@@ -10,7 +10,9 @@ key drift.
 
 Minimum viable scope (OMN-9333):
     * `.strip()` asymmetry on TopicBase.X arguments to send/subscribe/handler_for.
-    * Follow-ups filed: OMN-9339 (Pydantic), OMN-9340 (casefold), OMN-9341 (contract YAML).
+    * OMN-9339 Pydantic model field-set symmetry.
+    * OMN-9340 casefold/lower/upper case-normalization symmetry.
+    * Follow-up filed: OMN-9341 (contract YAML).
 """
 
 from __future__ import annotations
@@ -80,6 +82,114 @@ class _Consumer:
     def register(self) -> None:
         self._bus.subscribe([TopicBase.SESSION_STARTED])
 '''
+
+
+RED_CASE_NORMALIZATION_SOURCE = '''
+"""Producer lowercases the topic while consumer keeps the raw TopicBase value."""
+from omnibase_core.topics import TopicBase
+
+
+class _Producer:
+    def emit(self) -> None:
+        self._bus.send(TopicBase.SESSION_STARTED.lower(), {})
+
+
+class _Consumer:
+    def register(self) -> None:
+        self._bus.subscribe([TopicBase.SESSION_STARTED])
+'''
+
+
+GREEN_CASE_NORMALIZATION_TEMPLATE = '''
+"""Both sides apply the same case normalization transform."""
+from omnibase_core.topics import TopicBase
+
+
+class _Producer:
+    def emit(self) -> None:
+        self._bus.send(TopicBase.SESSION_STARTED.{transform}(), {{}})
+
+
+class _Consumer:
+    def register(self) -> None:
+        self._bus.subscribe([TopicBase.SESSION_STARTED.{transform}()])
+'''
+
+
+PYDANTIC_RED_MODELS_SOURCE = """
+from pydantic import BaseModel
+
+
+class ProducerEnvelope(BaseModel):
+    event_id: str
+    payload: str
+    trace_id: str
+
+
+class ConsumerEnvelope(BaseModel):
+    event_id: str
+    payload: str
+    received_at: str
+"""
+
+
+PYDANTIC_RED_PRODUCER_SOURCE = """
+from omnibase_core.topics import TopicBase
+from models import ProducerEnvelope as M
+
+
+class _Producer:
+    def emit(self) -> None:
+        event = M(event_id="evt-1", payload="payload", trace_id="trace-1")
+        self._bus.send(TopicBase.SESSION_STARTED, event)
+"""
+
+
+PYDANTIC_RED_CONSUMER_SOURCE = """
+from omnibase_core.topics import TopicBase
+from models import ConsumerEnvelope
+
+
+class _Consumer:
+    def register(self) -> None:
+        self._bus.subscribe(TopicBase.SESSION_STARTED, ConsumerEnvelope)
+"""
+
+
+PYDANTIC_GREEN_MODELS_SOURCE = """
+from pydantic import BaseModel
+
+
+class SharedEnvelope(BaseModel):
+    event_id: str
+    payload: str
+    trace_id: str
+"""
+
+
+PYDANTIC_GREEN_PRODUCER_SOURCE = """
+from omnibase_core.topics import TopicBase
+from models import SharedEnvelope as ProducerEnvelope
+
+
+class _Producer:
+    def emit(self) -> None:
+        self._bus.send(
+            TopicBase.SESSION_STARTED,
+            ProducerEnvelope(event_id="evt-1", payload="payload", trace_id="trace-1"),
+        )
+"""
+
+
+PYDANTIC_GREEN_CONSUMER_SOURCE = """
+from omnibase_core.topics import TopicBase
+from models import SharedEnvelope as ConsumerEnvelope
+
+
+class _Consumer:
+    def register(self) -> None:
+        self._bus.subscribe(TopicBase.SESSION_STARTED, ConsumerEnvelope)
+"""
 
 
 def _write_fixture(tmp_path: Path, name: str, source: str) -> Path:
@@ -194,3 +304,56 @@ class _Mixed:
         issue = issues[0]
         # The reported producer normalizations must be the divergent one (strip)
         assert "strip" in issue.message.lower()
+
+    def test_flags_case_normalization_asymmetry(self, tmp_path: Path) -> None:
+        _write_fixture(tmp_path, "case_normalization.py", RED_CASE_NORMALIZATION_SOURCE)
+
+        issues = scan_source_tree(tmp_path)
+
+        assert len(issues) == 1
+        issue = issues[0]
+        assert "transform asymmetry" in issue.message.lower()
+        assert "lower" in issue.message
+        assert "SESSION_STARTED" in issue.message
+
+    @pytest.mark.parametrize("transform", ["casefold", "lower", "upper"])
+    def test_passes_when_both_sides_use_same_case_transform(
+        self, tmp_path: Path, transform: str
+    ) -> None:
+        _write_fixture(
+            tmp_path,
+            f"symmetric_{transform}.py",
+            GREEN_CASE_NORMALIZATION_TEMPLATE.format(transform=transform),
+        )
+
+        issues = scan_source_tree(tmp_path)
+
+        assert issues == []
+
+    def test_flags_pydantic_schema_field_set_asymmetry(self, tmp_path: Path) -> None:
+        _write_fixture(tmp_path, "models.py", PYDANTIC_RED_MODELS_SOURCE)
+        _write_fixture(tmp_path, "producer.py", PYDANTIC_RED_PRODUCER_SOURCE)
+        _write_fixture(tmp_path, "consumer.py", PYDANTIC_RED_CONSUMER_SOURCE)
+
+        issues = scan_source_tree(tmp_path)
+
+        assert len(issues) == 1
+        issue = issues[0]
+        assert "pydantic schema field-set asymmetry" in issue.message.lower()
+        assert "ProducerEnvelope" in issue.message
+        assert "ConsumerEnvelope" in issue.message
+        assert "producer.py" in issue.message
+        assert "consumer.py" in issue.message
+        assert "trace_id" in issue.message
+        assert "received_at" in issue.message
+
+    def test_passes_when_both_sides_use_same_pydantic_model(
+        self, tmp_path: Path
+    ) -> None:
+        _write_fixture(tmp_path, "models.py", PYDANTIC_GREEN_MODELS_SOURCE)
+        _write_fixture(tmp_path, "producer.py", PYDANTIC_GREEN_PRODUCER_SOURCE)
+        _write_fixture(tmp_path, "consumer.py", PYDANTIC_GREEN_CONSUMER_SOURCE)
+
+        issues = scan_source_tree(tmp_path)
+
+        assert issues == []
