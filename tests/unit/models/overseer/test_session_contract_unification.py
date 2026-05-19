@@ -270,3 +270,103 @@ class TestSessionContractBackwardsCompat:
         )
         assert "merge_sweep_completed" in contract.required_outcomes
         assert "platform_readiness_gate_passed" in contract.required_outcomes
+
+
+@pytest.mark.unit
+class TestOMN11269AcceptanceCriteria:
+    """Acceptance criteria for OMN-11269: unify ModelSessionContract and ModelOvernightContract."""
+
+    def test_phase_spec_required_outcomes_is_typed_enum_tuple(self) -> None:
+        """required_outcomes uses EnumCompletionOutcome, not bare str."""
+        from omnibase_core.enums.overseer.enum_completion_outcome import (
+            EnumCompletionOutcome,
+        )
+        from omnibase_core.models.overseer.model_session_phase_spec import (
+            ModelSessionPhaseSpec,
+        )
+
+        phase = ModelSessionPhaseSpec(
+            phase_name="merge",
+            required_outcomes=(EnumCompletionOutcome.SUCCESS,),
+        )
+        assert isinstance(phase.required_outcomes, tuple)
+        assert phase.required_outcomes[0] is EnumCompletionOutcome.SUCCESS
+
+    def test_phase_spec_halt_conditions_per_phase(self) -> None:
+        """Per-phase halt_conditions are supported on ModelSessionPhaseSpec."""
+        from omnibase_core.models.overseer.model_session_halt_condition import (
+            ModelSessionHaltCondition,
+        )
+        from omnibase_core.models.overseer.model_session_phase_spec import (
+            ModelSessionPhaseSpec,
+        )
+
+        phase_halt = ModelSessionHaltCondition(
+            condition_id="phase-pr-stall",
+            description="PR blocked too long during this phase",
+            check_type="pr_blocked_too_long",
+            threshold=0.0,
+            pr=123,
+            threshold_minutes=60.0,
+        )
+        phase = ModelSessionPhaseSpec(
+            phase_name="ci_watch",
+            halt_conditions=(phase_halt,),
+        )
+        assert len(phase.halt_conditions) == 1
+        assert phase.halt_conditions[0].check_type == "pr_blocked_too_long"
+
+    def test_session_contract_full_overnight_equivalent(self) -> None:
+        """ModelSessionContract accepts all fields ModelOvernightContract had."""
+        from datetime import UTC, datetime
+
+        from omnibase_core.enums.overseer.enum_completion_outcome import (
+            EnumCompletionOutcome,
+        )
+        from omnibase_core.models.overseer.model_session_contract import (
+            ModelSessionContract,
+        )
+        from omnibase_core.models.overseer.model_session_halt_condition import (
+            ModelSessionHaltCondition,
+        )
+        from omnibase_core.models.overseer.model_session_phase_spec import (
+            ModelSessionPhaseSpec,
+        )
+
+        contract = ModelSessionContract(
+            session_id="omn-11269-acceptance",
+            created_at=datetime.now(UTC),
+            max_cost_usd=10.0,
+            max_duration_seconds=28800,
+            dry_run=False,
+            standing_orders=("merge PRs", "watch CI"),
+            required_outcomes=(
+                "merge_sweep_completed",
+                "platform_readiness_gate_passed",
+            ),
+            phases=(
+                ModelSessionPhaseSpec(
+                    phase_name="merge",
+                    required_outcomes=(EnumCompletionOutcome.SUCCESS,),
+                    halt_conditions=(
+                        ModelSessionHaltCondition(
+                            condition_id="phase-cost",
+                            description="Phase cost ceiling",
+                            check_type="cost_ceiling",
+                            threshold=2.0,
+                        ),
+                    ),
+                ),
+            ),
+            halt_conditions=(
+                ModelSessionHaltCondition(
+                    condition_id="cost_ceiling",
+                    description="Global cost ceiling",
+                    check_type="cost_ceiling",
+                    threshold=10.0,
+                ),
+            ),
+        )
+        assert contract.phases[0].required_outcomes == (EnumCompletionOutcome.SUCCESS,)
+        assert len(contract.phases[0].halt_conditions) == 1
+        assert contract.standing_orders == ("merge PRs", "watch CI")
