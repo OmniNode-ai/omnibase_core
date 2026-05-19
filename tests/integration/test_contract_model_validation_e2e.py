@@ -43,6 +43,7 @@ from omnibase_core.models.contracts.model_contract_reducer import ModelContractR
 from omnibase_core.models.contracts.subcontracts.model_contract_behavior_spec import (
     ModelContractBehaviorSpec,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 logger = logging.getLogger(__name__)
 
@@ -382,14 +383,16 @@ class TestBatchContractValidation:
             try:
                 filtered, contract_cls = _load_and_filter_contract(path)
                 result = contract_cls.model_validate(filtered)
-                assert isinstance(result, ModelContractBase)
-                successes.append(path.name)
-            except Exception as exc:  # noqa: BLE001 — collect for reporting
+            except (ModelOnexError, ValueError) as exc:
                 rel = path.relative_to(_NODES_DIR.parent.parent.parent)
                 failures.append(f"{rel}: {exc}")
                 logger.warning(
                     "Contract failed model_validate(): %s — %s", path.name, exc
                 )
+                continue
+
+            assert isinstance(result, ModelContractBase)
+            successes.append(path.name)
 
         logger.info(
             "Batch contract validation: %d passed, %d failed (total: %d)",
@@ -420,16 +423,17 @@ class TestBatchContractValidation:
             try:
                 filtered, contract_cls = _load_and_filter_contract(path)
                 result = contract_cls.model_validate(filtered)
-                assert not isinstance(result, dict), (
-                    f"{path.name}: model_validate() returned a dict instead of "
-                    f"{contract_cls.__name__}"
-                )
-                assert isinstance(result, ModelContractBase), (
-                    f"{path.name}: expected ModelContractBase subclass, "
-                    f"got {type(result).__name__}"
-                )
-            except Exception:  # noqa: BLE001 — schema-incomplete contracts skipped here
-                pass  # Only assert type for contracts that do pass
+            except (ModelOnexError, ValueError):
+                continue
+
+            assert not isinstance(result, dict), (
+                f"{path.name}: model_validate() returned a dict instead of "
+                f"{contract_cls.__name__}"
+            )
+            assert isinstance(result, ModelContractBase), (
+                f"{path.name}: expected ModelContractBase subclass, "
+                f"got {type(result).__name__}"
+            )
 
     def test_dispatch_produces_correct_class_per_node_type(self) -> None:
         """For each contract.yaml, the dispatched class matches the declared node_type."""
@@ -473,10 +477,11 @@ class TestBatchContractValidation:
             try:
                 filtered, contract_cls = _load_and_filter_contract(path)
                 result = contract_cls.model_validate(filtered)
-                if "node_type" in filtered:
-                    assert isinstance(result.node_type, EnumNodeType), (
-                        f"{path.name}: node_type must be EnumNodeType after validate, "
-                        f"got {type(result.node_type)}: {result.node_type!r}"
-                    )
-            except Exception:  # noqa: BLE001 — skip schema-incomplete contracts
-                pass
+            except (ModelOnexError, ValueError):
+                continue
+
+            if "node_type" in filtered:
+                assert isinstance(result.node_type, EnumNodeType), (
+                    f"{path.name}: node_type must be EnumNodeType after validate, "
+                    f"got {type(result.node_type)}: {result.node_type!r}"
+                )
