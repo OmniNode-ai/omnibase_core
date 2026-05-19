@@ -29,14 +29,8 @@ from omnibase_core.models.overseer.model_dispatch_item import ModelDispatchItem
 from omnibase_core.models.overseer.model_escalation_request import (
     ModelEscalationRequest,
 )
-from omnibase_core.models.overseer.model_overnight_contract import (
-    ModelOvernightContract,
-)
-from omnibase_core.models.overseer.model_overnight_halt_condition import (
-    ModelOvernightHaltCondition,
-)
-from omnibase_core.models.overseer.model_overnight_phase_spec import (
-    ModelOvernightPhaseSpec,
+from omnibase_core.models.overseer.model_phase_exit_condition import (
+    ModelPhaseExitCondition,
 )
 from omnibase_core.models.overseer.model_process_runner_state_transition import (
     ModelProcessRunnerStateTransition,
@@ -78,9 +72,7 @@ __all__ = [
     "ModelContractAllowedActions",
     "ModelDispatchItem",
     "ModelEscalationRequest",
-    "ModelOvernightContract",
-    "ModelOvernightHaltCondition",
-    "ModelOvernightPhaseSpec",
+    "ModelPhaseExitCondition",
     "ModelProcessRunnerStateTransition",
     "ModelSessionContract",
     "ModelSessionHaltCondition",

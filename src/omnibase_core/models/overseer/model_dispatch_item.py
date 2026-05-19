@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""ModelDispatchItem — per-theme dispatch detail for ModelOvernightPhaseSpec (OMN-10251)."""
+"""ModelDispatchItem — per-theme dispatch detail for ModelSessionPhaseSpec (OMN-10251, OMN-11225)."""
 
 from __future__ import annotations
 

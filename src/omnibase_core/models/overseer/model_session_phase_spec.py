@@ -1,13 +1,20 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""ModelSessionPhaseSpec — specification for a single session phase (OMN-10251)."""
+"""ModelSessionPhaseSpec — specification for a single session phase (OMN-10251, OMN-11225)."""
 
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.overseer.enum_completion_outcome import EnumCompletionOutcome
 from omnibase_core.models.overseer.model_dispatch_item import ModelDispatchItem
+from omnibase_core.models.overseer.model_phase_exit_condition import (
+    ModelPhaseExitCondition,
+)
+from omnibase_core.models.overseer.model_session_halt_condition import (
+    ModelSessionHaltCondition,
+)
 
 
 class ModelSessionPhaseSpec(BaseModel):
@@ -21,6 +28,9 @@ class ModelSessionPhaseSpec(BaseModel):
     halt_on_failure: bool = False
     success_criteria: list[str] = Field(default_factory=list)
     dispatch_items: tuple[ModelDispatchItem, ...] = ()
+    required_outcomes: tuple[EnumCompletionOutcome, ...] = ()
+    halt_conditions: tuple[ModelSessionHaltCondition, ...] = ()
+    exit_conditions: tuple[ModelPhaseExitCondition, ...] = ()
 
 
 __all__ = ["ModelSessionPhaseSpec"]
