@@ -127,6 +127,51 @@ class TestAgentInboxDirectedTopic:
             build_agent_inbox_directed_topic("agent#1")
 
 
+class TestSessionPhaseTopics:
+    """Verify exact wire values for the 5 session phase topics (OMN-11274)."""
+
+    def test_session_phase_evaluated(self) -> None:
+        assert (
+            TopicBase.SESSION_PHASE_EVALUATED
+            == "onex.evt.omnimarket.session-phase-evaluated.v1"
+        )
+
+    def test_session_phase_transition(self) -> None:
+        assert (
+            TopicBase.SESSION_PHASE_TRANSITION
+            == "onex.cmd.omnimarket.session-phase-transition.v1"
+        )
+
+    def test_session_phase_state(self) -> None:
+        assert (
+            TopicBase.SESSION_PHASE_STATE
+            == "onex.evt.omnimarket.session-phase-state.v1"
+        )
+
+    def test_session_phase_budget_warning(self) -> None:
+        assert (
+            TopicBase.SESSION_PHASE_BUDGET_WARNING
+            == "onex.evt.omnimarket.session-phase-budget-warning.v1"
+        )
+
+    def test_session_halt_required(self) -> None:
+        assert (
+            TopicBase.SESSION_HALT_REQUIRED
+            == "onex.cmd.omnimarket.session-halt-required.v1"
+        )
+
+    def test_all_five_pass_build_topic_validation(self) -> None:
+        phase_topics = [
+            TopicBase.SESSION_PHASE_EVALUATED,
+            TopicBase.SESSION_PHASE_TRANSITION,
+            TopicBase.SESSION_PHASE_STATE,
+            TopicBase.SESSION_PHASE_BUDGET_WARNING,
+            TopicBase.SESSION_HALT_REQUIRED,
+        ]
+        for topic in phase_topics:
+            assert build_topic(topic) == topic.value
+
+
 class TestBuildTopicCanonicalEnforcement:
     def test_non_canonical_short_name_rejected(self) -> None:
         with pytest.raises(ModelOnexError, match="canonical ONEX format"):
