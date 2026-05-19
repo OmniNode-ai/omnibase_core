@@ -46,6 +46,7 @@ from collections.abc import Mapping
 from functools import lru_cache
 from typing import cast
 
+from omnibase_core.enums.enum_normalization_family import EnumNormalizationFamily
 from omnibase_core.types.type_json import JsonType
 
 _LEGACY_METADATA_KEYS: frozenset[str] = frozenset(
@@ -58,6 +59,8 @@ _LEGACY_EVENT_BUS_KEYS: frozenset[str] = frozenset(
 
 _DEFAULT_HANDLER_ROUTING_VERSION: dict[str, int] = {"major": 1, "minor": 0, "patch": 0}
 _MULTI_OP_FLAG: str = "multi_operation_requires_human_review"
+_NORMALIZATION_FLAG_KEY: str = "_normalization_flag"
+_NORMALIZATION_PIPELINE_VERSION: str = "migration_normalization_v1"
 
 _PASCAL_TO_SNAKE_BOUNDARY_1 = re.compile(r"(.)([A-Z][a-z]+)")
 _PASCAL_TO_SNAKE_BOUNDARY_2 = re.compile(r"([a-z0-9])([A-Z])")
@@ -362,6 +365,121 @@ def validate_annotations_governance(annotations: Mapping[str, object]) -> list[s
     ]
 
 
+def _versioned_family_flag(family: EnumNormalizationFamily) -> str:
+    return f"{_NORMALIZATION_PIPELINE_VERSION}:{family.value}"
+
+
+def _versioned_embedded_flag(flag: str) -> str:
+    return f"{_NORMALIZATION_PIPELINE_VERSION}:flag:{flag}"
+
+
+def _append_unique(flags: list[str], flag: str) -> None:
+    if flag not in flags:
+        flags.append(flag)
+
+
+def _collect_embedded_normalization_flags(value: object) -> list[str]:
+    flags: list[str] = []
+    if isinstance(value, Mapping):
+        raw_flag = value.get(_NORMALIZATION_FLAG_KEY)
+        if isinstance(raw_flag, str):
+            _append_unique(flags, _versioned_embedded_flag(raw_flag))
+        for nested in value.values():
+            for flag in _collect_embedded_normalization_flags(nested):
+                _append_unique(flags, flag)
+    elif isinstance(value, list):
+        for item in value:
+            for flag in _collect_embedded_normalization_flags(item):
+                _append_unique(flags, flag)
+    return flags
+
+
+def normalize_contract_with_flags(
+    raw: Mapping[str, object],
+) -> tuple[dict[str, object], list[str]]:
+    """Run the migration-audit pipeline and return explicit audit flags.
+
+    The first tuple item is identical to :func:`compose_normalization_pipeline`.
+    The second item is a stable, version-prefixed list describing which
+    normalization families changed the payload plus any embedded human-review
+    flags produced by individual normalizers.
+    """
+    flags: list[str] = []
+
+    out = strip_legacy_metadata(raw)
+    if out != dict(raw):
+        _append_unique(
+            flags,
+            _versioned_family_flag(EnumNormalizationFamily.FAMILY_LEGACY_METADATA),
+        )
+
+    before = out
+    out = normalize_event_bus(cast("dict[str, JsonType]", out))
+    if out != before:
+        _append_unique(
+            flags,
+            _versioned_family_flag(EnumNormalizationFamily.FAMILY_LEGACY_EVENT_BUS),
+        )
+
+    before = out
+    out = normalize_io_model_ref(out)
+    if out != before:
+        _append_unique(
+            flags,
+            _versioned_family_flag(
+                EnumNormalizationFamily.FAMILY_LEGACY_INPUT_OUTPUT_MODEL
+            ),
+        )
+
+    before = out
+    out = normalize_handler_routing(out)
+    if out != before:
+        _append_unique(
+            flags,
+            _versioned_family_flag(
+                EnumNormalizationFamily.FAMILY_LEGACY_HANDLER_ROUTING
+            ),
+        )
+
+    if is_omnimarket_v0(out):
+        if "handler" in out:
+            _append_unique(
+                flags,
+                _versioned_family_flag(EnumNormalizationFamily.FAMILY_HANDLER_BLOCK),
+            )
+        if "descriptor" in out:
+            _append_unique(
+                flags,
+                _versioned_family_flag(EnumNormalizationFamily.FAMILY_DESCRIPTOR_BLOCK),
+            )
+        if "terminal_event" in out:
+            _append_unique(
+                flags,
+                _versioned_family_flag(EnumNormalizationFamily.FAMILY_TERMINAL_EVENT),
+            )
+        out = normalize_omnimarket_v0_contract(out)
+
+    before = out
+    out = normalize_dod_evidence(out)
+    if out != before:
+        _append_unique(
+            flags,
+            _versioned_family_flag(EnumNormalizationFamily.FAMILY_DOD_EVIDENCE_SCHEMA),
+        )
+
+    before = out
+    out = normalize_misc_extra_fields(out)
+    if out != before:
+        _append_unique(
+            flags,
+            _versioned_family_flag(EnumNormalizationFamily.FAMILY_MISC_EXTRA_FIELDS),
+        )
+
+    for flag in _collect_embedded_normalization_flags(out):
+        _append_unique(flags, flag)
+    return out, flags
+
+
 def compose_normalization_pipeline(raw: Mapping[str, object]) -> dict[str, object]:
     """Apply all per-family normalizers in canonical order.
 
@@ -386,19 +504,14 @@ def compose_normalization_pipeline(raw: Mapping[str, object]) -> dict[str, objec
     JsonType]``; we cast at the boundary because the pipeline carries
     unconstrained ``dict[str, object]``.
     """
-    out: dict[str, object] = strip_legacy_metadata(raw)
-    out = normalize_event_bus(cast("dict[str, JsonType]", out))
-    out = normalize_io_model_ref(out)
-    out = normalize_handler_routing(out)
-    if is_omnimarket_v0(out):
-        out = normalize_omnimarket_v0_contract(out)
-    out = normalize_dod_evidence(out)
-    return normalize_misc_extra_fields(out)
+    normalized, _flags = normalize_contract_with_flags(raw)
+    return normalized
 
 
 __all__ = [
     "compose_normalization_pipeline",
     "is_omnimarket_v0",
+    "normalize_contract_with_flags",
     "normalize_dod_evidence",
     "normalize_event_bus",
     "normalize_handler_routing",
