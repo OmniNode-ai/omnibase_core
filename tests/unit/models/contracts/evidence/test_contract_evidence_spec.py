@@ -4,6 +4,7 @@
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_stable_proof_kind import EnumStableProofKind
 from omnibase_core.models.contracts.evidence import (
     ModelContractEvidenceProof,
     ModelContractEvidenceSpec,
@@ -22,7 +23,7 @@ def test_contract_evidence_spec_accepts_artifact_first_proof() -> None:
         stable_proofs=(
             ModelContractEvidenceProof(
                 proof_id="model-import",
-                proof_kind="model_import",
+                proof_kind=EnumStableProofKind.MODEL_IMPORT,
                 description="Model imports from the canonical core package.",
                 target="omnibase_core.models.contracts.evidence.ModelContractEvidenceSpec",
                 model_path="omnibase_core.models.contracts.evidence.ModelContractEvidenceSpec",
@@ -40,7 +41,7 @@ def test_contract_evidence_spec_accepts_artifact_first_proof() -> None:
     )
 
     assert spec.schema_version == "1.0.0"
-    assert spec.stable_proofs[0].proof_kind == "model_import"
+    assert spec.stable_proofs[0].proof_kind == EnumStableProofKind.MODEL_IMPORT
     assert spec.provenance[0].pr_number == 1
 
 
@@ -49,7 +50,7 @@ def test_stable_proof_rejects_pr_number_bound_command() -> None:
     with pytest.raises(ValidationError, match="PR-number or PR-state bound"):
         ModelContractEvidenceProof(
             proof_id="pr-open",
-            proof_kind="command",
+            proof_kind=EnumStableProofKind.COMMAND,
             description="PR is open against main.",
             target="gh pr view 123 --repo OmniNode-ai/onex_change_control",
             command="gh pr view 123 --repo OmniNode-ai/onex_change_control",
@@ -61,7 +62,7 @@ def test_stable_proof_rejects_github_pull_url() -> None:
     with pytest.raises(ValidationError, match="PR-number or PR-state bound"):
         ModelContractEvidenceProof(
             proof_id="pr-url",
-            proof_kind="command",
+            proof_kind=EnumStableProofKind.COMMAND,
             description="PR URL is not stable proof.",
             target="https://github.com/OmniNode-ai/onex_change_control/pull/1138",
             command="test -n https://github.com/OmniNode-ai/onex_change_control/pull/1138",
@@ -72,7 +73,7 @@ def test_stable_proof_rejects_github_pull_url() -> None:
 def test_stable_proof_allows_non_pr_github_artifact_url() -> None:
     proof = ModelContractEvidenceProof(
         proof_id="github-artifact",
-        proof_kind="command",
+        proof_kind=EnumStableProofKind.COMMAND,
         description="GitHub blob URL can identify a stable artifact path.",
         target="https://github.com/OmniNode-ai/omnibase_core/blob/main/pyproject.toml",
         command="test -n https://github.com/OmniNode-ai/omnibase_core/blob/main/pyproject.toml",
@@ -112,7 +113,7 @@ def test_artifact_validation_requires_model_and_artifact_path() -> None:
     with pytest.raises(ValidationError, match="requires model_path and artifact_path"):
         ModelContractEvidenceProof(
             proof_id="validate-artifact",
-            proof_kind="artifact_validation",
+            proof_kind=EnumStableProofKind.ARTIFACT_VALIDATION,
             description="Validate artifact against model.",
             target="artifact_manifest.json",
             model_path="omnibase_core.models.evidence_bundle.ModelArtifactManifest",

@@ -122,10 +122,10 @@ from omnibase_core.models.security.model_condition_value import ModelConditionVa
 
 from . import subcontracts
 from .evidence import (
+    EnumStableProofKind,
     ModelContractEvidenceProof,
     ModelContractEvidenceSpec,
     ModelEvidenceProvenance,
-    StableProofKind,
 )
 from .model_action_config_parameter import (
     ModelActionConfigParameter,
@@ -287,7 +287,7 @@ __all__ = [
     "ModelDependencySpec",
     "DependencyType",
     "SelectionStrategy",
-    "StableProofKind",
+    "EnumStableProofKind",
     "ModelDriftDetails",
     "ModelDriftResult",
     "ModelNodeExtensions",
