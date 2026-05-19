@@ -263,7 +263,7 @@ class NormalizationSymmetryChecker(ast.NodeVisitor):
         if role is None:
             return
 
-        model_schema = self._extract_model_schema_from_call(node, role)
+        model_schema = self._extract_model_schema_from_call(node)
         for arg in self._topic_arg_candidates(node):
             topic_name, normalizations = self._extract_topic_use(arg)
             if topic_name is None and isinstance(arg, ast.Name):
@@ -341,11 +341,11 @@ class NormalizationSymmetryChecker(ast.NodeVisitor):
         return None, ()
 
     def _extract_model_schema_from_call(
-        self, node: ast.Call, role: Role
+        self, node: ast.Call
     ) -> ModelPydanticSchema | None:
         if self.model_registry is None:
             return None
-        for candidate in self._model_arg_candidates(node, role):
+        for candidate in self._model_arg_candidates(node):
             if isinstance(candidate, ast.Name):
                 model_alias = self._model_name_bindings.get(candidate.id)
                 if model_alias is None:
@@ -360,12 +360,9 @@ class NormalizationSymmetryChecker(ast.NodeVisitor):
         return None
 
     @staticmethod
-    def _model_arg_candidates(node: ast.Call, role: Role) -> Iterable[ast.expr]:
+    def _model_arg_candidates(node: ast.Call) -> Iterable[ast.expr]:
         positional_start = 1
-        if role == "producer":
-            yield from node.args[positional_start:]
-        else:
-            yield from node.args[positional_start:]
+        yield from node.args[positional_start:]
         for keyword in node.keywords:
             if keyword.arg in {
                 "event_model",
