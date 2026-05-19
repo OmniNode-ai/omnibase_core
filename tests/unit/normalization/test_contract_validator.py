@@ -27,8 +27,15 @@ import pytest
 import yaml
 
 from omnibase_core.enums.enum_contract_bucket import EnumContractBucket
+from omnibase_core.enums.enum_normalization_family import EnumNormalizationFamily
 from omnibase_core.enums.enum_validator_mode import EnumValidatorMode
 from omnibase_core.normalization.contract_validator import validate_contract_file
+
+_PIPELINE_VERSION = "migration_normalization_v1"
+
+
+def _family_flag(family: EnumNormalizationFamily) -> str:
+    return f"{_PIPELINE_VERSION}:{family.value}"
 
 
 def _clean_effect_contract() -> dict[str, Any]:
@@ -146,6 +153,31 @@ class TestMigrationAuditMode:
         result = validate_contract_file(path, mode=EnumValidatorMode.MIGRATION_AUDIT)
         assert result.passed is True, f"unexpected errors: {result.errors}"
         assert result.normalized is True
+        assert result.normalization_flags == []
+
+    def test_migration_audit_reports_applied_normalization_families(
+        self, tmp_path: Path
+    ) -> None:
+        path = _write_contract(tmp_path, _legacy_effect_contract())
+        result = validate_contract_file(path, mode=EnumValidatorMode.MIGRATION_AUDIT)
+        assert result.passed is True, f"unexpected errors: {result.errors}"
+        assert result.normalized is True
+        assert (
+            _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_METADATA)
+            in result.normalization_flags
+        )
+        assert (
+            _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_EVENT_BUS)
+            in result.normalization_flags
+        )
+        assert (
+            _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_INPUT_OUTPUT_MODEL)
+            in result.normalization_flags
+        )
+        assert (
+            _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_HANDLER_ROUTING)
+            in result.normalization_flags
+        )
 
 
 @pytest.mark.unit
@@ -194,6 +226,17 @@ class TestNodeTypeAliases:
         path = _write_contract(tmp_path, body)
         result = validate_contract_file(path, mode=EnumValidatorMode.STRICT)
         assert result.passed is True, f"unexpected errors: {result.errors}"
+
+    def test_migration_audit_reports_node_type_alias(self, tmp_path: Path) -> None:
+        body = _clean_effect_contract()
+        body["node_type"] = "EFFECT"
+        path = _write_contract(tmp_path, body)
+        result = validate_contract_file(path, mode=EnumValidatorMode.MIGRATION_AUDIT)
+        assert result.passed is True, f"unexpected errors: {result.errors}"
+        assert (
+            _family_flag(EnumNormalizationFamily.FAMILY_NODE_TYPE_ALIAS)
+            in result.normalization_flags
+        )
 
 
 @pytest.mark.unit

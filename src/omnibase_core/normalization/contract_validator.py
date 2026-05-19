@@ -41,14 +41,17 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.enums.enum_normalization_family import EnumNormalizationFamily
 from omnibase_core.enums.enum_validator_mode import EnumValidatorMode
 from omnibase_core.models.contracts.model_corpus_validation_report import (
     ModelCorpusValidationReport,
 )
 from omnibase_core.normalization.contract_normalizer import (
-    compose_normalization_pipeline,
+    normalize_contract_with_flags,
 )
 from omnibase_core.normalization.corpus_classifier import classify_contract_path
+
+_NORMALIZATION_PIPELINE_VERSION: str = "migration_normalization_v1"
 
 # Lazy-loaded mapping of canonical node_type values → canonical contract
 # model class. Built once on first call to keep the module import-light
@@ -174,13 +177,22 @@ def validate_contract_file(
         )
 
     normalized = False
+    normalization_flags: list[str] = []
     if mode is EnumValidatorMode.MIGRATION_AUDIT:
-        raw = compose_normalization_pipeline(raw)
+        raw, normalization_flags = normalize_contract_with_flags(raw)
         normalized = True
 
     raw_node_type = raw.get("node_type", "")
     raw_node_type_str = raw_node_type if isinstance(raw_node_type, str) else ""
     canonical_node_type = _NODE_TYPE_ALIASES.get(raw_node_type_str, raw_node_type_str)
+    if (
+        mode is EnumValidatorMode.MIGRATION_AUDIT
+        and raw_node_type_str in _NODE_TYPE_ALIASES
+    ):
+        normalization_flags.append(
+            f"{_NORMALIZATION_PIPELINE_VERSION}:"
+            f"{EnumNormalizationFamily.FAMILY_NODE_TYPE_ALIAS.value}"
+        )
     model_cls = _get_model_registry().get(canonical_node_type)
 
     if model_cls is None:
@@ -195,6 +207,7 @@ def validate_contract_file(
                 else "Missing required 'node_type' field"
             ],
             normalized=normalized,
+            normalization_flags=normalization_flags,
         )
 
     # Strict-mode pre-check enforces algorithm / io_operations even after
@@ -211,6 +224,7 @@ def validate_contract_file(
                 passed=False,
                 errors=precheck_errors,
                 normalized=normalized,
+                normalization_flags=normalization_flags,
             )
 
     try:
@@ -222,6 +236,7 @@ def validate_contract_file(
             passed=True,
             errors=[],
             normalized=normalized,
+            normalization_flags=normalization_flags,
         )
     except ValidationError as exc:
         return ModelCorpusValidationReport(
@@ -231,6 +246,7 @@ def validate_contract_file(
             passed=False,
             errors=[str(e) for e in exc.errors()],
             normalized=normalized,
+            normalization_flags=normalization_flags,
         )
 
 

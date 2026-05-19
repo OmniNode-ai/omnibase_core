@@ -28,9 +28,11 @@ import copy
 
 import pytest
 
+from omnibase_core.enums.enum_normalization_family import EnumNormalizationFamily
 from omnibase_core.normalization.contract_normalizer import (
     compose_normalization_pipeline,
     is_omnimarket_v0,
+    normalize_contract_with_flags,
     normalize_dod_evidence,
     normalize_event_bus,
     normalize_handler_routing,
@@ -39,6 +41,12 @@ from omnibase_core.normalization.contract_normalizer import (
     strip_legacy_metadata,
 )
 from omnibase_core.types.type_json import JsonType
+
+_PIPELINE_VERSION = "migration_normalization_v1"
+
+
+def _family_flag(family: EnumNormalizationFamily) -> str:
+    return f"{_PIPELINE_VERSION}:{family.value}"
 
 
 @pytest.mark.unit
@@ -564,3 +572,69 @@ class TestComposeNormalizationPipeline:
         }
         result = compose_normalization_pipeline(raw)
         assert result["input_model"] == "x.y.Z"  # unchanged
+
+
+@pytest.mark.unit
+class TestNormalizeContractWithFlags:
+    """Audit wrapper for explicit, versioned migration-normalization evidence."""
+
+    def test_returns_same_payload_as_compose_pipeline(self) -> None:
+        raw: dict[str, object] = {
+            "name": "node_foo_effect",
+            "node_type": "EFFECT_GENERIC",
+            "metadata": {"author": "Team"},
+            "input_model": {"name": "ModelFooRequest", "module": "foo.bar"},
+        }
+        normalized, _flags = normalize_contract_with_flags(raw)
+        assert normalized == compose_normalization_pipeline(raw)
+
+    def test_flags_changed_families_with_pipeline_version(self) -> None:
+        raw: dict[str, object] = {
+            "name": "node_foo_effect",
+            "node_type": "EFFECT_GENERIC",
+            "metadata": {"author": "Team"},
+            "contract_name": "node_foo_effect",
+            "event_bus": {"subscribe_topics": ["t"]},
+            "input_model": {"name": "ModelFooRequest", "module": "foo.bar"},
+            "dod_evidence": [{"kind": "test", "command": "uv run pytest"}],
+        }
+        _normalized, flags = normalize_contract_with_flags(raw)
+        assert _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_METADATA) in flags
+        assert _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_EVENT_BUS) in flags
+        assert (
+            _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_INPUT_OUTPUT_MODEL)
+            in flags
+        )
+        assert _family_flag(EnumNormalizationFamily.FAMILY_DOD_EVIDENCE_SCHEMA) in flags
+        assert all(flag.startswith(_PIPELINE_VERSION) for flag in flags)
+
+    def test_embedded_human_review_flag_is_reportable(self) -> None:
+        raw: dict[str, object] = {
+            "handler_routing": {
+                "routing_strategy": "operation_match",
+                "handlers": [
+                    {
+                        "handler_type": "foo",
+                        "supported_operations": ["foo.a", "foo.b"],
+                        "handler": {"name": "HandlerFoo", "module": "bar"},
+                    }
+                ],
+            }
+        }
+        _normalized, flags = normalize_contract_with_flags(raw)
+        assert (
+            _family_flag(EnumNormalizationFamily.FAMILY_LEGACY_HANDLER_ROUTING) in flags
+        )
+        assert (
+            "migration_normalization_v1:flag:"
+            "multi_operation_requires_human_review" in flags
+        )
+
+    def test_does_not_mutate_input(self) -> None:
+        raw: dict[str, object] = {
+            "metadata": {"author": "Team"},
+            "input_model": {"name": "ModelFooRequest", "module": "foo.bar"},
+        }
+        snapshot = copy.deepcopy(raw)
+        normalize_contract_with_flags(raw)
+        assert raw == snapshot
