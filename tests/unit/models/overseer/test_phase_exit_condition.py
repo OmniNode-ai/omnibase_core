@@ -43,7 +43,7 @@ def test_phase_exit_condition_worker_count() -> None:
 def test_phase_exit_condition_custom_probe() -> None:
     cond = ModelPhaseExitCondition(
         condition_type="custom_probe",
-        command="curl -fsS http://192.168.86.201:18085/health",  # onex-allow-internal-ip
+        command="curl -fsS http://127.0.0.1:18085/health",
         expected_exit_code=0,
     )
     assert cond.condition_type == "custom_probe"
@@ -94,10 +94,10 @@ def test_phase_spec_exit_conditions_default_empty() -> None:
 def test_phase_exit_condition_is_frozen() -> None:
     cond = ModelPhaseExitCondition(condition_type="task_complete", task_name="abc")
     with pytest.raises(Exception):
-        cond.task_name = "other"  # type: ignore[misc]
+        cond.task_name = "other"  # type: ignore[misc]  # NOTE(OMN-11226): intentional mutation attempt to verify frozen model
 
 
 @pytest.mark.unit
 def test_phase_exit_condition_rejects_extra_fields() -> None:
-    with pytest.raises(Exception):
-        ModelPhaseExitCondition(condition_type="task_complete", unknown_field="x")  # type: ignore[call-arg]
+    with pytest.raises(ValueError):
+        ModelPhaseExitCondition(condition_type="task_complete", unknown_field="x")  # type: ignore[call-arg]  # NOTE(OMN-11226): intentional invalid arg to verify extra-field rejection
