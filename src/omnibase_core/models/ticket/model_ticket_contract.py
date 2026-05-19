@@ -330,6 +330,66 @@ class ModelTicketContract(BaseModel):
 
         return v.astimezone(UTC)
 
+    @classmethod
+    def classify_runtime_change(
+        cls,
+        touched_paths: list[str] | tuple[str, ...] | set[str] | frozenset[str],
+        *,
+        deployed_nodes: set[str] | frozenset[str] | None = None,
+    ) -> bool:
+        """Return True when changed paths require runtime_sha_match evidence.
+
+        The default policy intentionally only looks at paths, so PR and ticket
+        tooling can call it before contracts are enriched. ``deployed_nodes`` lets
+        callers narrow omnimarket node matches when they have a deployment
+        registry; absent that registry, node source paths are treated as deployed
+        runtime code.
+        """
+        for raw_path in touched_paths:
+            path = cls._normalize_touched_path(raw_path)
+            if not path or cls._is_docs_or_tests_path(path):
+                continue
+            if path.startswith(("omnibase_infra/src/", "src/omnibase_infra/")):
+                return True
+
+            node_name = cls._omnimarket_node_name_from_path(path)
+            if node_name and (deployed_nodes is None or node_name in deployed_nodes):
+                return True
+
+        return False
+
+    @staticmethod
+    def _normalize_touched_path(path: str) -> str:
+        return path.strip().replace("\\", "/").lstrip("./")
+
+    @staticmethod
+    def _is_docs_or_tests_path(path: str) -> bool:
+        if path.endswith((".md", ".rst", ".txt")):
+            return True
+        if "/docs/" in f"/{path}" or path.startswith("docs/"):
+            return True
+        test_markers = ("/tests/", "/test/", "/__tests__/", "/fixtures/")
+        if any(marker in f"/{path}/" for marker in test_markers):
+            return True
+        filename = path.rsplit("/", 1)[-1]
+        return filename.startswith("test_") or filename.endswith("_test.py")
+
+    @staticmethod
+    def _omnimarket_node_name_from_path(path: str) -> str | None:
+        markers = (
+            "omnimarket/src/omnimarket/nodes/",
+            "src/omnimarket/nodes/",
+            "src/nodes/",
+        )
+        for marker in markers:
+            if marker not in path:
+                continue
+            after_marker = path.split(marker, 1)[1]
+            node_name = after_marker.split("/", 1)[0]
+            if node_name.startswith("node_"):
+                return node_name
+        return None
+
     # =========================================================================
     # research_notes as @property (derived from context)
     # =========================================================================

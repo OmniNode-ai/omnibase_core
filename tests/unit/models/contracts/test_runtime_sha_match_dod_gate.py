@@ -39,6 +39,7 @@ from omnibase_core.validation.runtime_sha_match import (
 pytestmark = pytest.mark.unit
 
 _PROBE_CMD = "ssh jonah@192.168.86.201 git -C /opt/omninode/runtime rev-parse HEAD"  # onex-allow-internal-ip: test fixture only
+_MERGE_SHA = "abc123def456"  # pragma: allowlist secret
 
 
 def _base_receipt(
@@ -46,6 +47,7 @@ def _base_receipt(
     check_type: str = CHECK_TYPE_RUNTIME_SHA_MATCH,
     status: EnumReceiptStatus = EnumReceiptStatus.PASS,
     actual_output: str | None = None,
+    check_value: str = _MERGE_SHA,
 ) -> ModelDodReceipt:
     # `runtime_sha_match` is not in EXECUTABLE_CHECK_TYPES, so probe_stdout
     # may be empty without violating the adversarial invariants.
@@ -54,14 +56,14 @@ def _base_receipt(
         ticket_id="OMN-9356",
         evidence_item_id="dod-sha-001",
         check_type=check_type,
-        check_value=_PROBE_CMD,
+        check_value=check_value,
         status=status,
         run_timestamp=datetime.now(tz=UTC),
         commit_sha="a1b2c3d4e5f6",  # pragma: allowlist secret
         runner="integration-sweep-verifier",
         verifier="foreground-runtime-sha-verifier",
         probe_command=_PROBE_CMD,
-        probe_stdout=actual_output or "abc123def456\n",  # pragma: allowlist secret
+        probe_stdout=actual_output or f"{_MERGE_SHA}\n",
         actual_output=actual_output,
     )
 
@@ -74,7 +76,7 @@ def _make_evidence_items(
             id="dod-sha-001",
             description="Runtime SHA matches merge SHA",
             checks=[
-                ModelDodEvidenceCheck(check_type=check_type, check_value=_PROBE_CMD)
+                ModelDodEvidenceCheck(check_type=check_type, check_value=_MERGE_SHA)
             ],
         )
     ]
@@ -83,8 +85,8 @@ def _make_evidence_items(
 def _make_output_json(
     *,
     runtime_host: str = "192.168.86.201",  # onex-allow-internal-ip: test fixture only
-    deployed_sha: str = "abc123def456",  # pragma: allowlist secret
-    merge_sha: str = "abc123def456",  # pragma: allowlist secret
+    deployed_sha: str = _MERGE_SHA,
+    merge_sha: str = _MERGE_SHA,
     match: bool = True,
 ) -> str:
     return json.dumps(
@@ -209,6 +211,26 @@ class TestClassifyRuntimeShaMatchReceipt:
         result = classify_runtime_sha_match_receipt(receipt)
         assert result.blocking is True
 
+    def test_pass_receipt_with_check_value_not_merge_sha_is_blocking(self) -> None:
+        receipt = ModelDodReceipt(
+            schema_version="1.0.0",
+            ticket_id="OMN-9356",
+            evidence_item_id="dod-sha-001",
+            check_type=CHECK_TYPE_RUNTIME_SHA_MATCH,
+            check_value="deadbeef1234",  # pragma: allowlist secret
+            status=EnumReceiptStatus.PASS,
+            run_timestamp=datetime.now(tz=UTC),
+            commit_sha=_MERGE_SHA,
+            runner="integration-sweep-verifier",
+            verifier="foreground-runtime-sha-verifier",
+            probe_command=_PROBE_CMD,
+            probe_stdout=f"{_MERGE_SHA}\n",
+            actual_output=_make_output_json(match=True),
+        )
+        result = classify_runtime_sha_match_receipt(receipt)
+        assert result.blocking is True
+        assert "check_value" in result.reason
+
     def test_wrong_check_type_raises_onex_error(self) -> None:
         receipt = _base_receipt(check_type="command")
         with pytest.raises(ModelOnexError):
@@ -217,6 +239,7 @@ class TestClassifyRuntimeShaMatchReceipt:
     def test_pass_receipt_with_valid_output_reason(self) -> None:
         receipt = _base_receipt(
             status=EnumReceiptStatus.PASS,
+            check_value="deadbeef1234",  # pragma: allowlist secret
             actual_output=_make_output_json(
                 deployed_sha="deadbeef1234",  # pragma: allowlist secret
                 merge_sha="deadbeef1234",  # pragma: allowlist secret
@@ -246,7 +269,7 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
             ticket_id="OMN-9356",
             evidence_item_id="dod-sha-001",
             check_type="runtime_sha_match",
-            check_value=_PROBE_CMD,
+            check_value=_MERGE_SHA,
             status=EnumReceiptStatus.PASS,
             run_timestamp=datetime.now(tz=UTC),
             commit_sha="abc123def456",  # pragma: allowlist secret
@@ -273,7 +296,7 @@ class TestDodGuardBlocksWithoutRuntimeShaReceipt:
             ticket_id="OMN-9356",
             evidence_item_id="dod-sha-001",
             check_type="runtime_sha_match",
-            check_value=_PROBE_CMD,
+            check_value="bbbbbbbbbbbb",  # pragma: allowlist secret
             status=EnumReceiptStatus.FAIL,
             run_timestamp=datetime.now(tz=UTC),
             commit_sha="abc123def456",  # pragma: allowlist secret
