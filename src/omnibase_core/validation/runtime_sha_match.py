@@ -93,6 +93,16 @@ def classify_runtime_sha_match_receipt(
             ),
         )
 
+    if receipt.check_value != output.merge_sha:
+        return ModelRuntimeShaClassifyResult(
+            valid=True,
+            blocking=True,
+            reason=(
+                f"receipt check_value={receipt.check_value!r} does not match "
+                f"runtime_sha_match merge_sha={output.merge_sha!r}"
+            ),
+        )
+
     return ModelRuntimeShaClassifyResult(
         valid=True,
         blocking=False,

@@ -101,6 +101,10 @@ from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
     ModelReceiptGateResult,
 )
 from omnibase_core.validation.completion_verify import verify as _completion_verify
+from omnibase_core.validation.runtime_sha_match import (
+    CHECK_TYPE_RUNTIME_SHA_MATCH,
+    classify_runtime_sha_match_receipt,
+)
 
 # PRs opened after this UTC datetime must include contract_sha256 in receipts;
 # earlier PRs get ADVISORY downgrade for the 7-day legacy window (OMN-10421).
@@ -388,6 +392,14 @@ def _check_one_receipt(
     )
     if adversarial_validated_failure is not None:
         return fail(adversarial_validated_failure)
+
+    if receipt.check_type == CHECK_TYPE_RUNTIME_SHA_MATCH:
+        runtime_sha_result = classify_runtime_sha_match_receipt(receipt)
+        if runtime_sha_result.blocking:
+            return fail(
+                f"runtime_sha_match receipt at {receipt_path} is blocking: "
+                f"{runtime_sha_result.reason}"
+            )
 
     # Hash-binding check (OMN-10421, invariant I4): verify the contract has
     # not mutated since this receipt was produced. Only active when the caller
