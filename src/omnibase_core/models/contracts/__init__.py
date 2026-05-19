@@ -121,6 +121,12 @@ from omnibase_core.models.runtime.model_handler_behavior import (
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 
 from . import subcontracts
+from .evidence import (
+    EnumStableProofKind,
+    ModelContractEvidenceProof,
+    ModelContractEvidenceSpec,
+    ModelEvidenceProvenance,
+)
 from .model_action_config_parameter import (
     ModelActionConfigParameter,
     ParameterType,
@@ -270,14 +276,18 @@ __all__ = [
     "ModelContractBase",
     "ModelContractFingerprint",
     "ModelContractMeta",
+    "ModelContractEvidenceProof",
+    "ModelContractEvidenceSpec",
     "ModelContractNodeMetadata",
     "ModelContractNormalizationConfig",
     "ModelContractVersion",
+    "ModelEvidenceProvenance",
     "ModelCorpusClassification",
     "ModelDependency",
     "ModelDependencySpec",
     "DependencyType",
     "SelectionStrategy",
+    "EnumStableProofKind",
     "ModelDriftDetails",
     "ModelDriftResult",
     "ModelNodeExtensions",
