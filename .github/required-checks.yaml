@@ -83,9 +83,8 @@ checks:
   - name: "Node Purity Check"
     workflow_file: ci.yml
     workflow_job_key: node-purity-check
-    reported_by: "Quality Gate"
-    note: "Non-blocking (continue-on-error: true) until tech debt resolved -- reported but excluded from
-      pass/fail"
+    aggregated_by: "Quality Gate"
+    note: "Blocking gate aggregated by Quality Gate"
 
   - name: "Enum Governance Check"
     workflow_file: ci.yml

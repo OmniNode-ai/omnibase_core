@@ -897,7 +897,6 @@ jobs:
           echo "| No Env Fallbacks (OMN-7227) | $no_env_fallbacks |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
-          # node-purity-check is NOT evaluated by this gate (continue-on-error until tech debt resolved)
           if [[ "$lint" == "success" ]] && \
              [[ "$pyright" == "success" ]] && \
              [[ "$exports" == "success" ]] && \
@@ -905,6 +904,7 @@ jobs:
              [[ "$core_infra" == "success" ]] && \
              [[ "$det_skills" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
+             [[ "$purity" == "success" ]] && \
              [[ "$enum_gov" == "success" ]] && \
              [[ "$secrets" == "success" ]] && \
              [[ "$sdk_boundary" == "success" ]] && \
