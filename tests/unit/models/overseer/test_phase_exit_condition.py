@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for ModelPhaseExitCondition and ModelSessionPhaseSpec.exit_conditions (OMN-11226)."""
+"""Unit tests for ModelPhaseExitCondition and ModelSessionPhaseSpec.exit_conditions (OMN-11226, OMN-11270)."""
 
 from __future__ import annotations
 
@@ -95,10 +95,124 @@ def test_phase_spec_exit_conditions_default_empty() -> None:
 def test_phase_exit_condition_is_frozen() -> None:
     cond = ModelPhaseExitCondition(condition_type="task_complete", task_name="abc")
     with pytest.raises(Exception):
-        cond.task_name = "other"  # type: ignore[misc]  # NOTE(OMN-11226): intentional mutation attempt to verify frozen model
+        cond.task_name = "other"  # NOTE(OMN-11270): intentional mutation attempt to verify frozen model raises at runtime
 
 
 @pytest.mark.unit
 def test_phase_exit_condition_rejects_extra_fields() -> None:
     with pytest.raises(ValueError):
         ModelPhaseExitCondition(condition_type="task_complete", unknown_field="x")  # type: ignore[call-arg]  # NOTE(OMN-11226): intentional invalid arg to verify extra-field rejection
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_pr_state_missing_repo() -> None:
+    with pytest.raises(ValueError, match="pr_state requires"):
+        ModelPhaseExitCondition(
+            condition_type="pr_state",
+            pr_number=42,
+            required_state="merged",
+        )
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_pr_state_missing_pr_number() -> None:
+    with pytest.raises(ValueError, match="pr_state requires"):
+        ModelPhaseExitCondition(
+            condition_type="pr_state",
+            repo="OmniNode-ai/omnimarket",
+            required_state="merged",
+        )
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_worker_count_missing_operator() -> None:
+    with pytest.raises(ValueError, match="worker_count requires"):
+        ModelPhaseExitCondition(
+            condition_type="worker_count",
+            value=5,
+        )
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_worker_count_missing_value() -> None:
+    with pytest.raises(ValueError, match="worker_count requires"):
+        ModelPhaseExitCondition(
+            condition_type="worker_count",
+            operator="gt",
+        )
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_custom_probe_missing_command() -> None:
+    with pytest.raises(ValueError, match="custom_probe requires"):
+        ModelPhaseExitCondition(
+            condition_type="custom_probe",
+            expected_exit_code=0,
+        )
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_custom_probe_missing_exit_code() -> None:
+    with pytest.raises(ValueError, match="custom_probe requires"):
+        ModelPhaseExitCondition(
+            condition_type="custom_probe",
+            command="curl http://localhost/health",
+        )
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_task_complete_missing_task_name() -> None:
+    with pytest.raises(ValueError, match="task_complete requires"):
+        ModelPhaseExitCondition(condition_type="task_complete")
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_time_elapsed_missing_value() -> None:
+    with pytest.raises(ValueError, match="time_elapsed requires"):
+        ModelPhaseExitCondition(condition_type="time_elapsed")
+
+
+@pytest.mark.unit
+def test_phase_spec_multiple_exit_conditions() -> None:
+    spec = ModelSessionPhaseSpec(
+        phase_name="close-out",
+        exit_conditions=(
+            ModelPhaseExitCondition(
+                condition_type="pr_state",
+                repo="OmniNode-ai/omnimarket",
+                pr_number=100,
+                required_state="merged",
+            ),
+            ModelPhaseExitCondition(
+                condition_type="worker_count",
+                operator="eq",
+                value=0,
+            ),
+        ),
+    )
+    assert len(spec.exit_conditions) == 2
+    assert spec.exit_conditions[0].condition_type == "pr_state"
+    assert spec.exit_conditions[1].condition_type == "worker_count"
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_pr_state_all_required_states() -> None:
+    for state in ("merged", "closed", "open"):
+        cond = ModelPhaseExitCondition(
+            condition_type="pr_state",
+            repo="OmniNode-ai/omnimarket",
+            pr_number=1,
+            required_state=state,
+        )
+        assert cond.required_state == state
+
+
+@pytest.mark.unit
+def test_phase_exit_condition_worker_count_all_operators() -> None:
+    for op in ("eq", "lt", "gt", "le", "ge"):
+        cond = ModelPhaseExitCondition(
+            condition_type="worker_count",
+            operator=op,
+            value=3,
+        )
+        assert cond.operator == op
