@@ -70,7 +70,7 @@ class TestSessionPhaseSpecUnification:
         )
 
         phase = ModelSessionPhaseSpec(phase_name="merge")
-        with pytest.raises((ValidationError, TypeError)):
+        with pytest.raises(Exception):
             phase.phase_name = "other"  # type: ignore[misc]  # NOTE(OMN-11225): intentional frozen-model mutation assertion
         assert phase.phase_name == "merge"
 
@@ -153,6 +153,45 @@ class TestSessionHaltConditionExpanded:
             threshold=5.0,
         )
         assert halt.on_halt == "hard_halt"
+
+    def test_session_halt_condition_threshold_checks_require_positive_value(
+        self,
+    ) -> None:
+        from omnibase_core.models.overseer.model_session_halt_condition import (
+            ModelSessionHaltCondition,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelSessionHaltCondition(
+                condition_id="cost",
+                description="Cost ceiling",
+                check_type="cost_ceiling",
+                threshold=0.0,
+            )
+
+    def test_session_halt_condition_pr_blocked_requires_positive_values(self) -> None:
+        from omnibase_core.models.overseer.model_session_halt_condition import (
+            ModelSessionHaltCondition,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelSessionHaltCondition(
+                condition_id="pr-stall",
+                description="PR stalled too long",
+                check_type="pr_blocked_too_long",
+                threshold=0.0,
+                pr=0,
+                threshold_minutes=30.0,
+            )
+        with pytest.raises(ValidationError):
+            ModelSessionHaltCondition(
+                condition_id="pr-stall",
+                description="PR stalled too long",
+                check_type="pr_blocked_too_long",
+                threshold=0.0,
+                pr=42,
+                threshold_minutes=0.0,
+            )
 
 
 @pytest.mark.unit

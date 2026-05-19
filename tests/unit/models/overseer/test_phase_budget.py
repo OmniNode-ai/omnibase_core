@@ -36,15 +36,15 @@ def test_phase_budget_defaults() -> None:
 
 @pytest.mark.unit
 def test_phase_max_duration_must_be_positive() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         ModelSessionPhaseSpec(phase_name="merge", max_duration_minutes=0)
 
 
 @pytest.mark.unit
 def test_phase_budget_warning_pct_range() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         ModelSessionPhaseSpec(phase_name="merge", budget_warning_pct=101)
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         ModelSessionPhaseSpec(phase_name="merge", budget_warning_pct=0)
 
 

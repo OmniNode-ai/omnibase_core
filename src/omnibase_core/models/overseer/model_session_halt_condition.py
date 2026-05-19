@@ -48,18 +48,29 @@ class ModelSessionHaltCondition(BaseModel):
 
     @model_validator(mode="after")
     def _enforce_conditional_fields(self) -> ModelSessionHaltCondition:
+        if (
+            self.check_type in {"cost_ceiling", "phase_failure_count", "time_elapsed"}
+            and self.threshold <= 0
+        ):
+            msg = (
+                "threshold must be > 0 when check_type is "
+                "'cost_ceiling', 'phase_failure_count', or 'time_elapsed'"
+            )
+            raise ValueError(
+                msg
+            )  # error-ok: Pydantic model_validator requires ValueError
         if self.on_halt == "dispatch_skill" and not self.skill:
             msg = "skill is required when on_halt='dispatch_skill'"
             raise ValueError(
                 msg
             )  # error-ok: Pydantic model_validator requires ValueError
         if self.check_type == "pr_blocked_too_long":
-            if self.pr is None:
+            if self.pr is None or self.pr <= 0:
                 msg = "pr is required when check_type='pr_blocked_too_long'"
                 raise ValueError(
                     msg
                 )  # error-ok: Pydantic model_validator requires ValueError
-            if self.threshold_minutes is None:
+            if self.threshold_minutes is None or self.threshold_minutes <= 0:
                 msg = (
                     "threshold_minutes is required"
                     " when check_type='pr_blocked_too_long'"
