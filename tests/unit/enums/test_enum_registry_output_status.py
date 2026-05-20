@@ -42,8 +42,13 @@ class TestEnumRegistryOutputStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRegistryOutputStatus.FAILURE in EnumRegistryOutputStatus
-        assert "failure" in [e.value for e in EnumRegistryOutputStatus]
+        assert (
+            EnumRegistryOutputStatus.FAILURE
+            in EnumRegistryOutputStatus.__members__.values()
+        )
+        assert "failure" in [
+            e.value for e in EnumRegistryOutputStatus.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -76,7 +81,7 @@ class TestEnumRegistryOutputStatus:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"success", "failure", "warning"}
-        actual_values = {e.value for e in EnumRegistryOutputStatus}
+        actual_values = {e.value for e in EnumRegistryOutputStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_output_status_categorization(self):
@@ -88,9 +93,11 @@ class TestEnumRegistryOutputStatus:
         # Cautionary status
         cautionary = {EnumRegistryOutputStatus.WARNING}
 
-        assert all(s in EnumRegistryOutputStatus for s in positive)
-        assert all(s in EnumRegistryOutputStatus for s in negative)
-        assert all(s in EnumRegistryOutputStatus for s in cautionary)
+        assert all(s in EnumRegistryOutputStatus.__members__.values() for s in positive)
+        assert all(s in EnumRegistryOutputStatus.__members__.values() for s in negative)
+        assert all(
+            s in EnumRegistryOutputStatus.__members__.values() for s in cautionary
+        )
         assert positive | negative | cautionary == set(EnumRegistryOutputStatus)
 
     def test_status_severity_levels(self):
@@ -103,4 +110,7 @@ class TestEnumRegistryOutputStatus:
             EnumRegistryOutputStatus.WARNING,
             EnumRegistryOutputStatus.FAILURE,
         ]
-        assert all(status in EnumRegistryOutputStatus for status in statuses)
+        assert all(
+            status in EnumRegistryOutputStatus.__members__.values()
+            for status in statuses
+        )

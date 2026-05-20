@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumLabelViolationType(StrValueHelper, str, Enum):
+class EnumLabelViolationType(UtilStrValueHelper, str, Enum):
     """Type of label policy violation detected.
 
     Used by ModelLabelViolation to categorize what kind of

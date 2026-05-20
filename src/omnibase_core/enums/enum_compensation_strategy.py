@@ -13,11 +13,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import Literal, assert_never
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCompensationStrategy(StrValueHelper, str, Enum):
+class EnumCompensationStrategy(UtilStrValueHelper, str, Enum):
     """
     Strongly typed compensation strategy discriminators.
 

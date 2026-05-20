@@ -227,7 +227,7 @@ class TestEnumHashAlgorithm:
 
     def test_all_values_are_strings(self) -> None:
         """Test that all enum values are strings."""
-        for member in EnumHashAlgorithm:
+        for member in EnumHashAlgorithm.__members__.values():
             assert isinstance(member.value, str)
             assert isinstance(member, str)
 
@@ -249,14 +249,16 @@ class TestEnumHashAlgorithm:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumHashAlgorithm]
+        values = [member.value for member in EnumHashAlgorithm.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
     def test_enum_iteration(self) -> None:
         """Test that enum can be iterated over."""
         expected_values = {"sha256"}
-        actual_values = {member.value for member in EnumHashAlgorithm}
+        actual_values = {
+            member.value for member in EnumHashAlgorithm.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_can_be_created_from_string(self) -> None:
@@ -293,12 +295,12 @@ class TestEnumHashAlgorithm:
 
     def test_enum_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumHashAlgorithm:
+        for member in EnumHashAlgorithm.__members__.values():
             assert bool(member) is True
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumHashAlgorithm:
+        for member in EnumHashAlgorithm.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -318,7 +320,7 @@ class TestEnumHashAlgorithm:
 
     def test_enum_in_operator(self) -> None:
         """Test that 'in' operator works with enum."""
-        assert EnumHashAlgorithm.SHA256 in EnumHashAlgorithm
+        assert EnumHashAlgorithm.SHA256 in EnumHashAlgorithm.__members__.values()
 
     def test_enum_with_pydantic_compatibility(self) -> None:
         """Test that enum works with Pydantic models."""
@@ -371,7 +373,7 @@ class TestEnumHashAlgorithmEdgeCases:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumHashAlgorithm:
+        for member in EnumHashAlgorithm.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -445,7 +447,7 @@ class TestEnumHashAlgorithmFutureCompatibility:
 
     def test_algorithm_name_convention(self) -> None:
         """Test that algorithm names follow expected conventions."""
-        for member in EnumHashAlgorithm:
+        for member in EnumHashAlgorithm.__members__.values():
             # Enum names should be UPPERCASE
             assert member.name.isupper(), f"{member.name} should be uppercase"
             # Values should be lowercase

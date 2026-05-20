@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTicketPhase(StrValueHelper, str, Enum):
+class EnumTicketPhase(UtilStrValueHelper, str, Enum):
     """Workflow phases for ticket processing."""
 
     INTAKE = "intake"
@@ -28,7 +28,7 @@ class EnumTicketPhase(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumTicketAction(StrValueHelper, str, Enum):
+class EnumTicketAction(UtilStrValueHelper, str, Enum):
     """Actions that can be performed during ticket processing."""
 
     FETCH_TICKET = "fetch_ticket"
@@ -43,7 +43,7 @@ class EnumTicketAction(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumTicketStepStatus(StrValueHelper, str, Enum):
+class EnumTicketStepStatus(UtilStrValueHelper, str, Enum):
     """Status values for ticket verification steps and gates."""
 
     PENDING = "pending"
@@ -55,7 +55,7 @@ class EnumTicketStepStatus(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumVerificationKind(StrValueHelper, str, Enum):
+class EnumVerificationKind(UtilStrValueHelper, str, Enum):
     """Types of verification steps."""
 
     UNIT_TESTS = "unit_tests"
@@ -68,7 +68,7 @@ class EnumVerificationKind(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumGateKind(StrValueHelper, str, Enum):
+class EnumGateKind(UtilStrValueHelper, str, Enum):
     """Types of gates that require approval."""
 
     HUMAN_APPROVAL = "human_approval"

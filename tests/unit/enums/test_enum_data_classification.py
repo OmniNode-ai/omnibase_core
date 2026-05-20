@@ -208,14 +208,17 @@ class TestEnumDataClassification:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumDataClassification.PUBLIC == EnumDataClassification.PUBLIC
+        assert (
+            type(EnumDataClassification.PUBLIC)(EnumDataClassification.PUBLIC.value)
+            is EnumDataClassification.PUBLIC
+        )
         assert EnumDataClassification.SECRET != EnumDataClassification.PUBLIC
 
     def test_enum_membership(self):
         """Test enum membership checking."""
         all_classifications = list(EnumDataClassification)
         for classification in all_classifications:
-            assert classification in EnumDataClassification
+            assert classification in EnumDataClassification.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -295,7 +298,7 @@ class TestEnumDataClassification:
         assert public_level == open_level
 
         # All classifications should have valid security levels
-        for classification in EnumDataClassification:
+        for classification in EnumDataClassification.__members__.values():
             security_level = EnumDataClassification.get_security_level(classification)
             assert 1 <= security_level <= 10
 

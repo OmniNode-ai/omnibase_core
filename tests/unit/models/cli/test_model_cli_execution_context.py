@@ -546,7 +546,7 @@ class TestModelCliExecutionContextEdgeCases:
 
     def test_all_context_types(self):
         """Test creating context with all context types."""
-        for context_type in EnumContextType:
+        for context_type in EnumContextType.__members__.values():
             context = ModelCliExecutionContext(
                 key="test",
                 value="value",
@@ -556,7 +556,7 @@ class TestModelCliExecutionContextEdgeCases:
 
     def test_all_context_sources(self):
         """Test creating context with all context sources."""
-        for source in EnumContextSource:
+        for source in EnumContextSource.__members__.values():
             context = ModelCliExecutionContext(
                 key="test",
                 value="value",

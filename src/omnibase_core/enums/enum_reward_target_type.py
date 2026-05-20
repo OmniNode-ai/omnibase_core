@@ -9,13 +9,13 @@ objective functions and reward architecture (OMN-2537).
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumRewardTargetType"]
 
 
 @unique
-class EnumRewardTargetType(StrValueHelper, str, Enum):
+class EnumRewardTargetType(UtilStrValueHelper, str, Enum):
     """Entity types that can receive reward signals.
 
     Used in RewardAssignedEvent to identify the target of a reward delta.

@@ -31,11 +31,11 @@ Enums for file traversal and ignore pattern handling.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumIgnorePatternSource(StrValueHelper, str, Enum):
+class EnumIgnorePatternSource(UtilStrValueHelper, str, Enum):
     """
     Canonical sources for ignore patterns when traversing directories.
 
@@ -51,7 +51,7 @@ class EnumIgnorePatternSource(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumTraversalMode(StrValueHelper, str, Enum):
+class EnumTraversalMode(UtilStrValueHelper, str, Enum):
     """
     Canonical modes for directory traversal.
 

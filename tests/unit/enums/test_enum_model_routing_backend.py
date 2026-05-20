@@ -40,12 +40,14 @@ class TestEnumModelRoutingBackend:
     def test_enum_all_values(self) -> None:
         """Test that all expected values are present and no extras."""
         expected = {"BIFROST", "DIRECT", "OPENAI_COMPAT"}
-        actual = {member.value for member in EnumModelRoutingBackend}
+        actual = {
+            member.value for member in EnumModelRoutingBackend.__members__.values()
+        }
         assert actual == expected
 
     def test_enum_membership(self) -> None:
         """Test enum membership via string values."""
-        values = {m.value for m in EnumModelRoutingBackend}
+        values = {m.value for m in EnumModelRoutingBackend.__members__.values()}
         assert "BIFROST" in values
         assert "DIRECT" in values
         assert "OPENAI_COMPAT" in values
@@ -53,7 +55,7 @@ class TestEnumModelRoutingBackend:
 
     def test_enum_unique(self) -> None:
         """Test that all enum values are unique (enforced by @unique)."""
-        values = [m.value for m in EnumModelRoutingBackend]
+        values = [m.value for m in EnumModelRoutingBackend.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_serialization(self) -> None:

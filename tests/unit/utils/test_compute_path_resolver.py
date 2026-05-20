@@ -23,7 +23,7 @@ import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.utils.util_compute_path_resolver import (
-    PathResolutionError,
+    UtilPathResolutionError,
     resolve_input_path,
     resolve_path,
     resolve_pipeline_path,
@@ -119,24 +119,24 @@ class TestResolvePath:
         assert resolve_path("container.user.name", data) == "Alice"
 
     def test_missing_key_raises_error(self) -> None:
-        """Test missing dictionary key raises PathResolutionError."""
+        """Test missing dictionary key raises UtilPathResolutionError."""
         data = {"name": "test"}
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_path("missing", data)
         assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
         assert "missing" in str(exc_info.value.message)
 
     def test_missing_attribute_raises_error(self) -> None:
-        """Test missing object attribute raises PathResolutionError."""
+        """Test missing object attribute raises UtilPathResolutionError."""
         obj = MockObject(name="Test", value=1)
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_path("nonexistent", obj)
         assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
 
     def test_private_attribute_blocked_by_default(self) -> None:
         """Test private attribute access is blocked by default."""
         obj = MockObject(name="Test", value=1, _private="secret")
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_path("_private", obj)
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "private" in str(exc_info.value.message).lower()
@@ -219,14 +219,14 @@ class TestResolveInputPath:
     def test_missing_input_field_raises_error(self) -> None:
         """Test missing input field raises error."""
         input_data = {"name": "test"}
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_input_path("$.input.missing", input_data)
         assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
 
     def test_private_attribute_blocked_on_input_objects(self) -> None:
         """Test private attribute access blocked on input objects."""
         input_data = MockObject(name="Test", value=1, _private="secret")
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_input_path("$.input._private", input_data)
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -237,7 +237,7 @@ class TestResolveInputPath:
 
     def test_invalid_input_path_format_raises_error(self) -> None:
         """Test invalid input path format raises error."""
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_input_path("$.other.field", {})
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -301,7 +301,7 @@ class TestResolveStepPath:
     def test_missing_step_raises_error(self) -> None:
         """Test missing step raises error."""
         step_results = {"existing": MockStepResult(output="value")}
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_step_path("$.steps.nonexistent", step_results)
         assert exc_info.value.error_code == EnumCoreErrorCode.OPERATION_FAILED
         assert "nonexistent" in str(exc_info.value.message)
@@ -309,20 +309,20 @@ class TestResolveStepPath:
     def test_invalid_step_subpath_raises_error(self) -> None:
         """Test invalid step subpath (not .output) raises error."""
         step_results = {"transform": MockStepResult(output="HELLO")}
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_step_path("$.steps.transform.invalid", step_results)
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "only '.output' supported" in str(exc_info.value.message)
 
     def test_invalid_step_path_format_raises_error(self) -> None:
         """Test invalid step path format raises error."""
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_step_path("$.input.field", {})
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_empty_step_name_raises_error(self) -> None:
         """Test empty step name raises error."""
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_step_path("$.steps.", {})
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -384,32 +384,32 @@ class TestResolvePipelinePath:
 
     def test_path_without_dollar_prefix_raises_error(self) -> None:
         """Test path without $ prefix raises error."""
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_pipeline_path("input.field", {}, {})
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "must start with '$'" in str(exc_info.value.message)
 
     def test_invalid_prefix_raises_error(self) -> None:
         """Test invalid path prefix raises error."""
-        with pytest.raises(PathResolutionError) as exc_info:
+        with pytest.raises(UtilPathResolutionError) as exc_info:
             resolve_pipeline_path("$.other.path", {}, {})
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
         assert "Invalid path prefix" in str(exc_info.value.message)
 
 
 # =============================================================================
-# Test PathResolutionError
+# Test UtilPathResolutionError
 # =============================================================================
 
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestPathResolutionError:
-    """Tests for PathResolutionError exception class."""
+class TestUtilPathResolutionError:
+    """Tests for UtilPathResolutionError exception class."""
 
     def test_basic_error_creation(self) -> None:
         """Test basic error creation."""
-        error = PathResolutionError(
+        error = UtilPathResolutionError(
             message="Test error",
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
         )
@@ -418,7 +418,7 @@ class TestPathResolutionError:
 
     def test_error_with_path_context(self) -> None:
         """Test error with path in context."""
-        error = PathResolutionError(
+        error = UtilPathResolutionError(
             message="Path not found",
             path="$.input.missing",
         )
@@ -430,7 +430,7 @@ class TestPathResolutionError:
 
     def test_error_with_segment_context(self) -> None:
         """Test error with segment in context."""
-        error = PathResolutionError(
+        error = UtilPathResolutionError(
             message="Missing key",
             path="$.input.user.name",
             segment="name",
@@ -443,7 +443,7 @@ class TestPathResolutionError:
 
     def test_error_with_available_keys_context(self) -> None:
         """Test error with available_keys in context."""
-        error = PathResolutionError(
+        error = UtilPathResolutionError(
             message="Key not found",
             path="$.input.missing",
             segment="missing",
@@ -456,10 +456,10 @@ class TestPathResolutionError:
         assert inner_context.get("available_keys") == ["name", "age", "email"]
 
     def test_error_is_model_onex_error_subclass(self) -> None:
-        """Test PathResolutionError is a ModelOnexError subclass."""
+        """Test UtilPathResolutionError is a ModelOnexError subclass."""
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        error = PathResolutionError(message="Test")
+        error = UtilPathResolutionError(message="Test")
         assert isinstance(error, ModelOnexError)
 
 
@@ -476,13 +476,13 @@ class TestEdgeCasesAndSecurity:
     def test_empty_dict_traversal(self) -> None:
         """Test traversing into empty dict."""
         data: dict[str, Any] = {}
-        with pytest.raises(PathResolutionError):
+        with pytest.raises(UtilPathResolutionError):
             resolve_path("missing", data)
 
     def test_nested_empty_dict(self) -> None:
         """Test nested empty dict access."""
         data: dict[str, Any] = {"outer": {}}
-        with pytest.raises(PathResolutionError):
+        with pytest.raises(UtilPathResolutionError):
             resolve_path("outer.inner", data)
 
     def test_path_with_consecutive_dots(self) -> None:

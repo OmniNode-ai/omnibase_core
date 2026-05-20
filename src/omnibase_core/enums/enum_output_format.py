@@ -31,11 +31,11 @@ Enums for output formats of CLI tools.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOutputFormat(StrValueHelper, str, Enum):
+class EnumOutputFormat(UtilStrValueHelper, str, Enum):
     """
     Canonical output formats for CLI tools.
     """

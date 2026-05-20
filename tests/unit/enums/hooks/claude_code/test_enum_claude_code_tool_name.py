@@ -9,7 +9,7 @@ Tests comprehensive enum functionality including:
 - from_string() returns UNKNOWN for unrecognized tools
 - MCP tool pattern handling (mcp__* prefix)
 - Helper methods (is_file_operation, is_search_operation, etc.)
-- StrValueHelper provides correct __str__ behavior
+- UtilStrValueHelper provides correct __str__ behavior
 - Import verification
 """
 
@@ -21,7 +21,7 @@ from enum import Enum
 import pytest
 
 from omnibase_core.enums.hooks.claude_code import EnumClaudeCodeToolName
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 pytestmark = pytest.mark.unit
 
@@ -141,7 +141,9 @@ class TestEnumClaudeCodeToolNameValues:
             "Mcp",
             "Unknown",
         }
-        actual_values = {member.value for member in EnumClaudeCodeToolName}
+        actual_values = {
+            member.value for member in EnumClaudeCodeToolName.__members__.values()
+        }
         assert actual_values == expected_values
 
 
@@ -154,13 +156,13 @@ class TestEnumClaudeCodeToolNameInheritance:
     """Tests for enum inheritance and string behavior."""
 
     def test_enum_inheritance(self) -> None:
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeToolName, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeToolName, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeToolName, str)
         assert issubclass(EnumClaudeCodeToolName, Enum)
 
     def test_str_value_helper_behavior(self) -> None:
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         assert str(EnumClaudeCodeToolName.READ) == "Read"
         assert str(EnumClaudeCodeToolName.BASH) == "Bash"
         assert str(EnumClaudeCodeToolName.WEB_FETCH) == "WebFetch"
@@ -183,9 +185,9 @@ class TestEnumClaudeCodeToolNameInheritance:
 
     def test_enum_membership(self) -> None:
         """Test enum membership operations."""
-        assert "Read" in EnumClaudeCodeToolName
-        assert "Bash" in EnumClaudeCodeToolName
-        assert "InvalidTool" not in EnumClaudeCodeToolName
+        assert "Read" in EnumClaudeCodeToolName._value2member_map_
+        assert "Bash" in EnumClaudeCodeToolName._value2member_map_
+        assert "InvalidTool" not in EnumClaudeCodeToolName._value2member_map_
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison operations."""
@@ -433,7 +435,7 @@ class TestEnumClaudeCodeToolNameIsFileOperation:
         """Test that exactly 4 tools are file operations."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_file_operation(tool)
         )
         assert count == 4
@@ -496,7 +498,7 @@ class TestEnumClaudeCodeToolNameIsSearchOperation:
         """Test that exactly 2 tools are search operations."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_search_operation(tool)
         )
         assert count == 2
@@ -559,7 +561,7 @@ class TestEnumClaudeCodeToolNameIsExecutionTool:
         """Test that exactly 4 tools are execution tools."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_execution_tool(tool)
         )
         assert count == 4
@@ -622,7 +624,7 @@ class TestEnumClaudeCodeToolNameIsWebOperation:
         """Test that exactly 2 tools are web operations."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_web_operation(tool)
         )
         assert count == 2
@@ -685,7 +687,7 @@ class TestEnumClaudeCodeToolNameIsTaskManagement:
         """Test that exactly 5 tools are task management tools."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_task_management(tool)
         )
         assert count == 5
@@ -748,7 +750,7 @@ class TestEnumClaudeCodeToolNameIsNotebookOperation:
         """Test that exactly 2 tools are notebook operations."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_notebook_operation(tool)
         )
         assert count == 2
@@ -809,7 +811,7 @@ class TestEnumClaudeCodeToolNameIsUserInteraction:
         """Test that exactly 1 tool is user interaction."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_user_interaction(tool)
         )
         assert count == 1
@@ -872,7 +874,7 @@ class TestEnumClaudeCodeToolNameIsPlanMode:
         """Test that exactly 2 tools are plan mode tools."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_plan_mode(tool)
         )
         assert count == 2
@@ -901,7 +903,7 @@ class TestEnumClaudeCodeToolNameIsSkill:
         """Test that exactly 1 tool is skill."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_skill(tool)
         )
         assert count == 1
@@ -928,7 +930,7 @@ class TestEnumClaudeCodeToolNameIsMcpTool:
         """Test that exactly 1 tool is MCP."""
         count = sum(
             1
-            for tool in EnumClaudeCodeToolName
+            for tool in EnumClaudeCodeToolName.__members__.values()
             if EnumClaudeCodeToolName.is_mcp_tool(tool)
         )
         assert count == 1
@@ -1080,7 +1082,9 @@ class TestTaskOutputRemoved:
 
     def test_task_output_not_in_enum_values(self) -> None:
         """TaskOutput must not appear in any enum member value."""
-        values = {member.value for member in EnumClaudeCodeToolName}
+        values = {
+            member.value for member in EnumClaudeCodeToolName.__members__.values()
+        }
         assert "TaskOutput" not in values
 
     def test_task_output_attr_absent(self) -> None:

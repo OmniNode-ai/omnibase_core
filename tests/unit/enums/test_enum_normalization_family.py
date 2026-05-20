@@ -37,7 +37,7 @@ class TestEnumNormalizationFamily:
             "family_custom_validator",
             "family_node_type_alias",
         }
-        actual = {f.value for f in EnumNormalizationFamily}
+        actual = {f.value for f in EnumNormalizationFamily.__members__.values()}
         assert required.issubset(actual)
 
     def test_member_count_is_fourteen(self) -> None:
@@ -57,7 +57,9 @@ class TestEnumNormalizationFamily:
 
     def test_enum_membership(self) -> None:
         """Membership lookup by value."""
-        values = {member.value for member in EnumNormalizationFamily}
+        values = {
+            member.value for member in EnumNormalizationFamily.__members__.values()
+        }
         assert "family_legacy_event_bus" in values
         assert "family_does_not_exist" not in values
 

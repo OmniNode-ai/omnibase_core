@@ -53,8 +53,8 @@ class TestEnumCliDiscoveryAction:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "discover_available_tools" in EnumCliDiscoveryAction
-        assert "invalid_action" not in EnumCliDiscoveryAction
+        assert "discover_available_tools" in EnumCliDiscoveryAction._value2member_map_
+        assert "invalid_action" not in EnumCliDiscoveryAction._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -98,7 +98,9 @@ class TestEnumCliDiscoveryAction:
             "get_discovery_stats",
         }
 
-        actual_values = {member.value for member in EnumCliDiscoveryAction}
+        actual_values = {
+            member.value for member in EnumCliDiscoveryAction.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -111,19 +113,35 @@ class TestEnumCliDiscoveryAction:
     def test_enum_discovery_actions(self):
         """Test that enum covers typical CLI discovery actions."""
         # Test core discovery operations
-        assert EnumCliDiscoveryAction.DISCOVER_AVAILABLE_TOOLS in EnumCliDiscoveryAction
         assert (
-            EnumCliDiscoveryAction.RESOLVE_TOOL_IMPLEMENTATION in EnumCliDiscoveryAction
+            EnumCliDiscoveryAction.DISCOVER_AVAILABLE_TOOLS
+            in EnumCliDiscoveryAction.__members__.values()
+        )
+        assert (
+            EnumCliDiscoveryAction.RESOLVE_TOOL_IMPLEMENTATION
+            in EnumCliDiscoveryAction.__members__.values()
         )
 
         # Test validation operations
-        assert EnumCliDiscoveryAction.VALIDATE_TOOL_HEALTH in EnumCliDiscoveryAction
+        assert (
+            EnumCliDiscoveryAction.VALIDATE_TOOL_HEALTH
+            in EnumCliDiscoveryAction.__members__.values()
+        )
 
         # Test metadata operations
-        assert EnumCliDiscoveryAction.GET_TOOL_METADATA in EnumCliDiscoveryAction
+        assert (
+            EnumCliDiscoveryAction.GET_TOOL_METADATA
+            in EnumCliDiscoveryAction.__members__.values()
+        )
 
         # Test registry operations
-        assert EnumCliDiscoveryAction.REFRESH_TOOL_REGISTRY in EnumCliDiscoveryAction
+        assert (
+            EnumCliDiscoveryAction.REFRESH_TOOL_REGISTRY
+            in EnumCliDiscoveryAction.__members__.values()
+        )
 
         # Test stats operations
-        assert EnumCliDiscoveryAction.GET_DISCOVERY_STATS in EnumCliDiscoveryAction
+        assert (
+            EnumCliDiscoveryAction.GET_DISCOVERY_STATS
+            in EnumCliDiscoveryAction.__members__.values()
+        )

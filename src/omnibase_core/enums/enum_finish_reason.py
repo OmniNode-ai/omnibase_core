@@ -10,11 +10,11 @@ with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumFinishReason(StrValueHelper, str, Enum):
+class EnumFinishReason(UtilStrValueHelper, str, Enum):
     """Completion finish reasons for LLM responses."""
 
     STOP = "stop"

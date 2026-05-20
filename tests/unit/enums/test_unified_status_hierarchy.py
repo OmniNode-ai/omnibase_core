@@ -42,7 +42,7 @@ class TestBaseStatus:
             "invalid",
             "unknown",
         }
-        actual_values = {status.value for status in EnumBaseStatus}
+        actual_values = {status.value for status in EnumBaseStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_base_status_methods(self):
@@ -88,7 +88,9 @@ class TestExecutionStatus:
             "timeout",
             "partial",
         }
-        actual_values = {status.value for status in EnumExecutionStatus}
+        actual_values = {
+            status.value for status in EnumExecutionStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_execution_status_base_overlap(self):
@@ -195,7 +197,9 @@ class TestFunctionLifecycleStatus:
             "beta",
             "alpha",
         }
-        actual_values = {status.value for status in EnumFunctionLifecycleStatus}
+        actual_values = {
+            status.value for status in EnumFunctionLifecycleStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_lifecycle_status_methods(self):
@@ -288,7 +292,9 @@ class TestGeneralStatus:
             "suspended",
             "processing",
         }
-        general_values = {status.value for status in EnumGeneralStatus}
+        general_values = {
+            status.value for status in EnumGeneralStatus.__members__.values()
+        }
         assert extended_values.issubset(general_values)
 
     def test_general_status_categorization(self):
@@ -409,10 +415,12 @@ class TestCrossEnumCompatibility:
     def test_no_value_conflicts_in_hierarchy(self):
         """Test that the unified hierarchy eliminates value conflicts."""
         # Get all values from each enum
-        base_values = {s.value for s in EnumBaseStatus}
-        execution_values = {s.value for s in EnumExecutionStatus}
-        function_values = {s.value for s in EnumFunctionLifecycleStatus}
-        general_values = {s.value for s in EnumGeneralStatus}
+        base_values = {s.value for s in EnumBaseStatus.__members__.values()}
+        execution_values = {s.value for s in EnumExecutionStatus.__members__.values()}
+        function_values = {
+            s.value for s in EnumFunctionLifecycleStatus.__members__.values()
+        }
+        general_values = {s.value for s in EnumGeneralStatus.__members__.values()}
 
         # Base values should be properly inherited
         base_in_execution = base_values.intersection(execution_values)

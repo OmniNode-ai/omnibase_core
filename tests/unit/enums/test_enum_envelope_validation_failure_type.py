@@ -24,7 +24,10 @@ class TestEnumEnvelopeValidationFailureTypeValues:
             "missing_entity_id",
             "unknown",
         }
-        actual_values = {member.value for member in EnumEnvelopeValidationFailureType}
+        actual_values = {
+            member.value
+            for member in EnumEnvelopeValidationFailureType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_missing_correlation_id_value(self) -> None:
@@ -55,11 +58,11 @@ class TestEnumEnvelopeValidationFailureTypeValues:
 
 
 class TestEnumEnvelopeValidationFailureTypeStrBehavior:
-    """Tests for str-based enum behavior (StrValueHelper mixin)."""
+    """Tests for str-based enum behavior (UtilStrValueHelper mixin)."""
 
     def test_enum_is_string(self) -> None:
         """Enum members are instances of str."""
-        for member in EnumEnvelopeValidationFailureType:
+        for member in EnumEnvelopeValidationFailureType.__members__.values():
             assert isinstance(member, str)
 
     def test_str_comparison(self) -> None:

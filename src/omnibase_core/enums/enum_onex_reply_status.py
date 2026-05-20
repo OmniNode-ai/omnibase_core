@@ -9,11 +9,11 @@ Standard ONEX reply status values.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOnexReplyStatus(StrValueHelper, str, Enum):
+class EnumOnexReplyStatus(UtilStrValueHelper, str, Enum):
     """Standard ONEX reply status values."""
 
     SUCCESS = "success"

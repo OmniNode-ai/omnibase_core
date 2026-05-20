@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumComplianceFramework(StrValueHelper, str, Enum):
+class EnumComplianceFramework(UtilStrValueHelper, str, Enum):
     """Supported compliance frameworks."""
 
     SOX = "SOX"  # Sarbanes-Oxley Act

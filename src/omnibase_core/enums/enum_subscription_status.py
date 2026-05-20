@@ -7,11 +7,11 @@ Subscription status enumeration for ONEX event consumers.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumSubscriptionStatus(StrValueHelper, str, Enum):
+class EnumSubscriptionStatus(UtilStrValueHelper, str, Enum):
     """Status states for event subscriptions."""
 
     ACTIVE = "ACTIVE"  # Currently receiving and processing events

@@ -33,7 +33,7 @@ class TestEnumErrorCategory:
         assert issubclass(EnumErrorCategory, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string behavior of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumErrorCategory.TRANSIENT) == "transient"
         assert str(EnumErrorCategory.CONFIGURATION) == "configuration"
         assert str(EnumErrorCategory.RESOURCE_EXHAUSTION) == "resource_exhaustion"
@@ -58,15 +58,15 @@ class TestEnumErrorCategory:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "transient" in EnumErrorCategory
-        assert "configuration" in EnumErrorCategory
-        assert "resource_exhaustion" in EnumErrorCategory
-        assert "authentication" in EnumErrorCategory
-        assert "network" in EnumErrorCategory
-        assert "validation" in EnumErrorCategory
-        assert "system" in EnumErrorCategory
-        assert "unknown" in EnumErrorCategory
-        assert "invalid" not in EnumErrorCategory
+        assert "transient" in EnumErrorCategory._value2member_map_
+        assert "configuration" in EnumErrorCategory._value2member_map_
+        assert "resource_exhaustion" in EnumErrorCategory._value2member_map_
+        assert "authentication" in EnumErrorCategory._value2member_map_
+        assert "network" in EnumErrorCategory._value2member_map_
+        assert "validation" in EnumErrorCategory._value2member_map_
+        assert "system" in EnumErrorCategory._value2member_map_
+        assert "unknown" in EnumErrorCategory._value2member_map_
+        assert "invalid" not in EnumErrorCategory._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -111,7 +111,9 @@ class TestEnumErrorCategory:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [category.value for category in EnumErrorCategory]
+        all_values = [
+            category.value for category in EnumErrorCategory.__members__.values()
+        ]
         expected_values = [
             "transient",
             "configuration",

@@ -63,7 +63,7 @@ class TestEnumBindingFunction:
         assert EnumBindingFunction.FROM_JSON.value == "from_json"
 
     def test_str_conversion_via_str_value_helper(self) -> None:
-        """Test string conversion returns the value (via StrValueHelper)."""
+        """Test string conversion returns the value (via UtilStrValueHelper)."""
         assert str(EnumBindingFunction.TO_JSON) == "to_json"
         assert str(EnumBindingFunction.FROM_JSON) == "from_json"
 

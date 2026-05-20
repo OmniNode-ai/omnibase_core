@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumPlanPhase(StrValueHelper, str, Enum):
+class EnumPlanPhase(UtilStrValueHelper, str, Enum):
     """Lifecycle phases for plan contracts."""
 
     DRAFT = "draft"
@@ -26,7 +26,7 @@ class EnumPlanPhase(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumPlanAction(StrValueHelper, str, Enum):
+class EnumPlanAction(UtilStrValueHelper, str, Enum):
     """Actions performable on a plan contract.
 
     EDIT_PLAN: Replace the plan document (via replace_document()).

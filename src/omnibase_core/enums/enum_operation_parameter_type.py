@@ -9,11 +9,11 @@ Defines types for discriminated union in operation parameters.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOperationParameterType(StrValueHelper, str, Enum):
+class EnumOperationParameterType(UtilStrValueHelper, str, Enum):
     """Operation parameter type enumeration for discriminated unions."""
 
     STRING = "string"

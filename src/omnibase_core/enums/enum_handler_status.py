@@ -14,11 +14,11 @@ of a handler's operational status.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHandlerStatus(StrValueHelper, str, Enum):
+class EnumHandlerStatus(UtilStrValueHelper, str, Enum):
     """
     Handler operational status values.
 

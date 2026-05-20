@@ -42,8 +42,13 @@ class TestEnumRegistryEntryStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRegistryEntryStatus.ONLINE in EnumRegistryEntryStatus
-        assert "online" in [e.value for e in EnumRegistryEntryStatus]
+        assert (
+            EnumRegistryEntryStatus.ONLINE
+            in EnumRegistryEntryStatus.__members__.values()
+        )
+        assert "online" in [
+            e.value for e in EnumRegistryEntryStatus.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -76,7 +81,7 @@ class TestEnumRegistryEntryStatus:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"ephemeral", "online", "validated"}
-        actual_values = {e.value for e in EnumRegistryEntryStatus}
+        actual_values = {e.value for e in EnumRegistryEntryStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_status_progression(self):
@@ -87,7 +92,10 @@ class TestEnumRegistryEntryStatus:
             EnumRegistryEntryStatus.ONLINE,
             EnumRegistryEntryStatus.VALIDATED,
         ]
-        assert all(status in EnumRegistryEntryStatus for status in progression)
+        assert all(
+            status in EnumRegistryEntryStatus.__members__.values()
+            for status in progression
+        )
 
     def test_temporary_vs_permanent_status(self):
         """Test categorization of temporary vs permanent status."""
@@ -99,6 +107,6 @@ class TestEnumRegistryEntryStatus:
             EnumRegistryEntryStatus.VALIDATED,
         }
 
-        assert all(s in EnumRegistryEntryStatus for s in temporary)
-        assert all(s in EnumRegistryEntryStatus for s in permanent)
+        assert all(s in EnumRegistryEntryStatus.__members__.values() for s in temporary)
+        assert all(s in EnumRegistryEntryStatus.__members__.values() for s in permanent)
         assert temporary | permanent == set(EnumRegistryEntryStatus)

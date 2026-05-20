@@ -437,7 +437,7 @@ class TestModelClaudeCodeHookEventIntegration:
 
     def test_all_event_types_constructable(self) -> None:
         """Test that all event types can be used to construct events."""
-        for event_type in EnumClaudeCodeHookEventType:
+        for event_type in EnumClaudeCodeHookEventType.__members__.values():
             event = ModelClaudeCodeHookEvent(
                 event_type=event_type,
                 session_id=f"session-{event_type.value}",

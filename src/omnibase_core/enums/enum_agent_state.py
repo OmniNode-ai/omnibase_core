@@ -11,11 +11,11 @@ CLOSED ENUM: Adding new states is a BREAKING CHANGE requiring:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumAgentState(StrValueHelper, str, Enum):
+class EnumAgentState(UtilStrValueHelper, str, Enum):
     """Closed enum for agent states. Version: 1.
 
     Represents the observable lifecycle state of an agent as reported

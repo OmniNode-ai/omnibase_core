@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumUsageSource(StrValueHelper, str, Enum):
+class EnumUsageSource(UtilStrValueHelper, str, Enum):
     """Source quality for token/cost usage attribution."""
 
     MEASURED = "measured"

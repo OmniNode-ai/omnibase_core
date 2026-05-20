@@ -46,8 +46,8 @@ class TestEnumCheckpointType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "manual" in EnumCheckpointType
-        assert "invalid_type" not in EnumCheckpointType
+        assert "manual" in EnumCheckpointType._value2member_map_
+        assert "invalid_type" not in EnumCheckpointType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -94,7 +94,9 @@ class TestEnumCheckpointType:
             "composition_boundary",
         }
 
-        actual_values = {member.value for member in EnumCheckpointType}
+        actual_values = {
+            member.value for member in EnumCheckpointType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -104,19 +106,28 @@ class TestEnumCheckpointType:
     def test_enum_checkpoint_types(self):
         """Test that enum covers typical checkpoint types."""
         # Test manual checkpoint
-        assert EnumCheckpointType.MANUAL in EnumCheckpointType
+        assert EnumCheckpointType.MANUAL in EnumCheckpointType.__members__.values()
 
         # Test automatic checkpoint
-        assert EnumCheckpointType.AUTOMATIC in EnumCheckpointType
+        assert EnumCheckpointType.AUTOMATIC in EnumCheckpointType.__members__.values()
 
         # Test recovery checkpoint
-        assert EnumCheckpointType.FAILURE_RECOVERY in EnumCheckpointType
+        assert (
+            EnumCheckpointType.FAILURE_RECOVERY
+            in EnumCheckpointType.__members__.values()
+        )
 
         # Test completion checkpoint
-        assert EnumCheckpointType.STEP_COMPLETION in EnumCheckpointType
+        assert (
+            EnumCheckpointType.STEP_COMPLETION
+            in EnumCheckpointType.__members__.values()
+        )
 
         # Test boundary checkpoint
-        assert EnumCheckpointType.COMPOSITION_BOUNDARY in EnumCheckpointType
+        assert (
+            EnumCheckpointType.COMPOSITION_BOUNDARY
+            in EnumCheckpointType.__members__.values()
+        )
 
 
 @pytest.mark.unit
@@ -184,7 +195,7 @@ class TestEnumCheckpointTypeIsAutomatic:
 
     def test_all_checkpoint_types_are_classified(self) -> None:
         """Test that all checkpoint types are classified as either automatic or manual."""
-        for checkpoint_type in EnumCheckpointType:
+        for checkpoint_type in EnumCheckpointType.__members__.values():
             result = EnumCheckpointType.is_automatic(checkpoint_type)
             assert isinstance(result, bool)
 

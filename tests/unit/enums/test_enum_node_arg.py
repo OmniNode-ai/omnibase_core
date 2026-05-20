@@ -44,13 +44,13 @@ class TestEnumNodeArg:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumNodeArg.ARGS in EnumNodeArg
-        assert "args" in EnumNodeArg
-        assert "invalid_value" not in EnumNodeArg
+        assert EnumNodeArg.ARGS in EnumNodeArg.__members__.values()
+        assert "args" in EnumNodeArg._value2member_map_
+        assert "invalid_value" not in EnumNodeArg._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumNodeArg.ARGS == EnumNodeArg.ARGS
+        assert type(EnumNodeArg.ARGS)(EnumNodeArg.ARGS.value) is EnumNodeArg.ARGS
         assert EnumNodeArg.KWARGS != EnumNodeArg.ARGS
         assert EnumNodeArg.ARGS == "args"
 
@@ -83,7 +83,7 @@ class TestEnumNodeArg:
             "--health-check",
             "--introspect",
         }
-        actual_values = {member.value for member in EnumNodeArg}
+        actual_values = {member.value for member in EnumNodeArg.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

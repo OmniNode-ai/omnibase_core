@@ -9,11 +9,11 @@ Enumeration for discriminated union types in CLI command option value objects.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCliOptionValueType(StrValueHelper, str, Enum):
+class EnumCliOptionValueType(UtilStrValueHelper, str, Enum):
     """CLI command option value type enumeration."""
 
     STRING = "string"

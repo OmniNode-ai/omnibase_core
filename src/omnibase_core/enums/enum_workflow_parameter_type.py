@@ -9,11 +9,11 @@ Defines types for discriminated union in workflow parameters.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumWorkflowParameterType(StrValueHelper, str, Enum):
+class EnumWorkflowParameterType(UtilStrValueHelper, str, Enum):
     """Workflow parameter type enumeration for discriminated unions."""
 
     WORKFLOW_CONFIG = "workflow_config"

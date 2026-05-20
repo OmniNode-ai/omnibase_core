@@ -9,11 +9,11 @@ Enumeration for discriminated union types in validation value objects.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumValidationValueType(StrValueHelper, str, Enum):
+class EnumValidationValueType(UtilStrValueHelper, str, Enum):
     """Validation value type enumeration."""
 
     STRING = "string"

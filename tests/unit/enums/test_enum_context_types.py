@@ -46,8 +46,8 @@ class TestEnumContextTypes:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "context" in EnumContextTypes
-        assert "invalid_type" not in EnumContextTypes
+        assert "context" in EnumContextTypes._value2member_map_
+        assert "invalid_type" not in EnumContextTypes._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -90,7 +90,9 @@ class TestEnumContextTypes:
             "runtime",
         }
 
-        actual_values = {member.value for member in EnumContextTypes}
+        actual_values = {
+            member.value for member in EnumContextTypes.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -100,12 +102,12 @@ class TestEnumContextTypes:
     def test_enum_context_types(self):
         """Test that enum covers typical context types."""
         # Test basic context types
-        assert EnumContextTypes.CONTEXT in EnumContextTypes
-        assert EnumContextTypes.VARIABLE in EnumContextTypes
+        assert EnumContextTypes.CONTEXT in EnumContextTypes.__members__.values()
+        assert EnumContextTypes.VARIABLE in EnumContextTypes.__members__.values()
 
         # Test environment types
-        assert EnumContextTypes.ENVIRONMENT in EnumContextTypes
-        assert EnumContextTypes.CONFIGURATION in EnumContextTypes
+        assert EnumContextTypes.ENVIRONMENT in EnumContextTypes.__members__.values()
+        assert EnumContextTypes.CONFIGURATION in EnumContextTypes.__members__.values()
 
         # Test runtime type
-        assert EnumContextTypes.RUNTIME in EnumContextTypes
+        assert EnumContextTypes.RUNTIME in EnumContextTypes.__members__.values()

@@ -328,7 +328,7 @@ class TestModelReducerOutputValidation:
         Validates that all enum values are accepted and invalid strings are rejected,
         ensuring type safety for reduction operations."""
         # Test all valid reduction types
-        for reduction_type in EnumReductionType:
+        for reduction_type in EnumReductionType.__members__.values():
             output = ModelReducerOutput[int](
                 result=42,
                 operation_id=uuid4(),
@@ -1164,7 +1164,7 @@ class TestModelReducerOutputEdgeCases:
 
         Validates comprehensive support for every reduction operation type defined
         in the EnumReductionType enumeration (FOLD, ACCUMULATE, MERGE, etc)."""
-        for reduction_type in EnumReductionType:
+        for reduction_type in EnumReductionType.__members__.values():
             output = ModelReducerOutput[int](
                 result=42,
                 operation_id=uuid4(),
@@ -1180,7 +1180,7 @@ class TestModelReducerOutputEdgeCases:
         Validates that every streaming mode (BATCH, WINDOWED, REAL_TIME) can be
         configured and persisted in output metadata for different processing patterns.
         """
-        for streaming_mode in EnumStreamingMode:
+        for streaming_mode in EnumStreamingMode.__members__.values():
             output = ModelReducerOutput[int](
                 result=42,
                 operation_id=uuid4(),

@@ -11,11 +11,11 @@ which tags infrastructure-level transport failures.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumAgentProtocol(StrValueHelper, str, Enum):
+class EnumAgentProtocol(UtilStrValueHelper, str, Enum):
     """Agent-level protocol used to invoke a remote agent.
 
     Applicable only when the invocation kind is AGENT. Each value names a

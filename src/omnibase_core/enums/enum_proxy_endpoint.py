@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumProxyEndpoint(StrValueHelper, str, Enum):
+class EnumProxyEndpoint(UtilStrValueHelper, str, Enum):
     """API endpoint patterns for proxy."""
 
     V1_MESSAGES = "v1/messages"

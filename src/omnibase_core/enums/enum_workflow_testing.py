@@ -11,11 +11,11 @@ supporting flexible dependency accommodation and comprehensive test workflows.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumAccommodationLevel(StrValueHelper, str, Enum):
+class EnumAccommodationLevel(UtilStrValueHelper, str, Enum):
     """Enumeration of dependency accommodation levels"""
 
     FULL_REAL = "full_real"
@@ -26,7 +26,7 @@ class EnumAccommodationLevel(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumAccommodationStrategy(StrValueHelper, str, Enum):
+class EnumAccommodationStrategy(UtilStrValueHelper, str, Enum):
     """Enumeration of accommodation strategies"""
 
     HYBRID_SMART = "hybrid_smart"
@@ -37,7 +37,7 @@ class EnumAccommodationStrategy(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumAccommodationType(StrValueHelper, str, Enum):
+class EnumAccommodationType(UtilStrValueHelper, str, Enum):
     """Enumeration of accommodation types"""
 
     REAL = "real"
@@ -47,7 +47,7 @@ class EnumAccommodationType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumFallbackStrategy(StrValueHelper, str, Enum):
+class EnumFallbackStrategy(UtilStrValueHelper, str, Enum):
     """Enumeration of fallback strategies"""
 
     MOCK_IF_REAL_UNAVAILABLE = "mock_if_real_unavailable"
@@ -57,7 +57,7 @@ class EnumFallbackStrategy(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumTestExecutionStatus(StrValueHelper, str, Enum):
+class EnumTestExecutionStatus(UtilStrValueHelper, str, Enum):
     """Enumeration of test execution statuses"""
 
     SUCCESS = "success"
@@ -68,7 +68,7 @@ class EnumTestExecutionStatus(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumTestWorkflowPriority(StrValueHelper, str, Enum):
+class EnumTestWorkflowPriority(UtilStrValueHelper, str, Enum):
     """Enumeration of test workflow priorities"""
 
     CRITICAL = "critical"
@@ -78,7 +78,7 @@ class EnumTestWorkflowPriority(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumTestContext(StrValueHelper, str, Enum):
+class EnumTestContext(UtilStrValueHelper, str, Enum):
     """Enumeration of test execution contexts"""
 
     CI_CD_ENVIRONMENT = "ci_cd_environment"
@@ -89,7 +89,7 @@ class EnumTestContext(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumDependencyType(StrValueHelper, str, Enum):
+class EnumDependencyType(UtilStrValueHelper, str, Enum):
     """Enumeration of dependency types"""
 
     SERVICE = "service"
@@ -102,7 +102,7 @@ class EnumDependencyType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumMockBehaviorType(StrValueHelper, str, Enum):
+class EnumMockBehaviorType(UtilStrValueHelper, str, Enum):
     """Enumeration of mock behavior types"""
 
     SUCCESS_RESPONSE = "success_response"
@@ -114,7 +114,7 @@ class EnumMockBehaviorType(StrValueHelper, str, Enum):
 
 
 @unique
-class EnumValidationRule(StrValueHelper, str, Enum):
+class EnumValidationRule(UtilStrValueHelper, str, Enum):
     """Enumeration of validation rules for test assertions"""
 
     EQUALS = "equals"

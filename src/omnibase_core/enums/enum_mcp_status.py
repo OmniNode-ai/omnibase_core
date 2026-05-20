@@ -7,11 +7,11 @@ Enum for MCP operation status values.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMCPStatus(StrValueHelper, str, Enum):
+class EnumMCPStatus(UtilStrValueHelper, str, Enum):
     """Status values for MCP operations."""
 
     SUCCESS = "success"

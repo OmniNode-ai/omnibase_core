@@ -9,11 +9,11 @@ Version lifecycle status values.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumVersionStatus(StrValueHelper, str, Enum):
+class EnumVersionStatus(UtilStrValueHelper, str, Enum):
     """Version lifecycle status values."""
 
     ACTIVE = "active"

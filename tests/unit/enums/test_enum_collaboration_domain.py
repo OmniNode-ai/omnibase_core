@@ -50,9 +50,9 @@ class TestEnumCollaborationDomain:
 
     def test_enum_membership(self):
         """Test enum membership."""
-        assert "frontend_development" in EnumCollaborationDomain
-        assert "testing" in EnumCollaborationDomain
-        assert "invalid_domain" not in EnumCollaborationDomain
+        assert "frontend_development" in EnumCollaborationDomain._value2member_map_
+        assert "testing" in EnumCollaborationDomain._value2member_map_
+        assert "invalid_domain" not in EnumCollaborationDomain._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -102,7 +102,7 @@ class TestEnumCollaborationDomain:
             "progress_tracking",
             "resource_planning",
         ]
-        actual_values = [e.value for e in EnumCollaborationDomain]
+        actual_values = [e.value for e in EnumCollaborationDomain.__members__.values()]
         assert set(actual_values) == set(expected_values)
 
     def test_enum_docstring(self):

@@ -47,15 +47,20 @@ class TestEnumLearningEventType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumLearningEventType.DEVELOPER_CORRECTION in EnumLearningEventType
-        assert "developer_correction" in EnumLearningEventType
-        assert "invalid_value" not in EnumLearningEventType
+        assert (
+            EnumLearningEventType.DEVELOPER_CORRECTION
+            in EnumLearningEventType.__members__.values()
+        )
+        assert "developer_correction" in EnumLearningEventType._value2member_map_
+        assert "invalid_value" not in EnumLearningEventType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
         assert (
-            EnumLearningEventType.DEVELOPER_CORRECTION
-            == EnumLearningEventType.DEVELOPER_CORRECTION
+            type(EnumLearningEventType.DEVELOPER_CORRECTION)(
+                EnumLearningEventType.DEVELOPER_CORRECTION.value
+            )
+            is EnumLearningEventType.DEVELOPER_CORRECTION
         )
         assert (
             EnumLearningEventType.CONTEXT_SUCCESS
@@ -103,7 +108,9 @@ class TestEnumLearningEventType:
             "workflow_started",
             "intelligence_extracted",
         }
-        actual_values = {member.value for member in EnumLearningEventType}
+        actual_values = {
+            member.value for member in EnumLearningEventType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

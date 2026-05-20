@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumSupportCategory(StrValueHelper, str, Enum):
+class EnumSupportCategory(UtilStrValueHelper, str, Enum):
     """Support ticket category for routing and classification.
 
     Categories are hierarchical with a primary domain (billing, account, technical)

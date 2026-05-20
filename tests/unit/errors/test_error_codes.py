@@ -82,7 +82,7 @@ class TestStatusToExitCodeMapping:
 
     def test_status_to_exit_code_completeness(self):
         """Test that all EnumOnexStatus values are mapped."""
-        for status in EnumOnexStatus:
+        for status in EnumOnexStatus.__members__.values():
             assert status in STATUS_TO_EXIT_CODE, f"Missing mapping for {status}"
 
     def test_status_mapping_correctness(self):

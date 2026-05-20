@@ -8,11 +8,11 @@ This module defines the operators supported for metadata filtering in vector que
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumVectorFilterOperator(StrValueHelper, str, Enum):
+class EnumVectorFilterOperator(UtilStrValueHelper, str, Enum):
     """Filter operators for metadata-based vector search filtering.
 
     These operators are used to filter vectors based on their metadata:

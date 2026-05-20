@@ -11,7 +11,7 @@ import pytest
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_outcome import (
     EnumClaudeCodeSessionOutcome,
 )
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -31,13 +31,13 @@ class TestEnumClaudeCodeSessionOutcome:
         assert len(values) == 4
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeSessionOutcome, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeSessionOutcome, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeSessionOutcome, str)
         assert issubclass(EnumClaudeCodeSessionOutcome, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (lowercase)
         assert str(EnumClaudeCodeSessionOutcome.SUCCESS) == "success"
         assert str(EnumClaudeCodeSessionOutcome.FAILED) == "failed"
@@ -62,11 +62,11 @@ class TestEnumClaudeCodeSessionOutcome:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "success" in EnumClaudeCodeSessionOutcome
-        assert "failed" in EnumClaudeCodeSessionOutcome
-        assert "abandoned" in EnumClaudeCodeSessionOutcome
-        assert "unknown" in EnumClaudeCodeSessionOutcome
-        assert "invalid_outcome" not in EnumClaudeCodeSessionOutcome
+        assert "success" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "failed" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "abandoned" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "unknown" in EnumClaudeCodeSessionOutcome._value2member_map_
+        assert "invalid_outcome" not in EnumClaudeCodeSessionOutcome._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -112,7 +112,9 @@ class TestEnumClaudeCodeSessionOutcome:
             "unknown",
         }
 
-        actual_values = {member.value for member in EnumClaudeCodeSessionOutcome}
+        actual_values = {
+            member.value for member in EnumClaudeCodeSessionOutcome.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -122,7 +124,9 @@ class TestEnumClaudeCodeSessionOutcome:
 
     def test_enum_uniqueness(self):
         """Test that enum values are unique (enforced by @unique decorator)."""
-        values = [member.value for member in EnumClaudeCodeSessionOutcome]
+        values = [
+            member.value for member in EnumClaudeCodeSessionOutcome.__members__.values()
+        ]
         assert len(values) == len(set(values))
 
 
@@ -157,7 +161,9 @@ class TestIsTerminal:
     def test_terminal_outcome_count(self):
         """Test that exactly 3 outcomes are terminal."""
         terminal_count = sum(
-            1 for outcome in EnumClaudeCodeSessionOutcome if outcome.is_terminal()
+            1
+            for outcome in EnumClaudeCodeSessionOutcome.__members__.values()
+            if outcome.is_terminal()
         )
         assert terminal_count == 3
 
@@ -186,7 +192,9 @@ class TestIsSuccessful:
     def test_successful_outcome_count(self):
         """Test that exactly 1 outcome is successful."""
         successful_count = sum(
-            1 for outcome in EnumClaudeCodeSessionOutcome if outcome.is_successful()
+            1
+            for outcome in EnumClaudeCodeSessionOutcome.__members__.values()
+            if outcome.is_successful()
         )
         assert successful_count == 1
 
@@ -222,7 +230,9 @@ class TestIsFailure:
     def test_failure_outcome_count(self):
         """Test that exactly 2 outcomes are failures."""
         failure_count = sum(
-            1 for outcome in EnumClaudeCodeSessionOutcome if outcome.is_failure()
+            1
+            for outcome in EnumClaudeCodeSessionOutcome.__members__.values()
+            if outcome.is_failure()
         )
         assert failure_count == 2
 
@@ -261,7 +271,7 @@ class TestOutcomeClassification:
 
     def test_no_overlap_between_success_and_failure(self):
         """Test that successful and failure categories are mutually exclusive."""
-        for outcome in EnumClaudeCodeSessionOutcome:
+        for outcome in EnumClaudeCodeSessionOutcome.__members__.values():
             is_successful = outcome.is_successful()
             is_failure = outcome.is_failure()
 
@@ -272,7 +282,7 @@ class TestOutcomeClassification:
 
     def test_all_outcomes_categorized(self):
         """Test that all outcomes have defined behavior for all helper methods."""
-        for outcome in EnumClaudeCodeSessionOutcome:
+        for outcome in EnumClaudeCodeSessionOutcome.__members__.values():
             # Each outcome should return a boolean for all methods
             assert isinstance(outcome.is_terminal(), bool)
             assert isinstance(outcome.is_successful(), bool)

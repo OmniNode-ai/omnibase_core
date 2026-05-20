@@ -8,11 +8,11 @@ Defines the JSON Schema types for MCP tool parameters.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMCPParameterType(StrValueHelper, str, Enum):
+class EnumMCPParameterType(UtilStrValueHelper, str, Enum):
     """JSON Schema types for MCP tool parameters.
 
     These correspond to JSON Schema primitive and complex types:

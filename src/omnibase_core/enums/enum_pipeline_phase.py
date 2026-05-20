@@ -31,13 +31,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumPipelinePhase", "PipelinePhaseEnum"]
 
 
 @unique
-class EnumPipelinePhase(StrValueHelper, str, Enum):
+class EnumPipelinePhase(UtilStrValueHelper, str, Enum):
     """Phases in the ticket-pipeline execution lifecycle.
 
     **Transition policy:** This enum defines valid phase names, NOT valid

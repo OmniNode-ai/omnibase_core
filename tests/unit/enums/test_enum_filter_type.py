@@ -89,7 +89,7 @@ class TestEnumFilterType:
 
     def test_enum_member_uniqueness(self):
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumFilterType]
+        values = [member.value for member in EnumFilterType.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -104,7 +104,7 @@ class TestEnumFilterType:
             "status",
             "complex",
         }
-        actual_values = {member.value for member in EnumFilterType}
+        actual_values = {member.value for member in EnumFilterType.__members__.values()}
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self):
@@ -114,8 +114,8 @@ class TestEnumFilterType:
 
     def test_enum_in_operator(self):
         """Test that 'in' operator works with enum."""
-        assert EnumFilterType.STRING in EnumFilterType
-        assert EnumFilterType.COMPLEX in EnumFilterType
+        assert EnumFilterType.STRING in EnumFilterType.__members__.values()
+        assert EnumFilterType.COMPLEX in EnumFilterType.__members__.values()
 
     def test_enum_hash_consistency(self):
         """Test that enum members are hashable and consistent."""
@@ -185,7 +185,7 @@ class TestEnumFilterType:
         """Test that enum values are JSON serializable."""
         import json
 
-        for member in EnumFilterType:
+        for member in EnumFilterType.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -218,7 +218,7 @@ class TestEnumFilterTypeEdgeCases:
         """Test that enum members can be pickled and unpickled."""
         import pickle
 
-        for member in EnumFilterType:
+        for member in EnumFilterType.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member

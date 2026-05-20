@@ -569,7 +569,7 @@ class TestModelCliExecutionCoreEdgeCases:
         """Test setting all execution phases."""
         core = ModelCliExecutionCore(command_name_id=uuid4())
 
-        for phase in EnumExecutionPhase:
+        for phase in EnumExecutionPhase.__members__.values():
             core.set_phase(phase)
             assert core.current_phase == phase
 

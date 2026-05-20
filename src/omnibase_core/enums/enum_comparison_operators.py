@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumComparisonOperators(StrValueHelper, str, Enum):
+class EnumComparisonOperators(UtilStrValueHelper, str, Enum):
     """Enum for comparison operators used in conditional logic."""
 
     EQUALS = "equals"

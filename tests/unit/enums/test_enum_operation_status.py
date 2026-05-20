@@ -188,9 +188,15 @@ class TestEnumOperationStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumOperationStatus.SUCCESS == EnumOperationStatus.SUCCESS
+        assert (
+            type(EnumOperationStatus.SUCCESS)(EnumOperationStatus.SUCCESS.value)
+            is EnumOperationStatus.SUCCESS
+        )
         assert EnumOperationStatus.FAILED != EnumOperationStatus.SUCCESS
-        assert EnumOperationStatus.IN_PROGRESS == EnumOperationStatus.IN_PROGRESS
+        assert (
+            type(EnumOperationStatus.IN_PROGRESS)(EnumOperationStatus.IN_PROGRESS.value)
+            is EnumOperationStatus.IN_PROGRESS
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""
@@ -204,7 +210,7 @@ class TestEnumOperationStatus:
         ]
 
         for status in all_statuses:
-            assert status in EnumOperationStatus
+            assert status in EnumOperationStatus.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -272,7 +278,7 @@ class TestEnumOperationStatus:
     def test_operation_lifecycle_logic(self):
         """Test operation lifecycle state transitions and logic."""
         # Test that active and terminal states are mutually exclusive
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             is_active = status.is_active()
             is_terminal = status.is_terminal()
 
@@ -282,7 +288,7 @@ class TestEnumOperationStatus:
             )
 
         # Test that all statuses are either active or terminal
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             is_active = status.is_active()
             is_terminal = status.is_terminal()
 
@@ -329,7 +335,7 @@ class TestEnumOperationStatus:
         Every operation status must be either terminal or active, never both.
         This is a fundamental invariant of operation lifecycle semantics.
         """
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             is_terminal = status.is_terminal()
             is_active = status.is_active()
 
@@ -345,8 +351,12 @@ class TestEnumOperationStatus:
         Every status must be either terminal or non-terminal (active).
         This ensures no status values are left uncategorized.
         """
-        terminal_count = sum(1 for s in EnumOperationStatus if s.is_terminal())
-        active_count = sum(1 for s in EnumOperationStatus if s.is_active())
+        terminal_count = sum(
+            1 for s in EnumOperationStatus.__members__.values() if s.is_terminal()
+        )
+        active_count = sum(
+            1 for s in EnumOperationStatus.__members__.values() if s.is_active()
+        )
 
         # All statuses should be accounted for
         assert terminal_count + active_count == len(EnumOperationStatus)
@@ -360,7 +370,7 @@ class TestEnumOperationStatus:
 
         Ensures str(enum) -> Enum(str) works for every value.
         """
-        for status in EnumOperationStatus:
+        for status in EnumOperationStatus.__members__.values():
             # String roundtrip
             serialized = str(status)
             deserialized = EnumOperationStatus(serialized)

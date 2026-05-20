@@ -46,8 +46,8 @@ class TestEnumPermissionScope:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPermissionScope.TEAM in EnumPermissionScope
-        assert "team" in [e.value for e in EnumPermissionScope]
+        assert EnumPermissionScope.TEAM in EnumPermissionScope.__members__.values()
+        assert "team" in [e.value for e in EnumPermissionScope.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -88,7 +88,7 @@ class TestEnumPermissionScope:
             "service",
             "resource",
         }
-        actual_values = {e.value for e in EnumPermissionScope}
+        actual_values = {e.value for e in EnumPermissionScope.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -104,7 +104,10 @@ class TestEnumPermissionScope:
             EnumPermissionScope.PROJECT,
             EnumPermissionScope.TEAM,
         }
-        assert all(scope in EnumPermissionScope for scope in hierarchy_scopes)
+        assert all(
+            scope in EnumPermissionScope.__members__.values()
+            for scope in hierarchy_scopes
+        )
 
     def test_entity_scopes(self):
         """Test entity-level scopes."""
@@ -113,7 +116,9 @@ class TestEnumPermissionScope:
             EnumPermissionScope.SERVICE,
             EnumPermissionScope.RESOURCE,
         }
-        assert all(scope in EnumPermissionScope for scope in entity_scopes)
+        assert all(
+            scope in EnumPermissionScope.__members__.values() for scope in entity_scopes
+        )
 
     def test_scope_hierarchy_ordering(self):
         """Test logical ordering from broadest to narrowest scope."""
@@ -125,7 +130,10 @@ class TestEnumPermissionScope:
             EnumPermissionScope.TEAM,
         ]
         # All should be valid enum values
-        assert all(scope in EnumPermissionScope for scope in hierarchy_order)
+        assert all(
+            scope in EnumPermissionScope.__members__.values()
+            for scope in hierarchy_order
+        )
 
     def test_all_scopes_categorized(self):
         """Test that all scopes are properly categorized."""

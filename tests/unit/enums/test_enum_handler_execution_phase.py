@@ -79,7 +79,9 @@ class TestEnumHandlerExecutionPhase:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumHandlerExecutionPhase]
+        values = [
+            member.value for member in EnumHandlerExecutionPhase.__members__.values()
+        ]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -91,7 +93,9 @@ class TestEnumHandlerExecutionPhaseAlignment:
     def test_alignment_with_default_execution_phases(self) -> None:
         """Test that enum values match DEFAULT_EXECUTION_PHASES exactly."""
         # Use tuple to match DEFAULT_EXECUTION_PHASES type (tuple for immutability)
-        enum_values = tuple(phase.value for phase in EnumHandlerExecutionPhase)
+        enum_values = tuple(
+            phase.value for phase in EnumHandlerExecutionPhase.__members__.values()
+        )
         assert enum_values == DEFAULT_EXECUTION_PHASES, (
             f"Enum values {enum_values} must match DEFAULT_EXECUTION_PHASES "
             f"{DEFAULT_EXECUTION_PHASES}"
@@ -211,7 +215,7 @@ class TestEnumHandlerExecutionPhaseOrdering:
 
     def test_same_phase_not_before_or_after_itself(self) -> None:
         """Test that a phase is neither before nor after itself."""
-        for phase in EnumHandlerExecutionPhase:
+        for phase in EnumHandlerExecutionPhase.__members__.values():
             assert not phase.is_before(phase)
             assert not phase.is_after(phase)
 
@@ -267,7 +271,7 @@ class TestEnumHandlerExecutionPhaseSerialization:
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumHandlerExecutionPhase:
+        for member in EnumHandlerExecutionPhase.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -301,7 +305,7 @@ class TestEnumHandlerExecutionPhaseSerialization:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumHandlerExecutionPhase:
+        for member in EnumHandlerExecutionPhase.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member
@@ -322,7 +326,9 @@ class TestEnumHandlerExecutionPhaseBehavior:
             "emit",
             "finalize",
         }
-        actual_values = {member.value for member in EnumHandlerExecutionPhase}
+        actual_values = {
+            member.value for member in EnumHandlerExecutionPhase.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self) -> None:
@@ -332,8 +338,14 @@ class TestEnumHandlerExecutionPhaseBehavior:
 
     def test_enum_in_operator(self) -> None:
         """Test that 'in' operator works with enum."""
-        assert EnumHandlerExecutionPhase.PREFLIGHT in EnumHandlerExecutionPhase
-        assert EnumHandlerExecutionPhase.FINALIZE in EnumHandlerExecutionPhase
+        assert (
+            EnumHandlerExecutionPhase.PREFLIGHT
+            in EnumHandlerExecutionPhase.__members__.values()
+        )
+        assert (
+            EnumHandlerExecutionPhase.FINALIZE
+            in EnumHandlerExecutionPhase.__members__.values()
+        )
 
     def test_enum_hash_consistency(self) -> None:
         """Test that enum members are hashable and consistent."""
@@ -365,7 +377,7 @@ class TestEnumHandlerExecutionPhaseBehavior:
 
     def test_enum_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumHandlerExecutionPhase:
+        for member in EnumHandlerExecutionPhase.__members__.values():
             assert bool(member) is True
 
     def test_enum_case_sensitivity(self) -> None:
@@ -456,13 +468,13 @@ class TestEnumHandlerExecutionPhaseEdgeCases:
 
     def test_membership_testing(self) -> None:
         """Test membership testing with string values."""
-        assert "preflight" in EnumHandlerExecutionPhase
-        assert "before" in EnumHandlerExecutionPhase
-        assert "execute" in EnumHandlerExecutionPhase
-        assert "after" in EnumHandlerExecutionPhase
-        assert "emit" in EnumHandlerExecutionPhase
-        assert "finalize" in EnumHandlerExecutionPhase
-        assert "invalid" not in EnumHandlerExecutionPhase
+        assert "preflight" in EnumHandlerExecutionPhase._value2member_map_
+        assert "before" in EnumHandlerExecutionPhase._value2member_map_
+        assert "execute" in EnumHandlerExecutionPhase._value2member_map_
+        assert "after" in EnumHandlerExecutionPhase._value2member_map_
+        assert "emit" in EnumHandlerExecutionPhase._value2member_map_
+        assert "finalize" in EnumHandlerExecutionPhase._value2member_map_
+        assert "invalid" not in EnumHandlerExecutionPhase._value2member_map_
 
 
 @pytest.mark.unit

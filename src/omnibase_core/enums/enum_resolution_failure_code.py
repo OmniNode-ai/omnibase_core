@@ -15,13 +15,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumResolutionFailureCode"]
 
 
 @unique
-class EnumResolutionFailureCode(StrValueHelper, str, Enum):
+class EnumResolutionFailureCode(UtilStrValueHelper, str, Enum):
     """Structured failure code for tiered dependency resolution.
 
     When resolution fails, one of these codes is attached to the failure

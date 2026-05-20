@@ -107,7 +107,7 @@ class TestEnumWorkflowStatus:
         Every workflow status must be either terminal or active, never both.
         This is a fundamental invariant of workflow lifecycle semantics.
         """
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             is_terminal = EnumWorkflowStatus.is_terminal(status)
             is_active = EnumWorkflowStatus.is_active(status)
 
@@ -124,10 +124,14 @@ class TestEnumWorkflowStatus:
         This ensures no status values are left uncategorized.
         """
         terminal_count = sum(
-            1 for s in EnumWorkflowStatus if EnumWorkflowStatus.is_terminal(s)
+            1
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_terminal(s)
         )
         active_count = sum(
-            1 for s in EnumWorkflowStatus if EnumWorkflowStatus.is_active(s)
+            1
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_active(s)
         )
 
         # All statuses should be accounted for
@@ -204,9 +208,15 @@ class TestEnumWorkflowStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumWorkflowStatus.COMPLETED == EnumWorkflowStatus.COMPLETED
+        assert (
+            type(EnumWorkflowStatus.COMPLETED)(EnumWorkflowStatus.COMPLETED.value)
+            is EnumWorkflowStatus.COMPLETED
+        )
         assert EnumWorkflowStatus.FAILED != EnumWorkflowStatus.COMPLETED
-        assert EnumWorkflowStatus.RUNNING == EnumWorkflowStatus.RUNNING
+        assert (
+            type(EnumWorkflowStatus.RUNNING)(EnumWorkflowStatus.RUNNING.value)
+            is EnumWorkflowStatus.RUNNING
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""
@@ -220,7 +230,7 @@ class TestEnumWorkflowStatus:
         ]
 
         for status in all_statuses:
-            assert status in EnumWorkflowStatus
+            assert status in EnumWorkflowStatus.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -288,7 +298,7 @@ class TestEnumWorkflowStatus:
     def test_workflow_lifecycle_logic(self):
         """Test workflow lifecycle state transitions and logic."""
         # Test that all statuses are either active XOR terminal (mutually exclusive)
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             is_active = EnumWorkflowStatus.is_active(status)
             is_terminal = EnumWorkflowStatus.is_terminal(status)
 
@@ -306,7 +316,9 @@ class TestEnumWorkflowStatus:
         """Test success status categorization logic."""
         # Successful statuses should be terminal
         successful_statuses = [
-            s for s in EnumWorkflowStatus if EnumWorkflowStatus.is_successful(s)
+            s
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_successful(s)
         ]
         for status in successful_statuses:
             assert EnumWorkflowStatus.is_terminal(status) is True
@@ -323,7 +335,9 @@ class TestEnumWorkflowStatus:
         """Test failure and error state categorization."""
         # Error states should be terminal
         error_statuses = [
-            s for s in EnumWorkflowStatus if EnumWorkflowStatus.is_error_state(s)
+            s
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_error_state(s)
         ]
         for status in error_statuses:
             assert EnumWorkflowStatus.is_terminal(status) is True
@@ -419,13 +433,15 @@ class TestEnumWorkflowStatus:
         # Test that terminal states have no valid transitions defined
         # (terminal statuses should not appear in valid_transitions keys)
         terminal_statuses = [
-            s for s in EnumWorkflowStatus if EnumWorkflowStatus.is_terminal(s)
+            s
+            for s in EnumWorkflowStatus.__members__.values()
+            if EnumWorkflowStatus.is_terminal(s)
         ]
         for status in terminal_statuses:
             assert status not in valid_transitions
 
         # Test that valid transitions are defined for active states
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             if EnumWorkflowStatus.is_active(status):
                 # Active states should have defined transitions
                 assert status in valid_transitions
@@ -436,7 +452,7 @@ class TestEnumWorkflowStatus:
         For str,Enum types like EnumWorkflowStatus, str(status) returns
         status.value, so we only need to test one roundtrip path.
         """
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             # Value roundtrip (str(status) == status.value for str,Enum)
             value = status.value
             reconstructed = EnumWorkflowStatus(value)

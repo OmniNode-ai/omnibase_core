@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRequestField(StrValueHelper, str, Enum):
+class EnumRequestField(UtilStrValueHelper, str, Enum):
     """Request field names in Claude API."""
 
     MODEL = "model"

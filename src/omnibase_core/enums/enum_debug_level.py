@@ -9,11 +9,11 @@ Canonical enum for debug verbosity levels used in execution contexts.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDebugLevel(StrValueHelper, str, Enum):
+class EnumDebugLevel(UtilStrValueHelper, str, Enum):
     """Debug verbosity levels for ONEX execution."""
 
     DEBUG = "debug"

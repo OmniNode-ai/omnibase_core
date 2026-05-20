@@ -47,8 +47,13 @@ class TestEnumPipelineStage:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPipelineStage.CONTENT_EXTRACTION in EnumPipelineStage
-        assert "CONTENT_EXTRACTION" in [e.value for e in EnumPipelineStage]
+        assert (
+            EnumPipelineStage.CONTENT_EXTRACTION
+            in EnumPipelineStage.__members__.values()
+        )
+        assert "CONTENT_EXTRACTION" in [
+            e.value for e in EnumPipelineStage.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -90,7 +95,7 @@ class TestEnumPipelineStage:
             "EVENT_PUBLISHING",
             "VALIDATION_COMPLETE",
         }
-        actual_values = {e.value for e in EnumPipelineStage}
+        actual_values = {e.value for e in EnumPipelineStage.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -112,7 +117,9 @@ class TestEnumPipelineStage:
             EnumPipelineStage.VALIDATION_COMPLETE,
         ]
         # All stages should be valid
-        assert all(stage in EnumPipelineStage for stage in expected_order)
+        assert all(
+            stage in EnumPipelineStage.__members__.values() for stage in expected_order
+        )
 
     def test_initial_stages(self):
         """Test initial processing stages."""
@@ -121,7 +128,9 @@ class TestEnumPipelineStage:
             EnumPipelineStage.STAMP_VALIDATION,
             EnumPipelineStage.CONTENT_EXTRACTION,
         }
-        assert all(stage in EnumPipelineStage for stage in initial_stages)
+        assert all(
+            stage in EnumPipelineStage.__members__.values() for stage in initial_stages
+        )
 
     def test_processing_stages(self):
         """Test data processing stages."""
@@ -129,7 +138,10 @@ class TestEnumPipelineStage:
             EnumPipelineStage.LANGEXTRACT_PROCESSING,
             EnumPipelineStage.VECTOR_EMBEDDING,
         }
-        assert all(stage in EnumPipelineStage for stage in processing_stages)
+        assert all(
+            stage in EnumPipelineStage.__members__.values()
+            for stage in processing_stages
+        )
 
     def test_finalization_stages(self):
         """Test finalization stages."""
@@ -138,7 +150,10 @@ class TestEnumPipelineStage:
             EnumPipelineStage.EVENT_PUBLISHING,
             EnumPipelineStage.VALIDATION_COMPLETE,
         }
-        assert all(stage in EnumPipelineStage for stage in finalization_stages)
+        assert all(
+            stage in EnumPipelineStage.__members__.values()
+            for stage in finalization_stages
+        )
 
     def test_all_stages_categorized(self):
         """Test that all pipeline stages are properly categorized."""

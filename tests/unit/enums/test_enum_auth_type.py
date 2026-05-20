@@ -148,9 +148,11 @@ class TestEnumAuthType:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumAuthType.OAUTH2 == EnumAuthType.OAUTH2
+        assert (
+            type(EnumAuthType.OAUTH2)(EnumAuthType.OAUTH2.value) is EnumAuthType.OAUTH2
+        )
         assert EnumAuthType.BASIC != EnumAuthType.BEARER
-        assert EnumAuthType.JWT == EnumAuthType.JWT
+        assert type(EnumAuthType.JWT)(EnumAuthType.JWT.value) is EnumAuthType.JWT
 
     def test_enum_membership(self):
         """Test enum membership checking."""
@@ -168,7 +170,7 @@ class TestEnumAuthType:
         ]
 
         for auth_type in all_auth_types:
-            assert auth_type in EnumAuthType
+            assert auth_type in EnumAuthType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

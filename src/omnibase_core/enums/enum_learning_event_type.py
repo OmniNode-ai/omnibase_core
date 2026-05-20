@@ -7,11 +7,11 @@ Enum for learning event types that trigger rule generation or updates.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumLearningEventType(StrValueHelper, str, Enum):
+class EnumLearningEventType(UtilStrValueHelper, str, Enum):
     """Types of learning events that trigger rule generation or updates."""
 
     DEVELOPER_CORRECTION = "developer_correction"

@@ -7,11 +7,11 @@ Enum for operational modes for context rules.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRuleMode(StrValueHelper, str, Enum):
+class EnumRuleMode(UtilStrValueHelper, str, Enum):
     """Operational modes for context rules."""
 
     SHADOW = "shadow"  # Log only, no actual injection

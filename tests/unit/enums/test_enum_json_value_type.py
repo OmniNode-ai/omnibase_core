@@ -42,13 +42,16 @@ class TestEnumJsonValueType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumJsonValueType.STRING in EnumJsonValueType
-        assert "string" in EnumJsonValueType
-        assert "invalid_value" not in EnumJsonValueType
+        assert EnumJsonValueType.STRING in EnumJsonValueType.__members__.values()
+        assert "string" in EnumJsonValueType._value2member_map_
+        assert "invalid_value" not in EnumJsonValueType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumJsonValueType.STRING == EnumJsonValueType.STRING
+        assert (
+            type(EnumJsonValueType.STRING)(EnumJsonValueType.STRING.value)
+            is EnumJsonValueType.STRING
+        )
         assert EnumJsonValueType.NUMBER != EnumJsonValueType.STRING
         assert EnumJsonValueType.STRING == "string"
 
@@ -73,7 +76,9 @@ class TestEnumJsonValueType:
     def test_enum_all_values(self):
         """Test that all expected values are present"""
         expected_values = {"string", "number", "boolean", "array", "null"}
-        actual_values = {member.value for member in EnumJsonValueType}
+        actual_values = {
+            member.value for member in EnumJsonValueType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

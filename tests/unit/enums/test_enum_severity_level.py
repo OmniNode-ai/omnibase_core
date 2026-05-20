@@ -241,7 +241,7 @@ class TestEnumSeverityLevel:
 
     def test_level_categorization_consistency(self):
         """Test that level categorization methods are consistent."""
-        for level in EnumSeverityLevel:
+        for level in EnumSeverityLevel.__members__.values():
             numeric = level.numeric_level
 
             # Test consistency with numeric thresholds
@@ -251,7 +251,10 @@ class TestEnumSeverityLevel:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumSeverityLevel.ERROR == EnumSeverityLevel.ERROR
+        assert (
+            type(EnumSeverityLevel.ERROR)(EnumSeverityLevel.ERROR.value)
+            is EnumSeverityLevel.ERROR
+        )
         assert EnumSeverityLevel.WARNING != EnumSeverityLevel.ERROR
         assert (
             EnumSeverityLevel.WARN != EnumSeverityLevel.WARNING
@@ -261,7 +264,7 @@ class TestEnumSeverityLevel:
         """Test enum membership checking."""
         all_levels = list(EnumSeverityLevel)
         for level in all_levels:
-            assert level in EnumSeverityLevel
+            assert level in EnumSeverityLevel.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -360,7 +363,9 @@ class TestEnumSeverityLevel:
         for rfc_level in rfc_levels:
             # Should be able to get the level by value
             levels_with_value = [
-                level for level in EnumSeverityLevel if level.value == rfc_level
+                level
+                for level in EnumSeverityLevel.__members__.values()
+                if level.value == rfc_level
             ]
             assert len(levels_with_value) >= 1, f"RFC level {rfc_level} not found"
 

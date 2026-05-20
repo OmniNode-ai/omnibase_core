@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumExecutionMode(StrValueHelper, str, Enum):
+class EnumExecutionMode(UtilStrValueHelper, str, Enum):
     """
     Execution pattern mode - WHICH pattern to use for processing.
 

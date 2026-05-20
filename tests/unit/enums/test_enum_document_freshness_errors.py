@@ -202,8 +202,10 @@ class TestEnumDocumentFreshnessErrors:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "FRESHNESS_PATH_NOT_FOUND" in EnumDocumentFreshnessErrors
-        assert "invalid_error" not in EnumDocumentFreshnessErrors
+        assert (
+            "FRESHNESS_PATH_NOT_FOUND" in EnumDocumentFreshnessErrors._value2member_map_
+        )
+        assert "invalid_error" not in EnumDocumentFreshnessErrors._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -277,7 +279,9 @@ class TestEnumDocumentFreshnessErrors:
             "FRESHNESS_OPERATION_CANCELLED",
         }
 
-        actual_values = {member.value for member in EnumDocumentFreshnessErrors}
+        actual_values = {
+            member.value for member in EnumDocumentFreshnessErrors.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -292,79 +296,79 @@ class TestEnumDocumentFreshnessErrors:
         # Test path validation errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_PATH_NOT_FOUND
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_PATH_INVALID
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
 
         # Test database errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_DATABASE_INIT_FAILED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_DATABASE_CONNECTION_FAILED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
 
         # Test analysis errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_ANALYSIS_FAILED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_ANALYSIS_TIMEOUT
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
 
         # Test AI service errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_AI_SERVICE_UNAVAILABLE
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_AI_SERVICE_ERROR
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
 
         # Test dependency analysis errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_DEPENDENCY_ANALYSIS_FAILED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_DEPENDENCY_CIRCULAR_DETECTED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
 
         # Test change detection errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_CHANGE_DETECTION_FAILED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_GIT_UNAVAILABLE
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
 
         # Test validation errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_VALIDATION_FAILED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_CONFIG_INVALID
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
 
         # Test system errors
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_SYSTEM_ERROR
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )
         assert (
             EnumDocumentFreshnessErrors.FRESHNESS_PERMISSION_DENIED
-            in EnumDocumentFreshnessErrors
+            in EnumDocumentFreshnessErrors.__members__.values()
         )

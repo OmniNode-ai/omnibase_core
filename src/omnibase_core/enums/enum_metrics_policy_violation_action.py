@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMetricsPolicyViolationAction(StrValueHelper, str, Enum):
+class EnumMetricsPolicyViolationAction(UtilStrValueHelper, str, Enum):
     """Action to take when a metrics policy violation is detected.
 
     Used by ModelMetricsPolicy to control behavior when forbidden labels

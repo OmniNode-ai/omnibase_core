@@ -8,11 +8,11 @@ This module defines the distance metrics supported by vector store operations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumVectorDistanceMetric(StrValueHelper, str, Enum):
+class EnumVectorDistanceMetric(UtilStrValueHelper, str, Enum):
     """Distance metrics for vector similarity calculations.
 
     These metrics determine how similarity between vectors is computed:

@@ -61,8 +61,12 @@ class TestEnumCircuitBreakerState:
 
     def test_enum_membership_check(self) -> None:
         """Test membership checks."""
-        assert "closed" in [e.value for e in EnumCircuitBreakerState]
-        assert "invalid" not in [e.value for e in EnumCircuitBreakerState]
+        assert "closed" in [
+            e.value for e in EnumCircuitBreakerState.__members__.values()
+        ]
+        assert "invalid" not in [
+            e.value for e in EnumCircuitBreakerState.__members__.values()
+        ]
 
     def test_enum_string_representation(self) -> None:
         """Test string representation.
@@ -83,7 +87,7 @@ class TestEnumCircuitBreakerState:
 
     def test_enum_value_uniqueness(self) -> None:
         """Test that all enum values are unique."""
-        values = [e.value for e in EnumCircuitBreakerState]
+        values = [e.value for e in EnumCircuitBreakerState.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_state_transitions(self) -> None:

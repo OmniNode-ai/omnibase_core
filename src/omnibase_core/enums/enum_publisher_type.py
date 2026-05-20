@@ -7,11 +7,11 @@ Publisher type enumeration for event publishing selection.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumPublisherType(StrValueHelper, str, Enum):
+class EnumPublisherType(UtilStrValueHelper, str, Enum):
     """Types of event publishers available."""
 
     IN_MEMORY = "IN_MEMORY"  # Use in-memory Event Bus

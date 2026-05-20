@@ -21,11 +21,11 @@ from __future__ import annotations
 from enum import Enum, unique
 from functools import lru_cache
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumIntentCategory(StrValueHelper, str, Enum):
+class EnumIntentCategory(UtilStrValueHelper, str, Enum):
     """Canonical intent categories for classification.
 
     These categories represent high-level user intent types that can be

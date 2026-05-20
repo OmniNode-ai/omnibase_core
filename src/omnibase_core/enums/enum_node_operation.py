@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNodeOperation(StrValueHelper, str, Enum):
+class EnumNodeOperation(UtilStrValueHelper, str, Enum):
     """Types of operations a node can perform on an envelope."""
 
     SOURCE = "source"  # Original envelope creation

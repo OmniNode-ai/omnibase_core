@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumNodeArchitectureType(StrValueHelper, str, Enum):
+class EnumNodeArchitectureType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed 4-node architecture type discriminators.
 

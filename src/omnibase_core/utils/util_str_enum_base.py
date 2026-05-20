@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""StrValueHelper mixin providing standard __str__ for string enums.
+"""UtilStrValueHelper mixin providing standard __str__ for string enums.
 
 See Also:
     - omnibase_compat.utils.util_str_enum_base: Equivalent definition for compat consumers
@@ -10,14 +10,14 @@ See Also:
 from __future__ import annotations
 
 
-class StrValueHelper:
+class UtilStrValueHelper:
     """Mixin providing __str__ that returns self.value for str-based enums.
 
     Use with enums that inherit from (str, Enum) to provide consistent
     string serialization. The __str__ returns the enum's value directly.
 
     Example:
-        class EnumStatus(StrValueHelper, str, Enum):
+        class EnumStatus(UtilStrValueHelper, str, Enum):
             PENDING = "pending"
             RUNNING = "running"
 

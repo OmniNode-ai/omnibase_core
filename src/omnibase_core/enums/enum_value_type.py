@@ -9,11 +9,11 @@ Strongly typed enumeration for generic value type discriminators.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumValueType(StrValueHelper, str, Enum):
+class EnumValueType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed value type discriminators for ModelGenericValue.
 

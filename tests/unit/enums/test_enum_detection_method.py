@@ -47,8 +47,8 @@ class TestEnumDetectionMethod:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "regex" in EnumDetectionMethod
-        assert "invalid_method" not in EnumDetectionMethod
+        assert "regex" in EnumDetectionMethod._value2member_map_
+        assert "invalid_method" not in EnumDetectionMethod._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -92,7 +92,9 @@ class TestEnumDetectionMethod:
             "hybrid",
         }
 
-        actual_values = {member.value for member in EnumDetectionMethod}
+        actual_values = {
+            member.value for member in EnumDetectionMethod.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -102,15 +104,24 @@ class TestEnumDetectionMethod:
     def test_enum_detection_methods(self):
         """Test that enum covers typical detection methods."""
         # Test pattern-based methods
-        assert EnumDetectionMethod.REGEX in EnumDetectionMethod
-        assert EnumDetectionMethod.DICTIONARY_MATCH in EnumDetectionMethod
+        assert EnumDetectionMethod.REGEX in EnumDetectionMethod.__members__.values()
+        assert (
+            EnumDetectionMethod.DICTIONARY_MATCH
+            in EnumDetectionMethod.__members__.values()
+        )
 
         # Test ML-based methods
-        assert EnumDetectionMethod.ML_MODEL in EnumDetectionMethod
+        assert EnumDetectionMethod.ML_MODEL in EnumDetectionMethod.__members__.values()
 
         # Test analysis methods
-        assert EnumDetectionMethod.ENTROPY_ANALYSIS in EnumDetectionMethod
-        assert EnumDetectionMethod.CONTEXT_ANALYSIS in EnumDetectionMethod
+        assert (
+            EnumDetectionMethod.ENTROPY_ANALYSIS
+            in EnumDetectionMethod.__members__.values()
+        )
+        assert (
+            EnumDetectionMethod.CONTEXT_ANALYSIS
+            in EnumDetectionMethod.__members__.values()
+        )
 
         # Test hybrid method
-        assert EnumDetectionMethod.HYBRID in EnumDetectionMethod
+        assert EnumDetectionMethod.HYBRID in EnumDetectionMethod.__members__.values()

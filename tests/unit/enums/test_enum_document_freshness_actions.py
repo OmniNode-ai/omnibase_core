@@ -403,8 +403,12 @@ class TestDocumentFreshnessEnumsIntegration:
     def test_risk_and_priority_alignment(self):
         """Test that risk levels and priorities are semantically aligned."""
         # Both have LOW, MEDIUM, HIGH, CRITICAL
-        risk_values = [r.value for r in EnumDocumentFreshnessRiskLevel]
-        priority_values = [p.value for p in EnumRecommendationPriority]
+        risk_values = [
+            r.value for r in EnumDocumentFreshnessRiskLevel.__members__.values()
+        ]
+        priority_values = [
+            p.value for p in EnumRecommendationPriority.__members__.values()
+        ]
 
         assert set(risk_values) == set(priority_values)
 

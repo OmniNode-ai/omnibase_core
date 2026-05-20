@@ -220,7 +220,9 @@ class TestEnumHandlerCapabilityHelperMethods:
     def test_values_matches_enum_iteration(self):
         """Test that values() matches iterating over enum."""
         values_method = EnumHandlerCapability.values()
-        values_iteration = [member.value for member in EnumHandlerCapability]
+        values_iteration = [
+            member.value for member in EnumHandlerCapability.__members__.values()
+        ]
 
         assert set(values_method) == set(values_iteration)
 
@@ -268,20 +270,23 @@ class TestEnumHandlerCapabilityIteration:
 
     def test_enum_membership_by_value(self):
         """Test membership testing using string values."""
-        assert "transform" in EnumHandlerCapability
-        assert "validate" in EnumHandlerCapability
-        assert "cache" in EnumHandlerCapability
-        assert "retry" in EnumHandlerCapability
-        assert "batch" in EnumHandlerCapability
-        assert "stream" in EnumHandlerCapability
-        assert "async" in EnumHandlerCapability
-        assert "idempotent" in EnumHandlerCapability
-        assert "invalid" not in EnumHandlerCapability
+        assert "transform" in EnumHandlerCapability._value2member_map_
+        assert "validate" in EnumHandlerCapability._value2member_map_
+        assert "cache" in EnumHandlerCapability._value2member_map_
+        assert "retry" in EnumHandlerCapability._value2member_map_
+        assert "batch" in EnumHandlerCapability._value2member_map_
+        assert "stream" in EnumHandlerCapability._value2member_map_
+        assert "async" in EnumHandlerCapability._value2member_map_
+        assert "idempotent" in EnumHandlerCapability._value2member_map_
+        assert "invalid" not in EnumHandlerCapability._value2member_map_
 
     def test_enum_membership_by_instance(self):
         """Test membership testing using enum instances."""
-        assert EnumHandlerCapability.TRANSFORM in EnumHandlerCapability
-        assert EnumHandlerCapability.ASYNC in EnumHandlerCapability
+        assert (
+            EnumHandlerCapability.TRANSFORM
+            in EnumHandlerCapability.__members__.values()
+        )
+        assert EnumHandlerCapability.ASYNC in EnumHandlerCapability.__members__.values()
 
 
 @pytest.mark.unit
@@ -290,7 +295,10 @@ class TestEnumHandlerCapabilityComparison:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumHandlerCapability.CACHE == EnumHandlerCapability.CACHE
+        assert (
+            type(EnumHandlerCapability.CACHE)(EnumHandlerCapability.CACHE.value)
+            is EnumHandlerCapability.CACHE
+        )
         assert EnumHandlerCapability.RETRY != EnumHandlerCapability.BATCH
         assert EnumHandlerCapability.TRANSFORM != EnumHandlerCapability.VALIDATE
 
@@ -462,7 +470,9 @@ class TestEnumHandlerCapabilityExhaustiveness:
             "idempotent",
         }
 
-        actual_values = {cap.value for cap in EnumHandlerCapability}
+        actual_values = {
+            cap.value for cap in EnumHandlerCapability.__members__.values()
+        }
 
         assert actual_values == expected_capabilities, (
             f"Enum values mismatch. "
@@ -495,7 +505,7 @@ class TestEnumHandlerCapabilityExhaustiveness:
                     EnumHandlerCapability.assert_exhaustive(cap)
 
         # Test all capabilities have descriptions
-        for cap in EnumHandlerCapability:
+        for cap in EnumHandlerCapability.__members__.values():
             description = describe_capability(cap)
             assert isinstance(description, str)
             assert len(description) > 0

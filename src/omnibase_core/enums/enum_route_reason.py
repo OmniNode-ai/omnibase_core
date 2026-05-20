@@ -10,11 +10,11 @@ with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRouteReason(StrValueHelper, str, Enum):
+class EnumRouteReason(UtilStrValueHelper, str, Enum):
     """Reasons for LLM provider selection."""
 
     BEST_MATCH = "best_match"

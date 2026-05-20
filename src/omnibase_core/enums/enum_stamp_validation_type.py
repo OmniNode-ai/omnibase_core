@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumStampValidationType(StrValueHelper, str, Enum):
+class EnumStampValidationType(UtilStrValueHelper, str, Enum):
     """Types of stamp validation operations."""
 
     CONTENT_INTEGRITY = "CONTENT_INTEGRITY"

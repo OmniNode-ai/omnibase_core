@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumSentiment(StrValueHelper, str, Enum):
+class EnumSentiment(UtilStrValueHelper, str, Enum):
     """Sentiment classification for customer communications.
 
     Used to categorize the emotional tone of support tickets

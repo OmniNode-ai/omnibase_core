@@ -56,8 +56,8 @@ class TestEnumEntityType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumEntityType.FUNCTION in EnumEntityType
-        assert "function" in [e.value for e in EnumEntityType]
+        assert EnumEntityType.FUNCTION in EnumEntityType.__members__.values()
+        assert "function" in [e.value for e in EnumEntityType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -114,7 +114,7 @@ class TestEnumEntityType:
             "transformer",
             "unknown",
         }
-        actual_values = {e.value for e in EnumEntityType}
+        actual_values = {e.value for e in EnumEntityType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -188,13 +188,25 @@ class TestEnumEntityType:
         all_entities = set(EnumEntityType)
 
         # Get entities categorized by each method
-        code_entities = {e for e in EnumEntityType if EnumEntityType.is_code_entity(e)}
-        data_entities = {e for e in EnumEntityType if EnumEntityType.is_data_entity(e)}
+        code_entities = {
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_code_entity(e)
+        }
+        data_entities = {
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_data_entity(e)
+        }
         system_entities = {
-            e for e in EnumEntityType if EnumEntityType.is_system_entity(e)
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_system_entity(e)
         }
         infrastructure_entities = {
-            e for e in EnumEntityType if EnumEntityType.is_infrastructure_entity(e)
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_infrastructure_entity(e)
         }
 
         # All entities should be categorized (except UNKNOWN)
@@ -209,13 +221,25 @@ class TestEnumEntityType:
 
     def test_entity_categorization_exclusivity(self):
         """Test that entity categories don't overlap inappropriately."""
-        code_entities = {e for e in EnumEntityType if EnumEntityType.is_code_entity(e)}
-        data_entities = {e for e in EnumEntityType if EnumEntityType.is_data_entity(e)}
+        code_entities = {
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_code_entity(e)
+        }
+        data_entities = {
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_data_entity(e)
+        }
         system_entities = {
-            e for e in EnumEntityType if EnumEntityType.is_system_entity(e)
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_system_entity(e)
         }
         infrastructure_entities = {
-            e for e in EnumEntityType if EnumEntityType.is_infrastructure_entity(e)
+            e
+            for e in EnumEntityType.__members__.values()
+            if EnumEntityType.is_infrastructure_entity(e)
         }
 
         # Code and data entities should not overlap

@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDispatchVerdict(StrValueHelper, str, Enum):
+class EnumDispatchVerdict(UtilStrValueHelper, str, Enum):
     """Verdict values for per-task dispatch evaluation results."""
 
     PASS = "pass"

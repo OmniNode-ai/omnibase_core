@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDiscoveryStatus(StrValueHelper, str, Enum):
+class EnumDiscoveryStatus(UtilStrValueHelper, str, Enum):
     """Discovery status values for tool discovery operations."""
 
     SUCCESS = "success"

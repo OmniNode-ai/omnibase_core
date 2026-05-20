@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMockStrategy(StrValueHelper, str, Enum):
+class EnumMockStrategy(UtilStrValueHelper, str, Enum):
     """Strategy for mocking interface dependencies."""
 
     PROTOCOL_STUB = "protocol_stub"

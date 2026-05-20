@@ -9,7 +9,7 @@ from enum import Enum
 import pytest
 
 from omnibase_core.enums.intelligence.enum_intent_category import EnumIntentCategory
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -45,13 +45,13 @@ class TestEnumIntentCategory:
         assert len(values) == 13
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumIntentCategory, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumIntentCategory, UtilStrValueHelper)
         assert issubclass(EnumIntentCategory, str)
         assert issubclass(EnumIntentCategory, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (snake_case)
         assert str(EnumIntentCategory.CODE_GENERATION) == "code_generation"
         assert str(EnumIntentCategory.DEBUGGING) == "debugging"
@@ -77,11 +77,11 @@ class TestEnumIntentCategory:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "code_generation" in EnumIntentCategory
-        assert "debugging" in EnumIntentCategory
-        assert "pattern_learning" in EnumIntentCategory
-        assert "unknown" in EnumIntentCategory
-        assert "invalid_intent" not in EnumIntentCategory
+        assert "code_generation" in EnumIntentCategory._value2member_map_
+        assert "debugging" in EnumIntentCategory._value2member_map_
+        assert "pattern_learning" in EnumIntentCategory._value2member_map_
+        assert "unknown" in EnumIntentCategory._value2member_map_
+        assert "invalid_intent" not in EnumIntentCategory._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -147,7 +147,9 @@ class TestEnumIntentCategory:
             "unknown",
         }
 
-        actual_values = {member.value for member in EnumIntentCategory}
+        actual_values = {
+            member.value for member in EnumIntentCategory.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -158,7 +160,7 @@ class TestEnumIntentCategory:
     def test_enum_uniqueness(self):
         """Test that @unique decorator ensures unique values."""
         # The @unique decorator ensures all values are distinct
-        values = [member.value for member in EnumIntentCategory]
+        values = [member.value for member in EnumIntentCategory.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_names_match_expected(self):
@@ -179,7 +181,9 @@ class TestEnumIntentCategory:
             "UNKNOWN",
         }
 
-        actual_names = {member.name for member in EnumIntentCategory}
+        actual_names = {
+            member.name for member in EnumIntentCategory.__members__.values()
+        }
         assert actual_names == expected_names
 
 
@@ -224,7 +228,7 @@ class TestIsDevelopmentIntent:
         """Test that exactly 6 intents are development intents."""
         dev_count = sum(
             1
-            for intent in EnumIntentCategory
+            for intent in EnumIntentCategory.__members__.values()
             if EnumIntentCategory.is_development_intent(intent)
         )
         assert dev_count == 6
@@ -271,7 +275,7 @@ class TestIsIntelligenceIntent:
         """Test that exactly 3 intents are intelligence intents."""
         intel_count = sum(
             1
-            for intent in EnumIntentCategory
+            for intent in EnumIntentCategory.__members__.values()
             if EnumIntentCategory.is_intelligence_intent(intent)
         )
         assert intel_count == 3
@@ -318,7 +322,7 @@ class TestIsMetaIntent:
         """Test that exactly 3 intents are meta intents."""
         meta_count = sum(
             1
-            for intent in EnumIntentCategory
+            for intent in EnumIntentCategory.__members__.values()
             if EnumIntentCategory.is_meta_intent(intent)
         )
         assert meta_count == 3
@@ -358,7 +362,7 @@ class TestIsClassified:
         """Test that exactly 12 intents are classified (all except UNKNOWN)."""
         classified_count = sum(
             1
-            for intent in EnumIntentCategory
+            for intent in EnumIntentCategory.__members__.values()
             if EnumIntentCategory.is_classified(intent)
         )
         assert classified_count == 12
@@ -392,7 +396,7 @@ class TestGetDevelopmentIntents:
         getter_result = EnumIntentCategory.get_development_intents()
         helper_count = sum(
             1
-            for intent in EnumIntentCategory
+            for intent in EnumIntentCategory.__members__.values()
             if EnumIntentCategory.is_development_intent(intent)
         )
         assert len(getter_result) == helper_count
@@ -423,7 +427,7 @@ class TestGetIntelligenceIntents:
         getter_result = EnumIntentCategory.get_intelligence_intents()
         helper_count = sum(
             1
-            for intent in EnumIntentCategory
+            for intent in EnumIntentCategory.__members__.values()
             if EnumIntentCategory.is_intelligence_intent(intent)
         )
         assert len(getter_result) == helper_count
@@ -454,7 +458,7 @@ class TestGetMetaIntents:
         getter_result = EnumIntentCategory.get_meta_intents()
         helper_count = sum(
             1
-            for intent in EnumIntentCategory
+            for intent in EnumIntentCategory.__members__.values()
             if EnumIntentCategory.is_meta_intent(intent)
         )
         assert len(getter_result) == helper_count
@@ -527,7 +531,7 @@ class TestCategoryGroupCoverage:
 
     def test_helper_and_getter_consistency(self):
         """Test that helper methods and getter methods are consistent."""
-        for intent in EnumIntentCategory:
+        for intent in EnumIntentCategory.__members__.values():
             is_dev = EnumIntentCategory.is_development_intent(intent)
             in_dev_set = intent in EnumIntentCategory.get_development_intents()
             assert is_dev == in_dev_set, (
@@ -551,7 +555,7 @@ class TestCategoryGroupCoverage:
 
     def test_each_classified_intent_in_exactly_one_group(self):
         """Test that each classified intent is in exactly one group."""
-        for intent in EnumIntentCategory:
+        for intent in EnumIntentCategory.__members__.values():
             if intent == EnumIntentCategory.UNKNOWN:
                 continue
 

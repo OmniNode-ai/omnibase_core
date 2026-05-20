@@ -32,7 +32,7 @@ def _run(*args: str, cwd: Path = REPO) -> subprocess.CompletedProcess[str]:
 def _contract_path(tmp_path: Path) -> Path:
     contract = tmp_path / "hook_activations.yaml"
     lines = ['package: "omniclaude"', "hook_activations:"]
-    for member in EnumHookBit:
+    for member in EnumHookBit.__members__.values():
         enabled = str(member.name not in _DISABLED_BY_DEFAULT).lower()
         lines.extend(
             [
@@ -69,7 +69,7 @@ class TestGenHookBitsHeader:
 class TestGenHookBitsEnumCoverage:
     def test_every_member_in_portable_case_table(self, tmp_path: Path) -> None:
         content = _generated_content(tmp_path)
-        for m in EnumHookBit:
+        for m in EnumHookBit.__members__.values():
             assert f"{m.name}) echo 0x{int(m):x} ;;" in content
         assert "declare -g -A" not in content
 

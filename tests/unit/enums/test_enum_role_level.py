@@ -48,8 +48,8 @@ class TestEnumRoleLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRoleLevel.PRINCIPAL in EnumRoleLevel
-        assert "principal" in [e.value for e in EnumRoleLevel]
+        assert EnumRoleLevel.PRINCIPAL in EnumRoleLevel.__members__.values()
+        assert "principal" in [e.value for e in EnumRoleLevel.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -92,7 +92,7 @@ class TestEnumRoleLevel:
             "distinguished",
             "fellow",
         }
-        actual_values = {e.value for e in EnumRoleLevel}
+        actual_values = {e.value for e in EnumRoleLevel.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -106,7 +106,7 @@ class TestEnumRoleLevel:
             EnumRoleLevel.INTERN,
             EnumRoleLevel.JUNIOR,
         }
-        assert all(role in EnumRoleLevel for role in entry_level)
+        assert all(role in EnumRoleLevel.__members__.values() for role in entry_level)
 
     def test_mid_level_roles(self):
         """Test mid-level role grouping."""
@@ -114,7 +114,7 @@ class TestEnumRoleLevel:
             EnumRoleLevel.MID,
             EnumRoleLevel.SENIOR,
         }
-        assert all(role in EnumRoleLevel for role in mid_level)
+        assert all(role in EnumRoleLevel.__members__.values() for role in mid_level)
 
     def test_leadership_roles(self):
         """Test leadership role grouping."""
@@ -122,7 +122,7 @@ class TestEnumRoleLevel:
             EnumRoleLevel.LEAD,
             EnumRoleLevel.PRINCIPAL,
         }
-        assert all(role in EnumRoleLevel for role in leadership)
+        assert all(role in EnumRoleLevel.__members__.values() for role in leadership)
 
     def test_executive_roles(self):
         """Test executive/senior technical role grouping."""
@@ -131,7 +131,7 @@ class TestEnumRoleLevel:
             EnumRoleLevel.DISTINGUISHED,
             EnumRoleLevel.FELLOW,
         }
-        assert all(role in EnumRoleLevel for role in executive)
+        assert all(role in EnumRoleLevel.__members__.values() for role in executive)
 
     def test_all_roles_categorized(self):
         """Test that all roles are properly categorized."""
@@ -174,4 +174,4 @@ class TestEnumRoleLevel:
             EnumRoleLevel.DISTINGUISHED,
             EnumRoleLevel.FELLOW,
         ]
-        assert all(role in EnumRoleLevel for role in progression)
+        assert all(role in EnumRoleLevel.__members__.values() for role in progression)

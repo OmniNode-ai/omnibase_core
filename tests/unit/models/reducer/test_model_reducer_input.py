@@ -270,7 +270,7 @@ class TestModelReducerInputValidation:
         Validates that all enum values are accepted and invalid strings are rejected,
         ensuring type safety for reduction operations and preventing typos."""
         # Valid enum values
-        for reduction_type in EnumReductionType:
+        for reduction_type in EnumReductionType.__members__.values():
             reducer_input = ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=reduction_type,
@@ -401,7 +401,7 @@ class TestModelReducerInputValidation:
 
         Validates that every conflict resolution strategy (LAST_WINS, FIRST_WINS,
         MERGE) can be successfully applied to reducer input configurations."""
-        for resolution in EnumConflictResolution:
+        for resolution in EnumConflictResolution.__members__.values():
             reducer_input = ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=EnumReductionType.FOLD,
@@ -414,7 +414,7 @@ class TestModelReducerInputValidation:
 
         Validates that every streaming mode (BATCH, WINDOWED, REAL_TIME) is supported
         and can be configured without errors for different processing patterns."""
-        for mode in EnumStreamingMode:
+        for mode in EnumStreamingMode.__members__.values():
             reducer_input = ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=EnumReductionType.FOLD,
@@ -936,7 +936,7 @@ class TestModelReducerInputEdgeCases:
 
         Validates comprehensive support for every reduction operation type defined
         in the EnumReductionType enumeration (FOLD, ACCUMULATE, MERGE, etc)."""
-        for reduction_type in EnumReductionType:
+        for reduction_type in EnumReductionType.__members__.values():
             reducer_input = ModelReducerInput[int](
                 data=[1, 2, 3],
                 reduction_type=reduction_type,
@@ -948,7 +948,7 @@ class TestModelReducerInputEdgeCases:
 
         Validates that every conflict resolution strategy (LAST_WINS, FIRST_WINS,
         MERGE) can be configured without errors."""
-        for resolution in EnumConflictResolution:
+        for resolution in EnumConflictResolution.__members__.values():
             reducer_input = ModelReducerInput[int](
                 data=[1, 2, 3],
                 reduction_type=EnumReductionType.FOLD,
@@ -961,7 +961,7 @@ class TestModelReducerInputEdgeCases:
 
         Validates that every streaming mode (BATCH, WINDOWED, REAL_TIME) can be
         configured for different processing patterns."""
-        for mode in EnumStreamingMode:
+        for mode in EnumStreamingMode.__members__.values():
             reducer_input = ModelReducerInput[int](
                 data=[1, 2, 3],
                 reduction_type=EnumReductionType.FOLD,

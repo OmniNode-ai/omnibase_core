@@ -10,11 +10,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumPatternKind(StrValueHelper, str, Enum):
+class EnumPatternKind(UtilStrValueHelper, str, Enum):
     """Categories of extractable patterns from session data.
 
     Used by pattern extraction to categorize discovered patterns.

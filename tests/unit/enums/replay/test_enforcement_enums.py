@@ -58,7 +58,9 @@ class TestEnumEnforcementModeValues:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"strict", "warn", "permissive", "mocked"}
-        actual_values = {member.value for member in EnumEnforcementMode}
+        actual_values = {
+            member.value for member in EnumEnforcementMode.__members__.values()
+        }
         assert actual_values == expected_values
 
 
@@ -80,14 +82,17 @@ class TestEnumEnforcementModeStringBehavior:
 
     def test_enum_equality(self) -> None:
         """Test enum equality."""
-        assert EnumEnforcementMode.STRICT == EnumEnforcementMode.STRICT
+        assert (
+            type(EnumEnforcementMode.STRICT)(EnumEnforcementMode.STRICT.value)
+            is EnumEnforcementMode.STRICT
+        )
         assert EnumEnforcementMode.STRICT != EnumEnforcementMode.WARN
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumEnforcementMode.STRICT in EnumEnforcementMode
-        assert "strict" in EnumEnforcementMode
-        assert "invalid_mode" not in EnumEnforcementMode
+        assert EnumEnforcementMode.STRICT in EnumEnforcementMode.__members__.values()
+        assert "strict" in EnumEnforcementMode._value2member_map_
+        assert "invalid_mode" not in EnumEnforcementMode._value2member_map_
 
 
 @pytest.mark.unit
@@ -156,7 +161,9 @@ class TestEnumEffectDeterminismValues:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"deterministic", "non_deterministic", "unknown"}
-        actual_values = {member.value for member in EnumEffectDeterminism}
+        actual_values = {
+            member.value for member in EnumEffectDeterminism.__members__.values()
+        }
         assert actual_values == expected_values
 
 
@@ -178,7 +185,10 @@ class TestEnumEffectDeterminismStringBehavior:
     def test_enum_equality(self) -> None:
         """Test enum equality."""
         assert (
-            EnumEffectDeterminism.DETERMINISTIC == EnumEffectDeterminism.DETERMINISTIC
+            type(EnumEffectDeterminism.DETERMINISTIC)(
+                EnumEffectDeterminism.DETERMINISTIC.value
+            )
+            is EnumEffectDeterminism.DETERMINISTIC
         )
         assert (
             EnumEffectDeterminism.DETERMINISTIC
@@ -269,7 +279,9 @@ class TestEnumNonDeterministicSourceValues:
             "filesystem",
             "environment",
         }
-        actual_values = {member.value for member in EnumNonDeterministicSource}
+        actual_values = {
+            member.value for member in EnumNonDeterministicSource.__members__.values()
+        }
         assert actual_values == expected_values
 
 
@@ -294,7 +306,10 @@ class TestEnumNonDeterministicSourceStringBehavior:
 
     def test_enum_equality(self) -> None:
         """Test enum equality."""
-        assert EnumNonDeterministicSource.TIME == EnumNonDeterministicSource.TIME
+        assert (
+            type(EnumNonDeterministicSource.TIME)(EnumNonDeterministicSource.TIME.value)
+            is EnumNonDeterministicSource.TIME
+        )
         assert EnumNonDeterministicSource.TIME != EnumNonDeterministicSource.RANDOM
 
 

@@ -10,11 +10,11 @@ and conversation lifecycle management.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumConversationStatus(StrValueHelper, str, Enum):
+class EnumConversationStatus(UtilStrValueHelper, str, Enum):
     """
     Conversation status enumeration for session state management.
 

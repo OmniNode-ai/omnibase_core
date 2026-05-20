@@ -1050,6 +1050,22 @@ class TestMainFunction:
             result = main()
             assert result == 1
 
+    def test_main_warning_mode_returns_zero_on_violations(
+        self, temp_omnibase_dir: Path
+    ) -> None:
+        """Test warning mode reports violations without failing."""
+        models_dir = temp_omnibase_dir / "models"
+        models_dir.mkdir()
+        (models_dir / "bad_file.py").write_text("# Invalid\n")
+
+        with patch.object(
+            sys,
+            "argv",
+            ["checker", str(temp_omnibase_dir), "--warning-mode"],
+        ):
+            result = main()
+            assert result == 0
+
     def test_main_returns_one_for_nonexistent_directory(self) -> None:
         """Test main returns 1 for non-existent directory."""
         with patch.object(sys, "argv", ["checker", "/nonexistent/path"]):

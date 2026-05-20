@@ -13,13 +13,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 from .enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumFunctionLifecycleStatus(StrValueHelper, str, Enum):
+class EnumFunctionLifecycleStatus(UtilStrValueHelper, str, Enum):
     """
     Function lifecycle status enumeration for component lifecycle management.
 

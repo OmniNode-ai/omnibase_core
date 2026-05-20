@@ -46,13 +46,16 @@ class TestEnumIssueType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumIssueType.TEMPLATE_ARTIFACT in EnumIssueType
-        assert "template_artifact" in EnumIssueType
-        assert "invalid_value" not in EnumIssueType
+        assert EnumIssueType.TEMPLATE_ARTIFACT in EnumIssueType.__members__.values()
+        assert "template_artifact" in EnumIssueType._value2member_map_
+        assert "invalid_value" not in EnumIssueType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumIssueType.TEMPLATE_ARTIFACT == EnumIssueType.TEMPLATE_ARTIFACT
+        assert (
+            type(EnumIssueType.TEMPLATE_ARTIFACT)(EnumIssueType.TEMPLATE_ARTIFACT.value)
+            is EnumIssueType.TEMPLATE_ARTIFACT
+        )
         assert EnumIssueType.PARSE_ERROR != EnumIssueType.TODO_FOUND
         assert EnumIssueType.TEMPLATE_ARTIFACT == "template_artifact"
 
@@ -87,7 +90,7 @@ class TestEnumIssueType:
             "incorrect_title",
             "missing_directory",
         }
-        actual_values = {member.value for member in EnumIssueType}
+        actual_values = {member.value for member in EnumIssueType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

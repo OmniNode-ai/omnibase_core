@@ -48,8 +48,8 @@ class TestEnumComplianceFramework:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "SOX" in EnumComplianceFramework
-        assert "invalid_framework" not in EnumComplianceFramework
+        assert "SOX" in EnumComplianceFramework._value2member_map_
+        assert "invalid_framework" not in EnumComplianceFramework._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -94,7 +94,9 @@ class TestEnumComplianceFramework:
             "NIST",
         }
 
-        actual_values = {member.value for member in EnumComplianceFramework}
+        actual_values = {
+            member.value for member in EnumComplianceFramework.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -104,20 +106,38 @@ class TestEnumComplianceFramework:
     def test_enum_compliance_frameworks(self):
         """Test that enum covers typical compliance frameworks."""
         # Test financial compliance
-        assert EnumComplianceFramework.SOX in EnumComplianceFramework
+        assert (
+            EnumComplianceFramework.SOX in EnumComplianceFramework.__members__.values()
+        )
 
         # Test healthcare compliance
-        assert EnumComplianceFramework.HIPAA in EnumComplianceFramework
+        assert (
+            EnumComplianceFramework.HIPAA
+            in EnumComplianceFramework.__members__.values()
+        )
 
         # Test data protection compliance
-        assert EnumComplianceFramework.GDPR in EnumComplianceFramework
+        assert (
+            EnumComplianceFramework.GDPR in EnumComplianceFramework.__members__.values()
+        )
 
         # Test payment card compliance
-        assert EnumComplianceFramework.PCI_DSS in EnumComplianceFramework
+        assert (
+            EnumComplianceFramework.PCI_DSS
+            in EnumComplianceFramework.__members__.values()
+        )
 
         # Test government compliance
-        assert EnumComplianceFramework.FISMA in EnumComplianceFramework
+        assert (
+            EnumComplianceFramework.FISMA
+            in EnumComplianceFramework.__members__.values()
+        )
 
         # Test international standards
-        assert EnumComplianceFramework.ISO27001 in EnumComplianceFramework
-        assert EnumComplianceFramework.NIST in EnumComplianceFramework
+        assert (
+            EnumComplianceFramework.ISO27001
+            in EnumComplianceFramework.__members__.values()
+        )
+        assert (
+            EnumComplianceFramework.NIST in EnumComplianceFramework.__members__.values()
+        )

@@ -7,11 +7,11 @@ Enum for permission actions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumPermissionAction(StrValueHelper, str, Enum):
+class EnumPermissionAction(UtilStrValueHelper, str, Enum):
     """Permission actions that can be granted."""
 
     CREATE = "create"

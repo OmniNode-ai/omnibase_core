@@ -10,11 +10,11 @@ analysis of failure patterns across memory snapshots.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumFailureType(StrValueHelper, str, Enum):
+class EnumFailureType(UtilStrValueHelper, str, Enum):
     """Failure type classification for omnimemory snapshots.
 
     Classifies failures recorded in memory snapshots to enable systematic

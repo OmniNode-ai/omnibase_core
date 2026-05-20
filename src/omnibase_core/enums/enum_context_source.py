@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumContextSource(StrValueHelper, str, Enum):
+class EnumContextSource(UtilStrValueHelper, str, Enum):
     """
     Enumeration of context data sources.
 

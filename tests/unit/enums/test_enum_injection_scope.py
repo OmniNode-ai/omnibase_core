@@ -15,7 +15,7 @@ class TestEnumInjectionScope:
     """Test suite for EnumInjectionScope enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumInjectionScope.GLOBAL) == "global"
         assert str(EnumInjectionScope.REQUEST) == "request"
         assert str(EnumInjectionScope.SESSION) == "session"
@@ -34,7 +34,7 @@ class TestEnumInjectionScope:
 
     def test_all_members_exist(self) -> None:
         """Test that all expected enum members exist."""
-        values = [m.value for m in EnumInjectionScope]
+        values = [m.value for m in EnumInjectionScope.__members__.values()]
         assert "request" in values
         assert "session" in values
         assert "thread" in values
@@ -44,7 +44,7 @@ class TestEnumInjectionScope:
 
     def test_unique_values(self) -> None:
         """Test that all enum values are unique."""
-        values = [m.value for m in EnumInjectionScope]
+        values = [m.value for m in EnumInjectionScope.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_count(self) -> None:
@@ -78,9 +78,9 @@ class TestEnumInjectionScope:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumInjectionScope.GLOBAL in EnumInjectionScope
-        assert "global" in EnumInjectionScope
-        assert "invalid_scope" not in EnumInjectionScope
+        assert EnumInjectionScope.GLOBAL in EnumInjectionScope.__members__.values()
+        assert "global" in EnumInjectionScope._value2member_map_
+        assert "invalid_scope" not in EnumInjectionScope._value2member_map_
 
     def test_enum_deserialization(self) -> None:
         """Test enum deserialization from string."""

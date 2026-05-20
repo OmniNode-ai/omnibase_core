@@ -11,11 +11,11 @@ enabling deterministic execution recording and playback.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumReplayMode(StrValueHelper, str, Enum):
+class EnumReplayMode(UtilStrValueHelper, str, Enum):
     """Mode for replay infrastructure.
 
     Defines the operating mode for deterministic replay:

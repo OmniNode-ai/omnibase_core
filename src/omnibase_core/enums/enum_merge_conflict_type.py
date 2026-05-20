@@ -27,11 +27,11 @@ See Also:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMergeConflictType(StrValueHelper, str, Enum):
+class EnumMergeConflictType(UtilStrValueHelper, str, Enum):
     """
     Types of conflicts that can occur during contract merge.
 

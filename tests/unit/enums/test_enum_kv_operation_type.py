@@ -46,13 +46,16 @@ class TestEnumKvOperationType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumKvOperationType.CREATE in EnumKvOperationType
-        assert "create" in EnumKvOperationType
-        assert "invalid_value" not in EnumKvOperationType
+        assert EnumKvOperationType.CREATE in EnumKvOperationType.__members__.values()
+        assert "create" in EnumKvOperationType._value2member_map_
+        assert "invalid_value" not in EnumKvOperationType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumKvOperationType.CREATE == EnumKvOperationType.CREATE
+        assert (
+            type(EnumKvOperationType.CREATE)(EnumKvOperationType.CREATE.value)
+            is EnumKvOperationType.CREATE
+        )
         assert EnumKvOperationType.READ != EnumKvOperationType.CREATE
         assert EnumKvOperationType.CREATE == "create"
 
@@ -87,7 +90,9 @@ class TestEnumKvOperationType:
             "backup",
             "restore",
         }
-        actual_values = {member.value for member in EnumKvOperationType}
+        actual_values = {
+            member.value for member in EnumKvOperationType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -104,29 +109,29 @@ class TestEnumKvOperationType:
         }
 
         for op in crud_ops:
-            assert op in EnumKvOperationType
+            assert op in EnumKvOperationType.__members__.values()
 
     def test_enum_list_operations(self):
         """Test list operations"""
         assert EnumKvOperationType.LIST.value == "list[Any]"
-        assert EnumKvOperationType.LIST in EnumKvOperationType
+        assert EnumKvOperationType.LIST in EnumKvOperationType.__members__.values()
 
     def test_enum_watch_operations(self):
         """Test watch operations"""
         assert EnumKvOperationType.WATCH.value == "watch"
-        assert EnumKvOperationType.WATCH in EnumKvOperationType
+        assert EnumKvOperationType.WATCH in EnumKvOperationType.__members__.values()
 
     def test_enum_sync_operations(self):
         """Test sync operations"""
         assert EnumKvOperationType.SYNC.value == "sync"
-        assert EnumKvOperationType.SYNC in EnumKvOperationType
+        assert EnumKvOperationType.SYNC in EnumKvOperationType.__members__.values()
 
     def test_enum_backup_operations(self):
         """Test backup operations"""
         assert EnumKvOperationType.BACKUP.value == "backup"
         assert EnumKvOperationType.RESTORE.value == "restore"
-        assert EnumKvOperationType.BACKUP in EnumKvOperationType
-        assert EnumKvOperationType.RESTORE in EnumKvOperationType
+        assert EnumKvOperationType.BACKUP in EnumKvOperationType.__members__.values()
+        assert EnumKvOperationType.RESTORE in EnumKvOperationType.__members__.values()
 
     def test_enum_operation_categories(self):
         """Test operation categories"""

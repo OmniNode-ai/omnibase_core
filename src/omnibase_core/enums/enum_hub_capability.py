@@ -10,11 +10,11 @@ Strongly-typed enum for hub capability types for different domains.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHubCapability(StrValueHelper, str, Enum):
+class EnumHubCapability(UtilStrValueHelper, str, Enum):
     """Hub capability types for different domains."""
 
     # Core hub capabilities

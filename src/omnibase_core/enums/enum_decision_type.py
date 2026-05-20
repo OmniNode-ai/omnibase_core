@@ -10,11 +10,11 @@ and reporting within memory snapshots.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDecisionType(StrValueHelper, str, Enum):
+class EnumDecisionType(UtilStrValueHelper, str, Enum):
     """Decision type classification for omnimemory snapshots and the Decision Store.
 
     Classifies decisions recorded in memory snapshots to enable systematic

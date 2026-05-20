@@ -26,7 +26,7 @@ class TestEnumComputeStepType:
 
     def test_is_str_enum(self) -> None:
         """Test enum values are strings for JSON serialization."""
-        for member in EnumComputeStepType:
+        for member in EnumComputeStepType.__members__.values():
             assert isinstance(member.value, str)
 
     def test_member_count(self) -> None:
@@ -50,7 +50,7 @@ class TestEnumTransformationType:
 
     def test_is_str_enum(self) -> None:
         """Test enum values are strings for JSON serialization."""
-        for member in EnumTransformationType:
+        for member in EnumTransformationType.__members__.values():
             assert isinstance(member.value, str)
 
     def test_member_count(self) -> None:
@@ -71,7 +71,7 @@ class TestEnumCaseMode:
 
     def test_is_str_enum(self) -> None:
         """Test enum values are strings."""
-        for member in EnumCaseMode:
+        for member in EnumCaseMode.__members__.values():
             assert isinstance(member.value, str)
 
     def test_member_count(self) -> None:
@@ -92,7 +92,7 @@ class TestEnumRegexFlag:
 
     def test_is_str_enum(self) -> None:
         """Test enum values are strings."""
-        for member in EnumRegexFlag:
+        for member in EnumRegexFlag.__members__.values():
             assert isinstance(member.value, str)
 
     def test_member_count(self) -> None:
@@ -114,7 +114,7 @@ class TestEnumUnicodeForm:
 
     def test_is_str_enum(self) -> None:
         """Test enum values are strings."""
-        for member in EnumUnicodeForm:
+        for member in EnumUnicodeForm.__members__.values():
             assert isinstance(member.value, str)
 
     def test_member_count(self) -> None:
@@ -135,7 +135,7 @@ class TestEnumTrimMode:
 
     def test_is_str_enum(self) -> None:
         """Test enum values are strings."""
-        for member in EnumTrimMode:
+        for member in EnumTrimMode.__members__.values():
             assert isinstance(member.value, str)
 
     def test_member_count(self) -> None:

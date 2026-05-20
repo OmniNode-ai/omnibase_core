@@ -208,7 +208,7 @@ class TestModelResourceUsageMetricCreation:
 
     def test_enum_values_for_usage_unit(self) -> None:
         """Test that usage_unit accepts all valid enum values."""
-        for unit in EnumResourceUnit:
+        for unit in EnumResourceUnit.__members__.values():
             metric = ModelResourceUsageMetric(
                 version=DEFAULT_VERSION,
                 resource_name="test_resource",

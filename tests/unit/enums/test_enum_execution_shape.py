@@ -202,7 +202,10 @@ class TestEnumMessageCategory:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumMessageCategory.EVENT == EnumMessageCategory.EVENT
+        assert (
+            type(EnumMessageCategory.EVENT)(EnumMessageCategory.EVENT.value)
+            is EnumMessageCategory.EVENT
+        )
         assert EnumMessageCategory.COMMAND != EnumMessageCategory.EVENT
         assert EnumMessageCategory.INTENT != EnumMessageCategory.COMMAND
 
@@ -215,7 +218,7 @@ class TestEnumMessageCategory:
         ]
 
         for category in all_categories:
-            assert category in EnumMessageCategory
+            assert category in EnumMessageCategory.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -480,8 +483,10 @@ class TestEnumExecutionShape:
     def test_enum_equality(self):
         """Test enum equality comparison."""
         assert (
-            EnumExecutionShape.EVENT_TO_ORCHESTRATOR
-            == EnumExecutionShape.EVENT_TO_ORCHESTRATOR
+            type(EnumExecutionShape.EVENT_TO_ORCHESTRATOR)(
+                EnumExecutionShape.EVENT_TO_ORCHESTRATOR.value
+            )
+            is EnumExecutionShape.EVENT_TO_ORCHESTRATOR
         )
         assert (
             EnumExecutionShape.EVENT_TO_REDUCER
@@ -502,7 +507,7 @@ class TestEnumExecutionShape:
         ]
 
         for shape in all_shapes:
-            assert shape in EnumExecutionShape
+            assert shape in EnumExecutionShape.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -522,10 +527,10 @@ class TestEnumExecutionShape:
 
     def test_shape_source_and_target_consistency(self):
         """Test that all shapes have consistent source and target mappings."""
-        for shape in EnumExecutionShape:
+        for shape in EnumExecutionShape.__members__.values():
             # Every shape should have a valid source category
             source = EnumExecutionShape.get_source_category(shape)
-            assert source in EnumMessageCategory
+            assert source in EnumMessageCategory.__members__.values()
 
             # Every shape should have a valid target node kind
             target = EnumExecutionShape.get_target_node_kind(shape)
@@ -552,7 +557,7 @@ class TestEnumMessageCategoryAndExecutionShapeIntegration:
 
     def test_all_categories_have_at_least_one_shape(self):
         """Test that every message category has at least one execution shape."""
-        for category in EnumMessageCategory:
+        for category in EnumMessageCategory.__members__.values():
             shapes = EnumExecutionShape.get_shapes_for_category(category)
             assert len(shapes) >= 1, f"Category {category} has no execution shapes"
 
@@ -581,14 +586,14 @@ class TestEnumMessageCategoryAndExecutionShapeIntegration:
 
     def test_shape_descriptions_are_non_empty(self):
         """Test that all shapes have non-empty descriptions."""
-        for shape in EnumExecutionShape:
+        for shape in EnumExecutionShape.__members__.values():
             description = EnumExecutionShape.get_description(shape)
             assert description, f"Shape {shape} has empty description"
             assert len(description) > 10, f"Shape {shape} has too short description"
 
     def test_category_descriptions_are_non_empty(self):
         """Test that all categories have non-empty descriptions."""
-        for category in EnumMessageCategory:
+        for category in EnumMessageCategory.__members__.values():
             description = EnumMessageCategory.get_description(category)
             assert description, f"Category {category} has empty description"
             assert len(description) > 10, (
@@ -611,7 +616,7 @@ class TestPropertyBasedExecutionShapes:
     ) -> None:
         """Property: Every shape must have a valid source category."""
         source = EnumExecutionShape.get_source_category(shape)
-        assert source in EnumMessageCategory
+        assert source in EnumMessageCategory.__members__.values()
         assert isinstance(source, EnumMessageCategory)
 
     @given(st.sampled_from(list(EnumExecutionShape)))

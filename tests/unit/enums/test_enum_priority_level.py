@@ -50,8 +50,8 @@ class TestEnumPriorityLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPriorityLevel.HIGH in EnumPriorityLevel
-        assert "high" in [e.value for e in EnumPriorityLevel]
+        assert EnumPriorityLevel.HIGH in EnumPriorityLevel.__members__.values()
+        assert "high" in [e.value for e in EnumPriorityLevel.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -84,7 +84,7 @@ class TestEnumPriorityLevel:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"critical", "high", "normal", "low"}
-        actual_values = {e.value for e in EnumPriorityLevel}
+        actual_values = {e.value for e in EnumPriorityLevel.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

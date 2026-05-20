@@ -13,11 +13,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDriftType(StrValueHelper, str, Enum):
+class EnumDriftType(UtilStrValueHelper, str, Enum):
     """Canonical drift type categories for intent drift detection.
 
     Values:

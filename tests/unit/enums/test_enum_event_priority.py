@@ -30,7 +30,7 @@ class TestEnumEventPriority:
         assert issubclass(EnumEventPriority, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string behavior of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumEventPriority.CRITICAL) == "critical"
         assert str(EnumEventPriority.HIGH) == "high"
         assert str(EnumEventPriority.NORMAL) == "normal"
@@ -49,12 +49,12 @@ class TestEnumEventPriority:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "critical" in EnumEventPriority
-        assert "high" in EnumEventPriority
-        assert "normal" in EnumEventPriority
-        assert "low" in EnumEventPriority
-        assert "deferred" in EnumEventPriority
-        assert "invalid" not in EnumEventPriority
+        assert "critical" in EnumEventPriority._value2member_map_
+        assert "high" in EnumEventPriority._value2member_map_
+        assert "normal" in EnumEventPriority._value2member_map_
+        assert "low" in EnumEventPriority._value2member_map_
+        assert "deferred" in EnumEventPriority._value2member_map_
+        assert "invalid" not in EnumEventPriority._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -87,7 +87,9 @@ class TestEnumEventPriority:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [priority.value for priority in EnumEventPriority]
+        all_values = [
+            priority.value for priority in EnumEventPriority.__members__.values()
+        ]
         expected_values = ["critical", "high", "normal", "low", "deferred"]
         assert set(all_values) == set(expected_values)
 

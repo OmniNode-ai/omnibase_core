@@ -40,7 +40,7 @@ class TestEnumReplayModeValues:
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"production", "recording", "replaying"}
-        actual_values = {member.value for member in EnumReplayMode}
+        actual_values = {member.value for member in EnumReplayMode.__members__.values()}
         assert actual_values == expected_values
 
 
@@ -61,14 +61,17 @@ class TestEnumReplayModeStringBehavior:
 
     def test_enum_equality(self) -> None:
         """Test enum equality."""
-        assert EnumReplayMode.PRODUCTION == EnumReplayMode.PRODUCTION
+        assert (
+            type(EnumReplayMode.PRODUCTION)(EnumReplayMode.PRODUCTION.value)
+            is EnumReplayMode.PRODUCTION
+        )
         assert EnumReplayMode.PRODUCTION != EnumReplayMode.RECORDING
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumReplayMode.PRODUCTION in EnumReplayMode
-        assert "production" in EnumReplayMode
-        assert "invalid_mode" not in EnumReplayMode
+        assert EnumReplayMode.PRODUCTION in EnumReplayMode.__members__.values()
+        assert "production" in EnumReplayMode._value2member_map_
+        assert "invalid_mode" not in EnumReplayMode._value2member_map_
 
 
 @pytest.mark.unit

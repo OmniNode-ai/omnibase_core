@@ -60,8 +60,8 @@ class TestEnumConversationStatus:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "active" in EnumConversationStatus
-        assert "invalid_status" not in EnumConversationStatus
+        assert "active" in EnumConversationStatus._value2member_map_
+        assert "invalid_status" not in EnumConversationStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -111,7 +111,9 @@ class TestEnumConversationStatus:
             "ready",
         }
 
-        actual_values = {member.value for member in EnumConversationStatus}
+        actual_values = {
+            member.value for member in EnumConversationStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -124,21 +126,52 @@ class TestEnumConversationStatus:
     def test_enum_conversation_lifecycle(self):
         """Test that enum covers typical conversation lifecycle states."""
         # Test initialization states
-        assert EnumConversationStatus.INITIALIZED in EnumConversationStatus
-        assert EnumConversationStatus.STARTING in EnumConversationStatus
-        assert EnumConversationStatus.READY in EnumConversationStatus
+        assert (
+            EnumConversationStatus.INITIALIZED
+            in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.STARTING
+            in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.READY in EnumConversationStatus.__members__.values()
+        )
 
         # Test active states
-        assert EnumConversationStatus.ACTIVE in EnumConversationStatus
-        assert EnumConversationStatus.ONGOING in EnumConversationStatus
-        assert EnumConversationStatus.PAUSED in EnumConversationStatus
+        assert (
+            EnumConversationStatus.ACTIVE in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.ONGOING
+            in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.PAUSED in EnumConversationStatus.__members__.values()
+        )
 
         # Test completion states
-        assert EnumConversationStatus.COMPLETED in EnumConversationStatus
-        assert EnumConversationStatus.TERMINATED in EnumConversationStatus
-        assert EnumConversationStatus.EXPIRED in EnumConversationStatus
+        assert (
+            EnumConversationStatus.COMPLETED
+            in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.TERMINATED
+            in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.EXPIRED
+            in EnumConversationStatus.__members__.values()
+        )
 
         # Test error states
-        assert EnumConversationStatus.ERROR in EnumConversationStatus
-        assert EnumConversationStatus.FAILED in EnumConversationStatus
-        assert EnumConversationStatus.TIMEOUT in EnumConversationStatus
+        assert (
+            EnumConversationStatus.ERROR in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.FAILED in EnumConversationStatus.__members__.values()
+        )
+        assert (
+            EnumConversationStatus.TIMEOUT
+            in EnumConversationStatus.__members__.values()
+        )

@@ -29,7 +29,9 @@ class TestEnumDiscriminatedValueTypeBasics:
 
     def test_enum_uniqueness(self) -> None:
         """Test that all enum values are unique."""
-        values = [member.value for member in EnumDiscriminatedValueType]
+        values = [
+            member.value for member in EnumDiscriminatedValueType.__members__.values()
+        ]
         assert len(values) == len(set(values))
 
     def test_enum_member_count(self) -> None:
@@ -192,7 +194,6 @@ class TestEnumDiscriminatedValueTypeEdgeCases:
 
     def test_enum_comparison(self) -> None:
         """Test enum value comparison."""
-        assert EnumDiscriminatedValueType.BOOL == EnumDiscriminatedValueType.BOOL
         assert EnumDiscriminatedValueType.INT != EnumDiscriminatedValueType.STR  # type: ignore[comparison-overlap]
 
     def test_enum_identity(self) -> None:

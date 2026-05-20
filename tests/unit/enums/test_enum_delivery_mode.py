@@ -43,8 +43,8 @@ class TestEnumDeliveryMode:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "direct" in EnumDeliveryMode
-        assert "invalid_mode" not in EnumDeliveryMode
+        assert "direct" in EnumDeliveryMode._value2member_map_
+        assert "invalid_mode" not in EnumDeliveryMode._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -81,7 +81,9 @@ class TestEnumDeliveryMode:
         """Test that all expected values are present."""
         expected_values = {"direct", "inmemory"}
 
-        actual_values = {member.value for member in EnumDeliveryMode}
+        actual_values = {
+            member.value for member in EnumDeliveryMode.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -91,7 +93,7 @@ class TestEnumDeliveryMode:
     def test_enum_delivery_modes(self):
         """Test that enum covers typical delivery modes."""
         # Test direct delivery
-        assert EnumDeliveryMode.DIRECT in EnumDeliveryMode
+        assert EnumDeliveryMode.DIRECT in EnumDeliveryMode.__members__.values()
 
         # Test in-memory delivery
-        assert EnumDeliveryMode.INMEMORY in EnumDeliveryMode
+        assert EnumDeliveryMode.INMEMORY in EnumDeliveryMode.__members__.values()

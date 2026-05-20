@@ -11,7 +11,7 @@ import pytest
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
 )
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -57,13 +57,13 @@ class TestEnumClaudeCodeHookEventType:
         assert len(values) == 12
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeHookEventType, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeHookEventType, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeHookEventType, str)
         assert issubclass(EnumClaudeCodeHookEventType, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (PascalCase)
         assert str(EnumClaudeCodeHookEventType.SESSION_START) == "SessionStart"
         assert str(EnumClaudeCodeHookEventType.PRE_TOOL_USE) == "PreToolUse"
@@ -90,9 +90,9 @@ class TestEnumClaudeCodeHookEventType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "SessionStart" in EnumClaudeCodeHookEventType
-        assert "PreToolUse" in EnumClaudeCodeHookEventType
-        assert "InvalidEvent" not in EnumClaudeCodeHookEventType
+        assert "SessionStart" in EnumClaudeCodeHookEventType._value2member_map_
+        assert "PreToolUse" in EnumClaudeCodeHookEventType._value2member_map_
+        assert "InvalidEvent" not in EnumClaudeCodeHookEventType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -146,7 +146,9 @@ class TestEnumClaudeCodeHookEventType:
             "PreCompact",
         }
 
-        actual_values = {member.value for member in EnumClaudeCodeHookEventType}
+        actual_values = {
+            member.value for member in EnumClaudeCodeHookEventType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -195,7 +197,7 @@ class TestIsAgenticLoopEvent:
         """Test that exactly 6 events are agentic loop events."""
         agentic_count = sum(
             1
-            for event in EnumClaudeCodeHookEventType
+            for event in EnumClaudeCodeHookEventType.__members__.values()
             if EnumClaudeCodeHookEventType.is_agentic_loop_event(event)
         )
         assert agentic_count == 6
@@ -241,7 +243,7 @@ class TestIsSessionLifecycleEvent:
         """Test that exactly 4 events are session lifecycle events."""
         session_count = sum(
             1
-            for event in EnumClaudeCodeHookEventType
+            for event in EnumClaudeCodeHookEventType.__members__.values()
             if EnumClaudeCodeHookEventType.is_session_lifecycle_event(event)
         )
         assert session_count == 4
@@ -259,7 +261,7 @@ class TestEventCategorization:
             EnumClaudeCodeHookEventType.NOTIFICATION,
         }
 
-        for event in EnumClaudeCodeHookEventType:
+        for event in EnumClaudeCodeHookEventType.__members__.values():
             is_agentic = EnumClaudeCodeHookEventType.is_agentic_loop_event(event)
             is_session = EnumClaudeCodeHookEventType.is_session_lifecycle_event(event)
             is_standalone = event in standalone_events
@@ -274,7 +276,7 @@ class TestEventCategorization:
 
     def test_no_overlap_between_categories(self):
         """Test that agentic and session lifecycle categories don't overlap."""
-        for event in EnumClaudeCodeHookEventType:
+        for event in EnumClaudeCodeHookEventType.__members__.values():
             is_agentic = EnumClaudeCodeHookEventType.is_agentic_loop_event(event)
             is_session = EnumClaudeCodeHookEventType.is_session_lifecycle_event(event)
 

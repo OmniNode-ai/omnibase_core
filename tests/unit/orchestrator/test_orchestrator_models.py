@@ -281,7 +281,7 @@ class TestModelOrchestratorInputFieldValidation:
 
     def test_execution_mode_enum_values(self) -> None:
         """Test all execution mode enum values work."""
-        for mode in EnumExecutionMode:
+        for mode in EnumExecutionMode.__members__.values():
             model = ModelOrchestratorInput(
                 workflow_id=uuid4(),
                 steps=[],
@@ -821,7 +821,7 @@ class TestModelActionFieldValidation:
 
     def test_all_action_type_values(self) -> None:
         """Test all action type enum values work."""
-        for action_type in EnumActionType:
+        for action_type in EnumActionType.__members__.values():
             model = ModelAction(
                 action_type=action_type,
                 target_node_type="TEST",
@@ -1364,7 +1364,7 @@ class TestModelCoordinationRulesFieldValidation:
 
     def test_all_failure_recovery_strategies(self) -> None:
         """Test all failure recovery strategy enum values."""
-        for strategy in EnumFailureRecoveryStrategy:
+        for strategy in EnumFailureRecoveryStrategy.__members__.values():
             model = ModelCoordinationRules(
                 version=DEFAULT_VERSION,
                 failure_recovery_strategy=strategy,

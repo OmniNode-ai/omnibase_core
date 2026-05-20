@@ -8,7 +8,7 @@ Tests all aspects of pattern learning models including:
 - Frozen (immutable) enforcement
 - Extra field rejection (extra="forbid")
 - Constraint validation (normalized scores, counts)
-- Enum behavior and StrValueHelper integration
+- Enum behavior and UtilStrValueHelper integration
 - Serialization and deserialization round-trips
 """
 
@@ -73,8 +73,8 @@ class TestEnumPatternLifecycleStateValues:
 
 
 @pytest.mark.unit
-class TestEnumPatternLifecycleStateStrValueHelper:
-    """Tests for StrValueHelper integration with EnumPatternLifecycleState."""
+class TestEnumPatternLifecycleStateUtilStrValueHelper:
+    """Tests for UtilStrValueHelper integration with EnumPatternLifecycleState."""
 
     def test_str_returns_value_candidate(self) -> None:
         """str() on CANDIDATE should return 'candidate'."""
@@ -134,8 +134,8 @@ class TestEnumPatternLearningStatusValues:
 
 
 @pytest.mark.unit
-class TestEnumPatternLearningStatusStrValueHelper:
-    """Tests for StrValueHelper integration with EnumPatternLearningStatus."""
+class TestEnumPatternLearningStatusUtilStrValueHelper:
+    """Tests for UtilStrValueHelper integration with EnumPatternLearningStatus."""
 
     def test_str_returns_value_completed(self) -> None:
         """str() on COMPLETED should return 'completed'."""
@@ -200,8 +200,8 @@ class TestEnumPatternTypeValues:
 
 
 @pytest.mark.unit
-class TestEnumPatternTypeStrValueHelper:
-    """Tests for StrValueHelper integration with EnumPatternType."""
+class TestEnumPatternTypeUtilStrValueHelper:
+    """Tests for UtilStrValueHelper integration with EnumPatternType."""
 
     def test_str_returns_value_code_pattern(self) -> None:
         """str() on CODE_PATTERN should return 'code_pattern'."""
@@ -1247,7 +1247,7 @@ class TestModelLearnedPatternValidConstruction:
 
     def test_all_lifecycle_states(self) -> None:
         """Should accept all lifecycle states."""
-        for state in EnumPatternLifecycleState:
+        for state in EnumPatternLifecycleState.__members__.values():
             model = ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",
@@ -1267,7 +1267,7 @@ class TestModelLearnedPatternValidConstruction:
 
     def test_all_pattern_types(self) -> None:
         """Should accept all pattern types."""
-        for pattern_type in EnumPatternType:
+        for pattern_type in EnumPatternType.__members__.values():
             model = ModelLearnedPattern(
                 pattern_id=uuid4(),
                 pattern_name="Test Pattern",

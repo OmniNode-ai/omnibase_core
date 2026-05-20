@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumEventType(StrValueHelper, str, Enum):
+class EnumEventType(UtilStrValueHelper, str, Enum):
     """
     Strongly typed event categories for proper routing and handling.
 

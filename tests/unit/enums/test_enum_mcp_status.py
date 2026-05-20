@@ -45,13 +45,16 @@ class TestEnumMCPStatus:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMCPStatus.SUCCESS in EnumMCPStatus
-        assert "success" in EnumMCPStatus
-        assert "invalid_value" not in EnumMCPStatus
+        assert EnumMCPStatus.SUCCESS in EnumMCPStatus.__members__.values()
+        assert "success" in EnumMCPStatus._value2member_map_
+        assert "invalid_value" not in EnumMCPStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMCPStatus.SUCCESS == EnumMCPStatus.SUCCESS
+        assert (
+            type(EnumMCPStatus.SUCCESS)(EnumMCPStatus.SUCCESS.value)
+            is EnumMCPStatus.SUCCESS
+        )
         assert EnumMCPStatus.ERROR != EnumMCPStatus.SUCCESS
         assert EnumMCPStatus.SUCCESS == "success"
 
@@ -85,7 +88,7 @@ class TestEnumMCPStatus:
             "unknown",
             "unreachable",
         }
-        actual_values = {member.value for member in EnumMCPStatus}
+        actual_values = {member.value for member in EnumMCPStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

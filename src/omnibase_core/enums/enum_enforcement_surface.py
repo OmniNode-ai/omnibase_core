@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumEnforcementSurface(StrValueHelper, str, Enum):
+class EnumEnforcementSurface(UtilStrValueHelper, str, Enum):
     """Surfaces where an architectural invariant is enforced."""
 
     STATIC_ARCHITECTURE = "static_architecture"

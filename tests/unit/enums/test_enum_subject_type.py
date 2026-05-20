@@ -34,7 +34,9 @@ class TestEnumSubjectType:
             "session",
             "custom",
         }
-        actual_values = {member.value for member in EnumSubjectType}
+        actual_values = {
+            member.value for member in EnumSubjectType.__members__.values()
+        }
         assert actual_values == expected_values
         assert len(EnumSubjectType) == 10
 
@@ -98,7 +100,10 @@ class TestEnumSubjectType:
 
     def test_equality(self) -> None:
         """Test enum equality comparisons."""
-        assert EnumSubjectType.AGENT == EnumSubjectType.AGENT
+        assert (
+            type(EnumSubjectType.AGENT)(EnumSubjectType.AGENT.value)
+            is EnumSubjectType.AGENT
+        )
         assert EnumSubjectType.AGENT == "agent"
         assert EnumSubjectType.AGENT != EnumSubjectType.USER
 
@@ -109,7 +114,7 @@ class TestEnumSubjectType:
         assert str(EnumSubjectType.WORKFLOW) == "workflow"
         assert str(EnumSubjectType.CUSTOM) == "custom"
         # Verify str() equals .value for all members
-        for member in EnumSubjectType:
+        for member in EnumSubjectType.__members__.values():
             assert str(member) == member.value
 
     @pytest.mark.parametrize(

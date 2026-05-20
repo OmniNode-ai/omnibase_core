@@ -33,7 +33,7 @@ class TestEnumEffectCategory:
         assert issubclass(EnumEffectCategory, Enum)
 
     def test_string_serialization_via_str_value_helper(self) -> None:
-        """Test StrValueHelper provides correct string representation."""
+        """Test UtilStrValueHelper provides correct string representation."""
         assert str(EnumEffectCategory.NETWORK) == "network"
         assert str(EnumEffectCategory.TIME) == "time"
         assert str(EnumEffectCategory.RANDOM) == "random"
@@ -74,14 +74,16 @@ class TestEnumEffectCategory:
             "filesystem",
             "database",
         }
-        actual_values = {member.value for member in EnumEffectCategory}
+        actual_values = {
+            member.value for member in EnumEffectCategory.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_membership(self) -> None:
         """Test enum membership operations."""
-        assert "network" in EnumEffectCategory
-        assert "time" in EnumEffectCategory
-        assert "invalid_category" not in EnumEffectCategory
+        assert "network" in EnumEffectCategory._value2member_map_
+        assert "time" in EnumEffectCategory._value2member_map_
+        assert "invalid_category" not in EnumEffectCategory._value2member_map_
 
     def test_enum_comparison_and_equality(self) -> None:
         """Test enum comparison operations."""
@@ -150,7 +152,7 @@ class TestEnumEffectCategory:
 
     def test_enum_uniqueness(self) -> None:
         """Test that enum values are unique (enforced by @unique decorator)."""
-        values = [member.value for member in EnumEffectCategory]
+        values = [member.value for member in EnumEffectCategory.__members__.values()]
         assert len(values) == len(set(values)), "Enum values should be unique"
 
     def test_string_behavior(self) -> None:

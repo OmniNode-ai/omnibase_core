@@ -45,10 +45,10 @@ class TestEnumFileProcessingMode:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "FAST" in EnumFileProcessingMode
-        assert "STANDARD" in EnumFileProcessingMode
-        assert "COMPREHENSIVE" in EnumFileProcessingMode
-        assert "invalid" not in EnumFileProcessingMode
+        assert "FAST" in EnumFileProcessingMode._value2member_map_
+        assert "STANDARD" in EnumFileProcessingMode._value2member_map_
+        assert "COMPREHENSIVE" in EnumFileProcessingMode._value2member_map_
+        assert "invalid" not in EnumFileProcessingMode._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -78,7 +78,9 @@ class TestEnumFileProcessingMode:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [mode.value for mode in EnumFileProcessingMode]
+        all_values = [
+            mode.value for mode in EnumFileProcessingMode.__members__.values()
+        ]
         expected_values = ["FAST", "STANDARD", "COMPREHENSIVE"]
         assert set(all_values) == set(expected_values)
 

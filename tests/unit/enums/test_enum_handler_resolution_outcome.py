@@ -31,7 +31,7 @@ class TestEnumHandlerResolutionOutcomeMembership:
 
     def test_enum_has_seven_members(self) -> None:
         """Plan §Task 1 (OMN-10278): seven members — added RESOLVED_VIA_KNOWN_PARAMS."""
-        assert {m.name for m in EnumHandlerResolutionOutcome} == {
+        assert {m.name for m in EnumHandlerResolutionOutcome.__members__.values()} == {
             "RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP",
             "RESOLVED_VIA_NODE_REGISTRY",
             "RESOLVED_VIA_CONTAINER",
@@ -76,14 +76,14 @@ class TestEnumHandlerResolutionOutcomeValues:
         assert EnumHandlerResolutionOutcome.UNRESOLVABLE.value == "unresolvable"
 
     def test_values_are_all_strings(self) -> None:
-        for member in EnumHandlerResolutionOutcome:
+        for member in EnumHandlerResolutionOutcome.__members__.values():
             assert isinstance(member.value, str)
             assert member.value == member.value.lower()
             assert " " not in member.value
 
     def test_values_are_unique(self) -> None:
         """No aliasing — five success branches + UNRESOLVABLE are distinct."""
-        values = [m.value for m in EnumHandlerResolutionOutcome]
+        values = [m.value for m in EnumHandlerResolutionOutcome.__members__.values()]
         assert len(values) == len(set(values))
 
 
@@ -92,12 +92,12 @@ class TestEnumHandlerResolutionOutcomeRoundTrip:
     """Round-trip from value string reconstructs the correct member."""
 
     def test_from_string_round_trip(self) -> None:
-        for member in EnumHandlerResolutionOutcome:
+        for member in EnumHandlerResolutionOutcome.__members__.values():
             reconstructed = EnumHandlerResolutionOutcome(member.value)
             assert reconstructed is member
 
     def test_json_round_trip(self) -> None:
-        for member in EnumHandlerResolutionOutcome:
+        for member in EnumHandlerResolutionOutcome.__members__.values():
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
             assert EnumHandlerResolutionOutcome(deserialized) is member

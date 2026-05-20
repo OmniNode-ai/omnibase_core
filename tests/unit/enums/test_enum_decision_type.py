@@ -42,7 +42,9 @@ class TestEnumDecisionType:
             "scope_boundary",
             "requirement_choice",
         }
-        actual_values = {member.value for member in EnumDecisionType}
+        actual_values = {
+            member.value for member in EnumDecisionType.__members__.values()
+        }
         assert actual_values == expected_values
         assert len(EnumDecisionType) == 16
 
@@ -109,7 +111,12 @@ class TestEnumDecisionType:
 
     def test_equality(self) -> None:
         """Test enum equality comparisons."""
-        assert EnumDecisionType.MODEL_SELECTION == EnumDecisionType.MODEL_SELECTION
+        assert (
+            type(EnumDecisionType.MODEL_SELECTION)(
+                EnumDecisionType.MODEL_SELECTION.value
+            )
+            is EnumDecisionType.MODEL_SELECTION
+        )
         assert EnumDecisionType.MODEL_SELECTION == "model_selection"
         assert EnumDecisionType.MODEL_SELECTION != EnumDecisionType.TOOL_SELECTION
 
@@ -120,7 +127,7 @@ class TestEnumDecisionType:
         assert str(EnumDecisionType.ESCALATION) == "escalation"
         assert str(EnumDecisionType.CUSTOM) == "custom"
         # Verify str() equals .value for all members
-        for member in EnumDecisionType:
+        for member in EnumDecisionType.__members__.values():
             assert str(member) == member.value
 
     @pytest.mark.parametrize(

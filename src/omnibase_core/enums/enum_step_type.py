@@ -9,13 +9,13 @@ Defines step types for workflow definitions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumStepType"]
 
 
 @unique
-class EnumStepType(StrValueHelper, str, Enum):
+class EnumStepType(UtilStrValueHelper, str, Enum):
     """Step types for workflow definitions.
 
     Categorizes workflow steps by their execution semantics.

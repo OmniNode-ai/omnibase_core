@@ -10,11 +10,11 @@ cross-instance collaboration in ONEX intelligence architecture.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCollaborationDomain(StrValueHelper, str, Enum):
+class EnumCollaborationDomain(UtilStrValueHelper, str, Enum):
     """
     Enum for collaboration domains with security validation.
 

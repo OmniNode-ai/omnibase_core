@@ -34,7 +34,7 @@ class TestEnumEvidenceTier:
         assert tier == "measured"
 
     def test_enum_str_method(self):
-        """Test __str__ method returns value (via StrValueHelper)."""
+        """Test __str__ method returns value (via UtilStrValueHelper)."""
         assert str(EnumEvidenceTier.UNMEASURED) == "unmeasured"
         assert str(EnumEvidenceTier.OBSERVED) == "observed"
         assert str(EnumEvidenceTier.MEASURED) == "measured"
@@ -55,8 +55,8 @@ class TestEnumEvidenceTier:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumEvidenceTier.VERIFIED in EnumEvidenceTier
-        assert "verified" in [e.value for e in EnumEvidenceTier]
+        assert EnumEvidenceTier.VERIFIED in EnumEvidenceTier.__members__.values()
+        assert "verified" in [e.value for e in EnumEvidenceTier.__members__.values()]
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
@@ -89,7 +89,7 @@ class TestEnumEvidenceTier:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"unmeasured", "observed", "measured", "verified"}
-        actual_values = {e.value for e in EnumEvidenceTier}
+        actual_values = {e.value for e in EnumEvidenceTier.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -134,7 +134,7 @@ class TestEnumEvidenceTier:
     def test_tier_less_than_or_equal(self):
         """Test less than or equal comparison."""
         assert EnumEvidenceTier.UNMEASURED <= EnumEvidenceTier.OBSERVED
-        assert EnumEvidenceTier.OBSERVED <= EnumEvidenceTier.OBSERVED
+        assert EnumEvidenceTier.OBSERVED <= "observed"
         assert EnumEvidenceTier.MEASURED <= EnumEvidenceTier.VERIFIED
 
     def test_tier_greater_than(self):
@@ -146,7 +146,7 @@ class TestEnumEvidenceTier:
     def test_tier_greater_than_or_equal(self):
         """Test greater than or equal comparison."""
         assert EnumEvidenceTier.VERIFIED >= EnumEvidenceTier.MEASURED
-        assert EnumEvidenceTier.MEASURED >= EnumEvidenceTier.MEASURED
+        assert EnumEvidenceTier.MEASURED >= "measured"
         assert EnumEvidenceTier.OBSERVED >= EnumEvidenceTier.UNMEASURED
 
     def test_tier_sorting(self):
@@ -168,8 +168,8 @@ class TestEnumEvidenceTier:
 
     def test_tier_comparison_completeness(self):
         """Test that all comparison operators work correctly."""
-        low = EnumEvidenceTier.UNMEASURED
-        high = EnumEvidenceTier.VERIFIED
+        low = EnumEvidenceTier("unmeasured")
+        high = EnumEvidenceTier("verified")
 
         assert low < high
         assert low <= high
@@ -180,8 +180,8 @@ class TestEnumEvidenceTier:
 
     def test_tier_self_equality_comparisons(self):
         """Test self-comparisons for all tiers."""
-        for tier in EnumEvidenceTier:
-            same_tier = EnumEvidenceTier(tier.value)
+        for tier in EnumEvidenceTier.__members__.values():
+            same_tier = tier.value
             assert tier <= same_tier
             assert tier >= same_tier
             assert not (tier < same_tier)
@@ -209,7 +209,7 @@ class TestEnumEvidenceTier:
 
     def test_uniqueness(self):
         """Test that all values are unique (enforced by @unique decorator)."""
-        values = [e.value for e in EnumEvidenceTier]
+        values = [e.value for e in EnumEvidenceTier.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_comparison_against_raw_string(self):

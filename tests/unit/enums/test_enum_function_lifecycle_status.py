@@ -180,7 +180,7 @@ class TestEnumFunctionLifecycleStatus:
         )
 
         # Non-stable release statuses
-        for status in EnumFunctionLifecycleStatus:
+        for status in EnumFunctionLifecycleStatus.__members__.values():
             if status not in {
                 EnumFunctionLifecycleStatus.ACTIVE,
                 EnumFunctionLifecycleStatus.STABLE,
@@ -198,7 +198,7 @@ class TestEnumFunctionLifecycleStatus:
         )
 
         # All other statuses don't require migration planning
-        for status in EnumFunctionLifecycleStatus:
+        for status in EnumFunctionLifecycleStatus.__members__.values():
             if status != EnumFunctionLifecycleStatus.DEPRECATED:
                 assert (
                     EnumFunctionLifecycleStatus.requires_migration_planning(status)
@@ -219,7 +219,7 @@ class TestEnumFunctionLifecycleStatus:
             )
 
         # Not temporarily unavailable
-        for status in EnumFunctionLifecycleStatus:
+        for status in EnumFunctionLifecycleStatus.__members__.values():
             if status not in temp_unavailable:
                 assert (
                     EnumFunctionLifecycleStatus.is_temporarily_unavailable(status)
@@ -369,13 +369,18 @@ class TestEnumFunctionLifecycleStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumFunctionLifecycleStatus.ACTIVE == EnumFunctionLifecycleStatus.ACTIVE
+        assert (
+            type(EnumFunctionLifecycleStatus.ACTIVE)(
+                EnumFunctionLifecycleStatus.ACTIVE.value
+            )
+            is EnumFunctionLifecycleStatus.ACTIVE
+        )
         assert EnumFunctionLifecycleStatus.STABLE != EnumFunctionLifecycleStatus.BETA
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        for status in EnumFunctionLifecycleStatus:
-            assert status in EnumFunctionLifecycleStatus
+        for status in EnumFunctionLifecycleStatus.__members__.values():
+            assert status in EnumFunctionLifecycleStatus.__members__.values()
 
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
@@ -413,14 +418,14 @@ class TestEnumFunctionLifecycleStatus:
 
     def test_all_statuses_have_stability_order(self):
         """Test that all statuses have a defined stability order."""
-        for status in EnumFunctionLifecycleStatus:
+        for status in EnumFunctionLifecycleStatus.__members__.values():
             order = EnumFunctionLifecycleStatus.get_stability_order(status)
             assert isinstance(order, int)
             assert order >= 0
 
     def test_lifecycle_consistency(self):
         """Test logical consistency of lifecycle categorization."""
-        for status in EnumFunctionLifecycleStatus:
+        for status in EnumFunctionLifecycleStatus.__members__.values():
             # If production ready, should be available
             if EnumFunctionLifecycleStatus.is_production_ready(status):
                 assert EnumFunctionLifecycleStatus.is_available(status)

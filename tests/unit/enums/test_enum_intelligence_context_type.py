@@ -62,7 +62,7 @@ class TestEnumIntelligenceContextType:
         assert issubclass(EnumIntelligenceContextType, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string behavior of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumIntelligenceContextType.DISCOVERY_PATTERN) == "discovery_pattern"
         assert str(EnumIntelligenceContextType.PROBLEM_DIAGNOSIS) == "problem_diagnosis"
         assert (
@@ -87,12 +87,14 @@ class TestEnumIntelligenceContextType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "discovery_pattern" in EnumIntelligenceContextType
-        assert "problem_diagnosis" in EnumIntelligenceContextType
-        assert "solution_implementation" in EnumIntelligenceContextType
-        assert "warning_security" in EnumIntelligenceContextType
-        assert "coordination_request" in EnumIntelligenceContextType
-        assert "invalid" not in EnumIntelligenceContextType
+        assert "discovery_pattern" in EnumIntelligenceContextType._value2member_map_
+        assert "problem_diagnosis" in EnumIntelligenceContextType._value2member_map_
+        assert (
+            "solution_implementation" in EnumIntelligenceContextType._value2member_map_
+        )
+        assert "warning_security" in EnumIntelligenceContextType._value2member_map_
+        assert "coordination_request" in EnumIntelligenceContextType._value2member_map_
+        assert "invalid" not in EnumIntelligenceContextType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -156,7 +158,8 @@ class TestEnumIntelligenceContextType:
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
         all_values = [
-            context_type.value for context_type in EnumIntelligenceContextType
+            context_type.value
+            for context_type in EnumIntelligenceContextType.__members__.values()
         ]
         expected_values = [
             "discovery_pattern",
@@ -192,7 +195,7 @@ class TestEnumIntelligenceContextType:
             EnumIntelligenceContextType.DISCOVERY_ISSUE,
         ]
         for context in discovery_contexts:
-            assert context in EnumIntelligenceContextType
+            assert context in EnumIntelligenceContextType.__members__.values()
 
     def test_problem_analysis_contexts(self):
         """Test problem analysis context types."""
@@ -202,7 +205,7 @@ class TestEnumIntelligenceContextType:
             EnumIntelligenceContextType.PROBLEM_WORKAROUND,
         ]
         for context in problem_contexts:
-            assert context in EnumIntelligenceContextType
+            assert context in EnumIntelligenceContextType.__members__.values()
 
     def test_solution_contexts(self):
         """Test solution context types."""
@@ -212,7 +215,7 @@ class TestEnumIntelligenceContextType:
             EnumIntelligenceContextType.SOLUTION_VALIDATION,
         ]
         for context in solution_contexts:
-            assert context in EnumIntelligenceContextType
+            assert context in EnumIntelligenceContextType.__members__.values()
 
     def test_warning_contexts(self):
         """Test warning context types."""
@@ -222,7 +225,7 @@ class TestEnumIntelligenceContextType:
             EnumIntelligenceContextType.WARNING_COMPATIBILITY,
         ]
         for context in warning_contexts:
-            assert context in EnumIntelligenceContextType
+            assert context in EnumIntelligenceContextType.__members__.values()
 
     def test_coordination_contexts(self):
         """Test coordination context types."""
@@ -232,4 +235,4 @@ class TestEnumIntelligenceContextType:
             EnumIntelligenceContextType.COORDINATION_HANDOFF,
         ]
         for context in coordination_contexts:
-            assert context in EnumIntelligenceContextType
+            assert context in EnumIntelligenceContextType.__members__.values()

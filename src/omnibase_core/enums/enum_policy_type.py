@@ -9,13 +9,13 @@ and reward architecture (OMN-2537).
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumPolicyType"]
 
 
 @unique
-class EnumPolicyType(StrValueHelper, str, Enum):
+class EnumPolicyType(UtilStrValueHelper, str, Enum):
     """Types of policy state updated by reward signals.
 
     Each policy type has a defined state shape that is updated by

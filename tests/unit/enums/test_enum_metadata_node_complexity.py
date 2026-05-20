@@ -41,13 +41,21 @@ class TestEnumMetadataNodeComplexity:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMetadataNodeComplexity.SIMPLE in EnumMetadataNodeComplexity
-        assert "simple" in EnumMetadataNodeComplexity
-        assert "invalid_value" not in EnumMetadataNodeComplexity
+        assert (
+            EnumMetadataNodeComplexity.SIMPLE
+            in EnumMetadataNodeComplexity.__members__.values()
+        )
+        assert "simple" in EnumMetadataNodeComplexity._value2member_map_
+        assert "invalid_value" not in EnumMetadataNodeComplexity._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMetadataNodeComplexity.SIMPLE == EnumMetadataNodeComplexity.SIMPLE
+        assert (
+            type(EnumMetadataNodeComplexity.SIMPLE)(
+                EnumMetadataNodeComplexity.SIMPLE.value
+            )
+            is EnumMetadataNodeComplexity.SIMPLE
+        )
         assert EnumMetadataNodeComplexity.MODERATE != EnumMetadataNodeComplexity.SIMPLE
         assert EnumMetadataNodeComplexity.SIMPLE == "simple"
 
@@ -75,7 +83,9 @@ class TestEnumMetadataNodeComplexity:
     def test_enum_all_values(self):
         """Test that all expected values are present"""
         expected_values = {"simple", "moderate", "complex", "advanced"}
-        actual_values = {member.value for member in EnumMetadataNodeComplexity}
+        actual_values = {
+            member.value for member in EnumMetadataNodeComplexity.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -116,7 +126,10 @@ class TestEnumMetadataNodeComplexity:
 
         # Verify all levels are present
         assert len(complexity_levels) == 4
-        assert all(level in EnumMetadataNodeComplexity for level in complexity_levels)
+        assert all(
+            level in EnumMetadataNodeComplexity.__members__.values()
+            for level in complexity_levels
+        )
 
     def test_enum_complexity_categories(self):
         """Test complexity categories"""

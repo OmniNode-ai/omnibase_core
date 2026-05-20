@@ -216,7 +216,7 @@ class TestModelResolutionProof:
 
     def test_all_proof_types(self) -> None:
         """Each proof type can be used in a ModelResolutionProof."""
-        for proof_type in EnumProofType:
+        for proof_type in EnumProofType.__members__.values():
             proof = _make_resolution_proof(proof_type=proof_type)
             assert proof.proof_type == proof_type
 

@@ -3,7 +3,7 @@
 
 """Unit tests for EnumSeverity.
 
-Tests the canonical severity enum including string serialization via StrValueHelper,
+Tests the canonical severity enum including string serialization via UtilStrValueHelper,
 enum member validation, uniqueness, and integration with Pydantic and JSON.
 """
 
@@ -40,7 +40,7 @@ class TestEnumSeverity:
         assert len(members) == 6
 
     def test_string_serialization_via_str_value_helper(self) -> None:
-        """Test StrValueHelper provides __str__ returning the value."""
+        """Test UtilStrValueHelper provides __str__ returning the value."""
         assert str(EnumSeverity.DEBUG) == "debug"
         assert str(EnumSeverity.INFO) == "info"
         assert str(EnumSeverity.WARNING) == "warning"
@@ -50,23 +50,23 @@ class TestEnumSeverity:
 
     def test_str_value_helper_consistency(self) -> None:
         """Verify str() returns value for all enum members."""
-        for member in EnumSeverity:
+        for member in EnumSeverity.__members__.values():
             assert str(member) == member.value
 
     def test_enum_uniqueness(self) -> None:
         """Verify no duplicate values exist via @unique decorator."""
-        values = [member.value for member in EnumSeverity]
+        values = [member.value for member in EnumSeverity.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_is_str_subclass(self) -> None:
         """Verify enum inherits from str for string compatibility."""
-        for member in EnumSeverity:
+        for member in EnumSeverity.__members__.values():
             assert isinstance(member, str)
             assert isinstance(member.value, str)
 
     def test_enum_equality(self) -> None:
         """Test enum equality comparison."""
-        assert EnumSeverity.ERROR == EnumSeverity.ERROR
+        assert type(EnumSeverity.ERROR)(EnumSeverity.ERROR.value) is EnumSeverity.ERROR
         assert EnumSeverity.WARNING != EnumSeverity.ERROR
         assert EnumSeverity.CRITICAL != EnumSeverity.FATAL
 
@@ -74,7 +74,7 @@ class TestEnumSeverity:
         """Test enum membership checking."""
         all_levels = list(EnumSeverity)
         for level in all_levels:
-            assert level in EnumSeverity
+            assert level in EnumSeverity.__members__.values()
 
     def test_enum_iteration_completeness(self) -> None:
         """Test that iterating over enum returns all 6 expected members.
@@ -135,7 +135,7 @@ class TestEnumSeverity:
 
     def test_enum_value_case_sensitivity(self) -> None:
         """Test that enum values are lowercase."""
-        for member in EnumSeverity:
+        for member in EnumSeverity.__members__.values():
             assert member.value == member.value.lower()
             assert member.value != member.value.upper()
 

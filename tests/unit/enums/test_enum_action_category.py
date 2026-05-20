@@ -118,7 +118,10 @@ class TestEnumActionCategory:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumActionCategory.LIFECYCLE == EnumActionCategory.LIFECYCLE
+        assert (
+            type(EnumActionCategory.LIFECYCLE)(EnumActionCategory.LIFECYCLE.value)
+            is EnumActionCategory.LIFECYCLE
+        )
         assert EnumActionCategory.VALIDATION != EnumActionCategory.EXECUTION
 
     def test_enum_membership(self):
@@ -135,7 +138,7 @@ class TestEnumActionCategory:
         ]
 
         for category in all_categories:
-            assert category in EnumActionCategory
+            assert category in EnumActionCategory.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

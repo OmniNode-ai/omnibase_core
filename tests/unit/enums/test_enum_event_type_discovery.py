@@ -32,7 +32,7 @@ class TestEnumEventTypeDiscovery:
         assert issubclass(EnumEventTypeDiscovery, Enum)
 
     def test_enum_string_behavior(self):
-        """Test string behavior of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string behavior of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumEventTypeDiscovery.SERVICE_DISCOVERY) == "service_discovery"
         assert (
             str(EnumEventTypeDiscovery.SERVICE_REGISTRATION) == "service_registration"
@@ -66,14 +66,14 @@ class TestEnumEventTypeDiscovery:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "service_discovery" in EnumEventTypeDiscovery
-        assert "service_registration" in EnumEventTypeDiscovery
-        assert "service_deregistration" in EnumEventTypeDiscovery
-        assert "container_provisioning" in EnumEventTypeDiscovery
-        assert "container_health_check" in EnumEventTypeDiscovery
-        assert "mesh_coordination" in EnumEventTypeDiscovery
-        assert "hub_status_update" in EnumEventTypeDiscovery
-        assert "invalid" not in EnumEventTypeDiscovery
+        assert "service_discovery" in EnumEventTypeDiscovery._value2member_map_
+        assert "service_registration" in EnumEventTypeDiscovery._value2member_map_
+        assert "service_deregistration" in EnumEventTypeDiscovery._value2member_map_
+        assert "container_provisioning" in EnumEventTypeDiscovery._value2member_map_
+        assert "container_health_check" in EnumEventTypeDiscovery._value2member_map_
+        assert "mesh_coordination" in EnumEventTypeDiscovery._value2member_map_
+        assert "hub_status_update" in EnumEventTypeDiscovery._value2member_map_
+        assert "invalid" not in EnumEventTypeDiscovery._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -144,7 +144,10 @@ class TestEnumEventTypeDiscovery:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [event_type.value for event_type in EnumEventTypeDiscovery]
+        all_values = [
+            event_type.value
+            for event_type in EnumEventTypeDiscovery.__members__.values()
+        ]
         expected_values = [
             "service_discovery",
             "service_registration",

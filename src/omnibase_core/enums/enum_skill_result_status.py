@@ -45,13 +45,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumSkillResultStatus", "SkillResultStatus"]
 
 
 @unique
-class EnumSkillResultStatus(StrValueHelper, str, Enum):
+class EnumSkillResultStatus(UtilStrValueHelper, str, Enum):
     """Canonical status categories for skill execution results.
 
     Skills write result files to ``~/.claude/skill-results/``. This enum

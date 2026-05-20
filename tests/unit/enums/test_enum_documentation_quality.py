@@ -50,7 +50,7 @@ class TestEnumDocumentationQuality:
 
     def test_enum_uniqueness(self):
         """Test that all enum values are unique."""
-        values = [e.value for e in EnumDocumentationQuality]
+        values = [e.value for e in EnumDocumentationQuality.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_members_count(self):
@@ -64,7 +64,7 @@ class TestNumericScore:
 
     def test_all_quality_levels_have_scores(self):
         """Test that all quality levels return valid numeric scores."""
-        for quality in EnumDocumentationQuality:
+        for quality in EnumDocumentationQuality.__members__.values():
             score = EnumDocumentationQuality.get_numeric_score(quality)
             assert isinstance(score, int)
             assert 0 <= score <= 10
@@ -299,7 +299,7 @@ class TestImprovementSuggestion:
 
     def test_all_qualities_have_suggestions(self):
         """Test that all quality levels have improvement suggestions."""
-        for quality in EnumDocumentationQuality:
+        for quality in EnumDocumentationQuality.__members__.values():
             suggestion = EnumDocumentationQuality.get_improvement_suggestion(quality)
             assert isinstance(suggestion, str)
             assert len(suggestion) > 0
@@ -519,7 +519,7 @@ class TestEnumIntegration:
 
     def test_enum_serialization(self):
         """Test that enum can be serialized to JSON-compatible format."""
-        for quality in EnumDocumentationQuality:
+        for quality in EnumDocumentationQuality.__members__.values():
             assert isinstance(str(quality), str)
             assert isinstance(quality.value, str)
             assert str(quality) == quality.value
@@ -563,7 +563,10 @@ class TestEnumIntegration:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumDocumentationQuality.GOOD == EnumDocumentationQuality.GOOD
+        assert (
+            type(EnumDocumentationQuality.GOOD)(EnumDocumentationQuality.GOOD.value)
+            is EnumDocumentationQuality.GOOD
+        )
         assert EnumDocumentationQuality.GOOD != EnumDocumentationQuality.EXCELLENT
         assert EnumDocumentationQuality.NONE != EnumDocumentationQuality.POOR
 

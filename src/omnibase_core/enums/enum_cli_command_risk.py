@@ -10,11 +10,11 @@ Risk level governs HITL (human-in-the-loop) enforcement and audit requirements.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCliCommandRisk(StrValueHelper, str, Enum):
+class EnumCliCommandRisk(UtilStrValueHelper, str, Enum):
     """
     Risk classifications for CLI commands advertised via cli.contribution.v1.
 

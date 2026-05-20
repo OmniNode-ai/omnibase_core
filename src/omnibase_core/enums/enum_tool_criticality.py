@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumToolCriticality(StrValueHelper, str, Enum):
+class EnumToolCriticality(UtilStrValueHelper, str, Enum):
     """
     Tool criticality levels for business impact assessment.
 

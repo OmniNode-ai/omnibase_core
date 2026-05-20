@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumValidationResult(StrValueHelper, str, Enum):
+class EnumValidationResult(UtilStrValueHelper, str, Enum):
     PASS = "pass"
     FAIL = "fail"
     SKIP = "skip"

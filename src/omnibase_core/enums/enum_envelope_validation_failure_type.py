@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumEnvelopeValidationFailureType(StrValueHelper, str, Enum):
+class EnumEnvelopeValidationFailureType(UtilStrValueHelper, str, Enum):
     """Failure type classifications for envelope validation metrics.
 
     Used to categorise validation failures tracked in

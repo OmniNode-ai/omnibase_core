@@ -190,7 +190,7 @@ class TestEnumScenarioStatusV2:
             assert EnumScenarioStatusV2.is_waiting(status) is True
 
         # Non-waiting statuses
-        for status in EnumScenarioStatusV2:
+        for status in EnumScenarioStatusV2.__members__.values():
             if status not in waiting_statuses:
                 assert EnumScenarioStatusV2.is_waiting(status) is False
 
@@ -285,7 +285,7 @@ class TestEnumScenarioStatusV2:
     def test_base_status_roundtrip(self):
         """Test roundtrip conversion base -> scenario -> base for base values."""
         # All base statuses should roundtrip
-        for base_status in EnumBaseStatus:
+        for base_status in EnumBaseStatus.__members__.values():
             scenario_status = EnumScenarioStatusV2.from_base_status(base_status)
             back_to_base = scenario_status.to_base_status()
             assert back_to_base == base_status, (
@@ -295,13 +295,16 @@ class TestEnumScenarioStatusV2:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumScenarioStatusV2.COMPLETED == EnumScenarioStatusV2.COMPLETED
+        assert (
+            type(EnumScenarioStatusV2.COMPLETED)(EnumScenarioStatusV2.COMPLETED.value)
+            is EnumScenarioStatusV2.COMPLETED
+        )
         assert EnumScenarioStatusV2.FAILED != EnumScenarioStatusV2.COMPLETED
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        for status in EnumScenarioStatusV2:
-            assert status in EnumScenarioStatusV2
+        for status in EnumScenarioStatusV2.__members__.values():
+            assert status in EnumScenarioStatusV2.__members__.values()
 
     def test_json_serialization(self):
         """Test JSON serialization compatibility."""
@@ -335,7 +338,7 @@ class TestEnumScenarioStatusV2:
 
     def test_status_lifecycle_consistency(self):
         """Test logical consistency of status lifecycle."""
-        for status in EnumScenarioStatusV2:
+        for status in EnumScenarioStatusV2.__members__.values():
             is_terminal = EnumScenarioStatusV2.is_terminal(status)
             is_executing = EnumScenarioStatusV2.is_executing(status)
             is_waiting = EnumScenarioStatusV2.is_waiting(status)
@@ -352,7 +355,7 @@ class TestEnumScenarioStatusV2:
 
     def test_all_statuses_categorized(self):
         """Test that all statuses fall into at least one category."""
-        for status in EnumScenarioStatusV2:
+        for status in EnumScenarioStatusV2.__members__.values():
             categorized = (
                 EnumScenarioStatusV2.is_terminal(status)
                 or EnumScenarioStatusV2.is_executing(status)

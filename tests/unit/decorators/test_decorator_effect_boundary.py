@@ -256,7 +256,7 @@ class TestEffectBoundaryDecorator:
 
     def test_all_policy_levels_work(self) -> None:
         """Test decorator works with all policy levels."""
-        for policy_level in EnumEffectPolicyLevel:
+        for policy_level in EnumEffectPolicyLevel.__members__.values():
 
             @effect_boundary(f"test.{policy_level}", policy=policy_level)
             def func() -> None:

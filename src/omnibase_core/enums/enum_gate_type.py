@@ -9,13 +9,13 @@ Part of the objective functions and reward architecture (OMN-2537).
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumGateType"]
 
 
 @unique
-class EnumGateType(StrValueHelper, str, Enum):
+class EnumGateType(UtilStrValueHelper, str, Enum):
     """Types of hard gates in an objective evaluation.
 
     Hard gates are binary pass/fail checks evaluated before shaped reward terms.

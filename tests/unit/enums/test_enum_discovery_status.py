@@ -50,8 +50,8 @@ class TestEnumDiscoveryStatus:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "success" in EnumDiscoveryStatus
-        assert "invalid_status" not in EnumDiscoveryStatus
+        assert "success" in EnumDiscoveryStatus._value2member_map_
+        assert "invalid_status" not in EnumDiscoveryStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -98,7 +98,9 @@ class TestEnumDiscoveryStatus:
             "completed",
         }
 
-        actual_values = {member.value for member in EnumDiscoveryStatus}
+        actual_values = {
+            member.value for member in EnumDiscoveryStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -111,22 +113,22 @@ class TestEnumDiscoveryStatus:
     def test_enum_discovery_statuses(self):
         """Test that enum covers typical discovery statuses."""
         # Test success states
-        assert EnumDiscoveryStatus.SUCCESS in EnumDiscoveryStatus
-        assert EnumDiscoveryStatus.COMPLETED in EnumDiscoveryStatus
+        assert EnumDiscoveryStatus.SUCCESS in EnumDiscoveryStatus.__members__.values()
+        assert EnumDiscoveryStatus.COMPLETED in EnumDiscoveryStatus.__members__.values()
 
         # Test failure states
-        assert EnumDiscoveryStatus.FAILED in EnumDiscoveryStatus
-        assert EnumDiscoveryStatus.TIMEOUT in EnumDiscoveryStatus
+        assert EnumDiscoveryStatus.FAILED in EnumDiscoveryStatus.__members__.values()
+        assert EnumDiscoveryStatus.TIMEOUT in EnumDiscoveryStatus.__members__.values()
 
         # Test partial states
-        assert EnumDiscoveryStatus.PARTIAL in EnumDiscoveryStatus
+        assert EnumDiscoveryStatus.PARTIAL in EnumDiscoveryStatus.__members__.values()
 
         # Test cache states
-        assert EnumDiscoveryStatus.CACHED in EnumDiscoveryStatus
+        assert EnumDiscoveryStatus.CACHED in EnumDiscoveryStatus.__members__.values()
 
         # Test activity states
-        assert EnumDiscoveryStatus.ACTIVE in EnumDiscoveryStatus
-        assert EnumDiscoveryStatus.INACTIVE in EnumDiscoveryStatus
+        assert EnumDiscoveryStatus.ACTIVE in EnumDiscoveryStatus.__members__.values()
+        assert EnumDiscoveryStatus.INACTIVE in EnumDiscoveryStatus.__members__.values()
 
         # Test pending state
-        assert EnumDiscoveryStatus.PENDING in EnumDiscoveryStatus
+        assert EnumDiscoveryStatus.PENDING in EnumDiscoveryStatus.__members__.values()

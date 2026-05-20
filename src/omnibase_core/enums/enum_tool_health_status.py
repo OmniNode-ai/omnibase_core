@@ -9,11 +9,11 @@ Health status values for tool monitoring.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumToolHealthStatus(StrValueHelper, str, Enum):
+class EnumToolHealthStatus(UtilStrValueHelper, str, Enum):
     """Tool health status values for monitoring and reporting."""
 
     AVAILABLE = "available"

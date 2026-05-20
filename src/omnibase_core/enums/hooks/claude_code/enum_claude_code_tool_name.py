@@ -10,11 +10,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumClaudeCodeToolName(StrValueHelper, str, Enum):
+class EnumClaudeCodeToolName(UtilStrValueHelper, str, Enum):
     """Claude Code built-in tool names.
 
     Used for classifying tool executions in pattern learning and analytics.

@@ -9,13 +9,13 @@ architecture (OMN-2537). Conflating these layers leads to failure.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumObjectiveLayer"]
 
 
 @unique
-class EnumObjectiveLayer(StrValueHelper, str, Enum):
+class EnumObjectiveLayer(UtilStrValueHelper, str, Enum):
     """The three distinct objective layers in OmniNode.
 
     Conflating these layers leads to metric collapse. Each layer has

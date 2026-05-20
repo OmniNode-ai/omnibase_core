@@ -31,7 +31,7 @@ class TestEnumEffectPolicyLevel:
         assert issubclass(EnumEffectPolicyLevel, Enum)
 
     def test_string_serialization_via_str_value_helper(self) -> None:
-        """Test StrValueHelper provides correct string representation."""
+        """Test UtilStrValueHelper provides correct string representation."""
         assert str(EnumEffectPolicyLevel.STRICT) == "strict"
         assert str(EnumEffectPolicyLevel.WARN) == "warn"
         assert str(EnumEffectPolicyLevel.PERMISSIVE) == "permissive"
@@ -59,14 +59,16 @@ class TestEnumEffectPolicyLevel:
     def test_all_expected_values_present(self) -> None:
         """Test complete set of expected values."""
         expected_values = {"strict", "warn", "permissive", "mocked"}
-        actual_values = {member.value for member in EnumEffectPolicyLevel}
+        actual_values = {
+            member.value for member in EnumEffectPolicyLevel.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_membership(self) -> None:
         """Test enum membership operations."""
-        assert "strict" in EnumEffectPolicyLevel
-        assert "warn" in EnumEffectPolicyLevel
-        assert "invalid_level" not in EnumEffectPolicyLevel
+        assert "strict" in EnumEffectPolicyLevel._value2member_map_
+        assert "warn" in EnumEffectPolicyLevel._value2member_map_
+        assert "invalid_level" not in EnumEffectPolicyLevel._value2member_map_
 
     def test_enum_as_dict_keys(self) -> None:
         """Test enum values can be used as dictionary keys."""
@@ -127,7 +129,7 @@ class TestEnumEffectPolicyLevel:
 
     def test_enum_uniqueness(self) -> None:
         """Test that enum values are unique (enforced by @unique decorator)."""
-        values = [member.value for member in EnumEffectPolicyLevel]
+        values = [member.value for member in EnumEffectPolicyLevel.__members__.values()]
         assert len(values) == len(set(values)), "Enum values should be unique"
 
     def test_value_attribute(self) -> None:

@@ -9,11 +9,11 @@ Strongly typed enumeration for OnexTree synchronization status values.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTreeSyncStatus(StrValueHelper, str, Enum):
+class EnumTreeSyncStatus(UtilStrValueHelper, str, Enum):
     """
     OnexTree synchronization status classifications.
 

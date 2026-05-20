@@ -21,11 +21,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumClaudeCodeHookEventType(StrValueHelper, str, Enum):
+class EnumClaudeCodeHookEventType(UtilStrValueHelper, str, Enum):
     """Event types from Claude Code hook lifecycle.
 
     These values match exactly what Claude Code sends, enabling direct deserialization

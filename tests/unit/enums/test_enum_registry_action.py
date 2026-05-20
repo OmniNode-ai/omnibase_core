@@ -41,8 +41,8 @@ class TestEnumRegistryAction:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRegistryAction.GET_NODE in EnumRegistryAction
-        assert "get_node" in [e.value for e in EnumRegistryAction]
+        assert EnumRegistryAction.GET_NODE in EnumRegistryAction.__members__.values()
+        assert "get_node" in [e.value for e in EnumRegistryAction.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -75,12 +75,12 @@ class TestEnumRegistryAction:
     def test_enum_all_values(self):
         """Test that all expected values are present."""
         expected_values = {"get_active_nodes", "get_node"}
-        actual_values = {e.value for e in EnumRegistryAction}
+        actual_values = {e.value for e in EnumRegistryAction.__members__.values()}
         assert actual_values == expected_values
 
     def test_registry_action_naming(self):
         """Test that all actions follow naming convention."""
-        for action in EnumRegistryAction:
+        for action in EnumRegistryAction.__members__.values():
             # Should start with "get_"
             assert action.value.startswith("get_")
             # Should be lowercase with underscores

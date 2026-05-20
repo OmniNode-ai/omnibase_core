@@ -38,13 +38,16 @@ class TestEnumNodeUnionType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumNodeUnionType.FUNCTION_NODE in EnumNodeUnionType
-        assert "function_node" in EnumNodeUnionType
-        assert "invalid_value" not in EnumNodeUnionType
+        assert EnumNodeUnionType.FUNCTION_NODE in EnumNodeUnionType.__members__.values()
+        assert "function_node" in EnumNodeUnionType._value2member_map_
+        assert "invalid_value" not in EnumNodeUnionType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumNodeUnionType.FUNCTION_NODE == EnumNodeUnionType.FUNCTION_NODE
+        assert (
+            type(EnumNodeUnionType.FUNCTION_NODE)(EnumNodeUnionType.FUNCTION_NODE.value)
+            is EnumNodeUnionType.FUNCTION_NODE
+        )
         assert EnumNodeUnionType.FUNCTION_NODE_DATA != EnumNodeUnionType.FUNCTION_NODE
         assert EnumNodeUnionType.FUNCTION_NODE == "function_node"
 
@@ -72,7 +75,9 @@ class TestEnumNodeUnionType:
     def test_enum_all_values(self):
         """Test that all expected values are present"""
         expected_values = {"function_node", "function_node_data"}
-        actual_values = {member.value for member in EnumNodeUnionType}
+        actual_values = {
+            member.value for member in EnumNodeUnionType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

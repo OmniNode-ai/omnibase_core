@@ -11,7 +11,7 @@ import pytest
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_status import (
     EnumClaudeCodeSessionStatus,
 )
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @pytest.mark.unit
@@ -31,13 +31,13 @@ class TestEnumClaudeCodeSessionStatus:
         assert len(values) == 4
 
     def test_enum_inheritance(self):
-        """Test that enum inherits from StrValueHelper, str, and Enum."""
-        assert issubclass(EnumClaudeCodeSessionStatus, StrValueHelper)
+        """Test that enum inherits from UtilStrValueHelper, str, and Enum."""
+        assert issubclass(EnumClaudeCodeSessionStatus, UtilStrValueHelper)
         assert issubclass(EnumClaudeCodeSessionStatus, str)
         assert issubclass(EnumClaudeCodeSessionStatus, Enum)
 
     def test_str_value_helper_behavior(self):
-        """Test that StrValueHelper provides correct __str__ behavior."""
+        """Test that UtilStrValueHelper provides correct __str__ behavior."""
         # str() should return the value (snake_case)
         assert str(EnumClaudeCodeSessionStatus.ORPHAN) == "orphan"
         assert str(EnumClaudeCodeSessionStatus.ACTIVE) == "active"
@@ -62,11 +62,11 @@ class TestEnumClaudeCodeSessionStatus:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "orphan" in EnumClaudeCodeSessionStatus
-        assert "active" in EnumClaudeCodeSessionStatus
-        assert "ended" in EnumClaudeCodeSessionStatus
-        assert "timed_out" in EnumClaudeCodeSessionStatus
-        assert "invalid_status" not in EnumClaudeCodeSessionStatus
+        assert "orphan" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "active" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "ended" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "timed_out" in EnumClaudeCodeSessionStatus._value2member_map_
+        assert "invalid_status" not in EnumClaudeCodeSessionStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -112,7 +112,9 @@ class TestEnumClaudeCodeSessionStatus:
             "timed_out",
         }
 
-        actual_values = {member.value for member in EnumClaudeCodeSessionStatus}
+        actual_values = {
+            member.value for member in EnumClaudeCodeSessionStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -122,7 +124,9 @@ class TestEnumClaudeCodeSessionStatus:
 
     def test_enum_uniqueness(self):
         """Test that enum values are unique (enforced by @unique decorator)."""
-        values = [member.value for member in EnumClaudeCodeSessionStatus]
+        values = [
+            member.value for member in EnumClaudeCodeSessionStatus.__members__.values()
+        ]
         assert len(values) == len(set(values))
 
 
@@ -157,7 +161,9 @@ class TestIsTerminal:
     def test_terminal_status_count(self):
         """Test that exactly 2 statuses are terminal."""
         terminal_count = sum(
-            1 for status in EnumClaudeCodeSessionStatus if status.is_terminal()
+            1
+            for status in EnumClaudeCodeSessionStatus.__members__.values()
+            if status.is_terminal()
         )
         assert terminal_count == 2
 
@@ -186,7 +192,9 @@ class TestIsActive:
     def test_active_status_count(self):
         """Test that exactly 1 status is active."""
         active_count = sum(
-            1 for status in EnumClaudeCodeSessionStatus if status.is_active()
+            1
+            for status in EnumClaudeCodeSessionStatus.__members__.values()
+            if status.is_active()
         )
         assert active_count == 1
 
@@ -221,7 +229,7 @@ class TestStatusTransitions:
 
     def test_no_overlap_between_active_and_terminal(self):
         """Test that active and terminal categories are mutually exclusive."""
-        for status in EnumClaudeCodeSessionStatus:
+        for status in EnumClaudeCodeSessionStatus.__members__.values():
             is_active = status.is_active()
             is_terminal = status.is_terminal()
 
@@ -232,7 +240,7 @@ class TestStatusTransitions:
 
     def test_all_statuses_categorized(self):
         """Test that all statuses have defined behavior for both helper methods."""
-        for status in EnumClaudeCodeSessionStatus:
+        for status in EnumClaudeCodeSessionStatus.__members__.values():
             # Each status should return a boolean for both methods
             assert isinstance(status.is_active(), bool)
             assert isinstance(status.is_terminal(), bool)

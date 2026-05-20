@@ -107,7 +107,7 @@ from omnibase_core.types.typed_dict_path_resolution_context import (
 TraversableData = dict[str, object] | BaseModel | object
 
 
-class PathResolutionError(ModelOnexError):
+class UtilPathResolutionError(ModelOnexError):
     """
     Error raised when path resolution fails.
 
@@ -130,7 +130,7 @@ class PathResolutionError(ModelOnexError):
         available_keys: list[str] | None = None,
     ) -> None:
         """
-        Initialize a PathResolutionError.
+        Initialize a UtilPathResolutionError.
 
         Args:
             message: Human-readable error description
@@ -164,14 +164,14 @@ def _validate_path_start(path: str) -> None:
         path: The path expression to validate.
 
     Raises:
-        PathResolutionError: If path doesn't start with "$" (VALIDATION_ERROR).
+        UtilPathResolutionError: If path doesn't start with "$" (VALIDATION_ERROR).
 
     Example:
         >>> _validate_path_start("$.input.field")  # OK
-        >>> _validate_path_start("input.field")  # raises PathResolutionError
+        >>> _validate_path_start("input.field")  # raises UtilPathResolutionError
     """
     if not path.startswith("$"):
-        raise PathResolutionError(
+        raise UtilPathResolutionError(
             message=f"Invalid path: must start with '$', got '{path}'",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             path=path,
@@ -193,7 +193,7 @@ def _validate_private_attribute(part: str, path: str) -> None:
         path: The full path expression (for error context).
 
     Raises:
-        PathResolutionError: If part starts with "_" (VALIDATION_ERROR).
+        UtilPathResolutionError: If part starts with "_" (VALIDATION_ERROR).
 
     Note:
         This check is only applied when accessing object attributes,
@@ -204,7 +204,7 @@ def _validate_private_attribute(part: str, path: str) -> None:
         >>> _validate_private_attribute("_private", "$.user._private")  # raises
     """
     if part.startswith("_"):
-        raise PathResolutionError(
+        raise UtilPathResolutionError(
             message=f"Cannot access private attribute: '{part}'",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             path=path,
@@ -240,7 +240,7 @@ def _traverse_path_segments(
         The value found at the end of the path traversal.
 
     Raises:
-        PathResolutionError: If any segment cannot be resolved:
+        UtilPathResolutionError: If any segment cannot be resolved:
             - OPERATION_FAILED: Key or attribute not found
             - VALIDATION_ERROR: Attempted private attribute access (if check_private)
 
@@ -255,7 +255,7 @@ def _traverse_path_segments(
 
         if isinstance(current, dict):
             if part not in current:
-                raise PathResolutionError(
+                raise UtilPathResolutionError(
                     message=f"Path '{path}' not found: key '{part}' missing",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
                     path=path,
@@ -271,7 +271,7 @@ def _traverse_path_segments(
             if hasattr(current, part):
                 current = getattr(current, part)
             else:
-                raise PathResolutionError(
+                raise UtilPathResolutionError(
                     message=f"Path '{path}' not found: cannot access '{part}' on {type(current).__name__}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
                     path=path,
@@ -313,7 +313,7 @@ def resolve_path(
         The value found at the specified path.
 
     Raises:
-        PathResolutionError: If the path cannot be resolved:
+        UtilPathResolutionError: If the path cannot be resolved:
             - OPERATION_FAILED: Key or attribute not found
             - VALIDATION_ERROR: Attempted private attribute access
 
@@ -367,7 +367,7 @@ def resolve_input_path(
         The resolved value from the input data.
 
     Raises:
-        PathResolutionError: If the path cannot be resolved or is malformed.
+        UtilPathResolutionError: If the path cannot be resolved or is malformed.
 
     Example:
         >>> input_data = {"user": {"name": "Alice"}}
@@ -386,7 +386,7 @@ def resolve_input_path(
     elif path.startswith("$input."):
         remaining = path[7:]  # Remove "$input."
     else:
-        raise PathResolutionError(
+        raise UtilPathResolutionError(
             message=f"Invalid input path format: '{path}'. Expected '$.input' or '$.input.<field>'",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             path=path,
@@ -431,7 +431,7 @@ def resolve_step_path(
         The resolved step output value.
 
     Raises:
-        PathResolutionError: If the step is not found or path is malformed.
+        UtilPathResolutionError: If the step is not found or path is malformed.
 
     Example:
         >>> from dataclasses import dataclass
@@ -445,7 +445,7 @@ def resolve_step_path(
         'HELLO'
     """
     if not path.startswith("$.steps."):
-        raise PathResolutionError(
+        raise UtilPathResolutionError(
             message=f"Invalid step path format: '{path}'. Expected '$.steps.<step_name>'",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             path=path,
@@ -457,14 +457,14 @@ def resolve_step_path(
     step_name = parts[0]
 
     if not step_name:
-        raise PathResolutionError(
+        raise UtilPathResolutionError(
             message=f"Invalid step path: missing step name in '{path}'",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             path=path,
         )
 
     if step_name not in step_results:
-        raise PathResolutionError(
+        raise UtilPathResolutionError(
             message=f"Step '{step_name}' not found in executed steps",
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             path=path,
@@ -488,7 +488,7 @@ def resolve_step_path(
             return result.output
         return result
     else:
-        raise PathResolutionError(
+        raise UtilPathResolutionError(
             message=f"Invalid step path: only '.output' supported in v1.0, got '.{sub_path}'",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             path=path,
@@ -531,7 +531,7 @@ def resolve_pipeline_path(
         The resolved value. Type depends on the path target.
 
     Raises:
-        PathResolutionError: If the path is invalid or cannot be resolved.
+        UtilPathResolutionError: If the path is invalid or cannot be resolved.
 
     Example:
         >>> from dataclasses import dataclass
@@ -556,7 +556,7 @@ def resolve_pipeline_path(
         return resolve_step_path(path, step_results)
 
     # Invalid prefix
-    raise PathResolutionError(
+    raise UtilPathResolutionError(
         message=f"Invalid path prefix: '{path}'. Must be '$.input', '$input', or '$.steps.<name>'",
         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         path=path,
@@ -565,7 +565,7 @@ def resolve_pipeline_path(
 
 __all__ = [
     # Error type
-    "PathResolutionError",
+    "UtilPathResolutionError",
     # Core resolution functions
     "resolve_path",
     "resolve_input_path",

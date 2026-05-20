@@ -142,7 +142,7 @@ class TestEnumOverlayScope:
 
     def test_scope_values_are_strings(self) -> None:
         """Each scope value must be a lowercase string."""
-        for scope in EnumOverlayScope:
+        for scope in EnumOverlayScope.__members__.values():
             assert isinstance(scope.value, str)
             assert scope.value == scope.value.lower()
 

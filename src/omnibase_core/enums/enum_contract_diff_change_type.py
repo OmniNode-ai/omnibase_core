@@ -10,11 +10,11 @@ during semantic diffing operations.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumContractDiffChangeType(StrValueHelper, str, Enum):
+class EnumContractDiffChangeType(UtilStrValueHelper, str, Enum):
     """
     Types of changes detected during contract diff operations.
 

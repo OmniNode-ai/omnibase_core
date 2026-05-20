@@ -81,7 +81,7 @@ class TestEnumRegistryStatus:
 
     def test_enum_member_uniqueness(self):
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumRegistryStatus]
+        values = [member.value for member in EnumRegistryStatus.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -94,7 +94,9 @@ class TestEnumRegistryStatus:
             "initializing",
             "maintenance",
         }
-        actual_values = {member.value for member in EnumRegistryStatus}
+        actual_values = {
+            member.value for member in EnumRegistryStatus.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self):
@@ -104,8 +106,8 @@ class TestEnumRegistryStatus:
 
     def test_enum_in_operator(self):
         """Test that 'in' operator works with enum."""
-        assert EnumRegistryStatus.HEALTHY in EnumRegistryStatus
-        assert EnumRegistryStatus.MAINTENANCE in EnumRegistryStatus
+        assert EnumRegistryStatus.HEALTHY in EnumRegistryStatus.__members__.values()
+        assert EnumRegistryStatus.MAINTENANCE in EnumRegistryStatus.__members__.values()
 
     def test_enum_hash_consistency(self):
         """Test that enum members are hashable and consistent."""
@@ -205,7 +207,7 @@ class TestEnumRegistryStatus:
         """Test that enum values are JSON serializable."""
         import json
 
-        for member in EnumRegistryStatus:
+        for member in EnumRegistryStatus.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -238,7 +240,7 @@ class TestEnumRegistryStatusEdgeCases:
         """Test that enum members can be pickled and unpickled."""
         import pickle
 
-        for member in EnumRegistryStatus:
+        for member in EnumRegistryStatus.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member

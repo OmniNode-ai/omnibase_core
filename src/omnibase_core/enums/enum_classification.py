@@ -15,13 +15,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumClassification"]
 
 
 @unique
-class EnumClassification(StrValueHelper, str, Enum):
+class EnumClassification(UtilStrValueHelper, str, Enum):
     """Data classification level for policy bundle gates.
 
     Ordered from least to most sensitive. Classification gates

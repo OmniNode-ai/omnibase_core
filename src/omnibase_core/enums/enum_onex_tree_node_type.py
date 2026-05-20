@@ -7,11 +7,11 @@ Enum for OnexTreeNode types.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOnexTreeNodeType(StrValueHelper, str, Enum):
+class EnumOnexTreeNodeType(UtilStrValueHelper, str, Enum):
     """Type of an OnexTreeNode."""
 
     FILE = "file"

@@ -15,7 +15,7 @@ class TestEnumServiceLifecycle:
     """Test suite for EnumServiceLifecycle enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumServiceLifecycle.SINGLETON) == "singleton"
         assert str(EnumServiceLifecycle.TRANSIENT) == "transient"
         assert str(EnumServiceLifecycle.SCOPED) == "scoped"
@@ -34,7 +34,7 @@ class TestEnumServiceLifecycle:
 
     def test_all_members_exist(self) -> None:
         """Test that all expected enum members exist."""
-        values = [m.value for m in EnumServiceLifecycle]
+        values = [m.value for m in EnumServiceLifecycle.__members__.values()]
         assert "singleton" in values
         assert "transient" in values
         assert "scoped" in values
@@ -44,7 +44,7 @@ class TestEnumServiceLifecycle:
 
     def test_unique_values(self) -> None:
         """Test that all enum values are unique."""
-        values = [m.value for m in EnumServiceLifecycle]
+        values = [m.value for m in EnumServiceLifecycle.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_count(self) -> None:
@@ -78,9 +78,11 @@ class TestEnumServiceLifecycle:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumServiceLifecycle.SINGLETON in EnumServiceLifecycle
-        assert "singleton" in EnumServiceLifecycle
-        assert "invalid_lifecycle" not in EnumServiceLifecycle
+        assert (
+            EnumServiceLifecycle.SINGLETON in EnumServiceLifecycle.__members__.values()
+        )
+        assert "singleton" in EnumServiceLifecycle._value2member_map_
+        assert "invalid_lifecycle" not in EnumServiceLifecycle._value2member_map_
 
     def test_enum_deserialization(self) -> None:
         """Test enum deserialization from string."""

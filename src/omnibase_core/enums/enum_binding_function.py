@@ -10,11 +10,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumBindingFunction(StrValueHelper, str, Enum):
+class EnumBindingFunction(UtilStrValueHelper, str, Enum):
     """
     Allowed pipe functions in binding expressions.
 

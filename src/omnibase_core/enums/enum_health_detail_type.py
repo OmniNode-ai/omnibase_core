@@ -9,11 +9,11 @@ Canonical enum for health detail types used in component health monitoring.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumHealthDetailType(StrValueHelper, str, Enum):
+class EnumHealthDetailType(UtilStrValueHelper, str, Enum):
     """Canonical health detail types for component monitoring."""
 
     INFO = "info"

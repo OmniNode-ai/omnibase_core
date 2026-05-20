@@ -9,11 +9,11 @@ Type of condition evaluation for workflow conditions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumConditionType(StrValueHelper, str, Enum):
+class EnumConditionType(UtilStrValueHelper, str, Enum):
     """Type of condition evaluation."""
 
     WORKFLOW_STATE = "workflow_state"

@@ -38,13 +38,16 @@ class TestEnumOnexTreeNodeType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumOnexTreeNodeType.FILE in EnumOnexTreeNodeType
-        assert "file" in EnumOnexTreeNodeType
-        assert "invalid_value" not in EnumOnexTreeNodeType
+        assert EnumOnexTreeNodeType.FILE in EnumOnexTreeNodeType.__members__.values()
+        assert "file" in EnumOnexTreeNodeType._value2member_map_
+        assert "invalid_value" not in EnumOnexTreeNodeType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumOnexTreeNodeType.FILE == EnumOnexTreeNodeType.FILE
+        assert (
+            type(EnumOnexTreeNodeType.FILE)(EnumOnexTreeNodeType.FILE.value)
+            is EnumOnexTreeNodeType.FILE
+        )
         assert EnumOnexTreeNodeType.DIRECTORY != EnumOnexTreeNodeType.FILE
         assert EnumOnexTreeNodeType.FILE == "file"
 
@@ -69,7 +72,9 @@ class TestEnumOnexTreeNodeType:
     def test_enum_all_values(self):
         """Test that all expected values are present"""
         expected_values = {"file", "directory"}
-        actual_values = {member.value for member in EnumOnexTreeNodeType}
+        actual_values = {
+            member.value for member in EnumOnexTreeNodeType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

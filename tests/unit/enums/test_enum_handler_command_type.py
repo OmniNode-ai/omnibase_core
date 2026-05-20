@@ -74,17 +74,19 @@ class TestEnumHandlerCommandType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "execute" in EnumHandlerCommandType
-        assert "validate" in EnumHandlerCommandType
-        assert "dry_run" in EnumHandlerCommandType
-        assert "rollback" in EnumHandlerCommandType
-        assert "health_check" in EnumHandlerCommandType
-        assert "describe" in EnumHandlerCommandType
-        assert "configure" in EnumHandlerCommandType
-        assert "reset" in EnumHandlerCommandType
+        assert "execute" in EnumHandlerCommandType._value2member_map_
+        assert "validate" in EnumHandlerCommandType._value2member_map_
+        assert "dry_run" in EnumHandlerCommandType._value2member_map_
+        assert "rollback" in EnumHandlerCommandType._value2member_map_
+        assert "health_check" in EnumHandlerCommandType._value2member_map_
+        assert "describe" in EnumHandlerCommandType._value2member_map_
+        assert "configure" in EnumHandlerCommandType._value2member_map_
+        assert "reset" in EnumHandlerCommandType._value2member_map_
         # Invalid values
-        assert "invalid" not in EnumHandlerCommandType
-        assert "EXECUTE" not in EnumHandlerCommandType  # Case sensitive
+        assert "invalid" not in EnumHandlerCommandType._value2member_map_
+        assert (
+            "EXECUTE" not in EnumHandlerCommandType.__members__.values()
+        )  # Case sensitive
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -133,7 +135,7 @@ class TestEnumHandlerCommandType:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [cmd.value for cmd in EnumHandlerCommandType]
+        all_values = [cmd.value for cmd in EnumHandlerCommandType.__members__.values()]
         expected_values = [
             "execute",
             "validate",
@@ -213,7 +215,7 @@ class TestEnumHandlerCommandTypeCategories:
             EnumHandlerCommandType.DRY_RUN,
         }
         for cmd in primary_commands:
-            assert cmd in EnumHandlerCommandType
+            assert cmd in EnumHandlerCommandType.__members__.values()
 
     def test_validation_commands(self):
         """Test validation command types."""
@@ -222,7 +224,7 @@ class TestEnumHandlerCommandTypeCategories:
             EnumHandlerCommandType.HEALTH_CHECK,
         }
         for cmd in validation_commands:
-            assert cmd in EnumHandlerCommandType
+            assert cmd in EnumHandlerCommandType.__members__.values()
 
     def test_state_management_commands(self):
         """Test state management command types."""
@@ -232,7 +234,7 @@ class TestEnumHandlerCommandTypeCategories:
             EnumHandlerCommandType.CONFIGURE,
         }
         for cmd in state_commands:
-            assert cmd in EnumHandlerCommandType
+            assert cmd in EnumHandlerCommandType.__members__.values()
 
     def test_introspection_commands(self):
         """Test introspection command types."""
@@ -240,7 +242,7 @@ class TestEnumHandlerCommandTypeCategories:
             EnumHandlerCommandType.DESCRIBE,
         }
         for cmd in introspection_commands:
-            assert cmd in EnumHandlerCommandType
+            assert cmd in EnumHandlerCommandType.__members__.values()
 
 
 @pytest.mark.unit
@@ -250,7 +252,7 @@ class TestEnumHandlerCommandTypeExhaustiveness:
     def test_exhaustive_match_coverage(self):
         """Test that all enum values can be matched exhaustively."""
         results = []
-        for cmd in EnumHandlerCommandType:
+        for cmd in EnumHandlerCommandType.__members__.values():
             match cmd:
                 case EnumHandlerCommandType.EXECUTE:
                     results.append("execute")
@@ -277,12 +279,12 @@ class TestEnumHandlerCommandTypeExhaustiveness:
 
     def test_all_values_are_unique(self):
         """Test that all enum values are unique (enforced by @unique decorator)."""
-        values = [cmd.value for cmd in EnumHandlerCommandType]
+        values = [cmd.value for cmd in EnumHandlerCommandType.__members__.values()]
         assert len(values) == len(set(values)), "Enum values must be unique"
 
     def test_all_names_are_unique(self):
         """Test that all enum names are unique."""
-        names = [cmd.name for cmd in EnumHandlerCommandType]
+        names = [cmd.name for cmd in EnumHandlerCommandType.__members__.values()]
         assert len(names) == len(set(names)), "Enum names must be unique"
 
 
@@ -362,7 +364,7 @@ class TestEnumHandlerCommandTypeSerialization:
 
     def test_yaml_serialization_all_values(self) -> None:
         """Test YAML serialization for all command types."""
-        for cmd in EnumHandlerCommandType:
+        for cmd in EnumHandlerCommandType.__members__.values():
             data = {"command": cmd.value}
             yaml_str = yaml.dump(data, default_flow_style=False)
             loaded = yaml.safe_load(yaml_str)
@@ -370,7 +372,7 @@ class TestEnumHandlerCommandTypeSerialization:
 
     def test_json_roundtrip_all_values(self) -> None:
         """Test JSON serialization roundtrip for all values."""
-        for cmd in EnumHandlerCommandType:
+        for cmd in EnumHandlerCommandType.__members__.values():
             serialized = json.dumps(cmd.value)
             deserialized = json.loads(serialized)
             reconstructed = EnumHandlerCommandType(deserialized)
@@ -378,7 +380,7 @@ class TestEnumHandlerCommandTypeSerialization:
 
     def test_pickle_serialization(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for cmd in EnumHandlerCommandType:
+        for cmd in EnumHandlerCommandType.__members__.values():
             pickled = pickle.dumps(cmd)
             unpickled = pickle.loads(pickled)
             assert unpickled == cmd
@@ -443,7 +445,7 @@ class TestEnumHandlerCommandTypeBehavior:
 
     def test_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for cmd in EnumHandlerCommandType:
+        for cmd in EnumHandlerCommandType.__members__.values():
             assert bool(cmd) is True
 
     def test_ordering_behavior(self) -> None:

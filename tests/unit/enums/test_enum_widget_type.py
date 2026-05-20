@@ -49,13 +49,13 @@ class TestEnumWidgetType:
 
     def test_data_bound_and_aggregation_mutually_exclusive(self) -> None:
         """Test that data_bound and aggregation are mutually exclusive."""
-        for widget_type in EnumWidgetType:
+        for widget_type in EnumWidgetType.__members__.values():
             # A widget should not be both data_bound and aggregation
             assert not (widget_type.is_data_bound and widget_type.is_aggregation)
 
     def test_string_conversion(self) -> None:
-        """Test string conversion and str enum behavior (str() returns value due to StrValueHelper mixin)."""
-        # str(enum) returns the value due to StrValueHelper mixin
+        """Test string conversion and str enum behavior (str() returns value due to UtilStrValueHelper mixin)."""
+        # str(enum) returns the value due to UtilStrValueHelper mixin
         assert str(EnumWidgetType.CHART) == "chart"
         assert str(EnumWidgetType.TABLE) == "table"
         assert str(EnumWidgetType.METRIC_CARD) == "metric_card"
@@ -105,22 +105,25 @@ class TestEnumWidgetType:
     def test_enum_membership(self) -> None:
         """Test membership testing."""
         # Enum member membership
-        assert EnumWidgetType.CHART in EnumWidgetType
+        assert EnumWidgetType.CHART in EnumWidgetType.__members__.values()
         # Value membership - check if string is a valid enum value
-        valid_values = {m.value for m in EnumWidgetType}
+        valid_values = {m.value for m in EnumWidgetType.__members__.values()}
         assert "chart" in valid_values
         assert "invalid_widget" not in valid_values
 
     def test_enum_comparison(self) -> None:
         """Test enum comparison."""
-        assert EnumWidgetType.CHART == EnumWidgetType.CHART
+        assert (
+            type(EnumWidgetType.CHART)(EnumWidgetType.CHART.value)
+            is EnumWidgetType.CHART
+        )
         assert EnumWidgetType.CHART != EnumWidgetType.TABLE
         assert EnumWidgetType.CHART == "chart"
 
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
         expected_values = {"chart", "table", "metric_card", "status_grid", "event_feed"}
-        actual_values = {member.value for member in EnumWidgetType}
+        actual_values = {member.value for member in EnumWidgetType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self) -> None:
@@ -132,7 +135,7 @@ class TestEnumWidgetType:
         """Test JSON serialization roundtrip."""
         import json
 
-        for widget_type in EnumWidgetType:
+        for widget_type in EnumWidgetType.__members__.values():
             # Serialize to JSON
             json_str = json.dumps(widget_type.value)
             # Deserialize from JSON

@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumUnavailableMode(StrValueHelper, str, Enum):
+class EnumUnavailableMode(UtilStrValueHelper, str, Enum):
     """
     How a skill presents itself when its scope is not satisfied.
 

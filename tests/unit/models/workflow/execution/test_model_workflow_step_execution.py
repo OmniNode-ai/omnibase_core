@@ -135,7 +135,7 @@ class TestModelWorkflowStepExecution:
 
     def test_all_execution_modes(self) -> None:
         """Test all valid execution modes."""
-        for mode in EnumExecutionMode:
+        for mode in EnumExecutionMode.__members__.values():
             step = ModelWorkflowStepExecution(
                 step_name="test",
                 execution_mode=mode,

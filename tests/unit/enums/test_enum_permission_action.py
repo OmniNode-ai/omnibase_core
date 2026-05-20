@@ -52,8 +52,8 @@ class TestEnumPermissionAction:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumPermissionAction.READ in EnumPermissionAction
-        assert "read" in [e.value for e in EnumPermissionAction]
+        assert EnumPermissionAction.READ in EnumPermissionAction.__members__.values()
+        assert "read" in [e.value for e in EnumPermissionAction.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -100,7 +100,7 @@ class TestEnumPermissionAction:
             "export",
             "import",
         }
-        actual_values = {e.value for e in EnumPermissionAction}
+        actual_values = {e.value for e in EnumPermissionAction.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -116,7 +116,10 @@ class TestEnumPermissionAction:
             EnumPermissionAction.UPDATE,
             EnumPermissionAction.DELETE,
         }
-        assert all(action in EnumPermissionAction for action in crud_actions)
+        assert all(
+            action in EnumPermissionAction.__members__.values()
+            for action in crud_actions
+        )
 
     def test_administrative_actions(self):
         """Test administrative actions."""
@@ -125,7 +128,10 @@ class TestEnumPermissionAction:
             EnumPermissionAction.APPROVE,
             EnumPermissionAction.DENY,
         }
-        assert all(action in EnumPermissionAction for action in admin_actions)
+        assert all(
+            action in EnumPermissionAction.__members__.values()
+            for action in admin_actions
+        )
 
     def test_data_actions(self):
         """Test data manipulation actions."""
@@ -134,7 +140,10 @@ class TestEnumPermissionAction:
             EnumPermissionAction.IMPORT,
             EnumPermissionAction.SHARE,
         }
-        assert all(action in EnumPermissionAction for action in data_actions)
+        assert all(
+            action in EnumPermissionAction.__members__.values()
+            for action in data_actions
+        )
 
     def test_viewing_actions(self):
         """Test viewing and editing actions."""
@@ -142,7 +151,10 @@ class TestEnumPermissionAction:
             EnumPermissionAction.VIEW,
             EnumPermissionAction.EDIT,
         }
-        assert all(action in EnumPermissionAction for action in view_actions)
+        assert all(
+            action in EnumPermissionAction.__members__.values()
+            for action in view_actions
+        )
 
     def test_action_semantic_grouping(self):
         """Test semantic grouping of all actions."""

@@ -200,16 +200,27 @@ class TestEnumAgentCapabilityIntegration:
     def test_enum_equality(self):
         """Test enum equality comparison."""
         assert (
-            EnumAgentCapability.CODE_GENERATION == EnumAgentCapability.CODE_GENERATION
+            type(EnumAgentCapability.CODE_GENERATION)(
+                EnumAgentCapability.CODE_GENERATION.value
+            )
+            is EnumAgentCapability.CODE_GENERATION
         )
         assert EnumAgentCapability.REASONING != EnumAgentCapability.DOCUMENTATION
-        assert EnumAgentCapability.MULTIMODAL == EnumAgentCapability.MULTIMODAL
+        assert (
+            type(EnumAgentCapability.MULTIMODAL)(EnumAgentCapability.MULTIMODAL.value)
+            is EnumAgentCapability.MULTIMODAL
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        assert EnumAgentCapability.CODE_GENERATION in EnumAgentCapability
-        assert EnumAgentCapability.REASONING in EnumAgentCapability
-        assert EnumAgentCapability.MULTIMODAL in EnumAgentCapability
+        assert (
+            EnumAgentCapability.CODE_GENERATION
+            in EnumAgentCapability.__members__.values()
+        )
+        assert EnumAgentCapability.REASONING in EnumAgentCapability.__members__.values()
+        assert (
+            EnumAgentCapability.MULTIMODAL in EnumAgentCapability.__members__.values()
+        )
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -305,7 +316,9 @@ class TestEnumAgentCapabilityEdgeCases:
 
     def test_all_code_capabilities_have_code_prefix(self):
         """Test that all code-related capabilities have 'code_' prefix."""
-        code_related = [c for c in EnumAgentCapability if c.is_code_related()]
+        code_related = [
+            c for c in EnumAgentCapability.__members__.values() if c.is_code_related()
+        ]
 
         for capability in code_related:
             assert capability.value.startswith("code_"), (
@@ -333,7 +346,9 @@ class TestEnumAgentCapabilityComprehensiveScenarios:
         """Test filtering capabilities based on model size requirements."""
         # Get capabilities suitable for small models
         small_model_capabilities = [
-            c for c in EnumAgentCapability if not c.requires_large_model()
+            c
+            for c in EnumAgentCapability.__members__.values()
+            if not c.requires_large_model()
         ]
 
         # Should have more small-model capabilities than large-model
@@ -350,7 +365,9 @@ class TestEnumAgentCapabilityComprehensiveScenarios:
     def test_capability_filtering_by_code_relation(self):
         """Test filtering capabilities based on code-relation."""
         # Get all code-related capabilities
-        code_capabilities = [c for c in EnumAgentCapability if c.is_code_related()]
+        code_capabilities = [
+            c for c in EnumAgentCapability.__members__.values() if c.is_code_related()
+        ]
 
         # Should have exactly 5 code-related capabilities
         assert len(code_capabilities) == 5
@@ -380,7 +397,7 @@ class TestEnumAgentCapabilityComprehensiveScenarios:
 
         # Verify all capabilities are valid
         for cap in senior_dev_agent_caps:
-            assert cap in EnumAgentCapability
+            assert cap in EnumAgentCapability.__members__.values()
 
         # Check characteristics of this profile
         code_related_count = sum(

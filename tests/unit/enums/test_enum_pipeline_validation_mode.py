@@ -15,7 +15,7 @@ class TestEnumPipelineValidationMode:
     """Test suite for EnumPipelineValidationMode enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumPipelineValidationMode.STRICT) == "strict"
         assert str(EnumPipelineValidationMode.LENIENT) == "lenient"
         assert str(EnumPipelineValidationMode.SMOKE) == "smoke"
@@ -32,7 +32,7 @@ class TestEnumPipelineValidationMode:
 
     def test_all_members_exist(self) -> None:
         """Test that all expected enum members exist."""
-        values = [m.value for m in EnumPipelineValidationMode]
+        values = [m.value for m in EnumPipelineValidationMode.__members__.values()]
         assert "strict" in values
         assert "lenient" in values
         assert "smoke" in values
@@ -41,7 +41,7 @@ class TestEnumPipelineValidationMode:
 
     def test_unique_values(self) -> None:
         """Test that all enum values are unique."""
-        values = [m.value for m in EnumPipelineValidationMode]
+        values = [m.value for m in EnumPipelineValidationMode.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_count(self) -> None:
@@ -74,9 +74,12 @@ class TestEnumPipelineValidationMode:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumPipelineValidationMode.STRICT in EnumPipelineValidationMode
-        assert "strict" in EnumPipelineValidationMode
-        assert "invalid_mode" not in EnumPipelineValidationMode
+        assert (
+            EnumPipelineValidationMode.STRICT
+            in EnumPipelineValidationMode.__members__.values()
+        )
+        assert "strict" in EnumPipelineValidationMode._value2member_map_
+        assert "invalid_mode" not in EnumPipelineValidationMode._value2member_map_
 
     def test_enum_deserialization(self) -> None:
         """Test enum deserialization from string."""

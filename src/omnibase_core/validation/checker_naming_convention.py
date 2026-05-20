@@ -601,6 +601,11 @@ Examples:
         action="store_true",
         help="Print progress for each file checked",
     )
+    parser.add_argument(
+        "--warning-mode",
+        action="store_true",
+        help="Report naming violations without failing the process.",
+    )
 
     args = parser.parse_args()
 
@@ -629,6 +634,9 @@ Examples:
         logger.warning("Found %d naming convention violation(s):", len(errors))
         for error in sorted(errors):
             logger.warning("  %s", error)
+        if args.warning_mode:
+            logger.warning("Warning mode enabled; not failing on violations.")
+            return 0
         return 1
 
     logger.info("All files conform to naming conventions!")

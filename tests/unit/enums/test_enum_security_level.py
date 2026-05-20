@@ -44,8 +44,8 @@ class TestEnumSecurityLevel:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumSecurityLevel.ENTERPRISE in EnumSecurityLevel
-        assert "enterprise" in [e.value for e in EnumSecurityLevel]
+        assert EnumSecurityLevel.ENTERPRISE in EnumSecurityLevel.__members__.values()
+        assert "enterprise" in [e.value for e in EnumSecurityLevel.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -86,7 +86,7 @@ class TestEnumSecurityLevel:
             "enterprise",
             "not_recommended",
         }
-        actual_values = {e.value for e in EnumSecurityLevel}
+        actual_values = {e.value for e in EnumSecurityLevel.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -101,7 +101,9 @@ class TestEnumSecurityLevel:
             EnumSecurityLevel.ENTERPRISE,
             EnumSecurityLevel.MEDIUM,
         }
-        assert all(level in EnumSecurityLevel for level in recommended)
+        assert all(
+            level in EnumSecurityLevel.__members__.values() for level in recommended
+        )
 
     def test_development_security_levels(self):
         """Test development-specific security levels."""
@@ -109,12 +111,16 @@ class TestEnumSecurityLevel:
             EnumSecurityLevel.BASIC,
             EnumSecurityLevel.DEVELOPMENT_ONLY,
         }
-        assert all(level in EnumSecurityLevel for level in development)
+        assert all(
+            level in EnumSecurityLevel.__members__.values() for level in development
+        )
 
     def test_discouraged_security_levels(self):
         """Test discouraged security levels."""
         discouraged = {EnumSecurityLevel.NOT_RECOMMENDED}
-        assert all(level in EnumSecurityLevel for level in discouraged)
+        assert all(
+            level in EnumSecurityLevel.__members__.values() for level in discouraged
+        )
 
     def test_all_security_levels_categorized(self):
         """Test that all security levels are properly categorized."""
@@ -146,4 +152,6 @@ class TestEnumSecurityLevel:
             EnumSecurityLevel.PRODUCTION,
             EnumSecurityLevel.ENTERPRISE,
         ]
-        assert all(level in EnumSecurityLevel for level in progression)
+        assert all(
+            level in EnumSecurityLevel.__members__.values() for level in progression
+        )

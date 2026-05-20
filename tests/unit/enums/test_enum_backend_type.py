@@ -111,7 +111,7 @@ class TestEnumBackendType:
 
     def test_enum_uniqueness(self) -> None:
         """Test that all enum values are unique."""
-        values = [e.value for e in EnumBackendType]
+        values = [e.value for e in EnumBackendType.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_comparison(self) -> None:
@@ -138,5 +138,5 @@ class TestEnumBackendType:
 
     def test_enum_membership(self) -> None:
         """Test enum membership checks."""
-        assert "environment" in [e.value for e in EnumBackendType]
-        assert "invalid" not in [e.value for e in EnumBackendType]
+        assert "environment" in [e.value for e in EnumBackendType.__members__.values()]
+        assert "invalid" not in [e.value for e in EnumBackendType.__members__.values()]

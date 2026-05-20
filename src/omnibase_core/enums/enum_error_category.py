@@ -9,11 +9,11 @@ Categorizes errors by type to enable appropriate retry and recovery strategies.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumErrorCategory(StrValueHelper, str, Enum):
+class EnumErrorCategory(UtilStrValueHelper, str, Enum):
     """Error categories for task queue operations."""
 
     TRANSIENT = "transient"

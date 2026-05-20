@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 # Module-level constant for numeric severity levels (avoids per-call dict allocation)
 # Uses ascending numeric scale (higher = more severe) for comparison operations.
@@ -50,7 +50,7 @@ _SEVERITY_LEVEL_NUMERIC_MAP: dict[str, int] = {
 
 
 @unique
-class EnumSeverityLevel(StrValueHelper, str, Enum):
+class EnumSeverityLevel(UtilStrValueHelper, str, Enum):
     """
     Strongly typed severity level for messages and logging.
 

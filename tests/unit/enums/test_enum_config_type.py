@@ -280,15 +280,21 @@ class TestEnumConfigTypeIntegration:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumConfigType.NODE_CONFIG == EnumConfigType.NODE_CONFIG
+        assert (
+            type(EnumConfigType.NODE_CONFIG)(EnumConfigType.NODE_CONFIG.value)
+            is EnumConfigType.NODE_CONFIG
+        )
         assert EnumConfigType.LOGGING_CONFIG != EnumConfigType.METRICS_CONFIG
-        assert EnumConfigType.TEMPLATE_CONFIG == EnumConfigType.TEMPLATE_CONFIG
+        assert (
+            type(EnumConfigType.TEMPLATE_CONFIG)(EnumConfigType.TEMPLATE_CONFIG.value)
+            is EnumConfigType.TEMPLATE_CONFIG
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        assert EnumConfigType.NODE_CONFIG in EnumConfigType
-        assert EnumConfigType.LOGGING_CONFIG in EnumConfigType
-        assert EnumConfigType.DEVELOPMENT_CONFIG in EnumConfigType
+        assert EnumConfigType.NODE_CONFIG in EnumConfigType.__members__.values()
+        assert EnumConfigType.LOGGING_CONFIG in EnumConfigType.__members__.values()
+        assert EnumConfigType.DEVELOPMENT_CONFIG in EnumConfigType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -367,7 +373,7 @@ class TestEnumConfigTypeEdgeCases:
     def test_unique_decorator_enforcement(self):
         """Test that @unique decorator prevents duplicate values."""
         # Get all enum values
-        values = [ct.value for ct in EnumConfigType]
+        values = [ct.value for ct in EnumConfigType.__members__.values()]
 
         # All values should be unique (no duplicates)
         assert len(values) == len(set(values))
@@ -397,14 +403,18 @@ class TestEnumConfigTypeComprehensiveScenarios:
         """Test routing configs based on their category."""
         # Simulate routing different config types
         core_configs = [
-            ct for ct in EnumConfigType if EnumConfigType.is_core_config(ct)
+            ct
+            for ct in EnumConfigType.__members__.values()
+            if EnumConfigType.is_core_config(ct)
         ]
         assert len(core_configs) == 5
         assert EnumConfigType.NODE_CONFIG in core_configs
         assert EnumConfigType.DATABASE_CONFIG in core_configs
 
         infra_configs = [
-            ct for ct in EnumConfigType if EnumConfigType.is_infrastructure_config(ct)
+            ct
+            for ct in EnumConfigType.__members__.values()
+            if EnumConfigType.is_infrastructure_config(ct)
         ]
         assert len(infra_configs) == 5
         assert EnumConfigType.LOGGING_CONFIG in infra_configs

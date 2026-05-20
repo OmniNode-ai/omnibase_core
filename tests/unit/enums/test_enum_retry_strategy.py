@@ -45,8 +45,13 @@ class TestEnumRetryStrategy:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumRetryStrategy.EXPONENTIAL_BACKOFF in EnumRetryStrategy
-        assert "exponential_backoff" in [e.value for e in EnumRetryStrategy]
+        assert (
+            EnumRetryStrategy.EXPONENTIAL_BACKOFF
+            in EnumRetryStrategy.__members__.values()
+        )
+        assert "exponential_backoff" in [
+            e.value for e in EnumRetryStrategy.__members__.values()
+        ]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -86,7 +91,7 @@ class TestEnumRetryStrategy:
             "circuit_breaker",
             "manual_intervention",
         }
-        actual_values = {e.value for e in EnumRetryStrategy}
+        actual_values = {e.value for e in EnumRetryStrategy.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -100,7 +105,7 @@ class TestEnumRetryStrategy:
             EnumRetryStrategy.NONE,
             EnumRetryStrategy.MANUAL_INTERVENTION,
         }
-        assert all(s in EnumRetryStrategy for s in no_retry)
+        assert all(s in EnumRetryStrategy.__members__.values() for s in no_retry)
 
     def test_automatic_retry_strategies(self):
         """Test automatic retry strategy group."""
@@ -109,12 +114,12 @@ class TestEnumRetryStrategy:
             EnumRetryStrategy.LINEAR_BACKOFF,
             EnumRetryStrategy.EXPONENTIAL_BACKOFF,
         }
-        assert all(s in EnumRetryStrategy for s in automatic_retry)
+        assert all(s in EnumRetryStrategy.__members__.values() for s in automatic_retry)
 
     def test_advanced_strategies(self):
         """Test advanced retry strategies."""
         advanced = {EnumRetryStrategy.CIRCUIT_BREAKER}
-        assert all(s in EnumRetryStrategy for s in advanced)
+        assert all(s in EnumRetryStrategy.__members__.values() for s in advanced)
 
     def test_all_strategies_categorized(self):
         """Test that all strategies are properly categorized."""

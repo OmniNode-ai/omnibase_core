@@ -66,8 +66,8 @@ class TestEnumToolType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumToolType.NODE_GENERATOR in EnumToolType
-        assert "NODE_GENERATOR" in [e.value for e in EnumToolType]
+        assert EnumToolType.NODE_GENERATOR in EnumToolType.__members__.values()
+        assert "NODE_GENERATOR" in [e.value for e in EnumToolType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -134,7 +134,7 @@ class TestEnumToolType:
             "scenario_runner",
             "FUNCTION",
         }
-        actual_values = {e.value for e in EnumToolType}
+        actual_values = {e.value for e in EnumToolType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -145,7 +145,7 @@ class TestEnumToolType:
     def test_enum_description_property(self):
         """Test description property for all tool types."""
         # Test that all tool types have descriptions
-        for tool_type in EnumToolType:
+        for tool_type in EnumToolType.__members__.values():
             description = tool_type.description
             assert isinstance(description, str)
             assert len(description) > 0
@@ -273,4 +273,4 @@ class TestEnumToolType:
 
         # All should be valid enum values
         for tool_type in dev_workflow | validation_workflow | discovery_workflow:
-            assert tool_type in EnumToolType
+            assert tool_type in EnumToolType.__members__.values()

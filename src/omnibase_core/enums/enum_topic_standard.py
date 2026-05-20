@@ -9,11 +9,11 @@ Enumeration of recognized topic naming standards for ONEX routing.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumTopicStandard(StrValueHelper, str, Enum):
+class EnumTopicStandard(UtilStrValueHelper, str, Enum):
     """
     Enumeration of recognized topic naming standards.
 

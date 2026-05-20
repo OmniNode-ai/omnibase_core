@@ -5,13 +5,13 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumEventSinkType"]
 
 
 @unique
-class EnumEventSinkType(StrValueHelper, str, Enum):
+class EnumEventSinkType(UtilStrValueHelper, str, Enum):
     """Event sink types for contract validation events.
 
     Types: MEMORY (in-memory), FILE (JSONL), KAFKA (streaming).

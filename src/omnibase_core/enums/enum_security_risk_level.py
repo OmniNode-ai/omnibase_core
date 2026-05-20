@@ -9,11 +9,11 @@ Strongly typed enumeration for security risk assessment levels.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumSecurityRiskLevel(StrValueHelper, str, Enum):
+class EnumSecurityRiskLevel(UtilStrValueHelper, str, Enum):
     """
     Security risk level classifications for security assessments.
 

@@ -9,11 +9,11 @@ Part of the contract registration subsystem (OMN-1651).
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDeregistrationReason(StrValueHelper, str, Enum):
+class EnumDeregistrationReason(UtilStrValueHelper, str, Enum):
     """Reasons for contract deregistration.
 
     Standard values for why a node deregisters its contract. These are used

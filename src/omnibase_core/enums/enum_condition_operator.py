@@ -9,11 +9,11 @@ Allowed operators for workflow condition evaluation.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumConditionOperator(StrValueHelper, str, Enum):
+class EnumConditionOperator(UtilStrValueHelper, str, Enum):
     """Allowed operators for workflow condition evaluation."""
 
     EQUALS = "equals"

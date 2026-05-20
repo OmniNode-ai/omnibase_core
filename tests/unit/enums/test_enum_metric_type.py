@@ -42,13 +42,16 @@ class TestEnumMetricType:
 
     def test_enum_membership(self):
         """Test membership testing"""
-        assert EnumMetricType.PERFORMANCE in EnumMetricType
-        assert "performance" in EnumMetricType
-        assert "invalid_value" not in EnumMetricType
+        assert EnumMetricType.PERFORMANCE in EnumMetricType.__members__.values()
+        assert "performance" in EnumMetricType._value2member_map_
+        assert "invalid_value" not in EnumMetricType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison"""
-        assert EnumMetricType.PERFORMANCE == EnumMetricType.PERFORMANCE
+        assert (
+            type(EnumMetricType.PERFORMANCE)(EnumMetricType.PERFORMANCE.value)
+            is EnumMetricType.PERFORMANCE
+        )
         assert EnumMetricType.SYSTEM != EnumMetricType.PERFORMANCE
         assert EnumMetricType.PERFORMANCE == "performance"
 
@@ -73,7 +76,7 @@ class TestEnumMetricType:
     def test_enum_all_values(self):
         """Test that all expected values are present"""
         expected_values = {"performance", "system", "business", "custom", "health"}
-        actual_values = {member.value for member in EnumMetricType}
+        actual_values = {member.value for member in EnumMetricType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):

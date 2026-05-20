@@ -9,11 +9,11 @@ Enumeration for discriminated union types in CLI execution input data value obje
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCliInputValueType(StrValueHelper, str, Enum):
+class EnumCliInputValueType(UtilStrValueHelper, str, Enum):
     """CLI input data value type enumeration."""
 
     STRING = "string"

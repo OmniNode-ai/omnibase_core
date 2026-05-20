@@ -462,19 +462,19 @@ class TestModelNodeCoreEdgeCases:
 
     def test_all_node_types(self):
         """Test creating nodes with all node types."""
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             node = ModelNodeCore(node_type=node_type)
             assert node.node_type == node_type
 
     def test_all_statuses(self):
         """Test creating nodes with all statuses."""
-        for status in EnumMetadataNodeStatus:
+        for status in EnumMetadataNodeStatus.__members__.values():
             node = ModelNodeCore(status=status)
             assert node.status == status
 
     def test_all_complexities(self):
         """Test creating nodes with all complexities."""
-        for complexity in EnumConceptualComplexity:
+        for complexity in EnumConceptualComplexity.__members__.values():
             node = ModelNodeCore(complexity=complexity)
             assert node.complexity == complexity
 

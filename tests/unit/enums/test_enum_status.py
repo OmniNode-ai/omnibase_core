@@ -75,8 +75,8 @@ class TestEnumStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumStatus.PROCESSING in EnumStatus
-        assert "processing" in [e.value for e in EnumStatus]
+        assert EnumStatus.PROCESSING in EnumStatus.__members__.values()
+        assert "processing" in [e.value for e in EnumStatus.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -137,7 +137,7 @@ class TestEnumStatus:
             "disabled",
             "suspended",
         }
-        actual_values = {e.value for e in EnumStatus}
+        actual_values = {e.value for e in EnumStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -205,10 +205,18 @@ class TestEnumStatus:
         all_statuses = set(EnumStatus)
 
         # Get statuses categorized by each method
-        active_statuses = {e for e in EnumStatus if e.is_active_state()}
-        terminal_statuses = {e for e in EnumStatus if e.is_terminal_state()}
-        error_statuses = {e for e in EnumStatus if e.is_error_state()}
-        pending_statuses = {e for e in EnumStatus if e.is_pending_state()}
+        active_statuses = {
+            e for e in EnumStatus.__members__.values() if e.is_active_state()
+        }
+        terminal_statuses = {
+            e for e in EnumStatus.__members__.values() if e.is_terminal_state()
+        }
+        error_statuses = {
+            e for e in EnumStatus.__members__.values() if e.is_error_state()
+        }
+        pending_statuses = {
+            e for e in EnumStatus.__members__.values() if e.is_pending_state()
+        }
 
         # All statuses should be categorized by at least one method
         categorized_statuses = (
@@ -289,7 +297,7 @@ class TestEnumStatus:
 
         # All workflow states should be valid
         for state in workflow_states:
-            assert state in EnumStatus
+            assert state in EnumStatus.__members__.values()
 
     def test_status_state_transitions(self):
         """Test logical state transitions."""

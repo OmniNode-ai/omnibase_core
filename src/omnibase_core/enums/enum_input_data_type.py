@@ -7,11 +7,11 @@ Input data type enum for discriminated union.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumInputDataType(StrValueHelper, str, Enum):
+class EnumInputDataType(UtilStrValueHelper, str, Enum):
     """Types of input data structures."""
 
     STRUCTURED = "structured"

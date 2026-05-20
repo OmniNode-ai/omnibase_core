@@ -41,8 +41,8 @@ class TestEnumFileStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumFileStatus.VALIDATED in EnumFileStatus
-        assert "validated" in [e.value for e in EnumFileStatus]
+        assert EnumFileStatus.VALIDATED in EnumFileStatus.__members__.values()
+        assert "validated" in [e.value for e in EnumFileStatus.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -84,7 +84,7 @@ class TestEnumFileStatus:
             "incomplete",
             "synthetic",
         }
-        actual_values = {e.value for e in EnumFileStatus}
+        actual_values = {e.value for e in EnumFileStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_member_names_are_upper_snake_case(self):
@@ -118,13 +118,15 @@ class TestEnumFileStatus:
 
         # Verify all members follow UPPER_SNAKE_CASE pattern
         upper_snake_case_pattern = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$")
-        for member in EnumFileStatus:
+        for member in EnumFileStatus.__members__.values():
             assert upper_snake_case_pattern.match(member.name), (
                 f"Member '{member.name}' does not follow UPPER_SNAKE_CASE convention"
             )
 
         # Verify no unexpected members were added
-        actual_member_names = {member.name for member in EnumFileStatus}
+        actual_member_names = {
+            member.name for member in EnumFileStatus.__members__.values()
+        }
         expected_member_names = set(expected_members.keys())
         assert actual_member_names == expected_member_names, (
             f"Unexpected members found: {actual_member_names - expected_member_names}"
@@ -178,4 +180,4 @@ class TestEnumFileStatus:
 
         # All workflow states should be valid
         for state in workflow_states:
-            assert state in EnumFileStatus
+            assert state in EnumFileStatus.__members__.values()

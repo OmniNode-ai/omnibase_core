@@ -85,7 +85,7 @@ class TestEnumCliStatus:
 
     def test_enum_member_uniqueness(self):
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumCliStatus]
+        values = [member.value for member in EnumCliStatus.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -99,7 +99,7 @@ class TestEnumCliStatus:
             "cancelled",
             "timeout",
         }
-        actual_values = {member.value for member in EnumCliStatus}
+        actual_values = {member.value for member in EnumCliStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self):
@@ -109,8 +109,8 @@ class TestEnumCliStatus:
 
     def test_enum_in_operator(self):
         """Test that 'in' operator works with enum."""
-        assert EnumCliStatus.SUCCESS in EnumCliStatus
-        assert EnumCliStatus.FAILED in EnumCliStatus
+        assert EnumCliStatus.SUCCESS in EnumCliStatus.__members__.values()
+        assert EnumCliStatus.FAILED in EnumCliStatus.__members__.values()
 
         # Test that strings work with member values
         success_member = EnumCliStatus.SUCCESS
@@ -131,14 +131,14 @@ class TestEnumCliStatus:
 
     def test_enum_bool_evaluation(self):
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumCliStatus:
+        for member in EnumCliStatus.__members__.values():
             assert bool(member) is True
 
     def test_enum_serialization_json_compatible(self):
         """Test that enum values are JSON serializable."""
         import json
 
-        for member in EnumCliStatus:
+        for member in EnumCliStatus.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -227,7 +227,7 @@ class TestEnumCliStatusEdgeCases:
         """Test that enum members can be pickled and unpickled."""
         import pickle
 
-        for member in EnumCliStatus:
+        for member in EnumCliStatus.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member

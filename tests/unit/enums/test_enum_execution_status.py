@@ -196,9 +196,15 @@ class TestEnumExecutionStatus:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumExecutionStatus.SUCCESS == EnumExecutionStatus.SUCCESS
+        assert (
+            type(EnumExecutionStatus.SUCCESS)(EnumExecutionStatus.SUCCESS.value)
+            is EnumExecutionStatus.SUCCESS
+        )
         assert EnumExecutionStatus.FAILED != EnumExecutionStatus.SUCCESS
-        assert EnumExecutionStatus.RUNNING == EnumExecutionStatus.RUNNING
+        assert (
+            type(EnumExecutionStatus.RUNNING)(EnumExecutionStatus.RUNNING.value)
+            is EnumExecutionStatus.RUNNING
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""
@@ -215,7 +221,7 @@ class TestEnumExecutionStatus:
         ]
 
         for status in all_statuses:
-            assert status in EnumExecutionStatus
+            assert status in EnumExecutionStatus.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -286,7 +292,7 @@ class TestEnumExecutionStatus:
     def test_execution_lifecycle_logic(self):
         """Test execution lifecycle state transitions and logic."""
         # Test that active and terminal states are mutually exclusive
-        for status in EnumExecutionStatus:
+        for status in EnumExecutionStatus.__members__.values():
             is_active = EnumExecutionStatus.is_active(status)
             is_terminal = EnumExecutionStatus.is_terminal(status)
 
@@ -296,7 +302,7 @@ class TestEnumExecutionStatus:
             )
 
         # Test that all statuses are either active or terminal
-        for status in EnumExecutionStatus:
+        for status in EnumExecutionStatus.__members__.values():
             is_active = EnumExecutionStatus.is_active(status)
             is_terminal = EnumExecutionStatus.is_terminal(status)
 
@@ -308,7 +314,9 @@ class TestEnumExecutionStatus:
         """Test success status categorization logic."""
         # Successful statuses should be terminal
         successful_statuses = [
-            s for s in EnumExecutionStatus if EnumExecutionStatus.is_successful(s)
+            s
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_successful(s)
         ]
         for status in successful_statuses:
             assert EnumExecutionStatus.is_terminal(status) is True
@@ -419,7 +427,9 @@ class TestEnumExecutionStatus:
 
         # Test that terminal states have no valid transitions
         terminal_statuses = [
-            s for s in EnumExecutionStatus if EnumExecutionStatus.is_terminal(s)
+            s
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_terminal(s)
         ]
         for status in terminal_statuses:
             # Terminal statuses should not transition to other states
@@ -538,7 +548,7 @@ class TestEnumExecutionStatus:
         Every execution status must be either terminal or active, never both.
         This is a fundamental invariant of execution lifecycle semantics.
         """
-        for status in EnumExecutionStatus:
+        for status in EnumExecutionStatus.__members__.values():
             is_terminal = EnumExecutionStatus.is_terminal(status)
             is_active = EnumExecutionStatus.is_active(status)
 
@@ -555,10 +565,14 @@ class TestEnumExecutionStatus:
         This ensures no status values are left uncategorized.
         """
         terminal_count = sum(
-            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_terminal(s)
+            1
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_terminal(s)
         )
         active_count = sum(
-            1 for s in EnumExecutionStatus if EnumExecutionStatus.is_active(s)
+            1
+            for s in EnumExecutionStatus.__members__.values()
+            if EnumExecutionStatus.is_active(s)
         )
 
         # All statuses should be accounted for
@@ -575,7 +589,7 @@ class TestEnumExecutionStatus:
 
         Ensures str(enum) -> Enum(str) works for every value.
         """
-        for status in EnumExecutionStatus:
+        for status in EnumExecutionStatus.__members__.values():
             # String roundtrip
             serialized = str(status)
             deserialized = EnumExecutionStatus(serialized)
@@ -643,7 +657,7 @@ class TestEnumExecutionStatus:
             EnumExecutionStatus.TIMEOUT,
         }
 
-        for status in EnumExecutionStatus:
+        for status in EnumExecutionStatus.__members__.values():
             expected = status in failure_statuses
             assert EnumExecutionStatus.is_failure(status) == expected, (
                 f"is_failure() mismatch for {status}: "
@@ -655,7 +669,7 @@ class TestEnumExecutionStatus:
 
         Verifies that only PARTIAL returns True.
         """
-        for status in EnumExecutionStatus:
+        for status in EnumExecutionStatus.__members__.values():
             expected = status == EnumExecutionStatus.PARTIAL
             assert EnumExecutionStatus.is_partial(status) == expected, (
                 f"is_partial() mismatch for {status}: "

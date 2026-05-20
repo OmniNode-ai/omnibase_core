@@ -76,7 +76,7 @@ class TestEnumValidationPhaseSerialization:
 
     def test_enum_serialization_json_compatible(self) -> None:
         """Test that enum values are JSON serializable."""
-        for member in EnumValidationPhase:
+        for member in EnumValidationPhase.__members__.values():
             # Should be able to serialize the value
             serialized = json.dumps(member.value)
             deserialized = json.loads(serialized)
@@ -123,7 +123,7 @@ class TestEnumValidationPhaseBehavior:
 
     def test_enum_member_uniqueness(self) -> None:
         """Test that all enum members have unique values."""
-        values = [member.value for member in EnumValidationPhase]
+        values = [member.value for member in EnumValidationPhase.__members__.values()]
         unique_values = set(values)
         assert len(values) == len(unique_values), "Enum members must have unique values"
 
@@ -134,7 +134,9 @@ class TestEnumValidationPhaseBehavior:
             "merge",
             "expanded",
         }
-        actual_values = {member.value for member in EnumValidationPhase}
+        actual_values = {
+            member.value for member in EnumValidationPhase.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_invalid_enum_value_raises_error(self) -> None:
@@ -144,9 +146,9 @@ class TestEnumValidationPhaseBehavior:
 
     def test_enum_in_operator(self) -> None:
         """Test that 'in' operator works with enum."""
-        assert EnumValidationPhase.PATCH in EnumValidationPhase
-        assert EnumValidationPhase.MERGE in EnumValidationPhase
-        assert EnumValidationPhase.EXPANDED in EnumValidationPhase
+        assert EnumValidationPhase.PATCH in EnumValidationPhase.__members__.values()
+        assert EnumValidationPhase.MERGE in EnumValidationPhase.__members__.values()
+        assert EnumValidationPhase.EXPANDED in EnumValidationPhase.__members__.values()
 
     def test_enum_hash_consistency(self) -> None:
         """Test that enum members are hashable and consistent."""
@@ -166,7 +168,7 @@ class TestEnumValidationPhaseBehavior:
 
     def test_enum_bool_evaluation(self) -> None:
         """Test that all enum members evaluate to True in boolean context."""
-        for member in EnumValidationPhase:
+        for member in EnumValidationPhase.__members__.values():
             assert bool(member) is True
 
     def test_enum_case_sensitivity(self) -> None:
@@ -208,7 +210,7 @@ class TestEnumValidationPhaseEdgeCases:
 
     def test_enum_pickling(self) -> None:
         """Test that enum members can be pickled and unpickled."""
-        for member in EnumValidationPhase:
+        for member in EnumValidationPhase.__members__.values():
             pickled = pickle.dumps(member)
             unpickled = pickle.loads(pickled)
             assert unpickled == member

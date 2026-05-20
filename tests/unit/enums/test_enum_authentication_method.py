@@ -55,8 +55,12 @@ class TestEnumAuthenticationMethod:
 
     def test_enum_membership_check(self) -> None:
         """Test membership checks."""
-        assert "basic" in [e.value for e in EnumAuthenticationMethod]
-        assert "invalid" not in [e.value for e in EnumAuthenticationMethod]
+        assert "basic" in [
+            e.value for e in EnumAuthenticationMethod.__members__.values()
+        ]
+        assert "invalid" not in [
+            e.value for e in EnumAuthenticationMethod.__members__.values()
+        ]
 
     def test_enum_string_representation(self) -> None:
         """Test string representation."""
@@ -71,5 +75,5 @@ class TestEnumAuthenticationMethod:
 
     def test_enum_value_uniqueness(self) -> None:
         """Test that all enum values are unique."""
-        values = [e.value for e in EnumAuthenticationMethod]
+        values = [e.value for e in EnumAuthenticationMethod.__members__.values()]
         assert len(values) == len(set(values))

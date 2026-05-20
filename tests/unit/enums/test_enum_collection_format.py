@@ -243,16 +243,19 @@ class TestEnumCollectionFormat:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumCollectionFormat.JSON == EnumCollectionFormat.JSON
+        assert (
+            type(EnumCollectionFormat.JSON)(EnumCollectionFormat.JSON.value)
+            is EnumCollectionFormat.JSON
+        )
         assert EnumCollectionFormat.JSON != EnumCollectionFormat.YAML
         assert EnumCollectionFormat.JSON == "json"
         assert EnumCollectionFormat.CSV != "json"
 
     def test_enum_membership(self):
         """Test enum membership checks."""
-        assert EnumCollectionFormat.JSON in EnumCollectionFormat
-        assert EnumCollectionFormat.CSV in EnumCollectionFormat
-        assert EnumCollectionFormat.BINARY in EnumCollectionFormat
+        assert EnumCollectionFormat.JSON in EnumCollectionFormat.__members__.values()
+        assert EnumCollectionFormat.CSV in EnumCollectionFormat.__members__.values()
+        assert EnumCollectionFormat.BINARY in EnumCollectionFormat.__members__.values()
 
     def test_enum_iteration(self):
         """Test iteration over enum values."""
@@ -287,7 +290,7 @@ class TestEnumCollectionFormat:
 
     def test_enum_uniqueness(self):
         """Test that all enum values are unique."""
-        values = [fmt.value for fmt in EnumCollectionFormat]
+        values = [fmt.value for fmt in EnumCollectionFormat.__members__.values()]
         assert len(values) == len(set(values))
 
 
@@ -357,7 +360,7 @@ class TestEnumCollectionFormatEdgeCases:
 
     def test_all_formats_have_extensions(self):
         """Test that all formats can return an extension."""
-        for fmt in EnumCollectionFormat:
+        for fmt in EnumCollectionFormat.__members__.values():
             extension = EnumCollectionFormat.get_default_extension(fmt)
             assert isinstance(extension, str)
             assert extension.startswith(".")
@@ -365,7 +368,7 @@ class TestEnumCollectionFormatEdgeCases:
 
     def test_all_formats_have_mime_types(self):
         """Test that all formats can return a MIME type."""
-        for fmt in EnumCollectionFormat:
+        for fmt in EnumCollectionFormat.__members__.values():
             mime_type = EnumCollectionFormat.get_mime_type(fmt)
             assert isinstance(mime_type, str)
             assert "/" in mime_type

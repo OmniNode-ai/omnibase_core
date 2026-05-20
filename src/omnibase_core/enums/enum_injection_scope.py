@@ -9,13 +9,13 @@ Defines injection scope patterns for dependency injection containers.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumInjectionScope"]
 
 
 @unique
-class EnumInjectionScope(StrValueHelper, str, Enum):
+class EnumInjectionScope(UtilStrValueHelper, str, Enum):
     """Injection scope patterns for DI container.
 
     Defines the scope boundaries within which service instances

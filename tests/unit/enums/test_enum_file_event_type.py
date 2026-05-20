@@ -60,14 +60,14 @@ class TestEnumFileEventType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "created" in EnumFileEventType
-        assert "modified" in EnumFileEventType
-        assert "deleted" in EnumFileEventType
-        assert "moved" in EnumFileEventType
-        assert "renamed" in EnumFileEventType
-        assert "permission_changed" in EnumFileEventType
-        assert "attribute_changed" in EnumFileEventType
-        assert "invalid" not in EnumFileEventType
+        assert "created" in EnumFileEventType._value2member_map_
+        assert "modified" in EnumFileEventType._value2member_map_
+        assert "deleted" in EnumFileEventType._value2member_map_
+        assert "moved" in EnumFileEventType._value2member_map_
+        assert "renamed" in EnumFileEventType._value2member_map_
+        assert "permission_changed" in EnumFileEventType._value2member_map_
+        assert "attribute_changed" in EnumFileEventType._value2member_map_
+        assert "invalid" not in EnumFileEventType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -112,7 +112,9 @@ class TestEnumFileEventType:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [event_type.value for event_type in EnumFileEventType]
+        all_values = [
+            event_type.value for event_type in EnumFileEventType.__members__.values()
+        ]
         expected_values = [
             "created",
             "modified",

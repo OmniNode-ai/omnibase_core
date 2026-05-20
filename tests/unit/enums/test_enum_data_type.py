@@ -117,20 +117,20 @@ class TestEnumDataType:
     def test_data_type_categorization_logic(self):
         """Test comprehensive data type categorization logic."""
         # All schema-supporting types should be structured
-        for data_type in EnumDataType:
+        for data_type in EnumDataType.__members__.values():
             if EnumDataType.supports_schema(data_type):
                 assert EnumDataType.is_structured(data_type) is True
 
         # All structured types should be text-based (in this enum)
-        for data_type in EnumDataType:
+        for data_type in EnumDataType.__members__.values():
             if EnumDataType.is_structured(data_type):
                 assert EnumDataType.is_text_based(data_type) is True
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumDataType.JSON == EnumDataType.JSON
+        assert type(EnumDataType.JSON)(EnumDataType.JSON.value) is EnumDataType.JSON
         assert EnumDataType.XML != EnumDataType.JSON
-        assert EnumDataType.YAML == EnumDataType.YAML
+        assert type(EnumDataType.YAML)(EnumDataType.YAML.value) is EnumDataType.YAML
 
     def test_enum_membership(self):
         """Test enum membership checking."""
@@ -144,7 +144,7 @@ class TestEnumDataType:
         ]
 
         for data_type in all_data_types:
-            assert data_type in EnumDataType
+            assert data_type in EnumDataType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

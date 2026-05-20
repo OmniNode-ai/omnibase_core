@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumInterfaceKind(StrValueHelper, str, Enum):
+class EnumInterfaceKind(UtilStrValueHelper, str, Enum):
     """Classification of interface types in contract boundaries."""
 
     PROTOCOL = "protocol"

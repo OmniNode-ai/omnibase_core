@@ -45,8 +45,8 @@ class TestEnumComplexity:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "simple" in EnumComplexity
-        assert "invalid_complexity" not in EnumComplexity
+        assert "simple" in EnumComplexity._value2member_map_
+        assert "invalid_complexity" not in EnumComplexity._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -83,7 +83,7 @@ class TestEnumComplexity:
         """Test that all expected values are present."""
         expected_values = {"simple", "moderate", "complex", "very_complex"}
 
-        actual_values = {member.value for member in EnumComplexity}
+        actual_values = {member.value for member in EnumComplexity.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -131,9 +131,9 @@ class TestEnumComplexity:
     def test_enum_complexity_levels(self):
         """Test that enum covers typical complexity levels."""
         # Test basic complexity levels
-        assert EnumComplexity.SIMPLE in EnumComplexity
-        assert EnumComplexity.MODERATE in EnumComplexity
+        assert EnumComplexity.SIMPLE in EnumComplexity.__members__.values()
+        assert EnumComplexity.MODERATE in EnumComplexity.__members__.values()
 
         # Test advanced complexity levels
-        assert EnumComplexity.COMPLEX in EnumComplexity
-        assert EnumComplexity.VERY_COMPLEX in EnumComplexity
+        assert EnumComplexity.COMPLEX in EnumComplexity.__members__.values()
+        assert EnumComplexity.VERY_COMPLEX in EnumComplexity.__members__.values()

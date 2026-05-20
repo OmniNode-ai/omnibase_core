@@ -51,8 +51,8 @@ class TestEnumServiceType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumServiceType.POSTGRESQL in EnumServiceType
-        assert "postgresql" in [e.value for e in EnumServiceType]
+        assert EnumServiceType.POSTGRESQL in EnumServiceType.__members__.values()
+        assert "postgresql" in [e.value for e in EnumServiceType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -98,7 +98,7 @@ class TestEnumServiceType:
             "s3",
             "custom",
         }
-        actual_values = {e.value for e in EnumServiceType}
+        actual_values = {e.value for e in EnumServiceType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -112,7 +112,9 @@ class TestEnumServiceType:
             EnumServiceType.KAFKA,
             EnumServiceType.RABBITMQ,
         }
-        assert all(service in EnumServiceType for service in messaging)
+        assert all(
+            service in EnumServiceType.__members__.values() for service in messaging
+        )
 
     def test_database_services(self):
         """Test database service grouping."""
@@ -121,17 +123,21 @@ class TestEnumServiceType:
             EnumServiceType.MYSQL,
             EnumServiceType.MONGODB,
         }
-        assert all(service in EnumServiceType for service in databases)
+        assert all(
+            service in EnumServiceType.__members__.values() for service in databases
+        )
 
     def test_cache_services(self):
         """Test cache service grouping."""
         cache = {EnumServiceType.REDIS}
-        assert all(service in EnumServiceType for service in cache)
+        assert all(service in EnumServiceType.__members__.values() for service in cache)
 
     def test_search_services(self):
         """Test search service grouping."""
         search = {EnumServiceType.ELASTICSEARCH}
-        assert all(service in EnumServiceType for service in search)
+        assert all(
+            service in EnumServiceType.__members__.values() for service in search
+        )
 
     def test_api_services(self):
         """Test API service grouping."""
@@ -139,24 +145,31 @@ class TestEnumServiceType:
             EnumServiceType.REST_API,
             EnumServiceType.GRPC,
         }
-        assert all(service in EnumServiceType for service in apis)
+        assert all(service in EnumServiceType.__members__.values() for service in apis)
 
     def test_infrastructure_services(self):
         """Test infrastructure service grouping."""
         infrastructure = {
             EnumServiceType.VAULT,
         }
-        assert all(service in EnumServiceType for service in infrastructure)
+        assert all(
+            service in EnumServiceType.__members__.values()
+            for service in infrastructure
+        )
 
     def test_storage_services(self):
         """Test storage service grouping."""
         storage = {EnumServiceType.S3}
-        assert all(service in EnumServiceType for service in storage)
+        assert all(
+            service in EnumServiceType.__members__.values() for service in storage
+        )
 
     def test_custom_service(self):
         """Test custom service type."""
         custom = {EnumServiceType.CUSTOM}
-        assert all(service in EnumServiceType for service in custom)
+        assert all(
+            service in EnumServiceType.__members__.values() for service in custom
+        )
 
     def test_all_services_categorized(self):
         """Test that all services are properly categorized."""

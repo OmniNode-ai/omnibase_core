@@ -49,8 +49,8 @@ class TestEnumBaseStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumBaseStatus.RUNNING in EnumBaseStatus
-        assert "running" in [e.value for e in EnumBaseStatus]
+        assert EnumBaseStatus.RUNNING in EnumBaseStatus.__members__.values()
+        assert "running" in [e.value for e in EnumBaseStatus.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -95,7 +95,7 @@ class TestEnumBaseStatus:
             "invalid",
             "unknown",
         }
-        actual_values = {e.value for e in EnumBaseStatus}
+        actual_values = {e.value for e in EnumBaseStatus.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -167,11 +167,21 @@ class TestEnumBaseStatus:
         all_statuses = set(EnumBaseStatus)
 
         # Get statuses categorized by each method
-        active_statuses = {e for e in EnumBaseStatus if e.is_active_state()}
-        terminal_statuses = {e for e in EnumBaseStatus if e.is_terminal_state()}
-        error_statuses = {e for e in EnumBaseStatus if e.is_error_state()}
-        pending_statuses = {e for e in EnumBaseStatus if e.is_pending_state()}
-        quality_statuses = {e for e in EnumBaseStatus if e.is_quality_state()}
+        active_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_active_state()
+        }
+        terminal_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_terminal_state()
+        }
+        error_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_error_state()
+        }
+        pending_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_pending_state()
+        }
+        quality_statuses = {
+            e for e in EnumBaseStatus.__members__.values() if e.is_quality_state()
+        }
 
         # All statuses should be categorized by at least one method
         categorized_statuses = (
@@ -223,7 +233,7 @@ class TestEnumBaseStatus:
 
         # All workflow states should be valid
         for state in workflow_states:
-            assert state in EnumBaseStatus
+            assert state in EnumBaseStatus.__members__.values()
 
     def test_status_state_transitions(self):
         """Test logical state transitions."""
@@ -256,7 +266,7 @@ class TestEnumBaseStatus:
             "invalid",
             "unknown",
         }
-        actual_values = {e.value for e in EnumBaseStatus}
+        actual_values = {e.value for e in EnumBaseStatus.__members__.values()}
         assert actual_values == universal_values
 
         # Values should be simple and not contain domain-specific terms
@@ -307,7 +317,7 @@ class TestEnumBaseStatus:
 
         Ensures str(enum) -> Enum(str) works for every value.
         """
-        for status in EnumBaseStatus:
+        for status in EnumBaseStatus.__members__.values():
             # String roundtrip
             serialized = str(status)
             deserialized = EnumBaseStatus(serialized)

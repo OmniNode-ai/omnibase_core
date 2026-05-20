@@ -8,11 +8,11 @@ Single responsibility: Centralized checkpoint status definitions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumCheckpointStatus(StrValueHelper, str, Enum):
+class EnumCheckpointStatus(UtilStrValueHelper, str, Enum):
     """Status of workflow checkpoints."""
 
     ACTIVE = "active"

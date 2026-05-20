@@ -27,11 +27,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOnexStatus(StrValueHelper, str, Enum):
+class EnumOnexStatus(UtilStrValueHelper, str, Enum):
     SUCCESS = "success"
     WARNING = "warning"
     ERROR = "error"

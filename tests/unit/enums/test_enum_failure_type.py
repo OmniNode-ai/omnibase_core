@@ -32,7 +32,9 @@ class TestEnumFailureType:
             "rate_limit",
             "unknown",
         }
-        actual_values = {member.value for member in EnumFailureType}
+        actual_values = {
+            member.value for member in EnumFailureType.__members__.values()
+        }
         assert actual_values == expected_values
         assert len(EnumFailureType) == 8
 
@@ -94,7 +96,10 @@ class TestEnumFailureType:
 
     def test_equality(self) -> None:
         """Test enum equality comparisons."""
-        assert EnumFailureType.TIMEOUT == EnumFailureType.TIMEOUT
+        assert (
+            type(EnumFailureType.TIMEOUT)(EnumFailureType.TIMEOUT.value)
+            is EnumFailureType.TIMEOUT
+        )
         assert EnumFailureType.TIMEOUT == "timeout"
         assert EnumFailureType.TIMEOUT != EnumFailureType.RATE_LIMIT
 
@@ -105,7 +110,7 @@ class TestEnumFailureType:
         assert str(EnumFailureType.RATE_LIMIT) == "rate_limit"
         assert str(EnumFailureType.UNKNOWN) == "unknown"
         # Verify str() equals .value for all members
-        for member in EnumFailureType:
+        for member in EnumFailureType.__members__.values():
             assert str(member) == member.value
 
     @pytest.mark.parametrize(

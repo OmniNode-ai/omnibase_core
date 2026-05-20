@@ -138,7 +138,7 @@ class TestModelNodeRegisteredEvent:
     def test_all_node_kinds(self):
         """Test event creation with all EnumNodeKind values."""
         node_id = uuid4()
-        for node_kind in EnumNodeKind:
+        for node_kind in EnumNodeKind.__members__.values():
             event = ModelNodeRegisteredEvent(
                 node_id=node_id,
                 node_name=f"{node_kind.value}-node",

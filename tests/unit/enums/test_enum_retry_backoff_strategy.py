@@ -48,16 +48,28 @@ class TestEnumRetryBackoffStrategy:
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
-        assert EnumRetryBackoffStrategy.FIXED == EnumRetryBackoffStrategy.FIXED
+        assert (
+            type(EnumRetryBackoffStrategy.FIXED)(EnumRetryBackoffStrategy.FIXED.value)
+            is EnumRetryBackoffStrategy.FIXED
+        )
         assert EnumRetryBackoffStrategy.FIXED != EnumRetryBackoffStrategy.LINEAR
         assert EnumRetryBackoffStrategy.EXPONENTIAL == "exponential"
         assert EnumRetryBackoffStrategy.RANDOM != "fixed"
 
     def test_enum_membership(self):
         """Test enum membership checks."""
-        assert EnumRetryBackoffStrategy.FIXED in EnumRetryBackoffStrategy
-        assert EnumRetryBackoffStrategy.LINEAR in EnumRetryBackoffStrategy
-        assert EnumRetryBackoffStrategy.EXPONENTIAL in EnumRetryBackoffStrategy
+        assert (
+            EnumRetryBackoffStrategy.FIXED
+            in EnumRetryBackoffStrategy.__members__.values()
+        )
+        assert (
+            EnumRetryBackoffStrategy.LINEAR
+            in EnumRetryBackoffStrategy.__members__.values()
+        )
+        assert (
+            EnumRetryBackoffStrategy.EXPONENTIAL
+            in EnumRetryBackoffStrategy.__members__.values()
+        )
 
     def test_enum_iteration(self):
         """Test iteration over enum values."""
@@ -110,7 +122,9 @@ class TestEnumRetryBackoffStrategy:
 
     def test_enum_uniqueness(self):
         """Test that all enum values are unique."""
-        values = [strategy.value for strategy in EnumRetryBackoffStrategy]
+        values = [
+            strategy.value for strategy in EnumRetryBackoffStrategy.__members__.values()
+        ]
         assert len(values) == len(set(values))
 
     def test_enum_value_access(self):

@@ -7,11 +7,11 @@ Enum for confidence levels for learned rules.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRuleConfidence(StrValueHelper, str, Enum):
+class EnumRuleConfidence(UtilStrValueHelper, str, Enum):
     """Confidence levels for learned rules."""
 
     EXPERIMENTAL = "experimental"  # <50% success rate

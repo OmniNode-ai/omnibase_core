@@ -62,9 +62,15 @@ class TestEnumMetadataNodeType:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumMetadataNodeType.FUNCTION == EnumMetadataNodeType.FUNCTION
+        assert (
+            type(EnumMetadataNodeType.FUNCTION)(EnumMetadataNodeType.FUNCTION.value)
+            is EnumMetadataNodeType.FUNCTION
+        )
         assert EnumMetadataNodeType.CLASS != EnumMetadataNodeType.METHOD
-        assert EnumMetadataNodeType.VARIABLE == EnumMetadataNodeType.VARIABLE
+        assert (
+            type(EnumMetadataNodeType.VARIABLE)(EnumMetadataNodeType.VARIABLE.value)
+            is EnumMetadataNodeType.VARIABLE
+        )
 
     def test_enum_membership(self):
         """Test enum membership checking."""
@@ -84,7 +90,7 @@ class TestEnumMetadataNodeType:
         ]
 
         for node_type in all_node_types:
-            assert node_type in EnumMetadataNodeType
+            assert node_type in EnumMetadataNodeType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""
@@ -177,7 +183,7 @@ class TestEnumMetadataNodeType:
         ]
 
         for node_type in code_types:
-            assert node_type in EnumMetadataNodeType
+            assert node_type in EnumMetadataNodeType.__members__.values()
             assert isinstance(node_type.value, str)
 
     def test_data_node_types(self):
@@ -189,7 +195,7 @@ class TestEnumMetadataNodeType:
         ]
 
         for node_type in data_types:
-            assert node_type in EnumMetadataNodeType
+            assert node_type in EnumMetadataNodeType.__members__.values()
             assert isinstance(node_type.value, str)
 
     def test_documentation_node_types(self):
@@ -201,7 +207,7 @@ class TestEnumMetadataNodeType:
         ]
 
         for node_type in doc_types:
-            assert node_type in EnumMetadataNodeType
+            assert node_type in EnumMetadataNodeType.__members__.values()
             assert isinstance(node_type.value, str)
 
 

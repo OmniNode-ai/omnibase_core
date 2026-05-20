@@ -50,14 +50,14 @@ from __future__ import annotations
 from enum import Enum, unique
 from typing import TYPE_CHECKING
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_base_status import EnumBaseStatus
 
 
 @unique
-class EnumOperationStatus(StrValueHelper, str, Enum):
+class EnumOperationStatus(UtilStrValueHelper, str, Enum):
     """Canonical operation status enum for API and service operations.
 
     This is the single source of truth for operation status values across

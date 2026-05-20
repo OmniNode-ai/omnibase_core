@@ -10,11 +10,11 @@ with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumErrorType(StrValueHelper, str, Enum):
+class EnumErrorType(UtilStrValueHelper, str, Enum):
     """LLM-specific error types."""
 
     HEALTH_CHECK_TIMEOUT = "health_check_timeout"

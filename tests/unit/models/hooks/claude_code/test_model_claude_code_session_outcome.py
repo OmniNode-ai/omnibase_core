@@ -177,7 +177,7 @@ class TestModelClaudeCodeSessionOutcomeConstruction:
 
     def test_construction_all_outcome_values(self, sample_session_id: UUID) -> None:
         """Test that all enum outcome values can be used to construct models."""
-        for outcome_value in EnumClaudeCodeSessionOutcome:
+        for outcome_value in EnumClaudeCodeSessionOutcome.__members__.values():
             outcome = ModelClaudeCodeSessionOutcome(
                 session_id=sample_session_id,
                 outcome=outcome_value,

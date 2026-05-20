@@ -165,7 +165,7 @@ class TestModelEventMappingRuleValidation:
 
     def test_mapping_type_enum_values(self):
         """Test mapping_type accepts all enum values."""
-        for mapping_type in EnumMappingType:
+        for mapping_type in EnumMappingType.__members__.values():
             rule = ModelEventMappingRule(
                 version=DEFAULT_VERSION,
                 source_field="source",

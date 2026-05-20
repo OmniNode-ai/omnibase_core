@@ -45,8 +45,8 @@ class TestEnumContentType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "text" in EnumContentType
-        assert "invalid_type" not in EnumContentType
+        assert "text" in EnumContentType._value2member_map_
+        assert "invalid_type" not in EnumContentType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -83,7 +83,9 @@ class TestEnumContentType:
         """Test that all expected values are present."""
         expected_values = {"text", "image", "tool_use", "tool_result"}
 
-        actual_values = {member.value for member in EnumContentType}
+        actual_values = {
+            member.value for member in EnumContentType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -93,9 +95,9 @@ class TestEnumContentType:
     def test_enum_content_types(self):
         """Test that enum covers typical content types."""
         # Test basic content types
-        assert EnumContentType.TEXT in EnumContentType
-        assert EnumContentType.IMAGE in EnumContentType
+        assert EnumContentType.TEXT in EnumContentType.__members__.values()
+        assert EnumContentType.IMAGE in EnumContentType.__members__.values()
 
         # Test tool-related content types
-        assert EnumContentType.TOOL_USE in EnumContentType
-        assert EnumContentType.TOOL_RESULT in EnumContentType
+        assert EnumContentType.TOOL_USE in EnumContentType.__members__.values()
+        assert EnumContentType.TOOL_RESULT in EnumContentType.__members__.values()

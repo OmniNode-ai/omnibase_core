@@ -174,7 +174,7 @@ class TestModelAggregationParameterCreation:
 
     def test_enum_values_for_parameter_type(self) -> None:
         """Test that parameter_type accepts all valid enum values."""
-        for param_type in EnumParameterType:
+        for param_type in EnumParameterType.__members__.values():
             param = ModelAggregationParameter(
                 version=DEFAULT_VERSION,
                 parameter_name="test_param",

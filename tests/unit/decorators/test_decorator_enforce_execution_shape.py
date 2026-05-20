@@ -199,7 +199,7 @@ class TestEnforceExecutionShapeForbiddenShapes:
 
     def test_any_to_runtime_host_forbidden(self):
         """Test any category -> RUNTIME_HOST shape raises error."""
-        for category in EnumMessageCategory:
+        for category in EnumMessageCategory.__members__.values():
             with pytest.raises(ModelOnexError) as exc_info:
 
                 @enforce_execution_shape(

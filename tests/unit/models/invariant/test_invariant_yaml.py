@@ -68,7 +68,7 @@ invariants:
             EnumInvariantType.COST: "max_cost: 0.10",
             EnumInvariantType.CUSTOM: 'callable_path: "my_module.validator"',
         }
-        for inv_type in EnumInvariantType:
+        for inv_type in EnumInvariantType.__members__.values():
             config_yaml = type_configs[inv_type]
             yaml_content = f"""
 name: "Test {inv_type.value}"
@@ -84,7 +84,7 @@ invariants:
 
     def test_yaml_parses_all_severity_levels(self) -> None:
         """All severity levels can be defined in YAML."""
-        for severity in EnumSeverity:
+        for severity in EnumSeverity.__members__.values():
             yaml_content = f"""
 name: "Test Severity"
 target: "node_test"

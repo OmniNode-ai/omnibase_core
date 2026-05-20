@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDiscoverySource(StrValueHelper, str, Enum):
+class EnumDiscoverySource(UtilStrValueHelper, str, Enum):
     """Sources for node discovery in ONEX."""
 
     REGISTRY = "registry"

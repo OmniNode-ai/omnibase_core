@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMetadataNodeComplexity(StrValueHelper, str, Enum):
+class EnumMetadataNodeComplexity(UtilStrValueHelper, str, Enum):
     """Metadata node complexity enumeration."""
 
     SIMPLE = "simple"

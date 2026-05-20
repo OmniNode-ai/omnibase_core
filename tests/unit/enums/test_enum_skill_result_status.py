@@ -77,12 +77,12 @@ class TestEnumSkillResultStatus:
 
     def test_all_members_covered_by_terminal_check(self) -> None:
         """Every enum member returns a bool from is_terminal (no exceptions)."""
-        for status in EnumSkillResultStatus:
+        for status in EnumSkillResultStatus.__members__.values():
             assert isinstance(status.is_terminal, bool)
 
     def test_all_members_covered_by_success_like_check(self) -> None:
         """Every enum member returns a bool from is_success_like (no exceptions)."""
-        for status in EnumSkillResultStatus:
+        for status in EnumSkillResultStatus.__members__.values():
             assert isinstance(status.is_success_like, bool)
 
     def test_str_serialization(self) -> None:

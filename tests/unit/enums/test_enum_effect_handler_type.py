@@ -56,13 +56,13 @@ class TestEnumEffectHandlerType:
 
     def test_enum_membership(self):
         """Test membership testing with string values."""
-        assert "http" in EnumEffectHandlerType
-        assert "db" in EnumEffectHandlerType
-        assert "kafka" in EnumEffectHandlerType
-        assert "filesystem" in EnumEffectHandlerType
-        assert "invalid" not in EnumEffectHandlerType
+        assert "http" in EnumEffectHandlerType._value2member_map_
+        assert "db" in EnumEffectHandlerType._value2member_map_
+        assert "kafka" in EnumEffectHandlerType._value2member_map_
+        assert "filesystem" in EnumEffectHandlerType._value2member_map_
+        assert "invalid" not in EnumEffectHandlerType._value2member_map_
         assert (
-            "database" not in EnumEffectHandlerType
+            "database" not in EnumEffectHandlerType._value2member_map_
         )  # Note: it's "db", not "database"
 
     def test_enum_comparison(self):

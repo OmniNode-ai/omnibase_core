@@ -359,7 +359,7 @@ class TestModelMCPParameterMapping:
 
     def test_all_parameter_types(self):
         """Test creation with each EnumMCPParameterType value."""
-        for param_type in EnumMCPParameterType:
+        for param_type in EnumMCPParameterType.__members__.values():
             mapping = ModelMCPParameterMapping(
                 name=f"test_{param_type.value}",
                 parameter_type=param_type,
@@ -845,7 +845,7 @@ class TestModelMCPToolDescriptor:
 
     def test_all_tool_types(self):
         """Test creation with each EnumMCPToolType value."""
-        for tool_type in EnumMCPToolType:
+        for tool_type in EnumMCPToolType.__members__.values():
             descriptor = ModelMCPToolDescriptor(
                 name=f"test_{tool_type.value}",
                 description=f"Tool of type {tool_type.value}",

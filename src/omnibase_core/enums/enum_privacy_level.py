@@ -10,11 +10,11 @@ with proper ONEX enum naming conventions.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumPrivacyLevel(StrValueHelper, str, Enum):
+class EnumPrivacyLevel(UtilStrValueHelper, str, Enum):
     """Privacy levels for LLM model selection."""
 
     LOCAL_ONLY = "local_only"

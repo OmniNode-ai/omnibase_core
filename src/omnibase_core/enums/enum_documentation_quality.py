@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDocumentationQuality(StrValueHelper, str, Enum):
+class EnumDocumentationQuality(UtilStrValueHelper, str, Enum):
     """
     Enumeration of documentation quality levels.
 

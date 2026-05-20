@@ -52,34 +52,14 @@ from typing import (
     TYPE_CHECKING,
     ClassVar,
     Generic,
-    Protocol,
     TypeVar,
     cast,
-    runtime_checkable,
 )
 from uuid import UUID
 
-
-@runtime_checkable
-class ProtocolEventBusDuckTyped(Protocol):
-    """Protocol for duck-typed event bus method access.
-
-    This protocol defines the interface for event bus operations that may not be
-    present on all event bus implementations. It is used with cast() to provide
-    type-safe access to optional methods while maintaining compatibility with
-    legacy event bus implementations.
-
-    The protocol is runtime_checkable to support hasattr() checks before method calls.
-    """
-
-    def publish(self, event: object) -> None:
-        """Synchronous publish method."""
-        ...
-
-    async def publish_async(self, envelope: object) -> None:
-        """Asynchronous publish method."""
-        ...
-
+from omnibase_core.protocols.protocol_event_bus_duck_typed import (
+    ProtocolEventBusDuckTyped,
+)
 
 # Generic type parameters for typed event processing
 InputStateT = TypeVar("InputStateT")

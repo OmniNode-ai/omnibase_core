@@ -7,11 +7,11 @@ Enum for role levels.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRoleLevel(StrValueHelper, str, Enum):
+class EnumRoleLevel(UtilStrValueHelper, str, Enum):
     """Role levels for users."""
 
     INTERN = "intern"

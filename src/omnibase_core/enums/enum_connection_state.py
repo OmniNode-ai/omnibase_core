@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumConnectionState(StrValueHelper, str, Enum):
+class EnumConnectionState(UtilStrValueHelper, str, Enum):
     """
     Strongly typed connection state for lifecycle tracking.
 

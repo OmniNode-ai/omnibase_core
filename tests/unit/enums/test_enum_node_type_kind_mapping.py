@@ -102,8 +102,8 @@ class TestEnumNodeTypeKindMapping:
         # Skip this test until the refactor is complete and _KIND_MAP exists
         # At that point, all collisions should be resolved
 
-        kind_names = {k.name.upper() for k in EnumNodeKind}
-        type_names = {t.name.upper() for t in EnumNodeType}
+        kind_names = {k.name.upper() for k in EnumNodeKind.__members__.values()}
+        type_names = {t.name.upper() for t in EnumNodeType.__members__.values()}
 
         # Detect exact name collisions (case-insensitive)
         collisions = kind_names & type_names
@@ -111,8 +111,16 @@ class TestEnumNodeTypeKindMapping:
         if collisions:
             collision_details = []
             for name in collisions:
-                kind_member = next(k for k in EnumNodeKind if k.name.upper() == name)
-                type_member = next(t for t in EnumNodeType if t.name.upper() == name)
+                kind_member = next(
+                    k
+                    for k in EnumNodeKind.__members__.values()
+                    if k.name.upper() == name
+                )
+                type_member = next(
+                    t
+                    for t in EnumNodeType.__members__.values()
+                    if t.name.upper() == name
+                )
                 collision_details.append(
                     f"  - {name}: EnumNodeKind.{kind_member.name} "
                     f"vs EnumNodeType.{type_member.name}"
@@ -144,7 +152,7 @@ class TestEnumNodeTypeKindMapping:
         """
 
         # Exclude UNKNOWN - it intentionally raises ModelOnexError
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             if node_type == EnumNodeType.UNKNOWN:
                 continue  # UNKNOWN is tested separately in test_unknown_type_intentionally_unmapped
 
@@ -157,7 +165,7 @@ class TestEnumNodeTypeKindMapping:
             )
 
             # Ensure the kind is a valid enum member
-            assert kind in EnumNodeKind, (
+            assert kind in EnumNodeKind.__members__.values(), (
                 f"get_node_kind({node_type}) returned {kind}, "
                 f"which is not a valid EnumNodeKind member. "
                 f"Valid members: {list(EnumNodeKind)}"
@@ -190,7 +198,7 @@ class TestEnumNodeTypeKindMapping:
         for node_type in compute_related_types:
             if node_type in EnumNodeType._KIND_MAP:
                 kind = EnumNodeType._KIND_MAP[node_type]
-                assert kind in EnumNodeKind, (
+                assert kind in EnumNodeKind.__members__.values(), (
                     f"{node_type} maps to {kind}, which is not a valid EnumNodeKind. "
                     f"Expected one of: {list(EnumNodeKind)}"
                 )
@@ -339,7 +347,7 @@ class TestHasNodeKind:
         """
 
         # Test all types except UNKNOWN
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             if node_type == EnumNodeType.UNKNOWN:
                 continue
 
@@ -425,7 +433,7 @@ class TestHasNodeKind:
         is a key in _KIND_MAP.
         """
 
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             expected = node_type in EnumNodeType._KIND_MAP
             actual = EnumNodeType.has_node_kind(node_type)
             assert actual == expected, (
@@ -913,7 +921,7 @@ class TestNodeRoutingIntegration:
         successful_routings: dict[EnumNodeType, EnumNodeKind] = {}
         failed_routings: list[tuple[EnumNodeType, Exception]] = []
 
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             if node_type == EnumNodeType.UNKNOWN:
                 continue  # UNKNOWN intentionally has no routing
 
@@ -931,7 +939,7 @@ class TestNodeRoutingIntegration:
 
         # Verify all routed kinds are valid EnumNodeKind members
         for node_type, kind in successful_routings.items():
-            assert kind in EnumNodeKind, (
+            assert kind in EnumNodeKind.__members__.values(), (
                 f"{node_type} routed to {kind}, which is not a valid EnumNodeKind"
             )
 
@@ -1050,7 +1058,7 @@ class TestNodeRoutingIntegration:
             kind: [] for kind in core_kinds
         }
 
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             if node_type == EnumNodeType.UNKNOWN:
                 continue
             kind = EnumNodeType.get_node_kind(node_type)
@@ -1078,7 +1086,7 @@ class TestNodeRoutingIntegration:
 
         runtime_host_sources = []
 
-        for node_type in EnumNodeType:
+        for node_type in EnumNodeType.__members__.values():
             if node_type == EnumNodeType.UNKNOWN:
                 continue
             kind = EnumNodeType.get_node_kind(node_type)

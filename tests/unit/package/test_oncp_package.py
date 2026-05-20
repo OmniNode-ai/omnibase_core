@@ -163,7 +163,7 @@ class TestModelOncpManifest:
 
     def test_overlay_entry_scope_values(self) -> None:
         """ModelOncpOverlayEntry accepts all EnumOverlayScope values."""
-        for scope in EnumOverlayScope:
+        for scope in EnumOverlayScope.__members__.values():
             entry = ModelOncpOverlayEntry(
                 overlay_id="test",
                 scope=scope,
@@ -685,7 +685,7 @@ class TestEnumOverlayScope:
         assert values == {"base", "org", "project", "env", "user", "session"}
 
     def test_str_returns_value(self) -> None:
-        """str() returns the lowercase value (StrValueHelper mixin)."""
+        """str() returns the lowercase value (UtilStrValueHelper mixin)."""
         assert str(EnumOverlayScope.PROJECT) == "project"
 
     def test_repr_includes_name(self) -> None:

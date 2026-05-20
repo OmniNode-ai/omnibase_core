@@ -9,11 +9,11 @@ Tool lifecycle status values.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumToolStatus(StrValueHelper, str, Enum):
+class EnumToolStatus(UtilStrValueHelper, str, Enum):
     """Tool lifecycle status values."""
 
     ACTIVE = "active"

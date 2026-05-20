@@ -4,11 +4,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumModelHealthState(StrValueHelper, str, Enum):
+class EnumModelHealthState(UtilStrValueHelper, str, Enum):
     """Observable health state of a model endpoint for delegation routing.
 
     States:

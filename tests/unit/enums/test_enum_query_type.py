@@ -65,8 +65,8 @@ class TestEnumQueryType:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert EnumQueryType.TECHNICAL in EnumQueryType
-        assert "technical" in [e.value for e in EnumQueryType]
+        assert EnumQueryType.TECHNICAL in EnumQueryType.__members__.values()
+        assert "technical" in [e.value for e in EnumQueryType.__members__.values()]
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -117,7 +117,7 @@ class TestEnumQueryType:
             "planning",
             "brainstorming",
         }
-        actual_values = {e.value for e in EnumQueryType}
+        actual_values = {e.value for e in EnumQueryType.__members__.values()}
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -133,7 +133,7 @@ class TestEnumQueryType:
             EnumQueryType.CONVERSATION,
             EnumQueryType.DOCUMENTATION,
         }
-        assert all(q in EnumQueryType for q in general_queries)
+        assert all(q in EnumQueryType.__members__.values() for q in general_queries)
 
     def test_technical_query_types(self):
         """Test technical query type grouping."""
@@ -143,7 +143,7 @@ class TestEnumQueryType:
             EnumQueryType.IMPLEMENTATION,
             EnumQueryType.DEBUGGING,
         }
-        assert all(q in EnumQueryType for q in technical_queries)
+        assert all(q in EnumQueryType.__members__.values() for q in technical_queries)
 
     def test_analysis_query_types(self):
         """Test analysis query type grouping."""
@@ -152,7 +152,7 @@ class TestEnumQueryType:
             EnumQueryType.COMPARISON,
             EnumQueryType.EVALUATION,
         }
-        assert all(q in EnumQueryType for q in analysis_queries)
+        assert all(q in EnumQueryType.__members__.values() for q in analysis_queries)
 
     def test_search_query_types(self):
         """Test search and retrieval query type grouping."""
@@ -161,7 +161,7 @@ class TestEnumQueryType:
             EnumQueryType.LOOKUP,
             EnumQueryType.REFERENCE,
         }
-        assert all(q in EnumQueryType for q in search_queries)
+        assert all(q in EnumQueryType.__members__.values() for q in search_queries)
 
     def test_creative_query_types(self):
         """Test creative and planning query type grouping."""
@@ -170,7 +170,7 @@ class TestEnumQueryType:
             EnumQueryType.PLANNING,
             EnumQueryType.BRAINSTORMING,
         }
-        assert all(q in EnumQueryType for q in creative_queries)
+        assert all(q in EnumQueryType.__members__.values() for q in creative_queries)
 
     def test_all_query_types_categorized(self):
         """Test that all query types are properly categorized."""

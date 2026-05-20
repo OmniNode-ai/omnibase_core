@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for StrValueHelper mixin.
+"""Tests for UtilStrValueHelper mixin.
 
-This module tests the StrValueHelper mixin which provides consistent
+This module tests the UtilStrValueHelper mixin which provides consistent
 __str__ behavior for string-based enums.
 """
 
@@ -14,12 +14,12 @@ from enum import Enum, unique
 
 import pytest
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 # Test enums for different scenarios
-class EnumTestStatus(StrValueHelper, str, Enum):  # type: ignore[misc]
-    """Test enum using StrValueHelper."""
+class EnumTestStatus(UtilStrValueHelper, str, Enum):  # type: ignore[misc]
+    """Test enum using UtilStrValueHelper."""
 
     PENDING = "pending"
     ACTIVE = "active"
@@ -27,7 +27,7 @@ class EnumTestStatus(StrValueHelper, str, Enum):  # type: ignore[misc]
 
 
 @unique
-class EnumTestWithUnique(StrValueHelper, str, Enum):  # type: ignore[misc]
+class EnumTestWithUnique(UtilStrValueHelper, str, Enum):  # type: ignore[misc]
     """Test enum with @unique decorator."""
 
     VALUE_A = "value_a"
@@ -35,7 +35,7 @@ class EnumTestWithUnique(StrValueHelper, str, Enum):  # type: ignore[misc]
     VALUE_C = "value_c"
 
 
-class EnumTestEdgeCases(StrValueHelper, str, Enum):  # type: ignore[misc]
+class EnumTestEdgeCases(UtilStrValueHelper, str, Enum):  # type: ignore[misc]
     """Test enum with edge case values."""
 
     EMPTY = ""
@@ -46,7 +46,7 @@ class EnumTestEdgeCases(StrValueHelper, str, Enum):  # type: ignore[misc]
     MIXED_CASE = "MixedCaseValue"
 
 
-class EnumTestSpecialChars(StrValueHelper, str, Enum):  # type: ignore[misc]
+class EnumTestSpecialChars(UtilStrValueHelper, str, Enum):  # type: ignore[misc]
     """Test enum with special characters."""
 
     WITH_DOT = "value.with.dots"
@@ -57,7 +57,7 @@ class EnumTestSpecialChars(StrValueHelper, str, Enum):  # type: ignore[misc]
     WITH_HASH = "value#with#hash"
 
 
-class EnumTestUnicode(StrValueHelper, str, Enum):  # type: ignore[misc]
+class EnumTestUnicode(UtilStrValueHelper, str, Enum):  # type: ignore[misc]
     """Test enum with unicode values."""
 
     EMOJI = "status_complete"
@@ -68,15 +68,15 @@ class EnumTestUnicode(StrValueHelper, str, Enum):  # type: ignore[misc]
 
 
 class EnumWithoutMixin(str, Enum):
-    """Standard str enum without StrValueHelper for comparison."""
+    """Standard str enum without UtilStrValueHelper for comparison."""
 
     PENDING = "pending"
     ACTIVE = "active"
 
 
 @pytest.mark.unit
-class TestStrValueHelperBasic:
-    """Basic functionality tests for StrValueHelper mixin."""
+class TestUtilStrValueHelperBasic:
+    """Basic functionality tests for UtilStrValueHelper mixin."""
 
     def test_str_returns_value(self) -> None:
         """Test that __str__ returns the enum value."""
@@ -86,7 +86,7 @@ class TestStrValueHelperBasic:
 
     def test_str_with_multiple_members(self) -> None:
         """Test str() works correctly with all enum members."""
-        for member in EnumTestStatus:
+        for member in EnumTestStatus.__members__.values():
             assert str(member) == member.value
 
     def test_str_does_not_return_member_name(self) -> None:
@@ -107,19 +107,21 @@ class TestStrValueHelperBasic:
 
 
 @pytest.mark.unit
-class TestStrValueHelperInheritance:
+class TestUtilStrValueHelperInheritance:
     """Tests for inheritance order and MRO behavior."""
 
     def test_correct_mro_pattern(self) -> None:
-        """Test that StrValueHelper, str, Enum is the correct MRO pattern."""
+        """Test that UtilStrValueHelper, str, Enum is the correct MRO pattern."""
         # Verify the class follows the expected pattern
         mro = EnumTestStatus.__mro__
         mro_names = [cls.__name__ for cls in mro]
 
-        # StrValueHelper should appear before str in MRO
-        str_helper_idx = mro_names.index("StrValueHelper")
+        # UtilStrValueHelper should appear before str in MRO
+        str_helper_idx = mro_names.index("UtilStrValueHelper")
         str_idx = mro_names.index("str")
-        assert str_helper_idx < str_idx, "StrValueHelper must come before str in MRO"
+        assert str_helper_idx < str_idx, (
+            "UtilStrValueHelper must come before str in MRO"
+        )
 
     def test_is_instance_of_str(self) -> None:
         """Test that enum members are instances of str."""
@@ -139,18 +141,18 @@ class TestStrValueHelperInheritance:
 
 
 @pytest.mark.unit
-class TestStrValueHelperVsStandardEnum:
-    """Comparison tests between StrValueHelper enums and standard str enums."""
+class TestUtilStrValueHelperVsStandardEnum:
+    """Comparison tests between UtilStrValueHelper enums and standard str enums."""
 
     def test_without_mixin_str_returns_full_representation(self) -> None:
         """Test that standard str,Enum without mixin returns different format."""
-        # Without StrValueHelper, str() returns "EnumName.MEMBER"
+        # Without UtilStrValueHelper, str() returns "EnumName.MEMBER"
         result = str(EnumWithoutMixin.PENDING)
         assert result == "EnumWithoutMixin.PENDING"
         assert result != "pending"
 
     def test_with_mixin_str_returns_value_only(self) -> None:
-        """Test that StrValueHelper mixin returns just the value."""
+        """Test that UtilStrValueHelper mixin returns just the value."""
         result = str(EnumTestStatus.PENDING)
         assert result == "pending"
         assert "EnumTestStatus" not in result
@@ -176,7 +178,7 @@ class TestStrValueHelperVsStandardEnum:
 
 
 @pytest.mark.unit
-class TestStrValueHelperIntegration:
+class TestUtilStrValueHelperIntegration:
     """Integration tests for common use cases."""
 
     def test_in_fstring(self) -> None:
@@ -226,7 +228,7 @@ class TestStrValueHelperIntegration:
 
 
 @pytest.mark.unit
-class TestStrValueHelperJsonSerialization:
+class TestUtilStrValueHelperJsonSerialization:
     """Tests for JSON serialization behavior."""
 
     def test_json_dumps_with_str(self) -> None:
@@ -260,7 +262,7 @@ class TestStrValueHelperJsonSerialization:
 
 
 @pytest.mark.unit
-class TestStrValueHelperEdgeCases:
+class TestUtilStrValueHelperEdgeCases:
     """Tests for edge cases and special values."""
 
     def test_empty_string_value(self) -> None:
@@ -295,7 +297,7 @@ class TestStrValueHelperEdgeCases:
 
 
 @pytest.mark.unit
-class TestStrValueHelperSpecialCharacters:
+class TestUtilStrValueHelperSpecialCharacters:
     """Tests for values with special characters."""
 
     def test_value_with_dots(self) -> None:
@@ -329,7 +331,7 @@ class TestStrValueHelperSpecialCharacters:
 
 
 @pytest.mark.unit
-class TestStrValueHelperUnicode:
+class TestUtilStrValueHelperUnicode:
     """Tests for unicode value handling."""
 
     def test_unicode_values_accessible(self) -> None:
@@ -351,11 +353,11 @@ class TestStrValueHelperUnicode:
 
 
 @pytest.mark.unit
-class TestStrValueHelperWithUniqueDecorator:
-    """Tests for StrValueHelper with @unique decorator."""
+class TestUtilStrValueHelperWithUniqueDecorator:
+    """Tests for UtilStrValueHelper with @unique decorator."""
 
     def test_unique_decorator_compatible(self) -> None:
-        """Test that @unique decorator works with StrValueHelper."""
+        """Test that @unique decorator works with UtilStrValueHelper."""
         # If we got here without error, @unique is compatible
         assert EnumTestWithUnique.VALUE_A.value == "value_a"
         assert EnumTestWithUnique.VALUE_B.value == "value_b"
@@ -367,12 +369,12 @@ class TestStrValueHelperWithUniqueDecorator:
 
     def test_all_unique_members_stringify(self) -> None:
         """Test all members of @unique enum stringify correctly."""
-        for member in EnumTestWithUnique:
+        for member in EnumTestWithUnique.__members__.values():
             assert str(member) == member.value
 
 
 @pytest.mark.unit
-class TestStrValueHelperEquality:
+class TestUtilStrValueHelperEquality:
     """Tests for equality comparisons."""
 
     def test_enum_equals_string(self) -> None:
@@ -408,7 +410,7 @@ class TestStrValueHelperEquality:
 
 
 @pytest.mark.unit
-class TestStrValueHelperIteration:
+class TestUtilStrValueHelperIteration:
     """Tests for iteration over enum members."""
 
     def test_iterate_and_stringify(self) -> None:
@@ -425,7 +427,7 @@ class TestStrValueHelperIteration:
 
 
 @pytest.mark.unit
-class TestStrValueHelperMemberAccess:
+class TestUtilStrValueHelperMemberAccess:
     """Tests for different ways to access enum members."""
 
     def test_access_by_name(self) -> None:
@@ -446,7 +448,7 @@ class TestStrValueHelperMemberAccess:
 
 
 @pytest.mark.unit
-class TestStrValueHelperRealWorldUsage:
+class TestUtilStrValueHelperRealWorldUsage:
     """Tests based on real-world usage patterns from the codebase."""
 
     def test_status_in_log_message(self) -> None:
@@ -483,8 +485,8 @@ class TestStrValueHelperRealWorldUsage:
 
 
 @pytest.mark.unit
-class TestStrValueHelperStringOperations:
-    """Tests for string operations on StrValueHelper enums."""
+class TestUtilStrValueHelperStringOperations:
+    """Tests for string operations on UtilStrValueHelper enums."""
 
     def test_direct_concatenation_without_str(self) -> None:
         """Test direct string concatenation works without explicit str() call."""
@@ -568,7 +570,7 @@ class TestStrValueHelperStringOperations:
 
 
 @pytest.mark.unit
-class TestStrValueHelperPydanticIntegration:
+class TestUtilStrValueHelperPydanticIntegration:
     """Tests for Pydantic model integration."""
 
     def test_enum_in_pydantic_model(self) -> None:
@@ -628,7 +630,7 @@ class TestStrValueHelperPydanticIntegration:
 
 
 @pytest.mark.unit
-class TestStrValueHelperTypeChecking:
+class TestUtilStrValueHelperTypeChecking:
     """Tests for type checking and type behavior."""
 
     def test_is_subclass_of_str(self) -> None:
@@ -650,4 +652,4 @@ class TestStrValueHelperTypeChecking:
         assert isinstance(status, EnumTestStatus)
         assert isinstance(status, str)
         assert isinstance(status, Enum)
-        assert isinstance(status, StrValueHelper)
+        assert isinstance(status, UtilStrValueHelper)

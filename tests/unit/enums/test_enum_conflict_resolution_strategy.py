@@ -49,8 +49,10 @@ class TestEnumConflictResolutionStrategy:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "manual" in EnumConflictResolutionStrategy
-        assert "invalid_strategy" not in EnumConflictResolutionStrategy
+        assert "manual" in EnumConflictResolutionStrategy._value2member_map_
+        assert (
+            "invalid_strategy" not in EnumConflictResolutionStrategy._value2member_map_
+        )
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -94,7 +96,10 @@ class TestEnumConflictResolutionStrategy:
             "last_writer_wins",
         }
 
-        actual_values = {member.value for member in EnumConflictResolutionStrategy}
+        actual_values = {
+            member.value
+            for member in EnumConflictResolutionStrategy.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -109,23 +114,31 @@ class TestEnumConflictResolutionStrategy:
         # Test timestamp-based strategies
         assert (
             EnumConflictResolutionStrategy.TIMESTAMP_WINS
-            in EnumConflictResolutionStrategy
+            in EnumConflictResolutionStrategy.__members__.values()
         )
         assert (
             EnumConflictResolutionStrategy.LAST_WRITER_WINS
-            in EnumConflictResolutionStrategy
+            in EnumConflictResolutionStrategy.__members__.values()
         )
 
         # Test manual resolution
-        assert EnumConflictResolutionStrategy.MANUAL in EnumConflictResolutionStrategy
+        assert (
+            EnumConflictResolutionStrategy.MANUAL
+            in EnumConflictResolutionStrategy.__members__.values()
+        )
 
         # Test location-based strategies
         assert (
-            EnumConflictResolutionStrategy.LOCAL_WINS in EnumConflictResolutionStrategy
+            EnumConflictResolutionStrategy.LOCAL_WINS
+            in EnumConflictResolutionStrategy.__members__.values()
         )
         assert (
-            EnumConflictResolutionStrategy.REMOTE_WINS in EnumConflictResolutionStrategy
+            EnumConflictResolutionStrategy.REMOTE_WINS
+            in EnumConflictResolutionStrategy.__members__.values()
         )
 
         # Test merge strategy
-        assert EnumConflictResolutionStrategy.MERGE in EnumConflictResolutionStrategy
+        assert (
+            EnumConflictResolutionStrategy.MERGE
+            in EnumConflictResolutionStrategy.__members__.values()
+        )

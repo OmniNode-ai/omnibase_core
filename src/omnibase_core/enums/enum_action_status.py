@@ -19,11 +19,11 @@ State Machine:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumActionStatus(StrValueHelper, str, Enum):
+class EnumActionStatus(UtilStrValueHelper, str, Enum):
     """
     Action status values for action metadata tracking.
 

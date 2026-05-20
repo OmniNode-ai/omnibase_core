@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMetadataNodeStatus(StrValueHelper, str, Enum):
+class EnumMetadataNodeStatus(UtilStrValueHelper, str, Enum):
     """Metadata node status enumeration."""
 
     ACTIVE = "active"

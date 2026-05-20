@@ -10,11 +10,11 @@ and distributed data management systems.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumConflictResolutionStrategy(StrValueHelper, str, Enum):
+class EnumConflictResolutionStrategy(UtilStrValueHelper, str, Enum):
     """Canonical conflict resolution strategies for ONEX distributed operations."""
 
     TIMESTAMP_WINS = "timestamp_wins"

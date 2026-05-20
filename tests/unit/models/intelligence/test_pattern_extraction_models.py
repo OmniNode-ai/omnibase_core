@@ -4,7 +4,7 @@
 """Unit tests for pattern extraction models (OMN-1587).
 
 Tests comprehensive pattern extraction model functionality including:
-- EnumPatternKind enum with StrValueHelper behavior
+- EnumPatternKind enum with UtilStrValueHelper behavior
 - ModelPatternWarning for non-fatal extraction warnings
 - ModelPatternError for structured error handling
 - ModelPatternRecord for individual pattern data
@@ -58,7 +58,7 @@ class TestEnumPatternKind:
         assert EnumPatternKind.TOOL_FAILURE.value == "tool_failure"
 
     def test_str_helper_returns_value(self) -> None:
-        """Test that StrValueHelper makes str() return the value."""
+        """Test that UtilStrValueHelper makes str() return the value."""
         assert str(EnumPatternKind.FILE_ACCESS) == "file_access"
         assert str(EnumPatternKind.ERROR) == "error"
         assert str(EnumPatternKind.ARCHITECTURE) == "architecture"
@@ -72,12 +72,12 @@ class TestEnumPatternKind:
 
     def test_value_attribute_matches_str(self) -> None:
         """Test that .value attribute matches str() output."""
-        for member in EnumPatternKind:
+        for member in EnumPatternKind.__members__.values():
             assert str(member) == member.value
 
     def test_enum_is_string_based(self) -> None:
         """Test that enum members are string instances."""
-        for member in EnumPatternKind:
+        for member in EnumPatternKind.__members__.values():
             assert isinstance(member.value, str)
 
     def test_can_compare_with_string(self) -> None:
@@ -426,7 +426,7 @@ class TestModelPatternRecord:
 
     def test_uses_enum_pattern_kind(self, valid_record_data: dict) -> None:
         """Test that kind field uses EnumPatternKind."""
-        for kind in EnumPatternKind:
+        for kind in EnumPatternKind.__members__.values():
             valid_record_data["kind"] = kind
             record = ModelPatternRecord(**valid_record_data)
             assert record.kind == kind
@@ -802,7 +802,7 @@ class TestModelPatternExtractionOutput:
         output = ModelPatternExtractionOutput(**minimal_output_data)
 
         # All EnumPatternKind values should be keys
-        for kind in EnumPatternKind:
+        for kind in EnumPatternKind.__members__.values():
             assert kind in output.patterns_by_kind
             assert output.patterns_by_kind[kind] == []
 

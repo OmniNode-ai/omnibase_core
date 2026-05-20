@@ -48,12 +48,12 @@ class TestEnumFileStampStatus:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert "VALID" in EnumFileStampStatus
-        assert "INVALID" in EnumFileStampStatus
-        assert "MISSING" in EnumFileStampStatus
-        assert "EXPIRED" in EnumFileStampStatus
-        assert "CORRUPTED" in EnumFileStampStatus
-        assert "invalid" not in EnumFileStampStatus
+        assert "VALID" in EnumFileStampStatus._value2member_map_
+        assert "INVALID" in EnumFileStampStatus._value2member_map_
+        assert "MISSING" in EnumFileStampStatus._value2member_map_
+        assert "EXPIRED" in EnumFileStampStatus._value2member_map_
+        assert "CORRUPTED" in EnumFileStampStatus._value2member_map_
+        assert "invalid" not in EnumFileStampStatus._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -86,7 +86,9 @@ class TestEnumFileStampStatus:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [status.value for status in EnumFileStampStatus]
+        all_values = [
+            status.value for status in EnumFileStampStatus.__members__.values()
+        ]
         expected_values = ["VALID", "INVALID", "MISSING", "EXPIRED", "CORRUPTED"]
         assert set(all_values) == set(expected_values)
 

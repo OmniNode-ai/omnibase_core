@@ -70,7 +70,7 @@ class TestModelInvariantValidation:
             EnumInvariantType.COST: {"max_cost": 0.10},
             EnumInvariantType.CUSTOM: {"callable_path": "my_module.validator"},
         }
-        for inv_type in EnumInvariantType:
+        for inv_type in EnumInvariantType.__members__.values():
             inv = ModelInvariant(
                 name=f"Test {inv_type.value}",
                 type=inv_type,
@@ -85,7 +85,7 @@ class TestModelInvariantSeverityLevels:
 
     def test_invariant_accepts_all_severity_levels(self) -> None:
         """All severity levels should be valid."""
-        for severity in EnumSeverity:
+        for severity in EnumSeverity.__members__.values():
             inv = ModelInvariant(
                 name=f"Test {severity.value}",
                 type=EnumInvariantType.LATENCY,

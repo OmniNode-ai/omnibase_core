@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = [
     "EnumNodeArchetype",
@@ -33,7 +33,7 @@ __all__ = [
 
 
 @unique
-class EnumNodeArchetype(StrValueHelper, str, Enum):
+class EnumNodeArchetype(UtilStrValueHelper, str, Enum):
     """
     Design-time architectural role for handler contracts.
 

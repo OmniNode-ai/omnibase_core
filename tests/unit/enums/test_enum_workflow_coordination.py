@@ -55,12 +55,12 @@ class TestEnumWorkflowStatus:
 
     def test_enum_membership(self) -> None:
         """Test enum membership check."""
-        assert EnumWorkflowStatus.PENDING in EnumWorkflowStatus
-        assert EnumWorkflowStatus.RUNNING in EnumWorkflowStatus
-        assert EnumWorkflowStatus.COMPLETED in EnumWorkflowStatus
-        assert EnumWorkflowStatus.FAILED in EnumWorkflowStatus
-        assert EnumWorkflowStatus.CANCELLED in EnumWorkflowStatus
-        assert EnumWorkflowStatus.PAUSED in EnumWorkflowStatus
+        assert EnumWorkflowStatus.PENDING in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.RUNNING in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.COMPLETED in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.FAILED in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.CANCELLED in EnumWorkflowStatus.__members__.values()
+        assert EnumWorkflowStatus.PAUSED in EnumWorkflowStatus.__members__.values()
 
     def test_string_conversion(self) -> None:
         """Test string conversion of enum values (uses value due to __str__)."""
@@ -138,13 +138,19 @@ class TestEnumAssignmentStatus:
 
     def test_enum_membership(self) -> None:
         """Test enum membership check."""
-        assert EnumAssignmentStatus.ASSIGNED in EnumAssignmentStatus
-        assert EnumAssignmentStatus.EXECUTING in EnumAssignmentStatus
-        assert EnumAssignmentStatus.COMPLETED in EnumAssignmentStatus
-        assert EnumAssignmentStatus.FAILED in EnumAssignmentStatus
+        assert (
+            EnumAssignmentStatus.ASSIGNED in EnumAssignmentStatus.__members__.values()
+        )
+        assert (
+            EnumAssignmentStatus.EXECUTING in EnumAssignmentStatus.__members__.values()
+        )
+        assert (
+            EnumAssignmentStatus.COMPLETED in EnumAssignmentStatus.__members__.values()
+        )
+        assert EnumAssignmentStatus.FAILED in EnumAssignmentStatus.__members__.values()
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string conversion of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumAssignmentStatus.ASSIGNED) == "ASSIGNED"
         assert str(EnumAssignmentStatus.EXECUTING) == "EXECUTING"
         assert str(EnumAssignmentStatus.COMPLETED) == "COMPLETED"
@@ -197,13 +203,23 @@ class TestEnumExecutionPattern:
 
     def test_enum_membership(self) -> None:
         """Test enum membership check."""
-        assert EnumExecutionPattern.SEQUENTIAL in EnumExecutionPattern
-        assert EnumExecutionPattern.PARALLEL_COMPUTE in EnumExecutionPattern
-        assert EnumExecutionPattern.PIPELINE in EnumExecutionPattern
-        assert EnumExecutionPattern.SCATTER_GATHER in EnumExecutionPattern
+        assert (
+            EnumExecutionPattern.SEQUENTIAL in EnumExecutionPattern.__members__.values()
+        )
+        assert (
+            EnumExecutionPattern.PARALLEL_COMPUTE
+            in EnumExecutionPattern.__members__.values()
+        )
+        assert (
+            EnumExecutionPattern.PIPELINE in EnumExecutionPattern.__members__.values()
+        )
+        assert (
+            EnumExecutionPattern.SCATTER_GATHER
+            in EnumExecutionPattern.__members__.values()
+        )
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string conversion of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumExecutionPattern.SEQUENTIAL) == "sequential"
         assert str(EnumExecutionPattern.PARALLEL_COMPUTE) == "parallel_compute"
         assert str(EnumExecutionPattern.PIPELINE) == "pipeline"
@@ -234,7 +250,7 @@ class TestEnumExecutionPattern:
 
     def test_lowercase_values(self) -> None:
         """Test that execution pattern values are lowercase."""
-        for pattern in EnumExecutionPattern:
+        for pattern in EnumExecutionPattern.__members__.values():
             assert pattern.value == pattern.value.lower()
 
 
@@ -267,13 +283,25 @@ class TestEnumFailureRecoveryStrategy:
 
     def test_enum_membership(self) -> None:
         """Test enum membership check."""
-        assert EnumFailureRecoveryStrategy.RETRY in EnumFailureRecoveryStrategy
-        assert EnumFailureRecoveryStrategy.ROLLBACK in EnumFailureRecoveryStrategy
-        assert EnumFailureRecoveryStrategy.COMPENSATE in EnumFailureRecoveryStrategy
-        assert EnumFailureRecoveryStrategy.ABORT in EnumFailureRecoveryStrategy
+        assert (
+            EnumFailureRecoveryStrategy.RETRY
+            in EnumFailureRecoveryStrategy.__members__.values()
+        )
+        assert (
+            EnumFailureRecoveryStrategy.ROLLBACK
+            in EnumFailureRecoveryStrategy.__members__.values()
+        )
+        assert (
+            EnumFailureRecoveryStrategy.COMPENSATE
+            in EnumFailureRecoveryStrategy.__members__.values()
+        )
+        assert (
+            EnumFailureRecoveryStrategy.ABORT
+            in EnumFailureRecoveryStrategy.__members__.values()
+        )
 
     def test_string_conversion(self) -> None:
-        """Test string conversion of enum values (str() returns value due to StrValueHelper mixin)."""
+        """Test string conversion of enum values (str() returns value due to UtilStrValueHelper mixin)."""
         assert str(EnumFailureRecoveryStrategy.RETRY) == "RETRY"
         assert str(EnumFailureRecoveryStrategy.ROLLBACK) == "ROLLBACK"
         assert str(EnumFailureRecoveryStrategy.COMPENSATE) == "COMPENSATE"
@@ -304,7 +332,7 @@ class TestEnumFailureRecoveryStrategy:
 
     def test_uppercase_values(self) -> None:
         """Test that failure recovery strategy values are uppercase."""
-        for strategy in EnumFailureRecoveryStrategy:
+        for strategy in EnumFailureRecoveryStrategy.__members__.values():
             assert strategy.value == strategy.value.upper()
 
 
@@ -324,34 +352,36 @@ class TestEnumWorkflowCoordinationIntegration:
         """Test that enum names match values for uppercase enums."""
         # Note: EnumWorkflowStatus uses lowercase values, so names don't match values
         # Only test enums that use UPPER_SNAKE_CASE values
-        for status in EnumAssignmentStatus:
+        for status in EnumAssignmentStatus.__members__.values():
             assert status.name == status.value
 
-        for strategy in EnumFailureRecoveryStrategy:
+        for strategy in EnumFailureRecoveryStrategy.__members__.values():
             assert strategy.name == strategy.value
 
     def test_workflow_status_uses_lowercase_values(self) -> None:
         """Test that EnumWorkflowStatus uses lowercase values (canonical spec)."""
-        for status in EnumWorkflowStatus:
+        for status in EnumWorkflowStatus.__members__.values():
             assert status.value == status.value.lower()
 
     def test_execution_pattern_names_are_uppercase(self) -> None:
         """Test that ExecutionPattern enum names are uppercase."""
-        for pattern in EnumExecutionPattern:
+        for pattern in EnumExecutionPattern.__members__.values():
             assert pattern.name == pattern.name.upper()
 
     def test_enum_value_uniqueness(self) -> None:
         """Test that all enum values within each enum are unique."""
-        workflow_values = [s.value for s in EnumWorkflowStatus]
+        workflow_values = [s.value for s in EnumWorkflowStatus.__members__.values()]
         assert len(workflow_values) == len(set(workflow_values))
 
-        assignment_values = [s.value for s in EnumAssignmentStatus]
+        assignment_values = [s.value for s in EnumAssignmentStatus.__members__.values()]
         assert len(assignment_values) == len(set(assignment_values))
 
-        execution_values = [p.value for p in EnumExecutionPattern]
+        execution_values = [p.value for p in EnumExecutionPattern.__members__.values()]
         assert len(execution_values) == len(set(execution_values))
 
-        recovery_values = [s.value for s in EnumFailureRecoveryStrategy]
+        recovery_values = [
+            s.value for s in EnumFailureRecoveryStrategy.__members__.values()
+        ]
         assert len(recovery_values) == len(set(recovery_values))
 
     def test_shared_member_names_across_enums(self) -> None:
@@ -367,7 +397,10 @@ class TestEnumWorkflowCoordinationIntegration:
     def test_enum_comparison(self) -> None:
         """Test enum value comparisons."""
         # Same enum comparisons
-        assert EnumWorkflowStatus.PENDING == EnumWorkflowStatus.PENDING
+        assert (
+            type(EnumWorkflowStatus.PENDING)(EnumWorkflowStatus.PENDING.value)
+            is EnumWorkflowStatus.PENDING
+        )
         assert EnumWorkflowStatus.PENDING != EnumWorkflowStatus.RUNNING
 
         # String comparisons (str enum feature)

@@ -11,11 +11,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumMigrationConflictType(StrValueHelper, str, Enum):
+class EnumMigrationConflictType(UtilStrValueHelper, str, Enum):
     """Strongly typed migration conflict type discriminators.
 
     Used for discriminated union patterns in migration conflict handling.

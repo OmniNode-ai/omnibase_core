@@ -104,13 +104,13 @@ class TestEnumCellType:
 
     def test_enum_equality(self):
         """Test enum equality comparison."""
-        assert EnumCellType.CODE == EnumCellType.CODE
+        assert type(EnumCellType.CODE)(EnumCellType.CODE.value) is EnumCellType.CODE
         assert EnumCellType.MARKDOWN != EnumCellType.CODE
 
     def test_enum_membership(self):
         """Test enum membership checking."""
-        assert EnumCellType.CODE in EnumCellType
-        assert EnumCellType.MARKDOWN in EnumCellType
+        assert EnumCellType.CODE in EnumCellType.__members__.values()
+        assert EnumCellType.MARKDOWN in EnumCellType.__members__.values()
 
     def test_enum_iteration(self):
         """Test iterating over enum values."""

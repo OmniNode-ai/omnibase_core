@@ -62,14 +62,14 @@ class TestEnumHandlerPriority:
 
     def test_enum_membership(self):
         """Test membership testing."""
-        assert 100 in EnumHandlerPriority
-        assert 50 in EnumHandlerPriority
-        assert 10 in EnumHandlerPriority
-        assert 0 in EnumHandlerPriority
-        assert 25 in EnumHandlerPriority
-        assert 75 in EnumHandlerPriority
-        assert 5 in EnumHandlerPriority
-        assert 999 not in EnumHandlerPriority
+        assert EnumHandlerPriority(100) in EnumHandlerPriority.__members__.values()
+        assert EnumHandlerPriority(50) in EnumHandlerPriority.__members__.values()
+        assert EnumHandlerPriority(10) in EnumHandlerPriority.__members__.values()
+        assert EnumHandlerPriority(0) in EnumHandlerPriority.__members__.values()
+        assert EnumHandlerPriority(25) in EnumHandlerPriority.__members__.values()
+        assert EnumHandlerPriority(75) in EnumHandlerPriority.__members__.values()
+        assert EnumHandlerPriority(5) in EnumHandlerPriority.__members__.values()
+        assert 999 not in EnumHandlerPriority.__members__.values()
 
     def test_enum_comparison(self):
         """Test enum comparison."""
@@ -112,7 +112,9 @@ class TestEnumHandlerPriority:
 
     def test_enum_all_values(self):
         """Test that all enum values are accessible."""
-        all_values = [priority.value for priority in EnumHandlerPriority]
+        all_values = [
+            priority.value for priority in EnumHandlerPriority.__members__.values()
+        ]
         expected_values = [100, 50, 10, 0, 25, 75, 5]
         assert set(all_values) == set(expected_values)
 

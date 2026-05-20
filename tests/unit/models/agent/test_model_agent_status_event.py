@@ -123,7 +123,7 @@ class TestModelAgentStatusEventStates:
 
     def test_all_states_are_accepted(self) -> None:
         """Test that each EnumAgentState value is accepted."""
-        for state in EnumAgentState:
+        for state in EnumAgentState.__members__.values():
             kwargs: dict[str, object] = {"state": state}
             if state == EnumAgentState.BLOCKED:
                 kwargs["blocking_reason"] = "waiting for external dependency"
@@ -231,7 +231,7 @@ class TestModelAgentStatusEventBlockingReason:
 
     def test_non_blocked_with_blocking_reason_raises(self) -> None:
         """Test that state != BLOCKED with a blocking_reason raises ValidationError."""
-        for state in EnumAgentState:
+        for state in EnumAgentState.__members__.values():
             if state == EnumAgentState.BLOCKED:
                 continue
             with pytest.raises(ValidationError) as exc_info:
@@ -243,7 +243,7 @@ class TestModelAgentStatusEventBlockingReason:
 
     def test_non_blocked_without_blocking_reason_is_valid(self) -> None:
         """Test that state != BLOCKED with blocking_reason=None is valid."""
-        for state in EnumAgentState:
+        for state in EnumAgentState.__members__.values():
             if state == EnumAgentState.BLOCKED:
                 continue
             event = _make_event(state=state, blocking_reason=None)

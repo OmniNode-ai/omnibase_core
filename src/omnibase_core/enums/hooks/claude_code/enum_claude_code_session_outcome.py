@@ -13,11 +13,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumClaudeCodeSessionOutcome(StrValueHelper, str, Enum):
+class EnumClaudeCodeSessionOutcome(UtilStrValueHelper, str, Enum):
     """Outcome classification for a completed Claude Code session.
 
     Provides semantic classification of how a session ended, enabling

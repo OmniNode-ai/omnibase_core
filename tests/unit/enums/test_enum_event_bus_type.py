@@ -30,7 +30,7 @@ class TestEnumEventBusTypeValues:
 
     @pytest.mark.unit
     def test_str_returns_value(self) -> None:
-        """str() returns the enum value (StrValueHelper mixin)."""
+        """str() returns the enum value (UtilStrValueHelper mixin)."""
         assert str(EnumEventBusType.KAFKA) == "kafka"
         assert str(EnumEventBusType.INMEMORY) == "inmemory"
 

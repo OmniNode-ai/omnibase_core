@@ -9,13 +9,13 @@ Part of the effect boundary system for OMN-1147.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumEffectCategory"]
 
 
 @unique
-class EnumEffectCategory(StrValueHelper, str, Enum):
+class EnumEffectCategory(UtilStrValueHelper, str, Enum):
     """Categories of non-deterministic effects for replay safety classification.
 
     Each category represents a class of external interactions that may produce

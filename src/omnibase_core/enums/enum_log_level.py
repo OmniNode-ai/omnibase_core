@@ -33,11 +33,11 @@ Used for structured logging and log level configuration.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumLogLevel(StrValueHelper, str, Enum):
+class EnumLogLevel(UtilStrValueHelper, str, Enum):
     """Log levels enum based on SPI LogLevel Literal type and severity levels for validation."""
 
     TRACE = "trace"

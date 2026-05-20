@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumJsonValueType(StrValueHelper, str, Enum):
+class EnumJsonValueType(UtilStrValueHelper, str, Enum):
     """ONEX-compliant JSON value type enum for validation."""
 
     STRING = "string"

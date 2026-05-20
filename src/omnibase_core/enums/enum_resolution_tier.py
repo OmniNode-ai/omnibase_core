@@ -15,13 +15,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumResolutionTier"]
 
 
 @unique
-class EnumResolutionTier(StrValueHelper, str, Enum):
+class EnumResolutionTier(UtilStrValueHelper, str, Enum):
     """Trust boundary tier for tiered dependency resolution.
 
     Resolution escalates through tiers in order, each requiring progressively

@@ -9,11 +9,11 @@ Categories for organizing different types of actions across tools.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumActionCategory(StrValueHelper, str, Enum):
+class EnumActionCategory(UtilStrValueHelper, str, Enum):
     """
     Categories for organizing different types of actions across tools.
 

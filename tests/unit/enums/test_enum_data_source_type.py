@@ -45,8 +45,8 @@ class TestEnumDataSourceType:
 
     def test_enum_membership(self):
         """Test enum membership operations."""
-        assert "FILE_SYSTEM" in EnumDataSourceType
-        assert "invalid_type" not in EnumDataSourceType
+        assert "FILE_SYSTEM" in EnumDataSourceType._value2member_map_
+        assert "invalid_type" not in EnumDataSourceType._value2member_map_
 
     def test_enum_comparison(self):
         """Test enum comparison operations."""
@@ -88,7 +88,9 @@ class TestEnumDataSourceType:
             "SCHEDULED_JOB",
         }
 
-        actual_values = {member.value for member in EnumDataSourceType}
+        actual_values = {
+            member.value for member in EnumDataSourceType.__members__.values()
+        }
         assert actual_values == expected_values
 
     def test_enum_docstring(self):
@@ -98,13 +100,18 @@ class TestEnumDataSourceType:
     def test_enum_data_source_types(self):
         """Test that enum covers typical data source types."""
         # Test file system source
-        assert EnumDataSourceType.FILE_SYSTEM in EnumDataSourceType
+        assert EnumDataSourceType.FILE_SYSTEM in EnumDataSourceType.__members__.values()
 
         # Test database source
-        assert EnumDataSourceType.DATABASE_RECORD in EnumDataSourceType
+        assert (
+            EnumDataSourceType.DATABASE_RECORD
+            in EnumDataSourceType.__members__.values()
+        )
 
         # Test API source
-        assert EnumDataSourceType.API_REQUEST in EnumDataSourceType
+        assert EnumDataSourceType.API_REQUEST in EnumDataSourceType.__members__.values()
 
         # Test scheduled job source
-        assert EnumDataSourceType.SCHEDULED_JOB in EnumDataSourceType
+        assert (
+            EnumDataSourceType.SCHEDULED_JOB in EnumDataSourceType.__members__.values()
+        )

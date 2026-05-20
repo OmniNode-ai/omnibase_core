@@ -53,7 +53,7 @@ class TestHooksList:
         ):
             result = runner.invoke(hooks_group, ["list"])
         assert result.exit_code == 0
-        for m in EnumHookBit:
+        for m in EnumHookBit.__members__.values():
             assert m.name in result.output
 
     def test_list_shows_on_state_by_default(self, tmp_path: Path) -> None:

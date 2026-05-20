@@ -9,11 +9,11 @@ Defines valid priority levels for AI workflow execution
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumWorkflowPriority(StrValueHelper, str, Enum):
+class EnumWorkflowPriority(UtilStrValueHelper, str, Enum):
     """Priority levels for workflow execution"""
 
     LOW = "low"

@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRegistryAction(StrValueHelper, str, Enum):
+class EnumRegistryAction(UtilStrValueHelper, str, Enum):
     """Registry actions for node operations."""
 
     GET_ACTIVE_NODES = "get_active_nodes"

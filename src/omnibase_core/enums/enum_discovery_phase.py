@@ -5,11 +5,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDiscoveryPhase(StrValueHelper, str, Enum):
+class EnumDiscoveryPhase(UtilStrValueHelper, str, Enum):
     """Discovery implementation phases."""
 
     PHASE_1_SIMPLE = "phase_1_simple_discovery"

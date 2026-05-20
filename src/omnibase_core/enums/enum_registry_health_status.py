@@ -3,11 +3,11 @@
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRegistryHealthStatus(StrValueHelper, str, Enum):
+class EnumRegistryHealthStatus(UtilStrValueHelper, str, Enum):
     """Standard registry health status values."""
 
     HEALTHY = "healthy"

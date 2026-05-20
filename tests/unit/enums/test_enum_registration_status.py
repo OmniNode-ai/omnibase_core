@@ -15,7 +15,7 @@ class TestEnumRegistrationStatus:
     """Test suite for EnumRegistrationStatus enumeration."""
 
     def test_string_returns_value(self) -> None:
-        """Test that str() returns the .value (StrValueHelper behavior)."""
+        """Test that str() returns the .value (UtilStrValueHelper behavior)."""
         assert str(EnumRegistrationStatus.REGISTERED) == "registered"
         assert str(EnumRegistrationStatus.UNREGISTERED) == "unregistered"
         assert str(EnumRegistrationStatus.FAILED) == "failed"
@@ -34,7 +34,7 @@ class TestEnumRegistrationStatus:
 
     def test_all_members_exist(self) -> None:
         """Test that all expected enum members exist."""
-        values = [m.value for m in EnumRegistrationStatus]
+        values = [m.value for m in EnumRegistrationStatus.__members__.values()]
         assert "registered" in values
         assert "unregistered" in values
         assert "failed" in values
@@ -44,7 +44,7 @@ class TestEnumRegistrationStatus:
 
     def test_unique_values(self) -> None:
         """Test that all enum values are unique."""
-        values = [m.value for m in EnumRegistrationStatus]
+        values = [m.value for m in EnumRegistrationStatus.__members__.values()]
         assert len(values) == len(set(values))
 
     def test_enum_count(self) -> None:
@@ -78,9 +78,12 @@ class TestEnumRegistrationStatus:
 
     def test_enum_membership(self) -> None:
         """Test membership testing."""
-        assert EnumRegistrationStatus.REGISTERED in EnumRegistrationStatus
-        assert "registered" in EnumRegistrationStatus
-        assert "invalid_status" not in EnumRegistrationStatus
+        assert (
+            EnumRegistrationStatus.REGISTERED
+            in EnumRegistrationStatus.__members__.values()
+        )
+        assert "registered" in EnumRegistrationStatus._value2member_map_
+        assert "invalid_status" not in EnumRegistrationStatus._value2member_map_
 
     def test_enum_deserialization(self) -> None:
         """Test enum deserialization from string."""

@@ -9,11 +9,11 @@ Authentication types for webhook notifications in ONEX infrastructure.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumAuthType(StrValueHelper, str, Enum):
+class EnumAuthType(UtilStrValueHelper, str, Enum):
     """Enumeration for authentication types used in webhook communications."""
 
     # No authentication

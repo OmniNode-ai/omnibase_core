@@ -17,11 +17,11 @@ The purpose value becomes part of the consumer group ID:
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumConsumerGroupPurpose(StrValueHelper, str, Enum):
+class EnumConsumerGroupPurpose(UtilStrValueHelper, str, Enum):
     """
     Consumer group purpose classification for event bus subscriptions.
 

@@ -160,7 +160,10 @@ class TestEnumInstanceType:
 
     def test_enum_equality(self):
         """Test enum equality comparisons."""
-        assert EnumInstanceType.T2_MICRO == EnumInstanceType.T2_MICRO
+        assert (
+            type(EnumInstanceType.T2_MICRO)(EnumInstanceType.T2_MICRO.value)
+            is EnumInstanceType.T2_MICRO
+        )
         assert EnumInstanceType.T2_MICRO != EnumInstanceType.T2_SMALL
         assert EnumInstanceType.T2_MICRO == "t2.micro"
 
@@ -180,7 +183,7 @@ class TestEnumInstanceType:
         # AWS instances
         aws_count = sum(
             1
-            for instance in EnumInstanceType
+            for instance in EnumInstanceType.__members__.values()
             if instance.value.startswith(("t2.", "t3.", "m5.", "c5.", "r5.", "i3."))
         )
         assert aws_count >= 15  # Should have reasonable AWS coverage
@@ -188,7 +191,7 @@ class TestEnumInstanceType:
         # Azure instances
         azure_instances = [
             instance
-            for instance in EnumInstanceType
+            for instance in EnumInstanceType.__members__.values()
             if EnumInstanceType.is_azure_instance(instance)
         ]
         assert len(azure_instances) >= 7  # Should have reasonable Azure coverage
@@ -196,7 +199,7 @@ class TestEnumInstanceType:
         # GCP instances
         gcp_instances = [
             instance
-            for instance in EnumInstanceType
+            for instance in EnumInstanceType.__members__.values()
             if EnumInstanceType.is_gcp_instance(instance)
         ]
         assert len(gcp_instances) >= 6  # Should have reasonable GCP coverage
@@ -204,7 +207,7 @@ class TestEnumInstanceType:
         # Database instances
         db_instances = [
             instance
-            for instance in EnumInstanceType
+            for instance in EnumInstanceType.__members__.values()
             if EnumInstanceType.is_database_instance(instance)
         ]
         assert len(db_instances) >= 6  # Should have reasonable DB coverage
@@ -212,7 +215,7 @@ class TestEnumInstanceType:
         # Container instances
         container_instances = [
             instance
-            for instance in EnumInstanceType
+            for instance in EnumInstanceType.__members__.values()
             if EnumInstanceType.is_container_instance(instance)
         ]
         assert (

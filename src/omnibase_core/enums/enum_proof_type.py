@@ -15,13 +15,13 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 __all__ = ["EnumProofType"]
 
 
 @unique
-class EnumProofType(StrValueHelper, str, Enum):
+class EnumProofType(UtilStrValueHelper, str, Enum):
     """Type of proof required or verified during tiered resolution.
 
     Proofs are assertions about a node's identity, capabilities, or

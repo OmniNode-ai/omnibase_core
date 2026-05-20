@@ -9,11 +9,11 @@ Defines agent request types for RSD (Rapid Service Development) system.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumRsdAgentRequestType(StrValueHelper, str, Enum):
+class EnumRsdAgentRequestType(UtilStrValueHelper, str, Enum):
     """Enumeration of RSD agent request types."""
 
     ANALYZE = "analyze"

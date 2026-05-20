@@ -12,11 +12,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumOutputMode(StrValueHelper, str, Enum):
+class EnumOutputMode(UtilStrValueHelper, str, Enum):
     """
     Strongly typed output mode discriminators.
 

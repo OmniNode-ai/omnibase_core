@@ -10,11 +10,11 @@ configuration keys using various validation strategies.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumValidationRuleType(StrValueHelper, str, Enum):
+class EnumValidationRuleType(UtilStrValueHelper, str, Enum):
     """Validation rule type enumeration."""
 
     REGEX = "regex"

@@ -10,11 +10,11 @@ from __future__ import annotations
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import StrValueHelper
+from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
 
 
 @unique
-class EnumDatabaseEngine(StrValueHelper, str, Enum):
+class EnumDatabaseEngine(UtilStrValueHelper, str, Enum):
     """Supported database engine types for repository contracts.
 
     Used by ModelDbRepositoryContract to specify the target database.
