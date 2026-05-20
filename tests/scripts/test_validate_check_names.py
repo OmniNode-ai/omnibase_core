@@ -31,7 +31,6 @@ def _load_module():  # type: ignore[return]
 
 _mod = _load_module()
 _parse_workflow_file = _mod._parse_workflow_file
-_parse_required_checks = _mod._parse_required_checks
 _validate_gates = _mod._validate_gates
 
 
@@ -92,7 +91,7 @@ def test_parse_workflow_file_no_uses_for_regular_job(tmp_path: Path) -> None:
 @pytest.mark.unit
 def test_validate_gates_composite_name_correct(tmp_path: Path) -> None:
     """No violation when check_name starts with '<caller-job-key> /' for a workflow_call job."""
-    wf = _write_workflow(
+    _write_workflow(
         tmp_path,
         "call-reject-skip.yml",
         """
@@ -119,7 +118,7 @@ def test_validate_gates_composite_name_correct(tmp_path: Path) -> None:
 @pytest.mark.unit
 def test_validate_gates_composite_name_missing_prefix(tmp_path: Path) -> None:
     """WORKFLOW_CALL_COMPOSITE_NAME_MISMATCH when check_name lacks '<caller-job-key> /' prefix."""
-    wf = _write_workflow(
+    _write_workflow(
         tmp_path,
         "call-reject-skip.yml",
         """
