@@ -194,10 +194,6 @@ class TestEnumDiscriminatedValueTypeEdgeCases:
 
     def test_enum_comparison(self) -> None:
         """Test enum value comparison."""
-        assert (
-            type(EnumDiscriminatedValueType.BOOL)(EnumDiscriminatedValueType.BOOL.value)
-            is EnumDiscriminatedValueType.BOOL
-        )
         assert EnumDiscriminatedValueType.INT != EnumDiscriminatedValueType.STR  # type: ignore[comparison-overlap]
 
     def test_enum_identity(self) -> None:

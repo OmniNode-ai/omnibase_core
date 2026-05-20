@@ -263,6 +263,7 @@ class TestEnumReturnType:
 
         # Text-based and file-based types might overlap (e.g., REPORTS)
         # This is acceptable as some types can be both text and file-based
+        assert EnumReturnType.REPORTS in (text_types & file_types)
 
     def test_return_type_logical_groupings(self):
         """Test logical groupings of return types."""
