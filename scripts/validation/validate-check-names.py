@@ -99,6 +99,9 @@ class WorkflowInfo(NamedTuple):
     has_paths_filter: bool
     """True if the workflow uses ``paths:`` at the top-level ``on:`` section."""
 
+    job_uses: dict[str, str]
+    """Map of job_key -> uses: value for workflow_call jobs (e.g. {'call-job': 'org/repo/.github/workflows/foo.yml@main'})."""
+
 
 # ---------------------------------------------------------------------------
 # YAML parsing helpers (line-based to avoid PyYAML dependency)
@@ -106,7 +109,7 @@ class WorkflowInfo(NamedTuple):
 
 
 def _parse_workflow_file(workflow_path: Path) -> WorkflowInfo:
-    """Extract job keys, display names, and paths-filter presence from a workflow file.
+    """Extract job keys, display names, uses references, and paths-filter presence.
 
     Uses a simple line-based parser to avoid requiring PyYAML in CI environments.
     Handles standard GitHub Actions YAML structure reliably.
@@ -115,12 +118,14 @@ def _parse_workflow_file(workflow_path: Path) -> WorkflowInfo:
         workflow_path: Absolute path to the workflow YAML file.
 
     Returns:
-        WorkflowInfo with job_keys, job_names mapping, and has_paths_filter flag.
+        WorkflowInfo with job_keys, job_names mapping, job_uses mapping, and
+        has_paths_filter flag.
     """
     lines = workflow_path.read_text(encoding="utf-8").splitlines()
 
     job_keys: set[str] = set()
     job_names: dict[str, str] = {}
+    job_uses: dict[str, str] = {}
     has_paths_filter = False
 
     in_jobs_block = False
@@ -185,7 +190,7 @@ def _parse_workflow_file(workflow_path: Path) -> WorkflowInfo:
                 current_job_indent = indent
                 continue
 
-        # Detect display name for current job (indent must be one level deeper)
+        # Detect display name or uses: for current job (indent must be one level deeper)
         if (
             current_job_key is not None
             and current_job_indent is not None
@@ -198,10 +203,19 @@ def _parse_workflow_file(workflow_path: Path) -> WorkflowInfo:
                 raw_name = re.sub(r"\s*\$\{.*?\}", "", raw_name).strip()
                 job_names[current_job_key] = raw_name
 
+            # NOTE(OMN-11119): pattern is anchored at ^ and $ on a single line of
+            # a trusted YAML workflow file. No user-controlled input; ReDoS risk is
+            # nil. SonarCloud python:S5852 false-positive — suppress as hotspot
+            # reviewed.
+            uses_match = re.match(r"^[ \t]+uses:[ \t]+(.+)$", line)  # NOSONAR
+            if uses_match:
+                job_uses[current_job_key] = uses_match.group(1).strip().strip("\"'")
+
     return WorkflowInfo(
         job_keys=job_keys,
         job_names=job_names,
         has_paths_filter=has_paths_filter,
+        job_uses=job_uses,
     )
 
 
@@ -445,22 +459,46 @@ def _validate_gates(
             continue
 
         # --- Check 5: check_name matches job's display name ---
-        actual_name = wf_info.job_names.get(workflow_job_key, "")
-        if actual_name and actual_name != check_name:
-            violations.append(
-                CheckNameViolation(
-                    gate_check_name=check_name,
-                    workflow_file=workflow_file,
-                    workflow_job_key=workflow_job_key,
-                    error_type="CHECK_NAME_MISMATCH",
-                    detail=(
-                        f"Gate check_name '{check_name}' does not match the actual "
-                        f"job display name '{actual_name}' for job key '{workflow_job_key}' "
-                        f"in '{workflow_file}'. Branch protection requires the check_name to "
-                        f"match exactly what GitHub reports (the job 'name:' field)."
-                    ),
+        # For workflow_call jobs (uses: references), GitHub generates composite check
+        # names of the form "<caller-job-key> / <callee-job-name>". Validate that the
+        # check_name matches this composite form when the job has a uses: reference.
+        uses_ref = wf_info.job_uses.get(workflow_job_key, "")
+        if uses_ref:
+            # This is a workflow_call job — check_name must start with caller-job-key /
+            expected_prefix = f"{workflow_job_key} / "
+            if not check_name.startswith(expected_prefix):
+                violations.append(
+                    CheckNameViolation(
+                        gate_check_name=check_name,
+                        workflow_file=workflow_file,
+                        workflow_job_key=workflow_job_key,
+                        error_type="WORKFLOW_CALL_COMPOSITE_NAME_MISMATCH",
+                        detail=(
+                            f"Job '{workflow_job_key}' in '{workflow_file}' invokes a reusable "
+                            f"workflow via 'uses: {uses_ref}'. GitHub generates composite "
+                            f"check-run names as '<caller-job-key> / <callee-job-name>', so "
+                            f"check_name must start with '{expected_prefix}'. "
+                            f"Got: '{check_name}'."
+                        ),
+                    )
                 )
-            )
+        else:
+            actual_name = wf_info.job_names.get(workflow_job_key, "")
+            if actual_name and actual_name != check_name:
+                violations.append(
+                    CheckNameViolation(
+                        gate_check_name=check_name,
+                        workflow_file=workflow_file,
+                        workflow_job_key=workflow_job_key,
+                        error_type="CHECK_NAME_MISMATCH",
+                        detail=(
+                            f"Gate check_name '{check_name}' does not match the actual "
+                            f"job display name '{actual_name}' for job key '{workflow_job_key}' "
+                            f"in '{workflow_file}'. Branch protection requires the check_name to "
+                            f"match exactly what GitHub reports (the job 'name:' field)."
+                        ),
+                    )
+                )
 
     return violations
 
