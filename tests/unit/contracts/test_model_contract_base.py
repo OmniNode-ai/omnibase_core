@@ -572,8 +572,7 @@ class TestModelContractBaseConfig:
         assert contract.config["count"] == 42
         assert contract.config["flag"] is True
 
-    def test_config_absent_from_yaml_gives_empty_dict(self):
-        # When no config: key in YAML, field defaults to {} — no error
+    def test_config_absent_in_constructor_gives_empty_dict(self):
         contract = SampleContractModel(**self.minimal_valid_data)
         assert isinstance(contract.config, dict)
         assert len(contract.config) == 0
