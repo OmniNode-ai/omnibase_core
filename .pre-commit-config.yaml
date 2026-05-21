@@ -187,6 +187,24 @@ repos:
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
+      # Skip-token rejection gate (OMN-11412 / OMN-10414)
+      # Blocks [skip-*] bypass tokens in staged markdown/yaml/txt files.
+      # Escape hatch: add '# skip-token-allowed: <receipt-id>' with a traceable approval receipt.
+      - id: reject-deploy-gate-skip-token
+        name: Reject skip-gate bypass tokens (OMN-10414)
+        entry: .pre-commit-hooks/reject-deploy-gate-skip-token.sh
+        language: script
+        pass_filenames: true
+        always_run: true
+        stages: [pre-commit]
+        exclude: ^tests/.*fixtures/
+      - id: reject-deploy-gate-skip-token-commit-msg
+        name: Reject skip-gate bypass tokens in commit messages (OMN-10414)
+        entry: .pre-commit-hooks/reject-deploy-gate-skip-token.sh
+        language: script
+        pass_filenames: true
+        stages: [commit-msg]
+
       # Substrate Gate: env silent fallback (OMN-wire-validators)
       # Baseline: 38 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
       # Annotate justified bootstrap cases with: # substrate-allow: bootstrap-fallback
