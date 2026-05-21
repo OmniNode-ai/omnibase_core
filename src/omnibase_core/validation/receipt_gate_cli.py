@@ -30,7 +30,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from omnibase_core.validation.receipt_gate import validate_pr_receipts
+from omnibase_core.validation.receipt_gate import (
+    parse_pr_opened_at,
+    validate_pr_receipts,
+)
 from omnibase_core.validation.validator_receipt_reprobe import (
     ReprobeStatus,
     verify_receipts_by_reexecuting_probes,
@@ -94,6 +97,14 @@ def main(argv: list[str] | None = None) -> int:
         help="OMN-10417: PR number. Used for skip-token scope check.",
     )
     parser.add_argument(
+        "--pr-opened-at",
+        default=None,
+        help=(
+            "UTC ISO-8601 timestamp when the PR was opened. Used to enforce "
+            "post-cutoff contract_sha256 receipt binding."
+        ),
+    )
+    parser.add_argument(
         "--evidence-ticket",
         default=None,
         help=(
@@ -124,6 +135,11 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = parser.parse_args(argv)
+    pr_opened_at = None
+    try:
+        pr_opened_at = parse_pr_opened_at(args.pr_opened_at)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     result = validate_pr_receipts(
         pr_body=args.pr_body,
@@ -134,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
         pr_author=args.pr_author,
         current_repo=args.current_repo,
         current_pr_number=args.current_pr_number,
+        pr_opened_at=pr_opened_at,
         evidence_ticket=args.evidence_ticket,
         branch_name=args.branch_name,
     )

@@ -190,6 +190,25 @@ def parse_evidence_source(pr_body: str) -> tuple[str | None, str | None]:
     return (None, None)
 
 
+def parse_pr_opened_at(value: str | None) -> datetime | None:
+    """Parse a PR-opened timestamp for receipt hash-binding enforcement."""
+    if value is None or not value.strip():
+        return None
+    raw = value.strip()
+    normalized = f"{raw[:-1]}+00:00" if raw.endswith("Z") else raw
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise ValueError(  # error-ok: argparse callers render this as CLI usage error.
+            f"pr_opened_at must be an ISO-8601 datetime with timezone, got {raw!r}"
+        ) from exc
+    if parsed.tzinfo is None:
+        raise ValueError(  # error-ok: argparse callers render this as CLI usage error.
+            f"pr_opened_at must include a timezone offset, got {raw!r}"
+        )
+    return parsed.astimezone(UTC)
+
+
 def compute_contract_sha256(contract_path: Path) -> str:
     """Return the SHA-256 hex digest of a contract YAML file's raw bytes."""
     return hashlib.sha256(contract_path.read_bytes()).hexdigest()
@@ -957,5 +976,6 @@ __all__ = [
     "_CONTRACT_SHA256_REQUIRED_AFTER",
     "compute_contract_sha256",
     "parse_evidence_source",
+    "parse_pr_opened_at",
     "validate_pr_receipts",
 ]

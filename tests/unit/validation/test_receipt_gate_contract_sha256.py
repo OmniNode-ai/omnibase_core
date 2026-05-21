@@ -23,6 +23,7 @@ import yaml
 from omnibase_core.validation.receipt_gate import (
     _CONTRACT_SHA256_REQUIRED_AFTER,
     compute_contract_sha256,
+    parse_pr_opened_at,
     validate_pr_receipts,
 )
 
@@ -215,3 +216,15 @@ class TestComputeContractSha256:
         f.write_bytes(b"mutated: true\n")
         sha2 = compute_contract_sha256(f)
         assert sha1 != sha2
+
+
+@pytest.mark.unit
+class TestParsePrOpenedAt:
+    def test_z_suffix_parses_as_utc(self) -> None:
+        parsed = parse_pr_opened_at("2026-05-21T12:30:00Z")
+
+        assert parsed == datetime(2026, 5, 21, 12, 30, tzinfo=UTC)
+
+    def test_naive_timestamp_rejected(self) -> None:
+        with pytest.raises(ValueError, match="timezone"):
+            parse_pr_opened_at("2026-05-21T12:30:00")
