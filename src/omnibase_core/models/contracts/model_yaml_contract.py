@@ -66,6 +66,12 @@ class ModelYamlContract(BaseModel):
         description="Event subscription patterns for event-driven execution",
     )
 
+    # Node configuration declared in the contract (OMN-10815)
+    config: dict[str, object] = Field(
+        default_factory=dict,
+        description="Static node configuration values declared in the contract",
+    )
+
     # Verification and traceability (OMN-7731)
     golden_path: list[str] | None = Field(
         default=None,

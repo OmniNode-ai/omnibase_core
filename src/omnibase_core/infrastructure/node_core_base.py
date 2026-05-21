@@ -407,6 +407,18 @@ class NodeCoreBase(ABC):
     def get_state(self) -> dict[str, str]:
         return dict(self.state)
 
+    @property
+    def contract_config(self) -> dict[str, object]:
+        """Contract-declared config section, or {} if absent.
+
+        Reads the `config:` key from self.contract_data (dict or Pydantic model).
+        Never falls back to env vars — absent config means empty dict.
+        """
+        raw = get_contract_attr(self.contract_data, "config")
+        if isinstance(raw, dict):
+            return raw
+        return {}
+
     async def _load_contract(self) -> None:
         """
         Load and validate contract configuration.
