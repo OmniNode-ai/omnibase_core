@@ -48,14 +48,11 @@ def get_version() -> str:
         return version("omnibase_core")
     except (ImportError, PackageNotFoundError):
         # Fallback to __init__.py version
-        try:
+        try:  # fallback-ok: version getter must never crash
             from omnibase_core import __version__
 
             return __version__
-        except (
-            ImportError,
-            AttributeError,
-        ):  # fallback-ok: version getter must never crash
+        except (ImportError, AttributeError):
             return "unknown"
 
 
@@ -670,6 +667,10 @@ cli.add_command(registry)
 from omnibase_core.cli.cli_node import run_node_by_name
 
 cli.add_command(run_node_by_name)
+
+# `onex run` is a canonical alias for `onex node` (OMN-9260).
+# omnimarket docs reference `uv run onex run <node>` as the canonical invocation.
+cli.add_command(run_node_by_name, name="run")
 
 # Register doctor command from separate module
 from omnibase_core.cli.cli_doctor import doctor
