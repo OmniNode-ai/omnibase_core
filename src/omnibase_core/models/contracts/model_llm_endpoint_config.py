@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class ModelLlmEndpointConfig(BaseModel):
-    """LLM endpoint URLs, model names, and timeouts declared in contract config."""
+    """LLM endpoint URLs and model names declared in contract config."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
