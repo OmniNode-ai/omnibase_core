@@ -1,0 +1,38 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-9260"
+title: "Add 'uv run onex run <node>' CLI entry point for RuntimeLocal"
+summary: "Registers onex run as a canonical alias for onex node in cli_commands.py via cli.add_command(run_node_by_name,
+  name='run'). Same flags and RuntimeLocal path. omnimarket docs reference 'uv run onex run <node>' as
+  the canonical invocation but the command returned 'No such command' before this fix."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "6 unit tests in test_onex_run.py pass: command exists, flags, error parity, override."
+    command: "uv run pytest tests/unit/cli/test_onex_run.py -v"
+  - kind: "ci"
+    description: "omnibase_core PR #1122 CI checks green."
+    command: "gh pr checks 1122 --repo OmniNode-ai/omnibase_core"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-unit-tests"
+    description: "6 unit tests covering onex run alias: command exists, all flags present, identical error
+      output to onex node."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/cli/test_onex_run.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure CLI alias addition with no runtime behavior change; no live
+      deploy required."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-9260 adds onex run as a CLI alias for onex node; no Docker
+          image, daemon, broker topic, runtime process, docker exec, or service deploy is required before
+          merge'"
