@@ -329,6 +329,103 @@ def _format_docstring_message(rule_name: str, doc_line: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+LineRule = tuple[str, re.Pattern[str], str]
+
+
+def _applicable_line_rules(
+    line_rules: dict[str, tuple[re.Pattern[str], str, list[str]]],
+    *,
+    is_markdown: bool,
+) -> list[LineRule]:
+    applicable: list[LineRule] = []
+    for rule_name, (pattern, severity, globs) in line_rules.items():
+        md_only = all(g == "*.md" for g in globs)
+        py_only = all(g == "*.py" for g in globs) and not any(
+            g == "*.md" for g in globs
+        )
+        if is_markdown and py_only:
+            continue
+        if not is_markdown and md_only:
+            continue
+        applicable.append((rule_name, pattern, severity))
+    return applicable
+
+
+def _toggle_triple_quote_state(
+    stripped: str, *, in_triple_quote: bool, triple_char: str
+) -> tuple[bool, str]:
+    for quote in ('"""', "'''"):
+        count = stripped.count(quote)
+        if not count:
+            continue
+        if not in_triple_quote and count % 2 == 1:
+            return True, quote
+        if quote == triple_char and count % 2 == 1:
+            return False, ""
+    return in_triple_quote, triple_char
+
+
+def _build_line_violation(
+    *,
+    filename: str,
+    lineno: int,
+    rule_name: str,
+    severity: str,
+    message: str,
+    source_line: str,
+) -> SlopViolation:
+    return SlopViolation(
+        filename=filename,
+        line=lineno,
+        check=rule_name,
+        severity=severity,
+        message=message,
+        source_line=source_line,
+    )
+
+
+def _check_line_rules(
+    *,
+    filename: str,
+    lineno: int,
+    stripped: str,
+    applicable: list[LineRule],
+) -> list[SlopViolation]:
+    if SUPPRESSION_MARKER in stripped:
+        return []
+
+    violations: list[SlopViolation] = []
+    for rule_name, pattern, severity in applicable:
+        if rule_name == CHECK_STEP_NARRATION:
+            comment_match = re.search(r"#(.+)", stripped)
+            if comment_match and pattern.search(comment_match.group(0)):
+                comment_text = comment_match.group(0)
+                violations.append(
+                    _build_line_violation(
+                        filename=filename,
+                        lineno=lineno,
+                        rule_name=rule_name,
+                        severity=severity,
+                        message=f"Step narration comment: {comment_text.strip()!r}",
+                        source_line=stripped,
+                    )
+                )
+            continue
+
+        if pattern.search(stripped):
+            violations.append(
+                _build_line_violation(
+                    filename=filename,
+                    lineno=lineno,
+                    rule_name=rule_name,
+                    severity=severity,
+                    message=f"Pattern match ({rule_name}): {stripped!r}",
+                    source_line=stripped,
+                )
+            )
+    return violations
+
+
 def _check_lines(
     filename: str,
     source_lines: list[str],
@@ -352,18 +449,7 @@ def _check_lines(
     violations: list[SlopViolation] = []
     is_markdown = filename.endswith(".md")
 
-    # Filter rules to those that apply to this file type
-    applicable: list[tuple[str, re.Pattern[str], str]] = []
-    for rule_name, (pattern, severity, globs) in line_rules.items():
-        md_only = all(g == "*.md" for g in globs)
-        py_only = all(g == "*.py" for g in globs) and not any(
-            g == "*.md" for g in globs
-        )
-        if is_markdown and py_only:
-            continue
-        if not is_markdown and md_only:
-            continue
-        applicable.append((rule_name, pattern, severity))
+    applicable = _applicable_line_rules(line_rules, is_markdown=is_markdown)
 
     in_triple_quote = False
     triple_char = ""
@@ -374,18 +460,11 @@ def _check_lines(
 
         # Toggle triple-quote tracking for Python files (simple heuristic)
         if not is_markdown:
-            for tq in ('"""', "'''"):
-                count = stripped.count(tq)
-                if count:
-                    if not in_triple_quote:
-                        if count % 2 == 1:
-                            in_triple_quote = True
-                            triple_char = tq
-                    elif tq == triple_char:
-                        if count % 2 == 1:
-                            in_triple_quote = False
-                            triple_char = ""
-
+            in_triple_quote, triple_char = _toggle_triple_quote_state(
+                stripped,
+                in_triple_quote=in_triple_quote,
+                triple_char=triple_char,
+            )
             if in_triple_quote:
                 continue
 
@@ -396,36 +475,14 @@ def _check_lines(
             if in_md_code_fence or stripped.startswith(("```", "~~~")):
                 continue
 
-        for rule_name, pattern, severity in applicable:
-            if rule_name == CHECK_STEP_NARRATION:
-                # step_narration: match only inside a heading/comment context in .md
-                comment_match = re.search(r"#(.+)", stripped)
-                if comment_match:
-                    comment_text = comment_match.group(0)
-                    if pattern.search(comment_text):
-                        if SUPPRESSION_MARKER not in stripped:
-                            violations.append(
-                                SlopViolation(
-                                    filename=filename,
-                                    line=lineno,
-                                    check=rule_name,
-                                    severity=severity,
-                                    message=f"Step narration comment: {comment_text.strip()!r}",
-                                    source_line=stripped,
-                                )
-                            )
-            elif pattern.search(stripped):
-                if SUPPRESSION_MARKER not in stripped:
-                    violations.append(
-                        SlopViolation(
-                            filename=filename,
-                            line=lineno,
-                            check=rule_name,
-                            severity=severity,
-                            message=f"Pattern match ({rule_name}): {stripped!r}",
-                            source_line=stripped,
-                        )
-                    )
+        violations.extend(
+            _check_line_rules(
+                filename=filename,
+                lineno=lineno,
+                stripped=stripped,
+                applicable=applicable,
+            )
+        )
 
     return violations
 

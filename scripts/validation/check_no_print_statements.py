@@ -109,57 +109,87 @@ def check_docstring_prints(
         return violations
 
     for node in ast.walk(tree):
-        # Check docstrings in functions, classes, and modules
-        docstring = None
-        if isinstance(
-            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)
-        ):
-            docstring = ast.get_docstring(node)
+        violations.extend(_docstring_print_violations(node, source_lines))
 
-        if docstring and "print(" in docstring:
-            # Find the actual line number of the docstring
-            if hasattr(node, "body") and node.body:
-                first_stmt = node.body[0]
-                if isinstance(first_stmt, ast.Expr) and isinstance(
-                    first_stmt.value, ast.Constant
-                ):
-                    # Find print( in the docstring and report it
-                    docstring_start = first_stmt.lineno
-                    # Detect if opening quotes are on separate line (accounts for off-by-one)
-                    opening_line = (
-                        source_lines[docstring_start - 1].strip()
-                        if docstring_start <= len(source_lines)
-                        else ""
-                    )
-                    offset = 1 if opening_line in ('"""', "'''") else 0
-                    docstring_lines = docstring.split("\n")
+    return violations
 
-                    for i, doc_line in enumerate(docstring_lines):
-                        if "print(" in doc_line:
-                            actual_line = docstring_start + i + offset
-                            line_content = (
-                                source_lines[actual_line - 1].strip()
-                                if actual_line <= len(source_lines)
-                                else doc_line.strip()
-                            )
 
-                            # Check for print-ok comment
-                            if "# print-ok:" in line_content:
-                                continue
+def _docstring_source_start(
+    node: ast.AST, source_lines: list[str]
+) -> tuple[int, int] | None:
+    if not hasattr(node, "body") or not node.body:
+        return None
 
-                            violations.append(
-                                {
-                                    "type": "docstring_print",
-                                    "line": actual_line,
-                                    "code": line_content,
-                                    "message": (
-                                        "print() in docstring example. Documentation should demonstrate "
-                                        "best practices using logger.debug/info/warning/error()"
-                                    ),
-                                    "severity": "warning",
-                                }
-                            )
+    first_stmt = node.body[0]
+    if not (
+        isinstance(first_stmt, ast.Expr) and isinstance(first_stmt.value, ast.Constant)
+    ):
+        return None
 
+    docstring_start = first_stmt.lineno
+    opening_line = (
+        source_lines[docstring_start - 1].strip()
+        if docstring_start <= len(source_lines)
+        else ""
+    )
+    offset = 1 if opening_line in ('"""', "'''") else 0
+    return docstring_start, offset
+
+
+def _docstring_line_content(
+    source_lines: list[str], actual_line: int, fallback: str
+) -> str:
+    if actual_line <= len(source_lines):
+        return source_lines[actual_line - 1].strip()
+    return fallback.strip()
+
+
+def _build_docstring_print_violation(
+    *, actual_line: int, line_content: str
+) -> dict[str, Any]:
+    return {
+        "type": "docstring_print",
+        "line": actual_line,
+        "code": line_content,
+        "message": (
+            "print() in docstring example. Documentation should demonstrate "
+            "best practices using logger.debug/info/warning/error()"
+        ),
+        "severity": "warning",
+    }
+
+
+def _docstring_print_violations(
+    node: ast.AST, source_lines: list[str]
+) -> list[dict[str, Any]]:
+    if not isinstance(
+        node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)
+    ):
+        return []
+
+    docstring = ast.get_docstring(node)
+    if not docstring or "print(" not in docstring:
+        return []
+
+    start = _docstring_source_start(node, source_lines)
+    if start is None:
+        return []
+
+    docstring_start, offset = start
+    violations: list[dict[str, Any]] = []
+    for index, doc_line in enumerate(docstring.split("\n")):
+        if "print(" not in doc_line:
+            continue
+        actual_line = docstring_start + index + offset
+        line_content = _docstring_line_content(source_lines, actual_line, doc_line)
+        if "# print-ok:" in line_content:
+            continue
+        violations.append(
+            _build_docstring_print_violation(
+                actual_line=actual_line,
+                line_content=line_content,
+            )
+        )
     return violations
 
 
