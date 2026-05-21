@@ -297,52 +297,39 @@ def iter_python_files(root_dir: Path, excludes: set[Path]) -> Iterator[Path]:
         ...     print(py_file)
     """
     for path in root_dir.rglob("*.py"):
-        # Skip files in excluded directories
-        if any(skip_dir in path.parts for skip_dir in SKIP_DIRECTORIES):
-            continue
-
-        # Check against user-provided exclusions
-        should_exclude = False
-        for exclude_path in excludes:
-            try:
-                path.relative_to(exclude_path)
-                should_exclude = True
-                break
-            except ValueError:
-                # path is not relative to exclude_path, use path component matching
-                try:
-                    # Check if exclude_path appears as a contiguous subsequence in path
-                    # using PATH COMPONENT matching (not string matching).
-                    #
-                    # Why path components? This prevents partial string matches:
-                    #   - path.parts gives tuples like ('src', 'tests', 'file.py')
-                    #   - exclude "tests" (parts: ('tests',)) matches ('src', 'tests', 'file.py')
-                    #   - exclude "tests" does NOT match ('src', 'tests_util', 'file.py')
-                    #     because ('tests',) != ('tests_util',) as tuples
-                    #
-                    # Examples:
-                    #   - Exclude "tests" MATCHES "src/tests/file.py"
-                    #   - Exclude "tests" does NOT match "src/tests_util/file.py"
-                    #   - Exclude "foo" does NOT match "foobar/file.py"
-                    path_parts = path.parts
-                    exclude_parts = exclude_path.parts
-                    exclude_len = len(exclude_parts)
-                    for i in range(len(path_parts) - exclude_len + 1):
-                        if path_parts[i : i + exclude_len] == exclude_parts:
-                            should_exclude = True
-                            break
-                    if should_exclude:
-                        break
-                    # Also check exact filename match (for single-file exclusions)
-                    if exclude_path.name == path.name:
-                        should_exclude = True
-                        break
-                except Exception:
-                    # fallback-ok: skip exclusion check on path parsing errors
-                    pass
-
-        if not should_exclude:
+        if not _should_exclude_python_file(path, excludes):
             yield path
+
+
+def _has_contiguous_parts(path: Path, exclude_path: Path) -> bool:
+    """Return True when exclude_path parts appear exactly in path parts."""
+    path_parts = path.parts
+    exclude_parts = exclude_path.parts
+    exclude_len = len(exclude_parts)
+    return any(
+        path_parts[index : index + exclude_len] == exclude_parts
+        for index in range(len(path_parts) - exclude_len + 1)
+    )
+
+
+def _matches_exclude_path(path: Path, exclude_path: Path) -> bool:
+    try:
+        path.relative_to(exclude_path)
+    except ValueError:
+        return (
+            _has_contiguous_parts(path, exclude_path) or exclude_path.name == path.name
+        )
+    return True
+
+
+def _should_exclude_python_file(path: Path, excludes: set[Path]) -> bool:
+    if any(skip_dir in path.parts for skip_dir in SKIP_DIRECTORIES):
+        return True
+
+    for exclude_path in excludes:
+        if _matches_exclude_path(path, exclude_path):
+            return True
+    return False
 
 
 def check_file(
