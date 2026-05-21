@@ -537,3 +537,43 @@ class TestModelContractBase:
         assert "input_type" in context
         assert "expected_type" in context
         assert "example" in context
+
+
+@pytest.mark.unit
+class TestModelContractBaseConfig:
+    """Tests for the config field on ModelContractBase (OMN-10815)."""
+
+    def setup_method(self):
+        self.minimal_valid_data = {
+            "name": "test_contract",
+            "contract_version": ModelSemVer(major=1, minor=0, patch=0),
+            "description": "Test contract",
+            "node_type": EnumNodeType.COMPUTE_GENERIC,
+            "input_model": "omnibase_core.models.test.TestInput",
+            "output_model": "omnibase_core.models.test.TestOutput",
+        }
+
+    def test_config_defaults_to_empty_dict(self):
+        contract = SampleContractModel(**self.minimal_valid_data)
+        assert contract.config == {}
+
+    def test_config_accepts_string_values(self):
+        data = {**self.minimal_valid_data, "config": {"key": "value", "env": "prod"}}
+        contract = SampleContractModel(**data)
+        assert contract.config["key"] == "value"
+        assert contract.config["env"] == "prod"
+
+    def test_config_accepts_mixed_value_types(self):
+        data = {
+            **self.minimal_valid_data,
+            "config": {"count": 42, "flag": True, "label": "x"},
+        }
+        contract = SampleContractModel(**data)
+        assert contract.config["count"] == 42
+        assert contract.config["flag"] is True
+
+    def test_config_absent_from_yaml_gives_empty_dict(self):
+        # When no config: key in YAML, field defaults to {} — no error
+        contract = SampleContractModel(**self.minimal_valid_data)
+        assert isinstance(contract.config, dict)
+        assert len(contract.config) == 0

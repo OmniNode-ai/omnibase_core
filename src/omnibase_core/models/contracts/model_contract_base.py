@@ -241,6 +241,13 @@ class ModelContractBase(BaseModel, ABC):
         description="Non-load-bearing operational annotations preserved from legacy contract corpus.",
     )
 
+    # Static node configuration declared in the contract (OMN-10815)
+    config: dict[str, object] = Field(
+        default_factory=dict,
+        description="Static node configuration values declared in the contract. "
+        "Read by nodes via self.contract.config; never falls back to env vars.",
+    )
+
     feature_flags: list[ModelContractFeatureFlag] = Field(
         default_factory=list,
         description="Feature flags declared by this contract. "
