@@ -1,3 +1,44 @@
+## v0.42.0 (2026-05-21)
+
+### Features
+- feat(OMN-11262): add canonical contract evidence storage models (#1113)
+- feat(OMN-11225): merge ModelOvernightContract into ModelSessionContract (#1107)
+- feat(OMN-11227): add phase budget and parallel dispatch fields (#1109)
+- feat(OMN-11272): add phase budget and parallel dispatch fields to ModelSessionPhaseSpec (#1117)
+- feat(OMN-11274): add unit tests asserting exact wire values for 5 session phase topics (#1115)
+- feat(OMN-9339, OMN-9340): extend normalization symmetry validator (#1114)
+- feat(OMN-9757): add normalize_contract_with_flags and expand normalization pipeline (#1112)
+- feat(OMN-9334): add runtime_sha_match DoD gate — classifier + receipt-gate integration (#1110)
+- feat(OMN-11228): register session phase topics in TopicBase (#1105)
+- feat(OMN-11221): add architectural invariant enforcement models and enums (#1104)
+- feat(OMN-11139): add OmniGate config loader (#1091)
+- feat(OMN-11140): add OmniGate diff hashing (#1089)
+- feat(OMN-11137): add OmniGate config model (#1088)
+- feat(OMN-11192): add ModelProjectionContract with freshness source (#1100)
+- feat(OMN-11193): add ModelDoctrineClause, ModelGatewayRouteBinding, projection health events (#1101)
+- feat(OMN-11132): configurable aislop validators with per-repo YAML overrides (#1093)
+- feat(OMN-11190): add ModelRuntimeManifest with ownership semantics (#1098)
+- feat(OMN-11191): add standard evidence bundle models (#1099)
+- feat(OMN-11194): register runtime manifest and projection health topics (#1102)
+- feat(OMN-11186): add pre-commit + CI validator blocking new os.environ/os.getenv additions (#1096)
+- feat(OMN-11189): add EnumDataProvenance, EnumDegradedBehavior, EnumDoctrineCoverage (#1097)
+- feat(OMN-11083): drive hook default mask from contract (#1087)
+- feat(OMN-11209): update scaffold templates with doctrine compliance fields (#1103)
+
+### Bug Fixes
+- fix(OMN-11119): extend check-name validator to handle workflow_call composite check names (#1094)
+- fix(OMN-10980): resolve 9 class naming violations and flip naming gate to blocking (#1095)
+- fix(OMN-11156,OMN-11157,OMN-11158,OMN-11159,OMN-11160): flip 5 advisory gates to blocking (#1106)
+
+### Tests
+- test(OMN-11270): expand typed exit condition validation test coverage (#1118)
+- test(OMN-11269): add acceptance criteria tests for session/overnight contract unification (#1116)
+- test(OMN-9738): contract model validation enforcement integration tests (#1111)
+
+### Other Changes
+- chore: bump omnibase-compat pin from >=0.3.1 to >=0.4.1 (compat v0.4.1 release)
+- chore(deps): bump OmniNode-ai/onex_change_control in actions group (#1119)
+
 ## Unreleased
 
 ### Refactors
