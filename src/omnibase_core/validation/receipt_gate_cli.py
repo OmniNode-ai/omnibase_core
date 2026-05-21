@@ -135,6 +135,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = parser.parse_args(argv)
+    pr_opened_at = None
     try:
         pr_opened_at = parse_pr_opened_at(args.pr_opened_at)
     except ValueError as exc:
