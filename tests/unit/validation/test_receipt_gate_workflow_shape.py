@@ -194,7 +194,8 @@ def test_workflow_captures_pr_snapshot_once_for_eligibility() -> None:
     step = _workflow_step("Resolve PR snapshot")
     script = step["run"]
 
-    assert "--json body,title,author,headRefName,commits" in script
+    assert "--json body,title,author,headRefName,createdAt,commits" in script
+    assert "/tmp/pr_created_at.txt" in script
     assert "/tmp/pr_commit_shas.txt" in script
     assert "/tmp/pr_commit_texts.txt" in script
     assert "MERGE_GROUP_HEAD_REF" in script

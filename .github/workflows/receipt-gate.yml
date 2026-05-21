@@ -452,6 +452,7 @@ jobs:
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_EVENT_BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_EVENT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_EVENT_CREATED_AT: ${{ github.event.pull_request.created_at }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           set -euo pipefail
@@ -464,12 +465,13 @@ jobs:
             printf '%s' "$pr_json" | jq -r '.title // ""' > /tmp/pr_title.txt
             printf '%s' "$pr_json" | jq -r '.author.login // ""' > /tmp/pr_author.txt
             printf '%s' "$pr_json" | jq -r '.headRefName // ""' > /tmp/pr_branch.txt
+            printf '%s' "$pr_json" | jq -r '.createdAt // ""' > /tmp/pr_created_at.txt
             printf '%s' "$pr_json" | jq -r '.commits[]?.oid // empty' > /tmp/pr_commit_shas.txt
             printf '%s' "$pr_json" | jq -r '.commits[]? | ((.messageHeadline // "") + " " + (.messageBody // "" | gsub("\r?\n"; " ")))' > /tmp/pr_commit_texts.txt
           }
 
           if [ -n "$PR_NUMBER" ]; then
-            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title,author,headRefName,commits 2>/dev/null)"; then
+            if pr_json="$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body,title,author,headRefName,createdAt,commits 2>/dev/null)"; then
               write_pr_snapshot "$pr_json"
               printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
             else
@@ -479,13 +481,14 @@ jobs:
               printf '%s' "$PR_EVENT_TITLE" > /tmp/pr_title.txt
               printf '%s' "$PR_EVENT_AUTHOR" > /tmp/pr_author.txt
               printf '%s' "$PR_EVENT_BRANCH" > /tmp/pr_branch.txt
+              printf '%s' "$PR_EVENT_CREATED_AT" > /tmp/pr_created_at.txt
               printf '%s\n' "$PR_EVENT_SHA" > /tmp/pr_commit_shas.txt
               printf '%s' "$PR_NUMBER" > /tmp/pr_number.txt
             fi
           elif [ -n "$MERGE_GROUP_HEAD_REF" ]; then
             pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
             if [ -n "$pr_num" ] && [ "$pr_num" != "$MERGE_GROUP_HEAD_REF" ]; then
-              pr_json="$(gh pr view "$pr_num" --repo "${{ github.repository }}" --json body,title,author,headRefName,commits)"
+              pr_json="$(gh pr view "$pr_num" --repo "${{ github.repository }}" --json body,title,author,headRefName,createdAt,commits)"
               write_pr_snapshot "$pr_json"
               printf '%s' "$pr_num" > /tmp/pr_number.txt
             else
@@ -493,6 +496,7 @@ jobs:
               : > /tmp/pr_title.txt
               : > /tmp/pr_author.txt
               : > /tmp/pr_branch.txt
+              : > /tmp/pr_created_at.txt
               : > /tmp/pr_number.txt
             fi
           else
@@ -500,6 +504,7 @@ jobs:
             : > /tmp/pr_title.txt
             : > /tmp/pr_author.txt
             : > /tmp/pr_branch.txt
+            : > /tmp/pr_created_at.txt
             : > /tmp/pr_number.txt
           fi
 
@@ -572,6 +577,7 @@ jobs:
           PR_TITLE="$(cat /tmp/pr_title.txt)"
           PR_AUTHOR="$(cat /tmp/pr_author.txt 2>/dev/null || true)"
           PR_NUMBER_RESOLVED="$(cat /tmp/pr_number.txt 2>/dev/null || true)"
+          PR_OPENED_AT="$(cat /tmp/pr_created_at.txt 2>/dev/null || true)"
           REPO_NAME="${{ github.repository }}"
           REPO_SHORT="${REPO_NAME##*/}"
 
@@ -591,6 +597,11 @@ jobs:
             PR_NUMBER_ARG="--current-pr-number $PR_NUMBER_RESOLVED"
           fi
 
+          PR_OPENED_AT_ARG=""
+          if [ -n "$PR_OPENED_AT" ]; then
+            PR_OPENED_AT_ARG="--pr-opened-at $PR_OPENED_AT"
+          fi
+
           # shellcheck disable=SC2086
           python -m omnibase_core.validation.receipt_gate_cli \
             --pr-body "$PR_BODY" \
@@ -600,4 +611,5 @@ jobs:
             --current-repo "$REPO_SHORT" \
             $ALLOWLIST_ARG \
             $PR_AUTHOR_ARG \
-            $PR_NUMBER_ARG
+            $PR_NUMBER_ARG \
+            $PR_OPENED_AT_ARG

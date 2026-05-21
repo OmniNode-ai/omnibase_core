@@ -23,7 +23,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from omnibase_core.validation.receipt_gate import validate_pr_receipts
+from omnibase_core.validation.receipt_gate import (
+    parse_pr_opened_at,
+    validate_pr_receipts,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -44,12 +47,25 @@ def main(argv: list[str] | None = None) -> int:
         default="onex_change_control/drift/dod_receipts",
         help="Directory tree containing ModelDodReceipt YAML files.",
     )
+    parser.add_argument(
+        "--pr-opened-at",
+        default=None,
+        help=(
+            "UTC ISO-8601 timestamp when the PR was opened. Used to enforce "
+            "post-cutoff contract_sha256 receipt binding."
+        ),
+    )
     args = parser.parse_args(argv)
+    try:
+        pr_opened_at = parse_pr_opened_at(args.pr_opened_at)
+    except ValueError as exc:
+        parser.error(str(exc))
 
     result = validate_pr_receipts(
         pr_body=args.pr_body,
         contracts_dir=Path(args.contracts_dir),
         receipts_dir=Path(args.receipts_dir),
+        pr_opened_at=pr_opened_at,
     )
 
     if result.friction_logged:
