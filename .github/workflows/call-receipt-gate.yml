@@ -19,6 +19,7 @@ name: Receipt Gate
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     branches: [main]
   merge_group:
 
