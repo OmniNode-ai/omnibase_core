@@ -152,6 +152,7 @@ from .model_conflict_resolution_config import ModelConflictResolutionConfig
 from .model_consumed_event_entry import ModelConsumedEventEntry
 from .model_contract_base import ModelContractBase
 from .model_contract_compute import ModelContractCompute
+from .model_contract_config import ModelContractConfig
 from .model_contract_effect import ModelContractEffect
 from .model_contract_fingerprint import ModelContractFingerprint
 from .model_contract_meta import (
@@ -206,10 +207,12 @@ from .model_http_response_contract import ModelHttpResponseContract
 from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
+from .model_llm_endpoint_config import ModelLlmEndpointConfig
 from .model_memory_management_config import ModelMemoryManagementConfig
 from .model_node_extensions import ModelNodeExtensions
 from .model_node_ref import ModelNodeRef
 from .model_omnimemory_contract import ModelOmniMemoryContract
+from .model_operational_config import ModelOperationalConfig
 from .model_output_transformation_config import ModelOutputTransformationConfig
 from .model_parallel_config import ModelParallelConfig
 from .model_performance_requirements import ModelPerformanceRequirements
@@ -228,6 +231,7 @@ from .model_retry_policy_contract import ModelRetryPolicyContract
 from .model_runtime_event_bus_config import ModelRuntimeEventBusConfig
 from .model_runtime_handler_config import ModelRuntimeHandlerConfig
 from .model_runtime_host_contract import ModelRuntimeHostContract
+from .model_storage_config import ModelStorageConfig
 from .model_streaming_config import ModelStreamingConfig
 from .model_transaction_config import ModelTransactionConfig
 from .model_trigger_mappings import ModelTriggerMappings
@@ -274,6 +278,10 @@ __all__ = [
     # Foundation models
     "ModelConsumedEventEntry",
     "ModelContractBase",
+    "ModelContractConfig",
+    "ModelLlmEndpointConfig",
+    "ModelOperationalConfig",
+    "ModelStorageConfig",
     "ModelContractFingerprint",
     "ModelContractMeta",
     "ModelContractEvidenceProof",

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from omnibase_core.models.container.model_protocols_namespace import (
     ModelProtocolsNamespace,
 )
+from omnibase_core.models.contracts.model_contract_config import ModelContractConfig
 from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
     ModelProtocolDependency,
 )
@@ -408,16 +409,18 @@ class NodeCoreBase(ABC):
         return dict(self.state)
 
     @property
-    def contract_config(self) -> dict[str, object]:
-        """Contract-declared config section, or {} if absent.
+    def contract_config(self) -> ModelContractConfig:
+        """Contract-declared config section, or default ModelContractConfig if absent.
 
         Reads the `config:` key from self.contract_data (dict or Pydantic model).
-        Never falls back to env vars — absent config means empty dict.
+        Never falls back to env vars — absent config means empty ModelContractConfig.
         """
         raw = get_contract_attr(self.contract_data, "config")
-        if isinstance(raw, dict):
+        if isinstance(raw, ModelContractConfig):
             return raw
-        return {}
+        if isinstance(raw, dict):
+            return ModelContractConfig.model_validate(raw)
+        return ModelContractConfig()
 
     async def _load_contract(self) -> None:
         """
