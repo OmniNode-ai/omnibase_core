@@ -416,11 +416,17 @@ class NodeCoreBase(ABC):
         Never falls back to env vars — absent config means empty ModelContractConfig.
         """
         raw = get_contract_attr(self.contract_data, "config")
+        if raw is None:
+            return ModelContractConfig()
         if isinstance(raw, ModelContractConfig):
             return raw
-        if isinstance(raw, dict):
-            return ModelContractConfig.model_validate(raw)
-        return ModelContractConfig()
+        if isinstance(raw, Mapping):
+            return ModelContractConfig.model_validate(dict(raw))
+        raise ModelOnexError(
+            message="Contract config must be a mapping or ModelContractConfig.",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            received_type=type(raw).__name__,
+        )
 
     async def _load_contract(self) -> None:
         """

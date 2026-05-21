@@ -56,7 +56,7 @@ class TestModelContractConfig:
 
     def test_llm_endpoint_config_rejects_unknown_fields(self):
         with pytest.raises(ValidationError):
-            ModelLlmEndpointConfig(unknown_field="bad")  # type: ignore[call-arg]
+            ModelLlmEndpointConfig(unknown_field="bad")  # type: ignore[call-arg]  # NOTE(OMN-11430): negative Pydantic validation case.
 
     def test_storage_config_valid(self):
         s = ModelStorageConfig(
@@ -69,7 +69,7 @@ class TestModelContractConfig:
 
     def test_storage_config_rejects_unknown_fields(self):
         with pytest.raises(ValidationError):
-            ModelStorageConfig(bad_key="x")  # type: ignore[call-arg]
+            ModelStorageConfig(bad_key="x")  # type: ignore[call-arg]  # NOTE(OMN-11430): negative Pydantic validation case.
 
     def test_operational_config_secrets_are_secret_str(self):
         op = ModelOperationalConfig(linear_api_key="secret123")
@@ -78,7 +78,7 @@ class TestModelContractConfig:
 
     def test_operational_config_rejects_unknown_fields(self):
         with pytest.raises(ValidationError):
-            ModelOperationalConfig(bogus="x")  # type: ignore[call-arg]
+            ModelOperationalConfig(bogus="x")  # type: ignore[call-arg]  # NOTE(OMN-11430): negative Pydantic validation case.
 
     def test_model_contract_config_allows_extra_fields(self):
         """extra="allow" on ModelContractConfig lets node-specific keys pass through."""
@@ -91,17 +91,17 @@ class TestModelContractConfig:
     def test_model_contract_config_is_frozen(self):
         cfg = ModelContractConfig()
         with pytest.raises(ValidationError):
-            cfg.llm = ModelLlmEndpointConfig()  # type: ignore[misc]
+            cfg.llm = ModelLlmEndpointConfig()  # type: ignore[misc]  # NOTE(OMN-11430): intentional frozen-model mutation test.
 
     def test_llm_endpoint_config_is_frozen(self):
         llm = ModelLlmEndpointConfig()
         with pytest.raises(ValidationError):
-            llm.coder_url = "http://new"  # type: ignore[misc]
+            llm.coder_url = "http://new"  # type: ignore[misc]  # NOTE(OMN-11430): intentional frozen-model mutation test.
 
     def test_storage_config_is_frozen(self):
         s = ModelStorageConfig()
         with pytest.raises(ValidationError):
-            s.postgres_port = 9999  # type: ignore[misc]
+            s.postgres_port = 9999  # type: ignore[misc]  # NOTE(OMN-11430): intentional frozen-model mutation test.
 
     def test_nested_config_parsed_from_dict(self):
         cfg = ModelContractConfig.model_validate(
@@ -117,7 +117,7 @@ class TestModelContractConfig:
 
     def test_bad_type_for_port_raises_validation_error(self):
         with pytest.raises(ValidationError):
-            ModelStorageConfig(postgres_port="not-an-int")  # type: ignore[arg-type]
+            ModelStorageConfig(postgres_port="not-an-int")  # type: ignore[arg-type]  # NOTE(OMN-11430): negative Pydantic validation case.
 
 
 @pytest.mark.unit
