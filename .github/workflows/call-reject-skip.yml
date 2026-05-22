@@ -15,8 +15,9 @@ name: Reject skip-gate bypass tokens
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
-    branches: [main]
+    branches: [main, dev]
   merge_group:
+    branches: [main, dev]
 
 permissions:
   contents: read

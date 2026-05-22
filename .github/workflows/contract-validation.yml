@@ -22,8 +22,9 @@ name: Contract Validation
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, dev]
   merge_group:
+    branches: [main, develop, dev]
   workflow_dispatch:
     inputs:
       branch-name:

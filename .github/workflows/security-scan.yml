@@ -9,9 +9,9 @@ name: Security Scan
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev, "hotfix/**"]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   schedule:
     # Run weekly on Monday at 06:00 UTC
     - cron: "0 6 * * 1"

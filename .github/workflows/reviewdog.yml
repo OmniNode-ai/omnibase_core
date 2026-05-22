@@ -3,6 +3,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   merge_group:
+    branches: [main, dev]
 
 jobs:
   reviewdog:

@@ -19,7 +19,7 @@ name: Stale TODO Gate
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   stale-todo-gate:
