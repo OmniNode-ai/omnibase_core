@@ -9,6 +9,16 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+def test_domain_plugin_config_importable_from_runtime_package() -> None:
+    """Runtime package exports the config model for cross-repo consumers."""
+    from omnibase_core.models.runtime import ModelDomainPluginConfig as PackageConfig
+    from omnibase_core.models.runtime.model_domain_plugin import (
+        ModelDomainPluginConfig as CanonicalConfig,
+    )
+
+    assert PackageConfig is CanonicalConfig
+
+
 def test_domain_plugin_result_importable_from_compat_module() -> None:
     """The SPI protocol imports both domain plugin models from one module."""
     from omnibase_core.models.runtime.model_domain_plugin import (
