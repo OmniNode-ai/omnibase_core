@@ -285,7 +285,7 @@ allowed_files:
     added: "2026-04-15"
     review: "2026-06-13"
 
-  - file: "src/omnibase_core/validation/receipt_gate.py"
+  - file: "src/omnibase_core/validation/validator_receipt_gate.py"
     reason: >-
       Receipt-gate CI check loads two YAML artifacts it did not author: ticket contracts (downstream-provided,
       varying schema across repos) and ModelDodReceipt artifacts. For receipts it does the load-then-validate

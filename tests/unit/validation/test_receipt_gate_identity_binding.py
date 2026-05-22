@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.validation.receipt_gate import validate_pr_receipts
+from omnibase_core.validation.validator_receipt_gate import validate_pr_receipts
 
 
 def _write_contract(

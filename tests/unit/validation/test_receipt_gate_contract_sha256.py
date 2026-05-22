@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.validation.receipt_gate import (
+from omnibase_core.validation.validator_receipt_gate import (
     _CONTRACT_SHA256_REQUIRED_AFTER,
     compute_contract_sha256,
     parse_pr_opened_at,

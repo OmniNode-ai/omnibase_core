@@ -15,8 +15,8 @@ import yaml
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 from omnibase_core.models.ticket.model_ticket_contract import ModelTicketContract
-from omnibase_core.validation.receipt_gate import validate_pr_receipts
 from omnibase_core.validation.runtime_sha_match import CHECK_TYPE_RUNTIME_SHA_MATCH
+from omnibase_core.validation.validator_receipt_gate import validate_pr_receipts
 
 pytestmark = pytest.mark.unit
 

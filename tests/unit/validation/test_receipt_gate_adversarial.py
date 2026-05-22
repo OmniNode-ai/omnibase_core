@@ -3,7 +3,7 @@
 
 """Adversarial-invariant tests for the canonical Receipt-Gate (OMN-9788).
 
-These tests harden ``omnibase_core.validation.receipt_gate`` against the
+These tests harden ``omnibase_core.validation.validator_receipt_gate`` against the
 loopholes that the OMN-9786 ``ModelDodReceipt`` invariants closed at the
 model layer:
 
@@ -30,7 +30,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.validation.receipt_gate import validate_pr_receipts
+from omnibase_core.validation.validator_receipt_gate import validate_pr_receipts
 
 
 def _write_contract(
