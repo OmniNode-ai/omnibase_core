@@ -5,13 +5,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.runtime.model_domain_plugin_result import (
     ModelDomainPluginResult,
 )
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 __all__: list[str] = ["ModelDomainPluginConfig", "ModelDomainPluginResult"]
 
