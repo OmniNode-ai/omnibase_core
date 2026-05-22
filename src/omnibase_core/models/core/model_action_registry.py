@@ -305,3 +305,23 @@ def reset_action_registry() -> None:
     except (AttributeError, KeyError, TypeError, ValueError):
         # If container is not initialized, nothing to reset
         pass
+
+
+def discover_actions_from_contracts(contracts_dir: Path) -> int:
+    """Discover actions from contracts and register them in the DI registry."""
+    registry = get_action_registry()
+    return registry.discover_from_contracts(contracts_dir)
+
+
+def get_registered_action(action_name: str) -> ModelCliAction | None:
+    """Get an action by display name from the DI registry."""
+    registry = get_action_registry()
+    return registry.get_action(action_name)
+
+
+def get_registered_action_by_qualified_name(
+    qualified_name: str,
+) -> ModelCliAction | None:
+    """Get an action by qualified name from the DI registry."""
+    registry = get_action_registry()
+    return registry.get_action_by_qualified_name(qualified_name)
