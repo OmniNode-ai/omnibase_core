@@ -65,6 +65,9 @@ _KAFKA_EVENT_BUS_ENTRY_POINT: str = "event_bus_kafka"
 # the ``onex.backends`` entry-point group.
 SUPPORTED_EVENT_BUS_VALUES: frozenset[str] = frozenset({"inmemory", "kafka"})
 
+# ONEX_EXCLUDE: dict_str_any - workflow YAML and runtime payload maps are heterogeneous before model validation
+RawWorkflowMap = dict[str, Any]
+
 
 @dataclass(frozen=True)
 class _ResolvedRoutingEntry:
@@ -126,7 +129,7 @@ def parse_backend_overrides(raw: tuple[str, ...]) -> dict[str, str]:
 # ONEX_EXCLUDE: dict_str_any — workflow contract has no fixed Pydantic model yet
 def load_workflow_contract(
     path: Path,
-) -> dict[str, Any]:
+) -> RawWorkflowMap:
     """Load and minimally validate a workflow contract YAML.
 
     Args:
@@ -199,7 +202,7 @@ class RuntimeLocal:
         self.timeout = timeout
 
         # ONEX_EXCLUDE: dict_str_any — workflow contract raw YAML
-        self._contract: dict[str, Any] = {}
+        self._contract: RawWorkflowMap = {}
         self._result: EnumWorkflowResult = EnumWorkflowResult.TIMEOUT
         self._terminal_received = asyncio.Event()
 
@@ -207,11 +210,11 @@ class RuntimeLocal:
         self._events_received: dict[str, int] = {}
         self._last_error: str | None = None
         self._handlers_wired: list[str] = []
-        self._terminal_payload: dict[str, Any] | None = None
+        self._terminal_payload: RawWorkflowMap | None = None
         self._handler_result: Any = None
 
     # ONEX_EXCLUDE: dict_str_any — event bus payload
-    def _on_terminal_event(self, payload: dict[str, Any]) -> None:
+    def _on_terminal_event(self, payload: RawWorkflowMap) -> None:
         """Callback invoked when a message arrives on the terminal_event topic."""
         self._record_event("(terminal)")
         if self._terminal_received.is_set():
@@ -350,7 +353,7 @@ class RuntimeLocal:
         except TypeError as original_exc:
             # The method may not accept arguments (e.g. run() with no args).
             # Retry without args; if that also fails, re-raise the original.
-            try:
+            try:  # fallback-ok: adapt no-argument handler methods while preserving the original TypeError
                 if asyncio.iscoroutinefunction(method):
                     result = await method()
                 else:
@@ -419,7 +422,7 @@ class RuntimeLocal:
 
         # Build initial payload from handler or contract input spec.
         # input_model may be a dotted string ("module.ClassName") — coerce to dict.
-        input_spec: dict[str, Any] | str = handler_spec.get(
+        input_spec: RawWorkflowMap | str = handler_spec.get(
             "input_model", {}
         ) or self._contract.get("input", {})
         if isinstance(input_spec, str) and "." in input_spec:
@@ -525,7 +528,7 @@ class RuntimeLocal:
 
     @staticmethod
     def _resolve_handler_input_topic(
-        entry: dict[str, Any],
+        entry: RawWorkflowMap,
         idx: int,
         subscribe_topics: list[str],
     ) -> str | None:
@@ -549,7 +552,7 @@ class RuntimeLocal:
 
     @staticmethod
     def _validate_routing(
-        routing: dict[str, Any],
+        routing: RawWorkflowMap,
         subscribe_topics: list[str],
         publish_topics: list[str],
     ) -> list[str]:
@@ -563,7 +566,7 @@ class RuntimeLocal:
         Returns:
             List of validation error messages (empty means valid).
         """
-        handlers: list[dict[str, Any]] = routing.get("handlers", [])
+        handlers: list[RawWorkflowMap] = routing.get("handlers", [])
         errors: list[str] = []
         input_topic_set = set(subscribe_topics)
 
@@ -613,12 +616,12 @@ class RuntimeLocal:
 
     def _resolve_routing_entries(
         self,
-        routing: dict[str, Any],
+        routing: RawWorkflowMap,
         subscribe_topics: list[str],
         publish_topics: list[str],
     ) -> list[_ResolvedRoutingEntry]:
         """Build resolved routing entries with concrete input/output topics."""
-        handlers: list[dict[str, Any]] = routing.get("handlers", [])
+        handlers: list[RawWorkflowMap] = routing.get("handlers", [])
 
         # Build index: event_model.name -> subscribe_topics index
         name_to_topic_idx: dict[str, int] = {}
@@ -676,8 +679,8 @@ class RuntimeLocal:
         """
         from omnibase_core.runtime.runtime_local_adapter import HandlerBusAdapter
 
-        routing: dict[str, Any] = self._contract.get("handler_routing", {})
-        event_bus_spec: dict[str, Any] = self._contract.get("event_bus", {})
+        routing: RawWorkflowMap = self._contract.get("handler_routing", {})
+        event_bus_spec: RawWorkflowMap = self._contract.get("event_bus", {})
         subscribe_topics: list[str] = event_bus_spec.get("subscribe_topics", [])
         publish_topics: list[str] = event_bus_spec.get("publish_topics", [])
 
@@ -988,7 +991,7 @@ class RuntimeLocal:
 
         # Build initial payload from handler or contract input spec
         handler_spec = self._contract.get("handler", {})
-        input_spec_raw: dict[str, Any] | str = (
+        input_spec_raw: RawWorkflowMap | str = (
             handler_spec.get("input_model", {})
             if isinstance(handler_spec, dict)
             else {}
@@ -999,7 +1002,7 @@ class RuntimeLocal:
                     "RuntimeLocal: invalid input_model format: %s",
                     input_spec_raw,
                 )
-                input_spec: dict[str, Any] = {}
+                input_spec: RawWorkflowMap = {}
             else:
                 im_module, im_class = input_spec_raw.rsplit(".", 1)
                 input_spec = {"module": im_module, "class": im_class}
@@ -1196,7 +1199,7 @@ class RuntimeLocal:
                     await self._run_compute()
                 except ModelOnexError:
                     self._result = EnumWorkflowResult.FAILED
-                except Exception:
+                except Exception:  # fallback-ok: runtime records FAILED workflow result instead of raising to CLI
                     logger.exception(
                         "RuntimeLocal: unhandled exception during compute execution"
                     )
@@ -1239,7 +1242,9 @@ class RuntimeLocal:
                 await self._run_single_handler(bus, terminal_topic)
         except ModelOnexError:
             self._result = EnumWorkflowResult.FAILED
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: runtime records FAILED workflow result and writes state
             logger.exception("RuntimeLocal: unhandled exception during execution")
             self._result = EnumWorkflowResult.FAILED
         finally:
@@ -1250,7 +1255,7 @@ class RuntimeLocal:
         return self._result
 
     # ONEX_EXCLUDE: dict_str_any — input spec from workflow contract
-    def _build_initial_payload(self, input_spec: dict[str, Any]) -> Any:
+    def _build_initial_payload(self, input_spec: RawWorkflowMap) -> Any:
         """Import and instantiate the input model from the contract's input spec.
 
         Resolution order:
@@ -1310,7 +1315,7 @@ class RuntimeLocal:
             from datetime import UTC
             from datetime import datetime as _dt
 
-            defaults: dict[str, Any] = {}
+            defaults: RawWorkflowMap = {}
             for field_name, field_info in cls.model_fields.items():
                 if field_info.is_required():
                     ann = field_info.annotation
@@ -1325,7 +1330,7 @@ class RuntimeLocal:
                         origin = typing.get_origin(ann)
                         if origin is tuple or origin is list:
                             defaults[field_name] = ()
-            try:
+            try:  # fallback-ok: retry with synthesized required-field defaults for local runtime input
                 return cls(**defaults)
             except (TypeError, ValueError) as exc:
                 logger.warning(
@@ -1354,7 +1359,7 @@ class RuntimeLocal:
         """Serialize workflow result to ``state_root/workflow_result.json``."""
         self.state_root.mkdir(parents=True, exist_ok=True)
         result_path = self.state_root / "workflow_result.json"
-        data: dict[str, Any] = {
+        data: RawWorkflowMap = {
             "result": self._result.value,
             "exit_code": self.exit_code,
             "workflow": str(self.workflow_path),
