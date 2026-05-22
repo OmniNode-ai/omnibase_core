@@ -6,4 +6,5 @@ This directory contains documentation for ONEX services.
 
 ## Available Services
 
-- [invariant/](./invariant/) - Invariant evaluation service for AI model validation
+Core no longer owns standalone service implementations. Runtime service nodes
+are documented in their owning package.

@@ -78,7 +78,6 @@ Core development patterns and practices.
 |-------|-------------|
 | [Effect Boundary Guide](./EFFECT_BOUNDARY_GUIDE.md) | Managing side effects and I/O boundaries |
 | [Declarative Node Import Rules](./DECLARATIVE_NODE_IMPORT_RULES.md) | Import conventions for declarative nodes |
-| [Custom Callable Patterns](./CUSTOM_CALLABLE_PATTERNS.md) | Patterns for custom callable implementations |
 | [Protocol Discovery Guide](./PROTOCOL_DISCOVERY_GUIDE.md) | Service discovery via protocols |
 | [Pipeline Hook Registry](./PIPELINE_HOOK_REGISTRY.md) | Registering and using pipeline hooks |
 | [Execution Corpus Guide](./EXECUTION_CORPUS_GUIDE.md) | Working with execution corpora |
