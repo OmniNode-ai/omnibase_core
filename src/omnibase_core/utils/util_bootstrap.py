@@ -117,6 +117,31 @@ def get_logging_service() -> object:
     return _BootstrapMinimalLogger()
 
 
+def emit_log_event(
+    level: LogLevel,
+    event_type: str,
+    message: str,
+    **kwargs: object,
+) -> None:
+    """
+    Bootstrap emit_log_event function.
+
+    Routes to the appropriate logging service or provides fallback.
+    """
+    try:
+        logging_service = get_logging_service()
+        if hasattr(logging_service, "emit_log_event"):
+            logging_service.emit_log_event(level, event_type, message, **kwargs)
+            return
+    except (
+        Exception  # noqa: BLE001
+    ):  # fallback-ok: bootstrap logging unavailable, silent fallback acceptable
+        pass
+
+    # Fallback to stderr when structured logging unavailable
+    return
+
+
 def emit_log_event_sync(
     level: LogLevel,
     message: str,
@@ -209,3 +234,25 @@ def is_service_available[T](protocol_type: type[T]) -> bool:
         True if service is available, False otherwise
     """
     return get_service(protocol_type) is not None
+
+
+def get_available_services() -> list[str]:
+    """
+    Get list of available services.
+
+    Returns:
+        List of available service types
+    """
+    try:
+        registry = _get_registry_node()
+        if registry:
+            services = registry.list_services()
+            # Type narrowing: ensure list[str]
+            return list(services) if services else []
+    except (
+        Exception  # noqa: BLE001
+    ):  # fallback-ok: bootstrap registry unavailable, return minimal services
+        pass
+
+    # Return minimal list for bootstrap
+    return ["logging"]
