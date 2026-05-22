@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Domain plugin configuration model used by ProtocolDomainPlugin in omnibase_spi."""
+"""Canonical domain plugin lifecycle configuration model."""
 
 from __future__ import annotations
 
@@ -37,6 +37,9 @@ class ModelDomainPluginConfig:
         output_topic_map: Per-event-type topic routing from contract published_events.
 
     Note:
+        Cross-repo runtime plugins should import this canonical config from
+        ``omnibase_core.models.runtime``.
+
         event_bus, dispatch_engine, and node_identity are typed as ``Any`` here
         so SPI has zero runtime dependency on omnibase_infra. Callers in infra
         pass the concrete types; the protocol contract is satisfied structurally.
