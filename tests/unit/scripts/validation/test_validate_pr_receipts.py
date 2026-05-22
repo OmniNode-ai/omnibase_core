@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for the Receipt-Gate library (`omnibase_core.validation.receipt_gate`).
+"""Unit tests for the Receipt-Gate library (`omnibase_core.validation.validator_receipt_gate`).
 
 Covers the full decision matrix: no-ticket, no-contract, missing-receipt,
 failing-receipt, corrupt-receipt, receipt-path-mismatch, all-PASS, skip-token
@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.validation.receipt_gate import validate_pr_receipts
+from omnibase_core.validation.validator_receipt_gate import validate_pr_receipts
 
 
 def _write_contract(

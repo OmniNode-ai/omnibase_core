@@ -3,7 +3,7 @@
 
 """Re-probe verification mode for ModelDodReceipt artifacts (OMN-9789).
 
-The Receipt Gate (``omnibase_core.validation.receipt_gate``) statically
+The Receipt Gate (``omnibase_core.validation.validator_receipt_gate``) statically
 checks that every cited ticket has a PASS receipt on disk. That is a
 necessary but not sufficient guarantee: a fabricated receipt is
 indistinguishable from a real one if you only inspect the file.
