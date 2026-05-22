@@ -4,7 +4,7 @@
 
 """Receipt-Gate CI check — thin CLI wrapper over `receipt_gate.validate_pr_receipts`.
 
-See `omnibase_core.validation.receipt_gate` for the decision matrix.
+See `omnibase_core.validation.validator_receipt_gate` for the decision matrix.
 
 Exit codes:
     0 — gate passed (all receipts present + PASS, or approved skip token accepted)
@@ -23,7 +23,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from omnibase_core.validation.receipt_gate import (
+from omnibase_core.validation.validator_receipt_gate import (
     parse_pr_opened_at,
     validate_pr_receipts,
 )

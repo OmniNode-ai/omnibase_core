@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Receipt-Gate CLI — `uv run python -m omnibase_core.validation.receipt_gate_cli ...`.
+"""Receipt-Gate CLI — `uv run python -m omnibase_core.validation.validator_receipt_gate_cli ...`.
 
 Importable CLI entrypoint for the receipt-gate GitHub Actions workflow. Keeps
 the gate logic discoverable as a module (not buried under scripts/).
 
-See `omnibase_core.validation.receipt_gate.validate_pr_receipts` for the
+See `omnibase_core.validation.validator_receipt_gate.validate_pr_receipts` for the
 decision matrix.
 
 The optional ``--reexecute-probes`` flag (OMN-9789) chains in re-probe
@@ -30,7 +30,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from omnibase_core.validation.receipt_gate import (
+from omnibase_core.validation.validator_receipt_gate import (
     parse_pr_opened_at,
     validate_pr_receipts,
 )

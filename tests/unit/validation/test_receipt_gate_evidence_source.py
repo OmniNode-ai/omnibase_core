@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.validation.receipt_gate import (
+from omnibase_core.validation.validator_receipt_gate import (
     EVIDENCE_SOURCE_ANY_PATTERN,
     parse_evidence_source,
     validate_pr_receipts,

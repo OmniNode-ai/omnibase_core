@@ -30,7 +30,7 @@ import yaml
 from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
     ModelReceiptGateResult,
 )
-from omnibase_core.validation.receipt_gate import (
+from omnibase_core.validation.validator_receipt_gate import (
     _CONTRACT_SHA256_REQUIRED_AFTER,
     validate_pr_receipts,
 )

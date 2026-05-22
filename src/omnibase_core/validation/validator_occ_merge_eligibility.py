@@ -27,7 +27,7 @@ from omnibase_core.models.validation.model_occ_eligibility_input import (
 from omnibase_core.models.validation.model_occ_eligibility_result import (
     ModelOccEligibilityResult,
 )
-from omnibase_core.validation.receipt_gate import (
+from omnibase_core.validation.validator_receipt_gate import (
     _extract_ticket_ids,
     _iter_dod_evidence,
 )

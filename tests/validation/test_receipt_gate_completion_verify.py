@@ -3,7 +3,7 @@
 
 import pytest
 
-from omnibase_core.validation.receipt_gate import EVIDENCE_HANDLERS
+from omnibase_core.validation.validator_receipt_gate import EVIDENCE_HANDLERS
 
 
 @pytest.mark.unit

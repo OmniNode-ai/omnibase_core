@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.validation.receipt_gate import (
+from omnibase_core.validation.validator_receipt_gate import (
     ALLOWLIST_PATTERN,
     OVERRIDE_PATTERN,
     SKIP_TOKEN_PATTERN,

@@ -14,8 +14,10 @@ import yaml
 from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
     ModelReceiptGateResult,
 )
-from omnibase_core.validation import receipt_gate_cli
-from omnibase_core.validation.receipt_gate_cli import _escape_github_actions_message
+from omnibase_core.validation import validator_receipt_gate_cli
+from omnibase_core.validation.validator_receipt_gate_cli import (
+    _escape_github_actions_message,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -40,13 +42,13 @@ def test_cli_accepts_workflow_context_args(monkeypatch: pytest.MonkeyPatch) -> N
         return ModelReceiptGateResult(passed=True, message="ok")
 
     monkeypatch.setattr(
-        receipt_gate_cli,
+        validator_receipt_gate_cli,
         "validate_pr_receipts",
         fake_validate_pr_receipts,
     )
 
     assert (
-        receipt_gate_cli.main(
+        validator_receipt_gate_cli.main(
             [
                 "--pr-body",
                 "Implements OMN-1",
@@ -75,7 +77,7 @@ def test_cli_accepts_workflow_context_args(monkeypatch: pytest.MonkeyPatch) -> N
 def test_cli_rejects_pr_opened_at_without_timezone() -> None:
     """PR-opened timestamps must be timezone-aware for deterministic cutoff checks."""
     with pytest.raises(SystemExit) as exc_info:
-        receipt_gate_cli.main(
+        validator_receipt_gate_cli.main(
             [
                 "--pr-body",
                 "Implements OMN-1",
@@ -135,7 +137,7 @@ def test_cli_enforces_post_cutoff_contract_sha256(
         )
     )
 
-    exit_code = receipt_gate_cli.main(
+    exit_code = validator_receipt_gate_cli.main(
         [
             "--pr-body",
             "Closes OMN-10421",

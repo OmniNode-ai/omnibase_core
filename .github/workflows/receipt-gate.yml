@@ -433,8 +433,8 @@ jobs:
         # installed package won't contain recent modules. Catch that here so the
         # actual gate step gets a clear error instead of a stack trace.
         run: |
-          python -c "from omnibase_core.validation import receipt_gate_cli" || {
-            echo "::error::omnibase_core.validation.receipt_gate_cli not importable — install step silently picked a stale PyPI wheel"
+          python -c "from omnibase_core.validation import validator_receipt_gate_cli" || {
+            echo "::error::omnibase_core.validation.validator_receipt_gate_cli not importable — install step silently picked a stale PyPI wheel"
             python -c "import omnibase_core, os; print('omnibase_core at:', os.path.dirname(omnibase_core.__file__))" || true
             exit 1
           }
@@ -603,7 +603,7 @@ jobs:
           fi
 
           # shellcheck disable=SC2086
-          python -m omnibase_core.validation.receipt_gate_cli \
+          python -m omnibase_core.validation.validator_receipt_gate_cli \
             --pr-body "$PR_BODY" \
             --pr-title "$PR_TITLE" \
             --contracts-dir "${{ steps.evidence.outputs.contracts_dir }}" \
