@@ -20,8 +20,9 @@ name: Receipt Gate
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
-    branches: [main]
+    branches: [main, dev]
   merge_group:
+    branches: [main, dev]
 
 permissions:
   contents: read

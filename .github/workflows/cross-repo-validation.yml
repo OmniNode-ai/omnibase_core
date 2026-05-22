@@ -21,7 +21,7 @@ on:
     - cron: '0 7 * * *'
   # Also run on pushes to main to keep the dashboard current
   push:
-    branches: [main]
+    branches: [main, dev, "hotfix/**"]
   workflow_dispatch:
     inputs:
       skip_kafka:

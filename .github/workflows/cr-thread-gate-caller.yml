@@ -12,6 +12,7 @@ on:
     types: [created, edited, deleted]
   merge_group:
     types: [checks_requested]
+    branches: [main, dev]
 
 jobs:
   gate:

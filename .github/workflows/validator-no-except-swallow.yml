@@ -13,10 +13,11 @@ name: No Except Swallow
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, dev, "hotfix/**"]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, dev]
   merge_group:
+    branches: [main, develop, dev]
 
 env:
   PYTHON_VERSION: "3.12"

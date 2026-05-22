@@ -12,13 +12,13 @@ name: check_name Validator
 
 on:
   push:
-    branches: [main, develop, "feature/*", "fix/*", "chore/*", "jonah/*", "jonahgabriel/*"]
+    branches: [main, develop, dev, "hotfix/**", "feature/*", "fix/*", "chore/*", "jonah/*", "jonahgabriel/*"]
     paths:
       - ".github/required-checks.yaml"
       - ".github/workflows/**.yml"
       - "scripts/validation/validate-check-names.py"
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, dev]
     paths:
       - ".github/required-checks.yaml"
       - ".github/workflows/**.yml"

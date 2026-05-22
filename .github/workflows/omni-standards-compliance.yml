@@ -5,9 +5,9 @@ name: Omni* Ecosystem Standards Compliance
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, dev, "hotfix/**"]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, dev]
 
 env:
   PYTHON_VERSION: "3.12"

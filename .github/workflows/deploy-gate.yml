@@ -13,8 +13,9 @@ name: Deploy Gate
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, dev]
   merge_group:
+    branches: [main, develop, dev]
 
 concurrency:
   group: deploy-gate-${{ github.ref }}
