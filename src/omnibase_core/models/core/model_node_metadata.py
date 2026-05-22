@@ -18,8 +18,6 @@ This policy is enforced for all ONEX metadata blocks.
 
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_metadata import (
     EnumEntrypointType,
@@ -102,27 +100,6 @@ DataHandlingDeclaration = ModelDataHandlingDeclaration
 ExtensionValueModel = ModelExtensionValue
 TestMatrixEntry = ModelTestMatrixEntry
 NodeMetadataBlock = ModelNodeMetadataBlock
-
-# NOTE: The only difference between model_dump() and __dict__ is that model_dump() serializes entrypoint as a dict[str, Any], while __dict__ keeps it as an EntrypointBlock object. This is expected and not a source of non-determinism for YAML serialization, which uses model_dump or to_serializable_dict.
-
-
-def debug_compare_model_dump_vs_dict(model: BaseModel) -> list[str]:
-    import difflib
-    import pprint
-
-    dump = model.model_dump()
-    dct = {k: v for k, v in model.__dict__.items() if not k.startswith("_")}
-    dump_str = pprint.pformat(dump, width=120, sort_dicts=True)
-    dict_str = pprint.pformat(dct, width=120, sort_dicts=True)
-    return list(
-        difflib.unified_diff(
-            dump_str.splitlines(),
-            dict_str.splitlines(),
-            fromfile="model_dump()",
-            tofile="__dict__",
-            lineterm="",
-        ),
-    )
 
 
 # --- Pydantic forward reference for ModelExtractedBlock ---

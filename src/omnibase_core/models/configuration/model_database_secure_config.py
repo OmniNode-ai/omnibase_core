@@ -71,24 +71,6 @@ class ModelPerformanceProfile(BaseModel):
     )
 
 
-class ModelTroubleshootingGuide(BaseModel):
-    """Troubleshooting guide for database connections."""
-
-    connection_failures: list[str] = Field(
-        default_factory=list, description="Connection failure tips"
-    )
-    ssl_issues: list[str] = Field(default_factory=list, description="SSL issue tips")
-    authentication_failures: list[str] = Field(
-        default_factory=list, description="Authentication failure tips"
-    )
-    performance_issues: list[str] = Field(
-        default_factory=list, description="Performance issue tips"
-    )
-    driver_specific: list[str] = Field(
-        default_factory=list, description="Driver-specific tips"
-    )
-
-
 class ModelDatabaseSecureConfig(ModelSecureCredentials):
     """
     Enterprise-grade secure database configuration with comprehensive connection
