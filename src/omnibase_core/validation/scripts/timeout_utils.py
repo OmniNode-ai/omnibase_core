@@ -15,7 +15,6 @@ import sys
 import threading
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Any, TypeVar
 
 from omnibase_core.validation.scripts.cross_platform_timeout import CrossPlatformTimeout
@@ -29,9 +28,6 @@ __all__ = [
     "TIMEOUT_ERROR_MESSAGES",
     "DEFAULT_TIMEOUTS",
     "timeout_context",
-    "with_timeout",
-    "create_cleanup_function",
-    "safe_file_operation",
     "get_platform_info",
 ]
 
@@ -93,89 +89,6 @@ def timeout_context(
     else:
         with CrossPlatformTimeout(timeout_seconds, error_message, cleanup_func):
             yield
-
-
-def with_timeout(
-    timeout_seconds: int,
-    error_message: str = TIMEOUT_ERROR_MESSAGES["general"],
-    cleanup_func: Callable[[], None] | None = None,
-) -> Callable[[Callable[..., T]], Callable[..., T]]:
-    """
-    Decorator to add timeout to any function.
-
-    Args:
-        timeout_seconds: Timeout duration
-        error_message: Error message for timeout
-        cleanup_func: Optional cleanup function
-
-    Usage:
-        @with_timeout(60, "File processing timed out")
-        def process_files():
-            # Your code here
-    """
-
-    def decorator(func: Callable[..., T]) -> Callable[..., T]:
-        def wrapper(*args: Any, **kwargs: Any) -> T:
-            with CrossPlatformTimeout(timeout_seconds, error_message, cleanup_func):
-                return func(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def create_cleanup_function(files_to_cleanup: list[Path]) -> Callable[[], None]:
-    """
-    Create a cleanup function that removes temporary files.
-
-    Args:
-        files_to_cleanup: List of file paths to clean up
-
-    Returns:
-        Cleanup function
-    """
-
-    def cleanup() -> None:
-        """Clean up temporary files."""
-        for file_path in files_to_cleanup:
-            try:
-                if file_path.exists():
-                    file_path.unlink()
-            except Exception as e:  # noqa: BLE001
-                print(f"Warning: Failed to cleanup {file_path}: {e}", file=sys.stderr)
-
-    return cleanup
-
-
-def safe_file_operation(  # noqa: UP047
-    file_path: Path,
-    operation: Callable[[Path], T],
-    timeout_seconds: int = 30,
-) -> T:
-    """
-    Perform a file operation with timeout and error handling.
-
-    Args:
-        file_path: Path to the file
-        operation: Function that takes a Path and returns result
-        timeout_seconds: Timeout for the operation
-
-    Returns:
-        Result of the operation
-
-    Raises:
-        TimeoutError: If operation times out
-        OSError: If file operation fails
-    """
-    error_message = f"File operation timed out for {file_path}"
-
-    with CrossPlatformTimeout(timeout_seconds, error_message):
-        try:
-            return operation(file_path)
-        except (OSError, PermissionError) as e:
-            raise OSError(  # error-ok: re-raising standard OS exception at utility boundary
-                f"File operation failed for {file_path}: {e}"
-            ) from e
 
 
 def get_platform_info() -> dict[str, Any]:  # ONEX_EXCLUDE: dict_str_any

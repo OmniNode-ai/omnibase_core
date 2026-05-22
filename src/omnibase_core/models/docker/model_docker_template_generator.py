@@ -9,11 +9,6 @@ enabling contract-driven deployment infrastructure.
 
 """
 
-from pathlib import Path
-
-from omnibase_core.models.services.model_kubernetestemplategenerator import (
-    ModelKubernetesTemplateGenerator,
-)
 from omnibase_core.models.services.model_node_service_config import (
     ModelNodeServiceConfig,
 )
@@ -292,46 +287,3 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
             volumes["redis-data"] = {}
 
         return volumes
-
-
-def generate_deployment_templates(
-    service_config: ModelNodeServiceConfig, output_dir: Path
-) -> dict[str, Path]:
-    """
-    Generate all deployment templates for a service configuration.
-
-    Args:
-        service_config: Service configuration model
-        output_dir: Directory to write template files
-
-    Returns:
-        Dictionary mapping template type to file path
-    """
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    generated_files = {}
-
-    # Generate Docker templates
-    docker_gen = ModelDockerTemplateGenerator(service_config)
-
-    # Dockerfile
-    dockerfile_content = docker_gen.generate_dockerfile()
-    dockerfile_path = output_dir / "Dockerfile"
-    dockerfile_path.write_text(dockerfile_content)
-    generated_files["dockerfile"] = dockerfile_path
-
-    # Docker Compose
-    compose_content = docker_gen.generate_docker_compose_full()
-    compose_path = output_dir / "docker-compose.yml"
-    compose_path.write_text(compose_content)
-    generated_files["docker_compose"] = compose_path
-
-    # Kubernetes templates
-    k8s_gen = ModelKubernetesTemplateGenerator(service_config)
-    k8s_content = k8s_gen.generate_all_manifests()
-    k8s_path = output_dir / "kubernetes.yaml"
-    k8s_path.write_text(k8s_content)
-    generated_files["kubernetes"] = k8s_path
-
-    return generated_files

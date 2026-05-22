@@ -189,7 +189,6 @@ def _format_table_name(table_node: Any) -> str | None:
 
 
 __all__ = [
-    "ParserResult",
     "extract_tables_with_parser",
     "has_parser",
 ]
