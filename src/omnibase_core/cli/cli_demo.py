@@ -952,10 +952,12 @@ def run_demo(
             sys.stdout.flush()
             last_progress = progress
 
-        # Simulate evaluation (in real implementation, use ServiceInvariantEvaluator)
-        sample_id_raw = (
-            sample.get("ticket_id") or sample.get("_source_file") or f"sample_{i + 1}"
-        )
+        # Simulate evaluation; runtime invariant evaluation now lives in omnibase_infra.
+        sample_id_raw = sample.get("ticket_id")
+        if sample_id_raw is None:
+            sample_id_raw = sample.get("_source_file")
+        if sample_id_raw is None:
+            sample_id_raw = f"sample_{i + 1}"
         sample_id = str(sample_id_raw)
 
         # Determine pass/fail and invariants checked
