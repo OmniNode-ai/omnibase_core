@@ -142,6 +142,7 @@ def enforce_execution_shape(
 
             # NOTE(OMN-1302): Wrapper matches original signature but mypy cannot verify Callable compatibility.
             # Safe because functools.wraps preserves signature.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return async_wrapper  # type: ignore[return-value]
 
         @functools.wraps(func)

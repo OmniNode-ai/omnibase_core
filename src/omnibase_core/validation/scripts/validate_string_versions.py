@@ -118,6 +118,7 @@ try:
     PYDANTIC_MODELS_AVAILABLE = True
 except ImportError:
     ModelGenericYaml = None
+    # Why: Runtime compatibility requires assigning through a broader static type.
     load_yaml_content_as_model = None  # type: ignore[assignment]
     PYDANTIC_MODELS_AVAILABLE = False
 

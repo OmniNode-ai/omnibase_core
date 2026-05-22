@@ -113,6 +113,7 @@ class ModelContractDiff(BaseModel):
         from_attributes=True,
     )
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def has_changes(self) -> bool:
@@ -143,6 +144,7 @@ class ModelContractDiff(BaseModel):
 
         return False
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def total_changes(self) -> int:
@@ -172,6 +174,7 @@ class ModelContractDiff(BaseModel):
 
         return count
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def change_summary(self) -> dict[str, int]:

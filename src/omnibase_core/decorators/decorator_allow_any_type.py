@@ -30,6 +30,7 @@ def allow_any_type(reason: str) -> Callable[[F], F]:
 
     def decorator(func: F) -> F:
         # NOTE(OMN-1302): Dynamic attribute for decorator metadata tracking. Safe because read via getattr.
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         func.__allow_any_reason__ = reason  # type: ignore[attr-defined]
         return func
 

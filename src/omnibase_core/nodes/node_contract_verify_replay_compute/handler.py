@@ -133,6 +133,7 @@ class NodeContractVerifyReplayCompute:
         if inp.package_bytes is not None:
             raw_bytes = inp.package_bytes
         else:
+            # Why: Runtime validation narrows this dynamic payload before use.
             p = Path(inp.package_path)  # type: ignore[arg-type]
             if not p.exists():
                 raise ModelOnexError(

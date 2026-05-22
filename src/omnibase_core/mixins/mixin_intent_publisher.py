@@ -150,6 +150,7 @@ class MixinIntentPublisher:
                 self._init_intent_publisher(container)
         """
         # The get_service method accepts a service name string, but mypy expects a type
+        # Why: Runtime validation narrows this dynamic payload before use.
         kafka_client: object | None = container.get_service("kafka_client")  # type: ignore[arg-type]  # String-based DI lookup; get_service accepts service name strings
         if kafka_client is None:
             raise OnexError(
@@ -165,6 +166,7 @@ class MixinIntentPublisher:
                 type(kafka_client).__name__,
             )
 
+        # Why: Runtime compatibility requires assigning through a broader static type.
         self._intent_kafka_client: ProtocolKafkaClient = kafka_client  # type: ignore[assignment]  # Runtime protocol validation; object assigned after None check
 
         # Store container for access to other services if needed

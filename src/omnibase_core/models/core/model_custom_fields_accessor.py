@@ -272,6 +272,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         except Exception:  # noqa: BLE001  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
             return False
 
+    # Why: Runtime API intentionally narrows or widens the inherited signature.
     def get_field(  # type: ignore[override]
         self, path: str, default: object = None
     ) -> object:

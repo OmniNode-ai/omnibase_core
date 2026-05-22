@@ -80,6 +80,7 @@ class ModelInvariantComparisonSummary(BaseModel):
             )
         return self
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def regression_detected(self) -> bool:

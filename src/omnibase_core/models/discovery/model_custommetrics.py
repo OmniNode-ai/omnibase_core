@@ -46,6 +46,7 @@ class ModelCustomMetrics(BaseModel):
             else:
                 # Defensive fallback for unexpected types at runtime
                 # Type annotation guarantees exhaustiveness, but runtime may differ
+                # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
                 logger.warning(  # type: ignore[unreachable]
                     "Unexpected metric type %s for metric '%s', converting to string",
                     type(value).__name__,

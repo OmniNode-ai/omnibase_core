@@ -75,8 +75,10 @@ def allow_dict_any(  # noqa: UP047
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:
         """Apply the decorator to a function."""
         # NOTE(OMN-1302): Dynamic attributes for decorator metadata tracking. Safe because read via getattr.
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         f._allow_dict_any = True  # type: ignore[attr-defined]
         if reason:
+            # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
             f._dict_any_reason = reason  # type: ignore[attr-defined]
         return f
 

@@ -85,6 +85,7 @@ class ModelFSMAnalysisResult(BaseModel):
         description="Human-readable error messages for all detected issues",
     )
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def is_valid(self) -> bool:

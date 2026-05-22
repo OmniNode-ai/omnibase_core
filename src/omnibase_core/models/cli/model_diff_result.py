@@ -113,6 +113,7 @@ class ModelDiffResult(BaseModel):
         description="Fields with changed values (non-behavioral)",
     )
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def has_changes(self) -> bool:
@@ -130,6 +131,7 @@ class ModelDiffResult(BaseModel):
             self.behavioral_changes or self.added or self.removed or self.changed
         )
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def total_changes(self) -> int:

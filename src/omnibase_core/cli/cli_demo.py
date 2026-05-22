@@ -527,6 +527,7 @@ def _find_mock_response_by_ticket_id(
         # NOTE(OMN-1397): Runtime safety check for JSON data that may not match declared types.
         if not isinstance(response, dict):
             # fallback-ok: skip malformed entries, search continues for valid matches
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             continue  # type: ignore[unreachable]
         response_ticket_id = response.get("ticket_id")
         if response_ticket_id == ticket_id:
@@ -955,7 +956,7 @@ def run_demo(
         # Simulate evaluation (in real implementation, use ServiceInvariantEvaluator)
         sample_id_raw = (
             sample.get("ticket_id") or sample.get("_source_file") or f"sample_{i + 1}"
-        )
+        )  # fallback-ok: replay demo samples accept ticket id, source file, or synthetic id
         sample_id = str(sample_id_raw)
 
         # Determine pass/fail and invariants checked

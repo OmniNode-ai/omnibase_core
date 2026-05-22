@@ -42,7 +42,7 @@ def _load_registry() -> dict[str, dict[str, str]]:
     """Load the installed nodes registry from disk."""
     path = _get_registry_path()
     if path.exists():
-        return json.loads(path.read_text())  # type: ignore[no-any-return]
+        return json.loads(path.read_text())
     return {}
 
 

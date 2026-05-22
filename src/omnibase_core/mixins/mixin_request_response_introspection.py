@@ -200,6 +200,7 @@ class MixinRequestResponseIntrospection:
                 # Convert object to dict for reconstruction
                 event_dict = event.__dict__ if hasattr(event, "__dict__") else event
                 # Dict unpacking to reconstruct typed event; structure validated by Pydantic at runtime
+                # Why: Runtime validation narrows this dynamic payload before use.
                 request_event = ModelRequestIntrospectionEvent(**event_dict)  # type: ignore[arg-type]  # Dict unpacking for event reconstruction
             elif isinstance(event, dict):
                 # Event bus delivers as dictionary - reconstruct typed object
@@ -401,7 +402,7 @@ class MixinRequestResponseIntrospection:
                     {"node_name": getattr(self, "node_name", "unknown")},
                 )
 
-        except Exception as e:  # noqa: BLE001  # catch-all-ok: request handling errors should be caught and reported via error response
+        except Exception as e:  # noqa: BLE001  # catch-all-ok: request handling errors should be caught and reported via error response  # fallback-ok: converted into introspection error responses
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"❌ INTROSPECTION: Error handling request: {e!s}",
@@ -412,7 +413,7 @@ class MixinRequestResponseIntrospection:
                 },
             )
             # Send error response
-            try:
+            try:  # fallback-ok: best-effort error response preserves the original logged failure
                 response_time_ms = (time.time() - start_time) * 1000
                 event_correlation_id = getattr(event, "correlation_id", None) or uuid4()
                 error_response = ModelIntrospectionResponseEvent.create_error_response(
@@ -470,9 +471,7 @@ class MixinRequestResponseIntrospection:
                         },
                     )
 
-            except (
-                Exception
-            ) as nested_e:  # catch-all-ok: error response sending is best-effort
+            except Exception as nested_e:  # catch-all-ok: error response sending is best-effort  # fallback-ok: logged and cannot replace the original error
                 if hasattr(self, "_logger") and self._logger:
                     self._logger.exception(f"Failed to send error response: {nested_e}")
 
@@ -596,6 +595,7 @@ class MixinRequestResponseIntrospection:
         return ModelNodeCapabilities(
             actions=actions,
             protocols=protocols,
+            # Why: Runtime validation narrows this dynamic payload before use.
             metadata=metadata,  # type: ignore[arg-type]  # Dict passed for metadata; Pydantic validates at runtime
         )
 

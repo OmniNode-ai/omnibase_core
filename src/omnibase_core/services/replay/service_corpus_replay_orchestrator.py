@@ -433,6 +433,7 @@ class ServiceCorpusReplayOrchestrator:
                 should_skip = self._cancelled or fail_fast_triggered
                 if should_skip:
                     # NOTE(OMN-1302): Defensive early return for race condition. Safe because checks state after lock.
+                    # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
                     return  # type: ignore[unreachable]
 
                 result = await self._replay_single(manifest, config)
@@ -520,7 +521,7 @@ class ServiceCorpusReplayOrchestrator:
                 # Cancellation should not be retried - it must propagate immediately.
                 raise
 
-            except Exception as e:  # noqa: BLE001  # boundary-ok: retry logic must capture all exceptions to track attempts
+            except Exception as e:  # noqa: BLE001  # boundary-ok: retry logic must capture all exceptions to track attempts  # fallback-ok: captured before final result
                 last_error = e
                 retry_count += 1
 
@@ -592,6 +593,6 @@ class ServiceCorpusReplayOrchestrator:
         if callback:
             try:
                 callback(progress)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # fallback-ok: observer callback must not fail replay
                 # tool-resilience-ok: callback errors must not crash replay
                 _logger.warning("Progress callback failed: %s", e)

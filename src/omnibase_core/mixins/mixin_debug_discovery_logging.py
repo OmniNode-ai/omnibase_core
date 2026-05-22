@@ -61,6 +61,7 @@ class MixinDebugDiscoveryLogging:
         if hasattr(self, "_handle_introspection_request"):
             # Store original handler
             self._original_handle_introspection_request = (
+                # Why: Dynamic attribute is installed before this debug/introspection wrapper runs.
                 self._handle_introspection_request  # type: ignore[has-type]  # Dynamic attribute access for debug wrapper
             )
 

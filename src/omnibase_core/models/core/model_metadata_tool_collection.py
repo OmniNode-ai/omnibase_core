@@ -179,6 +179,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         return self
 
     # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def collection_id(self) -> str:
@@ -188,6 +189,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
     # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def tool_count(self) -> int:
@@ -195,6 +197,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         return len([k for k in self.root if not k.startswith("_")])
 
     # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def analytics(self) -> ModelMetadataToolAnalytics:
@@ -203,6 +206,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         return ModelMetadataToolAnalytics(**analytics_data)
 
     # NOTE(OMN-1302): Pydantic @computed_field decorator - mypy doesn't understand Pydantic property semantics.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def health_score(self) -> float:

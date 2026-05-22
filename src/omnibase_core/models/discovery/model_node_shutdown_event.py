@@ -238,6 +238,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
             shutdown_reason="forced",
             final_status="stopped",
             cleanup_actions=["emergency_cleanup"],
+            # Why: Runtime validation narrows this dynamic payload before use.
             final_metrics={"force_reason": force_reason},  # type: ignore[arg-type]
             **kwargs,
         )

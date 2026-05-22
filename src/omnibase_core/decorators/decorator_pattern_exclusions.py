@@ -47,15 +47,20 @@ class ONEXPatternExclusion:
         # NOTE(OMN-1302): Dynamic attributes for exclusion metadata on decoratee.
         # Safe because attributes read via hasattr/getattr at runtime.
         if not hasattr(target, "_onex_pattern_exclusions"):
+            # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
             target._onex_pattern_exclusions = set()  # type: ignore[attr-defined]
 
         existing_exclusions: set[str] = getattr(
             target, "_onex_pattern_exclusions", set()
         )
         existing_exclusions.update(self.excluded_patterns)
+        # Why: Control flow guards this union member before the attribute access.
         target._onex_pattern_exclusions = existing_exclusions  # type: ignore[union-attr]
+        # Why: Control flow guards this union member before the attribute access.
         target._onex_exclusion_reason = self.reason  # type: ignore[union-attr]
+        # Why: Control flow guards this union member before the attribute access.
         target._onex_exclusion_scope = self.scope  # type: ignore[union-attr]
+        # Why: Control flow guards this union member before the attribute access.
         target._onex_exclusion_reviewer = self.reviewer  # type: ignore[union-attr]
 
         return target

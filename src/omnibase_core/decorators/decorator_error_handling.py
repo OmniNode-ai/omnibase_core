@@ -272,6 +272,7 @@ def standard_error_handling(
                         operation=operation_name,
                     ) from e
 
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return async_wrapper  # type: ignore[return-value]
         else:
 
@@ -371,6 +372,7 @@ def validation_error_handling(
                         operation=operation_name,
                     ) from e
 
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return async_wrapper  # type: ignore[return-value]
         else:
 
@@ -481,6 +483,7 @@ def io_error_handling(
                         operation=operation_name,
                     ) from e
 
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return async_wrapper  # type: ignore[return-value]
         else:
 

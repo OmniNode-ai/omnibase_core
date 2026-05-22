@@ -99,6 +99,7 @@ class ModelEventBusOutputState(BaseModel):
     # with TContext bound to BaseModel, but we don't constrain to a specific context type
     # for event bus output. The context_data field within ModelErrorDetails accepts both
     # typed contexts AND dict[str, ModelSchemaValue], so this is safe at runtime.
+    # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None, description="Detailed error information for debugging"
     )

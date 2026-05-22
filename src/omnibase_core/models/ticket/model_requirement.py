@@ -90,6 +90,7 @@ class ModelRequirement(BaseModel):
         # Reject duplicate criterion IDs
         if len(acceptance_ids) != len(set(acceptance_ids)):
             seen: set[str] = set()
+            # Why: Expression intentionally relies on a side effect while preserving order.
             dupes = [aid for aid in acceptance_ids if aid in seen or seen.add(aid)]  # type: ignore[func-returns-value]
             raise ValueError(f"Duplicate acceptance criterion IDs: {dupes}")
 

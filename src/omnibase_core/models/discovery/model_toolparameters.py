@@ -45,6 +45,7 @@ class ModelToolParameters(BaseModel):
             else:  # pragma: no cover
                 # Fallback for unexpected types - defensive code for runtime safety
                 # Type system guarantees this is unreachable, but runtime values may differ
+                # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
                 param_type = "string"  # type: ignore[unreachable]
                 value = str(value)
 

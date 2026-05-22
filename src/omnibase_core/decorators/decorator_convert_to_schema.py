@@ -638,6 +638,7 @@ def convert_to_schema(
 
         # NOTE(OMN-1302): Dynamic attribute for collision detection. Safe because read via getattr.
         # Must set before creating classmethod since bound methods don't accept new attributes.
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         convert_schema_fields._convert_to_schema_generated = True  # type: ignore[attr-defined]
 
         # Create a bound classmethod
@@ -795,6 +796,7 @@ def convert_list_to_schema(
 
         # NOTE(OMN-1302): Dynamic attribute for collision detection. Safe because read via getattr.
         # Must set before creating classmethod since bound methods don't accept new attributes.
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         convert_list_fields._convert_to_schema_generated = True  # type: ignore[attr-defined]
 
         validator_method = classmethod(convert_list_fields).__get__(None, cls)
@@ -922,6 +924,7 @@ def convert_dict_to_schema(
 
         # NOTE(OMN-1302): Dynamic attribute for collision detection. Safe because read via getattr.
         # Must set before creating classmethod since bound methods don't accept new attributes.
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         convert_dict_fields._convert_to_schema_generated = True  # type: ignore[attr-defined]
 
         validator_method = classmethod(convert_dict_fields).__get__(None, cls)

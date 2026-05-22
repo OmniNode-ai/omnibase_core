@@ -176,6 +176,7 @@ class ModelRouteSpec(BaseModel):
     ) -> "ModelRouteSpec":
         """Create a direct route to destination with dynamic routing."""
         # NOTE(OMN-1302): kwargs forwarded to Pydantic model constructor, types verified by Pydantic validation.
+        # Why: Runtime validation narrows this dynamic payload before use.
         return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)  # type: ignore[arg-type]
 
     @classmethod
@@ -191,6 +192,7 @@ class ModelRouteSpec(BaseModel):
             final_destination=destination,
             remaining_hops=hops.copy(),
             routing_strategy="explicit",
+            # Why: Runtime validation narrows this dynamic payload before use.
             **kwargs,  # type: ignore[arg-type]
         )
 
@@ -203,6 +205,7 @@ class ModelRouteSpec(BaseModel):
         return cls(
             final_destination=service_pattern,
             routing_strategy="anycast",
+            # Why: Runtime validation narrows this dynamic payload before use.
             **kwargs,  # type: ignore[arg-type]
         )
 
@@ -213,6 +216,7 @@ class ModelRouteSpec(BaseModel):
         return cls(
             final_destination="broadcast://all",
             routing_strategy="broadcast",
+            # Why: Runtime validation narrows this dynamic payload before use.
             **kwargs,  # type: ignore[arg-type]
         )
 

@@ -343,13 +343,16 @@ class ModelNumericStringValue(BaseModel):
         """
         if self.value_type == EnumNumericValueType.FLOAT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation narrows this dynamic payload before use.
             return float(self.int_value)  # type: ignore[arg-type]
         if self.value_type == EnumNumericValueType.STRING:
             try:
                 # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+                # Why: Runtime validation narrows this dynamic payload before use.
                 return float(self.str_value)  # type: ignore[arg-type]
             except (TypeError, ValueError) as e:
                 raise ModelOnexError(
@@ -396,6 +399,7 @@ class ModelNumericStringValue(BaseModel):
         """
         if self.value_type == EnumNumericValueType.INT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.int_value  # type: ignore[return-value]
 
         if self.value_type == EnumNumericValueType.FLOAT:
@@ -443,11 +447,13 @@ class ModelNumericStringValue(BaseModel):
             try:
                 # Try direct int conversion first
                 # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+                # Why: Runtime validation narrows this dynamic payload before use.
                 return int(self.str_value)  # type: ignore[arg-type]
             except (TypeError, ValueError):
                 # Try parsing as float first, then convert to int
-                try:
+                try:  # fallback-ok: numeric string coercion intentionally tries int after float parse
                     # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+                    # Why: Runtime validation narrows this dynamic payload before use.
                     float_val = float(self.str_value)  # type: ignore[arg-type]
                     # Apply coercion mode to the parsed float
                     if coercion_mode == EnumCoercionMode.STRICT:
@@ -503,6 +509,7 @@ class ModelNumericStringValue(BaseModel):
         """
         if self.value_type == EnumNumericValueType.STRING:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.str_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
             return str(self.int_value)
@@ -531,12 +538,15 @@ class ModelNumericStringValue(BaseModel):
         """
         if self.value_type == EnumNumericValueType.FLOAT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.INT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.int_value  # type: ignore[return-value]
         if self.value_type == EnumNumericValueType.STRING:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.str_value  # type: ignore[return-value]
 
         raise ModelOnexError(

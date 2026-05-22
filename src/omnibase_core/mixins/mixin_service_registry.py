@@ -195,6 +195,7 @@ class MixinServiceRegistry:
                 event_type="core.discovery.realtime_request",
                 node_id=getattr(self, "node_id", uuid4()),
                 correlation_id=correlation_id,
+                # Why: Runtime validation narrows this dynamic payload before use.
                 data={  # type: ignore[arg-type]  # Event data field accepts dict for discovery protocol; validated at runtime
                     "request_type": "tool_discovery",
                     "domain_filter": getattr(self, "domain_filter", None),
@@ -371,6 +372,7 @@ class MixinServiceRegistry:
                 event_type="core.discovery.node_introspection",
                 node_id=getattr(self, "node_id", uuid4()),
                 correlation_id=correlation_id,
+                # Why: Runtime validation narrows this dynamic payload before use.
                 data={  # type: ignore[arg-type]  # Event data field accepts dict for introspection protocol; validated at runtime
                     "target_node_id": str(node_id),
                     "requested_info": ["capabilities", "metadata", "health_status"],
@@ -519,6 +521,7 @@ class MixinServiceRegistry:
                         event_type="core.discovery.response",
                         node_id=getattr(self, "node_id", uuid4()),
                         correlation_id=correlation_id,
+                        # Why: Runtime validation narrows this dynamic payload before use.
                         data=response_data,  # type: ignore[arg-type]  # Event data field accepts dict for discovery response; validated at runtime
                     )
 

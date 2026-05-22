@@ -353,6 +353,7 @@ class MixinHealthCheck:
 
                 # Validate result type (handle invalid return types)
                 if not isinstance(result, ModelHealthStatus):
+                    # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
                     emit_log_event(  # type: ignore[unreachable]  # Defensive logging in catch-all branch; unreachable per static analysis but guards against runtime type violations
                         LogLevel.ERROR,
                         f"Async health check returned invalid type: {check_name}",

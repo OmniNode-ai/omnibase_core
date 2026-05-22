@@ -6,16 +6,11 @@
 Pydantic models for the ONEX container system.
 """
 
-from omnibase_core.models.container.model_base_model_onex_container import (
-    _BaseModelONEXContainer,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from omnibase_core.models.container.model_injection_context import ModelInjectionContext
-from omnibase_core.models.container.model_onex_container import (
-    ModelONEXContainer,
-    create_model_onex_container,
-    get_model_onex_container,
-    get_model_onex_container_sync,
-)
 from omnibase_core.models.container.model_protocols_namespace import (
     ModelProtocolsNamespace,
 )
@@ -36,6 +31,42 @@ from omnibase_core.models.container.model_service_metadata import ModelServiceMe
 from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
+
+if TYPE_CHECKING:
+    from omnibase_core.models.container.model_base_model_onex_container import (
+        _BaseModelONEXContainer,
+    )
+    from omnibase_core.models.container.model_onex_container import (
+        ModelONEXContainer,
+        create_model_onex_container,
+        get_model_onex_container,
+        get_model_onex_container_sync,
+    )
+
+_LAZY_CONTAINER_EXPORTS = {
+    "ModelONEXContainer",
+    "create_model_onex_container",
+    "get_model_onex_container",
+    "get_model_onex_container_sync",
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Load container implementations lazily to avoid package import cycles."""
+    if name == "_BaseModelONEXContainer":
+        from omnibase_core.models.container.model_base_model_onex_container import (
+            _BaseModelONEXContainer,
+        )
+
+        return _BaseModelONEXContainer
+
+    if name in _LAZY_CONTAINER_EXPORTS:
+        from omnibase_core.models.container import model_onex_container
+
+        return getattr(model_onex_container, name)
+
+    raise AttributeError(name)  # error-ok: __getattr__ protocol requires AttributeError
+
 
 __all__ = [
     "_BaseModelONEXContainer",

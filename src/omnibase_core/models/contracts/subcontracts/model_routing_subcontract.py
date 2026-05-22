@@ -83,7 +83,9 @@ def _ensure_models_rebuilt(
     with _rebuild_lock:
         if (
             _models_rebuilt
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
         ):  # Double-check after acquiring lock  # type: ignore[unreachable]
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             return  # type: ignore[unreachable]
 
         from omnibase_core.models.services.model_custom_fields import (  # noqa: F401

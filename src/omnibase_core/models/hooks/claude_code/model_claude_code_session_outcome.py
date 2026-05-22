@@ -96,6 +96,7 @@ class ModelClaudeCodeSessionOutcome(BaseModel):
     )
 
     # NOTE(OMN-1762): ModelErrorDetails is generic but type parameter unused for session error context.
+    # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     error: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Error details if outcome is FAILED",

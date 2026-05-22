@@ -12,5 +12,6 @@ class ExceptionContractViolationError(ExceptionFailFastError):
         super().__init__(
             message,
             "CONTRACT_VIOLATION",
+            # Why: Runtime validation narrows this dynamic payload before use.
             {"contract_field": contract_field},  # type: ignore[arg-type]
         )

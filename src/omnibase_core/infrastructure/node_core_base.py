@@ -445,6 +445,7 @@ class NodeCoreBase(ABC):
             contract_service: Any = None
             try:
                 # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
+                # Why: Runtime validation narrows this dynamic payload before use.
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
             except (
                 Exception  # noqa: BLE001
@@ -729,6 +730,7 @@ class NodeCoreBase(ABC):
             event_bus: Any = None
             try:
                 # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
+                # Why: Runtime validation narrows this dynamic payload before use.
                 event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
             except Exception:  # noqa: BLE001  # fallback-ok: event bus is optional for node operation
                 event_bus = None

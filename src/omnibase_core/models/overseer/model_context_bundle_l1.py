@@ -27,6 +27,7 @@ class ModelContextBundleL1(ModelContextBundleL0, frozen=True, extra="forbid"):
     Adds ticket metadata and summary on top of L0.
     """
 
+    # Why: Runtime compatibility requires assigning through a broader static type.
     level: Literal[EnumContextBundleLevel.L1] = Field(  # type: ignore[assignment]  # NOTE(OMN-10251): pydantic Field default narrowing to Literal[EnumMember] is a mypy false positive.
         default=EnumContextBundleLevel.L1,
         description="Context bundle level.",

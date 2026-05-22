@@ -340,7 +340,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
             # event_type is defined on subclasses, use getattr for type safety
             event_type = getattr(event, "event_type", type(event).__name__)
             logger.debug(f"Emitted event: {event_type}")
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001  # fallback-ok: event emission is best-effort telemetry and must not fail validation
             # boundary-ok: event emission should not fail the pipeline
             event_type = getattr(event, "event_type", type(event).__name__)
             logger.warning(
@@ -489,6 +489,7 @@ class ContractValidationPipeline:  # naming-ok: validator class, not protocol
 
         try:
             # NOTE(OMN-1302): Duck-typed validator interface. Safe because validate() verified via hasattr() at runtime.
+            # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
             constraint_result = self._constraint_validator.validate(  # type: ignore[attr-defined]
                 base, patch, merged
             )

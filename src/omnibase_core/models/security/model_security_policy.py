@@ -104,6 +104,7 @@ class ModelSecurityPolicy(BaseModel):
     def from_dict(cls, data: ModelSecurityPolicyData) -> "ModelSecurityPolicy":
         """Create from data container for easy migration."""
         data_dict = data.typed_data.to_python_dict()
+        # Why: Runtime validation narrows this dynamic payload before use.
         return cls(**data_dict)  # type: ignore[arg-type]
 
     @field_serializer("created_at", "updated_at", "valid_from", "valid_until")

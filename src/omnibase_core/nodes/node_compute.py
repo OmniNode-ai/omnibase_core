@@ -178,7 +178,9 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
             handler_routing = getattr(self.contract, "handler_routing", None)
 
         if handler_routing is not None:
+            # Why: Runtime validation narrows this dynamic payload before use.
             handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
+            # Why: Runtime validation narrows this dynamic payload before use.
             self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     # =========================================================================
@@ -256,10 +258,12 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
                     # NOTE(OMN-1731): Type narrowing for union with boolean flag.
                     # When is_lazy=True, handler_or_loader is LazyLoader (a callable
                     # that returns HandlerCallable). mypy cannot narrow automatically.
+                    # Why: Runtime compatibility requires assigning through a broader static type.
                     resolved_handler = handler_or_loader()  # type: ignore[assignment]
                 else:
                     # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is already
                     # HandlerCallable. mypy cannot narrow the union type automatically.
+                    # Why: Runtime compatibility requires assigning through a broader static type.
                     resolved_handler = handler_or_loader  # type: ignore[assignment]
 
                 # Dispatch to contract-specified handler
@@ -646,12 +650,15 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
         # NOTE(OMN-1302): Protocols are abstract by design but runtime_checkable works at runtime.
         # Safe because get_service_optional returns None if not registered.
         self._cache = self.container.get_service_optional(
+            # Why: Registry stores protocol contracts rather than instantiating them directly.
             ProtocolComputeCache  # type: ignore[type-abstract]
         )
         self._timing_service = self.container.get_service_optional(
+            # Why: Registry stores protocol contracts rather than instantiating them directly.
             ProtocolTimingService  # type: ignore[type-abstract]
         )
         self._parallel_executor = self.container.get_service_optional(
+            # Why: Registry stores protocol contracts rather than instantiating them directly.
             ProtocolParallelExecutor  # type: ignore[type-abstract]
         )
 

@@ -58,6 +58,7 @@ class ModelOnexReply(BaseModel):
 
     # === ERROR INFORMATION ===
     # NOTE(OMN-1765): Generic type arg omitted; error field accepts any ModelErrorDetails variant
+    # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     error: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Error details if applicable",
@@ -163,8 +164,10 @@ class ModelOnexReply(BaseModel):
         cls,
         # NOTE(OMN-1765): Generic type arg omitted to accept any ModelErrorDetails variant.
         # Both parameter and return type use type: ignore[type-arg] for the same reason.
+        # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
         v: ModelErrorDetails | None,  # type: ignore[type-arg]
         info: ValidationInfo,
+        # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     ) -> ModelErrorDetails | None:  # type: ignore[type-arg]
         """Validate error details consistency with status."""
         status = info.data.get("status")
@@ -250,6 +253,7 @@ class ModelOnexReply(BaseModel):
             }
 
         # NOTE(OMN-1765): Type inference limited due to generic ModelErrorDetails[TContext]
+        # Why: Suppression is retained for this documented runtime typing boundary.
         error_details = ModelErrorDetails(  # type: ignore[var-annotated]
             error_code=error_code or "UNKNOWN_ERROR",
             error_message=error_message,

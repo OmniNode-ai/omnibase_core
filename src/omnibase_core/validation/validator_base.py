@@ -447,6 +447,7 @@ class ValidatorBase(ABC):
             # We use lstrip/rstrip separately to be more precise about what we remove,
             # avoiding the issue where strip("*/") would remove characters in any order.
             if "**" in pattern or pattern.startswith("*/") or pattern.endswith("/*"):
+                # fallback-ok: glob normalization accepts multiple traversal marker shapes.
                 # Extract the core pattern by removing glob traversal markers
                 # Start with the full pattern
                 core_pattern = pattern
@@ -556,6 +557,7 @@ class ValidatorBase(ABC):
             # for future model changes or external data sources
             if rule.severity is None:
                 # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
+                # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
                 logger.debug(  # type: ignore[unreachable]
                     "Rule %s missing severity, using default: %s",
                     rule.rule_id,

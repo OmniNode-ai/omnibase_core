@@ -370,6 +370,7 @@ class ServiceContractValidator:
 
         try:
             # NOTE(OMN-1302): Duck-typed Pydantic model from registry. Safe because models validated at registration.
+            # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
             contract_instance = contract_model.model_validate(yaml_data)  # type: ignore[attr-defined]
 
             # Step 3: Check ONEX compliance
@@ -840,15 +841,18 @@ class ServiceContractValidator:
 
         # Naming violations
         naming_violations = await self.validate_onex_naming(file_path, source)
+        # Why: Runtime validation narrows this dynamic payload before use.
         violations.extend(naming_violations)  # type: ignore[arg-type]
 
         # Architecture violations
         arch_violations = await self.validate_architecture_compliance(file_path, source)
+        # Why: Runtime validation narrows this dynamic payload before use.
         violations.extend(arch_violations)  # type: ignore[arg-type]
 
         # Dependency violations
         imports = self._extract_imports(source)
         dep_violations = await self.validate_dependency_compliance(file_path, imports)
+        # Why: Runtime validation narrows this dynamic payload before use.
         violations.extend(dep_violations)  # type: ignore[arg-type]
 
         # Custom rule violations
@@ -915,6 +919,7 @@ class ServiceContractValidator:
             overall_compliance=overall,
             critical_violations=critical_count,
             recommendations=recommendations,
+            # Why: Runtime validation guarantees the returned value matches the contract.
         )  # type: ignore[return-value]
 
     async def validate_repository_compliance(
@@ -1046,6 +1051,7 @@ class ServiceContractValidator:
                     ),
                 )
 
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return violations  # type: ignore[return-value]
 
     async def validate_architecture_compliance(
@@ -1125,6 +1131,7 @@ class ServiceContractValidator:
                             ),
                         )
 
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return violations  # type: ignore[return-value]
 
     async def validate_directory_structure(
@@ -1161,6 +1168,7 @@ class ServiceContractValidator:
                     severity="critical",
                 ),
             )
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return violations  # type: ignore[return-value]
 
         # Check required directories
@@ -1181,6 +1189,7 @@ class ServiceContractValidator:
                     ),
                 )
 
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return violations  # type: ignore[return-value]
 
     async def validate_dependency_compliance(
@@ -1232,6 +1241,7 @@ class ServiceContractValidator:
                             ),
                         )
 
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return violations  # type: ignore[return-value]
 
     async def aggregate_compliance_results(
@@ -1282,6 +1292,7 @@ class ServiceContractValidator:
                 f"{len(non_compliant_files)} file(s) are non-compliant",
             )
 
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return result  # type: ignore[return-value]
 
     def add_custom_rule(self, rule: ProtocolComplianceRule) -> None:

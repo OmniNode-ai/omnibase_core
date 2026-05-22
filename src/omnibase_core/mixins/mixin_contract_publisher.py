@@ -105,6 +105,7 @@ class MixinContractPublisher:
         else:
             # NOTE(OMN-1655): get_service returns object by Protocol definition. Safe because
             # we verify resolved is not None before assignment.
+            # Why: Runtime validation narrows this dynamic payload before use.
             resolved: object | None = container.get_service("ProtocolEventBusPublisher")  # type: ignore[arg-type]
             if resolved is None:
                 raise ModelOnexError(
@@ -117,6 +118,7 @@ class MixinContractPublisher:
                 )
             # NOTE(OMN-1655): Assignment safe - we verify resolved is ProtocolEventBusPublisher
             # via the container registration, and checked for None above.
+            # Why: Runtime compatibility requires assigning through a broader static type.
             self._contract_publisher = resolved  # type: ignore[assignment]
 
         self._heartbeat_task = None

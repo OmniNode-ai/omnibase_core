@@ -276,6 +276,7 @@ class ModelFunctionNodeMetadata(BaseModel):
         return TypedDictFunctionMetadataSummary(
             documentation=doc_filtered,
             deprecation=dep_summary,
+            # Why: Runtime conversion validates this dictionary shape before model construction.
             relationships=rel_converted,  # type: ignore[typeddict-item]
             documentation_quality_score=self.get_documentation_quality_score(),
             # Consider "fully documented" based on documentation, not recency

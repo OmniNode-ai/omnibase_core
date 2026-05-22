@@ -126,6 +126,7 @@ class ModelEffectOperation(BaseModel):
                 if op_type == "RAW":
                     return False
             case _:  # Defensive: unknown handler types default to non-idempotent
+                # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
                 return False  # type: ignore[unreachable]  # Safety-first: prevent accidental retries of unknown operations
 
         return defaults.get(

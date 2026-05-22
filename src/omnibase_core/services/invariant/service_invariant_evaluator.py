@@ -961,6 +961,7 @@ class ServiceInvariantEvaluator:
         if min_value is not None:
             try:
                 # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
+                # Why: Runtime validation narrows this dynamic payload before use.
                 min_num = float(min_value)  # type: ignore[arg-type]
                 if actual_num < min_num:
                     return (
@@ -983,6 +984,7 @@ class ServiceInvariantEvaluator:
         if max_value is not None:
             try:
                 # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
+                # Why: Runtime validation narrows this dynamic payload before use.
                 max_num = float(max_value)  # type: ignore[arg-type]
                 if actual_num > max_num:
                     return (
@@ -1024,6 +1026,7 @@ class ServiceInvariantEvaluator:
 
         try:
             # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
+            # Why: Runtime validation narrows this dynamic payload before use.
             max_ms_num = float(max_ms)  # type: ignore[arg-type]
         except VALIDATION_ERRORS:  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_ms value: {max_ms!r}", None, None)
@@ -1086,6 +1089,7 @@ class ServiceInvariantEvaluator:
 
         try:
             # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
+            # Why: Runtime validation narrows this dynamic payload before use.
             max_cost_num = float(max_cost)  # type: ignore[arg-type]
         except VALIDATION_ERRORS:  # fallback-ok: invalid config fails validation
             return (False, f"Invalid max_cost value: {max_cost!r}", None, None)
@@ -1116,6 +1120,7 @@ class ServiceInvariantEvaluator:
                     # Default cost rate per token (can be customized via config)
                     cost_per_token = config.get("cost_per_token", 0.0001)
                     # NOTE(OMN-1302): Config value from dict lookup. Safe because ValueError caught below.
+                    # Why: Runtime validation narrows this dynamic payload before use.
                     actual_cost = token_count * float(cost_per_token)  # type: ignore[arg-type]
                 except (
                     TypeError,

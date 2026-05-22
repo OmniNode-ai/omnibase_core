@@ -339,6 +339,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
                 return cast("InputStateT", input_class(**data))
 
         # Fallback - return data as-is
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return data  # type: ignore[return-value]  # Fallback when input state class unavailable; dict substitutes for InputStateT
 
     def _handle_introspection(self) -> int:

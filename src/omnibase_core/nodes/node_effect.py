@@ -375,10 +375,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
                 # NOTE(OMN-1731): Type narrowing for union with boolean flag.
                 # When is_lazy=True, handler_or_loader is LazyLoader (a callable
                 # that returns HandlerCallable). mypy cannot narrow automatically.
+                # Why: Runtime compatibility requires assigning through a broader static type.
                 resolved_handler = handler_or_loader()  # type: ignore[assignment]
             else:
                 # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is already
                 # HandlerCallable. mypy cannot narrow the union type automatically.
+                # Why: Runtime compatibility requires assigning through a broader static type.
                 resolved_handler = handler_or_loader  # type: ignore[assignment]
             # Dispatch to contract-specified handler
             # Handler signature: async def handler(node, input_data) -> ModelEffectOutput

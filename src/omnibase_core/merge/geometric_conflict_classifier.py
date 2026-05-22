@@ -277,6 +277,7 @@ class GeometricConflictClassifier:
                 # Pre-compute all pairwise overlaps so the error message names
                 # both agents involved, not just the one accumulated last.
                 agent_keys: list[tuple[str, set[str]]] = [
+                    # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
                     (name, set(v.keys()))  # type: ignore[attr-defined]
                     for name, v in values
                 ]
@@ -291,6 +292,7 @@ class GeometricConflictClassifier:
                             )
                 merged: dict[str, object] = {}
                 for _, value in values:
+                    # Why: Suppression is retained for this documented runtime typing boundary.
                     merged.update(value)  # type: ignore[call-overload]
                 return merged, "Merged non-overlapping changes from all agents"
             return (

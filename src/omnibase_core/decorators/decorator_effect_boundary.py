@@ -138,6 +138,7 @@ def effect_boundary(
             # NOTE(OMN-1147): mypy cannot infer that async_wrapper matches Callable[P, R]
             # when R comes from an async function. Safe because async_wrapper preserves
             # the signature and return type of the original async function.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return async_wrapper  # type: ignore[return-value]
         else:
 

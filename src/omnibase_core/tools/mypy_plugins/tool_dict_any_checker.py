@@ -123,6 +123,7 @@ class DictAnyCheckerPlugin(Plugin):
             "allow_decorator": self.ALLOW_DECORATOR,
         }
 
+    # Why: Suppression is retained for this documented runtime typing boundary.
     def get_function_hook(self, fullname: str) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
         """
         Return a hook for function calls if needed.
@@ -139,6 +140,7 @@ class DictAnyCheckerPlugin(Plugin):
         """
         return
 
+    # Why: Suppression is retained for this documented runtime typing boundary.
     def get_method_hook(self, fullname: str) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
         """
         Return a hook for method calls if needed.

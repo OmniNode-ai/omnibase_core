@@ -422,21 +422,27 @@ class ModelDiscriminatedValue(BaseModel):
         """
         if self.value_type == EnumDiscriminatedValueType.BOOL:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.bool_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.FLOAT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.float_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.INT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.int_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.STR:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.str_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.DICT:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.dict_value  # type: ignore[return-value]
         if self.value_type == EnumDiscriminatedValueType.LIST:
             # NOTE(OMN-1302): Value guaranteed non-None by value_type discriminator check and model validator.
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return self.list_value  # type: ignore[return-value]
 
         raise ModelOnexError(

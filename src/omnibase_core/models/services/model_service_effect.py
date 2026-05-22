@@ -61,6 +61,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_effect import NodeEffect
 
 
+# Why: Compatibility path intentionally crosses a static typing limitation.
 class ModelServiceEffect(  # type: ignore[misc]  # MRO method signature conflicts between mixins
     MixinNodeService,
     NodeEffect,

@@ -163,6 +163,7 @@ class ModelOptionalInt(BaseModel):
             except ValueError:
                 coercion_mode = EnumCoercionMode.STRICT
         else:
+            # Why: Runtime compatibility requires assigning through a broader static type.
             coercion_mode = coercion_mode_value  # type: ignore[assignment]
 
         # Handle None - no coercion needed

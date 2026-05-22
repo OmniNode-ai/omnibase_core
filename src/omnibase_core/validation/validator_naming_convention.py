@@ -172,6 +172,7 @@ class ValidatorNamingConvention(ValidatorBase):
         default_severity = contract.severity_default or EnumSeverity.WARNING
         if contract.severity_default is None:
             # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             logger.warning(  # type: ignore[unreachable]
                 "Contract severity_default is None - using WARNING as fallback. "
                 "This indicates a contract configuration issue."
@@ -186,6 +187,7 @@ class ValidatorNamingConvention(ValidatorBase):
         )
         if file_naming_severity is None:
             # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             logger.warning(  # type: ignore[unreachable]
                 "Rule %s has None severity - using default %s. "
                 "This indicates a contract configuration issue.",
@@ -199,6 +201,7 @@ class ValidatorNamingConvention(ValidatorBase):
         )
         if class_naming_severity is None:
             # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             logger.warning(  # type: ignore[unreachable]
                 "Rule %s has None severity - using default %s. "
                 "This indicates a contract configuration issue.",
@@ -212,6 +215,7 @@ class ValidatorNamingConvention(ValidatorBase):
         )
         if function_naming_severity is None:
             # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             logger.warning(  # type: ignore[unreachable]
                 "Rule %s has None severity - using default %s. "
                 "This indicates a contract configuration issue.",
@@ -227,6 +231,7 @@ class ValidatorNamingConvention(ValidatorBase):
         )
         if unknown_naming_severity is None:
             # NOTE(OMN-1302): Defensive logging for impossible case. Safe because guards external data.
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             logger.warning(  # type: ignore[unreachable]
                 "Rule %s has None severity - using default %s. "
                 "This indicates a contract configuration issue.",

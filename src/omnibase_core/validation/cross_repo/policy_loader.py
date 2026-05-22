@@ -269,6 +269,7 @@ def _merge_dict_recursive(
 
 
 def _parse_policy_data(
+    # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     data: dict,  # type: ignore[type-arg]
     source_path: Path,
 ) -> ModelValidationPolicyContract:

@@ -35,6 +35,7 @@ class ModelContractOverlapEdge(BaseModel):
     # "producer_to_consumer", "co_consumer", "co_producer", "bidirectional"
     direction: str
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def edge_id(self) -> uuid.UUID:

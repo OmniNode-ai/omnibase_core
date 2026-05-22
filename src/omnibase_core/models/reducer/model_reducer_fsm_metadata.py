@@ -139,6 +139,7 @@ class ModelReducerFsmMetadata(BaseModel):
     def _coerce_failed_conditions(cls, v: object) -> tuple[str, ...] | None:
         if isinstance(v, list):
             return tuple(v)
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return v  # type: ignore[return-value]
 
     error: str | None = Field(

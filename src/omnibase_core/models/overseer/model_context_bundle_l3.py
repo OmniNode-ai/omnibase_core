@@ -21,6 +21,7 @@ class ModelContextBundleL3(ModelContextBundleL2, frozen=True, extra="forbid"):
     Adds architectural decisions and history on top of L2.
     """
 
+    # Why: Runtime compatibility requires assigning through a broader static type.
     level: Literal[EnumContextBundleLevel.L3] = Field(  # type: ignore[assignment]  # NOTE(OMN-10251): pydantic Field default narrowing to Literal[EnumMember] is a mypy false positive.
         default=EnumContextBundleLevel.L3,
         description="Context bundle level.",
