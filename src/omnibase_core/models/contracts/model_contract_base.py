@@ -49,6 +49,7 @@ if TYPE_CHECKING:
 from omnibase_core.models.contracts.model_concurrency_contract_spec import (
     ModelConcurrencyContractSpec,
 )
+from omnibase_core.models.contracts.model_contract_config import ModelContractConfig
 from omnibase_core.models.contracts.model_contract_feature_flag import (
     ModelContractFeatureFlag,
 )
@@ -241,13 +242,6 @@ class ModelContractBase(BaseModel, ABC):
         description="Non-load-bearing operational annotations preserved from legacy contract corpus.",
     )
 
-    # Static node configuration declared in the contract (OMN-10815)
-    config: dict[str, object] = Field(
-        default_factory=dict,
-        description="Static node configuration values declared in the contract. "
-        "Read by nodes via self.contract.config; never falls back to env vars.",
-    )
-
     feature_flags: list[ModelContractFeatureFlag] = Field(
         default_factory=list,
         description="Feature flags declared by this contract. "
@@ -268,6 +262,13 @@ class ModelContractBase(BaseModel, ABC):
         description="Structured Definition of Done evidence items. "
         "Each entry declares an evidence type and a check that must pass "
         "before a ticket touching this contract can be marked Done.",
+    )
+
+    # Static node configuration declared in the contract (OMN-10815, typed OMN-11430)
+    config: ModelContractConfig = Field(
+        default_factory=ModelContractConfig,
+        description="Strongly typed static node configuration declared in the contract. "
+        "Read by nodes via self.contract.config; never falls back to env vars.",
     )
 
     # Execution profile for contract-driven execution

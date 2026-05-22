@@ -25,6 +25,7 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
 from omnibase_core.models.contracts.model_contract_base import ModelContractBase
+from omnibase_core.models.contracts.model_contract_config import ModelContractConfig
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -553,15 +554,16 @@ class TestModelContractBaseConfig:
             "output_model": "omnibase_core.models.test.TestOutput",
         }
 
-    def test_config_defaults_to_empty_dict(self):
+    def test_config_defaults_to_empty_model(self):
         contract = SampleContractModel(**self.minimal_valid_data)
-        assert contract.config == {}
+        assert isinstance(contract.config, ModelContractConfig)
+        assert contract.config.model_extra == {}
 
     def test_config_accepts_string_values(self):
         data = {**self.minimal_valid_data, "config": {"key": "value", "env": "prod"}}
         contract = SampleContractModel(**data)
-        assert contract.config["key"] == "value"
-        assert contract.config["env"] == "prod"
+        assert contract.config.key == "value"
+        assert contract.config.env == "prod"
 
     def test_config_accepts_mixed_value_types(self):
         data = {
@@ -569,10 +571,10 @@ class TestModelContractBaseConfig:
             "config": {"count": 42, "flag": True, "label": "x"},
         }
         contract = SampleContractModel(**data)
-        assert contract.config["count"] == 42
-        assert contract.config["flag"] is True
+        assert contract.config.count == 42
+        assert contract.config.flag is True
 
-    def test_config_absent_in_constructor_gives_empty_dict(self):
+    def test_config_absent_in_constructor_gives_empty_model(self):
         contract = SampleContractModel(**self.minimal_valid_data)
-        assert isinstance(contract.config, dict)
-        assert len(contract.config) == 0
+        assert isinstance(contract.config, ModelContractConfig)
+        assert contract.config.model_extra == {}

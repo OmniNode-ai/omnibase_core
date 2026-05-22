@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.contracts.model_contract_config import ModelContractConfig
 from omnibase_core.models.contracts.model_event_subscription import (
     ModelEventSubscription,
 )
@@ -66,10 +67,10 @@ class ModelYamlContract(BaseModel):
         description="Event subscription patterns for event-driven execution",
     )
 
-    # Node configuration declared in the contract (OMN-10815)
-    config: dict[str, object] = Field(
-        default_factory=dict,
-        description="Static node configuration values declared in the contract",
+    # Node configuration declared in the contract (OMN-10815, typed OMN-11430)
+    config: ModelContractConfig = Field(
+        default_factory=ModelContractConfig,
+        description="Strongly typed static node configuration declared in the contract",
     )
 
     # Verification and traceability (OMN-7731)
