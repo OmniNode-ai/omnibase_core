@@ -223,6 +223,7 @@ class NormalizationSymmetryChecker(ast.NodeVisitor):
         self._name_bindings = saved_topics
         self._model_name_bindings = saved_models
 
+    # Why: Runtime compatibility requires assigning through a broader static type.
     visit_AsyncFunctionDef = visit_FunctionDef  # type: ignore[assignment]  # NOTE(OMN-9333): alias assignment — async variant shares sync visitor; mypy flags method-vs-function type mismatch  # noqa: N815
 
     def visit_Assign(self, node: ast.Assign) -> None:

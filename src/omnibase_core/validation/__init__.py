@@ -241,12 +241,14 @@ def __getattr__(name: str) -> type:
         from omnibase_core.validation.validator_contract_linter import CONTRACT_MODELS
 
         # NOTE(OMN-1302): Lazy import returns module-level dict. Safe because attribute known to exist.
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return CONTRACT_MODELS  # type: ignore[return-value]
 
     if name == "NODE_TYPE_MAPPING":
         from omnibase_core.validation.validator_contract_linter import NODE_TYPE_MAPPING
 
         # NOTE(OMN-1302): Lazy import returns module-level dict. Safe because attribute known to exist.
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return NODE_TYPE_MAPPING  # type: ignore[return-value]
 
     if name in (

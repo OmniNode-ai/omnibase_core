@@ -403,6 +403,7 @@ class MixinWorkflowExecution:
         for step_config in steps_config:
             # NOTE(OMN-1302): TypedDict compatible with ** unpacking but mypy cannot verify at call site.
             # Safe because ModelWorkflowStep validates fields.
+            # Why: Runtime validation narrows this dynamic payload before use.
             step = ModelWorkflowStep(**step_config)  # type: ignore[arg-type]
             workflow_steps.append(step)
 

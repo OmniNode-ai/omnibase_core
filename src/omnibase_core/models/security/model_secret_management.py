@@ -87,6 +87,7 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
                 ModelDatabaseSecureConfig,
             )
 
+            # Why: Runtime validation narrows this dynamic payload before use.
             config = ModelDatabaseSecureConfig(**kwargs)  # type: ignore[arg-type]
             result = config.validate_credentials()
             # Convert Pydantic model to dict
@@ -98,6 +99,7 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
 
     elif config_type == "backend":
         try:
+            # Why: Runtime validation narrows this dynamic payload before use.
             backend = ModelSecretBackend(**kwargs)  # type: ignore[arg-type]
             return {"is_valid": True, "backend": backend.model_dump()}
         except (
@@ -130,6 +132,7 @@ def get_security_recommendations(
 
             config = ModelDatabaseSecureConfig.model_validate(config_dict)
             assessment = config.get_security_assessment()
+            # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
             recommendations: list[str] = assessment.get("recommendations", [])  # type: ignore[attr-defined]
             return recommendations
 

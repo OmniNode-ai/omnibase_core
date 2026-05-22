@@ -527,6 +527,7 @@ def _find_mock_response_by_ticket_id(
         # NOTE(OMN-1397): Runtime safety check for JSON data that may not match declared types.
         if not isinstance(response, dict):
             # fallback-ok: skip malformed entries, search continues for valid matches
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             continue  # type: ignore[unreachable]
         response_ticket_id = response.get("ticket_id")
         if response_ticket_id == ticket_id:

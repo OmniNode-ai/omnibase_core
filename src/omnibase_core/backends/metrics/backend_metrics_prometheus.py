@@ -373,7 +373,7 @@ class BackendMetricsPrometheus:
                 self._consecutive_push_failures = 0
                 self._last_push_failure_time = None
                 return
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # fallback-ok: metrics retry loop records failures without crashing callers
                 # catch-all-ok: retry loop captures failures for exponential backoff
                 last_exception = e
                 if attempt < self._push_retry_count - 1:
@@ -635,6 +635,7 @@ class BackendMetricsPrometheus:
             kwargs["buckets"] = self._default_buckets
 
         # NOTE(OMN-1302): Prometheus Histogram accepts typed kwargs. Safe because kwargs validated above.
+        # Why: Runtime validation narrows this dynamic payload before use.
         histogram = Histogram(**kwargs)  # type: ignore[arg-type]
         self._cache_metric(
             name, label_names, histogram, self._histograms, self._histogram_labels

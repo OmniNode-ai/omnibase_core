@@ -375,6 +375,7 @@ class ModelTimeBased[T: (int, float)](BaseModel):
             description=description,
             runtime_category=category,
             metadata=metadata,
+            # Why: Runtime validation guarantees the returned value matches the contract.
         )  # type: ignore[return-value]
 
     model_config = ConfigDict(

@@ -26,6 +26,7 @@ class ModelDbOwnershipSubcontract(BaseModel):
     ) -> list[ModelDbTableDeclaration]:
         roles = [t.role for t in v]
         seen = set()
+        # Why: Expression intentionally relies on a side effect while preserving order.
         duplicates = [r for r in roles if r in seen or seen.add(r)]  # type: ignore[func-returns-value]
         if duplicates:
             raise ValueError(f"Duplicate db_table roles: {duplicates}")

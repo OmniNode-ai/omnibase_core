@@ -100,6 +100,7 @@ class ModelExamplesCollection(BaseModel):
 
     # === Computed Fields (Business Intelligence) ===
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def total_examples(self) -> int:
@@ -110,6 +111,7 @@ class ModelExamplesCollection(BaseModel):
         """
         return len(self.examples)
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def valid_examples(self) -> int:

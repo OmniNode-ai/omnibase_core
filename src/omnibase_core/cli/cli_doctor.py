@@ -40,6 +40,7 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
 
     # Register built-ins
     for check_cls in _BUILTIN_CHECKS:
+        # Why: Registry stores protocol contracts rather than instantiating them directly.
         registry.register(check_cls)  # type: ignore[type-abstract]
 
     # Discover entry-point checks from other packages

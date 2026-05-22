@@ -178,6 +178,7 @@ class ModelNodeSignature(BaseModel):
             operation=EnumNodeOperation.SOURCE,
             hop_index=0,
             user_context=user_context,
+            # Why: Runtime validation narrows this dynamic payload before use.
             **kwargs,  # type: ignore[arg-type]
         )
 
@@ -209,6 +210,7 @@ class ModelNodeSignature(BaseModel):
             hop_index=hop_index,
             previous_signature_hash=previous_signature_hash,
             operation_details=ModelOperationDetails(routing_decision=routing_decision),
+            # Why: Runtime validation narrows this dynamic payload before use.
             **kwargs,  # type: ignore[arg-type]
         )
 
@@ -240,6 +242,7 @@ class ModelNodeSignature(BaseModel):
             hop_index=hop_index,
             previous_signature_hash=previous_signature_hash,
             operation_details=ModelOperationDetails(delivery_status=delivery_status),
+            # Why: Runtime validation narrows this dynamic payload before use.
             **kwargs,  # type: ignore[arg-type]
         )
 

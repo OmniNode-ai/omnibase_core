@@ -80,12 +80,14 @@ class ModelHandlerContractExtended(ModelHandlerContract):
 
     # Override input_model/output_model to also accept dict form used by infra.
     # ONEX_EXCLUDE: dict_str_any - infra uses dict-form model refs
+    # Why: Runtime compatibility requires assigning through a broader static type.
     input_model: dict[str, object] | str = Field(  # type: ignore[assignment]  # OMN-6483: widened in subclass for infra YAML dict-form compatibility
         ...,
         description="Input model reference (string or dict for infra-extended form)",
     )
 
     # ONEX_EXCLUDE: dict_str_any - infra uses dict-form model refs
+    # Why: Runtime compatibility requires assigning through a broader static type.
     output_model: dict[str, object] | str = Field(  # type: ignore[assignment]  # OMN-6483: widened in subclass for infra YAML dict-form compatibility
         ...,
         description="Output model reference (string or dict for infra-extended form)",

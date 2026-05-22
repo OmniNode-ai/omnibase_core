@@ -96,6 +96,7 @@ class ModelNamespace(BaseModel):
     def __str__(self) -> str:
         return self.value
 
+    # Why: Runtime API intentionally narrows or widens the inherited signature.
     def model_dump(self, *args: Any, **kwargs: Any) -> str:  # type: ignore[override]  # Returns str instead of dict for namespace string serialization
         # Always dump as a string for YAML/JSON
         return self.value

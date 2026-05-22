@@ -208,6 +208,7 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
     # ANY ModelErrorDetails variant (with any TContext), not just the same TContext as
     # the parent. This enables flexible error chaining where a validation error (with
     # ValidationContext) can contain a network error (with TraceContext) as an inner error.
+    # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     inner_errors: list[ModelErrorDetails] | None = Field(  # type: ignore[type-arg]
         default=None,
         description=(
@@ -244,6 +245,7 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
 
     # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
+    # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     def from_dict(cls, data: dict[str, Any] | None) -> ModelErrorDetails | None:  # type: ignore[type-arg]
         """Create ModelErrorDetails from a dictionary.
 

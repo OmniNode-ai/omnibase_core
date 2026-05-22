@@ -92,6 +92,7 @@ class ModelStringSet(BaseModel):
         """Support len() function."""
         return self.size()
 
+    # Why: Runtime API intentionally narrows or widens the inherited signature.
     def __iter__(self) -> Iterator[str]:  # type: ignore[override]
         """Support iteration."""
         return iter(self.elements)

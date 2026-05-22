@@ -70,6 +70,7 @@ class ModelComputeCache:
         if isinstance(eviction_policy, str):
             self.eviction_policy = EnumCacheEvictionPolicy(eviction_policy)
         else:
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             self.eviction_policy = eviction_policy  # type: ignore[unreachable]
         self.enable_stats = enable_stats
 

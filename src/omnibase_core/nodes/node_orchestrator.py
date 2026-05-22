@@ -365,7 +365,9 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting
             handler_routing = getattr(self.contract, "handler_routing", None)
 
         if handler_routing is not None:
+            # Why: Runtime validation narrows this dynamic payload before use.
             handler_registry: object = container.get_service("ProtocolHandlerRegistry")  # type: ignore[arg-type]  # Protocol-based DI lookup per ONEX conventions
+            # Why: Runtime validation narrows this dynamic payload before use.
             self._init_handler_routing(handler_routing, handler_registry)  # type: ignore[arg-type]  # Registry retrieved via DI
 
     async def process(

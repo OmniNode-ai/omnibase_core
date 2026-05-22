@@ -25,6 +25,7 @@ class ModelContractDependencies(BaseModel):
         description="List of contract dependencies",
     )
 
+    # Why: Runtime API intentionally narrows or widens the inherited signature.
     def __iter__(self) -> Iterator[ModelContractDependency]:  # type: ignore[override]
         """Allow iteration over dependencies."""
         return iter(self.dependencies)

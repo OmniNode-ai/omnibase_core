@@ -125,6 +125,7 @@ def _get_cached_logger() -> Any:
                 # Try to get logger from container registry
                 try:
                     # NOTE(OMN-1302): String-based DI lookup returns Protocol. Safe because validated at registration.
+                    # Why: Runtime validation narrows this dynamic payload before use.
                     _cached_logger = container.get_service("ProtocolLogger")  # type: ignore[arg-type]
                 except Exception:  # noqa: BLE001  # fallback-ok: logger init must never fail
                     _cached_logger = _SimpleFallbackLogger()

@@ -196,8 +196,10 @@ class ModelOrchestratorOutput(BaseModel):
             return []
         # Note: len(v) > 0 check removed - guaranteed non-empty after early return
         if isinstance(v[0], ModelAction):
+            # Why: Runtime validation guarantees the returned value matches the contract.
             return v  # type: ignore[return-value]  # Already list[ModelAction]
         # Let Pydantic validate dicts as ModelAction
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return v  # type: ignore[return-value]  # Passthrough for dicts; Pydantic validates as ModelAction
 
     # Custom outputs for extensibility

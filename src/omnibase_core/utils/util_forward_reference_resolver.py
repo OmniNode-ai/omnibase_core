@@ -296,7 +296,9 @@ def rebuild_model_references(
     except ImportError:
         # NOTE(OMN-1302): Fallback exception types for older Pydantic versions.
         # Safe because only used in except clauses where parent types work.
+        # Why: Compatibility path intentionally crosses a static typing limitation.
         PydanticSchemaGenerationError = TypeError  # type: ignore[misc, assignment]
+        # Why: Compatibility path intentionally crosses a static typing limitation.
         PydanticUserError = ValueError  # type: ignore[misc, assignment]
 
     model_name = model_class.__name__

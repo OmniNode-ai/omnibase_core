@@ -75,6 +75,7 @@ class ModelFsmData(BaseModel):
 
     # -------------------------------------------------------------------------
     # Type Ignore Pattern Explanation:
+    # Why: Runtime validation guarantees the returned value matches the contract.
     # These validators use `# type: ignore[return-value]` because:
     # 1. Input type is `list[...] | tuple[...] | object` to accept various inputs
     # 2. When input is already a tuple, we return it directly

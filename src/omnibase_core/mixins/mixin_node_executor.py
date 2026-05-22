@@ -86,6 +86,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
     def __init__(self, **kwargs: object) -> None:
         """Initialize the executor mixin."""
+        # Why: Runtime validation narrows this dynamic payload before use.
         super().__init__(**kwargs)  # type: ignore[arg-type]  # Cooperative MRO super() call; kwargs passed to next class in chain
         self._executor_running = False
         self._executor_task: asyncio.Task[None] | None = None

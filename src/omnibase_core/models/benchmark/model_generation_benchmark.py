@@ -26,11 +26,13 @@ class ModelGenerationBenchmark(BaseModel):
     contract_passed: bool
     cost_inference_usd: float
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def attempt_count(self) -> int:
         return len(self.attempts)
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def cost_to_contract_pass_usd(self) -> float:

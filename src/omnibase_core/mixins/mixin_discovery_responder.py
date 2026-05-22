@@ -262,7 +262,7 @@ class MixinDiscoveryResponder:
 
             # Acknowledge message even on error to prevent infinite redelivery
             # Discovery failures are non-fatal and should not block the system
-            try:
+            try:  # fallback-ok: discovery ack after an error is best-effort to avoid redelivery loops
                 await message.ack()
             except (RuntimeError, ValueError) as ack_error:
                 emit_log_event(
@@ -572,6 +572,7 @@ class MixinDiscoveryResponder:
                 event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
+                # Why: Runtime validation narrows this dynamic payload before use.
                 data=response_metadata.model_dump(),  # type: ignore[arg-type]  # Discovery protocol places metadata dict in data field; receiver deserializes directly
             )
 

@@ -74,6 +74,7 @@ class ModelOutputDiff(BaseModel):
         description="Fields where type changed, keyed by path with description",
     )
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def has_differences(self) -> bool:

@@ -32,6 +32,7 @@ class ModelRuntimeManifest(BaseModel):
     image_digest: str | None = Field(default=None)
     started_at: datetime = Field(...)
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def contract_hash(self) -> str:
@@ -39,6 +40,7 @@ class ModelRuntimeManifest(BaseModel):
         payload = json.dumps(sorted_hashes, sort_keys=True)
         return hashlib.sha256(payload.encode()).hexdigest()
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def topology_hash(self) -> str:

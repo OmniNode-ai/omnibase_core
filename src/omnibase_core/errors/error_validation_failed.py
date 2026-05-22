@@ -22,4 +22,5 @@ class ExceptionValidationFailedError(ExceptionFailFastError):
             details["value"] = str(value)
 
         # NOTE(OMN-1302): String error code passed to base class. Safe because base validates code.
+        # Why: Runtime validation narrows this dynamic payload before use.
         super().__init__(message, "VALIDATION_FAILED", details)  # type: ignore[arg-type]

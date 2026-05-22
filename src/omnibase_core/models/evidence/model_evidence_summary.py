@@ -123,6 +123,7 @@ class ModelEvidenceSummary(BaseModel):
     started_at: datetime = Field(description="Timestamp of earliest comparison")
     ended_at: datetime = Field(description="Timestamp of latest comparison")
 
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def headline(self) -> str:

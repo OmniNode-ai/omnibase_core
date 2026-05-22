@@ -37,6 +37,7 @@ class ModelDemoSummary(BaseModel):
     )
 
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def recommendation(self) -> EnumDemoRecommendation:

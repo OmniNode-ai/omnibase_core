@@ -594,6 +594,7 @@ class MixinNodeService:
             params_dict: dict[str, object] = (
                 event.parameters.get_parameter_dict()
                 if hasattr(event.parameters, "get_parameter_dict")
+                # Why: Runtime compatibility requires assigning through a broader static type.
                 else event.parameters  # type: ignore[assignment]  # Duck-typed: parameters may be dict or model
             )
             state_data: dict[str, object] = {"action": event.action, **params_dict}
@@ -605,6 +606,7 @@ class MixinNodeService:
         params_dict = (
             event.parameters.get_parameter_dict()
             if hasattr(event.parameters, "get_parameter_dict")
+            # Why: Runtime compatibility requires assigning through a broader static type.
             else event.parameters  # type: ignore[assignment]  # Duck-typed: parameters may be dict or model
         )
         return SimpleNamespace(action=event.action, **params_dict)

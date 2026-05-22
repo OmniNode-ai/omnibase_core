@@ -62,6 +62,7 @@ class UtilUUID:
             except VALIDATION_ERRORS:
                 # fallback-ok: invalid UUID string generates new UUID
                 return uuid4()
+        # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
         return uuid4()  # type: ignore[unreachable]  # Defensive fallback
 
     @staticmethod

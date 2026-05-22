@@ -54,6 +54,7 @@ class ModelResultCrossRepoValidationOrchestrator(BaseModel):
     )
 
     # NOTE(OMN-1776): mypy/pydantic computed_field+property decorator interaction requires ignore.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def is_valid(self) -> bool:
@@ -64,6 +65,7 @@ class ModelResultCrossRepoValidationOrchestrator(BaseModel):
         return False
 
     # NOTE(OMN-1776): mypy/pydantic computed_field+property decorator interaction requires ignore.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def total_violations(self) -> int:

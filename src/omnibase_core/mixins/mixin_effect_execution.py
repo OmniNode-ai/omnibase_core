@@ -662,6 +662,7 @@ class MixinEffectExecution:
                 try:
                     # String-based DI lookup for extensibility; protocol not defined in core
                     secret_service: object = self.container.get_service(
+                        # Why: Runtime validation narrows this dynamic payload before use.
                         "ProtocolSecretService"  # type: ignore[arg-type]
                     )  # String-based DI lookup for extensibility
                     # Runtime guard for duck-typed method call
@@ -1333,6 +1334,7 @@ class MixinEffectExecution:
         # Attempt to resolve handler with explicit error for missing registration
         try:
             # String-based DI lookup for extensibility; handler protocols not defined in core
+            # Why: Runtime validation narrows this dynamic payload before use.
             handler: object = self.container.get_service(handler_protocol)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
         except (
             AttributeError,
@@ -1628,6 +1630,7 @@ class MixinEffectExecution:
         for protocol_name in handler_protocols:
             try:
                 # String-based DI lookup for extensibility check
+                # Why: Runtime validation narrows this dynamic payload before use.
                 self.container.get_service(protocol_name)  # type: ignore[arg-type]  # String-based DI lookup for extensibility
                 registration_status[protocol_name] = True
             except (

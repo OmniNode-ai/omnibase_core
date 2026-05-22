@@ -166,6 +166,7 @@ class ModelExternalServiceConfig(BaseModel):
         return ModelMaskedConfig(
             service_name=self.service_name,
             service_type=self.service_type,
+            # Why: Runtime validation narrows this dynamic payload before use.
             connection_config=masked_connection,  # type: ignore[arg-type]
             health_check_enabled=self.health_check_enabled,
             health_check_timeout=self.health_check_timeout,

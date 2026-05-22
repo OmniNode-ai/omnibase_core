@@ -758,6 +758,7 @@ class ModelONEXContainer:
             ModelOnexError: If service discovery is not registered.
         """
         # type-abstract: Protocol used for DI resolution, concrete impl registered at runtime
+        # Why: Registry stores protocol contracts rather than instantiating them directly.
         return await self.get_service_async(ProtocolServiceDiscovery)  # type: ignore[type-abstract]
 
     async def get_database(self) -> ProtocolDatabaseConnection:
@@ -772,6 +773,7 @@ class ModelONEXContainer:
             ModelOnexError: If database connection is not registered.
         """
         # type-abstract: Protocol used for DI resolution, concrete impl registered at runtime
+        # Why: Registry stores protocol contracts rather than instantiating them directly.
         return await self.get_service_async(ProtocolDatabaseConnection)  # type: ignore[type-abstract]
 
     async def get_external_services_health(self) -> dict[str, object]:

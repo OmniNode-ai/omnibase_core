@@ -149,6 +149,7 @@ class ValidatorRegistry:
                 f"register_decorator can only be applied to NodeValidator subclasses, "
                 f"got {node_class!r}."
             )
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         descriptor: ModelValidatorDescriptor = node_class.descriptor  # type: ignore[attr-defined]
         self.register(descriptor, node_class)
         return node_class

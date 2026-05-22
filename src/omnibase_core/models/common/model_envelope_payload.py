@@ -196,6 +196,7 @@ class ModelEnvelopePayload(BaseModel):
                 # Note: isinstance check is defensive - type system says dict values
                 # can't be dicts, but runtime may receive malformed input
                 if isinstance(value, dict):
+                    # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
                     skipped_keys.append(f"data.{key}")  # type: ignore[unreachable]
                 else:
                     extra_data[key] = value

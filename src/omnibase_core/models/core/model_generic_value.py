@@ -258,6 +258,7 @@ class ModelGenericValue(BaseModel):
             return json.loads(self.dict_value) if self.dict_value else {}
         if self.value_type == EnumValueType.NULL:
             return None
+        # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
         msg = f"Unknown value type: {self.value_type}"  # type: ignore[unreachable]
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -331,6 +332,7 @@ class ModelGenericValue(BaseModel):
         if isinstance(value, dict):
             return cls(value_type=EnumValueType.DICT, dict_value=json.dumps(value))
         # Fallback for unhandled types
+        # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
         msg = f"Unsupported type: {type(value).__name__}"  # type: ignore[unreachable]
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

@@ -28,17 +28,25 @@ See Also:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from dependency_injector import containers, providers
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.models.core.model_action_registry import ModelActionRegistry
-from omnibase_core.models.core.model_cli_command_registry import ModelCliCommandRegistry
-from omnibase_core.models.core.model_event_type_registry import ModelEventTypeRegistry
-from omnibase_core.models.security.model_secret_manager import ModelSecretManager
 
 from .model_enhanced_logger import ModelEnhancedLogger
 from .model_workflow_coordinator import ModelWorkflowCoordinator
 from .model_workflow_factory import ModelWorkflowFactory
+
+if TYPE_CHECKING:
+    from omnibase_core.models.core.model_action_registry import ModelActionRegistry
+    from omnibase_core.models.core.model_cli_command_registry import (
+        ModelCliCommandRegistry,
+    )
+    from omnibase_core.models.core.model_event_type_registry import (
+        ModelEventTypeRegistry,
+    )
+    from omnibase_core.models.security.model_secret_manager import ModelSecretManager
 
 
 def _create_enhanced_logger(level: LogLevel) -> ModelEnhancedLogger:
@@ -85,6 +93,8 @@ def _create_action_registry() -> ModelActionRegistry:
     Returns:
         ModelActionRegistry with core actions pre-registered.
     """
+    from omnibase_core.models.core.model_action_registry import ModelActionRegistry
+
     registry = ModelActionRegistry()
     registry.bootstrap_core_actions()
     return registry
@@ -99,6 +109,10 @@ def _create_event_type_registry() -> ModelEventTypeRegistry:
     Returns:
         ModelEventTypeRegistry with core event types pre-registered.
     """
+    from omnibase_core.models.core.model_event_type_registry import (
+        ModelEventTypeRegistry,
+    )
+
     registry = ModelEventTypeRegistry()
     registry.bootstrap_core_event_types()
     return registry
@@ -110,6 +124,10 @@ def _create_command_registry() -> ModelCliCommandRegistry:
     Returns:
         Empty ModelCliCommandRegistry for registering CLI commands.
     """
+    from omnibase_core.models.core.model_cli_command_registry import (
+        ModelCliCommandRegistry,
+    )
+
     return ModelCliCommandRegistry()
 
 
@@ -122,6 +140,8 @@ def _create_secret_manager() -> ModelSecretManager:
     Returns:
         Auto-configured ModelSecretManager instance.
     """
+    from omnibase_core.models.security.model_secret_manager import ModelSecretManager
+
     return ModelSecretManager.create_auto_configured()
 
 

@@ -115,7 +115,9 @@ def _ensure_models_rebuilt(contract_effect_cls: type[BaseModel] | None = None) -
     with _rebuild_lock:
         if (
             _models_rebuilt
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
         ):  # Double-check after acquiring lock  # type: ignore[unreachable]
+            # Why: Defensive branch covers runtime data even when static narrowing marks it unreachable.
             return  # type: ignore[unreachable]
 
         # Import ModelCustomFields to ensure it's available for forward reference resolution
@@ -217,6 +219,7 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
             strict=strict,
             from_attributes=from_attributes,
             context=context,
+            # Why: Runtime validation narrows this dynamic payload before use.
             extra=extra,  # type: ignore[arg-type]
             by_alias=by_alias,
             by_name=by_name,

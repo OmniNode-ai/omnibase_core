@@ -70,6 +70,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 
+# Why: Compatibility path intentionally crosses a static typing limitation.
 class ModelServiceOrchestrator(  # type: ignore[misc]
     MixinNodeService,
     NodeOrchestrator,

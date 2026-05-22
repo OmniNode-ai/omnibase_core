@@ -21,6 +21,7 @@ class ModelContextBundleL2(ModelContextBundleL1, frozen=True, extra="forbid"):
     Adds entrypoint and file-scope information on top of L1.
     """
 
+    # Why: Runtime compatibility requires assigning through a broader static type.
     level: Literal[EnumContextBundleLevel.L2] = Field(  # type: ignore[assignment]  # NOTE(OMN-10251): pydantic Field default narrowing to Literal[EnumMember] is a mypy false positive.
         default=EnumContextBundleLevel.L2,
         description="Context bundle level.",

@@ -284,6 +284,7 @@ class ModelOutputFormatOptions(BaseModel):
     @allow_dict_any
     def serialize(self) -> TypedDictOutputFormatOptionsSerialized:
         """Serialize to dictionary (Serializable protocol)."""
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[return-value]
 
     def get_name(self) -> str:

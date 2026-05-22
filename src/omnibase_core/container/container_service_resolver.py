@@ -240,4 +240,5 @@ def bind_get_service_method(container: ModelONEXContainer) -> None:
 
     get_service = create_get_service_method(container)
     # NOTE(OMN-1302): Dynamic method binding required for DynamicContainer restoration.
+    # Why: Runtime patching is intentional for this container/test hook boundary.
     container.get_service = types.MethodType(get_service, container)  # type: ignore[method-assign]

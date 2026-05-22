@@ -267,11 +267,13 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     # NOTE(OMN-1201): Override uses **kwargs to pass through to parent while setting
     # by_alias=True default. Signature is functionally compatible but mypy strict mode
     # flags the **kwargs pattern vs explicit parameters as incompatible.
+    # Why: Runtime API intentionally narrows or widens the inherited signature.
     def model_dump(  # type: ignore[override]
         self, **kwargs: Any
     ) -> TypedDictCliActionSerialized:
         """Override model_dump to use aliases by default."""
         kwargs.setdefault("by_alias", True)
+        # Why: Runtime validation guarantees the returned value matches the contract.
         return super().model_dump(**kwargs)  # type: ignore[return-value]
 
     # Protocol method implementations

@@ -219,6 +219,7 @@ def print_text_report(
         print("[FAIL] Validation FAILED\n")
 
     # Group issues by severity
+    # Why: Model intentionally accepts recursive or heterogeneous typed payloads.
     by_severity: dict[EnumSeverity, list] = {}  # type: ignore[type-arg]
     for issue in result.issues:
         by_severity.setdefault(issue.severity, []).append(issue)

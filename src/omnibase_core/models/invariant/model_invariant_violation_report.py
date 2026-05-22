@@ -101,6 +101,7 @@ class ModelInvariantViolationReport(BaseModel):
 
     # Computed Properties
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def pass_rate(self) -> float:
@@ -110,6 +111,7 @@ class ModelInvariantViolationReport(BaseModel):
         return self.passed_count / self.total_invariants
 
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def critical_count(self) -> int:
@@ -117,6 +119,7 @@ class ModelInvariantViolationReport(BaseModel):
         return sum(1 for v in self.violations if v.severity == EnumSeverity.CRITICAL)
 
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def warning_count(self) -> int:
@@ -124,6 +127,7 @@ class ModelInvariantViolationReport(BaseModel):
         return sum(1 for v in self.violations if v.severity == EnumSeverity.WARNING)
 
     # NOTE(OMN-1206): Pydantic @computed_field requires @property below it, causing mypy prop-decorator warning.
+    # Why: Pydantic computed_field stacking is valid at runtime but not modeled by mypy.
     @computed_field  # type: ignore[prop-decorator]
     @property
     def info_count(self) -> int:

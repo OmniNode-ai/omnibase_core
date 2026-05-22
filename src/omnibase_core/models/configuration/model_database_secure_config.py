@@ -648,6 +648,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # Performance profile based on driver
         if self.driver == "postgresql":
+            # Why: Runtime compatibility requires assigning through a broader static type.
             recommendations.performance_profile = {  # type: ignore[assignment]
                 "recommended_pool_size": min(20, max(5, self.pool_size)),
                 "recommended_max_overflow": min(30, max(10, self.max_overflow)),
@@ -655,6 +656,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 "concurrent_connections_limit": 100,
             }
         elif self.driver == "mysql":
+            # Why: Runtime compatibility requires assigning through a broader static type.
             recommendations.performance_profile = {  # type: ignore[assignment]
                 "recommended_pool_size": min(15, max(5, self.pool_size)),
                 "recommended_max_overflow": min(25, max(10, self.max_overflow)),
@@ -979,6 +981,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         # Remove None values
         config_data = {k: v for k, v in config_data.items() if v is not None}
 
+        # Why: Runtime validation narrows this dynamic payload before use.
         return cls(**config_data)  # type: ignore[arg-type]
 
     # === Factory Methods ===

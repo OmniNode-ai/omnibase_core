@@ -103,16 +103,19 @@ class MixinNodeIntrospection(ABC):
 
     @classmethod
     def get_node_name(cls) -> str:
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         node_name: str = cls.get_metadata_loader().node_name  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_name
 
     @classmethod
     def get_node_version(cls) -> ModelSemVer:
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         node_version: ModelSemVer = cls.get_metadata_loader().node_version  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_version
 
     @classmethod
     def get_node_description(cls) -> str:
+        # Why: Decorator, DI container, or optional dependency provides this attribute at runtime.
         node_description: str = cls.get_metadata_loader().node_description  # type: ignore[attr-defined]  # Metadata loader duck-typed interface; attr exists at runtime
         return node_description
 
@@ -501,6 +504,7 @@ class MixinNodeIntrospection(ABC):
         # 1. Try to extract correlation_id from event_bus (if it has one)
         correlation_id = None
         if hasattr(event_bus, "correlation_id"):
+            # Why: Control flow guards this union member before the attribute access.
             correlation_id = event_bus.correlation_id  # type: ignore[union-attr]  # Checked via hasattr; optional protocol extension
         # 2. Fallback to ONEX_CORRELATION_ID env var
         if not correlation_id:
