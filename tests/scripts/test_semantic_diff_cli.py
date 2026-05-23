@@ -4,12 +4,14 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -34,6 +36,15 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
         cwd=REPO_ROOT,
         env=_SUBPROCESS_ENV,
     )
+
+
+def _load_cli_module() -> ModuleType:
+    spec = importlib.util.spec_from_file_location("semantic_diff_cli", CLI)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.mark.unit
@@ -94,6 +105,30 @@ def test_cli_missing_required_args_exits_nonzero() -> None:
     """CLI exits non-zero when required --base / --head args are absent."""
     result = _run_cli("--json")
     assert result.returncode != 0
+
+
+@pytest.mark.unit
+def test_compute_report_skips_consumer_graph_when_no_changed_files(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No-diff runs should not build the expensive full-repo consumer graph."""
+    module = _load_cli_module()
+
+    monkeypatch.setattr(
+        module,
+        "_git_changed_py_files",
+        lambda _base, _head, _repo_root: [],
+    )
+
+    def fail_build_consumer_graph(_repo_root: Path) -> dict[str, int]:
+        raise AssertionError("consumer graph should not be built for an empty diff")
+
+    monkeypatch.setattr(module, "build_consumer_graph", fail_build_consumer_graph)
+
+    report = module._compute_report("origin/main", "HEAD", REPO_ROOT)
+
+    assert report.changes == ()
+    assert report.total_consumers_affected == 0
 
 
 @pytest.mark.unit
