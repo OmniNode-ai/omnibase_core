@@ -661,16 +661,9 @@ from omnibase_core.cli.cli_registry import registry
 
 cli.add_command(registry)
 
-# Register node command (local RuntimeLocal execution, name-based resolution).
-# Replaces the former `onex run <contract_path>` (OMN-7068) with `onex node <name>`.
-# See docs/plans/2026-04-16-prove-core-runtime-standalone.md § Task 3 (OMN-8938).
-from omnibase_core.cli.cli_node import run_node_by_name
-
-cli.add_command(run_node_by_name)
-
-# `onex run` is a canonical alias for `onex node` (OMN-9260).
-# omnimarket docs reference `uv run onex run <node>` as the canonical invocation.
-cli.add_command(run_node_by_name, name="run")
+# Local runtime commands (`onex node` and `onex run`) are contributed by
+# omnibase_infra through the onex.cli entry-point group. Core owns only the
+# extension loading surface to avoid depending on concrete runtime code.
 
 # Register doctor command from separate module
 from omnibase_core.cli.cli_doctor import doctor

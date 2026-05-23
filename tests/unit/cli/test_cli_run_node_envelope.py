@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 import uuid
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -195,107 +195,6 @@ class TestCliEnvelopeVsModelDispatchBusCommand:
         assert missing_from_cli, (
             "ModelDispatchBusCommand has required fields that the CLI envelope "
             f"does not provide: {missing_from_cli}"
-        )
-
-
-class TestHandlerBusAdapterWithCliEnvelope:
-    """Assert HandlerBusAdapter deserializes the CLI envelope shape correctly.
-
-    Since the CLI topic has no registered HandlerBusAdapter consumer in production,
-    this test proves that a custom input model matching the CLI shape CAN be wired
-    via the HandlerBusAdapter deserialization path without error.
-    """
-
-    def test_handler_bus_adapter_deserializes_cli_shape(self) -> None:
-        """HandlerBusAdapter can deserialize a ModelEventEnvelope-shaped message into a matching model."""
-        from pydantic import BaseModel, ConfigDict
-
-        from omnibase_core.runtime.runtime_local_adapter import HandlerBusAdapter
-
-        class ModelCliRunNodeCommand(BaseModel):
-            model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
-            correlation_id: str
-            payload: dict[str, Any]
-            target_tool: str
-            source_tool: str
-
-        received: list[ModelCliRunNodeCommand] = []
-
-        class _FakeHandler:
-            def handle(self, **kwargs: Any) -> None:
-                received.append(ModelCliRunNodeCommand(**kwargs))
-
-        bus = MagicMock()
-        bus.publish = AsyncMock()
-
-        adapter = HandlerBusAdapter(
-            handler=_FakeHandler(),
-            handler_name="FakeHandler",
-            input_model_cls=ModelCliRunNodeCommand,
-            output_topic=None,
-            bus=bus,
-        )
-
-        corr_id = str(uuid.uuid4())
-        cli_envelope = {
-            "correlation_id": corr_id,
-            "payload": {"param": "value"},
-            "target_tool": "synthetic-node",
-            "source_tool": "onex.run-node",
-        }
-        msg = MagicMock()
-        msg.value = json.dumps(cli_envelope).encode("utf-8")
-
-        import asyncio
-
-        asyncio.run(adapter.on_message(msg))
-
-        assert len(received) == 1
-        assert received[0].correlation_id == corr_id
-        assert received[0].target_tool == "synthetic-node"
-        assert received[0].payload == {"param": "value"}
-
-    def test_handler_bus_adapter_fails_on_mismatched_model(self) -> None:
-        """HandlerBusAdapter error callback fires when CLI envelope hits incompatible model."""
-        from omnibase_core.models.dispatch.model_dispatch_bus_command import (
-            ModelDispatchBusCommand,
-        )
-        from omnibase_core.runtime.runtime_local_adapter import HandlerBusAdapter
-
-        error_fired: list[bool] = []
-
-        class _FakeHandler:
-            def handle(self, **kwargs: Any) -> None:
-                pass  # pragma: no cover
-
-        bus = MagicMock()
-        bus.publish = AsyncMock()
-
-        adapter = HandlerBusAdapter(
-            handler=_FakeHandler(),
-            handler_name="FakeHandler",
-            input_model_cls=ModelDispatchBusCommand,
-            output_topic=None,
-            bus=bus,
-            on_error=lambda: error_fired.append(True),
-        )
-
-        cli_envelope = {
-            "correlation_id": str(uuid.uuid4()),
-            "payload": {"x": 1},
-            "target_tool": "test-node",
-            "source_tool": "onex.run-node",
-        }
-        msg = MagicMock()
-        msg.value = json.dumps(cli_envelope).encode("utf-8")
-
-        import asyncio
-
-        asyncio.run(adapter.on_message(msg))
-
-        assert error_fired, (
-            "Expected on_error to fire when CLI envelope is fed to "
-            "ModelDispatchBusCommand adapter"
         )
 
 

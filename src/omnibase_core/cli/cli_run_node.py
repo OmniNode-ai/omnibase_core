@@ -19,9 +19,16 @@ import click
 
 from omnibase_core.cli.cli_node import _resolve_packaged_contract
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.runtime.runtime_local import load_workflow_contract
+from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
+
+
+def load_workflow_contract(path: Path) -> dict[str, object]:
+    """Load and validate packaged workflow contract metadata for Kafka dispatch."""
+    raw_model = load_and_validate_yaml_model(path, ModelGenericYaml)
+    return raw_model.model_dump(mode="json", exclude_none=True)
 
 
 def _emit_error(node_id: str, message: str, **extra: str | int) -> NoReturn:
@@ -36,23 +43,32 @@ def _emit_error(node_id: str, message: str, **extra: str | int) -> NoReturn:
     sys.exit(1)
 
 
-def _contract_requires_payload_correlation_id(contract: dict[str, object]) -> bool:
+def _coerce_contract_metadata(
+    contract: ModelGenericYaml | dict[str, object],
+) -> dict[str, object]:
+    """Normalize tests and production loaders to the metadata model."""
+    if isinstance(contract, ModelGenericYaml):
+        return contract.model_dump(mode="json", exclude_none=True)
+    return contract
+
+
+def _contract_requires_payload_correlation_id(
+    contract: dict[str, object],
+) -> bool:
     """Return True when the contract explicitly requires payload.correlation_id."""
     inputs = contract.get("inputs")
     if not isinstance(inputs, dict):
         return False
-
     correlation_spec = inputs.get("correlation_id")
     if not isinstance(correlation_spec, dict):
         return False
-
     return correlation_spec.get("required") is True
 
 
 def _resolve_node_topics(node_id: str) -> tuple[Path, str, str, bool]:
     """Resolve a packaged node to its contract path and Kafka routing metadata."""
     contract_path = _resolve_packaged_contract(node_id)
-    contract = load_workflow_contract(contract_path)
+    contract = _coerce_contract_metadata(load_workflow_contract(Path(contract_path)))
 
     event_bus = contract.get("event_bus")
     if not isinstance(event_bus, dict):
