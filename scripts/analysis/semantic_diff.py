@@ -121,8 +121,14 @@ def _git_file_at(ref: str, rel_path: str, repo_root: Path) -> str:
 
 
 def _compute_report(base: str, head: str, repo_root: Path) -> ModelSemanticDiffReport:
-    consumer_graph = build_consumer_graph(repo_root)
     changed_files = _git_changed_py_files(base, head, repo_root)
+    if not changed_files:
+        return ModelSemanticDiffReport(
+            changes=(),
+            total_consumers_affected=0,
+        )
+
+    consumer_graph = build_consumer_graph(repo_root)
 
     all_changes: list[ModelSymbolChange] = []
     total_consumers = 0
