@@ -155,6 +155,18 @@ EVIDENCE_SOURCE_ANY_PATTERN = re.compile(
     r"^Evidence-Source:\s+\S",
     re.IGNORECASE | re.MULTILINE,
 )
+PROMOTION_RECEIPT_PATTERN = re.compile(
+    r"^Promotion-Receipt:\s+\S",
+    re.IGNORECASE | re.MULTILINE,
+)
+HOTFIX_RECEIPT_PATTERN = re.compile(
+    r"^Hotfix-Receipt:\s+\S",
+    re.IGNORECASE | re.MULTILINE,
+)
+EVIDENCE_CLASS_PATTERN = re.compile(
+    r"^Evidence-Class:\s+(promotion|hotfix)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 # The SHA of the commit that merged OMN-10419 (Task 9 / T6a). PRs opened after
 # this SHA are required to include Evidence-Source. PRs opened before it are
@@ -726,6 +738,75 @@ def _verify_ticket_identity(
     return None
 
 
+def _normalized_branch(value: str | None) -> str:
+    if value is None:
+        return ""
+    branch = value.strip()
+    for prefix in ("refs/heads/", "heads/"):
+        if branch.startswith(prefix):
+            branch = branch.removeprefix(prefix)
+    return branch
+
+
+def _evidence_class_present(pr_body: str, expected: str) -> bool:
+    for match in EVIDENCE_CLASS_PATTERN.finditer(pr_body):
+        if match.group(1).lower() == expected:
+            return True
+    return False
+
+
+def _validate_main_release_policy(
+    *,
+    pr_body: str,
+    target_branch: str | None,
+    branch_name: str | None,
+    current_repo: str | None,
+    occ_source_kind: str | None,
+) -> str | None:
+    """Return a failure message when a main release PR violates branch policy."""
+
+    if _normalized_branch(target_branch) != "main":
+        return None
+    if current_repo == "onex_change_control":
+        return None
+
+    source_kind = (occ_source_kind or "").strip().lower()
+    if source_kind != "merged":
+        return (
+            "RECEIPT GATE FAILED: main release policy requires merged OCC evidence. "
+            "Resolve Evidence-Source to an OCC commit on main before promotion or "
+            "hotfix merge; current evidence source kind is "
+            f"{source_kind or 'unknown'}."
+        )
+
+    head_branch = _normalized_branch(branch_name)
+    if head_branch == "dev" or head_branch.startswith("promotion/"):
+        if PROMOTION_RECEIPT_PATTERN.search(pr_body) or _evidence_class_present(
+            pr_body, "promotion"
+        ):
+            return None
+        return (
+            "RECEIPT GATE FAILED: PRs targeting main from dev/promotion branches "
+            "must declare Promotion-Receipt: <receipt-id-or-occ-ref> or "
+            "Evidence-Class: promotion."
+        )
+
+    if head_branch.startswith("hotfix/"):
+        if HOTFIX_RECEIPT_PATTERN.search(pr_body) or _evidence_class_present(
+            pr_body, "hotfix"
+        ):
+            return None
+        return (
+            "RECEIPT GATE FAILED: hotfix PRs targeting main must declare "
+            "Hotfix-Receipt: <receipt-id-or-occ-ref> or Evidence-Class: hotfix."
+        )
+
+    return (
+        "RECEIPT GATE FAILED: main accepts only promotion PRs from dev/promotion/* "
+        "or hotfix PRs from hotfix/* under main-release policy."
+    )
+
+
 def validate_pr_receipts(
     pr_body: str,
     contracts_dir: Path,
@@ -738,6 +819,9 @@ def validate_pr_receipts(
     pr_opened_at: datetime | None = None,
     evidence_ticket: str | None = None,
     branch_name: str | None = None,
+    target_branch: str | None = None,
+    receipt_gate_policy_mode: str = "legacy",
+    occ_source_kind: str | None = None,
 ) -> ModelReceiptGateResult:
     """Run the receipt-gate against a PR's body + the repo's contracts + receipts.
 
@@ -764,7 +848,31 @@ def validate_pr_receipts(
             arg is also ``None`` the detected value is used.  If neither source yields
             a value and ``Evidence-Source`` is present, the gate fails.
         branch_name: Git branch name for axis-2 identity binding.
+        target_branch: PR base branch. Used by branch-aware dev/main policy.
+        receipt_gate_policy_mode: ``legacy`` keeps current behavior. ``main-release``
+            additionally requires main-targeted PRs to be promotion or hotfix paths
+            backed by merged OCC evidence. ``dev-preflight`` intentionally preserves
+            current per-PR receipt behavior while allowing open OCC PR evidence.
+        occ_source_kind: Evidence snapshot provenance from the workflow
+            (``open-pr``, ``merged``, ``main``, or ``self``).
     """
+    policy_mode = receipt_gate_policy_mode.strip().lower()
+    if policy_mode not in {"legacy", "dev-preflight", "main-release"}:
+        return ModelReceiptGateResult(
+            passed=False,
+            message=f"Unknown receipt_gate_policy_mode: {policy_mode}",
+        )
+    if policy_mode == "main-release":
+        branch_policy_failure = _validate_main_release_policy(
+            pr_body=pr_body,
+            target_branch=target_branch,
+            branch_name=branch_name,
+            current_repo=current_repo,
+            occ_source_kind=occ_source_kind,
+        )
+        if branch_policy_failure is not None:
+            return ModelReceiptGateResult(passed=False, message=branch_policy_failure)
+
     override = OVERRIDE_PATTERN.search(pr_body)
     skip_match = SKIP_TOKEN_PATTERN.search(pr_body)
     if skip_match and override is None:
@@ -850,10 +958,18 @@ def validate_pr_receipts(
                 ),
             )
 
+        identity_branch_name = branch_name
+        if (
+            policy_mode == "main-release"
+            and _normalized_branch(target_branch) == "main"
+            and _normalized_branch(branch_name) == "dev"
+        ):
+            identity_branch_name = None
+
         identity_failure = _verify_ticket_identity(
             evidence_ticket=resolved_evidence_ticket,
             pr_title=pr_title,
-            branch_name=branch_name,
+            branch_name=identity_branch_name,
             contracts_dir=contracts_dir,
             receipts_dir=receipts_dir,
         )

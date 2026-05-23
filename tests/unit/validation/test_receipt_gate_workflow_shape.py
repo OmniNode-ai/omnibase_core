@@ -179,6 +179,43 @@ def test_workflow_resolves_evidence_source_before_checkout() -> None:
     assert "git -C .onex_change_control rev-parse HEAD" in evidence_step["run"]
 
 
+def test_workflow_has_branch_policy_input_and_resolution_step() -> None:
+    """OMN-11736 exposes branch-aware receipt policy without changing defaults."""
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    inputs = data[True]["workflow_call"]["inputs"]
+
+    assert inputs["branch-policy-mode"]["default"] == "legacy"
+
+    step = _workflow_step("Resolve receipt gate branch policy")
+    script = step["run"]
+    assert step["id"] == "branch_policy"
+    assert "target_branch=" in script
+    assert "policy_mode=" in script
+    assert "dev-preflight|main-release" in script
+
+
+def test_workflow_passes_branch_policy_context_to_cli() -> None:
+    """Receipt gate CLI must receive branch policy and OCC source provenance."""
+    step = _workflow_step("Run Receipt-Gate")
+    script = step["run"]
+
+    assert 'PR_BRANCH="$(cat /tmp/pr_branch.txt 2>/dev/null || true)"' in script
+    assert '--branch-name "$PR_BRANCH"' in script
+    assert "--target-branch" in script
+    assert "--receipt-gate-policy-mode" in script
+    assert "--occ-source-kind" in script
+
+
+def test_workflow_distinguishes_open_and_merged_occ_sources() -> None:
+    """Main-release policy depends on whether OCC evidence is merged or PR-head."""
+    step = _workflow_step("Resolve Evidence-Source")
+    script = step["run"]
+
+    assert 'occ_source_kind="open-pr"' in script
+    assert 'occ_source_kind="merged"' in script
+    assert "mergeCommit" in script
+
+
 def test_workflow_validates_occ_pr_diff_without_main_dependency() -> None:
     """onex_change_control PRs validate same-PR evidence to avoid a circular gate."""
     evidence_step = _workflow_step("Resolve evidence snapshot")
