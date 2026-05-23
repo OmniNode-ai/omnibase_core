@@ -154,6 +154,30 @@ class TestRuleRepoBoundaries:
         assert len(issues) == 1
         assert issues[0].line_number == 5
 
+    def test_allows_type_checking_forbidden_import(
+        self, config: ModelRuleRepoBoundariesConfig
+    ) -> None:
+        """Test that type-only imports do not create runtime boundary issues."""
+        rule = RuleRepoBoundaries(config)
+
+        file_imports = {
+            Path("/test/good.py"): ModelFileImports(
+                file_path=Path("/test/good.py"),
+                imports=(
+                    ModelImportInfo(
+                        module="fake_infra.services.service_kafka",
+                        line_number=5,
+                        is_from_import=False,
+                        is_type_checking_only=True,
+                    ),
+                ),
+            ),
+        }
+
+        issues = rule.validate(file_imports, "fake_app")
+
+        assert len(issues) == 0
+
     def test_cross_repo_boundary_violation(
         self, config: ModelRuleRepoBoundariesConfig
     ) -> None:

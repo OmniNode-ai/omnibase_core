@@ -108,6 +108,10 @@ class RuleRepoBoundaries:
         if not import_path or import_path.startswith("."):
             return None
 
+        # Type-only imports do not create runtime boundary coupling.
+        if imp.is_type_checking_only:
+            return None
+
         # Check forbidden import prefixes
         for forbidden in self.config.forbidden_import_prefixes:
             if import_path.startswith(forbidden):
