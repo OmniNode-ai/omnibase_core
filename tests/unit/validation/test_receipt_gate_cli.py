@@ -39,6 +39,9 @@ def test_cli_accepts_workflow_context_args(monkeypatch: pytest.MonkeyPatch) -> N
         assert kwargs["pr_body"] == "Implements OMN-1"
         assert kwargs["pr_title"] == "feat: test"
         assert kwargs["pr_opened_at"] == datetime(2026, 5, 21, 12, 30, tzinfo=UTC)
+        assert kwargs["target_branch"] == "dev"
+        assert kwargs["receipt_gate_policy_mode"] == "dev-preflight"
+        assert kwargs["occ_source_kind"] == "open-pr"
         return ModelReceiptGateResult(passed=True, message="ok")
 
     monkeypatch.setattr(
@@ -68,6 +71,12 @@ def test_cli_accepts_workflow_context_args(monkeypatch: pytest.MonkeyPatch) -> N
                 "1024",
                 "--pr-opened-at",
                 "2026-05-21T12:30:00Z",
+                "--target-branch",
+                "dev",
+                "--receipt-gate-policy-mode",
+                "dev-preflight",
+                "--occ-source-kind",
+                "open-pr",
             ]
         )
         == 0

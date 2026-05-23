@@ -46,6 +46,11 @@ on:
         type: string
         required: false
         default: drift/dod_receipts
+      branch-policy-mode:
+        description: "Branch-aware receipt policy mode: legacy, dev-preflight, or main-release."
+        type: string
+        required: false
+        default: legacy
 
 permissions:
   contents: read
@@ -73,6 +78,43 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
+
+      - name: Resolve receipt gate branch policy
+        id: branch_policy
+        env:
+          REQUESTED_POLICY_MODE: ${{ inputs.branch-policy-mode }}
+          PR_TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
+          MERGE_GROUP_BASE_REF: ${{ github.event.merge_group.base_ref }}
+        run: |
+          set -euo pipefail
+
+          normalize_branch() {
+            printf '%s' "$1" | sed -E 's@^refs/heads/@@; s@^heads/@@'
+          }
+
+          if [ -n "${PR_TARGET_BRANCH:-}" ]; then
+            target_branch="$(normalize_branch "$PR_TARGET_BRANCH")"
+          elif [ -n "${MERGE_GROUP_BASE_REF:-}" ]; then
+            target_branch="$(normalize_branch "$MERGE_GROUP_BASE_REF")"
+          else
+            target_branch=""
+          fi
+
+          case "${REQUESTED_POLICY_MODE:-legacy}" in
+            legacy|dev-preflight|main-release)
+              policy_mode="${REQUESTED_POLICY_MODE:-legacy}"
+              ;;
+            *)
+              echo "::error::invalid branch-policy-mode '${REQUESTED_POLICY_MODE}'. Expected legacy, dev-preflight, or main-release."
+              exit 1
+              ;;
+          esac
+
+          {
+            echo "target_branch=${target_branch}"
+            echo "policy_mode=${policy_mode}"
+          } >> "$GITHUB_OUTPUT"
+          echo "::notice::receipt-gate target_branch=${target_branch:-unknown} policy_mode=${policy_mode}"
 
       # OMN-10419: Resolve Evidence-Source commit-ish to an exact OCC SHA before
       # checking out onex_change_control. Accepts two forms:
@@ -134,6 +176,7 @@ jobs:
             echo "::notice::Evidence-Source not required: OMN-10419 cutoff SHA is PENDING_MERGE and no Evidence-Source was provided, so this run is treated as pre-cutoff."
             echo "PENDING_MERGE" > /tmp/occ_sha.txt
             echo "occ_sha=PENDING_MERGE" >> "$GITHUB_OUTPUT"
+            echo "occ_source_kind=main" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -156,6 +199,7 @@ jobs:
             echo "::notice::Evidence-Source not required: PR predates OMN-10419 cutoff (pr_epoch=${pr_epoch} < cutoff_epoch=${cutoff_epoch}). Falling back to OCC main."
             echo "PENDING_MERGE" > /tmp/occ_sha.txt
             echo "occ_sha=PENDING_MERGE" >> "$GITHUB_OUTPUT"
+            echo "occ_source_kind=main" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -167,9 +211,18 @@ jobs:
 
           # Resolve the commit-ish to an exact OCC SHA.
           if printf '%s' "$evidence_source" | grep -qiE '^OCC#[0-9]+$'; then
-            # OCC PR form: resolve to the current head SHA of that PR.
+            # OCC PR form: resolve to the merged commit when merged, otherwise
+            # to the current head SHA of the open PR.
             occ_pr_num="$(printf '%s' "$evidence_source" | sed -E 's/^OCC#//i')"
-            occ_sha="$(gh pr view "$occ_pr_num" --repo "OmniNode-ai/onex_change_control" --json headRefOid --jq '.headRefOid' 2>/dev/null || true)"
+            occ_json="$(gh pr view "$occ_pr_num" --repo "OmniNode-ai/onex_change_control" --json state,headRefOid,mergeCommit 2>/dev/null || true)"
+            occ_state="$(printf '%s' "$occ_json" | jq -r '.state // ""' 2>/dev/null || true)"
+            if [ "$occ_state" = "MERGED" ]; then
+              occ_sha="$(printf '%s' "$occ_json" | jq -r '.mergeCommit.oid // ""' 2>/dev/null || true)"
+              occ_source_kind="merged"
+            else
+              occ_sha="$(printf '%s' "$occ_json" | jq -r '.headRefOid // ""' 2>/dev/null || true)"
+              occ_source_kind="open-pr"
+            fi
             if [ -z "$occ_sha" ]; then
               echo "::error::RECEIPT GATE FAILED: OCC PR #${occ_pr_num} could not be resolved — OCC unavailable or PR not found. Cannot verify evidence (OMN-10419 invariant I8)."
               exit 1
@@ -185,6 +238,7 @@ jobs:
                 echo "::error::RECEIPT GATE FAILED: Evidence-Source SHA could not be canonicalized to a full OCC commit SHA (OMN-10419)."
                 exit 1
               fi
+              occ_source_kind="merged"
             else
               # Not an ancestor of main: check if it matches any open OCC PR head.
               matched_head="$(gh pr list --repo "OmniNode-ai/onex_change_control" --state open --json headRefOid --jq ".[] | select(.headRefOid | startswith(\"${occ_sha}\")) | .headRefOid" 2>/dev/null | head -1 || true)"
@@ -193,6 +247,7 @@ jobs:
                 exit 1
               fi
               occ_sha="$matched_head"
+              occ_source_kind="open-pr"
             fi
           else
             echo "::error::RECEIPT GATE FAILED: Evidence-Source value '${evidence_source}' is not a valid OCC#<number> or hex SHA. Accepted forms: 'OCC#1234' or '<sha>' (OMN-10419)."
@@ -203,6 +258,7 @@ jobs:
           printf '%s' "$occ_sha" > /tmp/occ_sha.txt
           # Expose as step output for the checkout step's ref field.
           echo "occ_sha=${occ_sha}" >> "$GITHUB_OUTPUT"
+          echo "occ_source_kind=${occ_source_kind}" >> "$GITHUB_OUTPUT"
           echo "::notice::Evidence-Source resolved to OCC SHA: ${occ_sha}"
 
       # We need the onex_change_control repo to find contracts + receipts.
@@ -575,6 +631,7 @@ jobs:
         run: |
           PR_BODY="$(cat /tmp/pr_body.txt)"
           PR_TITLE="$(cat /tmp/pr_title.txt)"
+          PR_BRANCH="$(cat /tmp/pr_branch.txt 2>/dev/null || true)"
           PR_AUTHOR="$(cat /tmp/pr_author.txt 2>/dev/null || true)"
           PR_NUMBER_RESOLVED="$(cat /tmp/pr_number.txt 2>/dev/null || true)"
           PR_OPENED_AT="$(cat /tmp/pr_created_at.txt 2>/dev/null || true)"
@@ -609,6 +666,10 @@ jobs:
             --contracts-dir "${{ steps.evidence.outputs.contracts_dir }}" \
             --receipts-dir "${{ steps.evidence.outputs.receipts_dir }}" \
             --current-repo "$REPO_SHORT" \
+            --branch-name "$PR_BRANCH" \
+            --target-branch "${{ steps.branch_policy.outputs.target_branch }}" \
+            --receipt-gate-policy-mode "${{ steps.branch_policy.outputs.policy_mode }}" \
+            --occ-source-kind "${{ steps.resolve_evidence_source.outputs.occ_source_kind || 'self' }}" \
             $ALLOWLIST_ARG \
             $PR_AUTHOR_ARG \
             $PR_NUMBER_ARG \

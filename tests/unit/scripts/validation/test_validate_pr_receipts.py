@@ -222,6 +222,218 @@ class TestReceiptGateGreedyRegression:
 
 
 @pytest.mark.unit
+class TestReceiptGateBranchPolicy:
+    def test_dev_preflight_allows_open_occ_pr_evidence(self, tmp_path: Path) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-11736")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-11736",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-11736\n"
+                "Evidence-Ticket: OMN-11736\n"
+                "Evidence-Source: OCC#1397"
+            ),
+            pr_title="feat(OMN-11736): branch-aware receipt gate",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-11736-receipt-gate",
+            target_branch="dev",
+            receipt_gate_policy_mode="dev-preflight",
+            occ_source_kind="open-pr",
+        )
+
+        assert result.passed
+
+    def test_unknown_policy_mode_fails_closed(self, tmp_path: Path) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-11736")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-11736",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-11736\n"
+                "Evidence-Ticket: OMN-11736\n"
+                "Evidence-Source: OCC#1397"
+            ),
+            pr_title="feat(OMN-11736): branch-aware receipt gate",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-11736-receipt-gate",
+            target_branch="dev",
+            receipt_gate_policy_mode="experimental",
+            occ_source_kind="open-pr",
+        )
+
+        assert not result.passed
+        assert result.message == "Unknown receipt_gate_policy_mode: experimental"
+
+    def test_main_release_rejects_open_occ_pr_evidence(self, tmp_path: Path) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-11736")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-11736",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-11736\n"
+                "Evidence-Ticket: OMN-11736\n"
+                "Evidence-Source: OCC#1397\n"
+                "Promotion-Receipt: OCC#1397"
+            ),
+            pr_title="feat(OMN-11736): promote dev to main",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="dev",
+            target_branch="main",
+            receipt_gate_policy_mode="main-release",
+            occ_source_kind="open-pr",
+        )
+
+        assert not result.passed
+        assert "requires merged occ evidence" in result.message.lower()
+
+    def test_main_release_accepts_promotion_with_merged_occ_evidence(
+        self, tmp_path: Path
+    ) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-11736")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-11736",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-11736\n"
+                "Evidence-Ticket: OMN-11736\n"
+                "Evidence-Source: 9b134fd779d85dcb83db476940b12036b50c1825\n"
+                "Promotion-Receipt: OCC#1397"
+            ),
+            pr_title="feat(OMN-11736): promote dev to main",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="dev",
+            target_branch="main",
+            receipt_gate_policy_mode="main-release",
+            occ_source_kind="merged",
+        )
+
+        assert result.passed
+
+    def test_main_release_rejects_promotion_without_receipt_marker(
+        self, tmp_path: Path
+    ) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-11736")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-11736",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-11736\n"
+                "Evidence-Ticket: OMN-11736\n"
+                "Evidence-Source: 9b134fd779d85dcb83db476940b12036b50c1825"
+            ),
+            pr_title="feat(OMN-11736): promote dev to main",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="dev",
+            target_branch="main",
+            receipt_gate_policy_mode="main-release",
+            occ_source_kind="merged",
+        )
+
+        assert not result.passed
+        assert "promotion-receipt" in result.message.lower()
+
+    def test_main_release_accepts_hotfix_with_hotfix_receipt(
+        self, tmp_path: Path
+    ) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-11736")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-11736",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-11736\n"
+                "Evidence-Ticket: OMN-11736\n"
+                "Evidence-Source: 9b134fd779d85dcb83db476940b12036b50c1825\n"
+                "Hotfix-Receipt: OCC#1397"
+            ),
+            pr_title="fix(OMN-11736): emergency hotfix",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="hotfix/omn-11736-emergency",
+            target_branch="main",
+            receipt_gate_policy_mode="main-release",
+            occ_source_kind="merged",
+        )
+
+        assert result.passed
+
+    def test_main_release_rejects_regular_main_pr(self, tmp_path: Path) -> None:
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-11736")
+        _write_receipt(
+            receipts,
+            ticket_id="OMN-11736",
+            evidence_item_id="dod-001",
+            check_type="command",
+        )
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-11736\n"
+                "Evidence-Ticket: OMN-11736\n"
+                "Evidence-Source: abcdef1234567890"
+            ),
+            pr_title="feat(OMN-11736): regular main change",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="feature/omn-11736-regular",
+            target_branch="main",
+            receipt_gate_policy_mode="main-release",
+            occ_source_kind="merged",
+        )
+
+        assert not result.passed
+        assert "main accepts only promotion" in result.message.lower()
+
+
+@pytest.mark.unit
 class TestReceiptGateContractPresence:
     def test_missing_contract_fails(self, tmp_path: Path) -> None:
         result = validate_pr_receipts(

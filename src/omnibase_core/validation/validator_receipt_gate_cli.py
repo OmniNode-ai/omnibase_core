@@ -124,6 +124,32 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--target-branch",
+        default=None,
+        help=(
+            "OMN-11736: PR base branch. Used by branch-aware dev/main receipt policy."
+        ),
+    )
+    parser.add_argument(
+        "--receipt-gate-policy-mode",
+        choices=("legacy", "dev-preflight", "main-release"),
+        default="legacy",
+        help=(
+            "OMN-11736: branch policy mode. legacy preserves current behavior; "
+            "dev-preflight allows PR-head OCC evidence; main-release requires "
+            "merged OCC evidence plus promotion/hotfix classification for main."
+        ),
+    )
+    parser.add_argument(
+        "--occ-source-kind",
+        choices=("unknown", "open-pr", "merged", "main", "self"),
+        default="unknown",
+        help=(
+            "OMN-11736: provenance of the checked-out OCC evidence snapshot, as "
+            "resolved by the reusable workflow."
+        ),
+    )
+    parser.add_argument(
         "--reexecute-probes",
         action="store_true",
         default=False,
@@ -153,6 +179,9 @@ def main(argv: list[str] | None = None) -> int:
         pr_opened_at=pr_opened_at,
         evidence_ticket=args.evidence_ticket,
         branch_name=args.branch_name,
+        target_branch=args.target_branch,
+        receipt_gate_policy_mode=args.receipt_gate_policy_mode,
+        occ_source_kind=args.occ_source_kind,
     )
 
     if result.friction_logged:
