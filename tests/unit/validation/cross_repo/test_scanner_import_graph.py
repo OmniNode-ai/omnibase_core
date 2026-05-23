@@ -333,3 +333,29 @@ class TestScannerImportGraph:
         assert len(result.imports) == 1
         assert result.imports[0].name == "*"
         assert result.imports[0].is_from_import is True
+
+    def test_scan_type_checking_imports(
+        self, scanner: ScannerImportGraph, tmp_path: Path
+    ) -> None:
+        """Test marking imports guarded by TYPE_CHECKING."""
+        test_file = tmp_path / "test.py"
+        test_file.write_text(
+            dedent(
+                """
+            from typing import TYPE_CHECKING
+
+            import os
+
+            if TYPE_CHECKING:
+                from redis.asyncio import Redis
+            """
+            ).strip()
+        )
+
+        result = scanner.scan_file(test_file)
+
+        assert result.parse_error is None
+        redis_import = next(i for i in result.imports if i.module == "redis.asyncio")
+        os_import = next(i for i in result.imports if i.module == "os")
+        assert redis_import.is_type_checking_only is True
+        assert os_import.is_type_checking_only is False

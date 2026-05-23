@@ -36,6 +36,10 @@ class ModelImportInfo(BaseModel):
         default=False,
         description="Whether this is a 'from X import Y' style import",
     )
+    is_type_checking_only: bool = Field(
+        default=False,
+        description="Whether this import is guarded by TYPE_CHECKING",
+    )
 
     @property
     def full_import_path(self) -> str:
@@ -66,6 +70,7 @@ class _ImportVisitor(ast.NodeVisitor):
 
     def __init__(self) -> None:
         self.imports: list[ModelImportInfo] = []
+        self._type_checking_depth = 0
 
     def visit_Import(self, node: ast.Import) -> None:
         """Handle 'import X' statements."""
@@ -76,6 +81,7 @@ class _ImportVisitor(ast.NodeVisitor):
                     alias=alias.asname,
                     line_number=node.lineno,
                     is_from_import=False,
+                    is_type_checking_only=self._type_checking_depth > 0,
                 )
             )
         self.generic_visit(node)
@@ -96,9 +102,31 @@ class _ImportVisitor(ast.NodeVisitor):
                     alias=alias.asname,
                     line_number=node.lineno,
                     is_from_import=True,
+                    is_type_checking_only=self._type_checking_depth > 0,
                 )
             )
         self.generic_visit(node)
+
+    def visit_If(self, node: ast.If) -> None:
+        """Track imports that are guarded by TYPE_CHECKING."""
+        if self._is_type_checking_guard(node.test):
+            self._type_checking_depth += 1
+            for statement in node.body:
+                self.visit(statement)
+            self._type_checking_depth -= 1
+            for statement in node.orelse:
+                self.visit(statement)
+            return
+
+        self.generic_visit(node)
+
+    @staticmethod
+    def _is_type_checking_guard(node: ast.expr) -> bool:
+        if isinstance(node, ast.Name):
+            return node.id == "TYPE_CHECKING"
+        if isinstance(node, ast.Attribute):
+            return node.attr == "TYPE_CHECKING"
+        return False
 
 
 class ScannerImportGraph:
