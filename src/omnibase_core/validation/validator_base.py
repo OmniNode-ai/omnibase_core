@@ -64,7 +64,9 @@ See Also:
 
 import argparse
 import fnmatch
+import hashlib
 import logging
+import re
 import sys
 import time
 from abc import ABC, abstractmethod
@@ -90,6 +92,9 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
     ModelValidatorSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.validation.model_antipattern_registry import (
+    ModelAntipatternRegistry,
+)
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -109,6 +114,16 @@ SEVERITY_PRIORITY: dict[EnumSeverity, int] = {
     EnumSeverity.DEBUG: 5,
 }
 
+# Pattern types that support line-by-line regex/grep matching
+_REGEX_PATTERN_TYPES = frozenset({"regex_line", "grep_code", "regex_ast_docstring"})
+
+# Map antipattern entry severity strings to EnumSeverity
+_ANTIPATTERN_SEVERITY_MAP: dict[str, EnumSeverity] = {
+    "ERROR": EnumSeverity.ERROR,
+    "WARNING": EnumSeverity.WARNING,
+    "INFO": EnumSeverity.INFO,
+}
+
 
 class ValidatorBase(ABC):
     """Concrete base class for contract-driven file validators.
@@ -119,6 +134,7 @@ class ValidatorBase(ABC):
     - Suppression comment handling
     - Deterministic result ordering
     - CLI exit code mapping
+    - Optional KB-aware antipattern matching (OMN-11920)
 
     Subclasses must implement:
     - validator_id (class attribute): Unique identifier for this validator
@@ -151,19 +167,27 @@ class ValidatorBase(ABC):
     Attributes:
         validator_id: Unique identifier for this validator (must be set by subclass).
         contract: The validator contract (loaded lazily if not provided).
+        antipattern_registry: Optional KB registry for regex/grep pattern matching.
     """
 
     # ONEX_EXCLUDE: string_id - human-readable validator identifier
     validator_id: ClassVar[str]
 
-    def __init__(self, contract: ModelValidatorSubcontract | None = None) -> None:
-        """Initialize validator with optional pre-loaded contract.
+    def __init__(
+        self,
+        contract: ModelValidatorSubcontract | None = None,
+        antipattern_registry: ModelAntipatternRegistry | None = None,
+    ) -> None:
+        """Initialize validator with optional pre-loaded contract and KB registry.
 
         Args:
             contract: Pre-loaded validator contract. If None, the contract
                 will be loaded from the default YAML location when first accessed.
+            antipattern_registry: Optional antipattern registry for KB-aware
+                rule matching. If None, KB-based validation is skipped.
         """
         self._contract = contract
+        self._antipattern_registry = antipattern_registry
         # Thread Safety: This cache is NOT thread-safe. When using parallel
         # execution (e.g., pytest-xdist), create separate validator instances
         # per worker. Cache is cleared after validate() completes to prevent
@@ -177,6 +201,11 @@ class ValidatorBase(ABC):
         # usage, create separate validator instances per thread/worker.
         # See docs/guides/THREADING.md for details.
         self._rule_config_cache: dict[str, tuple[bool, EnumSeverity]] | None = None
+
+    @property
+    def antipattern_registry(self) -> ModelAntipatternRegistry | None:
+        """The antipattern registry used for KB-aware validation, or None."""
+        return self._antipattern_registry
 
     @property
     def contract(self) -> ModelValidatorSubcontract:
@@ -316,6 +345,73 @@ class ValidatorBase(ABC):
             proper suppression handling and ordering.
         """
         ...
+
+    def _validate_file_against_kb_rules(
+        self,
+        path: Path,
+    ) -> tuple[ModelValidationIssue, ...]:
+        """Match file lines against regex/grep antipattern registry entries.
+
+        Applies all registry entries whose pattern_type is regex_line, grep_code,
+        or regex_ast_docstring and whose file_globs match the given path.
+        Entries of type semantic or ast_check are skipped (require vector search
+        or AST infrastructure not available here).
+
+        Suppression is honored: if the matching line contains the entry's
+        suppression_annotation string, the issue is not emitted.
+
+        Args:
+            path: Path to the file to check.
+
+        Returns:
+            Tuple of ModelValidationIssue for all unsuppressed matches.
+        """
+        if self._antipattern_registry is None:
+            return ()
+
+        issues: list[ModelValidationIssue] = []
+        lines = self._get_file_lines(path)
+
+        for entry in self._antipattern_registry.entries:
+            if entry.pattern_type not in _REGEX_PATTERN_TYPES:
+                continue
+
+            # Check file_globs — skip this entry if no glob matches the file name
+            if not any(fnmatch.fnmatch(path.name, glob) for glob in entry.file_globs):
+                continue
+
+            try:
+                compiled = re.compile(entry.pattern)
+            except re.error as exc:
+                logger.warning(
+                    "Invalid regex in antipattern entry '%s': %s", entry.name, exc
+                )
+                continue
+
+            severity = _ANTIPATTERN_SEVERITY_MAP.get(entry.severity, EnumSeverity.ERROR)
+
+            for line_idx, line in enumerate(lines):
+                line_number = line_idx + 1
+                if not compiled.search(line):
+                    continue
+                # Honor entry-specific suppression annotation
+                if (
+                    entry.suppression_annotation
+                    and entry.suppression_annotation in line
+                ):
+                    continue
+                issues.append(
+                    ModelValidationIssue(
+                        severity=severity,
+                        message=entry.description,
+                        rule_name=entry.name,
+                        file_path=path,
+                        line_number=line_number,
+                        code=entry.name,
+                    )
+                )
+
+        return tuple(issues)
 
     def _validate_file_with_suppression(
         self,
@@ -727,6 +823,11 @@ class ValidatorBase(ABC):
 
         return module_dir / "contracts" / f"{self.validator_id}.validation.yaml"
 
+    def _compute_registry_hash(self, registry: ModelAntipatternRegistry) -> str:
+        """Compute a deterministic SHA-256 hash of the registry contents."""
+        canonical = registry.model_dump_json()
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
     def _build_result(
         self,
         files_checked: list[Path],
@@ -789,6 +890,23 @@ class ValidatorBase(ABC):
                 f"{total_issues} issue(s) in {len(files_with_violations)} file(s)"
             )
 
+        # Collect KB registry metadata for reproducibility tracking
+        extra_metadata: dict[
+            str, object
+        ] = {}  # ONEX_EXCLUDE: dict_str_any - KB registry metadata passed as **kwargs to ModelValidationMetadata extra fields
+        if self._antipattern_registry is not None:
+            extra_metadata["antipattern_registry_version"] = (
+                self._antipattern_registry.version
+            )
+            extra_metadata["antipattern_registry_hash"] = self._compute_registry_hash(
+                self._antipattern_registry
+            )
+            extra_metadata["rule_ids_applied"] = [
+                e.name
+                for e in self._antipattern_registry.entries
+                if e.pattern_type in _REGEX_PATTERN_TYPES
+            ]
+
         # Build metadata
         metadata = ModelValidationMetadata(
             validation_type=self.validator_id,
@@ -801,6 +919,7 @@ class ValidatorBase(ABC):
             files_with_violations=files_with_violations,
             files_with_violations_count=len(files_with_violations),
             strict_mode=self.contract.fail_on_warning,
+            **extra_metadata,
         )
 
         return ModelValidationResult[None](
