@@ -94,3 +94,16 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-antipatterns
+  name: KB Antipattern Checker (offline, non-semantic rules only)
+  description: >
+    Offline antipattern checker (OMN-11923). Loads the resolved antipattern registry (defaults + per-repo
+    .onex/antipattern-overrides.yaml), filters to non-semantic rules (regex_line, regex_ast_docstring,
+    grep_code), and validates staged Python files. No network calls. Outputs registry version and SHA-256
+    hash for reproducibility. Suppression: per-entry suppression_annotation inline comment (e.g. # ai-slop-ok).
+  language: python
+  entry: python -m omnibase_core.validation.antipattern_checker
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
