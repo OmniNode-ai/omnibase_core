@@ -94,6 +94,13 @@ Example:
 """
 
 __all__ = [
+    # Knowledge context bundle models (OMN-11928)
+    "ModelContextProvenance",
+    "ModelADRSummary",
+    "ModelAntipatternSummary",
+    "ModelLearningMatch",
+    "ModelGraphSnapshot",
+    "ModelKnowledgeContextBundle",
     # Error/Retry context models
     "ModelErrorContext",
     "ModelErrorMetadata",
@@ -140,6 +147,12 @@ from omnibase_core.models.context.model_action_execution_context import (
 )
 from omnibase_core.models.context.model_action_parameters import ModelActionParameters
 
+# Knowledge context bundle models (OMN-11928)
+from omnibase_core.models.context.model_adr_summary import ModelADRSummary
+from omnibase_core.models.context.model_antipattern_summary import (
+    ModelAntipatternSummary,
+)
+
 # Metadata context models
 from omnibase_core.models.context.model_audit_metadata import ModelAuditMetadata
 from omnibase_core.models.context.model_authorization_context import (
@@ -148,6 +161,7 @@ from omnibase_core.models.context.model_authorization_context import (
 from omnibase_core.models.context.model_checkpoint_metadata import (
     ModelCheckpointMetadata,
 )
+from omnibase_core.models.context.model_context_provenance import ModelContextProvenance
 from omnibase_core.models.context.model_detection_metadata import ModelDetectionMetadata
 
 # Effect context models
@@ -164,9 +178,14 @@ from omnibase_core.models.context.model_error_metadata import (
     SERVER_ERROR_CATEGORIES,
     ModelErrorMetadata,
 )
+from omnibase_core.models.context.model_graph_snapshot import ModelGraphSnapshot
 from omnibase_core.models.context.model_http_request_metadata import (
     ModelHttpRequestMetadata,
 )
+from omnibase_core.models.context.model_knowledge_context_bundle import (
+    ModelKnowledgeContextBundle,
+)
+from omnibase_core.models.context.model_learning_match import ModelLearningMatch
 from omnibase_core.models.context.model_metrics_context import ModelMetricsContext
 from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitMetadata
 
