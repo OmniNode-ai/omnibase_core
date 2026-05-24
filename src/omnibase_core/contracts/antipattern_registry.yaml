@@ -1,0 +1,458 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# ONEX default antipattern registry (OMN-11911)
+# Merges the aislop rule set with architecture-level semantic antipatterns.
+# Per-repo overrides live at .onex/antipattern-overrides.yaml
+#
+# enforcement values:
+#   blocking     — merge gate; violations block PR merge
+#   advisory     — warning only; logged but not blocking
+#   informational — log/report mode only
+#
+# pattern_type values:
+#   regex_ast_docstring  — applied per-line inside AST-extracted docstrings
+#   regex_line           — applied per line outside docstrings
+#   grep_code            — applied per line across matched files
+#   ast_check            — named AST visitor check identifier
+#   semantic             — description used for vector-similarity search (vector_enabled required)
+
+version: "1.0.0"
+last_updated: "2026-05-24T00:00:00+00:00"
+
+entries:
+  # ── Migrated from aislop_default_rules.yaml ─────────────────────────────────
+
+  - name: sycophancy
+    severity: ERROR
+    enforcement: blocking
+    category: code_quality
+    pattern_type: regex_ast_docstring
+    pattern: >-
+      ^\s*(Excellent|Great|Sure|Certainly|Absolutely|Of course|Happy to| I would be|Gladly|Wonderful|Perfect|Fantastic|Awesome)[!,.
+      ]
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Sycophantic opener in a docstring (e.g. "Great, here is..."). LLMs frequently start generated docstrings
+      with affirmations.
+    rationale: >-
+      LLM-generated sycophantic openers pollute the codebase with filler text that conveys no information
+      and signals low-quality generation. They inflate cognitive load for human readers.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: rest_docstring
+    severity: ERROR
+    enforcement: blocking
+    category: code_quality
+    pattern_type: regex_ast_docstring
+    pattern: "^\\s*:(param|type|returns?|rtype|raises?|var|ivar|cvar)\\b"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      reST-style docstring markers (:param:, :type:, :returns:, :rtype:, etc.). Google-style docstrings
+      are the project standard.
+    rationale: >-
+      The project standardizes on Google-style docstrings for consistency and readability. reST markers
+      are LLM default output — they indicate the docstring was generated without following project conventions.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: boilerplate_docstring
+    severity: WARNING
+    enforcement: advisory
+    category: code_quality
+    pattern_type: regex_ast_docstring
+    pattern: >-
+      ^\s*This\s+(module|class|function|method|file|script|node|handler|service)\s+(provides?|implements?|contains?|is\s+responsible\s+for|handles?|manages?|offers?)
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Boilerplate opener "This <thing> provides/implements/contains ...". Catches LLM-generated filler
+      that describes the obvious.
+    rationale: >-
+      Tautological docstrings ("This class provides...") add zero value — the name already says what it
+      is. They are a strong signal of LLM-generated filler and trained reviewers to skip docstrings entirely.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: md_separator
+    severity: WARNING
+    enforcement: advisory
+    category: code_quality
+    pattern_type: regex_ast_docstring
+    pattern: "={4,}"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Markdown-style separator (4+ = chars) inside a Python docstring. LLMs sometimes insert visual dividers
+      that have no meaning in docstrings.
+    rationale: >-
+      Python docstrings are not Markdown. Visual separators inside docstrings are LLM formatting artifacts
+      that render incorrectly in IDEs and documentation generators.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: step_narration
+    severity: WARNING
+    enforcement: advisory
+    category: code_quality
+    pattern_type: regex_line
+    pattern: "#\\s*Step\\s+\\d+\\s*[:\\-]"
+    file_globs: ["*.md"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      "# Step N:" or "## Step N:" headings in Markdown files. Python inline "# Step N:" comments are legitimate
+      and are NOT flagged.
+    rationale: >-
+      Numbered step headings in Markdown are LLM narration artifacts. Prose documentation should use descriptive
+      section headings, not enumerated step labels that imply a procedure.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: obvious_comment
+    severity: INFO
+    enforcement: informational
+    category: code_quality
+    pattern_type: regex_line
+    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Self-evident inline comment with no content (e.g. "# TODO: "). Reported in INFO/report mode only;
+      not blocking by default.
+    rationale: >-
+      Empty TODO/FIXME tags are LLM placeholders that accumulate silently. They communicate intent to
+      fix something but provide no actionable information. Work should be tracked in Linear, not inline.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: hardcoded_ip
+    severity: ERROR
+    enforcement: blocking
+    category: security
+    pattern_type: grep_code
+    pattern: "\\b(?:192\\.168|10\\.0|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.[0-9]+\\.[0-9]+\\b"
+    file_globs: ["*.py", "*.yaml", "*.yml", "*.json"]
+    suppression_annotation: onex-allow-internal-ip
+    description: >-
+      Hardcoded private IP address. Use env vars or Infisical references. Annotate intentional exceptions
+      with # onex-allow-internal-ip.
+    rationale: >-
+      Hardcoded IPs are machine-specific and break portability across environments. They expose internal
+      network topology in source code. All addresses must come from env vars or Infisical.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: hardcoded_localhost
+    severity: ERROR
+    enforcement: blocking
+    category: security
+    pattern_type: grep_code
+    pattern: "\\b(localhost|127\\.0\\.0\\.1)\\b"
+    file_globs: ["*.py", "*.yaml", "*.yml"]
+    suppression_annotation: onex-allow-internal-ip
+    description: >-
+      Hardcoded localhost/127.0.0.1 reference. Use env vars or service discovery.
+    rationale: >-
+      localhost references fail in containerized environments and CI. Service addresses must be resolved
+      via env vars or service discovery so the same code runs in dev, staging, and prod.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: hardcoded_port
+    severity: WARNING
+    enforcement: advisory
+    category: security
+    pattern_type: grep_code
+    pattern: ":\\b(5432|6379|9092|19092|8080|8085|8086|3000|5000)\\b"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Hardcoded well-known port number. Pull from env vars or contract config.
+    rationale: >-
+      Well-known port literals in source code are a portability and security risk. Port assignments change
+      across deployment environments; they must be externalized to env vars or contract config.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: hardcoded_topic
+    severity: ERROR
+    enforcement: blocking
+    category: architecture
+    pattern_type: grep_code
+    pattern: "\"onex\\.(cmd|evt)\\.[a-z_]+\\.[a-z_]+\\.v[0-9]+\""
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Hardcoded Kafka topic string. Topics must be read from contract.yaml via TopicBase or the contract
+      loader -- never inlined as literals.
+    rationale: >-
+      Hardcoded topic strings diverge from contract.yaml silently. The canonical topic source is the contract
+      YAML; any literal that bypasses it will survive a topic rename and cause invisible routing failures
+      at runtime.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: prohibited_env_pattern
+    severity: WARNING
+    enforcement: advisory
+    category: security
+    pattern_type: grep_code
+    pattern: "os\\.environ\\.get\\([\"'][A-Z_]+[\"'],\\s*[\"'][^\"']+[\"']\\)"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      os.environ.get() with a non-empty default silently masks misconfiguration. Use os.environ[key] to
+      fail fast, or an explicit None default.
+    rationale: >-
+      Silent fallback defaults hide misconfigured environments. When a required env var is missing the
+      code should raise immediately, not silently pick a wrong default that may look correct in tests.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: compat_shim
+    severity: WARNING
+    enforcement: advisory
+    category: architecture
+    pattern_type: grep_code
+    pattern: "(?:^|\\s)_[a-zA-Z][a-zA-Z0-9_]*\\s*=\\s*[a-zA-Z]"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Possible backwards-compatibility alias (underscore-prefixed re-export). Remove compat shims; callers
+      should import from the canonical path.
+    rationale: >-
+      Compat shims accumulate as invisible debt. They indicate the canonical path was renamed but callers
+      weren't updated — the shim delays that cleanup indefinitely and creates double-maintenance burden.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: empty_impl
+    severity: WARNING
+    enforcement: advisory
+    category: code_quality
+    pattern_type: grep_code
+    pattern: "^\\s*(pass|\\.\\.\\.)\\s*$"
+    file_globs: ["*.py"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Empty function or method body (pass / ...). Placeholder implementations must be completed before
+      merging; stubs accumulate as silent debt.
+    rationale: >-
+      Placeholder stubs pass type checks and tests while doing nothing. They accumulate in codebases and
+      block callers from trusting that a method is actually implemented.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  - name: todo_fixme
+    severity: INFO
+    enforcement: informational
+    category: code_quality
+    pattern_type: grep_code
+    pattern: "#\\s*(TODO|FIXME)\\b"
+    file_globs: ["*.py", "*.yaml", "*.yml"]
+    suppression_annotation: ai-slop-ok
+    description: >-
+      Unresolved TODO or FIXME comment. Track work in Linear, not inline. Reported at INFO; escalate per-repo
+      via override if required.
+    rationale: >-
+      Inline TODO/FIXME comments are invisible to project management tools. Work should be tracked in
+      Linear tickets so it can be prioritized, assigned, and verified — not buried in source files.
+    discovered_date: "2025-01-01"
+    source_ticket: OMN-11132
+    vector_enabled: false
+
+  # ── Architecture-level semantic antipatterns ─────────────────────────────────
+
+  - name: handler_imports_handler
+    severity: ERROR
+    enforcement: blocking
+    category: architecture
+    pattern_type: semantic
+    pattern: >-
+      A handler module directly imports or instantiates another handler class or handler module, creating
+      direct handler-to-handler coupling outside the event bus.
+    file_globs: ["*.py"]
+    suppression_annotation: antipattern-ok
+    description: >-
+      Handler imports another handler directly instead of communicating via the event bus.
+    rationale: >-
+      Handlers must be fully decoupled. Direct handler-to-handler imports create a hidden dependency graph
+      that bypasses the contract-declared event bus topology. This prevents independent deployment, versioning,
+      and testing of handlers.
+    examples:
+      - kind: bad
+        label: Direct handler import
+        code: |
+          from omnibase_core.handlers.handler_merge_sweep import NodeHandlerMergeSweep
+          class NodeHandlerX:
+              def handle(self, ...):
+                  NodeHandlerMergeSweep().handle(...)  # direct coupling
+      - kind: good
+        label: Event bus dispatch
+        code: |
+          class NodeHandlerX:
+              def handle(self, event_bus, ...):
+                  event_bus.publish(TopicBase.CMD_MERGE_SWEEP_V1.value, payload)
+    discovered_date: "2026-05-24"
+    source_ticket: OMN-11911
+    vector_enabled: true
+
+  - name: node_io_in_init
+    severity: ERROR
+    enforcement: blocking
+    category: architecture
+    pattern_type: semantic
+    pattern: >-
+      A node class performs I/O operations (file reads, network calls, database queries, subprocess execution)
+      inside its __init__ constructor instead of deferring to a handler method.
+    file_globs: ["*.py"]
+    suppression_annotation: antipattern-ok
+    description: >-
+      Node class contains I/O operations in __init__, violating the thin-node / handler-owns-logic rule.
+    rationale: >-
+      Node constructors must remain side-effect-free. I/O in __init__ makes nodes untestable without live
+      infrastructure, prevents dependency injection, and couples construction to execution. Handlers own
+      all logic including I/O; nodes are coordination shells.
+    examples:
+      - kind: bad
+        label: I/O in __init__
+        code: |
+          class NodeMyEffect:
+              def __init__(self, container):
+                  super().__init__(container)
+                  self.config = open("config.yaml").read()  # I/O in constructor
+      - kind: good
+        label: I/O deferred to handler
+        code: |
+          class NodeMyEffect:
+              def __init__(self, container):
+                  super().__init__(container)
+                  # no I/O here
+              def handle(self, ...):
+                  config = open("config.yaml").read()
+    discovered_date: "2026-05-24"
+    source_ticket: OMN-11911
+    vector_enabled: true
+
+  - name: contract_topic_not_in_enum
+    severity: ERROR
+    enforcement: blocking
+    category: architecture
+    pattern_type: semantic
+    pattern: >-
+      A contract.yaml declares a publish or subscribe topic whose string value does not correspond to
+      any entry in the TopicBase enum, meaning the topic is undeclared in the canonical enum registry.
+    file_globs: ["*.yaml", "*.yml"]
+    suppression_annotation: antipattern-ok
+    description: >-
+      contract.yaml declares a topic that has no corresponding TopicBase enum entry.
+    rationale: >-
+      Topics must be registered in TopicBase before they can be used in contracts. Undeclared topics bypass
+      the canonical naming registry, making them invisible to routing validation, contract diff tools,
+      and dead-topic detection. Register first, then use in contracts.
+    examples:
+      - kind: bad
+        label: Topic not in TopicBase
+        code: |
+          event_bus:
+            publish_topics:
+              - onex.cmd.myservice.do_thing.v1  # not in TopicBase enum
+      - kind: good
+        label: Topic registered in TopicBase first
+        code: |
+          # First add to TopicBase enum:
+          # CMD_MYSERVICE_DO_THING_V1 = onex.cmd.myservice.do_thing.v1
+          event_bus:
+            publish_topics:
+              - onex.cmd.myservice.do_thing.v1  # now in TopicBase
+    discovered_date: "2026-05-24"
+    source_ticket: OMN-11911
+    vector_enabled: true
+
+  - name: test_mocks_subject
+    severity: ERROR
+    enforcement: blocking
+    category: testing
+    pattern_type: semantic
+    pattern: >-
+      A test creates a mock or patch of the very class or function under test, meaning the test never
+      exercises the real implementation and cannot detect regressions in it.
+    file_globs: ["*.py"]
+    suppression_annotation: antipattern-ok
+    description: >-
+      Test mocks the thing it is testing, creating a vacuous test that cannot detect regressions.
+    rationale: >-
+      Mocking the subject under test produces a test that passes trivially because it never calls the
+      real code. This gives false coverage confidence and fails to catch bugs in the actual implementation.
+      Mock dependencies; test the real subject.
+    examples:
+      - kind: bad
+        label: Mock of subject under test
+        code: |
+          def test_my_handler():
+              with patch("my_module.MyHandler.handle") as mock_handle:
+                  mock_handle.return_value = "ok"
+                  assert MyHandler().handle(...) == "ok"  # tests the mock, not MyHandler
+      - kind: good
+        label: Real subject, mocked dependency
+        code: |
+          def test_my_handler(mock_event_bus):
+              handler = MyHandler(event_bus=mock_event_bus)
+              result = handler.handle(...)  # calls real MyHandler.handle
+              assert result == expected
+    discovered_date: "2026-05-24"
+    source_ticket: OMN-11911
+    vector_enabled: true
+
+  - name: orchestrator_returns_result
+    severity: ERROR
+    enforcement: blocking
+    category: architecture
+    pattern_type: semantic
+    pattern: >-
+      An ORCHESTRATOR node handler method returns a result payload or uses ModelHandlerOutput with a result
+      field set, violating the invariant that ORCHESTRATOR nodes emit events/intents and never return
+      typed results.
+    file_globs: ["*.py"]
+    suppression_annotation: antipattern-ok
+    description: >-
+      ORCHESTRATOR node handler returns a result, violating the four-node architecture invariant.
+    rationale: >-
+      The ONEX four-node architecture mandates that ORCHESTRATOR nodes emit events and intents only. Returning
+      a result from an ORCHESTRATOR collapses the distinction between coordination and computation, breaks
+      the unidirectional flow (EFFECT→COMPUTE→REDUCER→ORCHESTRATOR), and prevents the runtime from enforcing
+      node-kind output constraints.
+    examples:
+      - kind: bad
+        label: ORCHESTRATOR with result
+        code: |
+          class NodeMyOrchestrator:
+              kind = EnumNodeKind.ORCHESTRATOR
+              def handle(self, ...):
+                  return ModelHandlerOutput.for_orchestrator(result={"status": "ok"})  # ValueError!
+      - kind: good
+        label: ORCHESTRATOR with events only
+        code: |
+          class NodeMyOrchestrator:
+              kind = EnumNodeKind.ORCHESTRATOR
+              def handle(self, ...):
+                  return ModelHandlerOutput.for_orchestrator(events=[my_event])
+    discovered_date: "2026-05-24"
+    source_ticket: OMN-11911
+    vector_enabled: true
