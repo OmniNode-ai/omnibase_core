@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+name: Check LLM Refs Drift
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+    paths:
+      - 'src/omnibase_core/constants/constants_llm_refs.py'
+      - 'scripts/generate_llm_refs.py'
+      - 'tests/unit/constants/test_constants_llm_refs.py'
+      - '.github/workflows/check-llm-refs-drift.yml'
+  pull_request:
+    branches: [main, develop, dev]
+    paths:
+      - 'src/omnibase_core/constants/constants_llm_refs.py'
+      - 'scripts/generate_llm_refs.py'
+      - 'tests/unit/constants/test_constants_llm_refs.py'
+      - '.github/workflows/check-llm-refs-drift.yml'
+  workflow_dispatch:
+
+env:
+  UV_VERSION: "0.8.3"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  check-llm-refs-drift:
+    name: LLM refs drift check (OMN-11932)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          # Check out the full repo so OMNI_HOME sub-path resolution works
+          fetch-depth: 1
+
+      - name: Checkout omnibase_infra for llm_endpoints.yaml
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/omnibase_infra
+          path: _omnibase_infra
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout omnimarket for model_registry_v1.yaml
+        uses: actions/checkout@v6
+        with:
+          repository: OmniNode-ai/omnimarket
+          path: _omnimarket
+          fetch-depth: 1
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Set OMNI_HOME for CI
+        run: |
+          mkdir -p _omni_home
+          ln -s "$PWD/_omnibase_infra" "_omni_home/omnibase_infra"
+          ln -s "$PWD/_omnimarket" "_omni_home/omnimarket"
+          echo "OMNI_HOME=$PWD/_omni_home" >> "$GITHUB_ENV"
+
+      - name: Check drift in constants_llm_refs.py
+        run: uv run python scripts/generate_llm_refs.py --check
+
+      - name: Run LLM refs unit tests
+        run: uv run pytest tests/unit/constants/test_constants_llm_refs.py -xvs
