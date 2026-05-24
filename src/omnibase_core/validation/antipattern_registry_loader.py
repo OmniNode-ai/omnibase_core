@@ -1,24 +1,26 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Antipattern registry loader: resolves effective registry for a repo (OMN-11911).
+"""Antipattern registry loader: resolves effective registry for a repo (OMN-11912).
 
 Resolution order:
   1. Load bundled defaults from contracts/antipattern_registry.yaml
   2. Load optional per-repo overrides from <repo_root>/.onex/antipattern-overrides.yaml
-  3. Merge: apply field overrides then append custom_entries
+  3. Merge: apply field overrides (including disable) then append custom_entries
 """
 
 from __future__ import annotations
 
 import importlib.resources
 from pathlib import Path
-from typing import Any
 
 import yaml
 
 from omnibase_core.models.validation.model_antipattern_entry import (
     ModelAntipatternEntry,
+)
+from omnibase_core.models.validation.model_antipattern_override_config import (
+    ModelAntipatternOverrideConfig,
 )
 from omnibase_core.models.validation.model_antipattern_registry import (
     ModelAntipatternRegistry,
@@ -29,7 +31,7 @@ _DEFAULT_YAML = "antipattern_registry.yaml"
 _OVERRIDES_PATH = ".onex/antipattern-overrides.yaml"
 
 
-def load_default_registry() -> ModelAntipatternRegistry:
+def load_default_antipatterns() -> ModelAntipatternRegistry:
     """Return the bundled default antipattern registry.
 
     Reads from omnibase_core/contracts/antipattern_registry.yaml via
@@ -51,38 +53,43 @@ def load_default_registry() -> ModelAntipatternRegistry:
     return ModelAntipatternRegistry.model_validate(data)
 
 
-def _load_overrides(repo_root: Path) -> dict[str, Any] | None:
+# Keep legacy name as an alias so existing callers (OMN-11911 tests) continue to work
+load_default_registry = load_default_antipatterns
+
+
+def load_repo_overrides(repo_root: Path) -> ModelAntipatternOverrideConfig | None:
     """Load per-repo overrides from <repo_root>/.onex/antipattern-overrides.yaml.
 
     Returns None if the file does not exist.
+    Raises ValidationError if the file exists but is malformed.
     """
     config_path = repo_root / _OVERRIDES_PATH
     if not config_path.exists():
         return None
-    return yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    return ModelAntipatternOverrideConfig.model_validate(data)
 
 
-def _merge_registry(
+def merge_antipatterns(
     defaults: ModelAntipatternRegistry,
-    overrides_data: dict[str, Any] | None,
+    overrides: ModelAntipatternOverrideConfig | None,
 ) -> ModelAntipatternRegistry:
     """Apply per-repo overrides and custom entries on top of defaults.
 
     Override semantics (mirrors aislop_rule_loader.merge_rules):
     - Override fields that are None → keep the default value.
+    - enabled=False → entry is excluded from the merged registry.
     - Unknown name → ValueError (prevents silent typos).
     - custom_entries are appended after merging overrides.
     """
-    if overrides_data is None:
+    if overrides is None:
         return defaults
-
-    override_list: list[dict[str, Any]] = overrides_data.get("overrides", [])
-    custom_list: list[dict[str, Any]] = overrides_data.get("custom_entries", [])
 
     default_by_name: dict[str, ModelAntipatternEntry] = {
         e.name: e for e in defaults.entries
     }
-    override_by_name: dict[str, dict[str, Any]] = {o["name"]: o for o in override_list}
+
+    override_by_name = {o.name: o for o in overrides.overrides}
 
     # Validate all override names reference known entries
     for name in override_by_name:
@@ -92,23 +99,27 @@ def _merge_registry(
                 f"Unknown antipattern name '{name}' in overrides. Known: {known}"
             )
 
-    # Apply field overrides
+    # Apply field overrides; entries with enabled=False are dropped
     merged: list[ModelAntipatternEntry] = []
     for entry in defaults.entries:
         ov = override_by_name.get(entry.name)
         if ov is None:
             merged.append(entry)
             continue
-        # Rebuild entry with overridden fields; None values keep the default
+        if ov.enabled is False:
+            continue
         base = entry.model_dump()
-        for field in ("severity", "enforcement", "file_globs"):
-            if ov.get(field) is not None:
-                base[field] = ov[field]
+        if ov.severity is not None:
+            base["severity"] = ov.severity
+        if ov.enforcement is not None:
+            base["enforcement"] = ov.enforcement
+        if ov.file_globs is not None:
+            base["file_globs"] = ov.file_globs
         merged.append(ModelAntipatternEntry.model_validate(base))
 
     # Append custom entries
-    for raw in custom_list:
-        merged.append(ModelAntipatternEntry.model_validate(raw))
+    for custom in overrides.custom_entries:
+        merged.append(custom)
 
     return ModelAntipatternRegistry(
         version=defaults.version,
@@ -119,12 +130,15 @@ def _merge_registry(
 
 def resolve_antipatterns(repo_root: Path) -> ModelAntipatternRegistry:
     """Full resolution pipeline: defaults → per-repo overrides → merged result."""
-    defaults = load_default_registry()
-    overrides_data = _load_overrides(repo_root)
-    return _merge_registry(defaults, overrides_data)
+    defaults = load_default_antipatterns()
+    overrides = load_repo_overrides(repo_root)
+    return merge_antipatterns(defaults, overrides)
 
 
 __all__ = [
+    "load_default_antipatterns",
     "load_default_registry",
+    "load_repo_overrides",
+    "merge_antipatterns",
     "resolve_antipatterns",
 ]
