@@ -48,9 +48,6 @@ OUTPUT_PATH = (
     REPO_ROOT / "src" / "omnibase_core" / "constants" / "constants_llm_refs.py"
 )
 
-_INVALID_ID_CHARS = re.compile(r"[^A-Z0-9]")
-
-
 def _to_enum_name(value: str) -> str:
     upper = value.upper()
     # Replace runs of non-alphanumeric chars with _
