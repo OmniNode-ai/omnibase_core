@@ -35,6 +35,12 @@ from omnibase_core.models.routing.model_classification_gate import (
     ModelClassificationGate,
 )
 from omnibase_core.models.routing.model_hop_constraints import ModelHopConstraints
+from omnibase_core.models.routing.model_llm_route_rejected_event import (
+    ModelLlmRouteRejectedEvent,
+)
+from omnibase_core.models.routing.model_llm_route_resolved_event import (
+    ModelLlmRouteResolvedEvent,
+)
 from omnibase_core.models.routing.model_policy_bundle import ModelPolicyBundle
 from omnibase_core.models.routing.model_redaction_policy import ModelRedactionPolicy
 from omnibase_core.models.routing.model_resolution_event import ModelResolutionEvent
@@ -43,6 +49,10 @@ from omnibase_core.models.routing.model_resolution_route_hop import (
     ModelResolutionRouteHop,
 )
 from omnibase_core.models.routing.model_route_plan import ModelRoutePlan
+from omnibase_core.models.routing.model_routing_policy import (
+    ModelCiOverridePolicy,
+    ModelRoutingPolicy,
+)
 from omnibase_core.models.routing.model_tier_attempt import ModelTierAttempt
 from omnibase_core.models.routing.model_tiered_resolution_config import (
     ModelTieredResolutionConfig,
@@ -59,12 +69,16 @@ __all__ = [
     "ModelCapabilityToken",
     "ModelClassificationGate",
     "ModelHopConstraints",
+    "ModelLlmRouteRejectedEvent",
+    "ModelLlmRouteResolvedEvent",
     "ModelPolicyBundle",
     "ModelRedactionPolicy",
     "ModelResolutionEvent",
     "ModelResolutionProof",
     "ModelResolutionRouteHop",
     "ModelRoutePlan",
+    "ModelCiOverridePolicy",
+    "ModelRoutingPolicy",
     "ModelTierAttempt",
     "ModelTieredResolutionConfig",
     "ModelTieredResolutionResult",
