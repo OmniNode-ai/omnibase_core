@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""RoutingErrorClass: structured failure classes for LLM route rejection."""
+"""EnumRoutingErrorClass: structured failure classes for LLM route rejection."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from enum import Enum, unique
 
 
 @unique
-class RoutingErrorClass(str, Enum):
+class EnumRoutingErrorClass(str, Enum):
     """Failure classes emitted when the LLM router rejects a route."""
 
     PRIMARY_UNHEALTHY = "primary_unhealthy"
@@ -23,4 +23,6 @@ class RoutingErrorClass(str, Enum):
     ENDPOINT_UNAVAILABLE = "endpoint_unavailable"
 
 
-__all__ = ["RoutingErrorClass"]
+RoutingErrorClass = EnumRoutingErrorClass
+
+__all__ = ["EnumRoutingErrorClass", "RoutingErrorClass"]
