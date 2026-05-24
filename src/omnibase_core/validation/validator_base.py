@@ -907,20 +907,22 @@ class ValidatorBase(ABC):
                 if e.pattern_type in _REGEX_PATTERN_TYPES
             ]
 
-        # Build metadata
-        metadata = ModelValidationMetadata(
-            validation_type=self.validator_id,
-            duration_ms=duration_ms,
-            files_processed=len(files_checked),
-            rules_applied=len([r for r in self.contract.rules if r.enabled]),
-            timestamp=datetime.now(tz=UTC).isoformat(),
-            validator_version=self.contract.version,
-            violations_found=total_issues,
-            files_with_violations=files_with_violations,
-            files_with_violations_count=len(files_with_violations),
-            strict_mode=self.contract.fail_on_warning,
-            **extra_metadata,
-        )
+        # Build metadata through Pydantic so extra KB fields remain validated
+        # without relying on mypy-hostile **kwargs expansion.
+        metadata_payload: dict[str, object] = {
+            "validation_type": self.validator_id,
+            "duration_ms": duration_ms,
+            "files_processed": len(files_checked),
+            "rules_applied": len([r for r in self.contract.rules if r.enabled]),
+            "timestamp": datetime.now(tz=UTC).isoformat(),
+            "validator_version": self.contract.version,
+            "violations_found": total_issues,
+            "files_with_violations": files_with_violations,
+            "files_with_violations_count": len(files_with_violations),
+            "strict_mode": self.contract.fail_on_warning,
+        }
+        metadata_payload.update(extra_metadata)
+        metadata = ModelValidationMetadata.model_validate(metadata_payload)
 
         return ModelValidationResult[None](
             is_valid=is_valid,
