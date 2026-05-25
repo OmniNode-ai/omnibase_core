@@ -1081,3 +1081,305 @@ class TestDuplicateIdentityKeys:
         assert deps_diff is not None
         # All three items should be detected as added
         assert len(deps_diff.added_items) == 3
+
+
+# =================== GENERATE REVERSE PATCH TESTS ===================
+
+
+@pytest.mark.unit
+class TestGenerateReversePatch:
+    """Tests for generate_reverse_patch decision gate (OMN-11591)."""
+
+    def test_no_diff_returns_empty_patch(self) -> None:
+        """A diff with no changes produces an empty override patch."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+
+        contract = SampleContract(name="test")
+        diff = compute_contract_diff(contract, contract)
+        patch = generate_reverse_patch(diff)
+
+        assert patch.is_override_only
+        assert not patch.has_list_operations()
+        assert patch.description is None
+
+    def test_consumed_events_added_becomes_remove(self) -> None:
+        """Events added in the diff appear in consumed_events__remove in the patch."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.contracts.diff.model_contract_diff import (
+            ModelContractDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_field_diff import (
+            ModelContractFieldDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_list_diff import (
+            ModelContractListDiff,
+        )
+
+        added_item = ModelContractFieldDiff(
+            field_path="consumed_events[my.event.created]",
+            change_type=EnumContractDiffChangeType.ADDED,
+            new_value=ModelSchemaValue.from_value("my.event.created"),
+            value_type="str",
+        )
+        list_diff = ModelContractListDiff(
+            field_path="consumed_events",
+            identity_key="__value__",
+            added_items=[added_item],
+        )
+        diff = ModelContractDiff(
+            before_contract_name="my_contract",
+            after_contract_name="my_contract",
+            list_diffs=[list_diff],
+        )
+
+        patch = generate_reverse_patch(diff)
+
+        assert patch.consumed_events__remove == ["my.event.created"]
+        assert patch.consumed_events__add is None
+
+    def test_consumed_events_removed_becomes_add(self) -> None:
+        """Events removed in the diff appear in consumed_events__add in the patch."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.contracts.diff.model_contract_diff import (
+            ModelContractDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_field_diff import (
+            ModelContractFieldDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_list_diff import (
+            ModelContractListDiff,
+        )
+
+        removed_item = ModelContractFieldDiff(
+            field_path="consumed_events[my.event.deleted]",
+            change_type=EnumContractDiffChangeType.REMOVED,
+            old_value=ModelSchemaValue.from_value("my.event.deleted"),
+            value_type="str",
+        )
+        list_diff = ModelContractListDiff(
+            field_path="consumed_events",
+            identity_key="__value__",
+            removed_items=[removed_item],
+        )
+        diff = ModelContractDiff(
+            before_contract_name="my_contract",
+            after_contract_name="my_contract",
+            list_diffs=[list_diff],
+        )
+
+        patch = generate_reverse_patch(diff)
+
+        assert patch.consumed_events__add == ["my.event.deleted"]
+        assert patch.consumed_events__remove is None
+
+    def test_handlers_added_becomes_remove(self) -> None:
+        """Handlers added in the diff appear in handlers__remove in the patch."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.contracts.diff.model_contract_diff import (
+            ModelContractDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_field_diff import (
+            ModelContractFieldDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_list_diff import (
+            ModelContractListDiff,
+        )
+
+        added_handler = ModelContractFieldDiff(
+            field_path="handlers[new_handler]",
+            change_type=EnumContractDiffChangeType.ADDED,
+            new_value=ModelSchemaValue.from_value({"name": "new_handler"}),
+            value_type="dict",
+        )
+        list_diff = ModelContractListDiff(
+            field_path="handlers",
+            identity_key="name",
+            added_items=[added_handler],
+        )
+        diff = ModelContractDiff(
+            before_contract_name="my_contract",
+            after_contract_name="my_contract",
+            list_diffs=[list_diff],
+        )
+
+        patch = generate_reverse_patch(diff)
+
+        assert patch.handlers__remove == ["new_handler"]
+
+    def test_capability_inputs_bidirectional(self) -> None:
+        """Capability inputs support full bidirectional reversal (add↔remove)."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.contracts.diff.model_contract_diff import (
+            ModelContractDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_field_diff import (
+            ModelContractFieldDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_list_diff import (
+            ModelContractListDiff,
+        )
+
+        added_cap = ModelContractFieldDiff(
+            field_path="capability_inputs[new_cap]",
+            change_type=EnumContractDiffChangeType.ADDED,
+            new_value=ModelSchemaValue.from_value("new_cap"),
+            value_type="str",
+        )
+        removed_cap = ModelContractFieldDiff(
+            field_path="capability_inputs[old_cap]",
+            change_type=EnumContractDiffChangeType.REMOVED,
+            old_value=ModelSchemaValue.from_value("old_cap"),
+            value_type="str",
+        )
+        list_diff = ModelContractListDiff(
+            field_path="capability_inputs",
+            identity_key="__value__",
+            added_items=[added_cap],
+            removed_items=[removed_cap],
+        )
+        diff = ModelContractDiff(
+            before_contract_name="my_contract",
+            after_contract_name="my_contract",
+            list_diffs=[list_diff],
+        )
+
+        patch = generate_reverse_patch(diff)
+
+        assert patch.capability_inputs__remove == ["new_cap"]
+        assert patch.capability_inputs__add == ["old_cap"]
+
+    def test_description_change_reversed(self) -> None:
+        """A description change is reversed by restoring the old value."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+
+        class DescContract(BaseModel):
+            model_config = ConfigDict(extra="forbid")
+            name: str
+            description: str = ""
+
+        before = DescContract(name="c", description="old desc")
+        after = DescContract(name="c", description="new desc")
+        diff = compute_contract_diff(before, after)
+
+        patch = generate_reverse_patch(diff)
+
+        assert patch.description == "old desc"
+
+    def test_non_patchable_scalar_raises_value_error(self) -> None:
+        """Scalar changes at non-patchable paths raise ValueError."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+
+        before = SampleContract(name="test", version=1)
+        after = SampleContract(name="test", version=2)
+        diff = compute_contract_diff(before, after)
+
+        with pytest.raises(ValueError, match="Non-reversible paths"):
+            generate_reverse_patch(diff)
+
+    def test_extends_uses_before_contract_name(self) -> None:
+        """The returned patch's extends.profile equals before_contract_name."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+
+        contract = SampleContract(name="my_node")
+        diff = compute_contract_diff(contract, contract)
+        patch = generate_reverse_patch(diff)
+
+        assert patch.extends.profile == "my_node"
+        assert patch.extends.version == "1.0.0"
+
+    def test_moved_items_ignored(self) -> None:
+        """MOVED list items produce no entries in the patch (position-only change)."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.contracts.diff.model_contract_diff import (
+            ModelContractDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_field_diff import (
+            ModelContractFieldDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_list_diff import (
+            ModelContractListDiff,
+        )
+
+        moved_item = ModelContractFieldDiff(
+            field_path="consumed_events[evt]",
+            change_type=EnumContractDiffChangeType.MOVED,
+            old_value=ModelSchemaValue.from_value("evt"),
+            new_value=ModelSchemaValue.from_value("evt"),
+            value_type="str",
+            old_index=0,
+            new_index=1,
+        )
+        list_diff = ModelContractListDiff(
+            field_path="consumed_events",
+            identity_key="__value__",
+            moved_items=[moved_item],
+        )
+        diff = ModelContractDiff(
+            before_contract_name="c",
+            after_contract_name="c",
+            list_diffs=[list_diff],
+        )
+
+        patch = generate_reverse_patch(diff)
+
+        assert not patch.has_list_operations()
+
+    def test_unknown_list_field_skipped_silently(self) -> None:
+        """Unknown list field paths are skipped without raising."""
+        from omnibase_core.contracts.contract_diff_computer import (
+            generate_reverse_patch,
+        )
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.contracts.diff.model_contract_diff import (
+            ModelContractDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_field_diff import (
+            ModelContractFieldDiff,
+        )
+        from omnibase_core.models.contracts.diff.model_contract_list_diff import (
+            ModelContractListDiff,
+        )
+
+        added_item = ModelContractFieldDiff(
+            field_path="some_unknown_list[item1]",
+            change_type=EnumContractDiffChangeType.ADDED,
+            new_value=ModelSchemaValue.from_value("item1"),
+            value_type="str",
+        )
+        list_diff = ModelContractListDiff(
+            field_path="some_unknown_list",
+            identity_key="name",
+            added_items=[added_item],
+        )
+        diff = ModelContractDiff(
+            before_contract_name="c",
+            after_contract_name="c",
+            list_diffs=[list_diff],
+        )
+
+        # Should not raise
+        patch = generate_reverse_patch(diff)
+        assert not patch.has_list_operations()
