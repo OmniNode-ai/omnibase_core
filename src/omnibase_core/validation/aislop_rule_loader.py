@@ -22,9 +22,17 @@ from omnibase_core.models.validation.model_aislop_rule_override import (
     ModelAislopRuleOverride,
 )
 from omnibase_core.models.validation.model_aislop_rule_set import ModelAislopRuleSet
+from omnibase_core.models.validation.model_antipattern_registry import (
+    ModelAntipatternRegistry,
+)
 
 _CONTRACTS_PKG = "omnibase_core.contracts"
 _DEFAULT_YAML = "aislop_default_rules.yaml"
+
+# pattern_type values from ModelAntipatternEntry that map directly to ModelAislopRule
+_AISLOP_COMPATIBLE_PATTERN_TYPES = frozenset(
+    {"regex_line", "regex_ast_docstring", "grep_code", "ast_check"}
+)
 
 
 def load_default_rules() -> ModelAislopRuleSet:
@@ -129,9 +137,67 @@ def resolve_rules(repo_root: Path) -> ModelAislopRuleSet:
     return merge_rules(defaults, config)
 
 
+def resolve_rules_from_registry(
+    registry: ModelAntipatternRegistry,
+) -> ModelAislopRuleSet:
+    """Convert compatible antipattern registry entries to a ModelAislopRuleSet.
+
+    Filters to entries whose pattern_type is in _AISLOP_COMPATIBLE_PATTERN_TYPES
+    (excludes 'semantic' entries which require vector search). Each matching entry
+    is converted field-by-field into a ModelAislopRule.
+    """
+    rules: list[ModelAislopRule] = []
+    for entry in registry.entries:
+        if entry.pattern_type not in _AISLOP_COMPATIBLE_PATTERN_TYPES:
+            continue
+        rules.append(
+            ModelAislopRule(
+                name=entry.name,
+                severity=entry.severity,
+                enabled=True,
+                pattern_type=entry.pattern_type,  # type: ignore[arg-type]  # NOTE(OMN-11921): ModelAntipatternEntry pattern_type is a wider Literal that includes "semantic"; we guard above but mypy cannot narrow frozenset membership to Literal
+                pattern=entry.pattern,
+                file_globs=list(entry.file_globs),
+                suppression_annotation=entry.suppression_annotation,
+                description=entry.description,
+            )
+        )
+    return ModelAislopRuleSet(rules=rules)
+
+
+def resolve_rules_unified(repo_root: Path) -> ModelAislopRuleSet:
+    """Merge legacy aislop defaults and antipattern registry into one rule set.
+
+    Resolution order:
+      1. Load legacy aislop defaults (aislop_default_rules.yaml)
+      2. Load registry rules (antipattern_registry.yaml, filtered to compatible types)
+      3. Build merged list: start with registry rules, then append legacy rules whose
+         name does not appear in the registry (registry wins on duplicate names).
+    """
+    from omnibase_core.validation.antipattern_registry_loader import (
+        load_default_antipatterns,
+    )
+
+    legacy = load_default_rules()
+    registry = load_default_antipatterns()
+    registry_rules = resolve_rules_from_registry(registry)
+
+    registry_names = {r.name for r in registry_rules.rules}
+
+    # Registry rules first; legacy rules added only when not already covered
+    merged: list[ModelAislopRule] = list(registry_rules.rules)
+    for rule in legacy.rules:
+        if rule.name not in registry_names:
+            merged.append(rule)
+
+    return ModelAislopRuleSet(rules=merged)
+
+
 __all__ = [
     "load_default_rules",
     "load_repo_config",
     "merge_rules",
     "resolve_rules",
+    "resolve_rules_from_registry",
+    "resolve_rules_unified",
 ]
