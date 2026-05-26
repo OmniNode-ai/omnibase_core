@@ -24,7 +24,7 @@ class ModelContractEvidenceProof(BaseModel):
     rejected here because PR metadata belongs in ModelEvidenceProvenance.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # string-id-ok: contract evidence proof IDs are stable human-authored keys, not object UUIDs.
     proof_id: str = Field(..., min_length=1)

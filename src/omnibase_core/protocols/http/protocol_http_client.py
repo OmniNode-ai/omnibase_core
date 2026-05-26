@@ -99,13 +99,9 @@ Migration Guide:
                 return await response.json()
 
     Step 4: Wire up via DI container
-        # In your application setup
-        # Import adapter from omnibase_infra (NOT from omnibase_core):
-        from omnibase_infra.adapters.http import AioHttpClientAdapter
-
-        session = aiohttp.ClientSession()
-        adapter = AioHttpClientAdapter(session)
-        container.register_service("ProtocolHttpClient", adapter)
+        # In your application setup (omnibase_infra bootstrap code):
+        # adapter = AioHttpClientAdapter(session)  # concrete impl lives in omnibase_infra
+        # container.register_service("ProtocolHttpClient", adapter)
 
         # Inject into services
         service = MyService(container.get_service("ProtocolHttpClient"))
@@ -308,13 +304,9 @@ class ProtocolHttpClient(Protocol):
                     return AioHttpResponseAdapter(response)
 
     Example with proper lifecycle:
-        # Container registration (typical ONEX pattern)
-        # Import adapter from omnibase_infra (NOT from omnibase_core):
-        from omnibase_infra.adapters.http import AioHttpClientAdapter
-
-        session = aiohttp.ClientSession()
-        client = AioHttpClientAdapter(session)
-        container.register_service("ProtocolHttpClient", client)
+        # Container registration (typical ONEX pattern — bootstrap in omnibase_infra):
+        # adapter = AioHttpClientAdapter(session)  # concrete impl lives in omnibase_infra
+        # container.register_service("ProtocolHttpClient", adapter)
 
         # Later, during shutdown:
         await session.close()

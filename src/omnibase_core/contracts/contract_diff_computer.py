@@ -72,8 +72,6 @@ _MAX_RECURSION_DEPTH = 100
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
-    from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
-
 from omnibase_core.enums.enum_contract_diff_change_type import (
     EnumContractDiffChangeType,
 )
@@ -88,6 +86,8 @@ from omnibase_core.models.contracts.diff.model_contract_list_diff import (
 from omnibase_core.models.contracts.diff.model_diff_configuration import (
     ModelDiffConfiguration,
 )
+from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
+from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Extended identity keys for contract diffing
@@ -848,23 +848,133 @@ def render_diff_table(diff: ModelContractDiff) -> str:
     return diff.to_markdown_table()
 
 
-def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:  # stub-ok
-    """Generate reverse patch from diff.
+def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
+    """Generate a reverse patch from a contract diff.
 
-    Will create a ModelContractPatch that, when applied to the "after"
-    contract, produces the "before" contract.
+    Creates a ``ModelContractPatch`` that expresses the list-operation inverses
+    of the changes captured in ``diff``.  When the patch is applied to the
+    "after" contract it restores the list fields to their "before" state.
 
     Args:
-        diff: The diff result to reverse.
+        diff: The diff result produced by ``ContractDiffComputer.compute_diff``
+            or ``compute_contract_diff``.
 
     Returns:
-        ModelContractPatch that reverses the changes.
+        ``ModelContractPatch`` encoding the list-operation inverses.
 
     Raises:
-        NotImplementedError: This feature is planned for OMN-1149.
+        ValueError: If the diff contains scalar field changes at paths that
+            cannot be expressed as patch operations (i.e. anything other than
+            ``description``), or if removed object-typed list items would need
+            full model reconstruction that is not possible from the diff alone.
     """
-    raise NotImplementedError(  # stub-ok: Phase 4 of OMN-1148
-        "Reverse patch generation not yet implemented"
+    non_reversible: list[str] = []
+    reverse_description: str | None = None
+
+    for fd in diff.field_diffs:
+        if fd.change_type in (
+            EnumContractDiffChangeType.UNCHANGED,
+            EnumContractDiffChangeType.MOVED,
+        ):
+            continue
+        if fd.field_path == "description":
+            if fd.old_value is not None:
+                raw = fd.old_value.to_value()
+                reverse_description = str(raw) if raw is not None else None
+        else:
+            non_reversible.append(f"{fd.field_path} ({fd.change_type.value})")
+
+    if non_reversible:
+        raise ValueError(
+            "Cannot generate reverse patch: diff contains scalar field changes "
+            "at paths that are not expressible as ModelContractPatch operations. "
+            "Non-reversible paths: "
+            + ", ".join(non_reversible)
+            + ". Only list-operation fields (handlers, dependencies, "
+            "consumed_events, capability_inputs, capability_outputs) and "
+            "'description' can be reversed via a patch."
+        )
+
+    def _extract_identity(field_path: str) -> str:
+        start = field_path.rfind("[")
+        end = field_path.rfind("]")
+        if start == -1 or end == -1 or end <= start:
+            return field_path
+        return field_path[start + 1 : end]
+
+    handlers_remove: list[str] = []
+    dependencies_remove: list[str] = []
+    consumed_events_remove: list[str] = []
+    consumed_events_add: list[str] = []
+    capability_inputs_remove: list[str] = []
+    capability_inputs_add: list[str] = []
+    capability_outputs_remove: list[str] = []
+    _object_list_skipped: list[str] = []
+
+    for ld in diff.list_diffs:
+        field_name = ld.field_path
+
+        if field_name == "handlers":
+            for item in ld.added_items:
+                handlers_remove.append(_extract_identity(item.field_path))
+            for item in ld.removed_items:
+                _object_list_skipped.append(item.field_path)
+        elif field_name == "dependencies":
+            for item in ld.added_items:
+                dependencies_remove.append(_extract_identity(item.field_path))
+            for item in ld.removed_items:
+                _object_list_skipped.append(item.field_path)
+        elif field_name == "consumed_events":
+            for item in ld.added_items:
+                consumed_events_remove.append(_extract_identity(item.field_path))
+            for item in ld.removed_items:
+                consumed_events_add.append(_extract_identity(item.field_path))
+        elif field_name == "capability_inputs":
+            for item in ld.added_items:
+                capability_inputs_remove.append(_extract_identity(item.field_path))
+            for item in ld.removed_items:
+                capability_inputs_add.append(_extract_identity(item.field_path))
+        elif field_name == "capability_outputs":
+            for item in ld.added_items:
+                capability_outputs_remove.append(_extract_identity(item.field_path))
+            for item in ld.removed_items:
+                _object_list_skipped.append(item.field_path)
+        else:
+            logger.debug(
+                "generate_reverse_patch: skipping unrecognised list field '%s' "
+                "(not expressible as ModelContractPatch operation)",
+                field_name,
+            )
+
+    if _object_list_skipped:
+        logger.debug(
+            "generate_reverse_patch: %d removed object-typed list item(s) were "
+            "skipped because full model reconstruction from a diff is not supported: %s",
+            len(_object_list_skipped),
+            _object_list_skipped,
+        )
+
+    extends = ModelProfileReference(
+        profile=diff.before_contract_name,
+        version="1.0.0",
+    )
+
+    return ModelContractPatch(
+        extends=extends,
+        description=reverse_description if reverse_description is not None else None,
+        handlers__remove=handlers_remove if handlers_remove else None,
+        dependencies__remove=dependencies_remove if dependencies_remove else None,
+        consumed_events__add=consumed_events_add if consumed_events_add else None,
+        consumed_events__remove=consumed_events_remove
+        if consumed_events_remove
+        else None,
+        capability_inputs__add=capability_inputs_add if capability_inputs_add else None,
+        capability_inputs__remove=capability_inputs_remove
+        if capability_inputs_remove
+        else None,
+        capability_outputs__remove=capability_outputs_remove
+        if capability_outputs_remove
+        else None,
     )
 
 

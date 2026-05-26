@@ -117,6 +117,57 @@ def get_logging_service() -> object:
     return _BootstrapMinimalLogger()
 
 
+# Private helper functions
+
+
+def _get_registry_node() -> ProtocolRegistryNode | None:
+    """
+    Attempt to find and return the registry node.
+
+    NOTE: omnibase_spi was removed in v0.3.6 - SPI now depends on Core.
+    Registry discovery now happens through Core's native mechanisms
+    via ModelONEXContainer. This function returns None to trigger
+    fallback service resolution.
+
+    Returns:
+        Registry node instance or None if not found
+    """
+    # v0.3.6: SPI dependency removed - registry discovery is now handled
+    # through Core's native container-based DI system.
+    # Return None to use fallback service resolution.
+    return None
+
+
+def _get_fallback_service[T](protocol_type: type[T]) -> T | None:
+    """
+    Get fallback service implementation for bootstrap scenarios.
+
+    Args:
+        protocol_type: The protocol interface to resolve
+
+    Returns:
+        Fallback service implementation or None
+    """
+    # Check if this is a logging protocol
+    if hasattr(protocol_type, "__name__") and "Logger" in protocol_type.__name__:
+        service = _get_minimal_logging_service()
+        # Type narrowing: cast to T for type safety
+        return cast("T", service)
+
+    # No fallback available
+    return None
+
+
+def _get_minimal_logging_service() -> _BootstrapMinimalLogger:
+    """
+    Get minimal logging service for bootstrap scenarios.
+
+    Returns:
+        Minimal logging service implementation
+    """
+    return _BootstrapMinimalLogger()
+
+
 def emit_log_event(
     level: LogLevel,
     event_type: str,
@@ -170,57 +221,6 @@ def emit_log_event_sync(
 
     # Fallback to stderr when structured logging unavailable
     return
-
-
-# Private helper functions
-
-
-def _get_registry_node() -> ProtocolRegistryNode | None:
-    """
-    Attempt to find and return the registry node.
-
-    NOTE: omnibase_spi was removed in v0.3.6 - SPI now depends on Core.
-    Registry discovery now happens through Core's native mechanisms
-    via ModelONEXContainer. This function returns None to trigger
-    fallback service resolution.
-
-    Returns:
-        Registry node instance or None if not found
-    """
-    # v0.3.6: SPI dependency removed - registry discovery is now handled
-    # through Core's native container-based DI system.
-    # Return None to use fallback service resolution.
-    return None
-
-
-def _get_fallback_service[T](protocol_type: type[T]) -> T | None:
-    """
-    Get fallback service implementation for bootstrap scenarios.
-
-    Args:
-        protocol_type: The protocol interface to resolve
-
-    Returns:
-        Fallback service implementation or None
-    """
-    # Check if this is a logging protocol
-    if hasattr(protocol_type, "__name__") and "Logger" in protocol_type.__name__:
-        service = _get_minimal_logging_service()
-        # Type narrowing: cast to T for type safety
-        return cast("T", service)
-
-    # No fallback available
-    return None
-
-
-def _get_minimal_logging_service() -> _BootstrapMinimalLogger:
-    """
-    Get minimal logging service for bootstrap scenarios.
-
-    Returns:
-        Minimal logging service implementation
-    """
-    return _BootstrapMinimalLogger()
 
 
 def is_service_available[T](protocol_type: type[T]) -> bool:

@@ -23,7 +23,7 @@ _TICKET_ID_RE = re.compile(r"^[A-Z]+-\d+$")
 class ModelContractEvidenceSpec(BaseModel):
     """Typed artifact-first replacement for PR-number-bound evidence checks."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     schema_version: Literal["1.0.0"] = "1.0.0"
     ticket_id: str = Field(..., min_length=1)
