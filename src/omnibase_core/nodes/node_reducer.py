@@ -754,6 +754,81 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             return copy.deepcopy(self._fsm_state)
         return self._fsm_state
 
+    @staticmethod
+    def _check_terminal_state(
+        snapshot: ModelFSMStateSnapshot,
+        state_definitions: dict[str, ModelFSMStateDefinition],
+        contract: ModelFSMSubcontract,
+        allow_terminal_state: bool,
+    ) -> None:
+        """Raise ModelOnexError when snapshot.current_state is terminal and allow_terminal_state is False."""
+        if allow_terminal_state:
+            return
+        current_state_def = state_definitions.get(snapshot.current_state)
+        is_terminal = (
+            current_state_def is not None and current_state_def.is_terminal
+        ) or snapshot.current_state in contract.terminal_states
+        if is_terminal:
+            raise ModelOnexError(
+                message=_ERR_TERMINAL_STATE_RESTORE.format(
+                    state=snapshot.current_state
+                ),
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={
+                    "snapshot_state": snapshot.current_state,
+                    "terminal_states": sorted(contract.terminal_states),
+                    "fsm_name": contract.state_machine_name,
+                    "suggestion": "Use validate=False or allow_terminal_state=True for replay/debugging",
+                },
+            )
+
+    @staticmethod
+    def _validate_snapshot_timestamps(
+        snapshot: ModelFSMStateSnapshot,
+        contract: ModelFSMSubcontract,
+    ) -> None:
+        """Raise ModelOnexError when a context timestamp is too far in the future."""
+        timestamp_keys = ["created_at", "timestamp", "snapshot_time"]
+        tolerance = timedelta(seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS)
+        for key in timestamp_keys:
+            if key not in snapshot.context:
+                continue
+            timestamp_value = snapshot.context[key]
+            if isinstance(timestamp_value, datetime):
+                snapshot_time = timestamp_value
+            elif isinstance(timestamp_value, str):
+                try:
+                    snapshot_time = datetime.fromisoformat(
+                        timestamp_value.replace("Z", "+00:00")
+                    )
+                except ValueError:
+                    continue
+            else:
+                continue
+
+            now = datetime.now(UTC)
+            if snapshot_time.tzinfo is None:
+                snapshot_time = snapshot_time.replace(tzinfo=UTC)
+
+            if snapshot_time > (now + tolerance):
+                difference_seconds = (snapshot_time - now).total_seconds()
+                raise ModelOnexError(
+                    message=_ERR_FUTURE_TIMESTAMP.format(
+                        snapshot_time=snapshot_time.isoformat(),
+                        current_time=now.isoformat(),
+                        difference_seconds=difference_seconds,
+                        tolerance_seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
+                    ),
+                    error_code=EnumCoreErrorCode.INVALID_STATE,
+                    context={
+                        "snapshot_timestamp": snapshot_time.isoformat(),
+                        "current_time": now.isoformat(),
+                        "difference_seconds": difference_seconds,
+                        "tolerance_seconds": SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
+                        "fsm_name": contract.state_machine_name,
+                    },
+                )
+
     def _validate_fsm_snapshot(
         self,
         snapshot: ModelFSMStateSnapshot,
@@ -848,25 +923,9 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                     },
                 )
 
-        # Terminal state validation: prevent restoring to terminal unless explicitly allowed
-        if not allow_terminal_state:
-            current_state_def = state_definitions.get(snapshot.current_state)
-            is_terminal = (
-                current_state_def is not None and current_state_def.is_terminal
-            ) or snapshot.current_state in contract.terminal_states
-            if is_terminal:
-                raise ModelOnexError(
-                    message=_ERR_TERMINAL_STATE_RESTORE.format(
-                        state=snapshot.current_state
-                    ),
-                    error_code=EnumCoreErrorCode.INVALID_STATE,
-                    context={
-                        "snapshot_state": snapshot.current_state,
-                        "terminal_states": sorted(contract.terminal_states),
-                        "fsm_name": contract.state_machine_name,
-                        "suggestion": "Use validate=False or allow_terminal_state=True for replay/debugging",
-                    },
-                )
+        self._check_terminal_state(
+            snapshot, state_definitions, contract, allow_terminal_state
+        )
 
         # Required context keys validation
         if validate_required_context:
@@ -910,51 +969,7 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                         },
                     )
 
-        # Timestamp sanity check: snapshot context may contain a timestamp
-        # Check if context has a 'created_at' or 'timestamp' field
-        # Allow tolerance for clock skew between distributed systems
-        timestamp_keys = ["created_at", "timestamp", "snapshot_time"]
-        tolerance = timedelta(seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS)
-        for key in timestamp_keys:
-            if key in snapshot.context:
-                timestamp_value = snapshot.context[key]
-                # Handle both datetime objects and ISO strings
-                if isinstance(timestamp_value, datetime):
-                    snapshot_time = timestamp_value
-                elif isinstance(timestamp_value, str):
-                    try:
-                        snapshot_time = datetime.fromisoformat(
-                            timestamp_value.replace("Z", "+00:00")
-                        )
-                    except ValueError:
-                        # Skip validation if timestamp format is unrecognized
-                        continue
-                else:
-                    continue
-
-                # Ensure timezone-aware comparison
-                now = datetime.now(UTC)
-                if snapshot_time.tzinfo is None:
-                    snapshot_time = snapshot_time.replace(tzinfo=UTC)
-
-                if snapshot_time > (now + tolerance):
-                    difference_seconds = (snapshot_time - now).total_seconds()
-                    raise ModelOnexError(
-                        message=_ERR_FUTURE_TIMESTAMP.format(
-                            snapshot_time=snapshot_time.isoformat(),
-                            current_time=now.isoformat(),
-                            difference_seconds=difference_seconds,
-                            tolerance_seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
-                        ),
-                        error_code=EnumCoreErrorCode.INVALID_STATE,
-                        context={
-                            "snapshot_timestamp": snapshot_time.isoformat(),
-                            "current_time": now.isoformat(),
-                            "difference_seconds": difference_seconds,
-                            "tolerance_seconds": SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
-                            "fsm_name": contract.state_machine_name,
-                        },
-                    )
+        self._validate_snapshot_timestamps(snapshot, contract)
 
     def restore_state(
         self,

@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-12243: Block PRs targeting main unless they are promotion PRs
+# from dev with a promotion receipt, or hotfix PRs with evidence and
+# a backmerge link.
+
+name: Main target guard
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  main-target-guard:
+    name: main-target-guard
+    runs-on: >-
+      ${{
+        (github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Check PR target branch
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${BASE_REF}" != "main" ]]; then
+            echo "::notice::PR targets '${BASE_REF}', not main; guard does not apply."
+            exit 0
+          fi
+
+          echo "PR targets main. Checking head ref: '${HEAD_REF}'"
+
+          if [[ "${HEAD_REF}" == "dev" ]]; then
+            if echo "${PR_BODY}" | grep -qE 'promotion-receipt:[[:space:]]*OCC-[0-9]+'; then
+              echo "::notice::Promotion PR from dev with valid promotion-receipt. Allowed."
+              exit 0
+            fi
+
+            echo "::error::PR is from dev but is missing a promotion receipt."
+            echo "::error::Add a line matching: promotion-receipt: OCC-<number>"
+            echo "::error::Retarget this PR to dev; main accepts only promotion or hotfix PRs."
+            exit 1
+          fi
+
+          if [[ "${HEAD_REF}" == hotfix/* ]]; then
+            MISSING=()
+
+            if ! echo "${PR_BODY}" | grep -qE 'hotfix-evidence:[[:space:]]*OCC-[0-9]+'; then
+              MISSING+=("hotfix-evidence: OCC-<number>")
+            fi
+
+            if ! echo "${PR_BODY}" | grep -qE 'backmerge:[[:space:]]*#[0-9]+'; then
+              MISSING+=("backmerge: #<pr-number>")
+            fi
+
+            if [[ "${#MISSING[@]}" -eq 0 ]]; then
+              echo "::notice::Hotfix PR from '${HEAD_REF}' with valid hotfix evidence and backmerge. Allowed."
+              exit 0
+            fi
+
+            echo "::error::Hotfix PR from '${HEAD_REF}' is missing required fields:"
+            for field in "${MISSING[@]}"; do
+              echo "::error::  - ${field}"
+            done
+            echo "::error::Retarget this PR to dev; main accepts only promotion or hotfix PRs."
+            exit 1
+          fi
+
+          echo "::error::PRs targeting main must come from dev or hotfix/*."
+          echo "::error::Head ref '${HEAD_REF}' is not permitted to target main directly."
+          echo "::error::Retarget this PR to dev; main accepts only promotion or hotfix PRs."
+          exit 1
