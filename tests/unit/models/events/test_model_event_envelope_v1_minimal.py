@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from omnibase_core.models.events.model_event_envelope_v1_minimal import (
     EventEnvelopeV1Minimal,
+    ModelEventEnvelopeV1Minimal,
 )
 
 
@@ -76,5 +77,8 @@ def test_event_envelope_data_provenance_values() -> None:
 @pytest.mark.unit
 def test_event_envelope_exported_from_events_init() -> None:
     from omnibase_core.models.events import EventEnvelopeV1Minimal as Imported
+    from omnibase_core.models.events import ModelEventEnvelopeV1Minimal as ModelImported
 
     assert Imported is EventEnvelopeV1Minimal
+    assert Imported is ModelEventEnvelopeV1Minimal
+    assert ModelImported is ModelEventEnvelopeV1Minimal

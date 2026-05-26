@@ -31,6 +31,7 @@ from omnibase_core.models.events.model_episode_event import (
 )
 from omnibase_core.models.events.model_event_envelope_v1_minimal import (
     EventEnvelopeV1Minimal,
+    ModelEventEnvelopeV1Minimal,
 )
 from omnibase_core.models.events.model_event_payload_base import (
     ModelEventPayloadBase,
@@ -164,4 +165,5 @@ __all__ = [
     "ModelEpisodeEvent",
     # Minimal cross-repo wire envelope migrated from compat (OMN-12188)
     "EventEnvelopeV1Minimal",
+    "ModelEventEnvelopeV1Minimal",
 ]

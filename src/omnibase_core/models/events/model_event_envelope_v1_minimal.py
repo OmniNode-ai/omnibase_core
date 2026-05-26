@@ -19,7 +19,7 @@ from omnibase_core.utils.util_decorators import allow_dict_str_any
     "payload is an open-schema wire transport field for cross-repo event compatibility; "
     "schema is intentionally untyped to decouple producer and consumer schemas"
 )
-class EventEnvelopeV1Minimal(BaseModel):
+class ModelEventEnvelopeV1Minimal(BaseModel):
     """Minimal shared transport envelope for cross-repo event compatibility.
 
     Intentionally narrow. Does not include timestamp, source, trace_id,
@@ -47,4 +47,7 @@ class EventEnvelopeV1Minimal(BaseModel):
     )
 
 
-__all__: list[str] = ["EventEnvelopeV1Minimal"]
+EventEnvelopeV1Minimal = ModelEventEnvelopeV1Minimal
+
+
+__all__: list[str] = ["EventEnvelopeV1Minimal", "ModelEventEnvelopeV1Minimal"]
