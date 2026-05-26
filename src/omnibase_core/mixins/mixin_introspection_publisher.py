@@ -10,7 +10,6 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nIntrospection Publisher Mixin.\n\nThis mixin handles:\n- Gathering node introspection data from various sources\n- Publishing NODE_INTROSPECTION_EVENT for service discovery\n- Extracting actions, protocols, metadata from nodes\n- Retry logic for failed publishes\n"
 import re
-from datetime import datetime
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -27,8 +26,12 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.mixins.model_node_introspection_data import (
     ModelNodeIntrospectionData,
 )
+from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 
 _COMPONENT_NAME = Path(__file__).stem
+
+# Module-level time service — injectable for replay determinism
+_time_svc = ServiceTimeInjector()
 DEFAULT_AUTHOR = "ONEX"
 
 _CANONICAL_NODE_TYPES = ("effect", "compute", "reducer", "orchestrator")
@@ -59,7 +62,7 @@ def _normalize_node_type(raw: str) -> str:
         calling_module=_COMPONENT_NAME,
         calling_function="_normalize_node_type",
         calling_line=0,
-        timestamp=datetime.now().isoformat(),
+        timestamp=_time_svc.now().isoformat(),
     )
     emit_log_event_sync(
         LogLevel.WARNING,
@@ -123,7 +126,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=71,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -136,7 +139,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=95,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -150,7 +153,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=95,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -200,7 +203,7 @@ class MixinIntrospectionPublisher:
             calling_module=_COMPONENT_NAME,
             calling_function="_gather_introspection_data",
             calling_line=127,
-            timestamp=datetime.now().isoformat(),
+            timestamp=_time_svc.now().isoformat(),
             node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
         )
         emit_log_event_sync(
@@ -461,7 +464,7 @@ class MixinIntrospectionPublisher:
                         calling_module=_COMPONENT_NAME,
                         calling_function="_publish_with_retry",
                         calling_line=350,
-                        timestamp=datetime.now().isoformat(),
+                        timestamp=_time_svc.now().isoformat(),
                         node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
                     )
                     emit_log_event_sync(

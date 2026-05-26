@@ -45,6 +45,8 @@ See Also:
 from collections import deque
 from datetime import datetime, timedelta
 
+from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
+
 
 class UtilStreamingWindow:
     """
@@ -80,18 +82,25 @@ class UtilStreamingWindow:
         prefix indicates a utility class.
     """
 
-    def __init__(self, window_size_ms: int, overlap_ms: int = 0):
+    def __init__(
+        self,
+        window_size_ms: int,
+        overlap_ms: int = 0,
+        time_svc: ServiceTimeInjector | None = None,
+    ):
         """
         Initialize streaming window.
 
         Args:
             window_size_ms: Window size in milliseconds
             overlap_ms: Overlap size in milliseconds (default: 0)
+            time_svc: Optional time service for deterministic replay
         """
         self.window_size_ms = window_size_ms
         self.overlap_ms = overlap_ms
+        self._time_svc = time_svc if time_svc is not None else ServiceTimeInjector()
         self.buffer: deque[tuple[object, datetime]] = deque()
-        self.window_start = datetime.now()
+        self.window_start = self._time_svc.now()
 
     def add_item(self, item: object) -> bool:
         """
@@ -103,7 +112,7 @@ class UtilStreamingWindow:
         Returns:
             True if window is full and ready to process
         """
-        current_time = datetime.now()
+        current_time = self._time_svc.now()
         self.buffer.append((item, current_time))
 
         # Check if window is complete
@@ -137,7 +146,7 @@ class UtilStreamingWindow:
             # Clear all items
             self.buffer.clear()
 
-        self.window_start = datetime.now()
+        self.window_start = self._time_svc.now()
 
 
 def __getattr__(name: str) -> object:

@@ -45,7 +45,6 @@ This mixin handles:
 import asyncio
 import fnmatch
 import inspect
-from datetime import datetime
 from pathlib import Path
 
 # Import protocol to avoid circular dependencies
@@ -57,9 +56,13 @@ from omnibase_core.models.core.model_event_type import (
 )
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.core.model_onex_event import OnexEvent
+from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
+
+# Module-level time service — injectable for replay determinism
+_time_svc = ServiceTimeInjector()
 
 # Background tasks set to prevent garbage collection of fire-and-forget tasks
 _background_tasks: set[asyncio.Task[None]] = set()
@@ -119,7 +122,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_setup_event_handlers",
                 calling_line=67,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -217,7 +220,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_introspection_request",
                 calling_line=124,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -236,7 +239,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_introspection_request",
                 calling_line=137,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -295,7 +298,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_node_discovery_request",
                 calling_line=170,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -314,7 +317,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_node_discovery_request",
                 calling_line=183,
-                timestamp=datetime.now().isoformat(),
+                timestamp=_time_svc.now().isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -408,7 +411,7 @@ class MixinEventHandler:
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_event_handlers",
                     calling_line=248,
-                    timestamp=datetime.now().isoformat(),
+                    timestamp=_time_svc.now().isoformat(),
                     node_id=(
                         UUID(node_id)
                         if isinstance(node_id, str) and node_id != "<unset>"
@@ -428,7 +431,7 @@ class MixinEventHandler:
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_event_handlers",
                     calling_line=261,
-                    timestamp=datetime.now().isoformat(),
+                    timestamp=_time_svc.now().isoformat(),
                     node_id=(
                         UUID(node_id)
                         if isinstance(node_id, str) and node_id != "<unset>"

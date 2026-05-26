@@ -45,7 +45,6 @@ import asyncio
 import contextlib
 import signal
 import time
-from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -66,8 +65,12 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 
 _COMPONENT_NAME = Path(__file__).stem
+
+# Module-level time service — injectable for replay determinism
+_time_svc = ServiceTimeInjector()
 
 
 class MixinNodeExecutor(MixinEventDrivenNode):
@@ -500,7 +503,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,
-            timestamp=datetime.now().isoformat(),
+            timestamp=_time_svc.now().isoformat(),
             node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.INFO, message, context=context)
@@ -514,7 +517,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,
-            timestamp=datetime.now().isoformat(),
+            timestamp=_time_svc.now().isoformat(),
             node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.WARNING, message, context=context)
@@ -528,7 +531,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,
-            timestamp=datetime.now().isoformat(),
+            timestamp=_time_svc.now().isoformat(),
             node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.ERROR, message, context=context)
