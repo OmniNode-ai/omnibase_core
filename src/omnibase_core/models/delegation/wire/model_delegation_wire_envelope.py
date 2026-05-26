@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict
 from omnibase_core.models.delegation.wire.model_delegation_result import (
     ModelDelegationResult,
 )
+from omnibase_core.topics import TopicBase
 
 
 class ModelDelegationEventEnvelope(BaseModel):
@@ -17,7 +18,7 @@ class ModelDelegationEventEnvelope(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    topic: str
+    topic: TopicBase
     payload: ModelDelegationResult
 
 

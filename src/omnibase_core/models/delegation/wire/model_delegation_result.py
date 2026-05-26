@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 
+from typing import Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelDelegationResult(BaseModel):
@@ -114,6 +115,15 @@ class ModelDelegationResult(BaseModel):
         ge=0.0,
         description="Estimated cost of the final attempt.",
     )
+
+    @model_validator(mode="after")
+    def validate_total_tokens(self) -> Self:
+        """Keep token accounting internally consistent at the wire boundary."""
+        expected_total = self.prompt_tokens + self.completion_tokens
+        if self.total_tokens != expected_total:
+            msg = "total_tokens must equal prompt_tokens + completion_tokens"
+            raise ValueError(msg)
+        return self
 
 
 __all__: list[str] = ["ModelDelegationResult"]

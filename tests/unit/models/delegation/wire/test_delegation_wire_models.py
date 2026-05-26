@@ -151,6 +151,23 @@ class TestModelDelegationResult:
                 fallback_to_claude=False,
             )
 
+    def test_rejects_inconsistent_total_tokens(self) -> None:
+        with pytest.raises(ValueError, match="total_tokens must equal"):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                latency_ms=1,
+                prompt_tokens=2,
+                completion_tokens=3,
+                total_tokens=6,
+                fallback_to_claude=False,
+            )
+
 
 @pytest.mark.unit
 class TestModelRoutingIntent:
@@ -177,6 +194,17 @@ class TestModelRoutingIntent:
         intent = ModelRoutingIntent(payload=req, min_tier_name="cheap_cloud")
         assert intent.min_tier_name == "cheap_cloud"
 
+    def test_rejects_invalid_intent_literal(self) -> None:
+        corr_id = uuid.uuid4()
+        req = ModelDelegationRequest(
+            prompt="test",
+            task_type="test",
+            correlation_id=corr_id,
+            emitted_at=datetime.now(tz=UTC),
+        )
+        with pytest.raises(ValidationError):
+            ModelRoutingIntent(intent="wrong", payload=req)
+
 
 @pytest.mark.unit
 class TestModelInferenceIntent:
@@ -192,6 +220,18 @@ class TestModelInferenceIntent:
         assert intent.intent == "llm_inference"
         assert intent.timeout_seconds == 30.0
         assert intent.api_key is None
+
+    def test_rejects_invalid_intent_literal(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelInferenceIntent(
+                intent="wrong",
+                base_url="http://localhost:8000",
+                model="qwen3",
+                system_prompt="You are helpful.",
+                prompt="Write a test",
+                max_tokens=512,
+                correlation_id=uuid.uuid4(),
+            )
 
 
 @pytest.mark.unit
@@ -244,6 +284,15 @@ class TestModelQualityGate:
             llm_response_content="This is the response.",
         )
         assert inp.min_response_length == 60
+
+    def test_gate_input_rejects_negative_min_response_length(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelQualityGateInput(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                llm_response_content="This is the response.",
+                min_response_length=-1,
+            )
 
     def test_gate_result_pass(self) -> None:
         result = ModelQualityGateResult(
@@ -378,6 +427,21 @@ class TestModelDelegationEventEnvelope:
         )
         assert envelope.topic == "onex.evt.omniclaude.task-delegated.v1"
 
+    def test_rejects_invalid_topic(self) -> None:
+        result = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="ok",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=50,
+            fallback_to_claude=False,
+        )
+        with pytest.raises(ValidationError):
+            ModelDelegationEventEnvelope(topic="not.a.topic", payload=result)
+
 
 @pytest.mark.unit
 class TestModelInferenceResponseData:
@@ -389,6 +453,23 @@ class TestModelInferenceResponseData:
         )
         assert resp.error_message == ""
         assert resp.latency_ms == 0
+
+    def test_rejects_negative_metrics(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelInferenceResponseData(
+                correlation_id=uuid.uuid4(),
+                content="Generated response.",
+                model_used="qwen3-14b",
+                latency_ms=-1,
+            )
+
+        with pytest.raises(ValidationError):
+            ModelInferenceResponseData(
+                correlation_id=uuid.uuid4(),
+                content="Generated response.",
+                model_used="qwen3-14b",
+                prompt_tokens=-1,
+            )
 
 
 @pytest.mark.unit
@@ -402,6 +483,23 @@ class TestModelBaselineIntent:
         assert intent.intent == "baseline_comparison"
         assert intent.candidate_cost_usd == 0.0
 
+    def test_rejects_invalid_intent_and_negative_tokens(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelBaselineIntent(
+                intent="wrong",
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                baseline_cost_usd=0.01,
+            )
+
+        with pytest.raises(ValidationError):
+            ModelBaselineIntent(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                baseline_cost_usd=0.01,
+                prompt_tokens=-1,
+            )
+
 
 @pytest.mark.unit
 class TestModelQualityGateIntent:
@@ -413,3 +511,12 @@ class TestModelQualityGateIntent:
         )
         intent = ModelQualityGateIntent(payload=gate_input)
         assert intent.intent == "quality_gate"
+
+    def test_rejects_invalid_intent_literal(self) -> None:
+        gate_input = ModelQualityGateInput(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            llm_response_content="This is a response.",
+        )
+        with pytest.raises(ValidationError):
+            ModelQualityGateIntent(intent="wrong", payload=gate_input)

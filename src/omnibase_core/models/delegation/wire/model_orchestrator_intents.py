@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,7 +24,7 @@ class ModelRoutingIntent(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    intent: str = Field(default="routing_reducer")
+    intent: Literal["routing_reducer"] = Field(default="routing_reducer")
     payload: ModelDelegationRequest
     min_tier_name: str | None = Field(
         default=None,
@@ -41,7 +42,7 @@ class ModelInferenceIntent(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    intent: str = Field(default="llm_inference")
+    intent: Literal["llm_inference"] = Field(default="llm_inference")
     base_url: str
     model: str
     system_prompt: str
@@ -70,7 +71,7 @@ class ModelQualityGateIntent(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    intent: str = Field(default="quality_gate")
+    intent: Literal["quality_gate"] = Field(default="quality_gate")
     payload: ModelQualityGateInput
 
 
@@ -79,7 +80,7 @@ class ModelBaselineIntent(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    intent: str = Field(default="baseline_comparison")
+    intent: Literal["baseline_comparison"] = Field(default="baseline_comparison")
     correlation_id: UUID = Field(..., description="Delegation correlation ID.")
     task_type: str = Field(..., description="Task classification.")
     baseline_cost_usd: float = Field(
@@ -89,9 +90,11 @@ class ModelBaselineIntent(BaseModel):
         default=0.0,
         description="Actual local LLM cost (near-zero for self-hosted).",
     )
-    prompt_tokens: int = Field(default=0, description="Prompt token count.")
-    completion_tokens: int = Field(default=0, description="Completion token count.")
-    total_tokens: int = Field(default=0, description="Total token count.")
+    prompt_tokens: int = Field(default=0, ge=0, description="Prompt token count.")
+    completion_tokens: int = Field(
+        default=0, ge=0, description="Completion token count."
+    )
+    total_tokens: int = Field(default=0, ge=0, description="Total token count.")
 
 
 class ModelInferenceResponseData(BaseModel):
@@ -109,10 +112,14 @@ class ModelInferenceResponseData(BaseModel):
         default="",
         description="Upstream LLM call ID for cost reconciliation (e.g. OpenAI id field).",
     )
-    latency_ms: int = Field(default=0, description="Inference latency in milliseconds.")
-    prompt_tokens: int = Field(default=0, description="Prompt token count.")
-    completion_tokens: int = Field(default=0, description="Completion token count.")
-    total_tokens: int = Field(default=0, description="Total token count.")
+    latency_ms: int = Field(
+        default=0, ge=0, description="Inference latency in milliseconds."
+    )
+    prompt_tokens: int = Field(default=0, ge=0, description="Prompt token count.")
+    completion_tokens: int = Field(
+        default=0, ge=0, description="Completion token count."
+    )
+    total_tokens: int = Field(default=0, ge=0, description="Total token count.")
     error_message: str = Field(
         default="",
         description="Failure reason when inference could not produce content.",

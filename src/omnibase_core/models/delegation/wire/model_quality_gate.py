@@ -40,6 +40,7 @@ class ModelQualityGateInput(BaseModel):
     )
     min_response_length: int = Field(
         default=60,
+        ge=0,
         description="Minimum acceptable response length in characters.",
     )
     dod_deterministic: tuple[str, ...] = Field(
