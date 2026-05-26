@@ -89,7 +89,7 @@ class TestUtilStreamingWindowWithInjectedTime:
         svc = ServiceTimeInjector(fixed_time=fixed)
         window = UtilStreamingWindow(window_size_ms=1000, time_svc=svc)
         window.add_item("event_a")
-        _item, ts = list(window.buffer)[0]
+        _item, ts = next(iter(window.buffer))
         assert ts == fixed
 
     @pytest.mark.unit
@@ -125,6 +125,6 @@ class TestUtilStreamingWindowWithInjectedTime:
         before = datetime.now(UTC)
         ready = window.add_item("event")
         after = datetime.now(UTC)
-        _item, ts = list(window.buffer)[0]
+        _item, ts = next(iter(window.buffer))
         assert before <= ts <= after
         assert not ready
