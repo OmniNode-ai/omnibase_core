@@ -186,6 +186,12 @@ def should_exclude_file(filepath: Path) -> bool:
         "model_database_secure_config.py",  # Database config with nested models
         "model_service_registry_config.py",  # Service config models
         "model_epic_state.py",  # 3 tightly-coupled epic state models; split tracked in OMN-4401
+        # Delegation wire DTO files (graduated from omnibase_compat, OMN-12126).
+        # These files group related intent/config DTOs by domain. Split tracked separately.
+        "model_orchestrator_intents.py",  # 6 related orchestrator intent DTOs
+        "model_routing_config.py",  # ModelTierModel + ModelRoutingTier + ModelDelegationConfig (hierarchy)
+        "model_quality_gate.py",  # ModelQualityGateInput + ModelQualityGateResult (paired gate DTOs)
+        "model_bifrost_delegation_config.py",  # 7 tightly-coupled Bifrost gateway config DTOs
     }
 
     # Exclude validator files with small helper classes
