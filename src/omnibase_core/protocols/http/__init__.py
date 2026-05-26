@@ -89,8 +89,8 @@ DI Container Registration:
         from omnibase_core.models.container.model_onex_container import (
             ModelONEXContainer,
         )
-        # Import adapter from omnibase_infra (NOT from omnibase_core):
-        from omnibase_infra.adapters.http import AioHttpClientAdapter
+        # Adapter is registered from omnibase_infra at bootstrap time (see DI Container Registration above).
+        # Inject it via: container.get_service("ProtocolHttpClient")
 
         async def setup_container() -> ModelONEXContainer:
             container = ModelONEXContainer()
