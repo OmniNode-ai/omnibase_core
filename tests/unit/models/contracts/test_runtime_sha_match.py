@@ -146,11 +146,11 @@ def _write_receipt(
         commit_sha=deployed_sha,
         runner="integration-sweep-verifier",
         verifier="receipt-gate-test-verifier",
-        probe_command="ssh 192.168.86.201 git -C /data/omninode/omni_home/omnimarket rev-parse HEAD",
+        probe_command="ssh 192.168.86.201 git -C /data/omninode/omni_home/omnimarket rev-parse HEAD",  # onex-allow-internal-ip
         probe_stdout=f"{deployed_sha}\n",
         actual_output=json.dumps(
             {
-                "runtime_host": "192.168.86.201",
+                "runtime_host": "192.168.86.201",  # onex-allow-internal-ip
                 "deployed_sha": deployed_sha,
                 "merge_sha": merge_sha,
                 "match": match,

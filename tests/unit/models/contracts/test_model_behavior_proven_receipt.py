@@ -36,7 +36,7 @@ def _base_fields() -> dict:
     return {
         "ticket_id": "OMN-9214",
         "evidence_item_id": "dod-behavior-001",
-        "command_run": "kcat -P -b 192.168.86.201:19092 -t onex.cmd.merge_sweep.v1",
+        "command_run": "kcat -P -b 192.168.86.201:19092 -t onex.cmd.merge_sweep.v1",  # onex-allow-internal-ip
         "query": "rpk topic consume onex.evt.merge_sweep.completed.v1 --num 1",
         "assertion": EnumBehaviorProvenAssertion.PASSED,
         "observed_at": datetime.now(tz=UTC),

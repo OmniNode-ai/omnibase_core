@@ -36,7 +36,7 @@ def test_valid_profile_passes() -> None:
 def test_rejects_endpoint_url_in_bifrost_ref() -> None:
     data = yaml.safe_load(VALID_YAML)
     data["llm_backends"]["default"]["bifrost_endpoint_ref"] = (
-        "https://192.168.86.201:8000"
+        "https://192.168.86.201:8000"  # onex-allow-internal-ip
     )
     result = validate_delegation_profile(data)
     assert not result.is_valid
@@ -45,7 +45,9 @@ def test_rejects_endpoint_url_in_bifrost_ref() -> None:
 
 def test_rejects_ip_in_bifrost_ref() -> None:
     data = yaml.safe_load(VALID_YAML)
-    data["llm_backends"]["default"]["bifrost_endpoint_ref"] = "192.168.86.201:8000"
+    data["llm_backends"]["default"]["bifrost_endpoint_ref"] = (
+        "192.168.86.201:8000"  # onex-allow-internal-ip
+    )
     result = validate_delegation_profile(data)
     assert not result.is_valid
     assert any("bifrost_endpoint_ref" in e for e in result.errors)

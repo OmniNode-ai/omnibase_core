@@ -58,7 +58,7 @@ from pydantic import ValidationError
 def minimal_event_bus() -> ModelDelegationEventBusEndpoint:
     return ModelDelegationEventBusEndpoint(
         provider="redpanda",
-        bootstrap_servers=["192.168.86.201:19092"],
+        bootstrap_servers=["192.168.86.201:19092"],  # onex-allow-internal-ip
         topic_policy_ref="onex.topics.v1",
         consumer_groups=["delegation-consumer-group"],
     )
@@ -113,7 +113,9 @@ class TestMinimalValidProfile:
     ) -> None:
         eb = minimal_profile.event_bus
         assert eb.provider == "redpanda"
-        assert eb.bootstrap_servers == ["192.168.86.201:19092"]
+        assert eb.bootstrap_servers == [
+            "192.168.86.201:19092"  # onex-allow-internal-ip
+        ]
         assert eb.topic_policy_ref == "onex.topics.v1"
         assert eb.consumer_groups == ["delegation-consumer-group"]
 

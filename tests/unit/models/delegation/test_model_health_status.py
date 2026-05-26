@@ -15,7 +15,7 @@ from omnibase_core.models.delegation.model_model_health_status import (
     ModelModelHealthStatus,
 )
 
-_ENDPOINT = "http://192.168.86.201:8000"
+_ENDPOINT = "http://192.168.86.201:8000"  # onex-allow-internal-ip
 _NOW = datetime(2026, 5, 6, 10, 0, 0, tzinfo=UTC)
 
 

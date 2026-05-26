@@ -13,12 +13,14 @@ from omnibase_core.models.dispatch.model_dispatch_claim import (
     compute_blocker_id,
 )
 
+_HOST = "192.168.86.201"  # onex-allow-internal-ip
+
 
 def _make_claim(**overrides) -> ModelDispatchClaim:
     defaults: dict = {
-        "blocker_id": compute_blocker_id("fix_containers", "192.168.86.201", "docker"),
+        "blocker_id": compute_blocker_id("fix_containers", _HOST, "docker"),
         "kind": "fix_containers",
-        "host": "192.168.86.201",
+        "host": _HOST,
         "resource": "docker",
         "claimant": "agent-abc123",
         "claimed_at": datetime.now(tz=UTC),
@@ -31,16 +33,16 @@ def _make_claim(**overrides) -> ModelDispatchClaim:
 
 @pytest.mark.unit
 def test_blocker_id_determinism() -> None:
-    id1 = compute_blocker_id("fix_containers", "192.168.86.201", "res")
-    id2 = compute_blocker_id("fix_containers", "192.168.86.201", "res")
+    id1 = compute_blocker_id("fix_containers", _HOST, "res")
+    id2 = compute_blocker_id("fix_containers", _HOST, "res")
     assert id1 == id2
     assert len(id1) == 40
 
 
 @pytest.mark.unit
 def test_blocker_id_distinct_inputs() -> None:
-    id1 = compute_blocker_id("fix_containers", "192.168.86.201", "docker")
-    id2 = compute_blocker_id("fix_containers", "192.168.86.201", "redpanda")
+    id1 = compute_blocker_id("fix_containers", _HOST, "docker")
+    id2 = compute_blocker_id("fix_containers", _HOST, "redpanda")
     assert id1 != id2
 
 
