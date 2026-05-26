@@ -128,7 +128,7 @@ class TopicBase(StrEnum):
     # Internal control plane — not an observability topic. No contract topic_base
     # (schema supports one topic_base per contract); governed via topic_allowlist.yaml.
     # Lifecycle: internal_control (OMN-3294)
-    ROUTING_DECISION_CMD = "onex.cmd.omniintelligence.routing-decision.v1"  # noqa: arch-topic-naming
+    ROUTING_DECISION_CMD = "onex.cmd.omniintelligence.routing-decision.v1"  # arch-topic-naming: hyphen in service segment allowed per OMN-3294
 
     # ==========================================================================
     # GitHub PR status topics (OMN-3294)
@@ -769,7 +769,7 @@ def build_topic(base: str) -> str:
 # Base prefix for per-agent directed inbox topics (OMN-8634).
 # Not a TopicBase member — not a full canonical topic name.
 # Full topic: AGENT_INBOX_DIRECTED_BASE + "." + agent_id + ".v1"
-AGENT_INBOX_DIRECTED_BASE: str = "onex.evt.omniclaude.agent-inbox"  # noqa: arch-topic-naming
+AGENT_INBOX_DIRECTED_BASE: str = "onex.evt.omniclaude.agent-inbox"  # arch-topic-naming: base prefix for directed inbox; full topic = base + "." + agent_id + ".v1"
 
 
 def build_agent_inbox_directed_topic(agent_id: str) -> str:

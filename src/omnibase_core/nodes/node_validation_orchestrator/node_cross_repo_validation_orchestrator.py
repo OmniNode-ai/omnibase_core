@@ -220,7 +220,7 @@ class NodeCrossRepoValidationOrchestrator:
             rules_applied = (
                 (result.metadata.rules_applied or 0) if result.metadata else 0
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001  # boundary-ok: validation errors captured for result, lifecycle must complete
             # Capture exception - lifecycle must complete
             error_message = f"{type(exc).__name__}: {exc}"
             issues = []
