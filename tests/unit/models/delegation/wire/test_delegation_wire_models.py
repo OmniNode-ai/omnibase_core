@@ -9,6 +9,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.delegation.wire import (
     TASK_DELEGATED_TOPIC_V1,
@@ -136,6 +137,20 @@ class TestModelDelegationResult:
         assert r.terminal_failure_reason is None
         assert r.attempts_count == 1
 
+    def test_rejects_invalid_metric_ranges(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=1.1,
+                latency_ms=-1,
+                fallback_to_claude=False,
+            )
+
 
 @pytest.mark.unit
 class TestModelRoutingIntent:
@@ -192,6 +207,25 @@ class TestModelRoutingTier:
         assert tier.cost_per_1k_tokens == 0.0
         assert tier.max_retries == 0
 
+    def test_rejects_negative_routing_limits(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelTierModel(
+                id="qwen3-14b",
+                backend_ref="local_qwen3",
+                max_context_tokens=0,
+            )
+
+        with pytest.raises(ValidationError):
+            ModelTierModel(
+                id="qwen3-14b",
+                backend_ref="local_qwen3",
+                max_context_tokens=32768,
+                fast_path_threshold_tokens=-1,
+            )
+
+        with pytest.raises(ValidationError):
+            ModelRoutingTier(name="local", max_retries=-1)
+
 
 @pytest.mark.unit
 class TestModelDelegationConfig:
@@ -219,6 +253,14 @@ class TestModelQualityGate:
         )
         assert result.fail_category == "pass"
         assert result.fallback_recommended is False
+
+    def test_rejects_quality_score_outside_unit_interval(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelQualityGateResult(
+                correlation_id=uuid.uuid4(),
+                passed=True,
+                quality_score=-0.1,
+            )
 
 
 @pytest.mark.unit
@@ -264,6 +306,19 @@ class TestModelBifrostDelegationConfig:
         assert shadow.shadow_label == "SHADOW"
         assert shadow.log_sample_rate == 1.0
 
+    def test_rejects_invalid_bifrost_wire_literals(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelDelegationFallbackPolicy(action="retry_forever")
+
+        with pytest.raises(ValidationError):
+            ModelDelegationFallbackPolicy(
+                action="return_error",
+                on_exhaust="retry_forever",
+            )
+
+        with pytest.raises(ValidationError):
+            ModelDelegationBackendConfig(backend_id="local_qwen3", tier="unknown")
+
 
 @pytest.mark.unit
 class TestModelTaskDelegatedEvent:
@@ -277,6 +332,27 @@ class TestModelTaskDelegatedEvent:
         )
         assert event.topic == TASK_DELEGATED_TOPIC_V1
         assert event.escalation_count == 0
+
+    def test_rejects_invalid_topic_and_negative_metrics(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelTaskDelegatedEvent(
+                topic="not.a.registered.topic",
+                timestamp="2026-05-26T00:00:00Z",
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                delegated_to="local_qwen3",
+                quality_gate_passed=True,
+            )
+
+        with pytest.raises(ValidationError):
+            ModelTaskDelegatedEvent(
+                timestamp="2026-05-26T00:00:00Z",
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                delegated_to="local_qwen3",
+                quality_gate_passed=True,
+                cost_usd=-0.01,
+            )
 
     def test_topic_constant(self) -> None:
         assert TASK_DELEGATED_TOPIC_V1 == "onex.evt.omniclaude.task-delegated.v1"

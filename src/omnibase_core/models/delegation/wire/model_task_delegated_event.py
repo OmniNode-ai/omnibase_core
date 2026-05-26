@@ -19,7 +19,7 @@ class ModelTaskDelegatedEvent(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    topic: str = Field(
+    topic: TopicBase = Field(
         default=TASK_DELEGATED_TOPIC_V1,
         description="Kafka topic this event should be routed to.",
     )
@@ -50,14 +50,17 @@ class ModelTaskDelegatedEvent(BaseModel):
     )
     cost_usd: float = Field(
         default=0.0,
+        ge=0.0,
         description="Estimated cost of local LLM inference (near-zero).",
     )
     cost_savings_usd: float = Field(
         default=0.0,
+        ge=0.0,
         description="Estimated savings vs Claude.",
     )
     delegation_latency_ms: int = Field(
         default=0,
+        ge=0,
         description="End-to-end delegation latency in ms.",
     )
     is_shadow: bool = Field(default=False, description="Whether this was a shadow run.")

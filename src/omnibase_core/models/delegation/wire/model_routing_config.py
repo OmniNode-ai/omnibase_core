@@ -21,13 +21,16 @@ class ModelTierModel(BaseModel):
         ...,
         description="Backend key in the deployed bifrost contract (bifrost_delegation.yaml).",
     )
-    max_context_tokens: int = Field(..., description="Max context window in tokens.")
+    max_context_tokens: int = Field(
+        ..., ge=1, description="Max context window in tokens."
+    )
     use_for: tuple[str, ...] = Field(
         default_factory=tuple,
         description="Task types this model handles.",
     )
     fast_path_threshold_tokens: int | None = Field(
         default=None,
+        ge=0,
         description="If set, prefer this model when prompt tokens <= threshold.",
     )
 
@@ -57,6 +60,7 @@ class ModelRoutingTier(BaseModel):
     )
     max_retries: int = Field(
         default=0,
+        ge=0,
         description="Max retry attempts within this tier before escalating.",
     )
 

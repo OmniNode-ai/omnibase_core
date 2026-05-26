@@ -49,7 +49,7 @@ class ModelDelegationFallbackPolicy(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    action: str = Field(
+    action: Literal["escalate_to_next_tier", "return_error"] = Field(
         ...,
         description="Action on backend failure: 'escalate_to_next_tier' or 'return_error'.",
     )
@@ -59,7 +59,7 @@ class ModelDelegationFallbackPolicy(BaseModel):
         le=10,
         description="Maximum retry attempts across backends in this rule.",
     )
-    on_exhaust: str = Field(
+    on_exhaust: Literal["return_error", "escalate_to_next_tier"] = Field(
         default="return_error",
         description="Behavior when all retries are exhausted.",
     )
@@ -156,7 +156,9 @@ class ModelDelegationBackendConfig(BaseModel):
         default=None,
         description="Optional static HTTP headers required by the backend provider.",
     )
-    tier: str = Field(..., description="Routing tier: 'local' or 'frontier_api'.")
+    tier: Literal["local", "frontier_api"] = Field(
+        ..., description="Routing tier: 'local' or 'frontier_api'."
+    )
     timeout_ms: int = Field(
         default=30000,
         ge=100,

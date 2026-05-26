@@ -32,14 +32,23 @@ class ModelDelegationResult(BaseModel):
         ...,
         description="Whether the quality gate accepted the response.",
     )
-    quality_score: float = Field(..., description="Quality score from 0.0 to 1.0.")
-    latency_ms: int = Field(..., description="End-to-end latency in milliseconds.")
-    prompt_tokens: int = Field(default=0, description="Number of tokens in the prompt.")
+    quality_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Quality score from 0.0 to 1.0.",
+    )
+    latency_ms: int = Field(
+        ..., ge=0, description="End-to-end latency in milliseconds."
+    )
+    prompt_tokens: int = Field(
+        default=0, ge=0, description="Number of tokens in the prompt."
+    )
     completion_tokens: int = Field(
-        default=0, description="Number of tokens in the completion."
+        default=0, ge=0, description="Number of tokens in the completion."
     )
     total_tokens: int = Field(
-        default=0, description="Total tokens used (prompt + completion)."
+        default=0, ge=0, description="Total tokens used (prompt + completion)."
     )
     fallback_to_claude: bool = Field(
         ...,

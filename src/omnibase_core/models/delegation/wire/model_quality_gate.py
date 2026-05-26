@@ -85,7 +85,12 @@ class ModelQualityGateResult(BaseModel):
             "or 'fail_heuristic' (escalate per contract policy)."
         ),
     )
-    quality_score: float = Field(..., description="Quality score from 0.0 to 1.0.")
+    quality_score: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description="Quality score from 0.0 to 1.0.",
+    )
     failure_reasons: tuple[str, ...] = Field(
         default=(),
         description="Tuple of human-readable failure reason strings.",
