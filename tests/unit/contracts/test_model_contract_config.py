@@ -48,10 +48,10 @@ class TestModelContractConfig:
 
     def test_llm_endpoint_config_valid(self):
         llm = ModelLlmEndpointConfig(
-            coder_url="http://192.168.86.201:8000",
+            coder_url="http://192.168.86.201:8000",  # onex-allow-internal-ip
             coder_model_name="Qwen3-Coder-30B",
         )
-        assert llm.coder_url == "http://192.168.86.201:8000"
+        assert llm.coder_url == "http://192.168.86.201:8000"  # onex-allow-internal-ip
         assert llm.coder_model_name == "Qwen3-Coder-30B"
 
     def test_llm_endpoint_config_rejects_unknown_fields(self):
@@ -60,11 +60,11 @@ class TestModelContractConfig:
 
     def test_storage_config_valid(self):
         s = ModelStorageConfig(
-            postgres_host="192.168.86.201",
+            postgres_host="192.168.86.201",  # onex-allow-internal-ip
             postgres_port=5436,
-            kafka_bootstrap_servers="192.168.86.201:19092",
+            kafka_bootstrap_servers="192.168.86.201:19092",  # onex-allow-internal-ip
         )
-        assert s.postgres_host == "192.168.86.201"
+        assert s.postgres_host == "192.168.86.201"  # onex-allow-internal-ip
         assert s.postgres_port == 5436
 
     def test_storage_config_rejects_unknown_fields(self):

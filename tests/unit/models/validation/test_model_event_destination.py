@@ -581,7 +581,7 @@ class TestModelEventDestinationEdgeCases:
 class TestDecommissionedEndpointAbsent:
     """Ensure decommissioned M2 Ultra bus endpoint never appears in model code.
 
-    The M2 Ultra Redpanda at 192.168.86.200:29092 was decommissioned 2026-03-03
+    The M2 Ultra Redpanda at 192.168.86.200:29092 was decommissioned 2026-03-03  # onex-allow-internal-ip
     (OMN-3431). Any reference to this endpoint in docstrings or defaults is stale
     and misleading.
     """
@@ -592,7 +592,7 @@ class TestDecommissionedEndpointAbsent:
         import omnibase_core.models.validation.model_event_destination as mod
 
         docstring = mod.__doc__ or ""
-        assert "192.168.86.200:29092" not in docstring, (
+        assert "192.168.86.200:29092" not in docstring, (  # onex-allow-internal-ip
             "Decommissioned M2 Ultra endpoint found in module docstring. "
             "Use localhost:19092 (local Docker bus) instead."
         )
@@ -601,7 +601,7 @@ class TestDecommissionedEndpointAbsent:
     def test_no_decommissioned_endpoint_in_class_docstring(self) -> None:
         """Assert decommissioned M2 endpoint absent from ModelEventDestination docstring."""
         docstring = ModelEventDestination.__doc__ or ""
-        assert "192.168.86.200:29092" not in docstring, (
+        assert "192.168.86.200:29092" not in docstring, (  # onex-allow-internal-ip
             "Decommissioned M2 Ultra endpoint found in class docstring."
         )
 
@@ -609,7 +609,7 @@ class TestDecommissionedEndpointAbsent:
     def test_no_decommissioned_endpoint_in_create_kafka_docstring(self) -> None:
         """Assert decommissioned M2 endpoint absent from create_kafka docstring."""
         docstring = ModelEventDestination.create_kafka.__doc__ or ""
-        assert "192.168.86.200:29092" not in docstring, (
+        assert "192.168.86.200:29092" not in docstring, (  # onex-allow-internal-ip
             "Decommissioned M2 Ultra endpoint found in create_kafka docstring. "
             "Use localhost:19092 (local Docker bus) instead."
         )
