@@ -89,28 +89,6 @@ def from_numeric(value: ModelNumericValue) -> ModelNodeConfigurationNumericValue
     return ModelNodeConfigurationNumericValue(value=value)
 
 
-def from_value(
-    value: object,
-) -> ModelNodeConfigurationStringValue | ModelNodeConfigurationNumericValue:
-    """Create configuration value from any supported type.
-
-    Args:
-        value: Input value (str, int, float, bool, or other types)
-
-    Returns:
-        Union[ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue]:
-            Configuration value with appropriate type discrimination.
-    """
-    if isinstance(value, str):
-        return from_string(value)
-    if isinstance(value, int):
-        return from_int(value)
-    if isinstance(value, float):
-        return from_float(value)
-    # Fallback to string representation for bool and other types
-    return from_string(str(value))
-
-
 __all__ = [
     "ModelNodeConfigurationNumericValue",
     "ModelNodeConfigurationStringValue",
@@ -119,5 +97,4 @@ __all__ = [
     "from_int",
     "from_numeric",
     "from_string",
-    "from_value",
 ]
