@@ -128,3 +128,51 @@ def test_extra_fields_are_rejected() -> None:
             branch="main",
             unexpected=True,  # type: ignore[call-arg]
         )
+
+
+@pytest.mark.unit
+def test_provenance_requires_at_least_one_trace_field() -> None:
+    with pytest.raises(ValidationError, match="at least one trace field"):
+        ModelEvidenceProvenance(repo="omnibase_core")
+
+
+@pytest.mark.unit
+def test_evidence_models_support_from_attributes() -> None:
+    class _FakeORM:
+        repo = "omnibase_core"
+        commit_sha = "abc1234"
+        branch = None
+        pr_number = None
+        pr_url = None
+        ci_run_url = None
+        notes = None
+
+    provenance = ModelEvidenceProvenance.model_validate(
+        _FakeORM(), from_attributes=True
+    )
+    assert provenance.repo == "omnibase_core"
+    assert provenance.commit_sha == "abc1234"
+
+
+@pytest.mark.unit
+def test_file_exists_proof_requires_artifact_path() -> None:
+    with pytest.raises(
+        ValidationError, match="file_exists proof requires artifact_path"
+    ):
+        ModelContractEvidenceProof(
+            proof_id="file-check",
+            proof_kind=EnumStableProofKind.FILE_EXISTS,
+            description="Check artifact file exists.",
+            target="some/path/artifact.json",
+        )
+
+
+@pytest.mark.unit
+def test_command_proof_requires_command_field() -> None:
+    with pytest.raises(ValidationError, match="command proof requires command"):
+        ModelContractEvidenceProof(
+            proof_id="run-cmd",
+            proof_kind=EnumStableProofKind.COMMAND,
+            description="Run a verification command.",
+            target="some-target",
+        )
