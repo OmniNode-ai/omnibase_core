@@ -5,46 +5,14 @@
 
 from __future__ import annotations
 
-from enum import StrEnum
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
-class EnumCapabilityTier(StrEnum):
-    """Model capability tier — used to select the appropriate inference backend."""
-
-    LOCAL = "local"
-    CHEAP_FRONTIER = "cheap_frontier"
-    MID_FRONTIER = "mid_frontier"
-    EXPENSIVE_FRONTIER = "expensive_frontier"
-
-
-class EnumProvider(StrEnum):
-    """LLM provider identifier."""
-
-    LOCAL_VLLM = "local_vllm"
-    ANTHROPIC = "anthropic"
-    OPENAI = "openai"
-    GOOGLE = "google"
-    LOCAL_MLX = "local_mlx"
-
-
-class EnumRetryType(StrEnum):
-    """Retry strategy for the selected model."""
-
-    NONE = "none"
-    SAME_MODEL = "same_model"
-    ESCALATE_TIER = "escalate_tier"
-    FALLBACK_MODEL = "fallback_model"
-
-
-class EnumRiskLevel(StrEnum):
-    """Risk level of the routing decision — affects audit logging."""
-
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
+from omnibase_core.enums.routing import (
+    EnumCapabilityTier,
+    EnumProvider,
+    EnumRetryType,
+    EnumRiskLevel,
+)
 
 
 class ModelRoutingDecision(BaseModel):
