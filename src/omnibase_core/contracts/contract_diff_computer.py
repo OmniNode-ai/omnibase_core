@@ -855,32 +855,6 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
     of the changes captured in ``diff``.  When the patch is applied to the
     "after" contract it restores the list fields to their "before" state.
 
-    Scope and limitations:
-        - **List adds become removes**: items that were added in the diff
-          (``added_items`` on each ``ModelContractListDiff``) are placed in
-          the corresponding ``__remove`` list in the patch (using the identity
-          key extracted from the field path).
-        - **List removes become adds** for string-list fields only:
-          ``consumed_events`` and ``capability_inputs`` removed items can be
-          placed back into the corresponding ``__add`` list because their
-          values are plain strings recoverable from the field path.
-          Object-typed list fields (``handlers``, ``dependencies``,
-          ``capability_outputs``) are **not reversible** from a diff alone:
-          the diff stores identity keys, not the full structured objects
-          required to reconstruct a ``ModelHandlerSpec``, ``ModelDependency``,
-          or ``ModelCapabilityProvided``.
-        - **Scalar field changes** (``MODIFIED``, ``ADDED``, ``REMOVED``)
-          are not expressible as patch operations except for ``description``.
-          If the diff contains any other scalar changes a ``ValueError`` is
-          raised identifying the non-reversible paths.
-        - **MOVED and UNCHANGED** items carry no net content change and are
-          silently ignored.
-
-    The ``extends`` field of the returned patch uses ``before_contract_name``
-    as the profile identifier with version ``"1.0.0"``.  This is a
-    structural reference only; callers that need to resolve the patch against
-    a real profile factory should override it after construction.
-
     Args:
         diff: The diff result produced by ``ContractDiffComputer.compute_diff``
             or ``compute_contract_diff``.
@@ -893,19 +867,7 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
             cannot be expressed as patch operations (i.e. anything other than
             ``description``), or if removed object-typed list items would need
             full model reconstruction that is not possible from the diff alone.
-
-    Example:
-        >>> diff = compute_contract_diff(before_contract, after_contract)
-        >>> reverse = generate_reverse_patch(diff)
-        >>> # reverse encodes __remove for handlers/deps/events added by the diff
-        >>> # and __add for consumed_events/capability_inputs removed by the diff
     """
-
-    # -------------------------------------------------------------------------
-    # Phase 1: Validate scalar field changes.
-    # Only "description" is expressible as a patch scalar override.
-    # Raise early with a clear diagnosis for everything else.
-    # -------------------------------------------------------------------------
     non_reversible: list[str] = []
     reverse_description: str | None = None
 
@@ -916,12 +878,9 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
         ):
             continue
         if fd.field_path == "description":
-            # MODIFIED description: reverse is the old value
             if fd.old_value is not None:
                 raw = fd.old_value.to_value()
                 reverse_description = str(raw) if raw is not None else None
-            # ADDED description: reverse removes it (set to None — omit from patch)
-            # REMOVED description: reverse adds it back using old_value (handled above)
         else:
             non_reversible.append(f"{fd.field_path} ({fd.change_type.value})")
 
@@ -936,21 +895,7 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
             "'description' can be reversed via a patch."
         )
 
-    # -------------------------------------------------------------------------
-    # Phase 2: Build list-operation inverses from list diffs.
-    #
-    # Supported list paths (matching ModelContractPatch fields):
-    #   "handlers"           → handlers__add / handlers__remove (remove only)
-    #   "dependencies"       → dependencies__add / dependencies__remove (remove only)
-    #   "consumed_events"    → consumed_events__add / consumed_events__remove
-    #   "capability_inputs"  → capability_inputs__add / capability_inputs__remove
-    #   "capability_outputs" → capability_outputs__add / capability_outputs__remove (remove only)
-    #
-    # Identity extraction: field_path is "field_name[identity_value]"
-    # -------------------------------------------------------------------------
-
     def _extract_identity(field_path: str) -> str:
-        """Extract identity value from 'field[identity]' path format."""
         start = field_path.rfind("[")
         end = field_path.rfind("]")
         if start == -1 or end == -1 or end <= start:
@@ -964,48 +909,37 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
     capability_inputs_remove: list[str] = []
     capability_inputs_add: list[str] = []
     capability_outputs_remove: list[str] = []
-
-    # Track object-typed removed items that cannot be reconstructed.
-    # We collect these but do NOT raise — callers receive the partial patch
-    # (names removed, full objects not re-added). The limitation is documented.
     _object_list_skipped: list[str] = []
 
     for ld in diff.list_diffs:
-        field_name = ld.field_path  # e.g. "handlers", "consumed_events"
+        field_name = ld.field_path
 
         if field_name == "handlers":
-            # added in diff → remove in reverse
             for item in ld.added_items:
                 handlers_remove.append(_extract_identity(item.field_path))
-            # removed in diff → would need full ModelHandlerSpec to re-add; skip
             for item in ld.removed_items:
                 _object_list_skipped.append(item.field_path)
-
         elif field_name == "dependencies":
             for item in ld.added_items:
                 dependencies_remove.append(_extract_identity(item.field_path))
             for item in ld.removed_items:
                 _object_list_skipped.append(item.field_path)
-
         elif field_name == "consumed_events":
             for item in ld.added_items:
                 consumed_events_remove.append(_extract_identity(item.field_path))
             for item in ld.removed_items:
                 consumed_events_add.append(_extract_identity(item.field_path))
-
         elif field_name == "capability_inputs":
             for item in ld.added_items:
                 capability_inputs_remove.append(_extract_identity(item.field_path))
             for item in ld.removed_items:
                 capability_inputs_add.append(_extract_identity(item.field_path))
-
         elif field_name == "capability_outputs":
             for item in ld.added_items:
                 capability_outputs_remove.append(_extract_identity(item.field_path))
             for item in ld.removed_items:
                 _object_list_skipped.append(item.field_path)
         else:
-            # Unknown list path — log at debug level, not an error
             logger.debug(
                 "generate_reverse_patch: skipping unrecognised list field '%s' "
                 "(not expressible as ModelContractPatch operation)",
@@ -1020,9 +954,6 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
             _object_list_skipped,
         )
 
-    # -------------------------------------------------------------------------
-    # Phase 3: Build and return the patch.
-    # -------------------------------------------------------------------------
     extends = ModelProfileReference(
         profile=diff.before_contract_name,
         version="1.0.0",
