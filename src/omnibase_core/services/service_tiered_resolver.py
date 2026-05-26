@@ -219,9 +219,9 @@ class ServiceTieredResolver:
         # Sort trust domains by canonical tier order
         sorted_domains = sorted(
             trust_domains,
-            key=lambda d: _TIER_ORDER.index(d.tier)
-            if d.tier in _TIER_ORDER
-            else len(_TIER_ORDER),
+            key=lambda d: (
+                _TIER_ORDER.index(d.tier) if d.tier in _TIER_ORDER else len(_TIER_ORDER)
+            ),
         )
 
         tier_attempts: list[ModelTierAttempt] = []
@@ -750,7 +750,7 @@ class ServiceTieredResolver:
             )
             self._resolution_event_publisher.publish(event)
 
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001  # fallback-ok: audit event publish failure must not block resolution
             logger.warning(
                 "Failed to publish resolution audit event for capability '%s'; "
                 "ignoring (best-effort)",

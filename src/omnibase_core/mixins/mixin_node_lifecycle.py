@@ -202,7 +202,7 @@ class MixinNodeLifecycle:
             )
 
         # fallback-ok: event publishing is non-critical, log and continue
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001  # fallback-ok: node announce publish error must not block registration
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -265,7 +265,7 @@ class MixinNodeLifecycle:
             )
 
         # fallback-ok: shutdown event is non-critical, log and continue
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001  # fallback-ok: shutdown event publish error must not block shutdown
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
@@ -481,7 +481,7 @@ class MixinNodeLifecycle:
             try:
                 self.cleanup_event_handlers()
             # fallback-ok: cleanup failure is non-critical, log and continue
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # cleanup-resilience-ok: event handler cleanup must not block lifecycle cleanup
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,

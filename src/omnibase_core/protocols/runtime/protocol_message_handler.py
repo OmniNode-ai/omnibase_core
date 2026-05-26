@@ -298,7 +298,7 @@ class ProtocolMessageHandler(Protocol):
                             projections=(result.projection,),
                             processing_time_ms=result.duration_ms,
                         )
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001  # boundary-ok: re-raised; noqa needed for broad except before re-raise
                         # Re-raise exceptions - dispatch engine handles errors
                         raise
         """

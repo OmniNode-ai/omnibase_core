@@ -56,7 +56,7 @@ class CrossPlatformTimeout:
         if self.cleanup_func:
             try:
                 self.cleanup_func()
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # cleanup-resilience-ok: cleanup errors must not mask the timeout exception
                 # Don't let cleanup errors mask the timeout
                 print(f"Warning: Timeout cleanup failed: {e}", file=sys.stderr)
 

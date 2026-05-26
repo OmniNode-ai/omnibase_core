@@ -379,7 +379,7 @@ class StringVersionValidator:
             try:
                 yaml_model = load_yaml_content_as_model(content, ModelGenericYaml)
                 yaml_data = yaml_model.model_dump()
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # fallback-ok: Pydantic parse failure falls back to AST validation
                 # If we can't parse with Pydantic, log it but continue with AST validation
                 # This is not a fatal error since we have fallback validation
                 pass
@@ -568,7 +568,7 @@ class StringVersionValidator:
                     if not self.validate_python_file(file_path):
                         success = False
                 # Silently skip files with other extensions
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # fallback-ok: per-file error captured, validation continues for remaining files
                 self.errors.append(f"Error processing file {file_path}: {e}")
                 success = False
 
@@ -585,7 +585,7 @@ class StringVersionValidator:
             try:
                 if not self.validate_yaml_file(yaml_path):
                     success = False
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # fallback-ok: per-YAML error captured, validation continues for remaining files
                 self.errors.append(f"Error processing YAML file {yaml_path}: {e}")
                 success = False
 
@@ -750,12 +750,12 @@ Examples:
                                                     file_path, verbose
                                                 ):
                                                     yaml_files.append(file_path)
-                                            except Exception as e:  # noqa: BLE001
+                                            except Exception as e:  # noqa: BLE001  # fallback-ok: file error logged, scan continues
                                                 print(
                                                     f"Warning: Error processing file {file_path}: {e}"
                                                 )
                                                 continue
-                                    except Exception as e:  # noqa: BLE001
+                                    except Exception as e:  # noqa: BLE001  # fallback-ok: filter error logged, directory scan continues
                                         print(
                                             f"Warning: Error filtering files in {path}: {e}"
                                         )
@@ -772,7 +772,7 @@ Examples:
                                 print(f"Warning: File does not exist: {path}")
                         else:
                             print(f"Warning: Unsupported file type: {path}")
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001  # fallback-ok: argument processing error logged, scan continues
                         print(f"Warning: Error processing argument '{arg}': {e}")
                         continue
             else:
@@ -793,7 +793,7 @@ Examples:
                             yaml_files.append(path)
                         else:
                             print(f"Warning: Unsupported file type: {path}")
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001  # fallback-ok: file argument processing error logged, scan continues
                         print(f"Warning: Error processing file argument '{arg}': {e}")
                         continue
         except (

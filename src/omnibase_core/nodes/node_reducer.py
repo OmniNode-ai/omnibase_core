@@ -1099,7 +1099,7 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
             try:
                 result = await node.process(input_data)
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001  # boundary-ok: catch-all triggers FSM state restore on any failure before re-raise
                 # Restore to previous state on failure
                 if saved_snapshot:
                     node.restore_state(saved_snapshot)
