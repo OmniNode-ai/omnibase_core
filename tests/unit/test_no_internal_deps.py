@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CI guard: omnibase-core must not hard-depend on other OmniNode repos.
+"""CI guard: omnibase-core must not hard-depend on other OmniNode repos or import from infra.
 
 Internal packages belong in [project.optional-dependencies] so that
 omnibase-core can be installed as a standalone SDK.
@@ -16,10 +16,17 @@ omninode-infra) must remain in optional-dependencies so core stays
 installable as a standalone SDK.
 """
 
+import ast
 import tomllib
 from pathlib import Path
 
 import pytest
+
+_HTTP_PROTOCOL_FILES = [
+    Path(__file__).parents[2] / "src/omnibase_core/protocols/http/__init__.py",
+    Path(__file__).parents[2]
+    / "src/omnibase_core/protocols/http/protocol_http_client.py",
+]
 
 OMNINODE_PACKAGES = {
     "omnibase-spi",
@@ -71,3 +78,34 @@ def test_optional_deps_are_documented() -> None:
                     f"Internal package '{dep_name}' in optional group '{group_name}' "
                     f"is not listed in the 'full' extra."
                 )
+
+
+@pytest.mark.unit
+def test_http_protocol_files_have_no_infra_runtime_imports() -> None:
+    """HTTP protocol files in omnibase_core must not import from omnibase_infra at runtime.
+
+    OMN-12158: Enforces the compat→core→spi→infra layering rule. Core defines
+    protocols only; concrete adapters (AioHttpClientAdapter etc.) live in infra
+    and are injected via the DI container at bootstrap time.
+    """
+    violations: list[str] = []
+    for file_path in _HTTP_PROTOCOL_FILES:
+        source = file_path.read_text()
+        tree = ast.parse(source, filename=str(file_path))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                module = node.module or ""
+                if module == "omnibase_infra" or module.startswith("omnibase_infra."):
+                    line = source.splitlines()[node.lineno - 1].strip()
+                    violations.append(f"{file_path.name}:{node.lineno}: {line}")
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name == "omnibase_infra" or alias.name.startswith(
+                        "omnibase_infra."
+                    ):
+                        line = source.splitlines()[node.lineno - 1].strip()
+                        violations.append(f"{file_path.name}:{node.lineno}: {line}")
+    assert not violations, (
+        "HTTP protocol files contain runtime imports from omnibase_infra "
+        "(violates core→infra layer rule, OMN-12158):\n" + "\n".join(violations)
+    )
