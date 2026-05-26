@@ -33,7 +33,6 @@ import signal
 import time
 import types
 from collections.abc import Callable
-from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
@@ -55,11 +54,15 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 from omnibase_core.types import TypedDictServiceHealth
 from omnibase_core.types.type_json import JsonType
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
+
+# Module-level time service — injectable for replay determinism
+_time_svc = ServiceTimeInjector()
 
 # Service lookup errors for container.get_service() calls.
 # Uses centralized PYDANTIC_MODEL_ERRORS (AttributeError, TypeError, ValidationError, ValueError)
@@ -842,7 +845,7 @@ class MixinNodeService:
             calling_module=_COMPONENT_NAME,
             calling_function="service",
             calling_line=1,  # Required field
-            timestamp=datetime.now().isoformat(),
+            timestamp=_time_svc.now().isoformat(),
             node_id=node_id,
         )
         emit_log_event_sync(LogLevel.INFO, message, context=context)
@@ -855,7 +858,7 @@ class MixinNodeService:
             calling_module=_COMPONENT_NAME,
             calling_function="service",
             calling_line=1,  # Required field
-            timestamp=datetime.now().isoformat(),
+            timestamp=_time_svc.now().isoformat(),
             node_id=node_id,
         )
         emit_log_event_sync(LogLevel.WARNING, message, context=context)
@@ -868,7 +871,7 @@ class MixinNodeService:
             calling_module=_COMPONENT_NAME,
             calling_function="service",
             calling_line=1,  # Required field
-            timestamp=datetime.now().isoformat(),
+            timestamp=_time_svc.now().isoformat(),
             node_id=node_id,
         )
         emit_log_event_sync(LogLevel.ERROR, message, context=context)
