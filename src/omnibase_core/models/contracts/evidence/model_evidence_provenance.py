@@ -16,7 +16,7 @@ class ModelEvidenceProvenance(BaseModel):
     truth that contracts validate.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     repo: str = Field(..., min_length=1)
     commit_sha: str | None = Field(default=None, min_length=7)
