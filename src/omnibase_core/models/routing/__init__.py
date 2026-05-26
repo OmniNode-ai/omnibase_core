@@ -49,6 +49,16 @@ from omnibase_core.models.routing.model_resolution_route_hop import (
     ModelResolutionRouteHop,
 )
 from omnibase_core.models.routing.model_route_plan import ModelRoutePlan
+from omnibase_core.models.routing.model_routing_decision import (
+    EnumCapabilityTier,
+    EnumProvider,
+    EnumRetryType,
+    EnumRiskLevel,
+    ModelRoutingDecision,
+)
+from omnibase_core.models.routing.model_routing_degraded_event import (
+    ModelRoutingDegradedEvent,
+)
 from omnibase_core.models.routing.model_routing_policy import (
     ModelCiOverridePolicy,
     ModelRoutingPolicy,
@@ -66,8 +76,13 @@ from omnibase_core.models.routing.model_trust_domain_config import (
 )
 
 __all__ = [
+    "EnumCapabilityTier",
+    "EnumProvider",
+    "EnumRetryType",
+    "EnumRiskLevel",
     "ModelCapabilityToken",
     "ModelClassificationGate",
+    "ModelCiOverridePolicy",
     "ModelHopConstraints",
     "ModelLlmRouteRejectedEvent",
     "ModelLlmRouteResolvedEvent",
@@ -77,7 +92,8 @@ __all__ = [
     "ModelResolutionProof",
     "ModelResolutionRouteHop",
     "ModelRoutePlan",
-    "ModelCiOverridePolicy",
+    "ModelRoutingDecision",
+    "ModelRoutingDegradedEvent",
     "ModelRoutingPolicy",
     "ModelTierAttempt",
     "ModelTieredResolutionConfig",
