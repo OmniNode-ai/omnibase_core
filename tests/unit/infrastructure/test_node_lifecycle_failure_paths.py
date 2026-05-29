@@ -29,6 +29,7 @@ from uuid import uuid4
 
 import pytest
 
+import omnibase_core.nodes.node_effect as _ne_mod
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.enums.enum_effect_types import EnumEffectType
@@ -48,7 +49,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_subcontract import
 )
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.nodes.node_effect import NodeEffect
 
 pytestmark = pytest.mark.unit
 
@@ -58,7 +58,7 @@ pytestmark = pytest.mark.unit
 # ---------------------------------------------------------------------------
 
 
-class _ConcreteEffect(NodeEffect):
+class _ConcreteEffect(_ne_mod.NodeEffect):
     """Minimal subclass for lifecycle tests — inherits process() from NodeEffect."""
 
 
@@ -234,8 +234,6 @@ class TestNodeEffectPerOpConfigWarnings:
     @pytest.mark.asyncio
     async def test_per_op_retry_policy_emits_warning(self) -> None:
         """Operation with explicit retry_policy emits a UserWarning."""
-        import omnibase_core.nodes.node_effect as _ne_mod
-
         # Reset the module-level flag so the warning fires in this test
         _ne_mod._per_op_retry_warning_emitted = False
 
