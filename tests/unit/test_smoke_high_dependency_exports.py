@@ -77,7 +77,7 @@ class TestEnumCoreErrorCodeExports:
         """All EnumCoreErrorCode values must be non-empty strings (ONEX_CORE_*format)."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-        for member in EnumCoreErrorCode:
+        for member in EnumCoreErrorCode.__members__.values():
             assert isinstance(member.value, str)
             assert member.value.startswith("ONEX_CORE_")
 
@@ -97,8 +97,7 @@ class TestErrorsInitExports:
     """errors/__init__.py re-exports the expected public symbols."""
 
     def test_errors_module_importable(self) -> None:
-        import omnibase_core.errors as errs
-
+        errs = importlib.import_module("omnibase_core.errors")
         assert errs is not None
 
     def test_enum_core_error_code_reexported(self) -> None:
