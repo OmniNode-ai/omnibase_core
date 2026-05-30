@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Gitignore baseline compliance gate [OMN-12453]
+#
+# Required status check context: "Gitignore Baseline Validator / validate"
+#
+# Runs unit tests for the validator then self-scans omnibase_core root.
+# Consumer repos wire this by adding the validate-gitignore-baseline pre-commit hook
+# and a mirror of the `validate` job in their own CI.
+
+name: Gitignore Baseline Validator
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: validator-gitignore-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_gitignore_baseline.py -v
+
+      - name: Self-scan omnibase_core root
+        run: |
+          uv run python -m omnibase_core.validators.gitignore_baseline .
