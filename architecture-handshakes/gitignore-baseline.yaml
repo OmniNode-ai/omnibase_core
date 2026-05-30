@@ -1,0 +1,103 @@
+---
+# Canonical .gitignore managed-block definitions for OmniNode-ai repos.
+#
+# This file is the machine-readable source of truth for which .gitignore
+# patterns must appear in every governed repo. The T2 validator
+# (gitignore_baseline_validator) reads this spec, assembles the verbatim
+# managed block (start marker → ordered patterns → end marker), and asserts
+# its presence in the target repo's .gitignore. Presence is a hard gate —
+# missing or reordered patterns fail validation.
+#
+# Block application rules:
+#   - "universal": enforced on ALL repos regardless of language/stack.
+#   - "python":    enforced only on repos that contain a pyproject.toml at
+#                  the repo root.
+#
+# Adding a pattern here automatically propagates to all governed repos via
+# the OMN-12450 pin-bump bot: spec change → bot opens a bump PR on every
+# downstream repo → each repo's handshake workflow fails until the block is
+# updated.
+#
+# See: OMN-12450 (canonical .gitignore baseline epic),
+#      OMN-12451 (this spec file),
+#      OMN-12452 (T2 validator + CI wiring).
+
+schema_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+# Managed block definitions.
+#
+# Each section has:
+#   start_marker   — exact string written as the opening comment line.
+#   end_marker     — exact string written as the closing comment line.
+#   patterns       — ordered list of .gitignore pattern strings.
+#                    The validator assembles the block as:
+#                      <start_marker>\n
+#                      <pattern[0]>\n
+#                      <pattern[1]>\n
+#                      ...
+#                      <end_marker>
+#                    and asserts that exact verbatim sequence is present.
+#   applies_when   — "always" | "pyproject_toml_present"
+#
+# Pattern ordering is significant — the validator checks sequence, not just
+# membership, so append-only changes are safe; reordering is a breaking change.
+
+managed_blocks:
+
+  universal:
+    description: |
+      Patterns enforced on every OmniNode-ai repo regardless of language or
+      stack. Covers environment files, OS artifacts, editor dirs, and
+      test-runner output directories common to all repos.
+    start_marker: "# === onex-managed: universal ==="
+    end_marker: "# === end onex-managed: universal ==="
+    applies_when: always
+    patterns:
+      - ".env"
+      - ".env.*"
+      - "!.env.example"
+      - ".DS_Store"
+      - "*.log"
+      - ".idea/"
+      - ".vscode/"
+      - "test-results/"
+      - "playwright-report/"
+
+  python:
+    description: |
+      Patterns enforced on repos that contain a pyproject.toml at the repo
+      root. Covers Python bytecode, virtual-environment directories, tool
+      caches, and build artifacts.
+    start_marker: "# === onex-managed: python ==="
+    end_marker: "# === end onex-managed: python ==="
+    applies_when: pyproject_toml_present
+    patterns:
+      - "__pycache__/"
+      - "*.py[cod]"
+      - "*$py.class"
+      - ".venv/"
+      - "venv/"
+      - "env/"
+      - ".pytest_cache/"
+      - ".mypy_cache/"
+      - ".ruff_cache/"
+      - ".coverage"
+      - "htmlcov/"
+      - "dist/"
+      - "build/"
+      - "*.egg-info/"
+
+# Metadata
+
+metadata:
+  generated_by: "manually authored (OMN-12451)"
+  last_updated: "2026-05-30"
+  next_review: "on any new pattern addition — single source of truth, change propagates via OMN-12450
+    pin-bump bot"
+  related_tickets:
+    - OMN-12450  # canonical .gitignore baseline + cross-repo enforcement epic
+    - OMN-12451  # this spec file
+    - OMN-12452  # T2 validator + CI wiring
