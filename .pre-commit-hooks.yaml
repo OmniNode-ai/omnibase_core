@@ -95,6 +95,17 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: validate-gitignore-baseline
+  name: Gitignore Baseline Validator (OMN-12453)
+  description: >
+    Assert that every managed block declared in architecture-handshakes/gitignore-baseline.yaml appears
+    VERBATIM in the target repo's .gitignore. Enforces universal block on all repos; python block on repos
+    that contain pyproject.toml. Suppress all findings for a file with: # gitignore-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validators.gitignore_baseline
+  pass_filenames: false
+  stages: [pre-commit]
+
 - id: check-antipatterns
   name: KB Antipattern Checker (offline, non-semantic rules only)
   description: >

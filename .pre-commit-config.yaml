@@ -539,6 +539,18 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # OMN-12453: gitignore-baseline compliance gate
+      # Asserts managed blocks from architecture-handshakes/gitignore-baseline.yaml
+      # appear VERBATIM in this repo's .gitignore.
+      # Suppress all findings with: # gitignore-ok: <reason>
+      - id: validate-gitignore-baseline
+        name: Gitignore Baseline Validator (OMN-12453)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validators.gitignore_baseline
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # OMN-10741: Unified localhost/hardcoded-endpoint fallback validator
       # Covers all 6 pattern types from OMN-10658 enforcement sweep.
       # Annotation: add  # fallback-ok: <reason>  to exempt a justified line.
