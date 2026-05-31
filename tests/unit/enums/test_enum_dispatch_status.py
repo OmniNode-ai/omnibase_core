@@ -30,11 +30,13 @@ class TestEnumDispatchStatus:
             "SUCCESS": "success",
             "ROUTED": "routed",
             "NO_HANDLER": "no_handler",
+            "NO_DISPATCHER": "no_dispatcher",
             "HANDLER_ERROR": "handler_error",
             "TIMEOUT": "timeout",
             "INVALID_MESSAGE": "invalid_message",
             "PUBLISH_FAILED": "publish_failed",
             "SKIPPED": "skipped",
+            "INTERNAL_ERROR": "internal_error",
         }
 
         for name, value in expected_values.items():
@@ -43,7 +45,7 @@ class TestEnumDispatchStatus:
 
     def test_enum_count(self):
         """Test expected number of enum values."""
-        assert len(EnumDispatchStatus) == 8
+        assert len(EnumDispatchStatus) == 10
 
     def test_string_representation(self):
         """Test string representation of enum values."""
@@ -57,11 +59,13 @@ class TestEnumDispatchStatus:
         terminal_statuses = [
             EnumDispatchStatus.SUCCESS,
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.TIMEOUT,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.PUBLISH_FAILED,
             EnumDispatchStatus.SKIPPED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         ]
 
         for status in terminal_statuses:
@@ -86,10 +90,12 @@ class TestEnumDispatchStatus:
         # All error states should be terminal
         error_states = [
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.TIMEOUT,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.PUBLISH_FAILED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         ]
         for status in error_states:
             assert status.is_terminal() is True
@@ -110,10 +116,12 @@ class TestEnumDispatchStatus:
         # Error statuses
         error_statuses = [
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.TIMEOUT,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.PUBLISH_FAILED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         ]
 
         for status in error_statuses:
@@ -145,9 +153,11 @@ class TestEnumDispatchStatus:
             EnumDispatchStatus.SUCCESS,
             EnumDispatchStatus.ROUTED,
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.SKIPPED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         ]
 
         for status in no_retry_statuses:
@@ -313,16 +323,18 @@ class TestEnumDispatchStatus:
     def test_is_terminal_exhaustive(self):
         """Test is_terminal returns correct values for ALL statuses.
 
-        Exhaustive test to ensure all 8 statuses are covered.
+        Exhaustive test to ensure all statuses are covered.
         """
         terminal_statuses = {
             EnumDispatchStatus.SUCCESS,
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.TIMEOUT,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.PUBLISH_FAILED,
             EnumDispatchStatus.SKIPPED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         }
 
         for status in EnumDispatchStatus.__members__.values():
@@ -347,13 +359,13 @@ class TestEnumDispatchStatus:
         assert terminal_count + non_terminal_count == len(EnumDispatchStatus)
 
         # Expected counts based on the enum definition
-        assert terminal_count == 7  # All except ROUTED
+        assert terminal_count == 9  # All except ROUTED
         assert non_terminal_count == 1  # Only ROUTED
 
     def test_is_successful_exhaustive(self):
         """Test is_successful returns correct values for ALL statuses.
 
-        Exhaustive test to ensure all 8 statuses are covered.
+        Exhaustive test to ensure all statuses are covered.
         """
         for status in EnumDispatchStatus.__members__.values():
             expected = status == EnumDispatchStatus.SUCCESS
@@ -365,14 +377,16 @@ class TestEnumDispatchStatus:
     def test_is_error_exhaustive(self):
         """Test is_error returns correct values for ALL statuses.
 
-        Exhaustive test to ensure all 8 statuses are covered.
+        Exhaustive test to ensure all statuses are covered.
         """
         error_statuses = {
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.TIMEOUT,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.PUBLISH_FAILED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         }
 
         for status in EnumDispatchStatus.__members__.values():
@@ -385,7 +399,7 @@ class TestEnumDispatchStatus:
     def test_requires_retry_exhaustive(self):
         """Test requires_retry returns correct values for ALL statuses.
 
-        Exhaustive test to ensure all 8 statuses are covered.
+        Exhaustive test to ensure all statuses are covered.
         """
         retry_statuses = {
             EnumDispatchStatus.TIMEOUT,
