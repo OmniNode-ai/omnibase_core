@@ -9,7 +9,7 @@ registrations in the dispatch engine. Handlers are the execution units that
 process messages after routing.
 
 Design Pattern:
-    The ServiceHandlerRegistry follows the "freeze after init" pattern (like EnvelopeRouter):
+    The ServiceHandlerRegistry follows the "freeze after init" pattern:
     1. Registration phase: Register handlers during startup (single-threaded)
     2. Freeze: Call freeze() to prevent further modifications
     3. Execution phase: Thread-safe read access for handler lookup
@@ -26,7 +26,6 @@ Thread Safety:
 
 Related:
     - OMN-934: Handler registry for message dispatch engine
-    - EnvelopeRouter: Uses similar freeze-after-init pattern
     - ModelHandlerRegistration: Handler metadata model
     - ModelExecutionShapeValidation: Validates execution shapes
 
@@ -113,8 +112,6 @@ class ServiceHandlerRegistry:
 
     See Also:
         - :class:`ProtocolMessageHandler`: Handler protocol definition
-        - :class:`~omnibase_core.runtime.runtime_envelope_router.EnvelopeRouter`:
-          Similar freeze-after-init pattern
         - :class:`~omnibase_core.models.validation.model_execution_shape_validation.ModelExecutionShapeValidation`:
           Execution shape validation
 

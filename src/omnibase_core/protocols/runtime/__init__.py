@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Runtime protocols for ONEX EnvelopeRouter and handler integration.
+Runtime protocols for ONEX message handler integration.
 
 Core-native protocol definitions for runtime handlers.
 These protocols establish the contracts that handler implementations (in SPI
@@ -15,24 +15,8 @@ Design Principles:
 - Provide complete type hints for mypy strict mode compliance
 
 Module Organization:
-- protocol_handler.py: Handler protocol for ONEX runtime handler interface
 - protocol_handler_registry.py: Handler registry protocol for DI abstraction
 - protocol_message_handler.py: Category-based message handler protocol
-
-Usage:
-    from omnibase_core.protocols.runtime import ProtocolHandler, ProtocolMessageHandler
-
-    class MyHandler(ProtocolHandler):
-        @property
-        def handler_type(self) -> EnumHandlerType:
-            return EnumHandlerType.HTTP
-
-        async def execute(self, envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
-            # Handler implementation
-            ...
-
-        def describe(self) -> TypedDictHandlerMetadata:
-            return {"name": "my_handler", "version": ModelSemVer(major=1, minor=0, patch=0)}
 
 Dependency Injection:
     Register handler registry under "ProtocolHandlerRegistry" DI token:
@@ -48,8 +32,6 @@ Dependency Injection:
         registry = container.get_service("ProtocolHandlerRegistry")
 
 Related:
-    - OMN-226: ProtocolHandler interface definition
-    - OMN-228: EnvelopeRouter transport-agnostic orchestrator
     - OMN-934: Handler registry for message dispatch engine
     - OMN-1293: Contract-driven handler routing
 
@@ -58,7 +40,6 @@ Related:
    Added ProtocolHandlerRegistry for handler registry abstraction.
 """
 
-from omnibase_core.protocols.runtime.protocol_handler import ProtocolHandler
 from omnibase_core.protocols.runtime.protocol_handler_registry import (
     ProtocolHandlerRegistry,
 )
@@ -70,7 +51,6 @@ from omnibase_core.protocols.runtime.protocol_runtime_skill_client import (
 )
 
 __all__ = [
-    "ProtocolHandler",
     "ProtocolHandlerRegistry",
     "ProtocolMessageHandler",
     "ProtocolRuntimeSkillClient",

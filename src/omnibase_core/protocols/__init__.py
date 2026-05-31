@@ -241,7 +241,6 @@ from omnibase_core.protocols.resolution import (
 # Runtime Module Exports
 # =============================================================================
 from omnibase_core.protocols.runtime import (
-    ProtocolHandler,
     ProtocolHandlerRegistry,
     ProtocolMessageHandler,
 )
@@ -473,7 +472,6 @@ __all__ = [
     # ==========================================================================
     # Runtime Module
     # ==========================================================================
-    "ProtocolHandler",
     "ProtocolHandlerRegistry",
     "ProtocolMessageHandler",
     # ==========================================================================
