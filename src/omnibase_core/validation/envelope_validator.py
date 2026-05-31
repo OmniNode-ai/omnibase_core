@@ -50,7 +50,6 @@ Related:
     - OMN-840: Add configurable validation strictness levels
     - OMN-817: Minimal envelope validation before dispatch (PR #35)
     - ModelEnvelopeValidationConfig: Configuration model
-    - EnvelopeRouter: Integrates this validator before dispatch
     - EnvelopeValidationError: Exception raised on strict mode failures
     - EnvelopeValidationResult: Result returned from validate()
 
