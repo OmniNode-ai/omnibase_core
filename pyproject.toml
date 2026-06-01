@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.42.0"
+version = "0.43.0"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -100,13 +100,13 @@ spi = ["omnibase-spi>=0.20.2"]
 # omnibase-compat provides run_coro_sync (OMN-9237) for sync-from-async bridging.
 # Optional so omnibase-core can be installed as a standalone SDK without it;
 # model_onex_container falls back to an inline equivalent when not installed.
-compat = ["omnibase-compat>=0.4.1,<1.0.0"]
+compat = ["omnibase-compat>=0.4.2,<1.0.0"]
 cli = ["psutil>=7.2.1"]
 kafka = ["aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0"]
 cache = ["redis>=5.0.0,<8.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
-full = ["omnibase-spi>=0.20.2", "omnibase-compat>=0.4.1,<1.0.0", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
+full = ["omnibase-spi>=0.20.2", "omnibase-compat>=0.4.2,<1.0.0", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
 
 [dependency-groups]
 dev = [
@@ -137,8 +137,8 @@ dev = [
 
 [tool.uv.sources]
 onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_control.git", branch = "main" }
-# Pinned to compat main while compat v0.4.1 (2026-05-21 release wave) is unpublished on PyPI.
-# Switch to a PyPI pin after omnibase-compat v0.4.1 publishes.
+# Pinned to compat main while compat v0.4.2 (2026-05-31 release wave) is unpublished on PyPI.
+# Switch to a PyPI pin after omnibase-compat v0.4.2 publishes.
 omnibase-compat = { git = "https://github.com/OmniNode-ai/omnibase_compat.git", branch = "main" }
 
 [tool.hatch.build.targets.wheel]
