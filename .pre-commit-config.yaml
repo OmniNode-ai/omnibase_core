@@ -539,6 +539,18 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # Breaking-schema-change compliance (OMN-12621)
+      # Requires an adjacent *.migration.yaml ModelTopicMigrationContract whenever
+      # a *.topic-schema.yaml declares a breaking topic-schema delta (major_bump
+      # or namespace_rename). Suppress a line with: # breaking-schema-ok: <reason>
+      - id: breaking-schema-change
+        name: Breaking-Schema-Change Validator (OMN-12621)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validators.breaking_schema_change
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # OMN-12453: gitignore-baseline compliance gate
       # Asserts managed blocks from architecture-handshakes/gitignore-baseline.yaml
       # appear VERBATIM in this repo's .gitignore.
