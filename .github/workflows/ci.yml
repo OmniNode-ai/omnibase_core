@@ -628,6 +628,50 @@ jobs:
           echo "- bus_bypass_import: scripts import directly from nodes/*/handlers/ (bypasses event bus)" >> $GITHUB_STEP_SUMMARY
           echo "- missing_contract_config: handler env reads with no matching contract.yaml entry" >> $GITHUB_STEP_SUMMARY
 
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Breaking-schema-change validator (OMN-12621)
+  breaking-schema-change:
+    name: Breaking-Schema-Change (OMN-12621)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run breaking-schema-change validator
+        run: uv run python -m omnibase_core.validators.breaking_schema_change src/omnibase_core/
+        # CI runners don't have ambient PYTHONPATH; runs cleanly without env -u PYTHONPATH
+
+      - name: Breaking-schema-change summary
+        if: always()
+        run: |
+          echo "## Breaking-Schema-Change (OMN-12621)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Requires an adjacent *.migration.yaml ModelTopicMigrationContract whenever a" >> $GITHUB_STEP_SUMMARY
+          echo "*.topic-schema.yaml declares a breaking topic-schema delta (major_bump or namespace_rename)." >> $GITHUB_STEP_SUMMARY
+
   # Localhost/env fallback prevention (OMN-10658 / OMN-7227)
   # Rejects os.getenv/os.environ.get with localhost fallback defaults in src/ and scripts/.
   no-env-fallbacks:
@@ -857,7 +901,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance, contract-config-compliance, no-env-fallbacks]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks]
     if: always()
 
     steps:
@@ -878,6 +922,7 @@ jobs:
           secrets="${{ needs.detect-secrets.result }}"
           sdk_boundary="${{ needs.sdk-boundary-check.result }}"
           contract_config="${{ needs.contract-config-compliance.result }}"
+          breaking_schema="${{ needs.breaking-schema-change.result }}"
           no_env_fallbacks="${{ needs.no-env-fallbacks.result }}"
 
           # Report each check
@@ -895,6 +940,7 @@ jobs:
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
           echo "| SDK Boundary Guard | $sdk_boundary |" >> $GITHUB_STEP_SUMMARY
           echo "| Contract-Config Compliance | $contract_config |" >> $GITHUB_STEP_SUMMARY
+          echo "| Breaking-Schema-Change (OMN-12621) | $breaking_schema |" >> $GITHUB_STEP_SUMMARY
           echo "| No Env Fallbacks (OMN-7227) | $no_env_fallbacks |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
@@ -910,6 +956,7 @@ jobs:
              [[ "$secrets" == "success" ]] && \
              [[ "$sdk_boundary" == "success" ]] && \
              [[ "$contract_config" == "success" ]] && \
+             [[ "$breaking_schema" == "success" ]] && \
              [[ "$no_env_fallbacks" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
