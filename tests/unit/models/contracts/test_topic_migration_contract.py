@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_cutover_criterion import EnumCutoverCriterion
 from omnibase_core.enums.enum_migration_phase import EnumMigrationPhase
@@ -19,7 +20,6 @@ from omnibase_core.models.contracts.model_topic_schema_binding import (
     detect_breaking_delta,
     parse_canonical_topic,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -47,7 +47,7 @@ class TestTopicParsingAndBuilder:
         assert parsed.topic_major == 2
 
     def test_parse_rejects_non_canonical(self) -> None:
-        with pytest.raises(ModelOnexError):
+        with pytest.raises(ValueError):
             parse_canonical_topic("not-a-topic")
 
     def test_build_versioned_topic(self) -> None:
@@ -57,7 +57,7 @@ class TestTopicParsingAndBuilder:
         )
 
     def test_build_versioned_topic_rejects_bad_version(self) -> None:
-        with pytest.raises(ModelOnexError):
+        with pytest.raises(ValueError):
             build_versioned_topic("payments", "payment-captured", 0)
 
 
@@ -75,7 +75,7 @@ class TestTopicSchemaBinding:
         assert b.parsed.topic_major == b.schema_version.major == 2
 
     def test_binding_major_mismatch_rejected(self) -> None:
-        with pytest.raises(ModelOnexError):
+        with pytest.raises(ValidationError):
             _binding(
                 "onex.evt.payments.payment-captured.v1", "PAYMENT_CAPTURED", _sv(2)
             )
@@ -186,7 +186,7 @@ class TestTopicMigrationContract:
             c.compatibility_window_hours = 1  # type: ignore[misc]
 
     def test_non_breaking_delta_rejected(self) -> None:
-        with pytest.raises(ModelOnexError):
+        with pytest.raises(ValidationError):
             ModelTopicMigrationContract(
                 contract_version=_sv(1),
                 ticket="OMN-12621",
@@ -207,7 +207,7 @@ class TestTopicMigrationContract:
             )
 
     def test_drain_proof_gate_requires_drained_criterion(self) -> None:
-        with pytest.raises(ModelOnexError):
+        with pytest.raises(ValidationError):
             ModelTopicMigrationContract(
                 contract_version=_sv(1),
                 ticket="OMN-12621",

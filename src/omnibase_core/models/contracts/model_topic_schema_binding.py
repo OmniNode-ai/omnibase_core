@@ -38,10 +38,8 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_topic_schema_delta import EnumTopicSchemaDelta
 from omnibase_core.models.contracts.model_canonical_topic import ModelCanonicalTopic
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # onex.<kind>.<service>.<event>[.<event>...].v<N>
@@ -58,17 +56,14 @@ def parse_canonical_topic(topic: str) -> ModelCanonicalTopic:
     """Parse a canonical ONEX topic into its structured parts.
 
     Raises:
-        ModelOnexError: if ``topic`` does not match the canonical format
+        ValueError: if ``topic`` does not match the canonical format
             ``onex.<kind>.<service>.<event>[.<event>...].v<N>``.
     """
     match = _CANONICAL_TOPIC_RE.match(topic)
     if match is None:
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.INVALID_INPUT,
-            message=(
-                f"Topic {topic!r} does not match canonical ONEX format "
-                "onex.<kind>.<service>.<event>[.<event>...].v<N>"
-            ),
+        raise ValueError(
+            f"Topic {topic!r} does not match canonical ONEX format "
+            "onex.<kind>.<service>.<event>[.<event>...].v<N>"
         )
     return ModelCanonicalTopic(
         namespace=match.group("namespace"),
@@ -91,18 +86,14 @@ def build_versioned_topic(
     General builder addressing the gap that only ``build_dlq_topic`` existed.
 
     Raises:
-        ModelOnexError: on invalid kind, version, or segment characters.
+        ValueError: on invalid kind, version, or segment characters.
     """
     if kind not in ("cmd", "evt", "dlq", "snapshot", "intent"):
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.INVALID_INPUT,
-            message=f"Invalid topic kind {kind!r}; expected cmd|evt|dlq|snapshot|intent",
+        raise ValueError(
+            f"Invalid topic kind {kind!r}; expected cmd|evt|dlq|snapshot|intent"
         )
     if version < 1:
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.INVALID_INPUT,
-            message=f"Topic version must be >= 1, got {version}",
-        )
+        raise ValueError(f"Topic version must be >= 1, got {version}")
     topic = f"onex.{kind}.{service}.{event}.v{version}"
     # Validate by round-tripping through the canonical parser.
     parse_canonical_topic(topic)
@@ -136,14 +127,11 @@ class ModelTopicSchemaBinding(BaseModel):
     def _assert_major_matches_topic_version(self) -> ModelTopicSchemaBinding:
         parsed = parse_canonical_topic(self.topic)
         if parsed.topic_major != self.schema_version.major:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=(
-                    f"Topic version segment .v{parsed.topic_major} does not match "
-                    f"schema_version major {self.schema_version.major} for topic "
-                    f"{self.topic!r}. The topic .vN MUST equal the event "
-                    "schema_version major (wire-compatibility boundary)."
-                ),
+            raise ValueError(
+                f"Topic version segment .v{parsed.topic_major} does not match "
+                f"schema_version major {self.schema_version.major} for topic "
+                f"{self.topic!r}. The topic .vN MUST equal the event "
+                "schema_version major (wire-compatibility boundary)."
             )
         return self
 

@@ -26,7 +26,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_cutover_criterion import EnumCutoverCriterion
 from omnibase_core.enums.enum_migration_phase import EnumMigrationPhase
 from omnibase_core.enums.enum_topic_schema_delta import EnumTopicSchemaDelta
@@ -35,7 +34,6 @@ from omnibase_core.models.contracts.model_topic_schema_binding import (
     detect_breaking_delta,
     parse_canonical_topic,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -115,25 +113,19 @@ class ModelTopicMigrationContract(BaseModel):
             self.old_binding.topic == self.new_binding.topic
             and self.old_binding.schema_version == self.new_binding.schema_version
         ):
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=(
-                    "Topic-migration contract old_binding and new_binding are "
-                    "identical; a migration must move topic or schema_version."
-                ),
+            raise ValueError(
+                "Topic-migration contract old_binding and new_binding are "
+                "identical; a migration must move topic or schema_version."
             )
 
         # The migration must describe a breaking delta — otherwise no migration
         # contract is needed and authoring one is a smell.
         delta = detect_breaking_delta(self.old_binding, self.new_binding)
         if not delta.is_breaking:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=(
-                    f"Topic-migration contract describes a non-breaking delta "
-                    f"({delta.value}); migration contracts are only for breaking "
-                    "deltas (major_bump or namespace_rename)."
-                ),
+            raise ValueError(
+                f"Topic-migration contract describes a non-breaking delta "
+                f"({delta.value}); migration contracts are only for breaking "
+                "deltas (major_bump or namespace_rename)."
             )
 
         # Drain-proof gate: if required, OLD_TOPIC_DRAINED must be a cutover criterion.
@@ -141,13 +133,10 @@ class ModelTopicMigrationContract(BaseModel):
             self.drain_proof_required
             and EnumCutoverCriterion.OLD_TOPIC_DRAINED not in self.cutover_criteria
         ):
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=(
-                    "drain_proof_required is True but OLD_TOPIC_DRAINED is not "
-                    "among cutover_criteria; the drain-proof gate would never be "
-                    "enforced."
-                ),
+            raise ValueError(
+                "drain_proof_required is True but OLD_TOPIC_DRAINED is not "
+                "among cutover_criteria; the drain-proof gate would never be "
+                "enforced."
             )
 
         # Both topics must be canonical (parse or raise).
