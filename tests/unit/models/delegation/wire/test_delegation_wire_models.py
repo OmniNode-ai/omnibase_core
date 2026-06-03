@@ -368,6 +368,29 @@ class TestModelBifrostDelegationConfig:
         with pytest.raises(ValidationError):
             ModelDelegationBackendConfig(backend_id="local_qwen3", tier="unknown")
 
+    def test_all_live_tier_values_accepted(self) -> None:
+        """All tier values present in live bifrost_delegation.yaml must be valid (OMN-12663).
+
+        Verified against bifrost_delegation.yaml and routing_tiers.yaml in omnimarket
+        and omnibase_infra; values confirmed in D3 trace (OMN-12642).
+        """
+        live_tiers = (
+            "local",
+            "frontier_api",
+            "cheap_cloud",
+            "cheap_frontier",
+            "cli_agents",
+        )
+        for tier in live_tiers:
+            backend = ModelDelegationBackendConfig(backend_id=f"test-{tier}", tier=tier)
+            assert backend.tier == tier, f"tier={tier!r} round-trip failed"
+
+    def test_previously_missing_tiers_now_accepted(self) -> None:
+        """cheap_cloud, cheap_frontier, and cli_agents were the three missing values (OMN-12663)."""
+        for tier in ("cheap_cloud", "cheap_frontier", "cli_agents"):
+            backend = ModelDelegationBackendConfig(backend_id=f"test-{tier}", tier=tier)
+            assert backend.tier == tier
+
 
 @pytest.mark.unit
 class TestModelTaskDelegatedEvent:
