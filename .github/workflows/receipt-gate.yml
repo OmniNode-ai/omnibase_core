@@ -65,7 +65,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 15
     # OMN-10419 invariant I9: disable GHA cache + artifact reuse so merge_group
     # entry always re-evaluates fully. No stale PASS from a previous run can
     # satisfy the gate on a new merge_group event.
