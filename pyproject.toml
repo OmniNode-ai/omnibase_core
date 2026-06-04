@@ -103,10 +103,10 @@ spi = ["omnibase-spi>=0.20.2"]
 compat = ["omnibase-compat>=0.4.2,<1.0.0"]
 cli = ["psutil>=7.2.1"]
 kafka = ["aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0"]
-cache = ["redis>=5.0.0,<8.0.0"]
+cache = ["redis>=5.0.0,<9.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
-full = ["omnibase-spi>=0.20.2", "omnibase-compat>=0.4.2,<1.0.0", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<8.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
+full = ["omnibase-spi>=0.20.2", "omnibase-compat>=0.4.2,<1.0.0", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
 
 [dependency-groups]
 dev = [
