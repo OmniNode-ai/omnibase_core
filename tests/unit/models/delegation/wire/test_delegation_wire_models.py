@@ -246,7 +246,30 @@ class TestModelInferenceIntent:
         )
         assert intent.intent == "llm_inference"
         assert intent.timeout_seconds == 30.0
-        assert intent.api_key is None
+        assert intent.api_key_ref is None
+
+    def test_carries_api_key_reference_not_secret_value(self) -> None:
+        intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+            api_key_ref="GEMINI_API_KEY",  # pragma: allowlist secret
+        )
+
+        assert intent.api_key_ref == "GEMINI_API_KEY"  # pragma: allowlist secret
+        with pytest.raises(ValidationError):
+            ModelInferenceIntent(
+                base_url="http://localhost:8000",
+                model="qwen3",
+                system_prompt="You are helpful.",
+                prompt="Write a test",
+                max_tokens=512,
+                correlation_id=uuid.uuid4(),
+                api_key="sk-test-secret",  # pragma: allowlist secret
+            )
 
     def test_rejects_invalid_intent_literal(self) -> None:
         with pytest.raises(ValidationError):
