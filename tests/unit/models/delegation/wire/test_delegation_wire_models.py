@@ -88,6 +88,33 @@ class TestModelDelegationRequest:
         r = self._make(acceptance_criteria=("response_non_empty",))
         assert "response_non_empty" in r.acceptance_criteria
 
+    @pytest.mark.parametrize(
+        "task_type",
+        [
+            "test",
+            "document",
+            "research",
+            "code_generation",
+            "refactor",
+            "reasoning",
+            "complex_reasoning",
+            "planning",
+            "review",
+            "summarization",
+            "agent_delegation",
+            "escalation",
+        ],
+    )
+    def test_all_compat_task_types_accepted(self, task_type: str) -> None:
+        """All 12 compat task_type values must be accepted (OMN-12663 parity fix)."""
+        r = self._make(task_type=task_type)
+        assert r.task_type == task_type
+
+    def test_invalid_task_type_rejected(self) -> None:
+        """task_type values outside the compat set must be rejected (OMN-12663)."""
+        with pytest.raises(Exception):
+            self._make(task_type="invalid_task_type")
+
 
 @pytest.mark.unit
 class TestValidateAcceptanceCriteria:

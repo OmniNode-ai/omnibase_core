@@ -49,7 +49,20 @@ class ModelDelegationRequest(BaseModel):
     prompt: str = Field(
         ..., description="The user prompt to delegate to the local LLM."
     )
-    task_type: Literal["test", "document", "research"] = Field(
+    task_type: Literal[
+        "test",
+        "document",
+        "research",
+        "code_generation",
+        "refactor",
+        "reasoning",
+        "complex_reasoning",
+        "planning",
+        "review",
+        "summarization",
+        "agent_delegation",
+        "escalation",
+    ] = Field(
         ...,
         description="Classification of the delegation task.",
     )
