@@ -156,8 +156,19 @@ class ModelDelegationBackendConfig(BaseModel):
         default=None,
         description="Optional static HTTP headers required by the backend provider.",
     )
-    tier: Literal["local", "frontier_api"] = Field(
-        ..., description="Routing tier: 'local' or 'frontier_api'."
+    tier: Literal[
+        "local", "frontier_api", "cheap_cloud", "cheap_frontier", "cli_agents"
+    ] = Field(
+        ...,
+        description=(
+            "Routing tier. Values verified against live bifrost_delegation.yaml and "
+            "routing_tiers.yaml (OMN-12663): "
+            "'local' = vLLM on .201; "
+            "'frontier_api' = Claude API; "
+            "'cheap_cloud' = OpenRouter/Gemini/GLM; "
+            "'cheap_frontier' = free-tier frontier models (OMN-12492); "
+            "'cli_agents' = subprocess-dispatched CLI agents (OMN-10137)."
+        ),
     )
     timeout_ms: int = Field(
         default=30000,
