@@ -335,7 +335,7 @@ class MixinHealthCheck:
                 check_tasks.append((check_func.__name__, task))
 
             # fallback-ok: health check task creation should not crash the async health check
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # fallback-ok: task creation error must not crash health check
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Failed to create health check task: {check_func.__name__}",

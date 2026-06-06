@@ -478,6 +478,88 @@ def _check_one_receipt(
     )
 
 
+def _load_allowlist(
+    allowlist_path: Path,
+) -> tuple[bool, list[Any] | None, str]:
+    """Load and parse the skip-token allowlist YAML.
+
+    Returns:
+        ``(ok, approvals_list, error_message)`` where ok=True means the list
+        is usable and approvals_list is the parsed list.
+    """
+    if not allowlist_path.exists():
+        return (
+            False,
+            None,
+            f"[skip-receipt-gate] REJECTED: allowlist not found at {allowlist_path}. "
+            "Use scripts/grant-skip-approval.sh to create an approved entry.",
+        )
+    try:
+        with allowlist_path.open(encoding="utf-8") as fh:
+            raw = yaml.safe_load(fh)
+    except (yaml.YAMLError, OSError) as e:
+        return (
+            False,
+            None,
+            f"[skip-receipt-gate] REJECTED: allowlist corrupt at {allowlist_path}: {e}",
+        )
+    if not isinstance(raw, dict):
+        return (
+            False,
+            None,
+            f"[skip-receipt-gate] REJECTED: allowlist at {allowlist_path} is not a YAML mapping",
+        )
+    approvals = raw.get("approvals", [])
+    if not isinstance(approvals, list):
+        return (
+            False,
+            None,
+            "[skip-receipt-gate] REJECTED: allowlist 'approvals' key is not a list",
+        )
+    return (True, approvals, "")
+
+
+def _check_expiry(entry: Any, approval_id: str) -> tuple[bool, str] | None:
+    """Validate the expires_at field of an allowlist entry.
+
+    Returns:
+        ``None`` when the entry has not expired (caller proceeds).
+        ``(False, reason)`` when expired, unparseable, or missing.
+    """
+    expires_at_raw = entry.get("expires_at")
+    if expires_at_raw is None:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing "
+            "'expires_at' — every approval must expire.",
+        )
+    try:
+        if isinstance(expires_at_raw, str):
+            expires_at = datetime.fromisoformat(expires_at_raw)
+        elif isinstance(expires_at_raw, datetime):
+            expires_at = expires_at_raw
+        else:
+            # error-ok: internal sentinel immediately re-caught by enclosing except (ValueError, TypeError)
+            raise ValueError(f"unexpected type: {type(expires_at_raw)}")
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=UTC)
+        now_utc = datetime.now(tz=UTC)
+        if now_utc > expires_at:
+            return (
+                False,
+                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} expired at "
+                f"{expires_at.isoformat()} (now={now_utc.isoformat()}). "
+                "Use scripts/grant-skip-approval.sh to create a new entry.",
+            )
+    except (ValueError, TypeError) as e:
+        return (
+            False,
+            f"[skip-receipt-gate] REJECTED: approval {approval_id!r} has unparseable "
+            f"expires_at {expires_at_raw!r}: {e}",
+        )
+    return None
+
+
 def _validate_skip_token(
     approval_id: str,
     pr_author: str | None,
@@ -498,34 +580,9 @@ def _validate_skip_token(
         ``(True, audit_message)`` when the token is valid and accepted.
         ``(False, rejection_reason)`` for every rejection case.
     """
-    if not allowlist_path.exists():
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist not found at {allowlist_path}. "
-            "Use scripts/grant-skip-approval.sh to create an approved entry.",
-        )
-
-    try:
-        with allowlist_path.open(encoding="utf-8") as fh:
-            raw = yaml.safe_load(fh)
-    except (yaml.YAMLError, OSError) as e:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist corrupt at {allowlist_path}: {e}",
-        )
-
-    if not isinstance(raw, dict):
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist at {allowlist_path} is not a YAML mapping",
-        )
-
-    approvals = raw.get("approvals", [])
-    if not isinstance(approvals, list):
-        return (
-            False,
-            "[skip-receipt-gate] REJECTED: allowlist 'approvals' key is not a list",
-        )
+    ok, approvals, err = _load_allowlist(allowlist_path)
+    if not ok or approvals is None:
+        return (False, err)
 
     matches = [
         a for a in approvals if isinstance(a, dict) and a.get("id") == approval_id
@@ -570,39 +627,9 @@ def _validate_skip_token(
             "A different team member must grant the approval.",
         )
 
-    # Expiry check — deterministic: compare against current UTC time.
-    expires_at_raw = entry.get("expires_at")
-    if expires_at_raw is None:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing "
-            "'expires_at' — every approval must expire.",
-        )
-    try:
-        if isinstance(expires_at_raw, str):
-            expires_at = datetime.fromisoformat(expires_at_raw)
-        elif isinstance(expires_at_raw, datetime):
-            expires_at = expires_at_raw
-        else:
-            # error-ok: internal sentinel immediately re-caught by enclosing except (ValueError, TypeError)
-            raise ValueError(f"unexpected type: {type(expires_at_raw)}")
-        # Make timezone-aware if naive (assume UTC).
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=UTC)
-        now_utc = datetime.now(tz=UTC)
-        if now_utc > expires_at:
-            return (
-                False,
-                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} expired at "
-                f"{expires_at.isoformat()} (now={now_utc.isoformat()}). "
-                "Use scripts/grant-skip-approval.sh to create a new entry.",
-            )
-    except (ValueError, TypeError) as e:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: approval {approval_id!r} has unparseable "
-            f"expires_at {expires_at_raw!r}: {e}",
-        )
+    expiry_result = _check_expiry(entry, approval_id)
+    if expiry_result is not None:
+        return expiry_result
 
     # Repo scope check.
     scope_repos = entry.get("scope_repos")
@@ -807,6 +834,57 @@ def _validate_main_release_policy(
     )
 
 
+def _check_ticket(
+    ticket_id: str,
+    contracts_dir: Path,
+    receipts_dir: Path,
+    pr_opened_at: datetime | None,
+) -> list[ModelReceiptCheckResult]:
+    """Load a ticket contract and verify all its dod_evidence receipts.
+
+    Returns a list of ModelReceiptCheckResult. A single failed entry with
+    a synthetic ``evidence_item_id="*"`` is returned on contract-level failures
+    (missing file, corrupt YAML, no dod_evidence).
+    """
+
+    def _fail(reason: str) -> list[ModelReceiptCheckResult]:
+        return [
+            ModelReceiptCheckResult(
+                ticket_id=ticket_id,
+                evidence_item_id="*",
+                check_type="*",
+                passed=False,
+                reason=reason,
+            )
+        ]
+
+    contract_path = contracts_dir / f"{ticket_id}.yaml"
+    if not contract_path.exists():
+        return _fail(f"no contract at {contract_path}")
+
+    try:
+        with contract_path.open(encoding="utf-8") as fh:
+            contract_data = yaml.safe_load(fh)
+    except (yaml.YAMLError, OSError) as e:
+        return _fail(f"corrupt contract at {contract_path}: {e}")
+
+    triples = _iter_dod_evidence(contract_data)
+    if not triples:
+        return _fail(f"contract {contract_path} has no dod_evidence items")
+
+    return [
+        _check_one_receipt(
+            ticket_id,
+            item_id,
+            check_type,
+            receipts_dir,
+            contract_path=contract_path,
+            pr_opened_at=pr_opened_at,
+        )
+        for item_id, check_type, _check_value in triples
+    ]
+
+
 def validate_pr_receipts(
     pr_body: str,
     contracts_dir: Path,
@@ -990,58 +1068,9 @@ def validate_pr_receipts(
 
     all_checks: list[ModelReceiptCheckResult] = []
     for ticket_id in ticket_ids:
-        contract_path = contracts_dir / f"{ticket_id}.yaml"
-        if not contract_path.exists():
-            all_checks.append(
-                ModelReceiptCheckResult(
-                    ticket_id=ticket_id,
-                    evidence_item_id="*",
-                    check_type="*",
-                    passed=False,
-                    reason=f"no contract at {contract_path}",
-                )
-            )
-            continue
-
-        try:
-            with contract_path.open(encoding="utf-8") as fh:
-                contract_data = yaml.safe_load(fh)
-        except (yaml.YAMLError, OSError) as e:
-            all_checks.append(
-                ModelReceiptCheckResult(
-                    ticket_id=ticket_id,
-                    evidence_item_id="*",
-                    check_type="*",
-                    passed=False,
-                    reason=f"corrupt contract at {contract_path}: {e}",
-                )
-            )
-            continue
-
-        triples = _iter_dod_evidence(contract_data)
-        if not triples:
-            all_checks.append(
-                ModelReceiptCheckResult(
-                    ticket_id=ticket_id,
-                    evidence_item_id="*",
-                    check_type="*",
-                    passed=False,
-                    reason=f"contract {contract_path} has no dod_evidence items",
-                )
-            )
-            continue
-
-        for item_id, check_type, _check_value in triples:
-            all_checks.append(
-                _check_one_receipt(
-                    ticket_id,
-                    item_id,
-                    check_type,
-                    receipts_dir,
-                    contract_path=contract_path,
-                    pr_opened_at=pr_opened_at,
-                )
-            )
+        all_checks.extend(
+            _check_ticket(ticket_id, contracts_dir, receipts_dir, pr_opened_at)
+        )
 
     failures = [c for c in all_checks if not c.passed]
     if failures:

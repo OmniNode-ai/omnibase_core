@@ -89,7 +89,7 @@ class ModelEventTypeRegistry:
         for contract_file in contract_files:
             try:
                 events_discovered += self._discover_from_contract(contract_file)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # fallback-ok: resilient discovery skips invalid contracts
                 # fallback-ok: resilient discovery - skip invalid contracts with debug logging
                 logger.debug("Failed to discover events from %s: %s", contract_file, e)
                 continue

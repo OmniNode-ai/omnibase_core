@@ -30,10 +30,6 @@ from omnibase_core.models.runtime.model_runtime_aliveness_probe_receipt import (
     ModelRuntimeAlivenessProbeReceipt,
 )
 from omnibase_core.models.runtime.model_runtime_directive import ModelRuntimeDirective
-from omnibase_core.models.runtime.model_runtime_node_instance import (
-    ModelRuntimeNodeInstance,
-    NodeInstance,
-)
 from omnibase_core.models.runtime.model_runtime_skill_error import (
     ModelRuntimeSkillError,
 )
@@ -65,8 +61,6 @@ __all__ = [
     "ModelDomainPluginConfig",
     "ModelDomainPluginResult",
     "ModelRuntimeDirective",
-    "ModelRuntimeNodeInstance",
-    "NodeInstance",
     "ModelRuntimeSkillError",
     "ModelRuntimeSkillRequest",
     "ModelRuntimeSkillResponse",

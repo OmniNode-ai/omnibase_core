@@ -129,7 +129,7 @@ class ModelTransaction:
                         "error_type": type(e).__name__,
                     },
                 )
-            except BaseException as e:  # noqa: BLE001
+            except BaseException as e:  # noqa: BLE001  # cleanup-resilience-ok: deferred BaseException subclasses re-raised after cleanup
                 # cleanup-resilience-ok: catch-all for resilience
                 # Catch any remaining BaseException subclasses not explicitly handled
                 # above (e.g., custom BaseException subclasses). Store first occurrence

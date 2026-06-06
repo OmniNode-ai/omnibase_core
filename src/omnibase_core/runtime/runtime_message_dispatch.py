@@ -66,7 +66,6 @@ Thread Safety:
 
 Related:
     - OMN-934: Message dispatch engine implementation
-    - EnvelopeRouter: Transport-agnostic orchestrator (reference for freeze pattern)
 
 .. versionadded:: 0.4.0
 """
@@ -215,7 +214,6 @@ class MessageDispatchEngine:
         - :class:`~omnibase_core.models.dispatch.ModelDispatchRoute`: Route model
         - :class:`~omnibase_core.models.dispatch.ModelDispatchResult`: Result model
         - :class:`~omnibase_core.models.dispatch.ModelDispatchMetrics`: Metrics model
-        - :class:`~omnibase_core.runtime.EnvelopeRouter`: Reference implementation
 
     .. versionadded:: 0.4.0
     """

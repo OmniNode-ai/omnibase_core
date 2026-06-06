@@ -54,9 +54,7 @@ from omnibase_core.protocols.compute import (
     ProtocolParallelExecutor,
     ProtocolTimingService,
 )
-from omnibase_core.resolution.resolver_handler import (
-    HandlerCallable,
-)
+from omnibase_core.resolution.resolver_handler import HandlerCallable
 
 
 class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
@@ -247,157 +245,12 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
         try:
             self._validate_compute_input(input_data)
 
-            # Check for contract-driven dispatch via default_handler
-            # If contract specifies a handler callable, dispatch to it directly
+            # Contract-driven dispatch takes priority over cache/parallel paths.
             handler_info = self._get_default_handler_callable()
             if handler_info is not None:
-                handler_or_loader, is_lazy = handler_info
-                # Resolve the handler - either directly or via lazy loader
-                resolved_handler: HandlerCallable
-                if is_lazy:
-                    # NOTE(OMN-1731): Type narrowing for union with boolean flag.
-                    # When is_lazy=True, handler_or_loader is LazyLoader (a callable
-                    # that returns HandlerCallable). mypy cannot narrow automatically.
-                    # Why: Runtime compatibility requires assigning through a broader static type.
-                    resolved_handler = handler_or_loader()  # type: ignore[assignment]
-                else:
-                    # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is already
-                    # HandlerCallable. mypy cannot narrow the union type automatically.
-                    # Why: Runtime compatibility requires assigning through a broader static type.
-                    resolved_handler = handler_or_loader  # type: ignore[assignment]
+                return await self._execute_contract_driven(input_data, start_time)
 
-                # Dispatch to contract-specified handler
-                # Handler signature: async def handler(node, input_data) -> output
-                # or sync: def handler(node, input_data) -> output
-                # NOTE(OMN-1731): mypy cannot infer the return type from
-                # the dynamically resolved handler. Safe because contract defines the
-                # handler signature requirement.
-                handler_result = resolved_handler(self, input_data)
-
-                # Handle both async and sync handlers
-                if asyncio.iscoroutine(handler_result):
-                    result: Any = await handler_result
-                else:
-                    result = handler_result
-
-                # Calculate processing time for contract-driven dispatch
-                contract_processing_time: float = 0.0
-                if self._timing_service is not None and start_time is not None:
-                    contract_processing_time = self._timing_service.stop_timer(
-                        start_time
-                    )
-
-                    # Log performance warning if threshold exceeded
-                    if contract_processing_time > self.performance_threshold_ms:
-                        emit_log_event(
-                            LogLevel.WARNING,
-                            f"Contract-driven computation exceeded threshold: {contract_processing_time:.2f}ms",
-                            {
-                                "node_id": str(self.node_id),
-                                "operation_id": str(input_data.operation_id),
-                                "computation_type": input_data.computation_type,
-                            },
-                        )
-
-                # Update metrics (only if timing service available)
-                if self._timing_service is not None:
-                    self._update_specialized_metrics(
-                        self.computation_metrics,
-                        input_data.computation_type,
-                        contract_processing_time,
-                        True,
-                    )
-                    await self._update_processing_metrics(
-                        contract_processing_time, True
-                    )
-
-                # If handler returns ModelComputeOutput, return as-is
-                # Otherwise, wrap in ModelComputeOutput for type safety
-                if isinstance(result, ModelComputeOutput):
-                    return result
-                # Wrap raw result in ModelComputeOutput
-                return ModelComputeOutput(
-                    result=result,
-                    operation_id=input_data.operation_id,
-                    computation_type=input_data.computation_type,
-                    processing_time_ms=contract_processing_time,
-                    cache_hit=False,
-                    parallel_execution_used=False,
-                    metadata={"contract_driven_dispatch": True},
-                )
-
-            # Check cache first if enabled and cache is available
-            if input_data.cache_enabled and self._cache is not None:
-                cache_key = self._generate_cache_key(input_data)
-                cached_result = self._cache.get(cache_key)
-                if cached_result is not None:
-                    return ModelComputeOutput(
-                        result=cached_result,
-                        operation_id=input_data.operation_id,
-                        computation_type=input_data.computation_type,
-                        processing_time_ms=0.0,
-                        cache_hit=True,
-                        parallel_execution_used=False,
-                        metadata={"cache_retrieval": True},
-                    )
-
-            # Execute computation
-            parallel_used = False
-            if (
-                input_data.parallel_enabled
-                and self._parallel_executor is not None
-                and self._supports_parallel_execution(input_data)
-            ):
-                result = await self._execute_parallel_computation(input_data)
-                parallel_used = True
-            else:
-                result = await self._execute_sequential_computation(input_data)
-
-            # Calculate processing time if timing service is available
-            processing_time: float = 0.0
-            if self._timing_service is not None and start_time is not None:
-                processing_time = self._timing_service.stop_timer(start_time)
-
-                # Log performance warning if threshold exceeded
-                if processing_time > self.performance_threshold_ms:
-                    emit_log_event(
-                        LogLevel.WARNING,
-                        f"Computation exceeded threshold: {processing_time:.2f}ms",
-                        {
-                            "node_id": str(self.node_id),
-                            "operation_id": str(input_data.operation_id),
-                            "computation_type": input_data.computation_type,
-                        },
-                    )
-
-            # Cache result if enabled and cache is available
-            if input_data.cache_enabled and self._cache is not None:
-                cache_key = self._generate_cache_key(input_data)
-                self._cache.put(cache_key, result, self.cache_ttl_minutes)
-
-            # Update metrics (only if timing service available)
-            if self._timing_service is not None:
-                self._update_specialized_metrics(
-                    self.computation_metrics,
-                    input_data.computation_type,
-                    processing_time,
-                    True,
-                )
-                await self._update_processing_metrics(processing_time, True)
-
-            return ModelComputeOutput(
-                result=result,
-                operation_id=input_data.operation_id,
-                computation_type=input_data.computation_type,
-                processing_time_ms=processing_time,
-                cache_hit=False,
-                parallel_execution_used=parallel_used,
-                metadata={
-                    "input_data_size": len(str(input_data.data)),
-                    "cache_enabled": input_data.cache_enabled,
-                    "pure_mode": self._timing_service is None,
-                },
-            )
+            return await self._execute_standard_computation_path(input_data, start_time)
 
         except (GeneratorExit, KeyboardInterrupt, SystemExit):
             # Never catch cancellation/exit signals
@@ -440,6 +293,140 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
                     "pure_mode": self._timing_service is None,
                 },
             ) from e
+
+    async def _execute_contract_driven(
+        self,
+        input_data: ModelComputeInput[T_Input],
+        start_time: float | None,
+    ) -> ModelComputeOutput[T_Output]:
+        """Dispatch to the contract-specified default handler and wrap the result."""
+        handler_info = self._get_default_handler_callable()
+        assert handler_info is not None  # caller checked
+        handler_or_loader, is_lazy = handler_info
+
+        resolved_handler: HandlerCallable
+        if is_lazy:
+            # NOTE(OMN-1731): When is_lazy=True, handler_or_loader is a LazyLoader.
+            # Why: Runtime compatibility requires assigning through a broader static type.
+            resolved_handler = handler_or_loader()  # type: ignore[assignment]
+        else:
+            # NOTE(OMN-1731): When is_lazy=False, handler_or_loader is HandlerCallable.
+            # Why: Runtime compatibility requires assigning through a broader static type.
+            resolved_handler = handler_or_loader  # type: ignore[assignment]
+
+        # NOTE(OMN-1731): mypy cannot infer return type from dynamically resolved handler.
+        handler_result = resolved_handler(self, input_data)
+        if asyncio.iscoroutine(handler_result):
+            result: Any = await handler_result
+        else:
+            result = handler_result
+
+        contract_processing_time: float = 0.0
+        if self._timing_service is not None and start_time is not None:
+            contract_processing_time = self._timing_service.stop_timer(start_time)
+            if contract_processing_time > self.performance_threshold_ms:
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"Contract-driven computation exceeded threshold: {contract_processing_time:.2f}ms",
+                    {
+                        "node_id": str(self.node_id),
+                        "operation_id": str(input_data.operation_id),
+                        "computation_type": input_data.computation_type,
+                    },
+                )
+
+        if self._timing_service is not None:
+            self._update_specialized_metrics(
+                self.computation_metrics,
+                input_data.computation_type,
+                contract_processing_time,
+                True,
+            )
+            await self._update_processing_metrics(contract_processing_time, True)
+
+        if isinstance(result, ModelComputeOutput):
+            return result
+        return ModelComputeOutput(
+            result=result,
+            operation_id=input_data.operation_id,
+            computation_type=input_data.computation_type,
+            processing_time_ms=contract_processing_time,
+            cache_hit=False,
+            parallel_execution_used=False,
+            metadata={"contract_driven_dispatch": True},
+        )
+
+    async def _execute_standard_computation_path(
+        self,
+        input_data: ModelComputeInput[T_Input],
+        start_time: float | None,
+    ) -> ModelComputeOutput[T_Output]:
+        """Cache check → parallel/sequential execution → cache store → metrics."""
+        if input_data.cache_enabled and self._cache is not None:
+            cache_key = self._generate_cache_key(input_data)
+            cached_result = self._cache.get(cache_key)
+            if cached_result is not None:
+                return ModelComputeOutput(
+                    result=cached_result,
+                    operation_id=input_data.operation_id,
+                    computation_type=input_data.computation_type,
+                    processing_time_ms=0.0,
+                    cache_hit=True,
+                    parallel_execution_used=False,
+                    metadata={"cache_retrieval": True},
+                )
+
+        parallel_used = False
+        if (
+            input_data.parallel_enabled
+            and self._parallel_executor is not None
+            and self._supports_parallel_execution(input_data)
+        ):
+            result = await self._execute_parallel_computation(input_data)
+            parallel_used = True
+        else:
+            result = await self._execute_sequential_computation(input_data)
+
+        processing_time: float = 0.0
+        if self._timing_service is not None and start_time is not None:
+            processing_time = self._timing_service.stop_timer(start_time)
+            if processing_time > self.performance_threshold_ms:
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"Computation exceeded threshold: {processing_time:.2f}ms",
+                    {
+                        "node_id": str(self.node_id),
+                        "operation_id": str(input_data.operation_id),
+                        "computation_type": input_data.computation_type,
+                    },
+                )
+
+        if input_data.cache_enabled and self._cache is not None:
+            cache_key = self._generate_cache_key(input_data)
+            self._cache.put(cache_key, result, self.cache_ttl_minutes)
+
+        if self._timing_service is not None:
+            self._update_specialized_metrics(
+                self.computation_metrics,
+                input_data.computation_type,
+                processing_time,
+                True,
+            )
+            await self._update_processing_metrics(processing_time, True)
+
+        return ModelComputeOutput(
+            result=result,
+            operation_id=input_data.operation_id,
+            computation_type=input_data.computation_type,
+            processing_time_ms=processing_time,
+            cache_hit=False,
+            parallel_execution_used=parallel_used,
+            metadata={
+                "input_data_size": len(str(input_data.data)),
+                "cache_enabled": input_data.cache_enabled,
+                "pure_mode": self._timing_service is None,
+            },
+        )
 
     async def execute_compute(
         self,

@@ -70,3 +70,57 @@ propagations:
         hook_id: normalization-symmetry
     auto_merge: true
     merge_method: queue_default
+
+  - name: gitignore-baseline-hook
+    source: .pre-commit-hooks.yaml
+    targets:
+      - repo: OmniNode-ai/omnibase_compat
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omnibase_spi
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omnibase_infra
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omniclaude
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omnidash
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omniintelligence
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omnimarket
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omnimemory
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omninode_infra
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/onex_change_control
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omnigemini
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+      - repo: OmniNode-ai/omnibase
+        path: .pre-commit-config.yaml
+        operation: append_hook_entry
+        hook_id: validate-gitignore-baseline
+    auto_merge: true
+    merge_method: queue_default

@@ -128,7 +128,7 @@ class TopicBase(StrEnum):
     # Internal control plane — not an observability topic. No contract topic_base
     # (schema supports one topic_base per contract); governed via topic_allowlist.yaml.
     # Lifecycle: internal_control (OMN-3294)
-    ROUTING_DECISION_CMD = "onex.cmd.omniintelligence.routing-decision.v1"  # noqa: arch-topic-naming
+    ROUTING_DECISION_CMD = "onex.cmd.omniintelligence.routing-decision.v1"  # arch-topic-naming: hyphen in service segment allowed per OMN-3294
 
     # ==========================================================================
     # GitHub PR status topics (OMN-3294)
@@ -487,6 +487,44 @@ class TopicBase(StrEnum):
     """
 
     # ==========================================================================
+    # Delegation inference pipeline topics (OMN-12663)
+    # Live runtime topics confirmed by D3 trace (OMN-12642): the omnibase-infra
+    # namespace is the authoritative runtime namespace for the inference
+    # request/response and delegation completion/failure events.
+    # ==========================================================================
+    DELEGATION_COMPLETED_INFRA = "onex.evt.omnibase-infra.delegation-completed.v1"
+    """Emitted by node_delegation_orchestrator when a delegation run completes successfully.
+
+    Producer: node_delegation_orchestrator (omnibase_infra runtime).
+    Confirmed in live D3 trace (OMN-12642, stability-test lane).
+    """
+
+    DELEGATION_FAILED_INFRA = "onex.evt.omnibase-infra.delegation-failed.v1"
+    """Emitted by node_delegation_orchestrator when a delegation run fails at any stage.
+
+    Producer: node_delegation_orchestrator (omnibase_infra runtime).
+    Confirmed in live D3 trace (OMN-12642, stability-test lane).
+    """
+
+    DELEGATION_INFERENCE_REQUEST = (
+        "onex.cmd.omnibase-infra.delegation-inference-request.v1"
+    )
+    """Command published by the delegation orchestrator to invoke LLM inference.
+
+    Consumed by node_llm_delegation_call_effect (effects runtime).
+    Confirmed in live D3 trace (OMN-12642): raw Kafka payload captured with this
+    exact topic name on stability-test lane.
+    """
+
+    DELEGATION_INFERENCE_RESPONSE = "onex.evt.omnibase-infra.inference-response.v1"
+    """Event published by node_llm_delegation_call_effect after LLM inference completes.
+
+    Published for both success and error outcomes (D4 defect: error_message field
+    indicates failure; no separate error topic exists as of OMN-12643).
+    Confirmed in live D3 trace (OMN-12642): response captured on this exact topic.
+    """
+
+    # ==========================================================================
     # Team lifecycle topics (OMN-7026)
     # Unified event schema for all dispatch surfaces (team_worker,
     # headless_claude, local_llm). Consumed by omnidash team timeline.
@@ -769,7 +807,7 @@ def build_topic(base: str) -> str:
 # Base prefix for per-agent directed inbox topics (OMN-8634).
 # Not a TopicBase member — not a full canonical topic name.
 # Full topic: AGENT_INBOX_DIRECTED_BASE + "." + agent_id + ".v1"
-AGENT_INBOX_DIRECTED_BASE: str = "onex.evt.omniclaude.agent-inbox"  # noqa: arch-topic-naming
+AGENT_INBOX_DIRECTED_BASE: str = "onex.evt.omniclaude.agent-inbox"  # arch-topic-naming: base prefix for directed inbox; full topic = base + "." + agent_id + ".v1"
 
 
 def build_agent_inbox_directed_topic(agent_id: str) -> str:

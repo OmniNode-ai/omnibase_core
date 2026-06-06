@@ -379,7 +379,7 @@ def cli_install(
                     click.echo(f"Warning: {package_path} is unsigned", err=True)
         except click.ClickException:
             raise
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001  # fallback-ok: signature check failure is a warning, not a fatal install error
             click.echo("Warning: could not check package signature", err=True)
 
     if dry_run:
