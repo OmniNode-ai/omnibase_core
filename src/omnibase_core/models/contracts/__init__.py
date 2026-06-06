@@ -93,6 +93,7 @@ from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
 from .model_backup_config import ModelBackupConfig
 from .model_branching_config import ModelBranchingConfig
 from .model_caching_config import ModelCachingConfig
+from .model_canonical_topic import ModelCanonicalTopic
 from .model_capability_provided import ModelCapabilityProvided
 from .model_cli_contribution import (
     CLI_CONTRIBUTION_CONTRACT_TYPE,
@@ -198,6 +199,13 @@ from .model_runtime_handler_config import ModelRuntimeHandlerConfig
 from .model_runtime_host_contract import ModelRuntimeHostContract
 from .model_storage_config import ModelStorageConfig
 from .model_streaming_config import ModelStreamingConfig
+from .model_topic_migration_contract import ModelTopicMigrationContract
+from .model_topic_schema_binding import (
+    ModelTopicSchemaBinding,
+    build_versioned_topic,
+    detect_breaking_delta,
+    parse_canonical_topic,
+)
 from .model_transaction_config import ModelTransactionConfig
 from .model_trigger_mappings import ModelTriggerMappings
 from .model_validation_rules import ModelValidationRules
@@ -301,6 +309,12 @@ __all__ = [
     "ModelReductionConfig",
     "ModelStreamingConfig",
     "ModelActionEmissionConfig",
+    "ModelTopicMigrationContract",
+    "ModelTopicSchemaBinding",
+    "ModelCanonicalTopic",
+    "build_versioned_topic",
+    "detect_breaking_delta",
+    "parse_canonical_topic",
     "ModelTransactionConfig",
     "ModelValidationRules",
     # Workflow models

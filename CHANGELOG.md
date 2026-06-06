@@ -1,3 +1,15 @@
+## v0.43.0 (2026-05-31)
+
+### Features
+- feat(OMN-12454): add gitignore-baseline-hook to propagation-targets.yaml (#1185)
+- feat(OMN-12453): wire gitignore-baseline as pre-commit hook + CI gate (#1184)
+- feat(OMN-12452): build gitignore_baseline validator + unit tests (#1183)
+
+### Changed
+- refactor(OMN-12545): merge infra-only EnumDispatchStatus members into canonical core copy (#1187)
+- chore(OMN-12526): delete dead EnvelopeRouter scaffold (#1186)
+- ci(OMN-12477): add dev-only main-target-guard forward-port (#1182)
+
 ## v0.42.0 (2026-05-21)
 
 ### Features

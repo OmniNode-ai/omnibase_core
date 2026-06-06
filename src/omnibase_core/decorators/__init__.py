@@ -30,9 +30,18 @@ from .decorator_pattern_exclusions import (
     allow_mixed_types,
     exclude_from_onex_standards,
 )
+from .decorator_shim import (
+    SHIM_ATTR,
+    ModelShimMetadata,
+    get_shim_metadata,
+    has_shim,
+    shim,
+)
 
 __all__ = [
     "EFFECT_BOUNDARY_ATTR",
+    "SHIM_ATTR",
+    "ModelShimMetadata",
     "allow_any_type",
     "allow_dict_any",
     "allow_legacy_pattern",
@@ -44,8 +53,11 @@ __all__ = [
     "enforce_execution_shape",
     "exclude_from_onex_standards",
     "get_effect_boundary",
+    "get_shim_metadata",
     "has_effect_boundary",
+    "has_shim",
     "io_error_handling",
+    "shim",
     "standard_error_handling",
     "validation_error_handling",
 ]

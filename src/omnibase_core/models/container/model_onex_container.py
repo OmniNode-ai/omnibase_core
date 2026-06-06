@@ -285,7 +285,7 @@ class ModelONEXContainer:
                     f"ServiceRegistry not available: {e}",
                 )
                 self._enable_service_registry = False
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001  # init-errors-ok: ServiceRegistry init failure uses safe defaults
                 # init-errors-ok: use safe defaults if ServiceRegistry initialization fails
                 emit_log_event(
                     LogLevel.ERROR,

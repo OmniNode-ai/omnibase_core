@@ -237,7 +237,7 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except Exception as e:  # noqa: BLE001
+                except Exception as e:  # noqa: BLE001  # fallback-ok: user shutdown callbacks must not crash service shutdown
                     # fallback-ok: user callbacks must not crash shutdown
                     self._log_error(f"Shutdown callback failed: {e}")
 
@@ -253,7 +253,7 @@ class MixinNodeService:
             # Set service as not running before propagating cancellation.
             self._service_running = False
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001  # cleanup-resilience-ok: shutdown must complete regardless of cleanup errors
             # cleanup-resilience-ok: shutdown must complete even if cleanup fails
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
@@ -372,7 +372,7 @@ class MixinNodeService:
 
         # fallback-ok: service must emit error response for any failure
         # Fallback for truly unexpected exceptions not covered above.
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001  # fallback-ok: unexpected exceptions must produce error response, not crash service
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,

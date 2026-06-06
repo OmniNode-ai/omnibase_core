@@ -29,11 +29,13 @@ class EnumDispatchStatus(UtilStrValueHelper, str, Enum):
         SUCCESS: Message was successfully routed, handled, and outputs published
         ROUTED: Message was successfully routed to a handler (not yet executed)
         NO_HANDLER: No handler was registered for the message type/topic
+        NO_DISPATCHER: No dispatcher was registered for the message type/topic
         HANDLER_ERROR: Handler execution failed with an exception
         TIMEOUT: Handler execution exceeded the configured timeout
         INVALID_MESSAGE: Message failed validation before dispatch
         PUBLISH_FAILED: Handler succeeded but output publishing failed
         SKIPPED: Message was intentionally skipped (e.g., filtered, deduplicated)
+        INTERNAL_ERROR: Internal error during dispatch result construction
 
     Example:
         >>> status = EnumDispatchStatus.SUCCESS
@@ -54,6 +56,9 @@ class EnumDispatchStatus(UtilStrValueHelper, str, Enum):
     NO_HANDLER = "no_handler"
     """No handler was registered for the message type/topic."""
 
+    NO_DISPATCHER = "no_dispatcher"
+    """No dispatcher was registered for the message type/topic."""
+
     HANDLER_ERROR = "handler_error"
     """Handler execution failed with an exception."""
 
@@ -68,6 +73,9 @@ class EnumDispatchStatus(UtilStrValueHelper, str, Enum):
 
     SKIPPED = "skipped"
     """Message was intentionally skipped (e.g., filtered, deduplicated)."""
+
+    INTERNAL_ERROR = "internal_error"
+    """Internal error during dispatch result construction (e.g., Pydantic ValidationError)."""
 
     def is_terminal(self) -> bool:
         """
@@ -88,11 +96,13 @@ class EnumDispatchStatus(UtilStrValueHelper, str, Enum):
         return self in {
             EnumDispatchStatus.SUCCESS,
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.TIMEOUT,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.PUBLISH_FAILED,
             EnumDispatchStatus.SKIPPED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         }
 
     def is_successful(self) -> bool:
@@ -125,10 +135,12 @@ class EnumDispatchStatus(UtilStrValueHelper, str, Enum):
         """
         return self in {
             EnumDispatchStatus.NO_HANDLER,
+            EnumDispatchStatus.NO_DISPATCHER,
             EnumDispatchStatus.HANDLER_ERROR,
             EnumDispatchStatus.TIMEOUT,
             EnumDispatchStatus.INVALID_MESSAGE,
             EnumDispatchStatus.PUBLISH_FAILED,
+            EnumDispatchStatus.INTERNAL_ERROR,
         }
 
     def requires_retry(self) -> bool:
@@ -171,11 +183,13 @@ class EnumDispatchStatus(UtilStrValueHelper, str, Enum):
             cls.SUCCESS: "Message was successfully routed, handled, and outputs published",
             cls.ROUTED: "Message was successfully routed to a handler (pending execution)",
             cls.NO_HANDLER: "No handler was registered for the message type/topic",
+            cls.NO_DISPATCHER: "No dispatcher was registered for the message type/topic",
             cls.HANDLER_ERROR: "Handler execution failed with an exception",
             cls.TIMEOUT: "Handler execution exceeded the configured timeout",
             cls.INVALID_MESSAGE: "Message failed validation before dispatch",
             cls.PUBLISH_FAILED: "Handler succeeded but output publishing failed",
             cls.SKIPPED: "Message was intentionally skipped",
+            cls.INTERNAL_ERROR: "Internal error during dispatch result construction",
         }
         return descriptions.get(status, "Unknown dispatch status")
 

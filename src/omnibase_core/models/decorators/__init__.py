@@ -6,5 +6,6 @@
 from omnibase_core.models.decorators.model_pattern_exclusion_info import (
     ModelPatternExclusionInfo,
 )
+from omnibase_core.models.decorators.model_shim_metadata import ModelShimMetadata
 
-__all__ = ["ModelPatternExclusionInfo"]
+__all__ = ["ModelPatternExclusionInfo", "ModelShimMetadata"]

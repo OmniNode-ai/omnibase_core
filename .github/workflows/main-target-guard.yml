@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 #
 # OMN-12243: Block PRs targeting main unless they are promotion PRs
-# from dev with a promotion receipt, or hotfix PRs with evidence and
-# a backmerge link.
+# from dev with a promotion receipt.
+# OMN-12477: Removed the hotfix/* bypass - main accepts only dev promotions.
 
 name: Main target guard
 
@@ -46,35 +46,11 @@ jobs:
 
             echo "::error::PR is from dev but is missing a promotion receipt."
             echo "::error::Add a line matching: promotion-receipt: OCC-<number>"
-            echo "::error::Retarget this PR to dev; main accepts only promotion or hotfix PRs."
+            echo "::error::Retarget this PR to dev; main accepts only promotion PRs."
             exit 1
           fi
 
-          if [[ "${HEAD_REF}" == hotfix/* ]]; then
-            MISSING=()
-
-            if ! echo "${PR_BODY}" | grep -qE 'hotfix-evidence:[[:space:]]*OCC-[0-9]+'; then
-              MISSING+=("hotfix-evidence: OCC-<number>")
-            fi
-
-            if ! echo "${PR_BODY}" | grep -qE 'backmerge:[[:space:]]*#[0-9]+'; then
-              MISSING+=("backmerge: #<pr-number>")
-            fi
-
-            if [[ "${#MISSING[@]}" -eq 0 ]]; then
-              echo "::notice::Hotfix PR from '${HEAD_REF}' with valid hotfix evidence and backmerge. Allowed."
-              exit 0
-            fi
-
-            echo "::error::Hotfix PR from '${HEAD_REF}' is missing required fields:"
-            for field in "${MISSING[@]}"; do
-              echo "::error::  - ${field}"
-            done
-            echo "::error::Retarget this PR to dev; main accepts only promotion or hotfix PRs."
-            exit 1
-          fi
-
-          echo "::error::PRs targeting main must come from dev or hotfix/*."
+          echo "::error::PRs targeting main must come from dev."
           echo "::error::Head ref '${HEAD_REF}' is not permitted to target main directly."
-          echo "::error::Retarget this PR to dev; main accepts only promotion or hotfix PRs."
+          echo "::error::Retarget this PR to dev; main accepts only promotion PRs."
           exit 1

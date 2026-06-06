@@ -207,7 +207,7 @@ class MixinDiscoveryResponder:
         if self._discovery_unsubscribe:
             try:
                 await self._discovery_unsubscribe()
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001  # cleanup-resilience-ok: shutdown cleanup errors are non-critical
                 # cleanup-resilience-ok: cleanup errors during shutdown are non-critical
                 pass
 

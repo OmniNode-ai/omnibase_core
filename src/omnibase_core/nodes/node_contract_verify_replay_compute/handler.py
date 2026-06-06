@@ -265,7 +265,7 @@ class NodeContractVerifyReplayCompute:
         """Check 1: all overlay YAMLs parse as ModelContractPatch."""
         try:
             patches = reader.get_overlay_patches()
-        except (ModelOnexError, Exception) as exc:  # noqa: BLE001
+        except (ModelOnexError, Exception) as exc:  # noqa: BLE001  # boundary-ok: check returns FAIL result, never raises
             return ModelVerifyCheckResult(
                 check_name="schema_validation",
                 status=EnumCheckStatus.FAIL,
@@ -301,7 +301,7 @@ class NodeContractVerifyReplayCompute:
         """
         try:
             patches = reader.get_overlay_patches()
-        except (ModelOnexError, Exception) as exc:  # noqa: BLE001
+        except (ModelOnexError, Exception) as exc:  # noqa: BLE001  # boundary-ok: check returns FAIL result, never raises
             return ModelVerifyCheckResult(
                 check_name="capability_linting",
                 status=EnumCheckStatus.FAIL,
@@ -376,7 +376,7 @@ class NodeContractVerifyReplayCompute:
                     raw_content = zf.read(scenario_entry.path)
                     try:
                         scenario_data = yaml.safe_load(raw_content.decode("utf-8"))
-                    except Exception:  # noqa: BLE001
+                    except Exception:  # noqa: BLE001  # fallback-ok: unparseable YAML skipped, not a bundle integrity failure
                         continue  # unparseable YAML — not our problem here
 
                     if not isinstance(scenario_data, dict):
@@ -389,7 +389,7 @@ class NodeContractVerifyReplayCompute:
                                 f"scenario '{scenario_entry.id}': "
                                 f"fixture_path '{fixture_path}' not in bundle"
                             )
-        except (zipfile.BadZipFile, Exception) as exc:  # noqa: BLE001
+        except (zipfile.BadZipFile, Exception) as exc:  # noqa: BLE001  # boundary-ok: check returns FAIL result, never raises
             return ModelVerifyCheckResult(
                 check_name="fixture_presence",
                 status=EnumCheckStatus.FAIL,
@@ -422,7 +422,7 @@ class NodeContractVerifyReplayCompute:
         """
         try:
             patches = reader.get_overlay_patches()
-        except (ModelOnexError, Exception) as exc:  # noqa: BLE001
+        except (ModelOnexError, Exception) as exc:  # noqa: BLE001  # boundary-ok: check returns FAIL result, never raises
             return ModelVerifyCheckResult(
                 check_name="overlay_merge_correctness",
                 status=EnumCheckStatus.FAIL,
@@ -477,7 +477,7 @@ class NodeContractVerifyReplayCompute:
                 # Single overlay — use simple merge.
                 engine.merge(patch=base_patch)
 
-        except (ModelOnexError, Exception) as exc:  # noqa: BLE001
+        except (ModelOnexError, Exception) as exc:  # noqa: BLE001  # boundary-ok: check returns FAIL result, never raises
             return ModelVerifyCheckResult(
                 check_name="overlay_merge_correctness",
                 status=EnumCheckStatus.FAIL,
@@ -561,7 +561,7 @@ class NodeContractVerifyReplayCompute:
                         missing.append(
                             f"scenario '{scenario.id}': path '{scenario.path}' missing"
                         )
-        except (zipfile.BadZipFile, Exception) as exc:  # noqa: BLE001
+        except (zipfile.BadZipFile, Exception) as exc:  # noqa: BLE001  # boundary-ok: check returns FAIL result, never raises
             return ModelVerifyCheckResult(
                 check_name="all_scenarios_present",
                 status=EnumCheckStatus.FAIL,
@@ -601,7 +601,7 @@ class NodeContractVerifyReplayCompute:
                         missing.append(
                             f"invariant '{inv.id}': path '{inv.path}' missing"
                         )
-        except (zipfile.BadZipFile, Exception) as exc:  # noqa: BLE001
+        except (zipfile.BadZipFile, Exception) as exc:  # noqa: BLE001  # boundary-ok: check returns FAIL result, never raises
             return ModelVerifyCheckResult(
                 check_name="all_invariants_present",
                 status=EnumCheckStatus.FAIL,
@@ -684,7 +684,7 @@ class NodeContractVerifyReplayCompute:
 
             sig_bytes = private_key.sign(report_digest.encode("ascii"))
             return base64.b64encode(sig_bytes).decode("ascii")
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001  # fallback-ok: signing is best-effort for MVP; report is still valid unsigned
             # fallback-ok: signing is best-effort for MVP; report is still valid
             return None
 

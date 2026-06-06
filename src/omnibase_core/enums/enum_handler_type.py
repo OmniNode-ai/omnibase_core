@@ -46,12 +46,6 @@ class EnumHandlerType(UtilStrValueHelper, str, Enum):
             - ``LOCAL`` ("local"): Local echo handler for dev/test only.
               WARNING: Not for production use.
 
-    See Also:
-        - :class:`~omnibase_core.protocols.runtime.protocol_handler.ProtocolHandler`:
-          Protocol that uses this enum for handler classification
-        - :class:`~omnibase_core.runtime.runtime_envelope_router.EnvelopeRouter`:
-          Router that registers handlers by this type
-
     .. versionchanged:: 0.3.6
         Added concrete handler types (HTTP, DATABASE, KAFKA, etc.)
 

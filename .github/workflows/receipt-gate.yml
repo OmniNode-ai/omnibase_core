@@ -342,6 +342,50 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
+      # OMN-12565: Runner Python write-contract preflight.
+      #
+      # The merge-group Receipt Gate previously installed omnibase-core into the
+      # system interpreter via `uv pip install --system`, which writes
+      # /usr/local/lib/python3.12/dist-packages. On a freshly recreated
+      # self-hosted runner that path is owned by root and not writable by the
+      # `runner` user, so the gate failed until each container was manually
+      # chowned — container state, not an image guarantee.
+      #
+      # The durable shape removes `--system` entirely and installs into a
+      # uv-managed virtual environment under $GITHUB_WORKSPACE (always writable
+      # on a fresh runner). This preflight asserts that contract up front and
+      # fails loudly if it is violated, before any install or gate step runs.
+      - name: Preflight runner Python write contract
+        env:
+          RECEIPT_GATE_VENV: ${{ github.workspace }}/.receipt-gate-venv
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GITHUB_WORKSPACE:-}" ]; then
+            echo "::error::OMN-12565 write-contract preflight: GITHUB_WORKSPACE is unset; cannot locate the writable venv root."
+            exit 1
+          fi
+
+          # Contract part 1: the workspace-rooted venv parent must be writable.
+          # This is the path the install step uses instead of the system path.
+          venv_parent="$(dirname "$RECEIPT_GATE_VENV")"
+          probe="${venv_parent}/.omn12565-write-probe"
+          if ! ( touch "$probe" && rm -f "$probe" ) 2>/dev/null; then
+            echo "::error::OMN-12565 write-contract preflight FAILED: ${venv_parent} is not writable by the runner user. The Receipt Gate venv cannot be created. A freshly recreated runner must expose a writable workspace; check the runner image and mount permissions."
+            exit 1
+          fi
+
+          # Contract part 2: prove we do NOT depend on writing the system
+          # dist-packages path. If a workflow ever reintroduces `uv pip install
+          # --system`, this preflight is the canary — the venv-only path means
+          # /usr/local/lib/python3.12/dist-packages writability is irrelevant.
+          system_dist="/usr/local/lib/python3.12/dist-packages"
+          if [ -d "$system_dist" ] && [ ! -w "$system_dist" ]; then
+            echo "::notice::OMN-12565: ${system_dist} is not writable — that is fine. The Receipt Gate installs into ${RECEIPT_GATE_VENV} (workspace venv), so the unwritable system path is not part of the contract."
+          fi
+
+          echo "::notice::OMN-12565 write-contract preflight PASSED: ${venv_parent} writable; gate uses workspace venv at ${RECEIPT_GATE_VENV}; no --system / dist-packages write required."
+
       # Check out omnibase_compat + omnibase_core from source when running in a
       # caller repo (not omnibase_core itself). This avoids the broken PyPI
       # fallback where omnibase-core's published package references a git+https
@@ -369,7 +413,24 @@ jobs:
         # or a sibling checkout, or the .receipt-gate-deps source checkouts.
         # Never fall back to PyPI — the published package has a broken transitive
         # dep (git+https omnibase-compat URL) that fails in CI.
+        #
+        # OMN-12565: install into a uv-managed virtual environment under
+        # $GITHUB_WORKSPACE instead of the system interpreter. `uv pip install
+        # --system` wrote /usr/local/lib/python3.12/dist-packages, which a
+        # freshly recreated self-hosted runner cannot write. The workspace venv
+        # is always writable, so the write contract no longer depends on a
+        # mutable, manually-chowned system path. The venv python is exported as
+        # RECEIPT_GATE_PY for the downstream gate steps.
+        env:
+          RECEIPT_GATE_VENV: ${{ github.workspace }}/.receipt-gate-venv
         run: |
+          set -euo pipefail
+
+          # Create a clean uv venv in the writable workspace. --clear makes the
+          # step idempotent across re-runs on a warm runner.
+          uv venv --clear --python 3.13 "$RECEIPT_GATE_VENV"
+          venv_py="$RECEIPT_GATE_VENV/bin/python"
+
           # OMN-9198 history (see docs/diagnosis-omn-9198-receipt-gate-v3-resolver-prefers-index.md):
           #   - PR #850 --no-index on pass 2: uv couldn't satisfy caller's
           #     `omnibase-core>=X` with index disabled.
@@ -393,8 +454,6 @@ jobs:
           # The explicit dep list below mirrors omnibase_core/pyproject.toml
           # [dependencies]. If core adds a new runtime dep this list must be
           # updated (tracked as OMN-FOLLOWUP pre-merge drift check).
-          uv pip uninstall --system omnibase-core omnibase-compat 2>/dev/null || true
-
           if [ -f "./omnibase_compat/pyproject.toml" ]; then
             compat_path="./omnibase_compat"
           elif [ -f "./.receipt-gate-deps/omnibase_compat/pyproject.toml" ]; then
@@ -404,7 +463,7 @@ jobs:
           fi
 
           if [ -n "$compat_path" ]; then
-            uv pip install --system --refresh -e "$compat_path"
+            uv pip install --python "$venv_py" --refresh -e "$compat_path"
           fi
 
           if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
@@ -426,7 +485,7 @@ jobs:
           # because the editable install below uses --no-index, which disables
           # PyPI lookups for EVERYTHING including build-system requirements.
           # Without hatchling pre-installed, uv cannot build the editable source.
-          uv pip install --system \
+          uv pip install --python "$venv_py" \
             'hatchling' \
             'editables' \
             'pydantic>=2.12.5,<3.0.0' \
@@ -479,9 +538,13 @@ jobs:
             exit 1
           fi
 
-          uv pip install --no-config --system --no-deps --no-index \
+          uv pip install --python "$venv_py" --no-config --no-deps --no-index \
             --reinstall-package omnibase-core \
             "$wheel_path"
+
+          # Export the venv interpreter for the downstream gate steps so they run
+          # against this install instead of bare `python` (the system interpreter).
+          echo "RECEIPT_GATE_PY=$venv_py" >> "$GITHUB_ENV"
 
       - name: Verify receipt_gate_cli importable
         # Fail-fast check: the preceding install step claims success, but if uv
@@ -489,9 +552,9 @@ jobs:
         # installed package won't contain recent modules. Catch that here so the
         # actual gate step gets a clear error instead of a stack trace.
         run: |
-          python -c "from omnibase_core.validation import validator_receipt_gate_cli" || {
+          "$RECEIPT_GATE_PY" -c "from omnibase_core.validation import validator_receipt_gate_cli" || {
             echo "::error::omnibase_core.validation.validator_receipt_gate_cli not importable — install step silently picked a stale PyPI wheel"
-            python -c "import omnibase_core, os; print('omnibase_core at:', os.path.dirname(omnibase_core.__file__))" || true
+            "$RECEIPT_GATE_PY" -c "import omnibase_core, os; print('omnibase_core at:', os.path.dirname(omnibase_core.__file__))" || true
             exit 1
           }
 
@@ -615,7 +678,7 @@ jobs:
             [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
           done < /tmp/pr_commit_texts.txt
 
-          python -m omnibase_core.validation.validator_occ_merge_eligibility \
+          "$RECEIPT_GATE_PY" -m omnibase_core.validation.validator_occ_merge_eligibility \
             --repo "$REPO_SHORT" \
             --pr-number "$PR_NUMBER_RESOLVED" \
             --pr-title "$PR_TITLE" \
@@ -660,7 +723,7 @@ jobs:
           fi
 
           # shellcheck disable=SC2086
-          python -m omnibase_core.validation.validator_receipt_gate_cli \
+          "$RECEIPT_GATE_PY" -m omnibase_core.validation.validator_receipt_gate_cli \
             --pr-body "$PR_BODY" \
             --pr-title "$PR_TITLE" \
             --contracts-dir "${{ steps.evidence.outputs.contracts_dir }}" \

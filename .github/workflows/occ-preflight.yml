@@ -182,6 +182,50 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
+      # OMN-12565: Runner Python write-contract preflight.
+      #
+      # The merge-group eligibility check previously installed omnibase-core into
+      # the system interpreter via `uv pip install --system`, which writes
+      # /usr/local/lib/python3.12/dist-packages. On a freshly recreated
+      # self-hosted runner that path is not writable by the `runner` user, so the
+      # gate failed until each container was manually chowned — container state,
+      # not an image guarantee.
+      #
+      # The durable shape removes `--system` entirely and installs into a
+      # uv-managed virtual environment under $GITHUB_WORKSPACE (always writable
+      # on a fresh runner). This preflight asserts that contract up front and
+      # fails loudly if it is violated, before any install or gate step runs.
+      - name: Preflight runner Python write contract
+        env:
+          OCC_PREFLIGHT_VENV: ${{ github.workspace }}/.occ-preflight-venv
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GITHUB_WORKSPACE:-}" ]; then
+            echo "::error::OMN-12565 write-contract preflight: GITHUB_WORKSPACE is unset; cannot locate the writable venv root."
+            exit 1
+          fi
+
+          # Contract part 1: the workspace-rooted venv parent must be writable.
+          # This is the path the install step uses instead of the system path.
+          venv_parent="$(dirname "$OCC_PREFLIGHT_VENV")"
+          probe="${venv_parent}/.omn12565-write-probe"
+          if ! ( touch "$probe" && rm -f "$probe" ) 2>/dev/null; then
+            echo "::error::OMN-12565 write-contract preflight FAILED: ${venv_parent} is not writable by the runner user. The OCC preflight venv cannot be created. A freshly recreated runner must expose a writable workspace; check the runner image and mount permissions."
+            exit 1
+          fi
+
+          # Contract part 2: prove we do NOT depend on writing the system
+          # dist-packages path. If a workflow ever reintroduces `uv pip install
+          # --system`, this preflight is the canary — the venv-only path means
+          # /usr/local/lib/python3.12/dist-packages writability is irrelevant.
+          system_dist="/usr/local/lib/python3.12/dist-packages"
+          if [ -d "$system_dist" ] && [ ! -w "$system_dist" ]; then
+            echo "::notice::OMN-12565: ${system_dist} is not writable — that is fine. The OCC preflight installs into ${OCC_PREFLIGHT_VENV} (workspace venv), so the unwritable system path is not part of the contract."
+          fi
+
+          echo "::notice::OMN-12565 write-contract preflight PASSED: ${venv_parent} writable; gate uses workspace venv at ${OCC_PREFLIGHT_VENV}; no --system / dist-packages write required."
+
       # Install omnibase_compat and omnibase_core from source so the validator
       # module is available. Pattern mirrors receipt-gate.yml install block.
       - name: Check out omnibase_compat (transitive dep)
@@ -203,8 +247,22 @@ jobs:
           fetch-depth: 1
 
       - name: Install omnibase_core
+        # OMN-12565: install into a uv-managed virtual environment under
+        # $GITHUB_WORKSPACE instead of the system interpreter. `uv pip install
+        # --system` wrote /usr/local/lib/python3.12/dist-packages, which a
+        # freshly recreated self-hosted runner cannot write. The workspace venv
+        # is always writable, so the write contract no longer depends on a
+        # mutable, manually-chowned system path. The venv python is exported as
+        # OCC_PREFLIGHT_PY for the downstream eligibility step.
+        env:
+          OCC_PREFLIGHT_VENV: ${{ github.workspace }}/.occ-preflight-venv
         run: |
-          uv pip uninstall --system omnibase-core omnibase-compat 2>/dev/null || true
+          set -euo pipefail
+
+          # Create a clean uv venv in the writable workspace. --clear makes the
+          # step idempotent across re-runs on a warm runner.
+          uv venv --clear --python 3.13 "$OCC_PREFLIGHT_VENV"
+          venv_py="$OCC_PREFLIGHT_VENV/bin/python"
 
           if [ -f "./omnibase_compat/pyproject.toml" ]; then
             compat_path="./omnibase_compat"
@@ -215,7 +273,7 @@ jobs:
           fi
 
           if [ -n "$compat_path" ]; then
-            uv pip install --system --refresh -e "$compat_path"
+            uv pip install --python "$venv_py" --refresh -e "$compat_path"
           fi
 
           if [ -f "./pyproject.toml" ] && grep -qE '^\s*name\s*=\s*["\x27]omnibase[-_.]core["\x27]' ./pyproject.toml 2>/dev/null; then
@@ -229,7 +287,7 @@ jobs:
             exit 1
           fi
 
-          uv pip install --system \
+          uv pip install --python "$venv_py" \
             'hatchling' \
             'editables' \
             'pydantic>=2.12.5,<3.0.0' \
@@ -246,16 +304,20 @@ jobs:
           mkdir -p /tmp/occ-preflight-wheels
           (cd "$core_path" && uv build --wheel --out-dir /tmp/occ-preflight-wheels)
 
-          uv pip install --system --no-deps --no-index \
+          uv pip install --python "$venv_py" --no-deps --no-index \
             --find-links /tmp/occ-preflight-wheels \
             --reinstall-package omnibase-core \
             omnibase-core
 
+          # Export the venv interpreter for the downstream gate steps so they run
+          # against this install instead of bare `python` (the system interpreter).
+          echo "OCC_PREFLIGHT_PY=$venv_py" >> "$GITHUB_ENV"
+
       - name: Verify eligibility validator importable
         run: |
-          python -c "from omnibase_core.validation.validator_occ_merge_eligibility import validate_occ_merge_eligibility" || {
+          "$OCC_PREFLIGHT_PY" -c "from omnibase_core.validation.validator_occ_merge_eligibility import validate_occ_merge_eligibility" || {
             echo "::error::validator_occ_merge_eligibility not importable after install"
-            python -c "import omnibase_core, os; print('omnibase_core at:', os.path.dirname(omnibase_core.__file__))" || true
+            "$OCC_PREFLIGHT_PY" -c "import omnibase_core, os; print('omnibase_core at:', os.path.dirname(omnibase_core.__file__))" || true
             exit 1
           }
 
@@ -285,7 +347,7 @@ jobs:
             [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
           done < /tmp/pr_commit_texts.txt
 
-          python -m omnibase_core.validation.validator_occ_merge_eligibility \
+          "$OCC_PREFLIGHT_PY" -m omnibase_core.validation.validator_occ_merge_eligibility \
             --repo "$REPO_SHORT" \
             --pr-number "$PR_NUMBER_RESOLVED" \
             --pr-title "$PR_TITLE" \
@@ -297,10 +359,10 @@ jobs:
             "${commit_args[@]}" \
             | tee /tmp/occ_preflight_result.json
 
-          result_eligible="$(python -c "import json,sys; d=json.load(open('/tmp/occ_preflight_result.json')); sys.exit(0 if d.get('eligible') else 1)" 2>/dev/null; echo $?)"
+          result_eligible="$("$OCC_PREFLIGHT_PY" -c "import json,sys; d=json.load(open('/tmp/occ_preflight_result.json')); sys.exit(0 if d.get('eligible') else 1)" 2>/dev/null; echo $?)"
           if [ "$result_eligible" != "0" ]; then
-            detail="$(python -c "import json; d=json.load(open('/tmp/occ_preflight_result.json')); print(d.get('detail','(no detail)'))" 2>/dev/null || true)"
-            reason="$(python -c "import json; d=json.load(open('/tmp/occ_preflight_result.json')); print(d.get('reason','(no reason)'))" 2>/dev/null || true)"
+            detail="$("$OCC_PREFLIGHT_PY" -c "import json; d=json.load(open('/tmp/occ_preflight_result.json')); print(d.get('detail','(no detail)'))" 2>/dev/null || true)"
+            reason="$("$OCC_PREFLIGHT_PY" -c "import json; d=json.load(open('/tmp/occ_preflight_result.json')); print(d.get('reason','(no reason)'))" 2>/dev/null || true)"
             echo "::error::OCC PREFLIGHT FAILED: reason=${reason} — ${detail}"
             echo "::error::Auto-merge cannot arm until OCC eligibility is satisfied."
             echo "::error::Add a passing receipt to drift/dod_receipts/ in onex_change_control for all dod_evidence items cited in this PR's ticket contract."
