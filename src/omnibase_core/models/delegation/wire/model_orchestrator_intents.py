@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -67,6 +67,14 @@ class ModelInferenceIntent(BaseModel):
     extra_headers: dict[str, str] | None = Field(
         default=None,
         description="Additional HTTP headers required by the selected backend.",
+    )
+    provider_request_options: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "Additional OpenAI-compatible request body options required by the "
+            "selected model protocol. The inference effect merges these at the "
+            "provider-call boundary after core fields are constructed."
+        ),
     )
 
 
