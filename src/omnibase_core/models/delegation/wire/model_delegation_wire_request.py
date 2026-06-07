@@ -18,9 +18,30 @@ EnumQualityContractMode = Literal["extend_task_class", "replace_task_class"]
 
 SUPPORTED_ACCEPTANCE_CRITERIA = frozenset(
     {
+        "compiles_without_errors",
+        "concise",
+        "covers_args_returns_raises",
+        "covers_edge_cases",
+        "covers_error_paths",
+        "cites_specific_lines",
+        "docstring_present",
         "exactly_two_sentences",
+        "explains_tradeoffs",
+        "final_artifact_only",
+        "follows_codebase_conventions",
+        "follows_google_style",
+        "methodical_analysis",
+        "no_obvious_regressions",
+        "no_refusal",
+        "output_parses",
+        "passes_existing_tests",
         "plain_text_only",
         "response_non_empty",
+        "signature_preserved",
+        "step_by_step_explanation",
+        "sub_tasks_verified",
+        "task_completed",
+        "uses_pytest_mark_unit",
     }
 )
 MAX_WORDS_PER_SENTENCE_RE = re.compile(r"^max_words_per_sentence_([1-9]\d*)$")

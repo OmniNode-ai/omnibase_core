@@ -88,6 +88,33 @@ class TestModelDelegationRequest:
         r = self._make(acceptance_criteria=("response_non_empty",))
         assert "response_non_empty" in r.acceptance_criteria
 
+    def test_overlay_accepts_quality_gate_dod_checks(self) -> None:
+        r = self._make(
+            quality_contract_mode="replace_task_class",
+            acceptance_criteria=(
+                "compiles_without_errors",
+                "final_artifact_only",
+                "no_refusal",
+                "uses_pytest_mark_unit",
+                "covers_edge_cases",
+                "covers_error_paths",
+                "follows_codebase_conventions",
+                "no_obvious_regressions",
+            ),
+        )
+
+        assert r.quality_contract_mode == "replace_task_class"
+        assert r.acceptance_criteria == (
+            "compiles_without_errors",
+            "final_artifact_only",
+            "no_refusal",
+            "uses_pytest_mark_unit",
+            "covers_edge_cases",
+            "covers_error_paths",
+            "follows_codebase_conventions",
+            "no_obvious_regressions",
+        )
+
     @pytest.mark.parametrize(
         "task_type",
         [
@@ -119,8 +146,14 @@ class TestModelDelegationRequest:
 @pytest.mark.unit
 class TestValidateAcceptanceCriteria:
     def test_valid(self) -> None:
-        result = validate_acceptance_criteria(("response_non_empty", "plain_text_only"))
-        assert "response_non_empty" in result
+        result = validate_acceptance_criteria(
+            ("response_non_empty", "plain_text_only", "final_artifact_only")
+        )
+        assert result == (
+            "response_non_empty",
+            "plain_text_only",
+            "final_artifact_only",
+        )
 
     def test_max_words_pattern(self) -> None:
         result = validate_acceptance_criteria(("max_words_per_sentence_10",))
