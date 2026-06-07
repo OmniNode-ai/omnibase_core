@@ -30,6 +30,7 @@ from omnibase_core.validation.validator_receipt_honesty import (
     EnumHonestyRule,
     HonestyViolation,
     check_receipt_honesty,
+    scan_receipt_files,
     scan_receipts_directory,
 )
 
@@ -589,3 +590,50 @@ class TestScanReceiptsDirectory:
         finding = findings[0]
         assert finding.receipt_path.exists()
         assert finding.violations
+
+
+@pytest.mark.unit
+class TestScanReceiptFiles:
+    """Explicit-file mode supports pre-commit and changed-file CI gating."""
+
+    def test_scan_receipt_files_flags_only_supplied_files(
+        self, tmp_path: object
+    ) -> None:
+        from pathlib import Path
+
+        import yaml
+
+        receipts_dir = Path(str(tmp_path)) / "dod_receipts"
+        gamed_path = (
+            receipts_dir
+            / "OMN-12780"
+            / "dod-deploy-gate-migration-only"
+            / "command.yaml"
+        )
+        honest_path = receipts_dir / "OMN-9999" / "dod-unit-tests" / "command.yaml"
+        gamed_path.parent.mkdir(parents=True)
+        honest_path.parent.mkdir(parents=True)
+        gamed_path.write_text(yaml.safe_dump(GAMED_RECEIPT_OMN_12780))
+        honest = _base_receipt()
+        honest["run_timestamp"] = str(honest["run_timestamp"])
+        honest["status"] = "PASS"
+        honest_path.write_text(yaml.safe_dump(honest))
+
+        findings = scan_receipt_files([honest_path])
+        assert findings == []
+
+        findings = scan_receipt_files([gamed_path])
+        assert len(findings) == 1
+        assert findings[0].receipt_path == gamed_path
+
+    def test_scan_receipt_files_ignores_missing_and_non_yaml_paths(
+        self, tmp_path: object
+    ) -> None:
+        from pathlib import Path
+
+        missing_path = Path(str(tmp_path)) / "missing.yaml"
+        text_path = Path(str(tmp_path)) / "notes.txt"
+        text_path.write_text("not a receipt")
+
+        findings = scan_receipt_files([missing_path, text_path])
+        assert findings == []

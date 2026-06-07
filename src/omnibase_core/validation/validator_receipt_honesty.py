@@ -363,6 +363,37 @@ class ReceiptFinding:
     violations: list[HonestyViolation]
 
 
+def _scan_receipt_file(receipt_path: Path) -> ReceiptFinding | None:
+    """Apply honesty rules to one YAML receipt file.
+
+    Files that are not valid YAML or fail ``ModelDodReceipt`` schema validation
+    are skipped because the structural receipt gate owns those failures.
+    """
+    try:
+        with receipt_path.open(encoding="utf-8") as fh:
+            raw = yaml.safe_load(fh)
+    except (yaml.YAMLError, OSError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    try:
+        receipt = ModelDodReceipt.model_validate(raw)
+    except (ValidationError, ValueError):
+        return None
+    violations = check_receipt_honesty(receipt)
+    if not violations:
+        return None
+    stamped = [
+        HonestyViolation(
+            rule=v.rule,
+            detail=v.detail,
+            receipt_path=receipt_path,
+        )
+        for v in violations
+    ]
+    return ReceiptFinding(receipt_path=receipt_path, violations=stamped)
+
+
 def scan_receipts_directory(receipts_dir: Path) -> list[ReceiptFinding]:
     """Walk ``receipts_dir`` and apply honesty rules to every parseable receipt.
 
@@ -380,31 +411,26 @@ def scan_receipts_directory(receipts_dir: Path) -> list[ReceiptFinding]:
     """
     findings: list[ReceiptFinding] = []
     for receipt_path in sorted(receipts_dir.rglob("*.yaml")):
-        try:
-            with receipt_path.open(encoding="utf-8") as fh:
-                raw = yaml.safe_load(fh)
-        except (yaml.YAMLError, OSError):
-            continue  # structural errors caught by receipt-gate
-        if not isinstance(raw, dict):
+        finding = _scan_receipt_file(receipt_path)
+        if finding is not None:
+            findings.append(finding)
+    return findings
+
+
+def scan_receipt_files(receipt_paths: list[Path]) -> list[ReceiptFinding]:
+    """Apply honesty rules to explicit receipt files.
+
+    This is the mode used by pre-commit and PR CI. It blocks newly changed
+    dishonest receipts without making historical OCC receipts a prerequisite
+    for every unrelated PR.
+    """
+    findings: list[ReceiptFinding] = []
+    for receipt_path in sorted(receipt_paths):
+        if not receipt_path.exists() or receipt_path.suffix not in {".yaml", ".yml"}:
             continue
-        try:
-            receipt = ModelDodReceipt.model_validate(raw)
-        except (ValidationError, ValueError):
-            continue  # schema errors caught by receipt-gate
-        violations = check_receipt_honesty(receipt)
-        if violations:
-            # Attach receipt_path to each violation for CLI output.
-            stamped = [
-                HonestyViolation(
-                    rule=v.rule,
-                    detail=v.detail,
-                    receipt_path=receipt_path,
-                )
-                for v in violations
-            ]
-            findings.append(
-                ReceiptFinding(receipt_path=receipt_path, violations=stamped)
-            )
+        finding = _scan_receipt_file(receipt_path)
+        if finding is not None:
+            findings.append(finding)
     return findings
 
 
@@ -442,16 +468,29 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Stop scanning after the first violation.",
     )
+    parser.add_argument(
+        "receipt_paths",
+        nargs="*",
+        help=(
+            "Optional explicit receipt YAML files to scan. When provided, "
+            "--receipts-dir is used only for display context."
+        ),
+    )
     args = parser.parse_args(argv)
 
     receipts_dir = Path(args.receipts_dir)
-    if not receipts_dir.exists():
+    explicit_paths = [Path(p) for p in args.receipt_paths]
+    if explicit_paths:
+        findings = scan_receipt_files(explicit_paths)
+        target_description = f"{len(explicit_paths)} explicit receipt file(s)"
+    elif not receipts_dir.exists():
         print(f"ERROR: receipts-dir does not exist: {receipts_dir}", file=sys.stderr)
         return 1
-
-    findings = scan_receipts_directory(receipts_dir)
+    else:
+        findings = scan_receipts_directory(receipts_dir)
+        target_description = str(receipts_dir)
     if not findings:
-        print(f"RECEIPT HONESTY GATE PASSED: 0 violations in {receipts_dir}")
+        print(f"RECEIPT HONESTY GATE PASSED: 0 violations in {target_description}")
         return 0
 
     total_violations = sum(len(f.violations) for f in findings)
@@ -478,5 +517,6 @@ __all__ = [
     "HonestyViolation",
     "ReceiptFinding",
     "check_receipt_honesty",
+    "scan_receipt_files",
     "scan_receipts_directory",
 ]
