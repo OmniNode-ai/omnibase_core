@@ -1020,6 +1020,20 @@ repos:
       - id: no-untracked-todos
         stages: [pre-commit]
 
+  # Demo-path topic coherence gate (OMN-12777)
+  # Scoped to demo-path contracts (metadata.demo_path: true).
+  # Fails on: orphan producers/consumers, publish/subscribe byte-mismatch,
+  # widget topics without producers, hand-authored topic literals.
+  - repo: local
+    hooks:
+      - id: demo-path-topic-coherence
+        name: demo-path topic coherence gate (OMN-12777)
+        entry: uv run onex-demo-path-topic-gate src/
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]
