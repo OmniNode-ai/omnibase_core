@@ -698,7 +698,7 @@ dependencies = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.43.0"
+version = "0.44.0"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
@@ -798,8 +798,8 @@ requires-dist = [
     { name = "psutil", marker = "extra == 'full'", specifier = ">=7.2.1" },
     { name = "pydantic", specifier = ">=2.12.5,<3.0.0" },
     { name = "pyyaml", specifier = ">=6.0.2,<7.0.0" },
-    { name = "redis", marker = "extra == 'cache'", specifier = ">=5.0.0,<8.0.0" },
-    { name = "redis", marker = "extra == 'full'", specifier = ">=5.0.0,<8.0.0" },
+    { name = "redis", marker = "extra == 'cache'", specifier = ">=5.0.0,<9.0.0" },
+    { name = "redis", marker = "extra == 'full'", specifier = ">=5.0.0,<9.0.0" },
     { name = "ruamel-yaml", specifier = ">=0.18.0" },
     { name = "sqlglot", marker = "extra == 'full'", specifier = ">=26.0.0,<31.0.0" },
     { name = "sqlglot", marker = "extra == 'sql-parser'", specifier = ">=26.0.0,<31.0.0" },
