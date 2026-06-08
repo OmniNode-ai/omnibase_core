@@ -15,7 +15,7 @@ def test_request_requires_fields() -> None:
         correlation_id=str(uuid4()),
     )
     assert req.target_node_type == "compute"
-    assert req.max_attempts == 2
+    assert req.max_attempts == 10
     assert req.generation_timeout_seconds == 60
 
 

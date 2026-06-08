@@ -10,7 +10,7 @@ class ModelNodeGenerationRequest(BaseModel):
     task_description: str
     correlation_id: str
     target_node_type: str = "compute"
-    max_attempts: int = 2
+    max_attempts: int = 10
     generation_timeout_seconds: int = 60
     validation_timeout_seconds: int = 15
 
