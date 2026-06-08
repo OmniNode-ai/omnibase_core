@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Receipt-Honesty Gate [OMN-12791 validator / OMN-12825 CI wiring]
+#
+# Required status check context: "Receipt Honesty / validate"
+#
+# Runs the receipt-honesty validator unit tests (proves the validator is
+# importable and behaving on the runner), then scans any in-repo DoD receipt
+# YAMLs under drift/dod_receipts/ for gaming patterns (no-op echo probes marked
+# PASS, deferral language in PASS receipts, self-attestation, fake human
+# verifiers, deploy-keyword echo receipts). omnibase_core carries no in-repo
+# receipts today, so the scan passes cleanly when the directory is absent —
+# the check still emits, keeping the merge queue safe when this becomes a
+# required status check.
+#
+# Triggers on pull_request AND merge_group so a later additive flip to a
+# required status check cannot permanently wedge the merge queue.
+
+name: Receipt Honesty
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: receipt-honesty-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run receipt-honesty validator unit tests
+        run: |
+          uv run pytest tests/unit/validation/test_receipt_honesty_validator.py -v
+
+      - name: Scan in-repo DoD receipts (passes cleanly when none present)
+        run: |
+          if [ -d drift/dod_receipts ]; then
+            uv run python -m omnibase_core.validation.validator_receipt_honesty \
+              --receipts-dir drift/dod_receipts
+          else
+            echo "RECEIPT HONESTY GATE: no in-repo drift/dod_receipts/ tree — nothing to scan, passing."
+          fi

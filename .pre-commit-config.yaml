@@ -793,6 +793,21 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # Receipt-Honesty Gate (OMN-12791 validator / OMN-12825 self-consume)
+      # Scans staged DoD receipt YAMLs under drift/dod_receipts/ for gaming
+      # patterns (echo probes marked PASS, deferred evidence in PASS receipts,
+      # self-attestation, fake human verifiers, deploy-keyword echo receipts).
+      # Fails loud if validator_receipt_honesty is not importable (not a silent
+      # skip). Only fires on receipt files matching the path pattern.
+      - id: check-receipt-honesty
+        name: Receipt Honesty Gate (OMN-12791)
+        entry: uv run python -m omnibase_core.validation.validator_receipt_honesty
+        language: system
+        types: [yaml]
+        files: drift/dod_receipts/.*\.yaml$
+        pass_filenames: true
+        stages: [pre-commit]
+
       - id: validate-exception-handling
         name: ONEX Exception Handling Validation
         entry: uv run python scripts/validation/validate-exception-handling.py
