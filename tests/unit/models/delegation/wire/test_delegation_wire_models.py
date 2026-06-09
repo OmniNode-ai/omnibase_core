@@ -443,7 +443,8 @@ class TestModelBifrostDelegationConfig:
             api_key_env="OPENROUTER_API_KEY",  # pragma: allowlist secret
         )
 
-        assert backend.resolved_secret_ref == "llm.openrouter.api_key"  # pragma: allowlist secret
+        expected_secret_ref = "llm.openrouter.api_key"  # pragma: allowlist secret
+        assert backend.resolved_secret_ref == expected_secret_ref
 
     def test_backend_rejects_conflicting_secret_refs(self) -> None:
         with pytest.raises(ValidationError):
@@ -466,7 +467,8 @@ class TestModelBifrostDelegationConfig:
             api_key_ref="llm.openrouter.api_key",  # pragma: allowlist secret
         )
 
-        assert backend.resolved_secret_ref == "llm.openrouter.api_key"  # pragma: allowlist secret
+        expected_secret_ref = "llm.openrouter.api_key"  # pragma: allowlist secret
+        assert backend.resolved_secret_ref == expected_secret_ref
 
     def test_shadow_config_defaults(self) -> None:
         shadow = ModelDelegationShadowConfig()
