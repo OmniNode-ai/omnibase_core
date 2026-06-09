@@ -433,6 +433,29 @@ class TestModelBifrostDelegationConfig:
         assert cfg.failover.max_attempts == 3
         assert cfg.shadow_mode.enabled is False
 
+    def test_backend_prefers_logical_secret_ref(self) -> None:
+        backend = ModelDelegationBackendConfig(
+            backend_id="openrouter",
+            endpoint_url="https://openrouter.ai/api/v1/chat/completions",
+            model_name="openrouter-model",
+            tier="cheap_cloud",
+            secret_ref="llm.openrouter.api_key",
+            api_key_env="OPENROUTER_API_KEY",
+        )
+
+        assert backend.resolved_secret_ref == "llm.openrouter.api_key"
+
+    def test_backend_rejects_conflicting_secret_refs(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelDelegationBackendConfig(
+                backend_id="openrouter",
+                endpoint_url="https://openrouter.ai/api/v1/chat/completions",
+                model_name="openrouter-model",
+                tier="cheap_cloud",
+                secret_ref="llm.openrouter.api_key",
+                api_key_ref="llm.other.api_key",
+            )
+
     def test_shadow_config_defaults(self) -> None:
         shadow = ModelDelegationShadowConfig()
         assert shadow.shadow_label == "SHADOW"

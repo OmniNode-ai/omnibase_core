@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelDelegationShadowConfig(BaseModel):
@@ -150,7 +150,23 @@ class ModelDelegationBackendConfig(BaseModel):
     )
     api_key_env: str | None = Field(
         default=None,
-        description="Optional environment variable name holding the backend API key.",
+        description=(
+            "Legacy environment variable name holding the backend API key. "
+            "Use secret_ref for new backends."
+        ),
+    )
+    api_key_ref: str | None = Field(
+        default=None,
+        description=(
+            "Legacy non-secret API-key reference. Use secret_ref for new backends."
+        ),
+    )
+    secret_ref: str | None = Field(
+        default=None,
+        description=(
+            "Logical secret reference resolved through the lane secret mapping "
+            "and ProtocolSecretStore at the effect boundary."
+        ),
     )
     extra_headers: dict[str, str] | None = Field(
         default=None,
@@ -180,6 +196,24 @@ class ModelDelegationBackendConfig(BaseModel):
         default_factory=tuple,
         description="Capabilities this backend supports.",
     )
+
+    @model_validator(mode="after")
+    def _validate_secret_ref_fields(self) -> ModelDelegationBackendConfig:
+        """Reject ambiguous canonical secret refs while allowing migration aliases."""
+        canonical_refs = {
+            value
+            for value in (self.secret_ref, self.api_key_ref)
+            if value is not None and value.strip()
+        }
+        if len(canonical_refs) > 1:
+            msg = "secret_ref and api_key_ref must match when both are declared"
+            raise ValueError(msg)
+        return self
+
+    @property
+    def resolved_secret_ref(self) -> str | None:
+        """Return the canonical non-secret reference for this backend."""
+        return self.secret_ref or self.api_key_ref or self.api_key_env
 
 
 class ModelDelegationCircuitBreakerConfig(BaseModel):
