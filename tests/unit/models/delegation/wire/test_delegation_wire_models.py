@@ -456,6 +456,18 @@ class TestModelBifrostDelegationConfig:
                 api_key_ref="llm.other.api_key",  # pragma: allowlist secret
             )
 
+    def test_backend_allows_matching_secret_refs_for_migration(self) -> None:
+        backend = ModelDelegationBackendConfig(
+            backend_id="openrouter",
+            endpoint_url="https://openrouter.ai/api/v1/chat/completions",
+            model_name="openrouter-model",
+            tier="cheap_cloud",
+            secret_ref="llm.openrouter.api_key",  # pragma: allowlist secret
+            api_key_ref="llm.openrouter.api_key",  # pragma: allowlist secret
+        )
+
+        assert backend.resolved_secret_ref == "llm.openrouter.api_key"  # pragma: allowlist secret
+
     def test_shadow_config_defaults(self) -> None:
         shadow = ModelDelegationShadowConfig()
         assert shadow.shadow_label == "SHADOW"

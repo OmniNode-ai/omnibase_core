@@ -212,7 +212,7 @@ class ModelDelegationBackendConfig(BaseModel):
 
     @property
     def resolved_secret_ref(self) -> str | None:
-        """Return the canonical non-secret reference for this backend."""
+        """Return secret_ref, then api_key_ref, then legacy api_key_env."""
         return self.secret_ref or self.api_key_ref or self.api_key_env
 
 
