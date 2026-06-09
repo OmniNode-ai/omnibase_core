@@ -439,11 +439,11 @@ class TestModelBifrostDelegationConfig:
             endpoint_url="https://openrouter.ai/api/v1/chat/completions",
             model_name="openrouter-model",
             tier="cheap_cloud",
-            secret_ref="llm.openrouter.api_key",
-            api_key_env="OPENROUTER_API_KEY",
+            secret_ref="llm.openrouter.api_key",  # pragma: allowlist secret
+            api_key_env="OPENROUTER_API_KEY",  # pragma: allowlist secret
         )
 
-        assert backend.resolved_secret_ref == "llm.openrouter.api_key"
+        assert backend.resolved_secret_ref == "llm.openrouter.api_key"  # pragma: allowlist secret
 
     def test_backend_rejects_conflicting_secret_refs(self) -> None:
         with pytest.raises(ValidationError):
@@ -452,8 +452,8 @@ class TestModelBifrostDelegationConfig:
                 endpoint_url="https://openrouter.ai/api/v1/chat/completions",
                 model_name="openrouter-model",
                 tier="cheap_cloud",
-                secret_ref="llm.openrouter.api_key",
-                api_key_ref="llm.other.api_key",
+                secret_ref="llm.openrouter.api_key",  # pragma: allowlist secret
+                api_key_ref="llm.other.api_key",  # pragma: allowlist secret
             )
 
     def test_shadow_config_defaults(self) -> None:
