@@ -1429,7 +1429,7 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@644d04a17f32114d84321cfc1fedafff99aa4924 # main 2026-03-25
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@5f309bdf7056ca117024fa6fc983c8ec208cda3d # main 2026-03-25
         with:
           checks: "boundary-parity"
           warn-only: "false"
