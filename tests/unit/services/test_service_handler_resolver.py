@@ -22,7 +22,7 @@ cases described in the plan:
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 from unittest.mock import MagicMock
 
 import pytest
@@ -57,6 +57,35 @@ class _HandlerWithDeps:
 
     async def handle(self, envelope: object) -> None:
         return None
+
+
+class _ProtocolHandler(Protocol):
+    """A typing.Protocol used as a (mis-declared) handler routing target.
+
+    Mirrors the real-world OMN-12961 defect: a contract's handler_routing
+    points at an interface Protocol (e.g. EvidenceEvaluator) rather than a
+    concrete implementation. Protocol's synthetic
+    `__init__(*args, **kwargs)` exposes only VAR_POSITIONAL/VAR_KEYWORD
+    params, so the resolver's required-param scan sees zero required
+    params and (pre-fix) attempts a zero-arg instantiation that dies inside
+    typing internals with the anonymous "Protocols cannot be instantiated".
+    """
+
+    async def handle(self, envelope: object) -> None:
+        """Protocol method signature only; never executed."""
+
+
+@runtime_checkable
+class _RuntimeCheckableProtocolHandler(Protocol):
+    """A runtime_checkable Protocol handler target.
+
+    Same defect class as `_ProtocolHandler`; included to prove the guard
+    keys off `_is_protocol` (set by typing for any Protocol subclass)
+    rather than any runtime_checkable-specific marker.
+    """
+
+    async def handle(self, envelope: object) -> None:
+        """Protocol method signature only; never executed."""
 
 
 @pytest.mark.unit
@@ -384,6 +413,151 @@ def test_skip_precedes_node_registry() -> None:
         materialized_explicit_dependencies={
             "H": {"projection_reader": proj, "reducer": reducer},
         },
+    )
+
+    result = ServiceHandlerResolver().resolve(ctx)
+
+    assert (
+        result.outcome == EnumHandlerResolutionOutcome.RESOLVED_VIA_LOCAL_OWNERSHIP_SKIP
+    )
+    assert result.handler_instance is None
+
+
+# ---------------------------------------------------------------------------
+# OMN-12961 — Protocol handler rejection.
+#
+# A typing.Protocol used as a handler_routing target is non-instantiable by
+# design. Pre-fix, the resolver's required-param scan treated Protocol's
+# synthetic `__init__(*args, **kwargs)` as zero-arg and called `handler_cls()`,
+# letting typing's anonymous `TypeError("Protocols cannot be instantiated")`
+# escape from typing.py — taking down runtime bootstrap with no attribution to
+# the offending contract/handler. The resolver must fail fast BEFORE any
+# instantiation path with an identifying TypeError naming the handler and its
+# contract, so the infra OMN-12501 quarantine guard (and any other caller) gets
+# an attributable error instead of typing's anonymous one.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_protocol_handler_rejected_with_identifying_type_error() -> None:
+    """Protocol handler_cls raises a TypeError naming handler + contract."""
+    ctx = ModelHandlerResolverContext(
+        handler_cls=_ProtocolHandler,
+        handler_module="omnimarket.nodes.node_overseer_observer.handlers",
+        handler_name="_ProtocolHandler",
+        contract_name="node_overseer_observer",
+        node_name="node_overseer_observer",
+    )
+
+    with pytest.raises(TypeError) as exc:
+        ServiceHandlerResolver().resolve(ctx)
+
+    msg = str(exc.value)
+    # Attributable: names the handler module.name and the owning contract.
+    assert "_ProtocolHandler" in msg
+    assert "omnimarket.nodes.node_overseer_observer.handlers" in msg
+    assert "node_overseer_observer" in msg
+    assert "Protocol" in msg
+    # NOT typing's anonymous internal message.
+    assert msg != "Protocols cannot be instantiated"
+
+
+@pytest.mark.unit
+def test_runtime_checkable_protocol_handler_rejected() -> None:
+    """A runtime_checkable Protocol handler is rejected the same way."""
+    ctx = ModelHandlerResolverContext(
+        handler_cls=_RuntimeCheckableProtocolHandler,
+        handler_module="x",
+        handler_name="_RuntimeCheckableProtocolHandler",
+        contract_name="node_foo",
+        node_name="node_foo",
+    )
+
+    with pytest.raises(TypeError) as exc:
+        ServiceHandlerResolver().resolve(ctx)
+
+    assert "_RuntimeCheckableProtocolHandler" in str(exc.value)
+    assert "Protocol" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_protocol_handler_rejected_even_with_container_present() -> None:
+    """Protocol rejection precedes container DI — the container is never probed."""
+    container = MagicMock()
+    ctx = ModelHandlerResolverContext(
+        handler_cls=_ProtocolHandler,
+        handler_module="x",
+        handler_name="_ProtocolHandler",
+        contract_name="node_foo",
+        node_name="node_foo",
+        container=container,
+    )
+
+    with pytest.raises(TypeError) as exc:
+        ServiceHandlerResolver().resolve(ctx)
+
+    assert "Protocol" in str(exc.value)
+    # Guard runs before Step 3; the container must never be consulted for a
+    # non-instantiable Protocol target.
+    container.get_service.assert_not_called()
+
+
+@pytest.mark.unit
+def test_protocol_handler_rejected_even_with_event_bus_present() -> None:
+    """Protocol rejection precedes known-param injection (Step 4)."""
+    ctx = ModelHandlerResolverContext(
+        handler_cls=_ProtocolHandler,
+        handler_module="x",
+        handler_name="_ProtocolHandler",
+        contract_name="node_foo",
+        node_name="node_foo",
+        event_bus=object(),
+    )
+
+    with pytest.raises(TypeError) as exc:
+        ServiceHandlerResolver().resolve(ctx)
+
+    assert "Protocol" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_protocol_handler_rejected_when_owned_here() -> None:
+    """When ownership says owned-here, the Protocol handler is rejected."""
+    ownership = MagicMock()
+    ownership.is_owned_here.return_value = True
+    ctx = ModelHandlerResolverContext(
+        handler_cls=_ProtocolHandler,
+        handler_module="x",
+        handler_name="_ProtocolHandler",
+        contract_name="node_foo",
+        node_name="node_foo",
+        ownership_query=ownership,
+    )
+
+    with pytest.raises(TypeError) as exc:
+        ServiceHandlerResolver().resolve(ctx)
+
+    assert "Protocol" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_protocol_handler_not_owned_here_still_skips_cleanly() -> None:
+    """Protocol rejection must NOT fire for a node not hosted here.
+
+    Ownership skip (Step 1) is a deliberate non-error path; a Protocol-typed
+    handler on a node this runtime does not host must skip cleanly rather than
+    raise, mirroring infra: only handlers this runtime would actually wire are
+    rejected/quarantined.
+    """
+    ownership = MagicMock()
+    ownership.is_owned_here.return_value = False
+    ctx = ModelHandlerResolverContext(
+        handler_cls=_ProtocolHandler,
+        handler_module="x",
+        handler_name="_ProtocolHandler",
+        contract_name="node_foo",
+        node_name="node_foo",
+        ownership_query=ownership,
     )
 
     result = ServiceHandlerResolver().resolve(ctx)

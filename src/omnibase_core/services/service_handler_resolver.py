@@ -4,6 +4,8 @@
 
 Precedence (first match wins):
     1. Local ownership skip — node not hosted here -> skip cleanly
+    1a. Protocol reject     — typing.Protocol handler_cls -> identifying TypeError
+                              (OMN-12961; non-instantiable interface, fail fast)
     2. Node registry        — materialized explicit dep map from create_registry
     3. Container DI         — container.get_service(handler_cls)
     4. Known-param injection — any combination of event_bus/container/ownership_query
@@ -99,6 +101,31 @@ class ServiceHandlerResolver:
                     skipped_handler=context.handler_name,
                     skipped_reason=(f"node {context.node_name!r} is not hosted here"),
                 )
+
+        # Step 1a - reject non-instantiable Protocol handler classes (OMN-12961).
+        # A `typing.Protocol` used as a `handler_routing` target is an interface,
+        # not a concrete implementation, and cannot be instantiated. Its synthetic
+        # `__init__ = _no_init_or_replace_init(*args, **kwargs)` exposes only
+        # VAR_POSITIONAL/VAR_KEYWORD params, which the required-param scan below
+        # excludes — so the Step 5 zero-arg path would call `handler_cls()` and let
+        # typing's anonymous `TypeError("Protocols cannot be instantiated")` escape
+        # from typing.py, crashing runtime bootstrap with no attribution to the
+        # offending contract/handler. Fail fast here with an identifying TypeError.
+        # `_is_protocol` is the marker typing sets on every Protocol subclass; we
+        # duck-type it (core must not import omnibase_spi) and mirror the infra
+        # OMN-12501 guard semantics, which catches this TypeError and quarantines
+        # the handler as PROTOCOL_HANDLER_DECLARATION. Placed AFTER Step 1 so a
+        # Protocol handler on a node not hosted here still skips cleanly.
+        if getattr(context.handler_cls, "_is_protocol", False):
+            # error-ok: HandlerResolver fail-fast on non-instantiable Protocol target.
+            raise TypeError(
+                f"Handler {context.handler_module}.{context.handler_name} "
+                f"declared by contract {context.contract_name!r} is a "
+                f"typing.Protocol, which is an interface and cannot be "
+                f"instantiated. A handler_routing entry must target a concrete "
+                f"implementation, not a Protocol — fix the contract to route to "
+                f"the concrete handler class."
+            )
 
         # Step 2 - explicit materialized dependency map from node registry.
         mat = context.materialized_explicit_dependencies
