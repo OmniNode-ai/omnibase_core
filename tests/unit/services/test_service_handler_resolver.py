@@ -71,7 +71,8 @@ class _ProtocolHandler(Protocol):
     typing internals with the anonymous "Protocols cannot be instantiated".
     """
 
-    async def handle(self, envelope: object) -> None: ...
+    async def handle(self, envelope: object) -> None:
+        """Protocol method signature only; never executed."""
 
 
 @runtime_checkable
@@ -83,7 +84,8 @@ class _RuntimeCheckableProtocolHandler(Protocol):
     rather than any runtime_checkable-specific marker.
     """
 
-    async def handle(self, envelope: object) -> None: ...
+    async def handle(self, envelope: object) -> None:
+        """Protocol method signature only; never executed."""
 
 
 @pytest.mark.unit
