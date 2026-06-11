@@ -539,6 +539,21 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # Dispatch-surface real-dispatch-test gate (OMN-12960)
+      # Requires a real-dispatch-path test for any commit touching dispatch,
+      # routing, handler-registration, or message-envelope source surfaces.
+      # Handler-isolation tests pass while live dispatch fails — the only durable
+      # guard is a test that drives the real dispatcher registration.
+      # Suppress a genuinely test-irrelevant change with:
+      #   # dispatch-surface-test-ok: <reason>
+      - id: dispatch-surface-test-required
+        name: Dispatch-Surface Test Required (OMN-12960)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validators.dispatch_surface_test_required
+        language: system
+        pass_filenames: true
+        files: ^(src|tests)/.*\.py$
+        stages: [pre-commit]
+
       # Breaking-schema-change compliance (OMN-12621)
       # Requires an adjacent *.migration.yaml ModelTopicMigrationContract whenever
       # a *.topic-schema.yaml declares a breaking topic-schema delta (major_bump
