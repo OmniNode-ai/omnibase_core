@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: url_authority
+  validator_name: URL Authority Validator
+  validator_description: |
+    Rejects NEW URL/endpoint literals outside contracts (OMN-12818, PR-2 of OMN-12803).
+
+    Every URL and *_URL / *_ENDPOINT env read must resolve from a contract
+    (routing authority / integration catalog), not a bare literal or env var.
+
+    Three rules:
+    - public-https-literal: quoted https:// URLs to public hosts (connection targets only)
+    - env-url-read: os.environ[*_URL] / os.environ.get(*_ENDPOINT) reads
+    - url-const-assignment: module-constant assignments from os.environ or https:// literal
+
+    Existing violations are grandfathered by content fingerprint (ratchet baseline).
+    Only NEW fingerprints fail the gate. Baseline is burn-down only.
+
+    Migration debt tickets:
+      omnibase_core:        OMN-12806
+      omnibase_infra:       OMN-12807
+      other repos:          OMN-12808
+
+    Suppression: # url-authority-ok: <reason>
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/dod_receipts/**"
+    - "**/evidence/**"
+
+  rules:
+    - rule_id: public-https-literal
+      description: >-
+        Rejects quoted https:// URLs to public connection-target hosts outside authority files. Migrate
+        to the routing authority / integration catalog. Suppress with # url-authority-ok: <reason>.
+      severity: error
+      enabled: true
+
+    - rule_id: env-url-read
+      description: >-
+        Rejects os.environ[*_URL] / os.environ.get(*_ENDPOINT) reads that bypass the contract-driven routing
+        authority. Resolve from contract model_routing instead.
+      severity: error
+      enabled: true
+
+    - rule_id: url-const-assignment
+      description: >-
+        Rejects module-level *_URL / *_ENDPOINT constants assigned from os.environ or a bare https://
+        literal. Declare in contract YAML and resolve via routing authority.
+      severity: error
+      enabled: true
+
+  suppression_comments:
+    - "# url-authority-ok:"
+    - "# contract-config-ok:"
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

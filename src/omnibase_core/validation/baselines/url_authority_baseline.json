@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0.0",
+  "count": 13,
+  "violations": [
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_anthropic.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "e1a289119d3d1358f6cdf3e76266f1f160213fff5aec9ae642cb19d5d1101899"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_local.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "7b0aeac4145d0b5421270aeae6cc022463f5f4406a5dd475ef4d43a7708a3855"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_openai.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "bf799835300f8665db12abb90ae9f5f4c6d1cdbdc0afcb942879d3d55f7eb753"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_openai.py",
+      "rule": "public-https-literal",
+      "fingerprint": "f811f1e5a4df1d9c8042299fe2dad0a37cf281b8cd1eae9d51d0ec5399d16547"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "scripts/emit_ts_types.py",
+      "rule": "public-https-literal",
+      "fingerprint": "49517946e67a010743926613607e217192833a4419ede0952411600ad5c303d8"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/doctor/checks/check_linear.py",
+      "rule": "public-https-literal",
+      "fingerprint": "616575581e98efa2826fbfb74e5beaa38214fd40552905067cb655bbdcf34a2a"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/handlers/model_artifact_ref.py",
+      "rule": "public-https-literal",
+      "fingerprint": "0f57ee9e1b9920c058c7e4f119248f0164442f432043087ce6838691331e0026"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/handlers/model_packaging_metadata_ref.py",
+      "rule": "public-https-literal",
+      "fingerprint": "e581c5786f36a9a424cdea11f3afcffe4f5298fba722e67a0ef0c5599bebe612"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/operations/model_change_proposal.py",
+      "rule": "public-https-literal",
+      "fingerprint": "05ff38ee1c4cc26e350a487fb3f54b551cbba9b4e90059929dd0a8efd1a7e7d6"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/operations/model_change_proposal.py",
+      "rule": "public-https-literal",
+      "fingerprint": "bc7c34f657d5f7574faf4c84ee0e1daaa249b170f65cee97f347b21547ecefe1"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/reducer/payloads/model_extension_payloads.py",
+      "rule": "public-https-literal",
+      "fingerprint": "ff358f1228f2c46bce0dce88334a9661c27995a10c1685ca5812e052887617bc"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/reducer/payloads/model_payload_http.py",
+      "rule": "public-https-literal",
+      "fingerprint": "1d271e1c0ec30348f10b437b01be085442b77301f45a9c6b8d0b7e6809ceaad0"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/vector/model_vector_connection_config.py",
+      "rule": "public-https-literal",
+      "fingerprint": "50e72ba0afdcfd2e8ff263e257daecbdf9157327d0f5d0066d29b8b1559205de"
+    }
+  ]
+}
