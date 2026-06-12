@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""ModelSkillResult -- base contract for skill execution result files.
+"""ModelSkillResultFile -- base contract for skill execution result files.
 
 Written to ``~/.claude/skill-results/{context_id}/{skill_name}.json``
 by producer skills.  Consumer skills (epic-team, ticket-pipeline) read
@@ -48,12 +48,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_skill_result_status import EnumSkillResultStatus
 
-__all__ = ["ModelSkillResult", "SkillResult"]
+__all__ = ["ModelSkillResultFile", "SkillResultFile"]
 
 _TICKET_ID_PATTERN = re.compile(r"^[A-Z]+-[0-9]+$")
 
 
-class ModelSkillResult(BaseModel):
+class ModelSkillResultFile(BaseModel):
     """Base contract for skill execution result files.
 
     Written to ``~/.claude/skill-results/{context_id}/{skill_name}.json``
@@ -202,10 +202,10 @@ class ModelSkillResult(BaseModel):
         return self.model_dump_json(indent=indent)
 
     @classmethod
-    def from_json(cls, data: str) -> ModelSkillResult:
+    def from_json(cls, data: str) -> ModelSkillResultFile:
         """Deserialize from JSON string."""
         return cls.model_validate_json(data)
 
 
 # Alias for convenience (matches existing aliasing patterns in omnibase_core)
-SkillResult = ModelSkillResult
+SkillResultFile = ModelSkillResultFile

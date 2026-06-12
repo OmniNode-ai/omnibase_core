@@ -348,10 +348,10 @@ allowed_files:
   - file: "src/omnibase_core/validators/breaking_schema_change.py"
     reason: >-
       Breaking-schema-change validator (OMN-12621) — must read adjacent *.topic-schema.yaml declarations
-      and *.migration.yaml contracts from the filesystem to diff baseline vs current bindings. Every
-      yaml.safe_load() result is immediately passed to ModelTopicSchemaBinding.model_validate() /
-      ModelTopicMigrationContract.model_validate(); the raw dict is never used unvalidated. Mirrors the
-      contract_config_compliance.py validator pattern it is modeled on.
+      and *.migration.yaml contracts from the filesystem to diff baseline vs current bindings. Every yaml.safe_load()
+      result is immediately passed to ModelTopicSchemaBinding.model_validate() / ModelTopicMigrationContract.model_validate();
+      the raw dict is never used unvalidated. Mirrors the contract_config_compliance.py validator pattern
+      it is modeled on.
     added: "2026-06-02"
     review: "2026-12-13"
 

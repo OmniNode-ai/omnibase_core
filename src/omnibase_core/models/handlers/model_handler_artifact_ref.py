@@ -14,19 +14,19 @@ and source tracking. The actual artifact content is resolved at runtime through
 the registry system.
 
 Location:
-    ``omnibase_core.models.handlers.model_artifact_ref.ModelArtifactRef``
+    ``omnibase_core.models.handlers.model_handler_artifact_ref.ModelHandlerArtifactRef``
 
 Import Example:
     .. code-block:: python
 
-        from omnibase_core.models.handlers.model_artifact_ref import ModelArtifactRef
+        from omnibase_core.models.handlers.model_handler_artifact_ref import ModelHandlerArtifactRef
         from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         # Minimal reference (required field only)
-        ref = ModelArtifactRef(ref="artifact://schemas/user-profile")
+        ref = ModelHandlerArtifactRef(ref="artifact://schemas/user-profile")
 
         # Full reference with all optional fields
-        ref = ModelArtifactRef(
+        ref = ModelHandlerArtifactRef(
             ref="artifact://schemas/user-profile",
             digest="sha256:a1b2c3d4e5f6...",
             version=ModelSemVer(major=1, minor=2, patch=0),
@@ -63,7 +63,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
-class ModelArtifactRef(BaseModel):
+class ModelHandlerArtifactRef(BaseModel):
     """
     Opaque reference to an artifact in the ONEX framework.
 
@@ -85,13 +85,13 @@ class ModelArtifactRef(BaseModel):
 
     Example:
         >>> # Minimal reference
-        >>> ref = ModelArtifactRef(ref="artifact://myartifact")
+        >>> ref = ModelHandlerArtifactRef(ref="artifact://myartifact")
         >>> ref.ref
         'artifact://myartifact'
 
         >>> # Reference with version
         >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
-        >>> ref = ModelArtifactRef(
+        >>> ref = ModelHandlerArtifactRef(
         ...     ref="artifact://myartifact",
         ...     version=ModelSemVer(major=2, minor=0, patch=0),
         ... )
@@ -99,7 +99,7 @@ class ModelArtifactRef(BaseModel):
         '2.0.0'
 
         >>> # Full reference
-        >>> ref = ModelArtifactRef(
+        >>> ref = ModelHandlerArtifactRef(
         ...     ref="artifact://schemas/event-envelope",
         ...     digest="sha256:e3b0c44298fc1c149afbf4c8996fb924",
         ...     version=ModelSemVer(major=1, minor=0, patch=0),
@@ -149,7 +149,7 @@ class ModelArtifactRef(BaseModel):
         parts = [f"ref={self.ref!r}"]
         if self.version:
             parts.append(f"version={self.version}")
-        return f"ModelArtifactRef({', '.join(parts)})"
+        return f"ModelHandlerArtifactRef({', '.join(parts)})"
 
 
-__all__ = ["ModelArtifactRef"]
+__all__ = ["ModelHandlerArtifactRef"]
