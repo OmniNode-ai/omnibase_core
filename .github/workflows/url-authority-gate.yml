@@ -1,0 +1,103 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-12818 (PR-2 of OMN-12803): url-authority ratchet gate — BLOCKING MODE.
+#
+# Every URL/endpoint must resolve from a contract (the routing authority for
+# model endpoints, the integration catalog for external/infra endpoints) — never
+# from a public-HTTPS source literal or a *_URL / *_ENDPOINT env read. API-key
+# env reads and config-PATH reads stay legal.
+#
+# This is a RATCHET: existing violations are grandfathered by the sha256 baseline
+# at src/omnibase_core/validation/baselines/url_authority_baseline.json.
+# Any NEW violation (fingerprint absent from the baseline) fails the job and blocks
+# merge. The baseline is burn-down only — a CI assertion rejects baseline growth.
+#
+# To permit a legitimate literal, annotate the line:
+#   # url-authority-ok: <concrete reason>
+#
+# Migration debt tickets:
+#   omnibase_core:  OMN-12806
+#   omnibase_infra: OMN-12807
+#   other repos:    OMN-12808
+#
+# This job is a REQUIRED STATUS CHECK. The job name "URL Authority Gate" must
+# match branch protection rules.
+
+name: URL Authority Gate
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main, dev]
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  url-authority-gate:
+    name: URL Authority Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run url-authority gate (full-repo, against frozen baseline)
+        run: |
+          uv run python -m omnibase_core.validation.validator_url_authority \
+            --all --repo omnibase_core --repo-root .
+
+      - name: Assert baseline did not grow (anti-gaming)
+        run: |
+          uv run python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          baseline = Path(
+              "src/omnibase_core/validation/baselines/url_authority_baseline.json"
+          )
+          head = json.loads(baseline.read_text())
+          head_repo = {
+              e["fingerprint"]
+              for e in head["violations"]
+              if e["repo"] == "omnibase_core"
+          }
+          # Compare against the baseline on the PR base branch.
+          base_ref = "origin/${{ github.base_ref || 'dev' }}"
+          try:
+              prior_text = subprocess.check_output(
+                  ["git", "show", f"{base_ref}:{baseline}"], text=True
+              )
+              prior = json.loads(prior_text)
+              prior_repo = {
+                  e["fingerprint"]
+                  for e in prior["violations"]
+                  if e["repo"] == "omnibase_core"
+              }
+          except subprocess.CalledProcessError:
+              prior_repo = set()  # new file on this PR — no prior to compare
+          grew = head_repo - prior_repo
+          if grew:
+              sys.stderr.write(
+                  "URL-AUTHORITY BASELINE GREW: "
+                  f"{len(grew)} new fingerprint(s) added to the baseline. The baseline "
+                  "is burn-down only — fix the violation or annotate with "
+                  "# url-authority-ok:, never grow the baseline.\n"
+              )
+              sys.exit(1)
+          print(
+              "URL-AUTHORITY BASELINE OK: "
+              f"omnibase_core subset {len(head_repo)} (<= prior {len(prior_repo)})."
+          )
+          PY

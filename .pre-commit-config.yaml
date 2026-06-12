@@ -823,6 +823,20 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # URL Authority Gate (OMN-12818, PR-2 of OMN-12803).
+      # Ratchet: NEW fingerprints fail; existing violations are grandfathered.
+      # Baseline is burn-down only. Migration debt: OMN-12806 (omnibase_core).
+      # Suppress with: # url-authority-ok: <reason>
+      - id: check-url-authority
+        name: URL Authority Gate (OMN-12818)
+        entry: uv run python -m omnibase_core.validation.validator_url_authority
+        args: [--repo, omnibase_core, --repo-root, .]
+        language: system
+        types: [python]
+        pass_filenames: true
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
       - id: validate-exception-handling
         name: ONEX Exception Handling Validation
         entry: uv run python scripts/validation/validate-exception-handling.py

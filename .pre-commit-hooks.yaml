@@ -147,3 +147,18 @@
   files: (^|/)test_.*\.py$
   pass_filenames: true
   stages: [pre-commit]
+
+- id: check-url-authority
+  name: URL Authority Gate (OMN-12818)
+  description: >
+    Ratchet gate: reject NEW URL/endpoint literals outside contracts (PR-2 of OMN-12803). Every URL and
+    *_URL/*_ENDPOINT env read must resolve from a contract (routing authority / integration catalog).
+    Existing violations are grandfathered by sha256 fingerprint; only NEW fingerprints fail the gate.
+    Baseline is burn-down only — may shrink, never grow. Migration debt: OMN-12806 (omnibase_core), OMN-12807
+    (omnibase_infra), OMN-12808 (others). Suppression: # url-authority-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validation.validator_url_authority
+  args: [--repo, omnibase_core, --repo-root, .]
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
