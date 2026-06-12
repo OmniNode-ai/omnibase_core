@@ -65,6 +65,7 @@ adjacency:
   # that every src/omnibase_core/<dir> has an entry.
   adapters: {reverse_deps: []}
   agents: {reverse_deps: []}
+  artifacts: {reverse_deps: []}
   analysis: {reverse_deps: []}
   backends: {reverse_deps: []}
   cli: {reverse_deps: []}
