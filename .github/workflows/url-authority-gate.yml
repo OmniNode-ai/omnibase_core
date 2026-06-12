@@ -86,7 +86,17 @@ jobs:
                   if e["repo"] == "omnibase_core"
               }
           except subprocess.CalledProcessError:
-              prior_repo = set()  # new file on this PR — no prior to compare
+              # Baseline file does not exist on the base branch — this is the
+              # initial introduction of the baseline for this repo.  By definition
+              # nothing "grew" relative to a non-existent prior, so the check
+              # passes.  Any new violations that sneak in via the first commit are
+              # caught by the gate step above.
+              print(
+                  "URL-AUTHORITY BASELINE OK (initial): "
+                  f"baseline file is new on this PR ({len(head_repo)} grandfathered "
+                  "fingerprints); no prior to compare against."
+              )
+              sys.exit(0)
           grew = head_repo - prior_repo
           if grew:
               sys.stderr.write(

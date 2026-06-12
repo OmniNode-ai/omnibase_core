@@ -50,23 +50,22 @@ validation:
   rules:
     - rule_id: public-https-literal
       description: >-
-        Rejects quoted https:// URLs to public connection-target hosts outside authority
-        files. Migrate to the routing authority / integration catalog. Suppress with
-        # url-authority-ok: <reason>.
+        Rejects quoted https:// URLs to public connection-target hosts outside authority files. Migrate
+        to the routing authority / integration catalog. Suppress with # url-authority-ok: <reason>.
       severity: error
       enabled: true
 
     - rule_id: env-url-read
       description: >-
-        Rejects os.environ[*_URL] / os.environ.get(*_ENDPOINT) reads that bypass the
-        contract-driven routing authority. Resolve from contract model_routing instead.
+        Rejects os.environ[*_URL] / os.environ.get(*_ENDPOINT) reads that bypass the contract-driven routing
+        authority. Resolve from contract model_routing instead.
       severity: error
       enabled: true
 
     - rule_id: url-const-assignment
       description: >-
-        Rejects module-level *_URL / *_ENDPOINT constants assigned from os.environ or a
-        bare https:// literal. Declare in contract YAML and resolve via routing authority.
+        Rejects module-level *_URL / *_ENDPOINT constants assigned from os.environ or a bare https://
+        literal. Declare in contract YAML and resolve via routing authority.
       severity: error
       enabled: true
 

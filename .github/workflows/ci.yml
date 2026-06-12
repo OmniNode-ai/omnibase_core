@@ -742,7 +742,9 @@ jobs:
           #
           # Excludes: uv.lock (dependency hashes), .venv/, test fixtures,
           # .git/, .secrets.baseline (contains hashed values that self-trigger),
-          # workflow YAML (references "secret" in config context)
+          # workflow YAML (references "secret" in config context),
+          # url_authority_baseline.json (sha256 fingerprints of known violations,
+          #   not secrets — Hex High Entropy false-positive)
           set +e
           git ls-files -z | xargs -0 detect-secrets-hook \
             --baseline .secrets.baseline \
@@ -751,7 +753,8 @@ jobs:
             --exclude-files 'tests/fixtures/' \
             --exclude-files '\.git/' \
             --exclude-files '\.secrets\.baseline' \
-            --exclude-files '\.github/workflows/.*\.yml'
+            --exclude-files '\.github/workflows/.*\.yml' \
+            --exclude-files 'url_authority_baseline\.json'
           HOOK_EXIT=$?
           set -e
 
