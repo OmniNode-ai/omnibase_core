@@ -129,6 +129,10 @@ from omnibase_core.models.dispatch.model_lifecycle_chain import (
     ModelLifecycleChain,
 )
 from omnibase_core.models.dispatch.model_model_call_record import ModelCallRecord
+from omnibase_core.models.dispatch.model_skill_result import (
+    SKILL_RESULT_SCHEMA_VERSION,
+    ModelSkillResult,
+)
 from omnibase_core.models.dispatch.model_topic_parser import (
     EnumTopicStandard,
     ModelParsedTopic,
@@ -139,6 +143,7 @@ __all__ = [
     # Constants
     "DEFAULT_HEARTBEAT_REQUIRED_SECONDS",
     "HEARTBEAT_REQUIRED_ENV_VAR",
+    "SKILL_RESULT_SCHEMA_VERSION",
     # Enums
     "EnumDispatchLifecycleEmitter",
     "EnumDispatchLifecycleState",
@@ -162,6 +167,7 @@ __all__ = [
     "ModelHandlerOutput",
     "ModelHandlerRegistration",
     "ModelParsedTopic",
+    "ModelSkillResult",
     "ModelTopicParser",
     # Functions
     "compute_blocker_id",

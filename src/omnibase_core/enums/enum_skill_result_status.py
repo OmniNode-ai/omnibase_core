@@ -8,7 +8,7 @@ Canonical status categories for skill execution results. Skills write result
 files to ~/.claude/skill-results/. This enum normalizes the 28+ ad-hoc status
 strings observed across 40+ skills into 9 semantic categories. Skills needing
 domain-specific granularity should use the ``extra_status`` field on
-ModelSkillResult rather than extending this enum.
+ModelSkillResultFile rather than extending this enum.
 
 Behavioral definitions
 ----------------------
@@ -57,7 +57,7 @@ class EnumSkillResultStatus(UtilStrValueHelper, str, Enum):
     Skills write result files to ``~/.claude/skill-results/``. This enum
     normalizes the 28+ ad-hoc status strings into 9 semantic categories.
     Skills needing domain-specific granularity should use the
-    ``extra_status`` field on ``ModelSkillResult``.
+    ``extra_status`` field on ``ModelSkillResultFile``.
 
     **Transition policy:** This enum defines valid phase names, NOT valid
     transitions between them. Consumers must not infer transition semantics
