@@ -30,7 +30,7 @@ Import Example:
             ref="artifact://schemas/user-profile",
             digest="sha256:a1b2c3d4e5f6...",
             version=ModelSemVer(major=1, minor=2, patch=0),
-            source="https://registry.omninode.ai/artifacts",
+            source="registry://artifacts",
         )
 
         # Access fields
