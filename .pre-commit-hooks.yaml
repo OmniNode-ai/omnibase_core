@@ -111,9 +111,9 @@
   description: >
     Scan ModelDodReceipt YAML files for gaming patterns: no-op echo probes marked PASS, deferral language
     (PENDING/TBD/TODO) in PASS receipts, self-attestation (verifier==runner), fake human verifiers (agent
-    runner + human verifier name), and deploy-keyword evidence backed only by echo probe_command. Fails on
-    any violation in supplied receipt files. Operates over onex_change_control/drift/dod_receipts/ when no
-    filenames are supplied; pass --receipts-dir to override.
+    runner + human verifier name), and deploy-keyword evidence backed only by echo probe_command. Fails
+    on any violation in supplied receipt files. Operates over onex_change_control/drift/dod_receipts/
+    when no filenames are supplied; pass --receipts-dir to override.
   language: python
   entry: python -m omnibase_core.validation.validator_receipt_honesty
   types: [yaml]
@@ -131,5 +131,19 @@
   language: python
   entry: python -m omnibase_core.validation.antipattern_checker
   types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: transport-mock-lint
+  name: Transport Mock Lint (OMN-13026)
+  description: >
+    Detect bare AsyncMock()/MagicMock() without spec=/spec_set= on EventBus/transport/Kafka mock surfaces
+    in test files. Reference incident: PR #1181 bare AsyncMock hid missing EventBusKafka.stop(), masking
+    a runtime-fatal bug. Pass --baseline <yaml> to activate ratchet mode (new violations blocked; existing
+    ones tracked per-site). Suppression: # transport-mock-ok: <reason> on the offending line.
+  language: python
+  entry: python -m omnibase_core.validators.transport_mock_lint
+  types: [python]
+  files: (^|/)test_.*\.py$
   pass_filenames: true
   stages: [pre-commit]
