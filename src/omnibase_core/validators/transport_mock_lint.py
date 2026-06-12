@@ -387,6 +387,18 @@ def _apply_baseline(
     return remaining
 
 
+def _rel_path(path: Path, cwd: Path) -> str:
+    """Return a portable relative path string for *path* against *cwd*.
+
+    Falls back to the absolute path string if *path* is not relative to *cwd*.
+    Ensures --write-baseline outputs portable keys that work across machines.
+    """
+    try:
+        return str(path.relative_to(cwd))
+    except ValueError:
+        return str(path)
+
+
 def _best_baseline_key(path: Path, baseline: dict[str, int]) -> str:
     """Return the baseline key that best matches *path* (exact, then suffix match)."""
     path_str = str(path)
@@ -475,7 +487,8 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         from collections import Counter
 
-        counts: Counter[str] = Counter(str(f.path) for f in all_findings)
+        cwd = Path.cwd()
+        counts: Counter[str] = Counter(_rel_path(f.path, cwd) for f in all_findings)
         out_path = Path(args.write_baseline)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with out_path.open("w", encoding="utf-8") as fh:
