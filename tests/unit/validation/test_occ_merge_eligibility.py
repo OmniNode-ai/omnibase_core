@@ -281,15 +281,21 @@ def test_contract_hash_mismatch_is_ineligible(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-def test_missing_contract_hash_is_migration_compatible(tmp_path: Path) -> None:
-    contract_hash = _write_contract(tmp_path)
+def test_missing_contract_hash_is_ineligible_post_cutoff(tmp_path: Path) -> None:
+    """contract_sha256=None must hard-fail (OMN-13061 / OMN-10421 post-cutoff).
+
+    The migration window closed on 2026-04-30; receipts without a contract hash
+    no longer pass silently — this aligns with validator_receipt_gate behaviour.
+    """
+    _write_contract(tmp_path)
     _write_receipt(tmp_path, contract_sha256=None)
 
     result = validate_occ_merge_eligibility(_snapshot(tmp_path))
 
-    assert result.eligible is True
-    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
-    assert result.contract_hashes == {TICKET: contract_hash}
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+    assert "contract_sha256" in (result.detail or "")
+    assert "OMN-10421" in (result.detail or "")
 
 
 @pytest.mark.unit

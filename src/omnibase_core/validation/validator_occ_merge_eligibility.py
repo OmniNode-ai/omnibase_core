@@ -28,6 +28,7 @@ from omnibase_core.models.validation.model_occ_eligibility_result import (
     ModelOccEligibilityResult,
 )
 from omnibase_core.validation.validator_receipt_gate import (
+    _CONTRACT_SHA256_REQUIRED_AFTER,
     _extract_ticket_ids,
     _iter_dod_evidence,
 )
@@ -181,9 +182,28 @@ def validate_occ_merge_eligibility(
                         f"expected {ticket_id}"
                     ),
                 )
+            # OMN-13061: hard-fail when contract_sha256 is None — mirrors
+            # validator_receipt_gate post-cutoff enforcement (OMN-10421).
+            # The migration window closed on _CONTRACT_SHA256_REQUIRED_AFTER
+            # (2026-04-30); all receipts authored after that date must bind
+            # a contract hash. Historical corpus scanners are ADVISORY only
+            # (OMN-13060 follow-through unchanged).
             if receipt.contract_sha256 is None:
-                pass
-            elif receipt.contract_sha256 != contract_hash:
+                return ModelOccEligibilityResult(
+                    eligible=False,
+                    reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
+                    ticket_ids=ticket_ids,
+                    occ_commit_sha=snapshot.occ_commit_sha,
+                    contract_hashes=contract_hashes,
+                    receipt_ids=tuple(sorted(receipt_ids)),
+                    detail=(
+                        f"receipt {receipt_path} missing required contract_sha256 field "
+                        f"(OMN-10421 / OMN-13061): receipts produced after "
+                        f"{_CONTRACT_SHA256_REQUIRED_AFTER.date()} must record the "
+                        "contract hash. Rerun probes to produce a new receipt."
+                    ),
+                )
+            if receipt.contract_sha256 != contract_hash:
                 return ModelOccEligibilityResult(
                     eligible=False,
                     reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
