@@ -256,6 +256,12 @@ class FileLocationValidator:
                 # Protocol* classes in validation/ are OK (validation protocols)
                 if prefix == "Protocol" and "validation/" in str(file_path):
                     return
+                # Enum* classes in validation/ are OK (per-validator rule-identifier
+                # enums co-located with their single consumer, e.g. EnumHonestyRule
+                # in validator_receipt_honesty.py — same helper-class category as
+                # the Model*/Protocol* carve-outs above).
+                if prefix == "Enum" and "validation/" in str(file_path):
+                    return
 
                 if expected_dir not in str(file_path):
                     actual_dir = self._get_actual_directory(file_path)

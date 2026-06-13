@@ -411,6 +411,9 @@ from .enum_service_type_category import EnumServiceTypeCategory
 # Severity enum (canonical - replaces EnumViolationSeverity, OMN-1311)
 from .enum_severity import EnumSeverity
 
+# Skill dispatch receipt-mode validator rule (OMN-13098)
+from .enum_skill_receipt_rule import EnumSkillReceiptRule
+
 # Skill result status enum (OMN-3866)
 from .enum_skill_result_status import EnumSkillResultStatus, SkillResultStatus
 
@@ -890,6 +893,8 @@ __all__ = [
     "PlanAction",
     "PLAN_PHASE_ALLOWED_ACTIONS",
     "PLAN_VALID_TRANSITIONS",
+    # Skill dispatch receipt-mode validator rule (OMN-13098)
+    "EnumSkillReceiptRule",
     # Skill result status domain (OMN-3866)
     "EnumSkillResultStatus",
     "SkillResultStatus",
