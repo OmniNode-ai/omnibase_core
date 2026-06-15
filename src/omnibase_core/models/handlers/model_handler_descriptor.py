@@ -119,7 +119,7 @@ See Also:
       Behavioral classification (COMPUTE, EFFECT, NONDETERMINISTIC_COMPUTE)
     - :class:`~omnibase_core.models.handlers.model_identifier.ModelIdentifier`:
       Structured handler identifier
-    - :class:`~omnibase_core.models.handlers.model_artifact_ref.ModelArtifactRef`:
+    - :class:`~omnibase_core.models.handlers.model_handler_artifact_ref.ModelHandlerArtifactRef`:
       Artifact reference for container/registry-based instantiation
 
 .. versionadded:: 0.4.0
@@ -135,7 +135,9 @@ from omnibase_core.enums.enum_handler_role import EnumHandlerRole
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.handlers.model_artifact_ref import ModelArtifactRef
+from omnibase_core.models.handlers.model_handler_artifact_ref import (
+    ModelHandlerArtifactRef,
+)
 from omnibase_core.models.handlers.model_identifier import ModelIdentifier
 from omnibase_core.models.handlers.model_packaging_metadata_ref import (
     ModelPackagingMetadataRef,
@@ -279,7 +281,7 @@ class ModelHandlerDescriptor(BaseModel):
             handler_type=EnumHandlerType.NAMED,
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
             import_path="myproject.handlers.MyHandler",  # Dev: used first
-            artifact_ref=ModelArtifactRef(              # Prod: fallback
+            artifact_ref=ModelHandlerArtifactRef(              # Prod: fallback
                 registry="ghcr.io",
                 repository="myorg/my-handler",
                 tag="v1.0.0",
@@ -506,7 +508,7 @@ class ModelHandlerDescriptor(BaseModel):
         ),
     )
 
-    artifact_ref: ModelArtifactRef | None = Field(
+    artifact_ref: ModelHandlerArtifactRef | None = Field(
         default=None,
         description=(
             "Artifact reference for registry-resolved instantiation. "

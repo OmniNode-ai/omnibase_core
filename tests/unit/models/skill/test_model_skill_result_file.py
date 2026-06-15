@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for ModelSkillResult base contract."""
+"""Tests for ModelSkillResultFile base contract."""
 
 from __future__ import annotations
 
@@ -11,15 +11,15 @@ from datetime import UTC
 import pytest
 
 from omnibase_core.enums.enum_skill_result_status import EnumSkillResultStatus
-from omnibase_core.models.skill.model_skill_result import ModelSkillResult
+from omnibase_core.models.skill.model_skill_result_file import ModelSkillResultFile
 
 
 @pytest.mark.unit
-class TestModelSkillResultConstruction:
+class TestModelSkillResultFileConstruction:
     """Basic construction and field defaults."""
 
     def test_minimal_construction(self) -> None:
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="ci-watch",
             status=EnumSkillResultStatus.SUCCESS,
         )
@@ -33,7 +33,7 @@ class TestModelSkillResultConstruction:
         assert result.ticket_id is None
 
     def test_full_construction(self) -> None:
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="auto-merge",
             status=EnumSkillResultStatus.SUCCESS,
             extra_status="merged",
@@ -49,12 +49,14 @@ class TestModelSkillResultConstruction:
         assert result.ticket_id == "OMN-1234"
 
     def test_created_at_auto_populated(self) -> None:
-        result = ModelSkillResult(skill_name="x", status=EnumSkillResultStatus.SUCCESS)
+        result = ModelSkillResultFile(
+            skill_name="x", status=EnumSkillResultStatus.SUCCESS
+        )
         assert result.created_at is not None
         assert result.created_at.tzinfo == UTC
 
     def test_frozen(self) -> None:
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="ci-watch",
             status=EnumSkillResultStatus.SUCCESS,
         )
@@ -63,32 +65,40 @@ class TestModelSkillResultConstruction:
 
 
 @pytest.mark.unit
-class TestModelSkillResultDelegation:
+class TestModelSkillResultFileDelegation:
     """Property delegation to EnumSkillResultStatus."""
 
     def test_is_terminal_success(self) -> None:
-        result = ModelSkillResult(skill_name="x", status=EnumSkillResultStatus.SUCCESS)
+        result = ModelSkillResultFile(
+            skill_name="x", status=EnumSkillResultStatus.SUCCESS
+        )
         assert result.is_terminal
 
     def test_is_terminal_pending(self) -> None:
-        result = ModelSkillResult(skill_name="x", status=EnumSkillResultStatus.PENDING)
+        result = ModelSkillResultFile(
+            skill_name="x", status=EnumSkillResultStatus.PENDING
+        )
         assert not result.is_terminal
 
     def test_is_success_like_partial(self) -> None:
-        result = ModelSkillResult(skill_name="x", status=EnumSkillResultStatus.PARTIAL)
+        result = ModelSkillResultFile(
+            skill_name="x", status=EnumSkillResultStatus.PARTIAL
+        )
         assert result.is_success_like
 
     def test_is_success_like_failed(self) -> None:
-        result = ModelSkillResult(skill_name="x", status=EnumSkillResultStatus.FAILED)
+        result = ModelSkillResultFile(
+            skill_name="x", status=EnumSkillResultStatus.FAILED
+        )
         assert not result.is_success_like
 
 
 @pytest.mark.unit
-class TestModelSkillResultSerialization:
+class TestModelSkillResultFileSerialization:
     """JSON roundtrip and serialization."""
 
     def test_json_roundtrip(self) -> None:
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="ci-watch",
             status=EnumSkillResultStatus.SUCCESS,
             run_id="run-123",
@@ -99,21 +109,21 @@ class TestModelSkillResultSerialization:
         assert parsed["skill_name"] == "ci-watch"
         assert parsed["status"] == "success"
 
-        restored = ModelSkillResult.from_json(json_str)
+        restored = ModelSkillResultFile.from_json(json_str)
         assert restored.skill_name == result.skill_name
         assert restored.status == result.status
         assert restored.extra["fix_cycles_used"] == 2
 
     def test_extra_status_preserved_through_roundtrip(self) -> None:
         """Review fix: extra_status must survive JSON roundtrip."""
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="auto-merge",
             status=EnumSkillResultStatus.GATED,
             extra_status="held",
             extra={"merge_commit": "abc123"},
         )
         json_str = result.to_json()
-        restored = ModelSkillResult.from_json(json_str)
+        restored = ModelSkillResultFile.from_json(json_str)
         assert restored.extra_status == "held"
         assert restored.extra["merge_commit"] == "abc123"
 
@@ -125,17 +135,17 @@ class TestModelSkillResultSerialization:
                 "status": "failed",
             }
         )
-        result = ModelSkillResult.from_json(json_str)
+        result = ModelSkillResultFile.from_json(json_str)
         assert result.status == EnumSkillResultStatus.FAILED
 
 
 @pytest.mark.unit
-class TestModelSkillResultValidation:
+class TestModelSkillResultFileValidation:
     """Field validation and normalization."""
 
     def test_skill_name_whitespace_stripped(self) -> None:
         """Review fix 1: strip whitespace on skill_name."""
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="  ci-watch  ",
             status=EnumSkillResultStatus.SUCCESS,
         )
@@ -144,14 +154,14 @@ class TestModelSkillResultValidation:
     def test_skill_name_empty_rejected(self) -> None:
         """Review fix 1: reject empty skill_name after strip."""
         with pytest.raises(Exception):
-            ModelSkillResult(
+            ModelSkillResultFile(
                 skill_name="   ",
                 status=EnumSkillResultStatus.SUCCESS,
             )
 
     def test_ticket_id_whitespace_stripped(self) -> None:
         """Review fix 1: strip whitespace on ticket_id."""
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="x",
             status=EnumSkillResultStatus.SUCCESS,
             ticket_id="  OMN-1234  ",
@@ -160,7 +170,7 @@ class TestModelSkillResultValidation:
 
     def test_ticket_id_valid_pattern(self) -> None:
         """Review fix 2: ticket_id must match ^[A-Z]+-[0-9]+$."""
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="x",
             status=EnumSkillResultStatus.SUCCESS,
             ticket_id="DASH-56",
@@ -170,7 +180,7 @@ class TestModelSkillResultValidation:
     def test_ticket_id_invalid_rejected(self) -> None:
         """Review fix 2: reject invalid ticket_id patterns."""
         with pytest.raises(Exception):
-            ModelSkillResult(
+            ModelSkillResultFile(
                 skill_name="x",
                 status=EnumSkillResultStatus.SUCCESS,
                 ticket_id="bad",
@@ -179,7 +189,7 @@ class TestModelSkillResultValidation:
     def test_ticket_id_lowercase_rejected(self) -> None:
         """ticket_id pattern requires uppercase prefix."""
         with pytest.raises(Exception):
-            ModelSkillResult(
+            ModelSkillResultFile(
                 skill_name="x",
                 status=EnumSkillResultStatus.SUCCESS,
                 ticket_id="omn-1234",
@@ -187,7 +197,7 @@ class TestModelSkillResultValidation:
 
     def test_ticket_id_none_allowed(self) -> None:
         """ticket_id is optional."""
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="x",
             status=EnumSkillResultStatus.SUCCESS,
             ticket_id=None,
@@ -197,7 +207,7 @@ class TestModelSkillResultValidation:
     def test_pr_number_ge_1(self) -> None:
         """Review fix 3: pr_number must be >= 1."""
         with pytest.raises(Exception):
-            ModelSkillResult(
+            ModelSkillResultFile(
                 skill_name="x",
                 status=EnumSkillResultStatus.SUCCESS,
                 pr_number=0,
@@ -205,14 +215,14 @@ class TestModelSkillResultValidation:
 
     def test_pr_number_negative_rejected(self) -> None:
         with pytest.raises(Exception):
-            ModelSkillResult(
+            ModelSkillResultFile(
                 skill_name="x",
                 status=EnumSkillResultStatus.SUCCESS,
                 pr_number=-1,
             )
 
     def test_pr_number_valid(self) -> None:
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="x",
             status=EnumSkillResultStatus.SUCCESS,
             pr_number=1,
@@ -220,7 +230,7 @@ class TestModelSkillResultValidation:
         assert result.pr_number == 1
 
     def test_pr_number_none_allowed(self) -> None:
-        result = ModelSkillResult(
+        result = ModelSkillResultFile(
             skill_name="x",
             status=EnumSkillResultStatus.SUCCESS,
             pr_number=None,
@@ -230,7 +240,7 @@ class TestModelSkillResultValidation:
     def test_extra_forbids_unknown_top_level_fields(self) -> None:
         """Model uses extra='forbid' -- unknown fields are rejected."""
         with pytest.raises(Exception):
-            ModelSkillResult(
+            ModelSkillResultFile(
                 skill_name="x",
                 status=EnumSkillResultStatus.SUCCESS,
                 unknown_field="oops",  # type: ignore[call-arg]

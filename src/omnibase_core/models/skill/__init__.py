@@ -3,15 +3,18 @@
 
 """Skill execution result models.
 
-Provides ``ModelSkillResult``, the base contract for skill result files
+Provides ``ModelSkillResultFile``, the base contract for skill result files
 written to ``~/.claude/skill-results/``.
 """
 
 from __future__ import annotations
 
-from omnibase_core.models.skill.model_skill_result import ModelSkillResult, SkillResult
+from omnibase_core.models.skill.model_skill_result_file import (
+    ModelSkillResultFile,
+    SkillResultFile,
+)
 
 __all__ = [
-    "ModelSkillResult",
-    "SkillResult",
+    "ModelSkillResultFile",
+    "SkillResultFile",
 ]

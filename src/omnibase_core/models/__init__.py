@@ -20,6 +20,7 @@ prevent circular import chains.
 __all__ = [
     # Domain modules (names only; no runtime import here)
     "agent",  # Agent status and lifecycle models (OMN-1847)
+    "artifacts",  # Content-addressed artifact references (OMN-13091)
     "audit",  # Context integrity task dispatch models (OMN-5233)
     "cli",
     "common",

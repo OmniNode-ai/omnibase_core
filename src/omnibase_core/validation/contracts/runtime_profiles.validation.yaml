@@ -12,10 +12,14 @@ validation:
   validator_description: |
     Enforces that every node contract whose event_bus subscribes to at
     least one onex.cmd.* topic also declares runtime_profiles (top-level
-    or under descriptor). Allowlist:
-      src/omnibase_core/validation/data/runtime_profiles_allowlist.yaml
-    Plan: docs/plans/2026-04-26-runtime-lifecycle-hardening-plan.md (Task 4).
-    Linear: OMN-9886.
+    or under descriptor), that declared profiles are members of the
+    canonical REGISTERED_RUNTIME_PROFILES registry, and that subscribing
+    REDUCER/EFFECT contracts name at least one consumer-attached profile.
+    Allowlist:
+      src/omnibase_core/validation/runtime_profiles_allowlist.yaml
+    Plans: docs/plans/2026-04-26-runtime-lifecycle-hardening-plan.md (Task 4);
+    docs/plans/2026-06-11-open-issues-remediation-plan.md (P1.1).
+    Linear: OMN-9886, OMN-12957.
 
   target_patterns:
     - "**/contract.yaml"
@@ -37,6 +41,22 @@ validation:
         Reject command-consuming contracts (any event_bus subscription on onex.cmd.*) that omit runtime_profiles.
         Declare 'runtime_profiles: [<profile>]' at the top level or under 'descriptor', or add the node
         id to the allowlist with a reason.
+      severity: error
+      enabled: true
+
+    - rule_id: runtime_profile_unregistered
+      description: >-
+        Reject contracts that declare a runtime_profiles value not present in the canonical REGISTERED_RUNTIME_PROFILES
+        registry (omnibase_core.constants.constants_runtime_profiles). A nonexistent profile name silently
+        orphans the node: no runtime process wires its subscriptions.
+      severity: error
+      enabled: true
+
+    - rule_id: runtime_profile_no_consumer_lane
+      description: >-
+        Reject subscribing REDUCER/EFFECT contracts whose declared runtime_profiles are all registered
+        but none runs a standalone consumer (CONSUMER_ATTACHED_RUNTIME_PROFILES: main, effects, workers),
+        so the subscriptions are never drained. Name at least one consumer-attached profile.
       severity: error
       enabled: true
 

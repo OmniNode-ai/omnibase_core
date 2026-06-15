@@ -22,7 +22,7 @@ ModelIdentifier
     Used as the primary key for handler registry lookup and discovery.
     Immutable and hashable for use as dict keys.
 
-ModelArtifactRef
+ModelHandlerArtifactRef
     Opaque artifact reference for registry-resolved instantiation.
     Enables decoupled artifact management without inline content.
 
@@ -205,7 +205,9 @@ omnibase_core.enums.enum_handler_capability : Handler capabilities
 .. versionadded:: 0.4.0
 """
 
-from omnibase_core.models.handlers.model_artifact_ref import ModelArtifactRef
+from omnibase_core.models.handlers.model_handler_artifact_ref import (
+    ModelHandlerArtifactRef,
+)
 from omnibase_core.models.handlers.model_handler_descriptor import (
     ModelHandlerDescriptor,
 )
@@ -228,7 +230,7 @@ from omnibase_core.models.handlers.model_security_metadata_ref import (
 
 __all__ = [
     "ModelHandlerState",
-    "ModelArtifactRef",
+    "ModelHandlerArtifactRef",
     "ModelHandlerDescriptor",
     "ModelHandlerPackaging",
     "ModelHandlerTypeMetadata",

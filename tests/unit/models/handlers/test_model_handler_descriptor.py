@@ -12,7 +12,9 @@ from omnibase_core.enums.enum_handler_role import EnumHandlerRole
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.handlers.model_artifact_ref import ModelArtifactRef
+from omnibase_core.models.handlers.model_handler_artifact_ref import (
+    ModelHandlerArtifactRef,
+)
 from omnibase_core.models.handlers.model_handler_descriptor import (
     ModelHandlerDescriptor,
 )
@@ -60,7 +62,7 @@ class TestModelHandlerDescriptorInstantiation:
         """Test creating descriptor with all optional fields."""
         handler_name = ModelIdentifier(namespace="onex", name="kafka-adapter")
         handler_version = ModelSemVer(major=1, minor=2, patch=3)
-        artifact_ref = ModelArtifactRef(ref="artifact://kafka-adapter-v1")
+        artifact_ref = ModelHandlerArtifactRef(ref="artifact://kafka-adapter-v1")
         security_ref = ModelSecurityMetadataRef(ref="security://kafka-adapter")
         packaging_ref = ModelPackagingMetadataRef(ref="pkg://kafka-adapter")
 
@@ -314,7 +316,7 @@ class TestModelHandlerDescriptorOptionalFields:
 
     def test_artifact_ref_accepted(self) -> None:
         """Test artifact_ref is accepted when provided."""
-        artifact = ModelArtifactRef(ref="artifact://handler-v1")
+        artifact = ModelHandlerArtifactRef(ref="artifact://handler-v1")
         descriptor = ModelHandlerDescriptor(
             handler_name=ModelIdentifier(namespace="onex", name="handler"),
             handler_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -618,7 +620,7 @@ class TestModelHandlerDescriptorInstantiationMethods:
             handler_role=EnumHandlerRole.COMPUTE_HANDLER,
             handler_type=EnumHandlerType.NAMED,
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
-            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+            artifact_ref=ModelHandlerArtifactRef(ref="artifact://handler-v1"),
         )
         assert descriptor.has_instantiation_method is True
 
@@ -631,7 +633,7 @@ class TestModelHandlerDescriptorInstantiationMethods:
             handler_type=EnumHandlerType.NAMED,
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
             import_path="mypackage.handlers.MyHandler",
-            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+            artifact_ref=ModelHandlerArtifactRef(ref="artifact://handler-v1"),
         )
         assert descriptor.has_instantiation_method is True
 
@@ -677,7 +679,7 @@ class TestModelHandlerDescriptorInstantiationMethods:
             handler_role=EnumHandlerRole.COMPUTE_HANDLER,
             handler_type=EnumHandlerType.NAMED,
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
-            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+            artifact_ref=ModelHandlerArtifactRef(ref="artifact://handler-v1"),
         )
         assert descriptor.can_instantiate_via_import() is False
 
@@ -689,7 +691,7 @@ class TestModelHandlerDescriptorInstantiationMethods:
             handler_role=EnumHandlerRole.COMPUTE_HANDLER,
             handler_type=EnumHandlerType.NAMED,
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
-            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+            artifact_ref=ModelHandlerArtifactRef(ref="artifact://handler-v1"),
         )
         assert descriptor.can_instantiate_via_artifact() is True
 
@@ -725,7 +727,7 @@ class TestModelHandlerDescriptorInstantiationMethods:
             handler_type=EnumHandlerType.NAMED,
             handler_type_category=EnumHandlerTypeCategory.COMPUTE,
             import_path="mypackage.handlers.MyHandler",
-            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+            artifact_ref=ModelHandlerArtifactRef(ref="artifact://handler-v1"),
         )
         assert descriptor.can_instantiate_via_import() is True
         assert descriptor.can_instantiate_via_artifact() is True
