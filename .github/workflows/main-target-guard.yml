@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 #
 # OMN-12243: Block PRs targeting main unless they are promotion PRs
-# from dev with a promotion receipt.
-# OMN-12477: Removed the hotfix/* bypass — main accepts only dev promotions.
+# from dev or promotion/* with a promotion receipt.
+# OMN-12477: Removed the hotfix/* bypass — main accepts only promotions.
 
 name: Main target guard
 
@@ -38,19 +38,19 @@ jobs:
 
           echo "PR targets main. Checking head ref: '${HEAD_REF}'"
 
-          if [[ "${HEAD_REF}" == "dev" ]]; then
+          if [[ "${HEAD_REF}" == "dev" || "${HEAD_REF}" == promotion/* ]]; then
             if echo "${PR_BODY}" | grep -qE 'promotion-receipt:[[:space:]]*OCC-[0-9]+'; then
-              echo "::notice::Promotion PR from dev with valid promotion-receipt. Allowed."
+              echo "::notice::Promotion PR from '${HEAD_REF}' with valid promotion-receipt. Allowed."
               exit 0
             fi
 
-            echo "::error::PR is from dev but is missing a promotion receipt."
+            echo "::error::Promotion PR from '${HEAD_REF}' is missing a promotion receipt."
             echo "::error::Add a line matching: promotion-receipt: OCC-<number>"
             echo "::error::Retarget this PR to dev; main accepts only promotion PRs."
             exit 1
           fi
 
-          echo "::error::PRs targeting main must come from dev."
+          echo "::error::PRs targeting main must come from dev or promotion/*."
           echo "::error::Head ref '${HEAD_REF}' is not permitted to target main directly."
           echo "::error::Retarget this PR to dev; main accepts only promotion PRs."
           exit 1
