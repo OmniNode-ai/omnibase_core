@@ -14,87 +14,65 @@ This guide walks you through setting up your development environment for buildin
 ## Prerequisites
 
 - **Python 3.12+** (required for modern async features)
-- **Poetry** (recommended package manager)
+- **uv** (required package manager)
 - **Git** (for version control)
 
 ## Installation Methods
 
-### Method 1: Poetry (Recommended)
+### Method 1: uv (Recommended)
 
-Poetry provides better dependency management and virtual environment handling.
+uv is the required package manager for this project. All Python commands must be run via `uv run`.
 
-#### 1. Install Poetry
+#### 1. Install uv
 
-```
-# Install Poetry
-curl -sSL https://install.python-poetry.org | python3 -
-
-# Add to PATH (add to your shell profile)
-export PATH="$HOME/.local/bin:$PATH"
+```bash
+# Install uv (see https://docs.astral.sh/uv/getting-started/installation/)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Verify installation
-poetry --version
+uv --version
 ```
 
 #### 2. Install omnibase_core
 
 **Option A: As a dependency in your project**
-```
+
+```bash
 # In your project directory
-poetry add omnibase_core
+uv add omnibase_core
 ```
 
 **Option B: For development**
-```
+
+```bash
 # Clone the repository
 git clone https://github.com/OmniNode-ai/omnibase_core.git
 cd omnibase_core
 
-# Install dependencies
-poetry install
+# Install all dependencies (including dev extras)
+uv sync --all-extras
 
-# Activate virtual environment
-poetry shell
-```
-
-### Method 2: pip (Alternative)
-
-If you prefer pip, you can install directly:
-
-```
-# Clone the repository
-git clone https://github.com/OmniNode-ai/omnibase_core.git
-cd omnibase_core
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -e .
+# Install pre-commit hooks
+pre-commit install
 ```
 
 ## Verification
 
 ### 1. Basic Import Test
 
-```
-# With Poetry
-uv run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
-
-# With pip
-python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('✅ Installation successful!')"
+```bash
+uv run python -c "from omnibase_core.nodes.node_compute import NodeCompute; print('Installation successful!')"
 ```
 
 ### 2. All Node Types Test
 
-```
+```bash
 uv run python -c "
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-print('✅ All node types imported successfully!')
+print('All node types imported successfully!')
 "
 ```
 
@@ -102,34 +80,21 @@ print('✅ All node types imported successfully!')
 
 ### 1. Install Development Dependencies
 
-```
-# With Poetry
-poetry install --with dev
-
-# With pip
-pip install -e ".[dev]"
+```bash
+uv sync --all-extras
 ```
 
 ### 2. Run Tests
 
-```
-# With Poetry
-uv run pytest
-
-# With pip
-pytest
+```bash
+uv run pytest tests/
 ```
 
 ### 3. Run Linting
 
-```
-# With Poetry
-uv run ruff check .
-uv run mypy .
-
-# With pip
-ruff check .
-mypy .
+```bash
+uv run ruff check src/ tests/
+uv run mypy src/omnibase_core/
 ```
 
 ## IDE Setup
@@ -143,7 +108,7 @@ mypy .
 
 ```json
 {
-    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.defaultInterpreterPath": ".venv/bin/python",
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
@@ -159,7 +124,7 @@ mypy .
 ### PyCharm
 
 1. Open the project
-2. Configure Python interpreter to use the virtual environment
+2. Configure Python interpreter to use `.venv/bin/python` (created by `uv sync`)
 3. Enable type checking in Settings → Editor → Inspections → Python → Type checker
 
 ## Troubleshooting
@@ -168,17 +133,17 @@ mypy .
 
 #### Import Errors
 
-```
-# If you see import errors, ensure you're in the virtual environment
-poetry shell  # or source venv/bin/activate
+```bash
+# Ensure uv sync has been run
+uv sync --all-extras
 
-# Reinstall if needed
-poetry install --force
+# Confirm the venv is active or prefix commands with uv run
+uv run python -c "import omnibase_core"
 ```
 
 #### Python Version Issues
 
-```
+```bash
 # Check Python version
 python --version  # Should be 3.12+
 
@@ -187,26 +152,16 @@ pyenv install 3.12.0
 pyenv local 3.12.0
 ```
 
-#### Poetry Issues
-
-```
-# Clear Poetry cache
-poetry cache clear --all pypi
-
-# Reinstall Poetry
-curl -sSL https://install.python-poetry.org | python3 -
-```
-
 ### Verification Commands
 
-```
+```bash
 # Check installation
 uv run python -c "
 from omnibase_core.nodes.node_compute import NodeCompute
 from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_reducer import NodeReducer
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-print('✅ All node types imported successfully!')
+print('All node types imported successfully!')
 "
 
 # Check version
@@ -225,7 +180,7 @@ If you encounter issues:
 
 1. Check the [troubleshooting section](#troubleshooting) above
 2. Search [existing issues](https://github.com/OmniNode-ai/omnibase_core/issues)
-4. Create a [new issue](https://github.com/OmniNode-ai/omnibase_core/issues/new) with:
+3. Create a [new issue](https://github.com/OmniNode-ai/omnibase_core/issues/new) with:
    - Python version
    - Installation method used
    - Full error message
@@ -234,5 +189,5 @@ If you encounter issues:
 ---
 
 **Related Documentation**:
-- [Poetry Documentation](https://python-poetry.org/docs/)
+- [uv Documentation](https://docs.astral.sh/uv/)
 - [Node Building Guide](../guides/node-building/README.md)

@@ -307,7 +307,7 @@ All behavior is declared in YAML contracts:
 | Use protocol names for DI | `container.get_service("ProtocolLogger")` not `"LoggerService"` |
 | No `dict[str, Any]` | Use TypedDict or Pydantic models for type safety |
 | ORCHESTRATOR cannot return results | Only COMPUTE nodes return typed results |
-| Always use Poetry | `uv run pytest`, never `python -m pytest` |
+| Always use uv | `uv run pytest`, never `python -m pytest` directly |
 
 ---
 
@@ -315,6 +315,10 @@ All behavior is declared in YAML contracts:
 
 ```text
 src/omnibase_core/
+├── adapters/               # Adapter utilities
+├── agents/                 # Agent support models
+├── analysis/               # Analysis helpers
+├── artifacts/              # Content-addressed ArtifactStore (OMN-13093)
 ├── backends/               # Cache (Redis) and metrics (Prometheus, in-memory)
 ├── cli/                    # CLI commands
 ├── constants/              # Project constants
@@ -323,27 +327,37 @@ src/omnibase_core/
 ├── contracts/              # Contract management
 ├── crypto/                 # Blake3 hashing, Ed25519 signing
 ├── decorators/             # Utility decorators (@standard_error_handling)
+├── discovery/              # Node discovery utilities
+├── dispatch/               # Dispatch bus client (OMN-12960)
+├── doctor/                 # onex doctor health-check registry and checks
 ├── enums/                  # Core enumerations (300+ enums, 6 subdirectories)
 ├── errors/                 # Error handling (ModelOnexError)
+├── event_bus/              # In-memory event bus (registered in onex.backends)
 ├── factories/              # Contract and profile factories
+├── gate/                   # OmniGate config loader, diff hash, receipt canonical
 ├── infrastructure/         # Base node classes
 ├── integrations/           # External integrations
 ├── logging/                # Structured logging
 ├── merge/                  # Contract merge engine, conflict classifier
 ├── mixins/                 # Reusable behavior mixins (40+)
 ├── models/                 # Pydantic models (80+ subdirectories)
+├── navigation/             # Navigation helpers
 ├── nodes/                  # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
+├── normalization/          # Normalization pipeline
+├── overlays/               # Contract overlay support
 ├── pipeline/               # Execution plan builders, runners
 ├── protocols/              # Protocol definitions
 ├── rendering/              # Report renderers (CLI, HTML, JSON, Markdown, Diff)
 ├── resolution/             # Execution, handler, protocol dependency resolvers
-├── runtime/                # Runtime components (FileRegistry)
+├── runtime/                # Runtime components (handler registry, message dispatch)
 ├── schemas/                # JSON Schema definitions
 ├── services/               # Service implementations
 ├── tools/                  # Mypy plugins
 ├── types/                  # TypedDict definitions
 ├── utils/                  # Utility functions
-└── validation/             # Validation framework + cross-repo validators + DB validators
+├── validators/             # Standalone validator modules
+├── validation/             # Validation framework + cross-repo validators + DB validators
+└── workflows/              # Workflow support models
 ```
 
 ---

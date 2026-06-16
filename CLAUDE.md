@@ -251,6 +251,11 @@ failure would be worse than a documented failure event.
 | Replay/Corpus System | `src/omnibase_core/models/replay/`, `services/replay/`, `protocols/replay/` |
 | DB Validation | `src/omnibase_core/validation/db/` |
 | Claude Code Hooks | `src/omnibase_core/models/hooks/`, `enums/hooks/` |
+| ArtifactStore | `src/omnibase_core/artifacts/artifact_store.py` — content-addressed artifact storage (OMN-13093) |
+| Dispatch Bus Client | `src/omnibase_core/dispatch/dispatch_bus_client.py` — typed dispatch surface over the event bus |
+| Doctor Health Checks | `src/omnibase_core/doctor/` — extensible health-check registry; checks registered in `onex.doctor` entry-point group |
+| In-Memory Event Bus | `src/omnibase_core/event_bus/event_bus_inmemory.py` — registered in `onex.backends` entry-point group |
+| OmniGate | `src/omnibase_core/gate/` — config loader, diff hash, receipt canonical (OMN-11137/11139/11140) |
 
 ### File Naming Conventions
 
