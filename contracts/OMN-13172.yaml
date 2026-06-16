@@ -1,0 +1,65 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13172"
+title: "docs(OMN-13172): refresh repo docs across five repos — CLAUDE.md/README/handoff sweep"
+summary: >
+  Docs-only refresh sweep across five repos (omnibase_compat, omnibase_core, omniclaude, omniintelligence,
+  onex-self-extending-agent). Each PR touches only documentation surfaces (CLAUDE.md, README, handoff/onboarding
+  notes) — no source, no contract behavior, no Kafka topic schema, no DDL/migration, no runtime/deploy/.201
+  mutation. The Receipt Gate fires on each branch ticket OMN-13172 and is the only blocker; this central
+  OCC contract binds each bound code PR to a paired OCC receipt so the gate resolves via Evidence-Source:
+  OCC#<pr> and Evidence-Ticket: OMN-13172 without any [skip-*] bypass token. One dod_evidence entry per
+  bound code PR, each a receipt-grep of its drift/dod_receipts/OMN-13172/pr-<n>/command.yaml.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-omnibase_compat-155"
+    description: >-
+      omnibase_compat PR #155 (branch jonah/omn-13172-omnibase_compat-docs-refresh) carries the docs-only
+      refresh. The paired OCC receipt drift/dod_receipts/OMN-13172/pr-155/command.yaml binds the code
+      PR head sha (commit_sha) and OCC PR number (pr_number) with status PASS.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "grep -q '^status: PASS$' drift/dod_receipts/OMN-13172/pr-155/command.yaml"
+  - id: "dod-omnibase_core-1241"
+    description: >-
+      omnibase_core PR #1241 (branch jonah/omn-13172-omnibase_core-docs-refresh) carries the docs-only
+      refresh. The paired OCC receipt drift/dod_receipts/OMN-13172/pr-1241/command.yaml binds the code
+      PR head sha (commit_sha) and OCC PR number (pr_number) with status PASS.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "grep -q '^status: PASS$' drift/dod_receipts/OMN-13172/pr-1241/command.yaml"
+  - id: "dod-omniclaude-1765"
+    description: >-
+      omniclaude PR #1765 (branch jonah/omn-13172-omniclaude-docs-refresh) carries the docs-only refresh.
+      The paired OCC receipt drift/dod_receipts/OMN-13172/pr-1765/command.yaml binds the code PR head
+      sha (commit_sha) and OCC PR number (pr_number) with status PASS.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "grep -q '^status: PASS$' drift/dod_receipts/OMN-13172/pr-1765/command.yaml"
+  - id: "dod-omniintelligence-711"
+    description: >-
+      omniintelligence PR #711 (branch jonah/omn-13172-omniintelligence-docs-refresh) carries the docs-only
+      refresh. The paired OCC receipt drift/dod_receipts/OMN-13172/pr-711/command.yaml binds the code
+      PR head sha (commit_sha) and OCC PR number (pr_number) with status PASS.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "grep -q '^status: PASS$' drift/dod_receipts/OMN-13172/pr-711/command.yaml"
+  - id: "dod-onex-self-extending-agent-235"
+    description: >-
+      onex-self-extending-agent PR #235 (branch jonah/omn-13172-onex-self-extending-agent-docs-refresh)
+      carries the docs-only refresh. The paired OCC receipt drift/dod_receipts/OMN-13172/pr-235/command.yaml
+      binds the code PR head sha (commit_sha) and OCC PR number (pr_number) with status PASS.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "grep -q '^status: PASS$' drift/dod_receipts/OMN-13172/pr-235/command.yaml"
