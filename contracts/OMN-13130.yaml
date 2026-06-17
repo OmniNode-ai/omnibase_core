@@ -16,9 +16,7 @@ summary: >
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
-  - "omnibase_core.models.dashboard (new public exports)"
-  - "omnibase_core.enums (new public exports)"
-  - "scripts/emit_ts_types.py (TS codegen registration)"
+  - "public_api"
 evidence_requirements:
   - kind: "tests"
     description: "36 new unit tests for the six primitives + EnumEmptyStateReason (frozen, extra=forbid, required fields, strong typing, ModelGate composition); existing dashboard export-surface test extended"
