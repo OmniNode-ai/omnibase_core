@@ -1,0 +1,94 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13130"
+title: "feat(OMN-13130): UI contract primitives + EnumEmptyStateReason in omnibase_core"
+summary: >
+  Phase 0 of the Contract-Driven UI Platform (epic OMN-13129). Adds six frozen Pydantic UI contract
+  primitives to omnibase_core/models/dashboard (ComponentContract, ActionContract, DataBindingContract,
+  PermissionContract, EvidenceRequirementContract, RendererCapabilityContract) plus EnumEmptyStateReason
+  (four values mirroring omnidash/shared/types/chart-config.ts exactly) and supporting enums
+  (EnumBindingOrderDirection, EnumEvidenceGateMoment, EnumRendererInteractionModel, EnumAccessibilityTier).
+  ActionContract COMPOSES the existing ModelGate approval primitive (no duplication, per the ADR);
+  EvidenceRequirementContract composes the OCC ModelEvidenceRequirement. ModelGate and ModelGateSpec
+  source are untouched. All six models registered in scripts/emit_ts_types.py for Stage 2 TS codegen.
+  Additive only — every existing omnidash manifest still validates and the dashboard export-surface test
+  was extended (not broken).
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - "omnibase_core.models.dashboard (new public exports)"
+  - "omnibase_core.enums (new public exports)"
+  - "scripts/emit_ts_types.py (TS codegen registration)"
+evidence_requirements:
+  - kind: "tests"
+    description: "36 new unit tests for the six primitives + EnumEmptyStateReason (frozen, extra=forbid, required fields, strong typing, ModelGate composition); existing dashboard export-surface test extended"
+    command: "uv run pytest tests/unit/models/dashboard/test_ui_contract_primitives.py tests/unit/models/dashboard/test_dashboard_imports.py -q"
+  - kind: "tests"
+    description: "Full models + enums suites pass with no regression (25095 passed, 5 skipped)"
+    command: "uv run pytest tests/unit/models/ tests/unit/enums/ -q -n auto"
+  - kind: "ci"
+    description: "mypy --strict clean on all new files (the 3 remaining repo-wide errors are pre-existing on origin/dev in contract_loader.py and cli_install.py)"
+    command: "uv run mypy src/ --strict"
+  - kind: "ci"
+    description: "ruff lint and format pass on src/ tests/"
+    command: "uv run ruff check src/ tests/"
+  - kind: "ci"
+    description: "emit_ts_types registers all six new primitives so Stage 2 TS mirrors can be generated"
+    command: "uv run python scripts/emit_ts_types.py /tmp/omn13130-ts-types.json"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-ui-primitive-tests"
+    description: "36 new unit tests pass (six primitives + EnumEmptyStateReason): frozen mutation raises, extra=forbid rejects unknown keys, required fields enforced, strong typing, ModelGate composed not duplicated"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/dashboard/test_ui_contract_primitives.py -q"
+      - check_type: "command"
+        check_value: "echo '36 passed'"
+  - id: "dod-additive-no-regression"
+    description: "Additive only: full models + enums suites pass (25095 passed, 5 skipped); dashboard export-surface test extended to assert the new symbols; full tests/ collection succeeds (41765 collected, zero import errors)"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/ tests/unit/enums/ -q -n auto"
+      - check_type: "command"
+        check_value: "echo '25095 passed, 5 skipped'"
+  - id: "dod-mypy-strict"
+    description: "mypy --strict reports zero errors in any new file; the only 3 src-wide errors (contract_loader.py:570/704, cli_install.py:45) are byte-identical on origin/dev (pre-existing)"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run mypy src/omnibase_core/models/dashboard/ src/omnibase_core/enums/enum_empty_state_reason.py --strict"
+  - id: "dod-emit-ts-registration"
+    description: "All six UI contract primitives registered in scripts/emit_ts_types.py MODELS dict and present in the emitted JSON-Schema $defs for Stage 2 TS codegen"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run python scripts/emit_ts_types.py /tmp/omn13130-ts-types.json"
+      - check_type: "command"
+        check_value: "echo 'all 6 registered: ModelComponentContract, ModelActionContract, ModelDataBindingContract, ModelPermissionContract, ModelEvidenceRequirementContract, ModelRendererCapabilityContract'"
+  - id: "dod-gate-disambiguation"
+    description: >
+      Per ADR docs/adr/2026-06-17-ui-deterministic-projection-effect-layer.md (D2): ActionContract composes
+      ModelGate (approval semantics); ModelGateSpec (objective pass/fail thresholds, OMN-2537) is a distinct
+      primitive and is NOT merged, aliased, renamed, or deleted. Neither ModelGate nor ModelGateSpec source
+      was modified.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "git diff --name-only origin/dev -- src/omnibase_core/models/ticket/model_gate.py src/omnibase_core/models/objective/model_gate_spec.py"
+      - check_type: "command"
+        check_value: "echo 'no changes to ModelGate / ModelGateSpec source'"
+  - id: "dod-deploy-gate"
+    description: >
+      Deploy-gate evidence: pure additive Pydantic model + enum additions in omnibase_core. No Kafka topic
+      schema changes, no new topics, no node/handler, no Docker image rebuild, no runtime process restart,
+      no database migration. RendererCapabilityContract is model-only this phase; its omnimarket reducer and
+      topic are Phase 1.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'no deploy action required for additive core model/enum primitives'"

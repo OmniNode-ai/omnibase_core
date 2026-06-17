@@ -26,6 +26,14 @@ EXPECTED_EXPORTS: tuple[str, ...] = (
     "ModelWidgetConfigStatusGrid",
     "ModelEventFilter",
     "ModelWidgetConfigEventFeed",
+    # UI Contract Primitives (OMN-13130 — Phase 0)
+    "ModelComponentContract",
+    "ModelActionContract",
+    "ModelDataBindingContract",
+    "EnumBindingOrderDirection",
+    "ModelPermissionContract",
+    "ModelEvidenceRequirementContract",
+    "ModelRendererCapabilityContract",
 )
 
 

@@ -26,6 +26,14 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from omnibase_core.models.dashboard import (
+    ModelActionContract,
+    ModelComponentContract,
+    ModelDataBindingContract,
+    ModelEvidenceRequirementContract,
+    ModelPermissionContract,
+    ModelRendererCapabilityContract,
+)
 from omnibase_core.models.notifications import ModelStateTransitionNotification
 from omnibase_core.models.projectors import (
     ModelDashboardHint,
@@ -47,6 +55,13 @@ MODELS: dict[str, type[BaseModel]] = {
     "ModelProjectorIndex": ModelProjectorIndex,
     "ModelDashboardHint": ModelDashboardHint,
     "ModelStateTransitionNotification": ModelStateTransitionNotification,
+    # UI contract primitives (OMN-13130 — Phase 0)
+    "ModelComponentContract": ModelComponentContract,
+    "ModelActionContract": ModelActionContract,
+    "ModelDataBindingContract": ModelDataBindingContract,
+    "ModelPermissionContract": ModelPermissionContract,
+    "ModelEvidenceRequirementContract": ModelEvidenceRequirementContract,
+    "ModelRendererCapabilityContract": ModelRendererCapabilityContract,
 }
 
 
