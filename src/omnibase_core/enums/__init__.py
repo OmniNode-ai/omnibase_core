@@ -10,6 +10,7 @@ organized by functional domains for better maintainability.
 # Action status enum (OMN-1309)
 # Audit enforcement level (OMN-5232 — context integrity)
 from .audit.enum_audit_enforcement_level import EnumAuditEnforcementLevel
+from .enum_accessibility_tier import EnumAccessibilityTier
 from .enum_action_status import EnumActionStatus
 
 # Agent protocol enum (OMN-9622 — A2A wire protocol classification)
@@ -31,6 +32,7 @@ from .enum_backoff_strategy import EnumBackoffStrategy
 
 # Binding function enums (Operation Bindings DSL - OMN-1410)
 from .enum_binding_function import EnumBindingFunction
+from .enum_binding_order_direction import EnumBindingOrderDirection
 from .enum_business_logic_pattern import EnumBusinessLogicPattern
 
 # Case mode enums (contract-driven NodeCompute v1.0)
@@ -143,18 +145,20 @@ from .enum_effect_category import EnumEffectCategory
 from .enum_effect_handler_type import EnumEffectHandlerType
 from .enum_effect_policy_level import EnumEffectPolicyLevel
 from .enum_effect_types import EnumEffectType, EnumTransactionState
+from .enum_empty_state_reason import EnumEmptyStateReason
 
 # Envelope validation failure type enum (OMN-839)
 from .enum_envelope_validation_failure_type import EnumEnvelopeValidationFailureType
 
 # Validation-related enums
 from .enum_environment_validation_rule_type import EnumEnvironmentValidationRuleType
-
-# Event priority enum (OMN-1308)
 from .enum_event_priority import EnumEventPriority
 
 # Event sink type enum (OMN-1151)
 from .enum_event_sink_type import EnumEventSinkType
+
+# Event priority enum (OMN-1308)
+from .enum_evidence_gate_moment import EnumEvidenceGateMoment
 
 # Execution-related enums
 from .enum_execution_mode import EnumExecutionMode
@@ -371,6 +375,7 @@ from .enum_registry_error_code import EnumRegistryErrorCode
 # Registry-related enums
 from .enum_registry_health_status import EnumRegistryHealthStatus
 from .enum_registry_type import EnumRegistryType
+from .enum_renderer_interaction_model import EnumRendererInteractionModel
 
 # Resolution tier enums (authenticated dependency resolution - OMN-2890)
 from .enum_resolution_failure_code import EnumResolutionFailureCode
@@ -590,6 +595,12 @@ __all__ = [
     "EnumEffectHandlerType",
     "EnumEffectType",
     "EnumTransactionState",
+    # UI contract primitive vocabulary (OMN-13130)
+    "EnumAccessibilityTier",
+    "EnumBindingOrderDirection",
+    "EnumEmptyStateReason",
+    "EnumEvidenceGateMoment",
+    "EnumRendererInteractionModel",
     # Effect classification domain (OMN-1147)
     "EnumEffectCategory",
     "EnumEffectPolicyLevel",

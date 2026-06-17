@@ -52,18 +52,35 @@ See Also:
     - :class:`~omnibase_core.enums.EnumDashboardStatus`: Lifecycle states
 """
 
+from omnibase_core.enums.enum_binding_order_direction import EnumBindingOrderDirection
+from omnibase_core.models.dashboard.model_action_contract import ModelActionContract
 from omnibase_core.models.dashboard.model_capability_view import ModelCapabilityView
 from omnibase_core.models.dashboard.model_chart_axis_config import ModelChartAxisConfig
 from omnibase_core.models.dashboard.model_chart_series_config import (
     ModelChartSeriesConfig,
 )
+from omnibase_core.models.dashboard.model_component_contract import (
+    ModelComponentContract,
+)
 from omnibase_core.models.dashboard.model_dashboard_config import ModelDashboardConfig
 from omnibase_core.models.dashboard.model_dashboard_layout_config import (
     ModelDashboardLayoutConfig,
 )
+from omnibase_core.models.dashboard.model_data_binding_contract import (
+    ModelDataBindingContract,
+)
 from omnibase_core.models.dashboard.model_event_filter import ModelEventFilter
+from omnibase_core.models.dashboard.model_evidence_requirement_contract import (
+    ModelEvidenceRequirementContract,
+)
 from omnibase_core.models.dashboard.model_metric_threshold import ModelMetricThreshold
 from omnibase_core.models.dashboard.model_node_view import ModelNodeView
+from omnibase_core.models.dashboard.model_permission_contract import (
+    ModelPermissionContract,
+)
+from omnibase_core.models.dashboard.model_renderer_capability_contract import (
+    ModelRendererCapabilityContract,
+)
 from omnibase_core.models.dashboard.model_status_item_config import (
     ModelStatusItemConfig,
 )
@@ -116,4 +133,12 @@ __all__: tuple[str, ...] = (
     # Event Feed Widget
     "ModelEventFilter",
     "ModelWidgetConfigEventFeed",
+    # UI Contract Primitives (OMN-13130 — Phase 0)
+    "ModelComponentContract",
+    "ModelActionContract",
+    "ModelDataBindingContract",
+    "EnumBindingOrderDirection",
+    "ModelPermissionContract",
+    "ModelEvidenceRequirementContract",
+    "ModelRendererCapabilityContract",
 )
