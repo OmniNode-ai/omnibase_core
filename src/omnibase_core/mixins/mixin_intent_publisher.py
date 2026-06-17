@@ -34,7 +34,7 @@ Subcontract:
 
 Dependencies:
     - kafka_client service (for intent publishing)
-    - ModelOnexEnvelope (from omnibase_core)
+    - ModelEventEnvelope (from omnibase_core)
 
 Part of omnibase_core framework - provides coordination I/O for all ONEX nodes
 """
@@ -51,6 +51,7 @@ if TYPE_CHECKING:
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,
@@ -234,32 +235,21 @@ class MixinIntentPublisher:
             priority=priority,
         )
 
-        # Wrap in ModelOnexEnvelope for standard event format
-        try:
-            from omnibase_core.models.core import ModelOnexEnvelope
-            from omnibase_core.models.primitives.model_semver import ModelSemVer
+        # Wrap the typed intent in the canonical ModelEventEnvelope[T].
+        # The payload is the typed ModelEventPublishIntent (NOT a serialized dict),
+        # so the envelope preserves full type fidelity on the wire.
+        envelope: ModelEventEnvelope[ModelEventPublishIntent] = ModelEventEnvelope[
+            ModelEventPublishIntent
+        ](
+            payload=intent,
+            envelope_id=intent_id,
+            correlation_id=correlation_id,
+            source_tool=f"omnibase_core.{self.__class__.__name__}",
+            envelope_timestamp=published_at,
+            payload_type=ModelEventPublishIntent.__name__,
+        )
 
-            envelope = ModelOnexEnvelope(
-                envelope_id=intent_id,
-                envelope_version=ModelSemVer(major=1, minor=0, patch=0),
-                correlation_id=correlation_id,
-                source_node=f"omnibase_core.{self.__class__.__name__}",
-                operation="EVENT_PUBLISH_INTENT",
-                payload=intent.model_dump(),
-                timestamp=published_at,
-            )
-
-            envelope_json = envelope.model_dump_json()
-
-        except ImportError:
-            # Fallback if ModelOnexEnvelope not available (should not happen)
-            logger.warning(
-                "Failed to import ModelOnexEnvelope; falling back to raw intent JSON "
-                "without envelope wrapper. This changes the message format on the wire "
-                "and may cause downstream parsing issues. intent_id=%s",
-                intent_id,
-            )
-            envelope_json = intent.model_dump_json()
+        envelope_json = envelope.model_dump_json()
 
         # Publish to intent topic (coordination I/O)
         await self._intent_kafka_client.publish(
