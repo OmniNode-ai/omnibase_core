@@ -947,7 +947,6 @@ class GoodNode(NodeReducer):
 ## Related Documentation
 
 - [Node Building Guide](README.md) - Complete implementation tutorials
-- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Comprehensive testing strategies
 - [Error Handling](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
 - [Threading Guide](../THREADING.md) - Thread safety considerations
 - [API Reference](../../reference/api/nodes.md) - Complete API documentation

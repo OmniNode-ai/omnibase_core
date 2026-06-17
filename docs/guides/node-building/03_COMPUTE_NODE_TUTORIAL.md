@@ -208,7 +208,7 @@ poetry add --group dev pytest pytest-asyncio
 uv run python -c "from omnibase_core.nodes import NodeCompute; print('✓ Ready!')"
 ```
 
-## Step 1: Define Input Model
+## Define the Input Model
 
 First, define what data your node accepts.
 
@@ -282,7 +282,7 @@ class ModelPriceCalculatorInput(BaseModel):
 - ✅ Validation constraints (gt=0, min_items=1)
 - ✅ Example in schema_extra for documentation
 
-## Step 2: Define Output Model
+## Define the Output Model
 
 Define what your node returns.
 
@@ -341,7 +341,7 @@ class ModelPriceCalculatorOutput(BaseModel):
 - ✅ Performance metrics (processing_time_ms, cache_hit)
 - ✅ Metadata for debugging (items_count, discount_code_applied)
 
-## Step 3: Implement the COMPUTE Node
+## Implement the COMPUTE Node
 
 Now build the actual node.
 
@@ -690,7 +690,7 @@ class NodePriceCalculatorCompute(NodeCompute):
 - Need health checks, metrics, event bus out-of-the-box
 - Following ONEX best practices
 
-## Step 4: Write Tests
+## Write Tests
 
 Always test your nodes!
 
@@ -861,7 +861,7 @@ async def test_metrics(calculator):
     assert metrics["cache_hit_rate"] == 0.5  # 50% hit rate
 ```
 
-## Step 5: Run Tests
+## Run Tests
 
 ```bash
 # Run all tests
@@ -888,7 +888,7 @@ tests/nodes/test_node_price_calculator.py::test_metrics PASSED
 ================================ 8 passed in 0.12s ================================
 ```
 
-## Step 6: Use Your Node
+## Use Your Node
 
 Now use it in your application!
 
@@ -1009,7 +1009,6 @@ You've successfully built a COMPUTE node! Now:
 - [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Build a data aggregation node
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Coordinate workflows
 - [Patterns Catalog](07_PATTERNS_CATALOG.md) - Reusable patterns
-- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Advanced testing strategies
 
 ## Troubleshooting
 

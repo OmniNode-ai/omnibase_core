@@ -45,7 +45,6 @@ from omnibase_core.models.events.model_github_pr_status_event import (
     ModelGitHubPRStatusEvent,
 )
 from omnibase_core.models.events.model_intent_events import (
-    TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,
     ModelIntentExecutionResult,
 )
@@ -110,7 +109,6 @@ __all__ = [
     # Intent coordination events (existing)
     "ModelEventPublishIntent",
     "ModelIntentExecutionResult",
-    "TOPIC_EVENT_PUBLISH_INTENT",
     # Intent storage events (WS-4)
     "ModelIntentStoredEvent",
     "ModelIntentQueryRequestedEvent",

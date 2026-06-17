@@ -3860,37 +3860,6 @@ mixin_hash_computation:
         - "Initial metadata definition (OMN-1115)"
 
 # =============================================================================
-# MixinIntentPublisher - Coordination I/O Publishing
-# =============================================================================
-mixin_intent_publisher:
-  name: "MixinIntentPublisher"
-  description: "Intent publishing for coordination I/O without direct domain events"
-  version: {major: 1, minor: 0, patch: 0}
-  category: "coordination"
-
-  requires:
-    - "omnibase_core.models.container.model_onex_container"
-    - "omnibase_core.models.events.model_event_envelope"
-
-  compatible_with:
-    - "MixinEventBus"
-    - "MixinContractPublisher"
-
-  incompatible_with: []
-
-  config_schema: {}
-
-  usage_examples:
-    - "Reducer nodes publishing intents instead of direct events"
-    - "Pure logic nodes coordinating actions via intent executors"
-
-  version_history:
-    - version: {major: 1, minor: 0, patch: 0}
-      date: "2026-03-08"
-      changes:
-        - "Initial metadata definition (OMN-1115)"
-
-# =============================================================================
 # MixinIntrospectFromContract - Contract-Based Introspection
 # =============================================================================
 mixin_introspect_from_contract:

@@ -325,7 +325,7 @@ uv run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
 
 ---
 
-## Step 1: Define Input/Output Models
+## Define Input/Output Models
 
 ### Input Model
 
@@ -506,7 +506,7 @@ class ModelMetricsAggregationOutput(BaseModel):
 
 ---
 
-## Step 2: Implement Pure FSM REDUCER Node
+## Implement the Pure FSM REDUCER Node
 
 **File**: `src/your_project/nodes/node_metrics_aggregator_reducer.py`
 
@@ -868,7 +868,7 @@ class NodeMetricsAggregatorReducer(NodeCoreBase):
 
 ---
 
-## Step 3: Intent Execution Pattern
+## Intent Execution Pattern
 
 ### How Intents Flow to Effect Nodes
 
@@ -980,7 +980,7 @@ class NodeIntentExecutorEffect(NodeEffect):
 
 ---
 
-## Step 4: Write Comprehensive Tests
+## Write Comprehensive Tests
 
 **File**: `tests/unit/nodes/test_node_metrics_aggregator_reducer.py`
 
@@ -1208,7 +1208,7 @@ async def test_intent_priority_ordering(aggregator_node):
 
 ---
 
-## Step 5: Usage Examples
+## Usage Examples
 
 ### Basic Metrics Aggregation with Intent Execution
 
@@ -1615,9 +1615,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 
 ### Further Reading
 
-- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Comprehensive testing guide
 - [MODEL_INTENT_ARCHITECTURE.md](../../architecture/MODEL_INTENT_ARCHITECTURE.md) - Intent pattern details
-- [MixinIntentPublisher Implementation](../../../src/omnibase_core/mixins/mixin_intent_publisher.py)
 
 ---
 
@@ -1680,7 +1678,6 @@ async def process(self, input_data):
 **Continue your journey**:
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
 - [Patterns Catalog](07_PATTERNS_CATALOG.md) - Common patterns and advanced Intent handling
-- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Testing strategies
 
 **Challenge**: Build an Effect node that executes Intents with retry logic and circuit breakers!
 

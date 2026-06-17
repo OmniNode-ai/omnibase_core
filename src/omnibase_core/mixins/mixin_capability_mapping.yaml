@@ -320,17 +320,6 @@ mixins:
     legacy_shim_required: true
     conversion_evidence: null
 
-  - mixin_name: MixinIntentPublisher
-    handler_contract_stub: contracts/handlers/intent_publisher_handler.yaml
-    handler_type_category: effect
-    capability_set: [intent_publishing, coordination_io]
-    nondeterminism_classification: network
-    phase: 3
-    migration_priority: 2
-    ordering_constraints: [MixinEventBus]
-    legacy_shim_required: true
-    conversion_evidence: null
-
   - mixin_name: MixinIntrospectionPublisher
     handler_contract_stub: contracts/handlers/introspection_publisher_handler.yaml
     handler_type_category: effect
