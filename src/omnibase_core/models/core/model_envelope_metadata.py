@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-ModelEnvelopeMetadata - Typed metadata for ModelOnexEnvelope.
+ModelEnvelopeMetadata - Typed metadata for ModelEventEnvelope.
 
 This model provides strongly typed metadata fields for envelope messages,
 replacing the untyped dict[str, Any] pattern. It includes common fields for
@@ -38,8 +38,7 @@ Usage:
 Part of omnibase_core framework - provides typed metadata for event envelopes.
 
 Related:
-    - : ModelOnexEnvelope refactoring
-    - ModelOnexEnvelope: Uses this model for its metadata field
+    - ModelEventEnvelope: Uses this model for its metadata field
 
 .. versionadded:: 0.3.6
     Introduced as typed replacement for dict[str, Any] metadata.
@@ -50,7 +49,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ModelEnvelopeMetadata(BaseModel):
     """
-    Typed metadata for ModelOnexEnvelope.
+    Typed metadata for ModelEventEnvelope.
 
     This model provides strongly typed fields for common envelope metadata
     including distributed tracing, request tracking, headers, and tags.
@@ -111,7 +110,7 @@ class ModelEnvelopeMetadata(BaseModel):
         concurrent access. Use ``model_copy(update={...})`` to create modified copies.
 
     See Also:
-        - :class:`~omnibase_core.models.core.model_onex_envelope.ModelOnexEnvelope`:
+        - :class:`~omnibase_core.models.events.model_event_envelope.ModelEventEnvelope`:
           The envelope that uses this metadata model
         - :class:`~omnibase_core.protocols.event_bus.ProtocolEventContext`:
           Protocol defining trace context properties
@@ -157,7 +156,7 @@ class ModelEnvelopeMetadata(BaseModel):
     # ==========================================================================
 
     # Performance Note: default_factory=dict creates a new dict per instance.
-    # This is intentional and correct - see ModelOnexEnvelope for details.
+    # This is intentional and correct - see ModelEventEnvelope for details.
     headers: dict[str, str] = Field(
         default_factory=dict,
         description="HTTP/protocol headers as string key-value pairs. "

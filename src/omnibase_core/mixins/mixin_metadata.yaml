@@ -3870,7 +3870,7 @@ mixin_intent_publisher:
 
   requires:
     - "omnibase_core.models.container.model_onex_container"
-    - "omnibase_core.models.events.model_onex_envelope"
+    - "omnibase_core.models.events.model_event_envelope"
 
   compatible_with:
     - "MixinEventBus"
