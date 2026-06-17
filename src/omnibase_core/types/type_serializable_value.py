@@ -76,7 +76,7 @@ SerializableValue = JsonType
 # - Pydantic model serialization: model.model_dump() -> SerializedDict
 # - API response payloads
 # - Configuration data storage
-# - Event envelope payloads (see ModelOnexEnvelope)
+# - Event envelope payloads (see ModelEventEnvelope)
 SerializedDict = dict[str, JsonType]
 
 

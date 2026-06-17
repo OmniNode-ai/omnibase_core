@@ -53,7 +53,6 @@ from .model_mixin_performance import ModelMixinPerformance
 from .model_mixin_preset import ModelMixinPreset
 from .model_mixin_property import ModelMixinProperty
 from .model_mixin_version import ModelMixinVersion
-from .model_onex_envelope import ModelOnexEnvelope
 
 # Version information
 from .model_onex_version import ModelOnexVersionInfo
@@ -158,7 +157,6 @@ __all__ = [
     "ModelOnexVersionInfo",
     # Event envelope patterns
     "ModelEnvelopeMetadata",
-    "ModelOnexEnvelope",
     # Generic container pattern
     "ModelContainer",
     # Field accessor patterns
