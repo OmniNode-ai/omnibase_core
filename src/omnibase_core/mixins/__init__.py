@@ -51,7 +51,6 @@ from omnibase_core.mixins.mixin_health_check import (
     check_postgresql_health,
     check_redis_health,
 )
-from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.mixins.mixin_introspect_from_contract import (
     MixinIntrospectFromContract,
 )
@@ -123,7 +122,6 @@ __all__ = [
     "MixinSensitiveFieldRedaction",
     "MixinSerializable",
     "MixinYAMLSerialization",
-    "MixinIntentPublisher",
     # Health check utility functions
     "check_postgresql_health",
     "check_kafka_health",

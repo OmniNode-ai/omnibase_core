@@ -36,7 +36,6 @@ from omnibase_core.constants import (
     TOPIC_DISCOVERY_COMMANDS,
     TOPIC_DISCOVERY_EVENTS,
     TOPIC_DISCOVERY_INTENTS,
-    TOPIC_EVENT_PUBLISH_INTENT,
     TOPIC_REGISTRATION_COMMANDS,
     TOPIC_REGISTRATION_EVENTS,
     TOPIC_REGISTRATION_INTENTS,
@@ -380,19 +379,6 @@ class TestRuntimeDomainTopics:
 
 
 @pytest.mark.unit
-class TestSpecialTopicConstants:
-    """Test cases for special topic constants."""
-
-    def test_event_publish_intent(self):
-        """Test TOPIC_EVENT_PUBLISH_INTENT constant value."""
-        assert TOPIC_EVENT_PUBLISH_INTENT == "onex.runtime.intents"
-
-    def test_event_publish_intent_equals_runtime_intents(self):
-        """Test that TOPIC_EVENT_PUBLISH_INTENT equals TOPIC_RUNTIME_INTENTS."""
-        assert TOPIC_EVENT_PUBLISH_INTENT == TOPIC_RUNTIME_INTENTS
-
-
-@pytest.mark.unit
 class TestCleanupPolicyConstants:
     """Test cases for cleanup policy constants."""
 
@@ -536,7 +522,6 @@ class TestTopicNamingConvention:
             TOPIC_RUNTIME_COMMANDS,
             TOPIC_RUNTIME_EVENTS,
             TOPIC_RUNTIME_INTENTS,
-            TOPIC_EVENT_PUBLISH_INTENT,
         ]
 
         for topic in topics:
@@ -621,7 +606,6 @@ class TestTopicConstantsUniqueness:
             TOPIC_RUNTIME_INTENTS,
         ]
 
-        # Note: TOPIC_EVENT_PUBLISH_INTENT == TOPIC_RUNTIME_INTENTS, so not included
         assert len(topics) == len(set(topics))
 
 

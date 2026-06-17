@@ -546,7 +546,6 @@ grep -rn "topic.*=" src/ | grep -v "onex\.[a-z]" | grep -v "test"
 - **Naming Conventions**: `docs/conventions/NAMING_CONVENTIONS.md`
 - **Event-Driven Architecture**: `docs/patterns/EVENT_DRIVEN_ARCHITECTURE.md`
 - **ModelEventEnvelope**: `src/omnibase_core/models/events/model_event_envelope.py`
-- **Intent Publisher**: `docs/guides/INTENT_PUBLISHER_TESTING_DOCUMENTATION.md`
 
 ---
 

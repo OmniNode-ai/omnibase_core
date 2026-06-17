@@ -15,8 +15,8 @@ Example:
     from uuid import uuid4
 
     from omnibase_core.constants import (
-        TOPIC_EVENT_PUBLISH_INTENT,
         TOPIC_REGISTRATION_EVENTS,
+        TOPIC_RUNTIME_INTENTS,
         TOPIC_TYPE_EVENTS,
         topic_name,
     )
@@ -67,7 +67,7 @@ Example:
     )
 
     # Publish to intent topic for execution by IntentExecutor
-    await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, custom_intent)
+    await publish_to_kafka(TOPIC_RUNTIME_INTENTS, custom_intent)
 
     # Example 3: Using TOPIC_METRICS_EVENTS for node health metrics
     # Health events can be published to the metrics domain topic for monitoring
@@ -89,14 +89,14 @@ Example:
         target_event_type="NODE_HEALTH",
         target_event_payload=health_payload,
     )
-    await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, metrics_intent)
+    await publish_to_kafka(TOPIC_RUNTIME_INTENTS, metrics_intent)
 
 Note:
-    TOPIC_EVENT_PUBLISH_INTENT is defined in constants_topic_taxonomy.py and
-    should be imported from omnibase_core.constants. Use pre-defined topic
-    constants (e.g., TOPIC_REGISTRATION_EVENTS, TOPIC_METRICS_EVENTS) when
-    available, or use topic_name() to generate domain-specific topic names
-    dynamically.
+    TOPIC_RUNTIME_INTENTS ("onex.runtime.intents") is the canonical runtime
+    intent-coordination topic, defined in constants_topic_taxonomy.py and
+    imported from omnibase_core.constants. Use pre-defined topic constants
+    (e.g., TOPIC_REGISTRATION_EVENTS, TOPIC_METRICS_EVENTS) when available, or
+    use topic_name() to generate domain-specific topic names dynamically.
 """
 
 from __future__ import annotations

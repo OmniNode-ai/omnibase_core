@@ -89,7 +89,6 @@ Testing strategies and performance optimization.
 | Guide | Description |
 |-------|-------------|
 | [Testing Guide](./TESTING_GUIDE.md) | Comprehensive testing strategies for ONEX |
-| [Intent Publisher Testing Documentation](./INTENT_PUBLISHER_TESTING_DOCUMENTATION.md) | Testing intent publishers |
 | [Performance Benchmarks](./PERFORMANCE_BENCHMARKS.md) | Performance benchmarking guidelines |
 | [Production Cache Tuning](./PRODUCTION_CACHE_TUNING.md) | Cache optimization for production |
 | [Request Tracing](./REQUEST_TRACING.md) | Distributed request tracing |

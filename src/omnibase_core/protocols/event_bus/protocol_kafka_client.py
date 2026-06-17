@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 """
-Protocol for Kafka client used by intent publisher.
+Protocol for a minimal, publish-only Kafka client.
 
-The ProtocolKafkaClient protocol definition
-for simple string-based Kafka publishing used by MixinIntentPublisher.
+The ProtocolKafkaClient protocol definition for simple string-based Kafka
+publishing. Intentionally limited to a single ``publish`` method.
 """
 
 from typing import Protocol, runtime_checkable

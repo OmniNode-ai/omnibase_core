@@ -216,10 +216,6 @@ TOPIC_RUNTIME_INTENTS = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS)
 TOPIC_METRICS_EVENTS = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
 TOPIC_METRICS_INTENTS = topic_name(DOMAIN_METRICS, TOPIC_TYPE_INTENTS)
 
-# Intent Publisher Topic (coordination)
-# Note: This is the central intent topic used by MixinIntentPublisher
-TOPIC_EVENT_PUBLISH_INTENT = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS)
-
 # Cleanup Policy Defaults
 CLEANUP_POLICY_EVENTS = "delete"
 CLEANUP_POLICY_SNAPSHOTS = "compact,delete"
@@ -285,8 +281,6 @@ __all__ = [
     # Metrics topics
     "TOPIC_METRICS_EVENTS",
     "TOPIC_METRICS_INTENTS",
-    # Special topics
-    "TOPIC_EVENT_PUBLISH_INTENT",
     # Cleanup policies
     "CLEANUP_POLICY_EVENTS",
     "CLEANUP_POLICY_SNAPSHOTS",
