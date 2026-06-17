@@ -1,3 +1,8 @@
+## v0.45.0 (2026-06-17)
+
+### Breaking Changes
+- refactor(OMN-13200): bump omnibase_core to v0.45.0 — removes ModelOnexEnvelope public API (deleted in #1250, B4). Canonical envelope is ModelEventEnvelope[T]. Minor bump per pre-1.0 semver convention for a breaking public-API deletion.
+
 ## v0.44.2 (2026-06-07)
 
 ### Changes
