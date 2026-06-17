@@ -51,7 +51,6 @@ with enhanced tracking and routing capabilities.
 
 Related:
     - : ModelOnexEnvelope refactoring
-    - ModelOnexEnvelopeV1: Predecessor with simpler fields (deprecated)
 """
 
 from __future__ import annotations
@@ -75,8 +74,8 @@ class ModelOnexEnvelope(BaseModel):
     Enhanced event envelope for standardized message wrapping.
 
     This is the canonical envelope format for ONEX inter-service communication,
-    providing comprehensive tracking and routing capabilities. It replaces
-    ModelOnexEnvelopeV1 with enhanced fields for:
+    providing comprehensive tracking and routing capabilities with enhanced
+    fields for:
 
     - Causation chain tracking (causation_id)
     - Routing support (target_node, handler_type)
@@ -345,7 +344,8 @@ class ModelOnexEnvelope(BaseModel):
         - ``docs/guides/THREADING.md``: Thread safety guidelines
 
     .. versionadded:: 0.3.6
-        Replaces ModelOnexEnvelopeV1 with enhanced fields.
+        Introduced as the enhanced envelope format with causation tracking,
+        routing, and request/response support.
     """
 
     # ==========================================================================
