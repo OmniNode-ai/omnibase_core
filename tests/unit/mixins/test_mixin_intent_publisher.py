@@ -11,7 +11,7 @@ Validates ONEX standards for coordination I/O and intent-based architecture.
 import asyncio
 from datetime import UTC, datetime
 from typing import Any
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,7 +20,10 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.events.model_intent_events import TOPIC_EVENT_PUBLISH_INTENT
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_intent_events import (
+    TOPIC_EVENT_PUBLISH_INTENT,
+)
 from omnibase_core.models.events.model_node_registered_event import (
     ModelNodeRegisteredEvent,
 )
@@ -330,8 +333,21 @@ class TestMixinIntentPublisher:
 
         envelope_data = json.loads(published_value)
 
-        # Verify envelope structure (should have ModelOnexEnvelope fields or fallback)
-        assert "payload" in envelope_data or "intent_id" in envelope_data
+        # Verify ModelEventEnvelope[ModelEventPublishIntent] wire shape: the typed
+        # intent lives under "payload" and the envelope carries its own metadata.
+        assert "payload" in envelope_data
+        assert "envelope_id" in envelope_data
+        assert "envelope_timestamp" in envelope_data
+        assert envelope_data["source_tool"] == (
+            f"omnibase_core.{test_node.__class__.__name__}"
+        )
+        assert envelope_data["payload_type"] == "ModelEventPublishIntent"
+        assert envelope_data["correlation_id"] == str(correlation_id)
+        # The payload is the typed intent (NOT a serialized dict double-wrap).
+        intent_payload = envelope_data["payload"]
+        assert intent_payload["target_topic"] == target_topic
+        assert intent_payload["target_key"] == target_key
+        assert intent_payload["priority"] == priority
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -437,50 +453,91 @@ class TestMixinIntentPublisher:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
-    async def test_onex_envelope_success_path(self, test_node, test_event):
+    async def test_event_envelope_wraps_typed_intent(self, test_node, test_event):
         """
-        Test successful ModelOnexEnvelope wrapping.
+        Test that the publisher wraps the intent in ModelEventEnvelope[ModelEventPublishIntent].
 
-        Validates envelope creation when ModelOnexEnvelope is available.
+        Validates the migrated envelope type (OMN-13192): the published value
+        deserializes back into a ModelEventEnvelope whose payload carries the
+        intent fields, with the mapped envelope fields populated.
+
+        Note on deserialization: the envelope is re-parsed via the generic
+        ModelEventEnvelope (payload preserved as a mapping). The strict
+        ModelEventEnvelope[ModelEventPublishIntent] parameterization cannot
+        reconstruct from JSON because ModelEventPublishIntent.target_event_payload
+        is a ModelEventPayloadUnion whose own before-validator rejects the plain
+        dict that JSON decoding produces (the union stores no discriminator).
+        That is a pre-existing property of ModelEventPublishIntent, independent
+        of this envelope migration.
         """
-        # Mock ModelOnexEnvelope to be available
-        mock_envelope_class = Mock()
-        mock_envelope_instance = Mock()
-        mock_envelope_instance.model_dump_json.return_value = '{"envelope": "data"}'
-        mock_envelope_class.return_value = mock_envelope_instance
+        target_topic = "dev.omninode.test.v1"
+        target_key = "envelope-key"
+        correlation_id = uuid4()
 
-        with patch.dict(
-            "sys.modules",
-            {"omnibase_core.models.core": Mock(ModelOnexEnvelope=mock_envelope_class)},
-        ):
-            await test_node.publish_event_intent(
-                target_topic="dev.omninode.test.v1",
-                target_key="test-key",
-                event=test_event,
-            )
+        await test_node.publish_event_intent(
+            target_topic=target_topic,
+            target_key=target_key,
+            event=test_event,
+            correlation_id=correlation_id,
+        )
 
-            # Verify envelope was used
-            call_kwargs = test_node._intent_kafka_client.publish.call_args.kwargs
-            assert call_kwargs["value"] == '{"envelope": "data"}'
+        call_kwargs = test_node._intent_kafka_client.publish.call_args.kwargs
+        published_value = call_kwargs["value"]
+
+        # Deserialize the published wire bytes into the generic envelope.
+        envelope = ModelEventEnvelope.model_validate_json(published_value)
+
+        assert isinstance(envelope, ModelEventEnvelope)
+        assert envelope.correlation_id == correlation_id
+        assert envelope.source_tool == (f"omnibase_core.{test_node.__class__.__name__}")
+        assert envelope.payload_type == "ModelEventPublishIntent"
+        # envelope_timestamp is mapped from the publisher's published_at.
+        assert envelope.envelope_timestamp is not None
+        # The intent payload fields survive the wrap.
+        assert isinstance(envelope.payload, dict)
+        assert envelope.payload["target_topic"] == target_topic
+        assert envelope.payload["target_key"] == target_key
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
-    async def test_onex_envelope_fallback_path(self, test_node, test_event):
+    async def test_envelope_serialize_deserialize_round_trip(
+        self, test_node, test_event
+    ):
         """
-        Test fallback when ModelOnexEnvelope is not available.
+        Test serialize -> deserialize round-trip on the new envelope (OMN-13192).
 
-        Validates graceful degradation without envelope wrapping.
+        Proves the envelope wire format is lossless: re-parsing the published
+        JSON yields an envelope equal to a second serialize/parse cycle, with
+        all envelope metadata and intent payload fields preserved.
         """
-        # The actual implementation handles ImportError gracefully
-        # Test that publishing still works
+        correlation_id = uuid4()
         result = await test_node.publish_event_intent(
             target_topic="dev.omninode.test.v1",
-            target_key="test-key",
+            target_key="round-trip-key",
             event=test_event,
+            correlation_id=correlation_id,
+            priority=4,
         )
 
-        # Should still succeed
         assert isinstance(result, ModelIntentPublishResult)
+
+        call_kwargs = test_node._intent_kafka_client.publish.call_args.kwargs
+        published_value = call_kwargs["value"]
+
+        # First deserialization from the published wire bytes (generic envelope).
+        envelope = ModelEventEnvelope.model_validate_json(published_value)
+        # Re-serialize and deserialize again; the second envelope must equal the first.
+        round_tripped = ModelEventEnvelope.model_validate_json(
+            envelope.model_dump_json()
+        )
+
+        assert round_tripped == envelope
+        assert isinstance(round_tripped.payload, dict)
+        assert round_tripped.payload["intent_id"] == str(result.intent_id)
+        assert round_tripped.correlation_id == correlation_id
+        assert (
+            round_tripped.payload["target_event_type"] == test_event.__class__.__name__
+        )
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests

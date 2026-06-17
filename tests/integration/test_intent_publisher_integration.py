@@ -30,6 +30,7 @@ from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelIntentExecutionResult,
@@ -165,10 +166,12 @@ class TestIntentPublisherIntegration:
     @staticmethod
     def extract_intent_from_message(message_value: str) -> dict[str, Any]:
         """
-        Extract intent from Kafka message, handling both wrapped and unwrapped formats.
+        Extract the typed intent payload from a published Kafka message.
 
-        The mixin tries to wrap intents in ModelOnexEnvelope, but falls back to raw JSON
-        if the envelope class is not available.
+        As of OMN-13192 the mixin wraps the typed ModelEventPublishIntent in a
+        ModelEventEnvelope[ModelEventPublishIntent]; the intent lives under the
+        envelope's "payload" key. (A raw-intent fallback is retained for any
+        message that is not envelope-wrapped.)
 
         Args:
             message_value: JSON string from Kafka message
@@ -178,7 +181,7 @@ class TestIntentPublisherIntegration:
         """
         data = json.loads(message_value)
 
-        # Check if wrapped in ModelOnexEnvelope
+        # Check if wrapped in ModelEventEnvelope (carries payload + envelope_version)
         if "payload" in data and "envelope_version" in data:
             return data["payload"]
 
@@ -262,6 +265,59 @@ class TestIntentPublisherIntegration:
         # Verify result includes intent_id
         assert "intent_id" in result
         assert UUID(result["intent_id"])
+
+    @pytest.mark.asyncio
+    async def test_published_envelope_round_trips_typed_intent(
+        self, container_with_kafka, mock_kafka_client
+    ):
+        """Serialize -> deserialize round-trip on the migrated envelope (OMN-13192).
+
+        Proves the publisher emits a ModelEventEnvelope wrapping the intent on
+        the wire and that re-parsing the published JSON yields an envelope equal
+        to a second serialize/parse cycle (lossless wire format), with the
+        envelope metadata and intent fields preserved.
+
+        Deserialization uses the generic ModelEventEnvelope (payload preserved as
+        a mapping): the strict ModelEventEnvelope[ModelEventPublishIntent]
+        parameterization cannot reconstruct from JSON because the inner
+        ModelEventPayloadUnion before-validator rejects the plain dict that JSON
+        decoding produces. That is a pre-existing property of
+        ModelEventPublishIntent, independent of this envelope migration.
+        """
+        reducer = MockReducerWithIntentPublisher(container_with_kafka)
+
+        node_id = uuid4()
+        correlation_id = uuid4()
+        node_event = ModelNodeRegisteredEvent(
+            node_id=node_id,
+            node_name="round-trip-node",
+            node_type=EnumNodeKind.COMPUTE,
+        )
+
+        await reducer.publish_event_intent(
+            target_topic="dev.omninode.registration.v1",
+            target_key=str(node_id),
+            event=node_event,
+            correlation_id=correlation_id,
+        )
+
+        published_value = mock_kafka_client.published_messages[0]["value"]
+
+        # Deserialize the published wire bytes into the generic envelope.
+        envelope = ModelEventEnvelope.model_validate_json(published_value)
+        assert isinstance(envelope, ModelEventEnvelope)
+        assert envelope.correlation_id == correlation_id
+        assert envelope.source_tool == "omnibase_core.MockReducerWithIntentPublisher"
+        assert envelope.payload_type == "ModelEventPublishIntent"
+        assert isinstance(envelope.payload, dict)
+        assert envelope.payload["target_topic"] == "dev.omninode.registration.v1"
+        assert envelope.payload["target_event_type"] == "ModelNodeRegisteredEvent"
+
+        # Re-serialize and re-parse; the second envelope must equal the first.
+        round_tripped = ModelEventEnvelope.model_validate_json(
+            envelope.model_dump_json()
+        )
+        assert round_tripped == envelope
 
     @pytest.mark.asyncio
     async def test_intent_publish_result_validation(
