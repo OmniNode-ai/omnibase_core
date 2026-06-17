@@ -5,8 +5,8 @@
 TDD Unit tests for ModelOnexEnvelope ().
 
 These tests are written BEFORE the implementation following TDD methodology.
-Tests define the expected behavior of the new ModelOnexEnvelope model which
-replaces ModelOnexEnvelopeV1 with enhanced fields for:
+Tests define the expected behavior of the ModelOnexEnvelope model with
+enhanced fields for:
 - Causation chain tracking (causation_id)
 - Routing support (target_node, handler_type)
 - Request/response pattern (is_response, success, error)
