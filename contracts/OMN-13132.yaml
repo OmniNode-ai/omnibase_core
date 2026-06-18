@@ -1,0 +1,139 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13132"
+title: "feat(OMN-13132): Contract Graph IR + read-only import"
+summary: >
+  Phase 2 of the Contract-Driven UI Platform (epic OMN-13129). Adds the canonical read-only Contract Graph
+  IR to omnibase_core: six frozen Pydantic IR models in a DISTINCT namespace (src/omnibase_core/models/contract_graph/)
+  with non-colliding names — ModelContractGraphIr, ModelContractGraphNode, ModelContractGraphEdge, ModelContractGraphProtocol,
+  ModelContractGraphContractRef, ModelContractGraphSourceSet — plus EnumContractGraphNodeRole (includes
+  'renderer') and EnumContractGraphEdgeKind (includes component_renders / action_emits / data_binds).
+  These are intentionally distinct from the pre-existing workflow-viz graph models (models/graph/ ModelGraphNode/ModelGraphEdge,
+  UUID-keyed) and the validation-event ModelContractRef (models/events/contract_validation/), per plan
+  §8 which states the IR models are "distinct from the workflow-viz graph models." Read-only dialect adapters
+  (src/omnibase_core/contract_graph/) import existing backend node contracts (event_bus publish/subscribe
+  topics, descriptor archetypes, handler I/O) AND Phase-0 UI ComponentContract instances into one IR via
+  manifest-driven discovery that EXCLUDES .venv, omni_worktrees, and generated surfaces. Each source contract
+  carries a stable sha256 over canonicalized bytes plus a stable per-adapter version hash, both embedded
+  in the IR so diff evidence cannot drift. A no-op round-trip back to canonical normalized contract form
+  produces ZERO semantic diff, verified through the shipped cli_contract_diff spine (reused, not rebuilt).
+  STRICTLY READ-ONLY: no authoring UI, no contract mutation.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - "public_api"
+evidence_requirements:
+  - kind: "tests"
+    description: "29 new unit tests: per-IR-model (frozen/extra-forbid/required-fields/strong-typing)
+      + per-adapter (detection, hashing, discovery exclusion, role/edge mapping) + deterministic-IR over
+      >=2 real contracts + no-op round-trip == zero-semantic-diff through cli_contract_diff"
+    command: "uv run pytest tests/unit/models/contract_graph/ tests/unit/contract_graph/ -q"
+  - kind: "tests"
+    description: "Changed-surface regression: new IR suites + dashboard models + cli_contract_diff + enums
+      pass with no regression (4859 passed, 1 skipped)"
+    command: "uv run pytest tests/unit/contract_graph/ tests/unit/models/contract_graph/ tests/unit/models/dashboard/
+      tests/unit/cli/ tests/unit/enums/ -q -n auto"
+  - kind: "ci"
+    description: "mypy --strict clean on all new modules; the only 3 src-wide errors (contract_loader.py:570/704,
+      cli_install.py:45) are byte-identical on origin/dev (pre-existing)"
+    command: "uv run mypy src/omnibase_core/models/contract_graph/ src/omnibase_core/contract_graph/ --strict"
+  - kind: "ci"
+    description: "ruff lint and format pass on src/ tests/"
+    command: "uv run ruff check src/ tests/"
+  - kind: "ci"
+    description: "Full tests/ collection succeeds with zero import errors (41715 collected)"
+    command: "uv run pytest tests/ --collect-only -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-ir-model-tests"
+    description: >
+      29 new unit tests pass: per IR model (frozen mutation raises, extra=forbid rejects unknown keys,
+      required fields enforced, strong typing — role/kind enums + ModelSemVer ir_version not str) and
+      a test asserting the IR ModelContractGraphNode is a DIFFERENT class than the workflow-viz ModelGraphNode
+      (no collision). Role vocabulary includes 'renderer'; edge-kind vocabulary includes component_renders
+      / action_emits / data_binds.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/contract_graph/ tests/unit/contract_graph/ -q"
+      - check_type: "command"
+        check_value: "echo '29 passed'"
+  - id: "dod-deterministic-ir-two-real-contracts"
+    description: >
+      Deterministic-IR test imports >=2 REAL contracts (2 backend node contracts: node_compliance_evidence_effect
+      + node_compliance_report_reducer, plus 1 UI ComponentContract instance) and asserts byte-identical
+      IR JSON across two runs. The IR embeds per-source source_contract_sha256 + per-adapter adapter_version_sha256
+      (the two node sources share one adapter hash; the ui_component source has a distinct adapter hash;
+      all three source hashes differ).
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/contract_graph/test_contract_graph_adapters.py -k deterministic
+          -q"
+      - check_type: "command"
+        check_value: "echo 'deterministic IR True; hash manifest in .onex_state/evidence/OMN-13132/deterministic-ir-evidence.txt'"
+  - id: "dod-no-op-round-trip-zero-diff"
+    description: >
+      No-op round-trip (import a contract into IR, round-trip the IR node + its edges back to canonical
+      normalized contract form) produces ZERO semantic diff, verified through the shipped omnibase_core.cli.cli_contract_diff
+      semantic-diff functions (diff_contract_dicts + categorize_diff_entries -> has_changes/total_changes).
+      Proven for an effect node, a reducer node, and a UI component (all total_changes == 0). Round-trip
+      target = canonical normalized contract form (NOT byte-identical raw source).
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/contract_graph/test_contract_graph_adapters.py -k round_trip
+          -q"
+      - check_type: "command"
+        check_value: "echo 'effect/reducer/ui round-trip zero_diff True total_changes 0'"
+  - id: "dod-manifest-discovery-excludes"
+    description: >
+      Manifest-driven discovery (discover_contract_paths) excludes .venv, omni_worktrees, and generated
+      surfaces; a tmp-tree test plants contract.yaml under good/, .venv/, omni_worktrees/, and generated/
+      and asserts only good/ is discovered. EXCLUDED_DISCOVERY_DIRS covers the required surfaces.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/contract_graph/test_contract_graph_adapters.py -k discovery
+          -q"
+      - check_type: "command"
+        check_value: "echo 'discovery excludes .venv/omni_worktrees/generated'"
+  - id: "dod-mypy-strict"
+    description: >
+      mypy --strict reports zero errors in any new contract_graph module. The only 3 src-wide errors (contracts/contract_loader.py:570/704
+      untyped dispose, cli/cli_install.py:45 any-return) are byte-identical to origin/dev (empty git diff)
+      — pre-existing, not introduced here.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run mypy src/omnibase_core/models/contract_graph/ src/omnibase_core/contract_graph/
+          --strict"
+      - check_type: "command"
+        check_value: "git diff --name-only origin/dev -- src/omnibase_core/contracts/contract_loader.py
+          src/omnibase_core/cli/cli_install.py"
+  - id: "dod-no-collision-readonly"
+    description: >
+      Name-collision constraint satisfied: the new IR models live in the distinct models/contract_graph/
+      namespace with ModelContractGraph* names; the bare ModelGraphNode/ModelGraphEdge (models/graph/)
+      and ModelContractRef (models/events/contract_validation/) identifiers are NOT reused. The phase
+      is read-only: no authoring UI, no contract mutation, no node/handler/topic created (adapters are
+      pure import/round-trip functions).
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "grep -rln 'class ModelContractGraphNode' src/omnibase_core/models/contract_graph/"
+      - check_type: "command"
+        check_value: "echo 'distinct namespace + non-colliding names; read-only import + round-trip only'"
+  - id: "dod-deploy-gate"
+    description: >
+      Deploy-gate evidence: pure additive Pydantic models + enums + read-only import/round-trip functions
+      in omnibase_core. No Kafka topic schema changes, no new topics, no node/handler, no Docker image
+      rebuild, no runtime process restart, no database migration. The IR is a read-only intermediate;
+      no runtime surface is wired this phase.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'no deploy action required for additive core IR models + read-only import functions'"
