@@ -207,18 +207,19 @@ def main(argv: list[str] | None = None) -> int:
         action = classify_pr(pr, strict_update=_truthy(args.strict_update))
         sys.stdout.write(action.value + "\n")
         return 0
-
-    if args.command == "verify":
+    elif args.command == "verify":
         pr = _load_pr(args.pr_json)
         if verify_enqueued(pr):
             sys.stdout.write("in_queue\n")
             return 0
         sys.stdout.write("not_in_queue\n")
         return 1
-
-    # argparse marks the subcommand required, so this is defensive only.
-    # parser.error() raises SystemExit (NoReturn), so no trailing return needed.
-    parser.error(f"unknown command: {args.command}")
+    else:
+        # argparse marks the subcommand required, so this is defensive only.
+        # parser.error() raises SystemExit; raising keeps every branch of this
+        # function terminating with an explicit return or raise (no implicit
+        # fall-through that would silently return None).
+        raise SystemExit(parser.error(f"unknown command: {args.command}"))
 
 
 if __name__ == "__main__":
