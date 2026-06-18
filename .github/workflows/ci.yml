@@ -743,7 +743,8 @@ jobs:
           # Excludes: uv.lock (dependency hashes), .venv/, test fixtures,
           # .git/, .secrets.baseline (contains hashed values that self-trigger),
           # workflow YAML (references "secret" in config context),
-          # url_authority_baseline.json (sha256 fingerprints of known violations,
+          # url_authority_baseline.json / canonical_inference_baseline.json
+          # (sha256 fingerprints of known violations,
           #   not secrets — Hex High Entropy false-positive)
           set +e
           git ls-files -z | xargs -0 detect-secrets-hook \
@@ -754,7 +755,8 @@ jobs:
             --exclude-files '\.git/' \
             --exclude-files '\.secrets\.baseline' \
             --exclude-files '\.github/workflows/.*\.yml' \
-            --exclude-files 'url_authority_baseline\.json'
+            --exclude-files 'url_authority_baseline\.json' \
+            --exclude-files 'canonical_inference_baseline\.json'
           HOOK_EXIT=$?
           set -e
 
@@ -768,7 +770,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "If these are false positives, regenerate the baseline:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            echo 'detect-secrets scan --all-files --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
+            echo 'detect-secrets scan --all-files --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --exclude-files "url_authority_baseline\.json" --exclude-files "canonical_inference_baseline\.json" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
