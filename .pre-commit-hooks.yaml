@@ -148,6 +148,19 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-github-token-env-reads
+  name: GitHub-Token Env Read Ban (OMN-13310)
+  description: >
+    Fleet-wide ban on raw GitHub-token env reads: os.environ["GH_PAT"], os.environ.get("GH_PAT"), os.getenv("GH_PAT"),
+    and equivalents for GH_TOKEN / GITHUB_TOKEN. The canonical replacement is contract_secret_ref + resolve_api_key
+    (OMN-12856 / OMN-13310). Excludes tests/, conftest.py, __pycache__, .pyc files. Suppression: # omn-allow-env-read
+    or # ONEX_EXCLUDE on the offending line. Implemented as a canonical COMPUTE handler on ProtocolMessageHandler.
+  language: python
+  entry: python -m omnibase_core.validation.validator_github_token_env_reads
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-url-authority
   name: URL Authority Gate (OMN-12818)
   description: >

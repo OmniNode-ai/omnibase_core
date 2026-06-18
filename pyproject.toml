@@ -63,6 +63,7 @@ omni-agent = "omnibase_core.cli.cli_commands:cli"
 # WARNING: For development and testing ONLY, not for production use
 omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
 check-local-paths = "omnibase_core.validation.validator_local_paths:main"
+check-github-token-env-reads = "omnibase_core.validation.validator_github_token_env_reads:main"
 onex-validate-topics = "omnibase_core.validation.scripts.validate_topic_names:main"
 validate-string-versions = "omnibase_core.validation.scripts.validate_string_versions:main"
 onex-validate-links = "omnibase_core.scripts.validate_markdown_links:main"
@@ -308,6 +309,7 @@ ignore = [
 "scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_local_paths.py" = ["T201"]
+"src/omnibase_core/validation/validator_github_token_env_reads.py" = ["T201"]  # CLI output for github-token env-read gate (OMN-13310)
 "src/omnibase_core/validation/antipattern_checker.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-11923)
 "src/omnibase_core/validation/validator_skill_backing_node.py" = ["T201"]
 "src/omnibase_core/validation/validator_patterns.py" = ["T201"]
