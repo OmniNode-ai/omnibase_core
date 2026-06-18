@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the routing_authority_check COMPUTE node.
+# Validates that model routing resolves from contract authority — not env vars,
+# not hardcoded literals, not CLI shell-outs.
+#
+# See: OMN-13306 — W6(b) port check_routing_authority to core COMPUTE handler
+
+name: node_routing_authority_check_compute
+node_id: node_routing_authority_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Validate that model-routing fields (provider, served_model_id, endpoint_ref,
+  routing_source) resolve from contract/overlay/routing authority and that demo-path
+  source files contain no env reads, provider literals, or fallback endpoint strings.
+  Also runs a residue ratchet over known debt files and a provider-class endpoint-shape
+  audit over bifrost_delegation.yaml. Returns a structured evidence packet.
+handler_routing:
+  default_handler: handler:NodeRoutingAuthorityCheckCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
