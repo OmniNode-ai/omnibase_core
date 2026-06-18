@@ -28,6 +28,18 @@
 # These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
 # in the architecture. They need raw YAML access to prepare data for model validation.
 allowed_files:
+  - file: "src/omnibase_core/validation/validator_canonical_inference.py"
+    reason: >-
+      Canonical-inference gate structural agent-invocation carve-out (OMN-13249). To tell an agent-invocation
+      EFFECT (which legitimately shells a coding agent) from a banned inference tier, the gate reads ONE
+      structural fact — descriptor.agent_invocation — from the enclosing node contract.yaml. contract.yaml
+      schemas vary by node_type (ModelContractCompute/Effect/Reducer/Orchestrator) and the gate must tolerate
+      ANY contract shape while reading a single boolean; no single Pydantic model applies, so raw yaml.safe_load
+      extracts the flat fact (same architectural pattern as validator_banned_compose_vars.py and
+      mixin_contract_publisher.py). The result is coerced to a strict bool (descriptor.get(...) is True).
+    added: "2026-06-18"
+    review: "2026-12-13"
+
   - file: "src/omnibase_core/validation/validator_architecture.py"
     reason: >-
       Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
