@@ -71,6 +71,10 @@ adjacency:
   cli: {reverse_deps: []}
   constants: {reverse_deps: []}
   context: {reverse_deps: [nodes, runtime]}
+  # Contract Graph IR (OMN-13132): read-only leaf module — nothing imports it yet,
+  # so reverse_deps is empty. It imports models/enums/cli (already shared_modules =>
+  # full-suite escalation) and types (see types.reverse_deps below).
+  contract_graph: {reverse_deps: []}
   crypto: {reverse_deps: []}
   decorators: {reverse_deps: []}
   dispatch: {reverse_deps: []}
@@ -96,7 +100,7 @@ adjacency:
   scripts: {reverse_deps: []}
   services: {reverse_deps: [nodes]}
   tools: {reverse_deps: []}
-  types: {reverse_deps: [models]}
+  types: {reverse_deps: [models, contract_graph]}
   utils: {reverse_deps: []}
   validators: {reverse_deps: []}
   workflows: {reverse_deps: [nodes]}

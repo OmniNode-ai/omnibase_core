@@ -94,6 +94,8 @@ from .enum_contract_compliance import EnumContractCompliance
 
 # Contract diff change type enum (semantic contract diffing)
 from .enum_contract_diff_change_type import EnumContractDiffChangeType
+from .enum_contract_graph_edge_kind import EnumContractGraphEdgeKind
+from .enum_contract_graph_node_role import EnumContractGraphNodeRole
 from .enum_coordination_mode import EnumCoordinationMode
 from .enum_core_error_code import (
     CORE_ERROR_CODE_TO_EXIT_CODE,
@@ -601,6 +603,9 @@ __all__ = [
     "EnumEmptyStateReason",
     "EnumEvidenceGateMoment",
     "EnumRendererInteractionModel",
+    # Contract Graph IR vocabulary (OMN-13132 — Phase 2)
+    "EnumContractGraphNodeRole",
+    "EnumContractGraphEdgeKind",
     # Effect classification domain (OMN-1147)
     "EnumEffectCategory",
     "EnumEffectPolicyLevel",
