@@ -14,12 +14,20 @@ approval semantics. The ADR
 Gate-vs-GateSpec resolution: ActionContract composes ``ModelGate`` (approval);
 ``ModelGateSpec`` stays a distinct objective pass/fail primitive and is not
 touched.
-"""
 
-from __future__ import annotations
+The risk/confidence policy the rev-4 plan §6 attributes to the action contract
+(``confidence_threshold``, ``requires_user_confirmation``, ``risk_level``,
+``reversible``, commit level) is **composed** here as ``ModelActionGatePolicy``
+per the ADR D2 plan-vs-code note — those fields are NOT on ``ModelGate`` and are
+declared in their canonical home ``ModelActionGatePolicy`` rather than invented
+onto the approval gate.
+"""
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.models.dashboard.model_action_gate_policy import (
+    ModelActionGatePolicy,
+)
 from omnibase_core.models.ticket.model_gate import ModelGate
 from omnibase_core.models.validation.model_topic_suffix_parts import TOPIC_KIND_CMD
 from omnibase_core.validation.validator_topic_suffix import validate_topic_suffix
@@ -57,6 +65,14 @@ class ModelActionContract(BaseModel):
     approval_gate: ModelGate | None = Field(
         default=None,
         description="Composed canonical approval gate; None means no approval required",
+    )
+    gate_policy: ModelActionGatePolicy | None = Field(
+        default=None,
+        description=(
+            "Composed risk/confidence policy (confidence_threshold, "
+            "requires_user_confirmation, risk_level, reversible, commit_level); "
+            "None means no policy-driven gating beyond the approval gate"
+        ),
     )
     correlation_required: bool = Field(
         default=True,
