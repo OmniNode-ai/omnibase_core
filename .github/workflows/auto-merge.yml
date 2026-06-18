@@ -23,6 +23,21 @@
 # targets. The main job depends on pre-check and is skipped entirely when
 # skip=true. A concurrency group per PR cancels redundant queued runs so
 # only the most-recent check_suite completion for a given PR actually runs.
+#
+# OMN-13214: Arming auto-merge is NOT the same as enqueuing. During the
+# 2026-06-17 dev wave, CLEAN + all-required-green + armed PRs sat OUTSIDE the
+# merge queue for hours and each needed a manual enqueuePullRequest to land.
+# Two fixes here: (1) the "Enable auto-merge" step previously passed bare
+# `--auto --squash`, but dev is queue-controlled, so an explicit method is
+# REJECTED ("The merge strategy for dev is set by the merge queue") and the PR
+# is NEVER enqueued. Use bare `--auto` and let the queue pick the method.
+# (2) The old "Force enqueue" step did not verify the PR actually entered the
+# queue. This workflow now (a) arms bare --auto, (b) runs gh pr update-branch
+# first on strict-update repos when the PR is BEHIND, (c) explicitly calls
+# enqueuePullRequest, and (d) VERIFIES the PR actually entered the queue —
+# failing loudly if a green+armed PR is not enqueued, so the gap surfaces
+# instead of stalling silently. The classify/verify decision logic is
+# unit-tested in scripts/ci/merge_queue_enqueue.py.
 name: Auto-Merge
 
 on:
@@ -198,20 +213,23 @@ jobs:
           PR: ${{ needs.pre-check.outputs.pr }}
         run: |
           set -euo pipefail
-          # "already enqueued" race is benign — treat as success.
-          # All other failures surface loudly (no silent continue-on-error).
-          if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto --squash 2>&1); then
+          # OMN-13138/13214: dev is queue-controlled — the merge method is set by
+          # the merge queue, so passing an explicit --squash is rejected ("The
+          # merge strategy for dev is set by the merge queue") and the PR is NEVER
+          # enqueued (sits CLEAN + auto-merge armed forever). Use bare --auto and
+          # let the queue pick the method.
+          # OMN-13214: arming alone does not enqueue — the explicit enqueue +
+          # verify step below closes that gap. Do NOT exit here on success.
+          if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto 2>&1); then
             echo "auto-merge enabled: $output"
-            exit 0
-          fi
-          if echo "$output" | grep -qiE "already enqueued|already queued|auto-merge already enabled"; then
+          elif echo "$output" | grep -qiE "already enqueued|already queued|auto-merge already enabled"; then
             echo "auto-merge not newly enabled (expected): $output"
-            exit 0
+          else
+            echo "auto-merge failed: $output"
+            exit 1
           fi
-          echo "auto-merge failed: $output"
-          exit 1
 
-      - name: Force enqueue to merge queue
+      - name: Enqueue armed PR and verify it entered the queue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -220,18 +238,111 @@ jobs:
           set -euo pipefail
           OWNER="${GH_REPO%/*}"
           NAME="${GH_REPO#*/}"
-          PR_ID=$(gh api graphql -f query='{repository(owner:"'"$OWNER"'",name:"'"$NAME"'"){pullRequest(number:'"$PR"'){id}}}' --jq '.data.repository.pullRequest.id')
-          if [ -z "$PR_ID" ] || [ "$PR_ID" = "null" ]; then
-            echo "could not resolve PR id"; exit 0
-          fi
-          if output=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
-            echo "enqueued: $output"
-          else
-            # Tolerate only known benign states.
-            if echo "$output" | grep -qiE "already (in|enqueued|queued)|merge queue (is )?not enabled|not mergeable|required status check"; then
-              echo "enqueue attempt result (tolerated): $output"
+
+          classify() {
+            python3 scripts/ci/merge_queue_enqueue.py classify \
+              --pr-json "$1" --strict-update "$2"
+          }
+
+          # Is the target (default) branch strict-update? On strict repos a BEHIND
+          # PR cannot enqueue until its branch is updated.
+          DEFAULT_BRANCH="$(gh repo view "$GH_REPO" --json defaultBranchRef --jq '.defaultBranchRef.name')"
+          STRICT="$(gh api "repos/${GH_REPO}/branches/${DEFAULT_BRANCH}/protection/required_status_checks" \
+            --jq '.strict' 2>/dev/null || echo "false")"
+          [ "$STRICT" = "true" ] || STRICT="false"
+          echo "strict-update on '${DEFAULT_BRANCH}': ${STRICT}"
+
+          fetch_pr() {
+            # isInMergeQueue is only on the GraphQL PullRequest object, NOT a
+            # `gh pr view --json` field, so fetch PR state via GraphQL.
+            # shellcheck disable=SC2016  # $owner/$name/$number are GraphQL vars, not shell vars
+            gh api graphql \
+              -f owner="$OWNER" \
+              -f name="$NAME" \
+              -F number="$PR" \
+              -f query='
+                query($owner:String!, $name:String!, $number:Int!) {
+                  repository(owner: $owner, name: $name) {
+                    pullRequest(number: $number) {
+                      isInMergeQueue
+                      mergeStateStatus
+                      mergeable
+                      autoMergeRequest {
+                        enabledAt
+                      }
+                    }
+                  }
+                }' \
+              --jq '.data.repository.pullRequest'
+          }
+
+          PR_JSON="$(fetch_pr)"
+          ACTION="$(classify "$PR_JSON" "$STRICT")"
+          echo "classified action: ${ACTION}"
+
+          case "$ACTION" in
+            already_queued)
+              echo "PR #${PR} already in the merge queue — nothing to do."
               exit 0
-            fi
-            echo "enqueue failed: $output"
+              ;;
+            wait)
+              echo "PR #${PR} is not enqueueable yet (BLOCKED/DIRTY/DRAFT/UNKNOWN); will re-fire on next event."
+              exit 0
+              ;;
+            blocked)
+              echo "::warning::PR #${PR} in an unrecognised merge state: $(printf '%s' "$PR_JSON" | jq -r '.mergeStateStatus'). Not enqueuing."
+              exit 0
+              ;;
+            update_branch_then_enqueue)
+              echo "PR #${PR} is BEHIND on a strict-update repo — updating branch before enqueue."
+              if ! gh pr update-branch "$PR" --repo "$GH_REPO" 2>&1; then
+                echo "::warning::update-branch reported no change or a benign error; continuing."
+              fi
+              echo "update-branch issued; the resulting check run re-fires this workflow when CI is green."
+              exit 0
+              ;;
+            enqueue)
+              : # fall through to enqueue below
+              ;;
+            *)
+              echo "::error::unexpected action '${ACTION}' from classifier"
+              exit 1
+              ;;
+          esac
+
+          PR_ID="$(gh api graphql -f query='{repository(owner:"'"$OWNER"'",name:"'"$NAME"'"){pullRequest(number:'"$PR"'){id}}}' --jq '.data.repository.pullRequest.id')"
+          if [ -z "$PR_ID" ] || [ "$PR_ID" = "null" ]; then
+            echo "::error::could not resolve PR node id for #${PR}"
             exit 1
           fi
+
+          # shellcheck disable=SC2016  # $prId is a GraphQL variable, not a shell var
+          if enq_out=$(gh api graphql -f query='mutation($prId:ID!){enqueuePullRequest(input:{pullRequestId:$prId}){mergeQueueEntry{position}}}' -f prId="$PR_ID" 2>&1); then
+            echo "enqueue issued: ${enq_out}"
+          else
+            if echo "$enq_out" | grep -qiE "merge queue (is )?not enabled|does not have a merge queue|merge_queue_not_enabled"; then
+              echo "repo has no merge queue — arming auto-merge is sufficient: ${enq_out}"
+              exit 0
+            fi
+            if echo "$enq_out" | grep -qiE "already (in|enqueued|queued)|in the merge queue"; then
+              echo "benign enqueue race (already queued): ${enq_out}"
+            else
+              echo "::error::enqueuePullRequest failed for #${PR}: ${enq_out}"
+              exit 1
+            fi
+          fi
+
+          # OMN-13214 ENFORCEMENT: verify the PR actually entered the queue.
+          # Poll briefly — GitHub may take a few seconds to reflect the entry.
+          for attempt in 1 2 3 4 5; do
+            sleep 6
+            PR_AFTER="$(fetch_pr)"
+            if python3 scripts/ci/merge_queue_enqueue.py verify --pr-json "$PR_AFTER"; then
+              echo "VERIFIED: PR #${PR} is in the merge queue."
+              exit 0
+            fi
+            echo "not yet in queue (attempt ${attempt}/5); state=$(printf '%s' "$PR_AFTER" | jq -r '.mergeStateStatus')"
+          done
+
+          echo "::error::PR #${PR} is green + armed but did NOT enter the merge queue after enqueue (OMN-13214 armed-but-not-enqueued). Manual intervention required."
+          exit 1
