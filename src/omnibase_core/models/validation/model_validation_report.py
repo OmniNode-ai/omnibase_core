@@ -287,20 +287,16 @@ class ModelValidationReport(BaseModel):
 
     Example:
         >>> from omnibase_core.models.validation.model_validation_finding import (
-        ...     ValidationFinding,
+        ...     ModelValidationFinding,
         ... )
-        >>> from omnibase_core.models.validation.model_validation_request import (
-        ...     ValidationRequest,
-        ... )
-        >>> req = ValidationRequest(target="src/", scope="subtree", profile="strict")
-        >>> finding = ValidationFinding(
+        >>> finding = ModelValidationFinding(
         ...     validator_id="naming_convention",
         ...     severity="WARN",
         ...     message="Module name does not match convention.",
         ... )
-        >>> report = ValidationReport.from_findings(
+        >>> report = ModelValidationReport.from_findings(
         ...     findings=(ModelValidationFindingEmbed(**finding.model_dump()),),
-        ...     request=ModelValidationRequestRef(profile=req.profile),
+        ...     request=ModelValidationRequestRef(profile="strict"),
         ... )
         >>> report.overall_status  # strict profile elevates WARN -> FAIL
         'FAIL'
