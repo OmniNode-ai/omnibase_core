@@ -54,6 +54,9 @@ See Also:
 
 from omnibase_core.enums.enum_binding_order_direction import EnumBindingOrderDirection
 from omnibase_core.models.dashboard.model_action_contract import ModelActionContract
+from omnibase_core.models.dashboard.model_action_gate_policy import (
+    ModelActionGatePolicy,
+)
 from omnibase_core.models.dashboard.model_capability_view import ModelCapabilityView
 from omnibase_core.models.dashboard.model_chart_axis_config import ModelChartAxisConfig
 from omnibase_core.models.dashboard.model_chart_series_config import (
@@ -136,6 +139,7 @@ __all__: tuple[str, ...] = (
     # UI Contract Primitives (OMN-13130 — Phase 0)
     "ModelComponentContract",
     "ModelActionContract",
+    "ModelActionGatePolicy",
     "ModelDataBindingContract",
     "EnumBindingOrderDirection",
     "ModelPermissionContract",
