@@ -1,7 +1,8 @@
 ---
 # SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-# Accepted validator-requirement gaps for omnibase_core.
+#
+# Accepted validator-requirement gaps for omnibase_core (OMN-13299).
 #
 # This file is the ratchet baseline for validator_requirements_consumer.py.
 # Each entry is a gap the consumer would otherwise report against
@@ -19,33 +20,84 @@
 # Spec consumer: OMN-9115. Baseline pattern mirrors validate-dict-any-usage
 # (pre-commit-config --max-violations), which is the established ratchet
 # precedent in this repo.
-- repo: omnibase_core
-  validator: bandit-security
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: bandit-security
-  kind: MISSING_PRE_COMMIT
-- repo: omnibase_core
-  validator: detect-secrets
-  kind: MISSING_PRE_COMMIT
-- repo: omnibase_core
-  validator: hardcoded-local-paths
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: no-hardcoded-topics
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: no-untracked-todos
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: self-gating-workflows
-  kind: MISSING_PRE_COMMIT
-- repo: omnibase_core
-  validator: single-class-per-file
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: spdx-headers
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: stub-implementations
-  kind: MISSING_CI_WORKFLOW
+#
+# Schema: schema_version + report_format + classification are metadata-only
+# fields consumed by the consumer for structured reporting. They do not
+# affect which gaps are accepted — only the gaps[] list does.
+# The consumer reports ALL missing gates in a single pass (not fail-on-first).
+#
+# Classification values:
+#   "in_progress"   — remediation underway (OMN ticket exists, wiring pending)
+#   "backlog"       — accepted gap, tracked in OMN-9048, no active work yet
+#   "not_applicable" — gate legitimately does not apply to this repo + context
+#
+schema_version: "1.0.0"
+repo: omnibase_core
+report_format: "all_gaps"  # consumer reports ALL missing gates, never fail-on-first
+
+# Per-gate classification: maps validator name → status for this repo.
+# Used in CI output to signal why a gap is accepted and what ticket tracks it.
+classification:
+  bandit-security:
+    pre_commit: backlog
+    ci_workflow: backlog
+    tracking: OMN-9048
+  detect-secrets:
+    pre_commit: backlog
+    tracking: OMN-9048
+  hardcoded-local-paths:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  no-hardcoded-topics:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  no-untracked-todos:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  self-gating-workflows:
+    pre_commit: backlog
+    tracking: OMN-9048
+  single-class-per-file:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  spdx-headers:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  stub-implementations:
+    ci_workflow: backlog
+    tracking: OMN-9048
+
+# Accepted gaps list — this is the ratchet. Consumer compares live scan output
+# against this list. New gaps not here → gate fails. Entries not reproduced by
+# the scan → stale baseline warning → gate fails.
+gaps:
+  - repo: omnibase_core
+    validator: bandit-security
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: bandit-security
+    kind: MISSING_PRE_COMMIT
+  - repo: omnibase_core
+    validator: detect-secrets
+    kind: MISSING_PRE_COMMIT
+  - repo: omnibase_core
+    validator: hardcoded-local-paths
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: no-hardcoded-topics
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: no-untracked-todos
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: self-gating-workflows
+    kind: MISSING_PRE_COMMIT
+  - repo: omnibase_core
+    validator: single-class-per-file
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: spdx-headers
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: stub-implementations
+    kind: MISSING_CI_WORKFLOW

@@ -313,23 +313,60 @@ def _format_gaps(gaps: list[ModelValidatorRequirementGap]) -> str:
 def _load_baseline(path: Path) -> set[tuple[str, str, str]]:
     """Load an accepted-gap baseline as a set of ``(repo, validator, kind)`` tuples.
 
-    The baseline is YAML shaped as a list of mapping entries. Unknown kind
-    values fail loudly to prevent silent drift.
+    Supports two formats (OMN-13299):
+
+    Legacy flat-list format::
+
+        - repo: omnibase_core
+          validator: bandit-security
+          kind: MISSING_CI_WORKFLOW
+
+    Structured format with ``schema_version``, ``report_format``, and a ``gaps``
+    key (preferred for new baselines — enables per-gate classification metadata
+    and explicit ``report_format: "all_gaps"`` declaration)::
+
+        schema_version: "1.0.0"
+        repo: omnibase_core
+        report_format: "all_gaps"
+        classification: {bandit-security: {pre_commit: backlog, ...}}
+        gaps:
+          - repo: omnibase_core
+            validator: bandit-security
+            kind: MISSING_CI_WORKFLOW
+
+    In both formats the ``gaps`` list (or the flat list itself) is the ratchet:
+    the consumer compares live scan output against it.  The ``report_format``
+    field is metadata-only (the consumer always reports all gaps; the field
+    documents that intent explicitly).  Unknown ``kind`` values fail loudly to
+    prevent silent drift.
     """
     if not path.exists():
         return set()
     with path.open() as fh:
         raw = yaml.safe_load(fh) or []
-    if not isinstance(raw, list):
+
+    # Detect structured format: top-level dict with a ``gaps`` list key.
+    if isinstance(raw, dict):
+        raw_gaps = raw.get("gaps")
+        if not isinstance(raw_gaps, list):
+            raise ValueError(  # error-ok: baseline shape validation at load boundary
+                f"baseline {path} has a dict root but is missing a 'gaps' list key"
+            )
+        gaps_list = raw_gaps
+    elif isinstance(raw, list):
+        # Legacy flat-list format.
+        gaps_list = raw
+    else:
         raise ValueError(  # error-ok: baseline shape validation at load boundary
-            f"baseline {path} must be a list of mappings"
+            f"baseline {path} must be a list of mappings or a dict with a 'gaps' key"
         )
+
     accepted: set[tuple[str, str, str]] = set()
     valid_kinds = {k.value for k in EnumValidatorRequirementGapKind}
-    for idx, item in enumerate(raw):
+    for idx, item in enumerate(gaps_list):
         if not isinstance(item, dict):
             raise ValueError(  # error-ok: baseline shape validation at load boundary
-                f"baseline[{idx}] must be a mapping"
+                f"baseline gaps[{idx}] must be a mapping"
             )
         try:
             repo = str(item["repo"])
@@ -337,11 +374,11 @@ def _load_baseline(path: Path) -> set[tuple[str, str, str]]:
             kind = str(item["kind"])
         except KeyError as exc:
             raise ValueError(  # error-ok: baseline shape validation at load boundary
-                f"baseline[{idx}] missing field: {exc}"
+                f"baseline gaps[{idx}] missing field: {exc}"
             ) from exc
         if kind not in valid_kinds:
             raise ValueError(  # error-ok: baseline shape validation at load boundary
-                f"baseline[{idx}].kind invalid: {kind}"
+                f"baseline gaps[{idx}].kind invalid: {kind}"
             )
         accepted.add((repo, validator, kind))
     return accepted
