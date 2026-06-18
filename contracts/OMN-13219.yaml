@@ -1,0 +1,53 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13219"
+title: "feat(OMN-13219): canonical-inference enforcement gate (pre-commit + required CI)"
+summary: >
+  Adds ValidatorCanonicalInference (omnibase_core) — a ratchet gate, wired as a pre-commit hook and a
+  required CI status check, that fails on non-canonical model-inference surfaces: shelled model CLIs (codex/claude/gemini/opencode
+  via subprocess/exec/os.system/shutil.which) and *_MODEL / *_PROVIDER env reads. Endpoint URLs and *_URL
+  / *_ENDPOINT env reads remain owned by the URL-authority gate (OMN-12818); freestanding imperative IO
+  generally by scan_freestanding_imperative_io (OMN-12515/12540). Fail-closed: a NEW shell-out or env-resolved
+  model trips the gate (exit 1); the contract-resolved tier (OMN-13215 target shape) passes. Existing
+  violations grandfathered by sha256 baseline; burn-down only.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Canonical-inference validator unit tests pass (fail-closed regression included)"
+    command: "uv run pytest tests/unit/validation/test_validator_canonical_inference.py -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-tests"
+    description: "42 unit tests pass — shell-out + env-model trip the gate; contract-resolved path passes;
+      ratchet + baseline + CLI exit codes covered"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/validation/test_validator_canonical_inference.py -q"
+  - id: "dod-mypy"
+    description: "mypy --strict clean on validator + model"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run mypy src/omnibase_core/validation/validator_canonical_inference.py src/omnibase_core/models/validation/model_canonical_inference_violation.py
+          --strict"
+  - id: "dod-precommit-gate"
+    description: "New pre-commit hook check-canonical-inference passes; full focused pre-commit pass clean"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pre-commit run check-canonical-inference --all-files"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: adds a static validator + pre-commit hook + CI workflow only;
+      no Docker image, daemon, broker topic, runtime process, docker exec, or service deploy is required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-13219 ships a static enforcement gate (validator + pre-commit
+          hook + CI workflow); no Docker image, daemon, broker topic, runtime process, docker exec, or
+          service deploy is required before merge'"

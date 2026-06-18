@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: canonical_inference
+  validator_name: Canonical Inference Validator
+  validator_description: |
+    Rejects NEW non-canonical model-inference surfaces (OMN-13219).
+
+    Inference must go through the contract-driven routing authority (bus /
+    inference-effect / Bifrost), never a shelled model CLI and never a
+    hardcoded/env-resolved model or provider.
+
+    Two rules:
+    - model-cli-shellout: a model-CLI binary (codex/claude/gemini/opencode) passed
+      to subprocess/exec or resolved via shutil.which
+    - model-id-env-read: os.environ[*_MODEL] / os.environ.get(*_PROVIDER) reads
+
+    Endpoint URLs and *_URL / *_ENDPOINT env reads are covered by the sibling
+    URL-authority gate (OMN-12803/12818); this validator does NOT re-implement
+    them. Freestanding imperative IO generally is covered by
+    scan_freestanding_imperative_io (OMN-12515/12540).
+
+    Existing violations are grandfathered by content fingerprint (ratchet
+    baseline). Only NEW fingerprints fail the gate. Baseline is burn-down only.
+    The codex shell-out (OMN-13215) is the seeded baseline with its removal ticket.
+
+    Suppression: # canonical-inference-ok: <reason>
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/dod_receipts/**"
+    - "**/evidence/**"
+
+  rules:
+    - rule_id: model-cli-shellout
+      description: >-
+        Rejects shelling out to a model-CLI binary (codex/claude/gemini/opencode) via subprocess/exec/os.system
+        or shutil.which as an inference/delegation tier. Route inference through the canonical path (bus
+        / inference-effect / Bifrost). Suppress with # canonical-inference-ok: <reason>.
+      severity: error
+      enabled: true
+
+    - rule_id: model-id-env-read
+      description: >-
+        Rejects os.environ[*_MODEL] / os.environ.get(*_PROVIDER) reads that bypass the contract-driven
+        routing authority. Resolve model + provider from the routing-tiers / model_routing contract instead.
+      severity: error
+      enabled: true
+
+  suppression_comments:
+    - "# canonical-inference-ok:"
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
