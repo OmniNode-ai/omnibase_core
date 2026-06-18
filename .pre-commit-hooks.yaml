@@ -148,6 +148,20 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: no-plugin-daemon-classes
+  name: Block Plugin* daemon/service/worker classes (OMN-13309)
+  description: >
+    AST-based gate that prevents Plugin* classes from owning daemon, service, worker, runtime, consumer,
+    publisher, controller, server, or client lifecycles. Only Plugin* classes that subclass PluginComputeBase
+    directly (legacy compute) are permitted. All other lifecycle ownership must live behind ONEX nodes/handlers/contracts.
+    Canonical implementation: omnibase_core.validators.no_plugin_daemon_classes Ticket: OMN-13309 (W9
+    — Validator Standardization Remediation)
+  language: python
+  entry: python -m omnibase_core.validators.no_plugin_daemon_classes
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-url-authority
   name: URL Authority Gate (OMN-12818)
   description: >
