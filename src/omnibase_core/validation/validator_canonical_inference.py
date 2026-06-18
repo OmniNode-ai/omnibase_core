@@ -139,7 +139,7 @@ _MODEL_ENV_SUFFIXES: Final[tuple[str, ...]] = ("_MODEL", "_MODEL_ID", "_PROVIDER
 
 # ``os.environ[...]`` / ``os.environ.get(...)`` for a model/provider name.
 _ENV_MODEL_READ: Final[re.Pattern[str]] = re.compile(
-    r"""os\.environ(?:\.get\(\s*|\[\s*)["'][A-Z0-9_]*(?:_MODEL|_MODEL_ID|_PROVIDER)["']""",
+    rf"""os\.environ(?:\.get\(\s*|\[\s*)["'][A-Z0-9_]*(?:{"|".join(re.escape(suffix) for suffix in _MODEL_ENV_SUFFIXES)})["']""",
 )
 
 # Suppression annotation.
