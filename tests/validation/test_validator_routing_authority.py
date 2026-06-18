@@ -57,7 +57,7 @@ backends:
     tier: "cloud"
     endpoint_url_env: "GEMINI_PRO_URL"
     endpoint_url: null
-    api_key_env: "GEMINI_API_KEY"
+    api_key_env: "GEMINI_API_KEY"  # pragma: allowlist secret
 """
 
 _CLEAN_SOURCE = """\

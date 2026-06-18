@@ -15,11 +15,10 @@ node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 
 description: >
-  Validate that model-routing fields (provider, served_model_id, endpoint_ref,
-  routing_source) resolve from contract/overlay/routing authority and that demo-path
-  source files contain no env reads, provider literals, or fallback endpoint strings.
-  Also runs a residue ratchet over known debt files and a provider-class endpoint-shape
-  audit over bifrost_delegation.yaml. Returns a structured evidence packet.
+  Validate that model-routing fields (provider, served_model_id, endpoint_ref, routing_source) resolve
+  from contract/overlay/routing authority and that demo-path source files contain no env reads, provider
+  literals, or fallback endpoint strings. Also runs a residue ratchet over known debt files and a provider-class
+  endpoint-shape audit over bifrost_delegation.yaml. Returns a structured evidence packet.
 handler_routing:
   default_handler: handler:NodeRoutingAuthorityCheckCompute
 
