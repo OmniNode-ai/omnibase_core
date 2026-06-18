@@ -95,7 +95,6 @@ Each tutorial takes you from zero to a working, tested node:
 
 - [07. Patterns Catalog](07_PATTERNS_CATALOG.md) - Common patterns with code
 - [08. Common Pitfalls](08_COMMON_PITFALLS.md) - What to avoid
-- [09. Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Testing with MixinIntentPublisher
 - [10. Agent Templates](10_AGENT_TEMPLATES.md) - Agent-friendly structured templates
 
 ## Quick Start
@@ -110,7 +109,6 @@ Each tutorial takes you from zero to a working, tested node:
 **Built nodes before?** Jump to:
 
 - [Patterns Catalog](07_PATTERNS_CATALOG.md) for reusable patterns
-- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) for testing strategies
 - [Agent Templates](10_AGENT_TEMPLATES.md) for structured templates
 
 ## Development Notes

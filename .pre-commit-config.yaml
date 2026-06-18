@@ -837,6 +837,23 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      # Canonical Inference Gate (OMN-13219).
+      # Fails on non-canonical model-inference surfaces: shelled model CLIs
+      # (codex/claude/gemini/opencode via subprocess/exec/shutil.which) and
+      # *_MODEL / *_PROVIDER env reads. Endpoint URLs are owned by the
+      # url-authority gate above. Ratchet: NEW fingerprints fail; existing are
+      # grandfathered (codex shell-out removal tracked by OMN-13215). Baseline is
+      # burn-down only. Suppress with: # canonical-inference-ok: <reason>
+      - id: check-canonical-inference
+        name: Canonical Inference Gate (OMN-13219)
+        entry: uv run python -m omnibase_core.validation.validator_canonical_inference
+        args: [--repo, omnibase_core, --repo-root, .]
+        language: system
+        types: [python]
+        pass_filenames: true
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
       - id: validate-exception-handling
         name: ONEX Exception Handling Validation
         entry: uv run python scripts/validation/validate-exception-handling.py

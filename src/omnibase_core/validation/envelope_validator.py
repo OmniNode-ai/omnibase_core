@@ -60,7 +60,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from omnibase_core.models.validation.model_envelope_validation_config import (
     ModelEnvelopeValidationConfig,
@@ -69,7 +69,7 @@ from omnibase_core.validation.envelope_validation_error import EnvelopeValidatio
 from omnibase_core.validation.envelope_validation_result import EnvelopeValidationResult
 
 if TYPE_CHECKING:
-    from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 __all__ = ["EnvelopeValidator"]
 
@@ -106,7 +106,7 @@ class EnvelopeValidator:
     """
     Configurable envelope validator with strict and lenient modes.
 
-    Validates ModelOnexEnvelope instances before dispatch, performing:
+    Validates ModelEventEnvelope[Any] instances before dispatch, performing:
     1. Structural validation (required fields, correlation_id presence)
     2. Payload type validation (empty list rejection, known schema checks)
     3. Type coercion warnings (for mismatched but convertible types)
@@ -186,7 +186,7 @@ class EnvelopeValidator:
 
     def validate(
         self,
-        envelope: ModelOnexEnvelope,
+        envelope: ModelEventEnvelope[Any],
         *,
         config_override: ModelEnvelopeValidationConfig | None = None,
     ) -> EnvelopeValidationResult:
@@ -200,7 +200,7 @@ class EnvelopeValidator:
         In lenient mode: collects all issues, logs warnings, returns result.
 
         Args:
-            envelope: The ModelOnexEnvelope to validate.
+            envelope: The ModelEventEnvelope[Any] to validate.
             config_override: Optional per-call configuration override.
                 Useful for per-handler strictness differences.
 
@@ -253,7 +253,7 @@ class EnvelopeValidator:
 
     def _validate_structure(
         self,
-        envelope: ModelOnexEnvelope,
+        envelope: ModelEventEnvelope[Any],
         config: ModelEnvelopeValidationConfig,
         errors: list[str],
         warnings: list[str],
@@ -319,7 +319,7 @@ class EnvelopeValidator:
 
     def _validate_payload(
         self,
-        envelope: ModelOnexEnvelope,
+        envelope: ModelEventEnvelope[Any],
         config: ModelEnvelopeValidationConfig,
         errors: list[str],
         warnings: list[str],

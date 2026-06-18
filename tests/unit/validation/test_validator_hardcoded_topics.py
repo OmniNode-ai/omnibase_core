@@ -472,7 +472,7 @@ class TestEdgeCases:
             tmp_path,
             """\
             class MyPublisher:
-                INTENT_TOPIC: str = TOPIC_EVENT_PUBLISH_INTENT
+                INTENT_TOPIC: str = TOPIC_RUNTIME_INTENTS
                 OUTPUT_TOPIC: ClassVar[str] = SOME_TOPIC
             """,
         )

@@ -23,6 +23,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
 
 from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
@@ -526,3 +527,121 @@ class TestCLI:
         )
         # Growth detected — must reject
         assert rc == 1
+
+
+# ---------------------------------------------------------------------------
+# Integration catalog structure (OMN-12804)
+# ---------------------------------------------------------------------------
+
+_CATALOG_PATH = (
+    Path(__file__).parent.parent.parent.parent
+    / "src"
+    / "omnibase_core"
+    / "contracts"
+    / "integrations"
+    / "catalog.yaml"
+)
+
+
+@pytest.mark.unit
+class TestIntegrationCatalogStructure:
+    """Verify the non-model URL authority catalog is structurally valid.
+
+    These tests do NOT import the catalog resolver (which doesn't ship yet)
+    — they validate the YAML document shape so any future parser has a stable
+    contract to target (OMN-12804).
+    """
+
+    def test_catalog_file_exists(self) -> None:
+        """The authority catalog must be checked in at the canonical path."""
+        assert _CATALOG_PATH.exists(), (
+            f"Integration catalog not found at {_CATALOG_PATH}. "
+            "Every non-model URL must resolve from this authority file."
+        )
+
+    def test_catalog_is_valid_yaml(self) -> None:
+        """The catalog must parse as valid YAML."""
+        raw = _CATALOG_PATH.read_text(encoding="utf-8")
+        doc = yaml.safe_load(raw)
+        assert isinstance(doc, dict), "Catalog root must be a YAML mapping"
+
+    def test_catalog_has_required_top_level_keys(self) -> None:
+        """The catalog must declare catalog_version and schema_version."""
+        doc = yaml.safe_load(_CATALOG_PATH.read_text(encoding="utf-8"))
+        assert "catalog_version" in doc, "Missing catalog_version"
+        assert "schema_version" in doc, "Missing schema_version"
+        # catalog_version must be a semver dict {major, minor, patch}
+        cv = doc["catalog_version"]
+        assert isinstance(cv, dict) and {"major", "minor", "patch"} <= cv.keys(), (
+            f"catalog_version must be {{major: X, minor: Y, patch: Z}}, got: {cv!r}"
+        )
+
+    def test_catalog_has_at_least_one_category(self) -> None:
+        """The catalog must have at least one of: external_apis, internal_infra, env_resolved."""
+        doc = yaml.safe_load(_CATALOG_PATH.read_text(encoding="utf-8"))
+        categories = {"external_apis", "internal_infra", "env_resolved"}
+        found = categories & set(doc.keys())
+        assert found, (
+            f"No known category found in catalog. Expected one of: {categories}"
+        )
+
+    def test_every_entry_has_id_and_description(self) -> None:
+        """Every entry in every category must have id and description fields."""
+        doc = yaml.safe_load(_CATALOG_PATH.read_text(encoding="utf-8"))
+        for category in ("external_apis", "internal_infra", "env_resolved"):
+            entries = doc.get(category) or []
+            for entry in entries:
+                assert "id" in entry, f"Missing 'id' in {category} entry: {entry}"
+                assert "description" in entry, (
+                    f"Missing 'description' in {category} entry: {entry.get('id', entry)}"
+                )
+
+    def test_every_entry_has_endpoint_url_or_env(self) -> None:
+        """Every entry must declare endpoint_url and/or endpoint_url_env — never neither."""
+        doc = yaml.safe_load(_CATALOG_PATH.read_text(encoding="utf-8"))
+        for category in ("external_apis", "internal_infra", "env_resolved"):
+            entries = doc.get(category) or []
+            for entry in entries:
+                has_url = "endpoint_url" in entry
+                has_env = "endpoint_url_env" in entry
+                assert has_url or has_env, (
+                    f"Entry {entry.get('id', '?')} in {category} must have "
+                    "at least one of: endpoint_url, endpoint_url_env"
+                )
+
+    def test_catalog_path_suffix_matches_authority_allowlist(self) -> None:
+        """The catalog path must end with the suffix recognized by ValidatorUrlAuthority.
+
+        This ensures URLs placed in the catalog are treated as canonical by the
+        gate and not flagged as violations.
+        """
+        from omnibase_core.validation.validator_url_authority import (
+            _AUTHORITY_PATH_SUFFIXES,
+        )
+
+        catalog_rel = str(_CATALOG_PATH).replace("\\", "/")
+        matched = any(
+            catalog_rel.endswith(suffix) for suffix in _AUTHORITY_PATH_SUFFIXES
+        )
+        assert matched, (
+            f"Catalog path {catalog_rel!r} does not end with any known authority "
+            f"suffix: {_AUTHORITY_PATH_SUFFIXES}.  "
+            "Add the suffix to _AUTHORITY_PATH_SUFFIXES in validator_url_authority.py."
+        )
+
+    def test_catalog_contains_github_entry(self) -> None:
+        """A GitHub API entry must exist — it is the highest-frequency integration."""
+        doc = yaml.safe_load(_CATALOG_PATH.read_text(encoding="utf-8"))
+        ids = {e["id"] for e in (doc.get("external_apis") or [])}
+        assert "github.rest_api" in ids, (
+            "github.rest_api entry missing from external_apis. "
+            "Every GitHub API call must resolve from this catalog."
+        )
+
+    def test_catalog_contains_linear_entry(self) -> None:
+        """A Linear GraphQL entry must exist."""
+        doc = yaml.safe_load(_CATALOG_PATH.read_text(encoding="utf-8"))
+        ids = {e["id"] for e in (doc.get("external_apis") or [])}
+        assert "linear.graphql_api" in ids, (
+            "linear.graphql_api entry missing from external_apis."
+        )

@@ -67,8 +67,8 @@ The ONEX (OmniNode eXecution) framework defines a structured vocabulary for buil
     +---------------------------------------------------------------------------+
     |                              RUNTIME HOST                                  |
     |  +-------------+  +-------------+  +---------------+  +-----------------+ |
-    |  |  Handler    |  |  Handler    |  |   Envelope    |  |    Projection   | |
-    |  |  (HTTP)     |  |  (Kafka)    |  |    Router     |  |      Store      | |
+    |  |  Handler    |  |  Handler    |  |   Message     |  |    Projection   | |
+    |  |  (HTTP)     |  |  (Kafka)    |  |   Dispatch    |  |      Store      | |
     |  +-------------+  +-------------+  +---------------+  +-----------------+ |
     +---------------------------------------------------------------------------+
 
@@ -414,7 +414,7 @@ class NodeDatabaseWriterEffect(NodeEffect):
 
 **File Location**: `src/omnibase_core/protocols/runtime/protocol_handler.py`
 
-**Role in Architecture**: Handlers are execution units within the Runtime that process `ModelOnexEnvelope` instances. The `EnvelopeRouter` routes envelopes to handlers based on `handler_type`.
+**Role in Architecture**: Handlers are execution units within the Runtime that process `ModelOnexEnvelope` instances. The `RuntimeMessageDispatch` routes envelopes to registered handlers based on `handler_type`.
 
 **Three Handler Sub-Patterns**:
 
@@ -546,7 +546,8 @@ if projection is None:
 
 | Component | Description | Location |
 |-----------|-------------|----------|
-| `EnvelopeRouter` | Transport-agnostic orchestrator | `src/omnibase_core/runtime/runtime_envelope_router.py` |
+| `RuntimeMessageDispatch` | Transport-agnostic message dispatcher | `src/omnibase_core/runtime/runtime_message_dispatch.py` |
+| `RuntimeHandlerRegistry` | Handler registration and lookup | `src/omnibase_core/runtime/runtime_handler_registry.py` |
 | `ModelRuntimeNodeInstance` | Node instance wrapper | `src/omnibase_core/models/runtime/model_runtime_node_instance.py` |
 | `ModelONEXContainer` | DI container for services | `src/omnibase_core/models/container/model_onex_container.py` |
 
@@ -560,7 +561,8 @@ if projection is None:
 **Code Example**:
 
 ```python
-from omnibase_core.runtime.runtime_envelope_router import EnvelopeRouter
+from omnibase_core.runtime.runtime_handler_registry import RuntimeHandlerRegistry
+from omnibase_core.runtime.runtime_message_dispatch import RuntimeMessageDispatch
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Initialize DI container
@@ -568,16 +570,15 @@ container = ModelONEXContainer()
 container.register_service("ProtocolLogger", logger_instance)
 container.register_service("ProtocolEventBus", event_bus_instance)
 
-# Create envelope router
-router = EnvelopeRouter(container)
+# Register handlers via the handler registry
+registry = RuntimeHandlerRegistry()
+registry.register(HttpHandler())
+registry.register(DatabaseHandler())
+registry.register(KafkaHandler())
 
-# Register handlers
-router.register_handler(HttpHandler())
-router.register_handler(DatabaseHandler())
-router.register_handler(KafkaHandler())
-
-# Route envelope to appropriate handler
-response = await router.route(incoming_envelope)
+# Dispatch envelope to appropriate handler via RuntimeMessageDispatch
+dispatch = RuntimeMessageDispatch(container, registry)
+response = await dispatch.route(incoming_envelope)
 ```
 
 ---
@@ -594,7 +595,7 @@ response = await router.route(incoming_envelope)
 | **EFFECT** | `NodeEffect` | `nodes/node_effect.py` | Position 1 |
 | **HANDLER** | `ProtocolHandler` | `protocols/runtime/protocol_handler.py` | Runtime layer |
 | **PROJECTION** | `ModelProjectionBase` | `models/projection/model_projection_base.py` | CQRS read side |
-| **RUNTIME** | `EnvelopeRouter` | `runtime/runtime_envelope_router.py` | Infrastructure |
+| **RUNTIME** | `RuntimeMessageDispatch` | `runtime/runtime_message_dispatch.py` | Infrastructure |
 
 ---
 
@@ -676,7 +677,7 @@ Start
             v
     +---------------+
     |   RUNTIME     |
-    | (EnvelopeRouter|
+    | (MsgDispatch  |
     |  + Handlers)  |
     +---------------+
             |

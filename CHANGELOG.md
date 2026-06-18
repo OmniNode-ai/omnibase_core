@@ -1,3 +1,43 @@
+## v0.45.0 (2026-06-17)
+
+### Breaking Changes
+- refactor(OMN-13200): bump omnibase_core to v0.45.0 — removes ModelOnexEnvelope public API (deleted in #1250, B4). Canonical envelope is ModelEventEnvelope[T]. Minor bump per pre-1.0 semver convention for a breaking public-API deletion.
+
+## v0.44.2 (2026-06-07)
+
+### Changes
+- chore(release)(OMN-12765): bump omnibase_core to v0.44.2 (#1217)
+- release(OMN-12765): promote dev integration to main (#1216)
+
+## v0.44.1 (2026-06-07)
+
+### Changes
+- chore(release)(OMN-12765): bump omnibase_core to v0.44.1 (#1213)
+- release(OMN-12765): promote core dev lane to main (#1211)
+
+## v0.44.0 (2026-06-06)
+
+### Features
+- feat(OMN-13098): skill-dispatch receipt-mode validator (Phase 4b) (#1237)
+- feat(OMN-13093): minimal content-addressed ArtifactStore slice (Phase 1) (#1236)
+- feat(OMN-13091): ModelArtifactRef + ModelSkillResult[T] typed receipt models (#1235)
+- feat(OMN-12818): url-authority ratchet gate — ValidatorUrlAuthority (#1232)
+- feat(OMN-13026): transport-mock lint validator — bare AsyncMock/MagicMock on EventBus/transport surfaces (#1231)
+- feat(OMN-13026): protocol-conformance tests per Protocol + portable _rel_path baseline fix (#1234)
+- feat(OMN-12957): runtime-profile registry + unregistered/no-consumer-lane validator rules (#1229)
+- feat(OMN-12960): single transport-envelope unwrap predicate + dispatch-surface test gate (#1228)
+- feat(OMN-12857): add Bifrost logical secret refs (#1223)
+- feat(OMN-12791): receipt-honesty validator — fail gamed DoD receipts (#1219)
+- feat(OMN-12777): add demo-path topic coherence gate as pre-commit + required CI (#1218)
+
+### Bug Fixes
+- fix(OMN-13061): hard-fail on contract_sha256=None in OCC eligibility validator (#1233)
+- fix(OMN-12961): reject typing.Protocol handler targets in ServiceHandlerResolver (#1230)
+- fix(OMN-12816): raise generation retry budget (#1221)
+
+### CI
+- ci(OMN-12825): wire receipt-honesty CI + pre-commit gate (queue-safe prep) (#1222)
+
 ## v0.43.0 (2026-05-31)
 
 ### Features

@@ -175,7 +175,7 @@ If tests fail, see [Troubleshooting](#troubleshooting) at the end of this guide.
 
 ---
 
-## Step 1: Define Input Model
+## Define the Input Model
 
 **File**: `src/your_project/nodes/model_file_backup_input.py`
 
@@ -260,7 +260,7 @@ class ModelFileBackupInput(BaseModel):
 
 ---
 
-## Step 2: Define Output Model
+## Define the Output Model
 
 **File**: `src/your_project/nodes/model_file_backup_output.py`
 
@@ -376,7 +376,7 @@ class ModelFileBackupOutput(BaseModel):
 
 ---
 
-## Step 3: Implement the EFFECT Node
+## Implement the EFFECT Node
 
 ### RECOMMENDED: Using ModelServiceEffect Wrapper
 
@@ -804,7 +804,7 @@ class NodeFileBackupEffect(NodeEffect):
 
 ---
 
-## Step 4: Write Comprehensive Tests
+## Write Comprehensive Tests
 
 **File**: `tests/unit/nodes/test_node_file_backup_effect.py`
 
@@ -958,7 +958,7 @@ async def test_backup_statistics_tracking(backup_node, temp_source_file, tmp_pat
 
 ---
 
-## Step 5: Usage Examples
+## Usage Examples
 
 ### Basic File Backup
 
@@ -1132,7 +1132,6 @@ Congratulations! You've built a production-ready EFFECT node!
 - [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Learn data aggregation
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
 - [Patterns Catalog](07_PATTERNS_CATALOG.md) - Common EFFECT patterns
-- [Testing Intent Publisher](09_TESTING_INTENT_PUBLISHER.md) - Advanced testing strategies
 
 **Challenge**: Extend this node to support S3 backups using external service integration!
 

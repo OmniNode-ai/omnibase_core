@@ -1,0 +1,135 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# contracts/integrations/catalog.yaml — Non-model URL authority.
+#
+# This file is the CANONICAL source of truth for every non-model-routing URL
+# used by ONEX services: external SaaS APIs (GitHub, Linear, OpenRouter),
+# internal infrastructure (projection API, bus bootstrap, dashboard data
+# sources), and environment-resolved endpoints.
+#
+# Design authority (OMN-12804):
+#
+#   The ONEX stack has two URL authority surfaces:
+#
+#   1. Model / inference routing — bifrost_delegation.yaml (omnimarket/omniclaude)
+#      Owns: LLM backend URLs, inference endpoints, provider-specific base URLs.
+#
+#   2. Non-model integration endpoints — THIS FILE (omnibase_core)
+#      Owns: GitHub API, Linear GraphQL, OpenRouter non-inference, projection
+#      API, bus health endpoints, dashboard data-source URIs, and any other
+#      URL that is NOT an LLM inference endpoint.
+#
+# Resolution contract:
+#
+#   Python code MUST NOT embed a URL literal or read a *_URL /*_ENDPOINT env
+#   var directly.  Instead it calls the catalog resolver:
+#
+#       from omnibase_core.contracts.integrations.catalog_resolver import (
+#           IntegrationCatalogResolver,
+#       )
+#       resolver = IntegrationCatalogResolver.load()
+#       url = resolver.endpoint("github.rest_api")
+#
+#   The resolver applies a site-specific overlay at runtime (env var
+#   ONEX_INTEGRATION_CATALOG_OVERLAY or ~/.omninode/integration_overrides.yaml)
+#   so every deployment can remap endpoints without touching committed YAML.
+#
+# Adding a new integration:
+#
+#   1. Add an entry under the appropriate category below (external_apis,
+#      internal_infra, or env_resolved).
+#   2. Set endpoint_url to the public canonical URL (or null for env-only
+#      endpoints where the operator always supplies the value).
+#   3. If the URL varies per deployment, add endpoint_url_env naming the env
+#      var whose value replaces the catalog default at resolution time.
+#   4. Run the url-authority gate to confirm no literal sneaks into source:
+#         python -m omnibase_core.validation.validator_url_authority --all
+#   5. Cite this catalog entry in the PR body.
+#
+# Migration debt:
+#   - omnibase_core: OMN-12806 (13 violations — drain to zero)
+#   - omnibase_infra: OMN-12807 (48 violations — drain to zero)
+#   - other repos: OMN-12808
+#
+# Schema: v1.0.0 (OMN-12804)
+#
+catalog_version: {major: 1, minor: 0, patch: 0}
+schema_version: "integration_catalog.v1"
+
+# ---------------------------------------------------------------------------
+# External SaaS APIs
+# ---------------------------------------------------------------------------
+external_apis:
+
+  - id: github.rest_api
+    description: >
+      GitHub REST API v3 base URL. Used by the CI relay, post-merge checks, PR title gate, and all GitHub-facing
+      effect nodes.
+    endpoint_url: "https://api.github.com"
+    # Operators in air-gapped or GHES environments set this env var to their
+    # GHES base URL.  Value must NOT include a trailing slash.
+    endpoint_url_env: ONEX_GITHUB_API_URL
+
+  - id: linear.graphql_api
+    description: >
+      Linear GraphQL API endpoint. Used by the Linear relay and all Linear-facing effect nodes (issue
+      sync, PR comment relay).
+    endpoint_url: "https://api.linear.app/graphql"
+    endpoint_url_env: ONEX_LINEAR_API_URL
+
+  - id: openrouter.completions
+    description: >
+      OpenRouter /api/v1/chat/completions endpoint. Non-inference usage (model listing, rate-limit probing).
+      Inference calls go through bifrost_delegation.yaml, not this catalog.
+    endpoint_url: "https://openrouter.ai/api/v1/chat/completions"
+    endpoint_url_env: ONEX_OPENROUTER_COMPLETIONS_URL
+
+# ---------------------------------------------------------------------------
+# Internal / self-hosted infrastructure endpoints
+# ---------------------------------------------------------------------------
+internal_infra:
+
+  - id: projection_api.base
+    description: >
+      ONEX projection API base URL. Resolved from env in production; the default below is the stability-test
+      lane.  Operators MUST override for dev and prod lanes via overlay or env var.
+    endpoint_url: null
+    endpoint_url_env: ONEX_PROJECTION_API_URL
+
+  - id: bus.redpanda_schema_registry
+    description: >
+      Redpanda / Confluent schema-registry HTTP base URL.
+    endpoint_url: null
+    endpoint_url_env: ONEX_SCHEMA_REGISTRY_URL
+
+  - id: bus.kafka_bootstrap
+    description: >
+      Kafka / Redpanda plaintext bootstrap address (host:port).  Not an HTTP URL — used only in bootstrap
+      configuration, not HTTP calls.
+    endpoint_url: null
+    endpoint_url_env: ONEX_KAFKA_BOOTSTRAP
+
+  - id: dashboard.data_source
+    description: >
+      OmniDash backend data-source base URL (used by the dashboard service layer when it queries the projection
+      API on behalf of widgets).
+    endpoint_url: null
+    endpoint_url_env: ONEX_DASHBOARD_DATA_SOURCE_URL
+
+# ---------------------------------------------------------------------------
+# Operator-resolved endpoints (no public default; must be set via env)
+# ---------------------------------------------------------------------------
+env_resolved:
+
+  - id: infisical.addr
+    description: >
+      Infisical secrets-management base URL.  Always operator-supplied; never has a public default.
+    endpoint_url: null
+    endpoint_url_env: INFISICAL_ADDR
+
+  - id: deployment.callback_url
+    description: >
+      Deployment callback URL for CI relay post-merge notifications.
+    endpoint_url: null
+    endpoint_url_env: CI_CALLBACK_URL

@@ -20,12 +20,12 @@ Related:
 
 from datetime import UTC, datetime
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_pipeline_validation_mode import EnumPipelineValidationMode
-from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_envelope_validation_config import (
     ENV_VALIDATION_MODE,
@@ -43,14 +43,37 @@ DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 FIXED_TIMESTAMP = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
 
 
+class _ValidatorEnvelope(BaseModel):
+    """Minimal envelope stub exposing the attributes EnvelopeValidator reads.
+
+    EnvelopeValidator.validate() is duck-typed (it accesses fields via
+    ``getattr``: ``correlation_id``, ``source_node``, ``operation``,
+    ``target_node``, ``envelope_version``, ``envelope_id``, ``payload``).
+    The canonical ModelEventEnvelope[T] does not carry these dispatch-routing
+    fields, so this stub provides the exact attribute surface under test
+    without re-introducing the deleted legacy envelope model (OMN-13196).
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    envelope_id: UUID
+    envelope_version: ModelSemVer
+    correlation_id: UUID
+    source_node: str
+    target_node: str | None
+    operation: str
+    payload: dict[str, Any]
+    timestamp: datetime
+
+
 def make_valid_envelope(
     operation: str = "GET_DATA",
     payload: dict[str, Any] | None = None,
     source_node: str = "test-service",
     target_node: str | None = "target-service",
-) -> ModelOnexEnvelope:
-    """Create a valid ModelOnexEnvelope for testing."""
-    return ModelOnexEnvelope(
+) -> _ValidatorEnvelope:
+    """Create a valid envelope stub for EnvelopeValidator testing."""
+    return _ValidatorEnvelope(
         envelope_id=uuid4(),
         envelope_version=DEFAULT_VERSION,
         correlation_id=uuid4(),
@@ -175,10 +198,10 @@ class TestEnvelopeValidatorLenient:
         config = ModelEnvelopeValidationConfig.lenient()
         validator = EnvelopeValidator(config=config)
         # Create envelope with no correlation_id — we test the validation logic
-        # by passing an envelope and checking the internal validation path
-        # Since ModelOnexEnvelope requires correlation_id, we test via direct
-        # _validate_structure call with a simulated scenario
-        # Use the lenient config which has require_correlation_id=False
+        # by passing an envelope and checking the internal validation path.
+        # The envelope stub requires correlation_id, so a valid envelope still
+        # passes; the lenient config (require_correlation_id=False) is the path
+        # under test here.
         envelope = make_valid_envelope()
         result = validator.validate(envelope)
         assert result.is_valid  # valid envelope should pass
