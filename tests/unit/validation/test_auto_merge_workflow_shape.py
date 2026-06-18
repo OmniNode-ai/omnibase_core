@@ -45,7 +45,7 @@ def test_auto_merge_runs_occ_preflight_before_mutating_pr() -> None:
 
     assert names.index("OCC auto-merge preflight") < names.index("Enable auto-merge")
     assert names.index("OCC auto-merge preflight") < names.index(
-        "Force enqueue to merge queue"
+        "Enqueue armed PR and verify it entered the queue"
     )
 
 
@@ -57,3 +57,34 @@ def test_auto_merge_preflight_uses_single_pr_snapshot() -> None:
     assert "omnibase_core.validation.validator_occ_merge_eligibility" in script
     assert "--occ-commit-sha" in script
     assert "--pr-body-file /tmp/pr_body.txt" in script
+
+
+def test_enable_auto_merge_arms_bare_auto_not_squash() -> None:
+    # OMN-13214: dev is queue-controlled; an explicit --squash is rejected and
+    # the PR is never enqueued. The actual `gh pr merge` command must arm bare
+    # --auto (a comment may still explain why --squash is wrong).
+    script = _step("Enable auto-merge")["run"]
+    assert isinstance(script, str)
+
+    merge_lines = [
+        line
+        for line in script.splitlines()
+        if "gh pr merge" in line and not line.strip().startswith("#")
+    ]
+    assert merge_lines, "no `gh pr merge` command found in Enable auto-merge step"
+    for line in merge_lines:
+        assert "--auto" in line
+        assert "--squash" not in line
+
+
+def test_enqueue_step_classifies_enqueues_and_verifies() -> None:
+    # OMN-13214: arming != enqueuing. The enqueue step must classify via the
+    # unit-tested helper, explicitly enqueue, and VERIFY the PR entered the queue.
+    script = _step("Enqueue armed PR and verify it entered the queue")["run"]
+
+    assert "scripts/ci/merge_queue_enqueue.py classify" in script
+    assert "scripts/ci/merge_queue_enqueue.py verify" in script
+    assert "enqueuePullRequest" in script
+    assert "gh pr update-branch" in script
+    # Must fail loudly when a green + armed PR does not enter the queue.
+    assert "::error::" in script
