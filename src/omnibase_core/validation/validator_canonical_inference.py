@@ -24,6 +24,23 @@ Detects the following non-canonical patterns in Python source:
    ``shutil.which(...)``. This is the canonical signal of "shell out to a model
    CLI as an inference/delegation tier."
 
+   **Structural agent-invocation carve-out (OMN-13249):** running a coding agent
+   (Claude Code / Codex) *is* external I/O performed by a canonical EFFECT node —
+   a distinct surface from the banned *inference* tier (OMN-13215/13219). The
+   architecture already distinguishes the two: an inference tier resolves a
+   model+endpoint+provider and is registered in ``routing_tiers.yaml`` /
+   ``bifrost_delegation.yaml``; an agent-invocation EFFECT declares
+   ``descriptor.agent_invocation: true`` in its node ``contract.yaml`` and is
+   never in those configs. So this gate permits a model-CLI shell-out **iff** the
+   enclosing node's ``contract.yaml`` declares ``descriptor.agent_invocation:
+   true`` (a real YAML boolean). The permission is a contract-declared,
+   reviewable fact the gate verifies — NOT a widened ``# canonical-inference-ok:``
+   comment (that free-text path is the "self-judgement is not evidence" failure
+   mode this gate exists to stop). A shell-out with no enclosing agent contract
+   still fails closed; the old codex-as-a-tier shape still fails if reintroduced.
+   The carve-out scopes only the shell-out surface — an ``agent_invocation`` node
+   does **not** license a model-id env read.
+
 2. **model-id-env-read** — ``os.environ[...]`` / ``os.environ.get(...)`` whose
    variable NAME ends in ``_MODEL`` / ``_MODEL_ID`` / ``_PROVIDER``. Model and
    provider must resolve from the routing-tiers / model_routing contract, not an
@@ -77,13 +94,16 @@ Usage Examples:
 
 Suppression:
     Add ``# canonical-inference-ok: <reason>`` on the offending line. Free-text
-    PR-body justification does NOT suppress — only the in-line annotation.
+    PR-body justification does NOT suppress — only the in-line annotation. This
+    is distinct from the structural agent-invocation carve-out (OMN-13249), which
+    is a contract fact (``descriptor.agent_invocation: true``), not a comment.
 
 Migration debt:
     - codex/claude/gemini CLI shell-out removal: OMN-13215
 
 Schema Version:
     v1.0.0 - Initial version (OMN-13219)
+    v1.1.0 - Structural agent-invocation carve-out (OMN-13249)
 """
 
 from __future__ import annotations
@@ -95,6 +115,8 @@ import re
 import sys
 from pathlib import Path
 from typing import ClassVar, Final
+
+import yaml
 
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
@@ -144,6 +166,13 @@ _ENV_MODEL_READ: Final[re.Pattern[str]] = re.compile(
 
 # Suppression annotation.
 _SUPPRESS_ANNOTATION: Final[str] = "# canonical-inference-ok:"
+
+# Structural carve-out (OMN-13249): the node contract.yaml filename and the
+# descriptor flag that marks an agent-invocation EFFECT. A model-CLI shell-out is
+# permitted ONLY inside a node whose contract declares this flag as YAML ``true``.
+_CONTRACT_FILENAME: Final[str] = "contract.yaml"
+_DESCRIPTOR_KEY: Final[str] = "descriptor"
+_AGENT_INVOCATION_KEY: Final[str] = "agent_invocation"
 
 # Rule identifiers (must match the validation contract).
 RULE_MODEL_CLI_SHELLOUT: Final[str] = "model-cli-shellout"
@@ -259,6 +288,79 @@ def _cli_binary_in_call(call: ast.Call) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Structural agent-invocation carve-out (OMN-13249)
+# ---------------------------------------------------------------------------
+
+
+def find_enclosing_contract(source_path: Path) -> Path | None:
+    """Return the nearest ancestor ``contract.yaml`` for a source file, else None.
+
+    Walks up the directory tree from ``source_path`` (the Python file's own
+    directory first — handling both the core layout where ``handler.py`` sits
+    beside ``contract.yaml`` and the infra layout where handlers live in a
+    ``handlers/`` subdir below it). The first ``contract.yaml`` found wins;
+    directories above the node root do not declare a node contract.
+
+    Args:
+        source_path: Filesystem path to the Python source file.
+
+    Returns:
+        Path to the enclosing node ``contract.yaml``, or None if no ancestor
+        directory contains one.
+    """
+    for parent in source_path.resolve().parents:
+        candidate = parent / _CONTRACT_FILENAME
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def contract_permits_agent_invocation(contract_path: Path) -> bool:
+    """True iff the node ``contract.yaml`` declares ``descriptor.agent_invocation: true``.
+
+    The permission is a strict YAML boolean: a string ``"true"``, ``1``, or any
+    other truthy-but-not-``True`` value does NOT permit the shell-out. A malformed
+    or unreadable contract fails closed (returns False).
+
+    Args:
+        contract_path: Filesystem path to a node ``contract.yaml``.
+
+    Returns:
+        True only when the parsed descriptor maps ``agent_invocation`` to the
+        Python boolean ``True``.
+    """
+    try:
+        raw = contract_path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    try:
+        data = yaml.safe_load(raw)
+    except yaml.YAMLError:
+        return False
+    if not isinstance(data, dict):
+        return False
+    descriptor = data.get(_DESCRIPTOR_KEY)
+    if not isinstance(descriptor, dict):
+        return False
+    return descriptor.get(_AGENT_INVOCATION_KEY) is True
+
+
+def _permits_agent_shellout(source_path: Path | None) -> bool:
+    """Resolve whether the enclosing node permits a model-CLI shell-out.
+
+    A missing ``source_path`` (text-only scan, no filesystem anchor) fails closed
+    — the carve-out is opt-in via a real on-disk path so the gate can read the
+    contract fact, never a self-asserted claim.
+    """
+    if source_path is None:
+        return False
+    contract = find_enclosing_contract(source_path)
+    if contract is None:
+        return False
+    return contract_permits_agent_invocation(contract)
+
+
+# ---------------------------------------------------------------------------
 # Source scanner
 # ---------------------------------------------------------------------------
 
@@ -273,7 +375,10 @@ def _line_suppressed(raw_line: str) -> bool:
 
 
 def scan_source(
-    repo: str, path: str, source: str
+    repo: str,
+    path: str,
+    source: str,
+    source_path: Path | None = None,
 ) -> list[ModelCanonicalInferenceViolation]:
     """Scan one source file's text for non-canonical-inference violations.
 
@@ -284,6 +389,12 @@ def scan_source(
         repo: Repo name used in fingerprints (e.g. ``"omnibase_core"``).
         path: Repo-relative path for fingerprints (e.g. ``"src/pkg/file.py"``).
         source: Full source text of the file.
+        source_path: Filesystem path to the file, when available. Enables the
+            structural agent-invocation carve-out (OMN-13249): a model-CLI
+            shell-out is permitted iff the enclosing node ``contract.yaml``
+            declares ``descriptor.agent_invocation: true``. None (text-only
+            scan) fails closed — the shell-out rule is unaffected by the
+            carve-out.
 
     Returns:
         Sorted (by line) list of violations found in the file.
@@ -293,6 +404,8 @@ def scan_source(
 
     raw_lines = source.splitlines()
     violations: dict[int, ModelCanonicalInferenceViolation] = {}
+    # Resolve the contract permission once per file (not per call site).
+    agent_shellout_permitted = _permits_agent_shellout(source_path)
 
     def _add(line: int, rule: str) -> None:
         if line in violations:
@@ -311,16 +424,18 @@ def scan_source(
         )
 
     # Rule 1: model-CLI shell-out (AST — robust against false positives).
-    try:
-        tree = ast.parse(source, filename=path)
-    except SyntaxError:
-        tree = None
-    if tree is not None:
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
-                binary = _cli_binary_in_call(node)
-                if binary is not None:
-                    _add(node.lineno, RULE_MODEL_CLI_SHELLOUT)
+    # Permitted ONLY inside a node whose contract declares agent_invocation: true.
+    if not agent_shellout_permitted:
+        try:
+            tree = ast.parse(source, filename=path)
+        except SyntaxError:
+            tree = None
+        if tree is not None:
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call):
+                    binary = _cli_binary_in_call(node)
+                    if binary is not None:
+                        _add(node.lineno, RULE_MODEL_CLI_SHELLOUT)
 
     # Rule 2: model/provider env read (line regex — env reads are single-line).
     for index, raw_line in enumerate(raw_lines, start=1):
@@ -360,7 +475,7 @@ def scan_tree(repo: str, repo_root: Path) -> list[ModelCanonicalInferenceViolati
             rel = str(py.relative_to(repo_root))
         except ValueError:
             rel = str(py)
-        violations.extend(scan_source(repo, rel, source))
+        violations.extend(scan_source(repo, rel, source, source_path=py))
     return violations
 
 
@@ -512,7 +627,7 @@ class ValidatorCanonicalInference(ValidatorBase):
         except OSError:
             return ()
 
-        raw_violations = scan_source(self._repo, rel, source)
+        raw_violations = scan_source(self._repo, rel, source, source_path=path)
         baseline = self._get_baseline()
         new, _ = partition_against_baseline(raw_violations, baseline)
 
@@ -680,7 +795,7 @@ def main(argv: list[str] | None = None) -> int:
                 rel = str(p.resolve().relative_to(repo_root.resolve()))
             except ValueError:
                 rel = str(p)
-            violations.extend(scan_source(args.repo, rel, source))
+            violations.extend(scan_source(args.repo, rel, source, source_path=p))
 
     baseline = load_baseline(baseline_path)
     new, grandfathered = partition_against_baseline(violations, baseline)
