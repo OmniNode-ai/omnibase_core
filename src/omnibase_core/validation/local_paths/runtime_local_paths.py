@@ -35,6 +35,10 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Final
 
+from omnibase_core.constants.constants_event_types import (
+    TOPIC_VALIDATION_LOCAL_PATH_SCAN_COMPLETED_EVENT,
+    TOPIC_VALIDATION_LOCAL_PATH_SCAN_REQUESTED_CMD,
+)
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -54,8 +58,8 @@ __all__ = [
 # Contract-style topic names (onex.{cmd|evt}.{service}.{event}.v{N}). The runner
 # is the producer of the command and the consumer of the result; the handler is
 # the consumer of the command and producer of the result.
-COMMAND_TOPIC: Final[str] = "onex.cmd.validation.local-path-scan-requested.v1"
-RESULT_TOPIC: Final[str] = "onex.evt.validation.local-path-scan-completed.v1"
+COMMAND_TOPIC: Final[str] = TOPIC_VALIDATION_LOCAL_PATH_SCAN_REQUESTED_CMD
+RESULT_TOPIC: Final[str] = TOPIC_VALIDATION_LOCAL_PATH_SCAN_COMPLETED_EVENT
 
 _RUNNER_GROUP: Final[str] = "validator-local-paths-runner"
 _HANDLER_GROUP: Final[str] = "validator-local-paths-compute"
