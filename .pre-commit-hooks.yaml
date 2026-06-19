@@ -182,3 +182,18 @@
   pass_filenames: false
   always_run: true
   stages: [pre-commit]
+
+- id: backend-secret-discipline
+  name: Backend Secret Discipline (OMN-13290)
+  description: >
+    Reject literal credentials (PEM private keys, service-account JSON, bearer tokens, sk-/AIza/ya29.
+    keys) in committed config, and require a logical secret reference (secret_ref/api_key_ref/api_key_env
+    for API-key auth, or credential_ref for ADC) on every authenticated cloud backend in a bifrost routing-authority
+    config. ADC and api-key auth are mutually exclusive on one backend. Ported from omnimarket check_backend_secret_discipline
+    (OMN-12971) to core for fleet wiring. Credential VALUES live in the secret store, never in routing-authority
+    config. Suppression (test fixtures only): # backend-secret-ok: <reason> on the offending line.
+  language: python
+  entry: python -m omnibase_core.validators.backend_secret_discipline
+  files: \.(ya?ml|json)$
+  pass_filenames: true
+  stages: [pre-commit]
