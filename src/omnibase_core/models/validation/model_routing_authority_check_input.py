@@ -18,7 +18,11 @@ from omnibase_core.models.validation.model_routing_contract_entry import (
 class ModelRoutingAuthorityCheckInput(BaseModel):
     """Input payload for the routing-authority check COMPUTE handler."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+    )
 
     demo_path_contracts: tuple[ModelRoutingContractEntry, ...]
     """Contract files to verify model_routing from authority."""
