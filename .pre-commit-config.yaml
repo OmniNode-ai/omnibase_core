@@ -854,6 +854,20 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      # GitHub Token Env-Read Ban (OMN-13292; fleet port of OMN-12856).
+      # Bans raw GH_PAT/GH_TOKEN/GITHUB_TOKEN reads via os.environ/os.getenv in
+      # production source. A GitHub token is a contract-native secret: declare an
+      # api_key_ref in the contract and resolve at the effect boundary.
+      # Suppress boundary code with: # github-token-env-ok: <reason>
+      - id: check-github-token-env-reads
+        name: GitHub Token Env-Read Ban (OMN-13292)
+        entry: uv run python -m omnibase_core.validators.github_token_env_reads
+        language: system
+        types: [python]
+        pass_filenames: true
+        exclude: ^(tests/|archived/|archive/).*\.py$
+        stages: [pre-commit]
+
       - id: validate-exception-handling
         name: ONEX Exception Handling Validation
         entry: uv run python scripts/validation/validate-exception-handling.py

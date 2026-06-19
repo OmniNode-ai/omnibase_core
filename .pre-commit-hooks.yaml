@@ -162,3 +162,17 @@
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
+
+- id: check-github-token-env-reads
+  name: GitHub Token Env-Read Ban (OMN-13292)
+  description: >
+    Ban raw GitHub-token env reads (GH_PAT/GH_TOKEN/GITHUB_TOKEN via os.environ/os.getenv) in production
+    source. Fleet port of omnimarket OMN-12856. A GitHub token is a contract-native secret: declare its
+    api_key_ref in the node/effect contract and resolve the value at the effect boundary via the secret
+    resolver — never read it directly from the environment. Test files are excluded. Suppression for
+    boundary code that must read the env: # github-token-env-ok: <reason> (or # ONEX_EXCLUDE) on the line.
+  language: python
+  entry: python -m omnibase_core.validators.github_token_env_reads
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
