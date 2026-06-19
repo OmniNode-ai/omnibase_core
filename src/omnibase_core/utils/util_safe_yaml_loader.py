@@ -63,6 +63,32 @@ from omnibase_core.types.typed_dict_yaml_dump_options import TypedDictYamlDumpOp
 # Removed _load_yaml_content function - YAML loading now handled by Pydantic model from_yaml methods
 
 
+def parse_yaml_content_as_mapping(content: str) -> dict[str, object]:
+    """Safely parse untrusted YAML content into a plain ``dict[str, object]``.
+
+    The canonical boundary for validators that must audit the *structure* of
+    arbitrary, externally-authored YAML (node contracts, routing/bifrost config)
+    for which there is no single owning Pydantic schema. Uses ``yaml.safe_load``
+    (no code execution) and returns a mapping with ``str`` keys; an empty
+    document yields ``{}``. Returns ``{}`` for a document that does not parse to
+    a mapping (callers treat a non-mapping as "no auditable structure").
+
+    Raises:
+        ModelOnexError: If the content is not valid YAML.
+    """
+    try:
+        data = yaml.safe_load(content)
+    except yaml.YAMLError as exc:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            message=f"YAML parsing error: {exc}",
+            cause=exc,
+        )
+    if not isinstance(data, dict):
+        return {}
+    return {str(key): value for key, value in data.items()}
+
+
 def validate_file_exists(path: Path | str) -> None:
     """
     Pre-flight check that a file path exists and is a readable file.

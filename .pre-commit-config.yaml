@@ -837,6 +837,22 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      # Routing-Authority Gate (OMN-13285, W6/GAP-3).
+      # Canonical port of omnimarket's check_routing_authority.py + the folded-in
+      # validator_delegation_profile, implemented as a COMPUTE handler on
+      # ProtocolMessageHandler (pure, no I/O; CLI is the EFFECT boundary). In
+      # omnibase_core this SKIPs cleanly (no demo-path artifacts live here); it
+      # is wired so core carries the gate and runs it for any future routing
+      # surface. omnimarket runs the same module via its own config + ci.yml.
+      - id: check-routing-authority
+        name: Routing-Authority Gate (OMN-13285)
+        entry: uv run python -m omnibase_core.validation.validator_routing_authority
+        args: [--repo, omnibase_core, --repo-root, .]
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # Canonical Inference Gate (OMN-13219).
       # Fails on non-canonical model-inference surfaces: shelled model CLIs
       # (codex/claude/gemini/opencode via subprocess/exec/shutil.which) and

@@ -162,3 +162,23 @@
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
+
+- id: check-routing-authority
+  name: Routing-Authority Gate (OMN-13285)
+  description: >
+    Canonical routing-authority + delegation-profile COMPUTE validator (W6 / GAP-3, port of the omnimarket-local
+    check_routing_authority.py + the folded-in validator_delegation_profile). Proves the demo path resolves
+    provider/served_model_id/endpoint_ref/routing_source from the contract + bifrost authority; that no
+    demo-path source reads env for endpoint/provider/model, hardcodes a provider literal, or reads a fallback
+    endpoint string; that residue files stay within their env-authority baselines; that every bifrost
+    backend respects the provider-class endpoint URL shape contract (overlay-supplied -> endpoint_url
+    null; static -> complete URL; no shelled-CLI tier); and that delegation runtime profiles use symbolic
+    refs (no raw URL/IP) with consistent token limits. The validator is a COMPUTE handler on ProtocolMessageHandler
+    (pure, no I/O); the CLI is the EFFECT boundary that loads the corpus from disk. Repos pass --repo/--repo-root
+    to scope the audit. SYNC consumers' ci.yml routing-authority step.
+  language: python
+  entry: python -m omnibase_core.validation.validator_routing_authority
+  args: [--repo, omnibase_core, --repo-root, .]
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]
