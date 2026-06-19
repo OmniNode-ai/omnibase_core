@@ -116,7 +116,7 @@ def _validate_file(path: Path) -> list[str]:
     except OSError as exc:
         return [f"{path}: cannot read: {exc}"]
     try:
-        data = yaml.safe_load(text)
+        data = yaml.load(text, Loader=yaml.SafeLoader)
     except yaml.YAMLError as exc:
         return [f"{path}: YAML parse error: {exc}"]
     result = validate_delegation_profile(data)
