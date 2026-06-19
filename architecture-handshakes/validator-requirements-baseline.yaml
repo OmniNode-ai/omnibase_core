@@ -1,10 +1,11 @@
 ---
 # SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-# Accepted validator-requirement gaps for omnibase_core.
+#
+# Accepted validator-requirement gaps for omnibase_core (OMN-13291).
 #
 # This file is the ratchet baseline for validator_requirements_consumer.py.
-# Each entry is a gap the consumer would otherwise report against
+# Each gap entry is one the consumer would otherwise report against
 # architecture-handshakes/validator-requirements.yaml. The handshake gate
 # blocks:
 #
@@ -12,40 +13,118 @@
 #   - any entry here that the consumer no longer reproduces (stale baseline;
 #     must be removed once the validator is wired)
 #
-# Individual entries close as OMN-9048 sub-tickets land. Remove each entry
+# Individual gap entries close as OMN-9048 sub-tickets land. Remove each entry
 # when the corresponding wiring work lands in this repo. See
 # docs/audits/2026-04-17-validator-inventory.md for the per-validator roadmap.
 #
 # Spec consumer: OMN-9115. Baseline pattern mirrors validate-dict-any-usage
 # (pre-commit-config --max-violations), which is the established ratchet
 # precedent in this repo.
-- repo: omnibase_core
-  validator: bandit-security
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: bandit-security
-  kind: MISSING_PRE_COMMIT
-- repo: omnibase_core
-  validator: detect-secrets
-  kind: MISSING_PRE_COMMIT
-- repo: omnibase_core
-  validator: hardcoded-local-paths
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: no-hardcoded-topics
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: no-untracked-todos
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: self-gating-workflows
-  kind: MISSING_PRE_COMMIT
-- repo: omnibase_core
-  validator: single-class-per-file
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: spdx-headers
-  kind: MISSING_CI_WORKFLOW
-- repo: omnibase_core
-  validator: stub-implementations
-  kind: MISSING_CI_WORKFLOW
+#
+# ---------------------------------------------------------------------------
+# Schema (formalized OMN-13291 — W0 of the validator-standardization plan)
+# ---------------------------------------------------------------------------
+# This baseline carries a formal schema so the meta-gate verdict is objective:
+#
+#   schema_version  — {major, minor, patch}; bumped on any breaking shape
+#                     change to this file or to the gaps[] / classification
+#                     contract the consumer reads.
+#   repo            — the repo this baseline governs (must match the --repo arg).
+#   report_format   — "all_gaps": the consumer enumerates EVERY missing required
+#                     gate in a single run (never fail-on-first). This is the
+#                     only supported value; it documents the no-fail-fast intent
+#                     explicitly so reviewers cannot mistake the gate for a
+#                     fail-on-first check.
+#   classification  — per-validator status map. For each accepted gap, declares
+#                     why it is accepted (status) and which ticket tracks its
+#                     closure, scoped to the gate dimension (pre_commit /
+#                     ci_workflow). Status values:
+#                       required        — gate IS required for this repo and is
+#                                          wired (no gap; absent from gaps[]).
+#                       backlog         — accepted gap; tracked under `tracking`,
+#                                          no active wiring work yet.
+#                       in_progress     — remediation underway (ticket open).
+#                       not_applicable  — gate legitimately does not apply to
+#                                          this repo/context (e.g. layer-
+#                                          constrained spi/compat). N_A gaps are
+#                                          NOT listed in gaps[]; the consumer's
+#                                          applies_to_repos already skips them.
+#   gaps            — the ratchet list. The consumer compares its live scan
+#                     output against this set of (repo, validator, kind). A new
+#                     gap not here fails the gate; an entry here the scan no
+#                     longer reproduces (stale) also fails the gate.
+#
+# classification is metadata-only: it does NOT change which gaps are accepted
+# (only gaps[] does). It exists so the per-repo CI/PC output explains why each
+# accepted gap is tolerated and what closes it.
+schema_version:
+  major: 1
+  minor: 0
+  patch: 0
+repo: omnibase_core
+report_format: "all_gaps"
+
+classification:
+  bandit-security:
+    pre_commit: backlog
+    ci_workflow: backlog
+    tracking: OMN-9048
+  detect-secrets:
+    pre_commit: backlog
+    tracking: OMN-9048
+  hardcoded-local-paths:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  no-hardcoded-topics:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  no-untracked-todos:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  self-gating-workflows:
+    pre_commit: backlog
+    tracking: OMN-9048
+  single-class-per-file:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  spdx-headers:
+    ci_workflow: backlog
+    tracking: OMN-9048
+  stub-implementations:
+    ci_workflow: backlog
+    tracking: OMN-9048
+
+# Accepted gaps list — this is the ratchet. The consumer compares its live
+# scan output against this list. New gaps not here → gate fails. Entries here
+# the scan no longer reproduces → stale-baseline failure.
+gaps:
+  - repo: omnibase_core
+    validator: bandit-security
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: bandit-security
+    kind: MISSING_PRE_COMMIT
+  - repo: omnibase_core
+    validator: detect-secrets
+    kind: MISSING_PRE_COMMIT
+  - repo: omnibase_core
+    validator: hardcoded-local-paths
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: no-hardcoded-topics
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: no-untracked-todos
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: self-gating-workflows
+    kind: MISSING_PRE_COMMIT
+  - repo: omnibase_core
+    validator: single-class-per-file
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: spdx-headers
+    kind: MISSING_CI_WORKFLOW
+  - repo: omnibase_core
+    validator: stub-implementations
+    kind: MISSING_CI_WORKFLOW

@@ -352,6 +352,142 @@ def test_report_exit_code_zero_on_clean_repo(tmp_path: Path, spec_data: dict) ->
     assert gaps == [], f"expected clean repo to produce zero gaps, got: {gaps}"
 
 
+# ---------------------------------------------------------------------------
+# Baseline loading — structured + legacy formats (OMN-13291)
+# ---------------------------------------------------------------------------
+
+
+def test_load_baseline_legacy_flat_list(tmp_path: Path) -> None:
+    """The legacy flat-list baseline format must still load to the same
+    ``(repo, validator, kind)`` tuple set (backward compatibility)."""
+    from omnibase_core.validation.validator_requirements_consumer import _load_baseline
+
+    baseline = tmp_path / "baseline.yaml"
+    baseline.write_text(
+        yaml.safe_dump(
+            [
+                {
+                    "repo": "omnibase_core",
+                    "validator": "bandit-security",
+                    "kind": "MISSING_CI_WORKFLOW",
+                }
+            ]
+        )
+    )
+    accepted = _load_baseline(baseline)
+    assert accepted == {("omnibase_core", "bandit-security", "MISSING_CI_WORKFLOW")}
+
+
+def test_load_baseline_structured_schema(tmp_path: Path) -> None:
+    """The structured baseline (schema_version + report_format + classification
+    + gaps) must load the gaps[] list identically to the legacy flat list."""
+    from omnibase_core.validation.validator_requirements_consumer import _load_baseline
+
+    baseline = tmp_path / "baseline.yaml"
+    baseline.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": {"major": 1, "minor": 0, "patch": 0},
+                "repo": "omnibase_core",
+                "report_format": "all_gaps",
+                "classification": {
+                    "bandit-security": {
+                        "pre_commit": "backlog",
+                        "tracking": "OMN-9048",
+                    }
+                },
+                "gaps": [
+                    {
+                        "repo": "omnibase_core",
+                        "validator": "bandit-security",
+                        "kind": "MISSING_CI_WORKFLOW",
+                    },
+                    {
+                        "repo": "omnibase_core",
+                        "validator": "detect-secrets",
+                        "kind": "MISSING_PRE_COMMIT",
+                    },
+                ],
+            }
+        )
+    )
+    accepted = _load_baseline(baseline)
+    assert accepted == {
+        ("omnibase_core", "bandit-security", "MISSING_CI_WORKFLOW"),
+        ("omnibase_core", "detect-secrets", "MISSING_PRE_COMMIT"),
+    }
+
+
+def test_load_baseline_structured_missing_gaps_key_fails(tmp_path: Path) -> None:
+    """A dict-root baseline without a 'gaps' list key must fail loud — a typo
+    that silently dropped every accepted gap would turn the ratchet permissive."""
+    from omnibase_core.validation.validator_requirements_consumer import _load_baseline
+
+    baseline = tmp_path / "baseline.yaml"
+    baseline.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": {"major": 1, "minor": 0, "patch": 0},
+                "repo": "omnibase_core",
+                "report_format": "all_gaps",
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="missing a 'gaps' list key"):
+        _load_baseline(baseline)
+
+
+def test_load_baseline_rejects_invalid_kind_in_gaps(tmp_path: Path) -> None:
+    """An unknown gap kind anywhere in gaps[] must fail loud (no silent drift)."""
+    from omnibase_core.validation.validator_requirements_consumer import _load_baseline
+
+    baseline = tmp_path / "baseline.yaml"
+    baseline.write_text(
+        yaml.safe_dump(
+            {
+                "gaps": [
+                    {
+                        "repo": "omnibase_core",
+                        "validator": "bandit-security",
+                        "kind": "NOT_A_REAL_KIND",
+                    }
+                ]
+            }
+        )
+    )
+    with pytest.raises(ValueError, match="kind invalid"):
+        _load_baseline(baseline)
+
+
+def test_canonical_baseline_is_structured_and_clean() -> None:
+    """The repo's own canonical baseline must use the structured schema and the
+    consumer scan of omnibase_core must reproduce exactly the baseline gaps
+    (no new gaps, no stale entries) — proving the meta-gate is green on a clean
+    tree for the source-of-truth repo itself."""
+    import yaml as _yaml
+
+    from omnibase_core.validation.validator_requirements_consumer import (
+        _load_baseline,
+    )
+
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    baseline_path = (
+        repo_root / "architecture-handshakes" / "validator-requirements-baseline.yaml"
+    )
+    raw = _yaml.safe_load(baseline_path.read_text())
+    assert isinstance(raw, dict), "canonical baseline must use the structured schema"
+    assert raw["report_format"] == "all_gaps"
+    assert raw["repo"] == "omnibase_core"
+    assert isinstance(raw["schema_version"], dict)
+
+    accepted = _load_baseline(baseline_path)
+    consumer = ValidatorRequirementsConsumer.from_spec_path(SPEC_PATH)
+    gaps = consumer.scan_repo(repo_name="omnibase_core", repo_root=repo_root)
+    observed = {(g.repo, g.validator, g.kind.value) for g in gaps}
+    assert observed - accepted == set(), "new gap not in baseline (regression)"
+    assert accepted - observed == set(), "stale baseline entry no longer reproduced"
+
+
 def test_scan_gap_model_is_frozen() -> None:
     """ModelValidatorRequirementGap must be a frozen Pydantic model (per repo pydantic
     conventions) — gaps are facts about a point-in-time scan and must not be

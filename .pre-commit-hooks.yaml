@@ -162,3 +162,19 @@
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
+
+- id: validate-validator-requirements
+  name: Validator Requirements Fleet Gate (OMN-13291)
+  description: >
+    Enforce architecture-handshakes/validator-requirements.yaml for a downstream repo (OMN-9115). Reads
+    the spec from the installed omnibase_core package and cross-references the target repo's .pre-commit-config.yaml
+    + .github/workflows/*.yml. Exits non-zero and reports ALL missing gates (never fail-on-first) when
+    any required validator is absent or wrapped in a silent-skip shim. Accepts a per-repo baseline YAML
+    (structured schema_version/classification/gaps format, or legacy flat-list) for the ratchet pattern.
+    Usage: add to your repo's .pre-commit-config.yaml referencing omnibase_core and pass --repo <your-repo-name>
+    --baseline architecture-handshakes/validator-requirements-baseline.yaml. See OMN-13291 and architecture-handshakes/validator-requirements-baseline.yaml.
+  language: python
+  entry: python -m omnibase_core.validation.validator_requirements_consumer
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]
