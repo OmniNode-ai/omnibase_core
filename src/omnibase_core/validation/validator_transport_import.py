@@ -26,7 +26,7 @@ Suppression:
     Add ``# transport-import-ok: <reason>`` anywhere on the import line to suppress
     a single violation::
 
-        import httpx  # transport-import-ok: infra boundary file, not a node
+        >>> import httpx  # transport-import-ok: infra boundary file, not a node
 
 Schema Version:
     v1.0.0 - Initial port from omniintelligence/omnimemory scripts (OMN-13283).
