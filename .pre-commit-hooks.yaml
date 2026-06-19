@@ -162,3 +162,29 @@
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
+
+- id: validate-no-transport-imports
+  name: Transport Import Guard (ARCH-002, OMN-13283)
+  description: >
+    AST-based gate banning transport/I/O library imports (httpx, aiohttp, requests, aiokafka, asyncpg,
+    redis, grpc, websockets, ...) in ONEX node code. Nodes declare intent via contracts; runtime owns
+    all transport plumbing. TYPE_CHECKING-guarded imports are allowed. Canonical fleet-wide replacement
+    for the per-repo validate_no_transport_imports.py scripts. Suppression: # transport-import-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validation.validator_transport_import
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: node-purity
+  name: Node Purity Gate (no I/O in nodes, OMN-13283)
+  description: >
+    AST-based gate enforcing the pure-compute / no-I/O invariant in ONEX node code. Flags net-client imports,
+    env-access (os.getenv / os.environ[...]), and file-io (open(), Path.read_text(), logging FileHandler)
+    inside files under a 'nodes' directory. Canonical fleet-wide replacement for the per-repo io_audit
+    packages. Suppression: # node-purity-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validation.validator_node_purity
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
