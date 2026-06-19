@@ -35,6 +35,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import cast
 
 from omnibase_core.nodes.node_routing_authority_check_compute.handler import (
     ModelResidueEntry,
@@ -108,9 +109,16 @@ def _find_repo_root(start: Path) -> Path:
 
 def _print_result(result: ModelRoutingAuthorityCheckOutput) -> None:
     if result.passed:
-        entries = result.positive_proof.get("entries", [])
-        residue_files = len(result.residue_audit.get("files", []))
-        shape_backends = len(result.provider_endpoint_shape_audit.get("backends", []))
+        entries = cast(
+            list[dict[str, object]], result.positive_proof.get("entries", [])
+        )
+        residue_files = len(cast(list[object], result.residue_audit.get("files", [])))
+        shape_backends = len(
+            cast(
+                list[object],
+                result.provider_endpoint_shape_audit.get("backends", []),
+            )
+        )
         print(
             "[routing-authority-gate] PASS — "
             f"{len(entries)} demo-path entry(ies) resolve from authority; "
@@ -127,18 +135,31 @@ def _print_result(result: ModelRoutingAuthorityCheckOutput) -> None:
         return
 
     print("[routing-authority-gate] FAIL")
-    for err in result.positive_proof.get("errors", []):
+    positive_errors = cast(list[object], result.positive_proof.get("errors", []))
+    negative_errors = cast(list[object], result.negative_audit.get("errors", []))
+    negative_files = cast(
+        list[dict[str, object]], result.negative_audit.get("files", [])
+    )
+    residue_errors = cast(list[object], result.residue_audit.get("errors", []))
+    residue_violations = cast(
+        list[object], result.residue_audit.get("new_violations", [])
+    )
+    shape_violations = cast(
+        list[object], result.provider_endpoint_shape_audit.get("violations", [])
+    )
+    for err in positive_errors:
         print(f"  positive-proof error: {err}")
-    for err in result.negative_audit.get("errors", []):
+    for err in negative_errors:
         print(f"  negative-audit error: {err}")
-    for fr in result.negative_audit.get("files", []):
-        for v in fr.get("violations", []):
+    for fr in negative_files:
+        violations = cast(list[object], fr.get("violations", []))
+        for v in violations:
             print(f"  negative-audit violation: {v}")
-    for err in result.residue_audit.get("errors", []):
+    for err in residue_errors:
         print(f"  residue-audit error: {err}")
-    for v in result.residue_audit.get("new_violations", []):
+    for v in residue_violations:
         print(f"  residue-audit new violation: {v}")
-    for v in result.provider_endpoint_shape_audit.get("violations", []):
+    for v in shape_violations:
         print(f"  shape-audit violation: {v}")
     print(
         "\nFix: every demo-path routing field must resolve from contract / "
