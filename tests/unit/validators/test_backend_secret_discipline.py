@@ -41,15 +41,13 @@ pytestmark = pytest.mark.unit
 
 
 def test_literal_pem_credential_detected() -> None:
-    leaked = (
-        'endpoint_url: null\n  service_account: "-----BEGIN PRIVATE KEY-----MIIabc"\n'
-    )
+    leaked = 'endpoint_url: null\n  service_account: "-----BEGIN PRIVATE KEY-----MIIabc"\n'  # pragma: allowlist secret
     findings = mod.scan_literal_credentials("fake.yaml", leaked)
     assert any("pem-private-key" in f.message for f in findings)
 
 
 def test_literal_google_api_key_detected() -> None:
-    leaked = 'api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"\n'
+    leaked = 'api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"\n'  # pragma: allowlist secret
     findings = mod.scan_literal_credentials("fake.yaml", leaked)
     assert any("google-api-key" in f.message for f in findings)
 
@@ -69,13 +67,13 @@ def test_service_account_json_markers_detected() -> None:
 
 
 def test_clean_literal_scan_passes() -> None:
-    clean = 'secret_ref: "llm.vertex.access_token"\nendpoint_url: null\n'
+    clean = 'secret_ref: "llm.vertex.access_token"\nendpoint_url: null\n'  # pragma: allowlist secret
     assert mod.scan_literal_credentials("fake.yaml", clean) == []
 
 
 def test_suppression_token_suppresses_literal() -> None:
     leaked = (
-        'api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"  '
+        'api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"  '  # pragma: allowlist secret
         "# backend-secret-ok: synthetic test fixture\n"
     )
     assert mod.scan_literal_credentials("fake.yaml", leaked) == []
@@ -107,7 +105,7 @@ def test_mutually_exclusive_auth_detected() -> None:
                 "backend_id": "cloud-both",
                 "tier": "cheap_cloud",
                 "credential_ref": "llm.vertex.adc",
-                "secret_ref": "llm.gemini.api_key",
+                "secret_ref": "llm.gemini.api_key",  # pragma: allowlist secret
             }
         ]
     }
@@ -121,7 +119,7 @@ def test_cloud_backend_with_secret_ref_passes() -> None:
             {
                 "backend_id": "cloud-gemini-flash",
                 "tier": "cheap_cloud",
-                "secret_ref": "llm.gemini.api_key",
+                "secret_ref": "llm.gemini.api_key",  # pragma: allowlist secret
             }
         ]
     }
@@ -192,7 +190,7 @@ def test_build_report_leaked_credential_fails(tmp_path: Path) -> None:
         "backends:\n"
         "  - backend_id: cloud-gemini-flash\n"
         "    tier: cheap_cloud\n"
-        '    api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"\n',
+        '    api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"\n',  # pragma: allowlist secret
     )
     report = mod.build_report([cfg], cwd=tmp_path)
     assert not report["passed"]
@@ -222,7 +220,8 @@ def test_non_backends_config_scanned_for_literals_only(tmp_path: Path) -> None:
 
 def test_non_config_file_ignored(tmp_path: Path) -> None:
     src = _write(
-        tmp_path / "module.py", 'KEY = "AIzaSy0123456789abcdefghijklmnopqrstuvwx"\n'
+        tmp_path / "module.py",
+        'KEY = "AIzaSy0123456789abcdefghijklmnopqrstuvwx"\n',  # pragma: allowlist secret
     )
     report = mod.build_report([src], cwd=tmp_path)
     # .py is not a scanned config suffix → no findings.
