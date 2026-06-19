@@ -240,6 +240,23 @@
   pass_filenames: false
   stages: [pre-commit]
 
+- id: check-canonical-inference
+  name: Canonical Inference Gate (OMN-13219)
+  description: >
+    Ratchet gate: reject NEW non-canonical model-inference surfaces. Inference must go through the contract-driven
+    routing authority (bus / inference-effect / Bifrost), never a shelled model CLI (codex/claude/gemini/opencode)
+    and never a hardcoded/env-resolved model or provider (*_MODEL, *_MODEL_ID, *_PROVIDER env reads).
+    Existing violations are grandfathered by sha256 fingerprint in src/omnibase_core/validation/baselines/canonical_inference_baseline.json;
+    only NEW fingerprints fail the gate. Structural carve-out: a model-CLI shell-out is permitted iff
+    the enclosing node contract.yaml declares descriptor.agent_invocation: true (OMN-13249 — a contract
+    fact, never a free-text comment). Suppression: # canonical-inference-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validation.validator_canonical_inference
+  args: [--repo, omnibase_core, --repo-root, .]
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: validate-no-transport-imports
   name: Transport Import Guard (ARCH-002, OMN-13283)
   description: >
