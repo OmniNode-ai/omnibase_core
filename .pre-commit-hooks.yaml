@@ -209,6 +209,37 @@
   always_run: true
   stages: [pre-commit]
 
+- id: check-enum-governance
+  name: ONEX Enum Governance Validation (OMN-13287)
+  description: >
+    Enforce ONEX enum governance across Python source (canonical core validator omnibase_core.validation.checker_enum_governance,
+    W10B consolidation). Rules: ENUM_001 enum members must be UPPER_SNAKE_CASE; ENUM_002 module-scope
+    Literal type aliases carrying status/type vocabulary with 3+ values should be Enums; ENUM_003 duplicate
+    string values shared across two or more Enum classes (cross-file). The validator discovers files under
+    the positional target; consumer repos override the target via args: [<src-dir>]. Suppression: # enum-governance-ok:
+    <reason>.
+  language: python
+  entry: python -m omnibase_core.validation.checker_enum_governance
+  args: [src/]
+  types: [python]
+  pass_filenames: false
+  stages: [pre-commit]
+
+- id: check-no-backward-compat
+  name: ONEX No Backward Compatibility Anti-Pattern Detection (OMN-13287)
+  description: >
+    Reject backward-compatibility anti-patterns (canonical core script scripts/validation/validate-no-backward-compatibility.py,
+    W10B consolidation): @deprecated decorators, backward-compat comments/docstrings, _legacy/_compat/_backward
+    re-export aliases, and Protocol* backward-compat conditions. Scans the directories passed via --dir
+    (default src/); file-level architectural exemptions live in the script's ARCHITECTURAL_EXEMPTIONS.
+    language: script runs the file from the checked-out hook repo (the script is not packaged in the wheel).
+  language: script
+  entry: scripts/validation/validate-no-backward-compatibility.py
+  args: [--dir, src/]
+  types: [python]
+  pass_filenames: false
+  stages: [pre-commit]
+
 - id: validate-no-transport-imports
   name: Transport Import Guard (ARCH-002, OMN-13283)
   description: >
