@@ -55,9 +55,10 @@ __all__ = [
     "main",
 ]
 
-# Contract-style topic names (onex.{cmd|evt}.{service}.{event}.v{N}). The runner
-# is the producer of the command and the consumer of the result; the handler is
-# the consumer of the command and producer of the result.
+# Contract-style topic names (onex.{cmd|evt}.{service}.{event}.v{N}), sourced from
+# the canonical topic registry (constants_event_types) rather than inline literals.
+# The runner is the producer of the command and the consumer of the result; the
+# handler is the consumer of the command and producer of the result.
 COMMAND_TOPIC: Final[str] = TOPIC_VALIDATION_LOCAL_PATH_SCAN_REQUESTED_CMD
 RESULT_TOPIC: Final[str] = TOPIC_VALIDATION_LOCAL_PATH_SCAN_COMPLETED_EVENT
 
