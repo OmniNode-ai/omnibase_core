@@ -58,19 +58,19 @@ backends:
     endpoint_url: http://localhost:8080/v1/chat/completions
 """
 
-_LEAKED_PEM_YAML = """\
-backends:
-  - backend_id: cloud-bad
-    tier: cheap_cloud
-    private_key: "-----BEGIN PRIVATE KEY-----MIIABC"
-"""
+_LEAKED_PEM_YAML = (
+    "backends:\n"
+    "  - backend_id: cloud-bad\n"
+    "    tier: cheap_cloud\n"
+    '    private_key: "-----BEGIN PRIVATE KEY-----MIIABC"\n'  # pragma: allowlist secret
+)
 
-_LEAKED_SA_PRIVATE_KEY_YAML = """\
-backends:
-  - backend_id: cloud-bad
-    tier: cheap_cloud
-    config: '"private_key": "-----BEGIN PRIVATE KEY-----ABC"'
-"""
+_LEAKED_SA_PRIVATE_KEY_YAML = (
+    "backends:\n"
+    "  - backend_id: cloud-bad\n"
+    "    tier: cheap_cloud\n"
+    '    config: \'"private_key": "-----BEGIN PRIVATE KEY-----ABC"\'\n'  # pragma: allowlist secret
+)
 
 _LEAKED_CLIENT_EMAIL_YAML = """\
 value: '"client_email": "svc@proj.iam.gserviceaccount.com"'
@@ -81,13 +81,11 @@ config:
   auth_header: "Bearer ya29.LONG_TOKEN_HERE_ABCDEFGHIJKLMNOPQRSTU"
 """
 
-_LEAKED_OPENAI_KEY_YAML = """\
-api_key: "sk-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst"
-"""
+_LEAKED_OPENAI_KEY_YAML = 'api_key: "sk-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst"\n'  # pragma: allowlist secret
 
-_LEAKED_GOOGLE_KEY_YAML = """\
-api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345678"
-"""
+_LEAKED_GOOGLE_KEY_YAML = (
+    'api_key: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345678"\n'  # pragma: allowlist secret
+)
 
 _LEAKED_GCP_OAUTH_YAML = """\
 token: "ya29.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst"
@@ -444,7 +442,7 @@ def test_cli_fails_on_leaked_credential(tmp_path: Path) -> None:
     """Fail-closed proof: planted literal private_key → CLI exits 1."""
     config = tmp_path / "leaked.yaml"
     config.write_text(
-        'service_account: \'"private_key": "-----BEGIN PRIVATE KEY-----MIIABC"\'\n',
+        'service_account: \'"private_key": "-----BEGIN PRIVATE KEY-----MIIABC"\'\n',  # pragma: allowlist secret
         encoding="utf-8",
     )
 
@@ -495,7 +493,7 @@ def test_cli_json_flag_clean(tmp_path: Path) -> None:
 def test_cli_json_flag_violation(tmp_path: Path) -> None:
     config = tmp_path / "bad.yaml"
     config.write_text(
-        'value: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345678"\n',
+        'value: "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ012345678"\n',  # pragma: allowlist secret
         encoding="utf-8",
     )
 
