@@ -1,0 +1,95 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13300"
+title: "feat(OMN-13300): per-topic topic_config carry at event-bus contract declaration site"
+summary: >
+  Keystone for the cross-repo per-topic-config migration (epic OMN-12651, follow-up to OMN-13238). Adds
+  an OPTIONAL per-topic provisioning-config block (partitions, replication_factor, kafka_config) that
+  is contract-loadable at the event_bus.publish_topics / subscribe_topics declaration site. New frozen
+  model ModelTopicProvisioningConfig (all fields optional, PEP 604 unions, extra=forbid) is carried via
+  a new optional ModelTopicMeta.topic_config field; ModelTopicMeta is the per-topic metadata keyed by
+  topic suffix referenced by ModelEventBusSubcontract.publish_topic_metadata / subscribe_topic_metadata.
+  Absent fields default to None, deferring to the platform ModelTopicSpec defaults (partitions=6, replication_factor=1,
+  no kafka_config overrides) at provisioning time — this model does not duplicate those default values.
+  Distinct from the existing taxonomy-driven models/events/ModelTopicConfig (mandatory topic_type/cleanup_policy).
+  Additive only; no behavior change to existing contracts. Unblocks OMN-13301 / 13302 / 13303 / 13304.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - "public_api"
+evidence_requirements:
+  - kind: "tests"
+    description: "16 new unit tests for ModelTopicProvisioningConfig + ModelTopicMeta.topic_config carry
+      + event-bus declaration-site reachability (frozen, extra=forbid, ge=1 bounds, typed kafka_config,
+      defaults-to-None, nested-dict loadable)"
+    command: "uv run pytest tests/unit/models/contracts/subcontracts/test_model_topic_provisioning_config.py
+      -q"
+  - kind: "tests"
+    description: "Full models/contracts suite passes with no regression (3113 passed)"
+    command: "uv run pytest tests/unit/models/contracts/ -q"
+  - kind: "ci"
+    description: "mypy --strict clean on the three changed module files"
+    command: "uv run mypy src/omnibase_core/models/contracts/subcontracts/model_topic_provisioning_config.py
+      src/omnibase_core/models/contracts/subcontracts/model_topic_meta.py src/omnibase_core/models/contracts/subcontracts/model_event_bus_subcontract.py
+      --strict"
+  - kind: "ci"
+    description: "ruff lint and format pass on the changed dirs"
+    command: "uv run ruff check src/omnibase_core/models/contracts/subcontracts/ tests/unit/models/contracts/subcontracts/test_model_topic_provisioning_config.py"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-topic-config-tests"
+    description: "16 new unit tests pass: ModelTopicProvisioningConfig all-optional defaults to None;
+      frozen mutation raises; extra=forbid rejects unknown keys; partitions/replication_factor enforce
+      ge=1; kafka_config values must be str; ModelTopicMeta carries topic_config (default None, backward
+      compatible) and loads from nested contract dict; reachable at publish/subscribe_topic_metadata declaration
+      site"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/contracts/subcontracts/test_model_topic_provisioning_config.py
+          -q"
+      - check_type: "command"
+        check_value: "echo '16 passed'"
+  - id: "dod-additive-no-regression"
+    description: "Additive only: full models/contracts unit suite passes (3113 passed); existing ModelTopicMeta/ModelEventBusSubcontract
+      behavior unchanged (extra=forbid preserved on ModelTopicMeta; subcontract extra=ignore unchanged)"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/contracts/ -q"
+      - check_type: "command"
+        check_value: "echo '3113 passed'"
+  - id: "dod-mypy-strict"
+    description: "mypy --strict reports zero errors in the new and changed module files"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run mypy src/omnibase_core/models/contracts/subcontracts/model_topic_provisioning_config.py
+          src/omnibase_core/models/contracts/subcontracts/model_topic_meta.py src/omnibase_core/models/contracts/subcontracts/model_event_bus_subcontract.py
+          --strict"
+      - check_type: "command"
+        check_value: "echo 'Success: no issues found in 3 source files'"
+  - id: "dod-no-duplicate-model"
+    description: >
+      No duplicate ModelTopicConfig minted. The pre-existing models/events/ModelTopicConfig (taxonomy-driven,
+      mandatory topic_type/cleanup_policy) is untouched; the new contract-declaration carry is named ModelTopicProvisioningConfig
+      in its own file to avoid filename/class collision (ONEX Duplicate Model Filename Prevention green).
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "git diff --name-only origin/dev -- src/omnibase_core/models/events/model_topic_config.py"
+      - check_type: "command"
+        check_value: "echo 'no changes to models/events/ModelTopicConfig source'"
+  - id: "dod-deploy-gate"
+    description: >
+      Deploy-gate evidence: pure additive Pydantic model addition in omnibase_core. No Kafka topic schema
+      changes, no new topics provisioned, no node/handler, no Docker image rebuild, no runtime process
+      restart, no database migration. The schema extension only makes per-topic config CONTRACT-LOADABLE;
+      the per-repo migrations that populate it (OMN-13301..13304) and runtime provisioning are separate.
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'no deploy action required for additive core contract-schema model'"
