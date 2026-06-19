@@ -148,6 +148,36 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-delegation-profile
+  name: Delegation Runtime Profile Validator (OMN-13306)
+  description: >
+    Schema + semantic validation of delegation runtime profile YAML files. Rejects raw URLs/IPs in bifrost_endpoint_ref
+    fields, max_tokens_hard_limit below max_tokens_default, and URL-form bootstrap_servers. Wired as pre-commit
+    hook from previously-unwired validator_delegation_profile (OMN-13306 W6b). Pass filenames: true —
+    pre-commit invokes per staged YAML file. Suppression: none; fix the profile to use symbolic refs and
+    valid token limits. See: OMN-13306 (W6b).
+  language: python
+  entry: python -m omnibase_core.validation.delegation.validator_delegation_profile
+  types: [yaml]
+  files: (delegation.*runtime_profile|runtime_profile.*delegation)\.ya?ml$
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-routing-authority
+  name: Routing Authority Gate (OMN-13306)
+  description: >
+    Verifies that model-routing fields (provider, served_model_id, endpoint_ref, routing_source) resolve
+    from contract/overlay/routing authority rather than env vars, hardcoded literals, or CLI shell-outs.
+    Runs four audits: positive route-source proof, negative env-read/literal scan over demo-path sources,
+    residue ratchet over known debt files, and provider-class endpoint URL shape audit over bifrost config.
+    Ported from omnimarket check_routing_authority.py (OMN-12821/12877/12883) into a canonical COMPUTE
+    handler. Suppression: # contract-config-ok for bootstrap-config-loader bootstrap env reads. See: OMN-13306
+    (W6b).
+  language: python
+  entry: python -m omnibase_core.validation.validator_routing_authority
+  pass_filenames: false
+  stages: [pre-commit]
+
 - id: check-url-authority
   name: URL Authority Gate (OMN-12818)
   description: >
@@ -167,12 +197,38 @@
   name: Block Plugin* daemon/service/worker classes (OMN-13284)
   description: >
     Canonical Plugin* lifecycle guard (relocated from omnibase_infra, OMN-10123). AST-based: a class named
-    Plugin* may only be a deterministic compute plugin (direct PluginComputeBase subclass). Any Plugin* class
-    whose own name or a base name contains a lifecycle term (Daemon, Service, Worker, Runtime, Consumer,
+    Plugin* may only be a deterministic compute plugin (direct PluginComputeBase subclass). Any Plugin*
+    class whose own name or a base name contains a lifecycle term (Daemon, Service, Worker, Runtime, Consumer,
     Publisher, Controller, Server, Client) owns a forbidden lifecycle — move it behind an ONEX node/handler/
     contract. Consumers reference this hook by id to enforce the canonical 3-primitives architecture (OMN-12525).
   language: python
   entry: python -m omnibase_core.validators.no_plugin_daemon_classes
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: validate-no-transport-imports
+  name: Transport Import Guard (ARCH-002, OMN-13283)
+  description: >
+    AST-based gate banning transport/I/O library imports (httpx, aiohttp, requests, aiokafka, asyncpg,
+    redis, grpc, websockets, ...) in ONEX node code. Nodes declare intent via contracts; runtime owns
+    all transport plumbing. TYPE_CHECKING-guarded imports are allowed. Canonical fleet-wide replacement
+    for the per-repo validate_no_transport_imports.py scripts. Suppression: # transport-import-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validation.validator_transport_import
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: node-purity
+  name: Node Purity Gate (no I/O in nodes, OMN-13283)
+  description: >
+    AST-based gate enforcing the pure-compute / no-I/O invariant in ONEX node code. Flags net-client imports,
+    env-access (os.getenv / os.environ[...]), and file-io (open(), Path.read_text(), logging FileHandler)
+    inside files under a 'nodes' directory. Canonical fleet-wide replacement for the per-repo io_audit
+    packages. Suppression: # node-purity-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.validation.validator_node_purity
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
