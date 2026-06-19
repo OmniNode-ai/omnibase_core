@@ -252,6 +252,19 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-backend-secret-discipline
+  name: Backend Secret-Ref Discipline Gate (OMN-13305)
+  description: >
+    Canonical COMPUTE hook for backend secret discipline. Rejects literal PEM, service-account JSON, bearer
+    tokens, sk-/AIza/ya29-style keys in committed routing-authority config, and requires every authenticated
+    cloud backend to declare a logical secret reference (secret_ref / api_key_ref / api_key_env / credential_ref).
+    ADC and API-key auth are mutually exclusive per backend.
+  language: python
+  entry: python -m omnibase_core.validation.validator_backend_secret_discipline
+  files: \.(ya?ml|json)$
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-enum-governance
   name: ONEX Enum Governance Validation (OMN-13287)
   description: >
