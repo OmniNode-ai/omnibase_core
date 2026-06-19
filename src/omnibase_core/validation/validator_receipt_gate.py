@@ -359,6 +359,56 @@ def _check_adversarial_invariants_validated(
     return None
 
 
+def _load_bound_receipt(
+    receipt_path: Path,
+    ticket_id: str,
+    evidence_item_id: str,
+    check_type: str,
+) -> tuple[ModelDodReceipt | None, str | None]:
+    """Load, validate, and path-bind a receipt from its canonical location."""
+    if not receipt_path.exists():
+        return (None, f"no receipt at {receipt_path}")
+
+    try:
+        with receipt_path.open(encoding="utf-8") as fh:
+            raw = yaml.safe_load(fh)
+    except (yaml.YAMLError, OSError) as e:
+        return (None, f"corrupt receipt at {receipt_path}: {e}")
+
+    # Pre-schema adversarial guard: missing/empty verifier, probe_command,
+    # probe_stdout fields must produce a clear "missing <field>" message
+    # before pydantic's bulk "Field required" error fires (OMN-9788).
+    adversarial_raw_failure = _check_adversarial_invariants_raw(raw, receipt_path)
+    if adversarial_raw_failure is not None:
+        return (None, adversarial_raw_failure)
+
+    try:
+        receipt = ModelDodReceipt.model_validate(raw)
+    except ValidationError as e:
+        return (None, f"invalid receipt schema at {receipt_path}: {e}")
+
+    if receipt.ticket_id != ticket_id:
+        return (
+            None,
+            f"receipt at {receipt_path} declares ticket_id={receipt.ticket_id!r}, "
+            f"expected {ticket_id!r}",
+        )
+    if receipt.evidence_item_id != evidence_item_id:
+        return (
+            None,
+            f"receipt at {receipt_path} declares evidence_item_id="
+            f"{receipt.evidence_item_id!r}, expected {evidence_item_id!r}",
+        )
+    if receipt.check_type != check_type:
+        return (
+            None,
+            f"receipt at {receipt_path} declares check_type={receipt.check_type!r}, "
+            f"expected {check_type!r}",
+        )
+
+    return (receipt, None)
+
+
 def _check_one_receipt(
     ticket_id: str,
     evidence_item_id: str,
@@ -379,42 +429,15 @@ def _check_one_receipt(
             reason=reason,
         )
 
-    if not receipt_path.exists():
-        return fail(f"no receipt at {receipt_path}")
-
-    try:
-        with receipt_path.open(encoding="utf-8") as fh:
-            raw = yaml.safe_load(fh)
-    except (yaml.YAMLError, OSError) as e:
-        return fail(f"corrupt receipt at {receipt_path}: {e}")
-
-    # Pre-schema adversarial guard: missing/empty verifier, probe_command,
-    # probe_stdout fields must produce a clear "missing <field>" message
-    # before pydantic's bulk "Field required" error fires (OMN-9788).
-    adversarial_raw_failure = _check_adversarial_invariants_raw(raw, receipt_path)
-    if adversarial_raw_failure is not None:
-        return fail(adversarial_raw_failure)
-
-    try:
-        receipt = ModelDodReceipt.model_validate(raw)
-    except ValidationError as e:
-        return fail(f"invalid receipt schema at {receipt_path}: {e}")
-
-    if receipt.ticket_id != ticket_id:
-        return fail(
-            f"receipt at {receipt_path} declares ticket_id={receipt.ticket_id!r}, "
-            f"expected {ticket_id!r}"
-        )
-    if receipt.evidence_item_id != evidence_item_id:
-        return fail(
-            f"receipt at {receipt_path} declares evidence_item_id="
-            f"{receipt.evidence_item_id!r}, expected {evidence_item_id!r}"
-        )
-    if receipt.check_type != check_type:
-        return fail(
-            f"receipt at {receipt_path} declares check_type={receipt.check_type!r}, "
-            f"expected {check_type!r}"
-        )
+    receipt, receipt_failure = _load_bound_receipt(
+        receipt_path,
+        ticket_id,
+        evidence_item_id,
+        check_type,
+    )
+    if receipt_failure is not None:
+        return fail(receipt_failure)
+    assert receipt is not None
 
     # Post-schema adversarial guard: surface ADVISORY / PENDING / self-
     # attestation with a message that names the rule (OMN-9788).
