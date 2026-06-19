@@ -179,8 +179,16 @@ def scan_source(
                 and isinstance(func.value.value, ast.Name)
                 and func.value.value.id == "os"
             )
-            if (is_getenv or is_environ_get) and node.args:
-                key = _arg_name(node.args[0])
+            key_node: ast.expr | None = None
+            if node.args:
+                key_node = node.args[0]
+            else:
+                for keyword in node.keywords:
+                    if keyword.arg == "key":
+                        key_node = keyword.value
+                        break
+            if (is_getenv or is_environ_get) and key_node is not None:
+                key = _arg_name(key_node)
                 if key in _GITHUB_TOKEN_ENV_NAMES:
                     lineno = node.lineno
                     end_lineno = getattr(node, "end_lineno", node.lineno)
@@ -305,10 +313,10 @@ def main(argv: list[str] | None = None) -> int:
         if not args.report:
             print(  # T201 — CLI output for pre-commit gate
                 "\nFix: replace os.environ/os.getenv with:\n"
-                "    from omnimarket.nodes.contract_topics import contract_secret_ref\n"
-                "    from omnimarket.inference.secret_store_resolver import resolve_api_key\n"
                 "    ref = contract_secret_ref(CONTRACT_PATH, 'GITHUB_TOKEN')\n"  # env-var-ok: fix guidance text
                 "    secret = resolve_api_key(ref)\n"
+                "Use the repo-local contract_secret_ref and resolve_api_key APIs; "
+                "see OMN-13310 / OMN-12856 for the contract-secret pattern.\n"
                 "(OMN-13310 / OMN-12856)"
             )
             return 1

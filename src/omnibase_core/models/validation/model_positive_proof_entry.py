@@ -11,7 +11,11 @@ from pydantic import BaseModel, ConfigDict
 class ModelPositiveProofEntry(BaseModel):
     """Route-source proof for one demo-path contract."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+    )
 
     contract: str
     provider: str | None

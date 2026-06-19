@@ -156,7 +156,7 @@
     (OMN-12856 / OMN-13310). Excludes tests/, conftest.py, __pycache__, .pyc files. Suppression: # omn-allow-env-read
     or # ONEX_EXCLUDE on the offending line. Implemented as a canonical COMPUTE handler on ProtocolMessageHandler.
   language: python
-  entry: python -m omnibase_core.validation.validator_github_token_env_reads
+  entry: uv run python -m omnibase_core.validation.validator_github_token_env_reads
   types: [python]
   pass_filenames: true
   stages: [pre-commit]

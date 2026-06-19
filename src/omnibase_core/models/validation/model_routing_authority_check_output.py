@@ -11,7 +11,11 @@ from pydantic import BaseModel, ConfigDict
 class ModelRoutingAuthorityCheckOutput(BaseModel):
     """Output of the routing-authority check."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+    )
 
     passed: bool
     positive_ok: bool

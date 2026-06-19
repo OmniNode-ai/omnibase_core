@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import textwrap
 from pathlib import Path
+from typing import cast
 from uuid import uuid4
 
 import pytest
@@ -97,6 +98,14 @@ _VIOLATION_FIXTURES: list[tuple[str, str]] = [
     (
         'import os\ntoken = os.environ.get("GITHUB_TOKEN")\n',
         "os.environ.get('GITHUB_TOKEN')",
+    ),
+    (
+        'import os\ntoken = os.environ.get(key="GITHUB_TOKEN")\n',
+        "os.environ.get('GITHUB_TOKEN')",
+    ),
+    (
+        'import os\ntoken = os.getenv(key="GH_TOKEN")\n',
+        "os.getenv('GH_TOKEN')",
     ),
     (
         'import os\ntoken = os.environ["GH_TOKEN"]\n',
@@ -214,7 +223,7 @@ def test_handler_clean_input_returns_empty_result() -> None:
     handler = HandlerGithubTokenEnvReads()
     output = asyncio.run(handler.handle(envelope))
     assert output.result is not None
-    scan_result: ModelGithubTokenScanResult = output.result  # type: ignore[assignment]
+    scan_result = cast(ModelGithubTokenScanResult, output.result)
     assert scan_result.is_clean
     assert scan_result.files_scanned == 1
 
@@ -237,7 +246,7 @@ def test_handler_violation_input_returns_findings() -> None:
     handler = HandlerGithubTokenEnvReads()
     output = asyncio.run(handler.handle(envelope))
     assert output.result is not None
-    scan_result: ModelGithubTokenScanResult = output.result  # type: ignore[assignment]
+    scan_result = cast(ModelGithubTokenScanResult, output.result)
     assert not scan_result.is_clean
     assert scan_result.files_scanned == 2
     assert len(scan_result.violations) == 1
@@ -263,7 +272,7 @@ def test_handler_allowlisted_files_skipped() -> None:
     handler = HandlerGithubTokenEnvReads()
     output = asyncio.run(handler.handle(envelope))
     assert output.result is not None
-    scan_result: ModelGithubTokenScanResult = output.result  # type: ignore[assignment]
+    scan_result = cast(ModelGithubTokenScanResult, output.result)
     assert scan_result.is_clean
     assert scan_result.files_skipped == 1
 

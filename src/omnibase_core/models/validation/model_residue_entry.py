@@ -11,7 +11,11 @@ from pydantic import BaseModel, ConfigDict
 class ModelResidueEntry(BaseModel):
     """One residue file with a baselined violation count."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+    )
 
     file_rel: str
     baseline_count: int
