@@ -1,15 +1,21 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for ValidationRequest, ValidationFinding, ValidationReport, ValidatorDescriptor.
+"""Unit tests for ValidationFinding, ValidationReport, and ValidationMetrics.
 
-OMN-2543: Implement ValidationRequest, ValidationReport, and ValidationFinding models.
+OMN-2543: canonical ValidationReport semantics (PASS/WARN/FAIL/ERROR/SKIP/
+NOT_APPLICABLE + explicit precedence) retained by OMN-13279.
+
+The ValidationRequest and ValidatorDescriptor models were part of the
+superseded Generic Validator Node mechanism (OMN-2362) and were removed in
+OMN-13279; their tests were removed with them. The canonical report model
+carries its own `ModelValidationRequestRef` duck-type, so it does not depend on
+the removed request model.
 
 Coverage:
 - All severity literals on ValidationFinding
-- All profile modes on ValidationRequest and their effect on ValidationReport
+- All profile modes and their effect on ValidationReport
 - Status precedence matrix edge cases
-- ValidatorDescriptor field validation
 - JSON serialisability without custom encoders
 """
 
@@ -31,75 +37,6 @@ from omnibase_core.models.validation.model_validation_report import (
     ModelValidationRequestRef,
     _compute_overall_status,
 )
-from omnibase_core.models.validation.model_validation_request import (
-    ModelValidationRequest,
-)
-from omnibase_core.models.validation.model_validator_descriptor import (
-    ModelValidatorDescriptor,
-)
-
-# ---------------------------------------------------------------------------
-# ValidationRequest
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.unit
-class TestValidationRequest:
-    """Tests for the ValidationRequest model."""
-
-    def test_minimal_construction(self) -> None:
-        """ValidationRequest can be constructed with target and scope only."""
-        req = ModelValidationRequest(target="src/", scope="file")
-        assert req.target == "src/"
-        assert req.scope == "file"
-        assert req.profile == "default"
-        assert req.validator_ids == ()
-        assert req.tag_filters == ()
-        assert req.metadata == {}
-
-    def test_all_scope_literals(self) -> None:
-        """All four scope literals are accepted."""
-        for scope in ("file", "subtree", "workspace", "artifact"):
-            req = ModelValidationRequest(target="x", scope=scope)  # type: ignore[arg-type]
-            assert req.scope == scope
-
-    def test_all_profile_literals(self) -> None:
-        """All three profile literals are accepted."""
-        for profile in ("strict", "default", "advisory"):
-            req = ModelValidationRequest(target="x", scope="file", profile=profile)  # type: ignore[arg-type]
-            assert req.profile == profile
-
-    def test_invalid_scope_rejected(self) -> None:
-        """Invalid scope raises ValidationError."""
-        with pytest.raises(Exception):
-            ModelValidationRequest(target="x", scope="unknown")  # type: ignore[arg-type]
-
-    def test_invalid_profile_rejected(self) -> None:
-        """Invalid profile raises ValidationError."""
-        with pytest.raises(Exception):
-            ModelValidationRequest(target="x", scope="file", profile="aggressive")  # type: ignore[arg-type]
-
-    def test_frozen(self) -> None:
-        """ValidationRequest is immutable."""
-        req = ModelValidationRequest(target="src/", scope="file")
-        with pytest.raises(Exception):
-            req.target = "other/"  # type: ignore[misc]
-
-    def test_json_serialisable(self) -> None:
-        """ValidationRequest serialises to JSON without custom encoders."""
-        req = ModelValidationRequest(
-            target="src/",
-            scope="subtree",
-            profile="strict",
-            validator_ids=("naming_convention",),
-            tag_filters=("style",),
-            metadata={"env": "ci"},
-        )
-        data = json.loads(req.model_dump_json())
-        assert data["target"] == "src/"
-        assert data["scope"] == "subtree"
-        assert data["profile"] == "strict"
-
 
 # ---------------------------------------------------------------------------
 # ValidationFinding
@@ -317,7 +254,7 @@ def _embed(
     validator_id: str,
     severity: str,
     message: str = "msg",
-) -> ValidationFindingEmbed:
+) -> ModelValidationFindingEmbed:
     return ModelValidationFindingEmbed(
         validator_id=validator_id,
         severity=severity,  # type: ignore[arg-type]
@@ -434,7 +371,7 @@ class TestValidationReport:
     def test_inconsistent_overall_status_rejected(self) -> None:
         """Direct construction with wrong overall_status raises ValueError."""
         with pytest.raises(Exception):
-            ValidationReport(
+            ModelValidationReport(
                 profile="default",
                 overall_status="PASS",  # wrong — findings have FAIL
                 findings=(_embed("v", "FAIL"),),
@@ -458,78 +395,6 @@ class TestValidationReport:
         )
         report = ModelValidationReport.from_findings(findings=findings, request=req)
         assert report.overall_status == "ERROR"
-
-
-# ---------------------------------------------------------------------------
-# ValidatorDescriptor
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.unit
-class TestValidatorDescriptor:
-    """Tests for the ValidatorDescriptor model."""
-
-    def test_minimal_construction(self) -> None:
-        """ValidatorDescriptor can be constructed with validator_id only."""
-        d = ModelValidatorDescriptor(validator_id="naming_convention")
-        assert d.validator_id == "naming_convention"
-        assert d.deterministic is True
-        assert d.idempotent is True
-        assert d.timeout_seconds is None
-        assert d.tags == ()
-        assert d.applicable_scopes == ("file", "subtree", "workspace", "artifact")
-
-    def test_full_construction(self) -> None:
-        """ValidatorDescriptor accepts all fields."""
-        d = ModelValidatorDescriptor(
-            validator_id="security_scan",
-            display_name="Security Scanner",
-            description="Scans for known vulnerabilities.",
-            applicable_scopes=("file", "subtree"),
-            applicable_contract_types=("NodeContract",),
-            applicable_tuple_types=("ModelOnexNode",),
-            required_capabilities=("filesystem", "network"),
-            deterministic=False,
-            idempotent=True,
-            timeout_seconds=120,
-            tags=("security", "slow"),
-            version="1.2.0",
-        )
-        assert d.display_name == "Security Scanner"
-        assert d.deterministic is False
-        assert d.timeout_seconds == 120
-        assert "security" in d.tags
-
-    def test_timeout_seconds_must_be_positive(self) -> None:
-        """timeout_seconds must be >= 1 when set."""
-        with pytest.raises(Exception):
-            ModelValidatorDescriptor(validator_id="v", timeout_seconds=0)
-
-    def test_frozen(self) -> None:
-        """ValidatorDescriptor is immutable."""
-        d = ModelValidatorDescriptor(validator_id="v")
-        with pytest.raises(Exception):
-            d.validator_id = "changed"  # type: ignore[misc]
-
-    def test_json_serialisable(self) -> None:
-        """ValidatorDescriptor serialises to JSON without custom encoders."""
-        d = ModelValidatorDescriptor(
-            validator_id="naming",
-            applicable_scopes=("file",),
-            tags=("style",),
-            timeout_seconds=30,
-        )
-        data = json.loads(d.model_dump_json())
-        assert data["validator_id"] == "naming"
-        assert data["timeout_seconds"] == 30
-
-    def test_invalid_scope_in_applicable_scopes_rejected(self) -> None:
-        """Invalid scope in applicable_scopes raises ValidationError."""
-        with pytest.raises(Exception):
-            ModelValidatorDescriptor(
-                validator_id="v",
-                applicable_scopes=("file", "unknown"),  # type: ignore[arg-type]
-            )
 
 
 # ---------------------------------------------------------------------------

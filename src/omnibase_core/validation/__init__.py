@@ -150,6 +150,11 @@ from .validator_naming_convention import (
     RULE_UNKNOWN_NAMING,
     ValidatorNamingConvention,
 )
+from .validator_node_purity import (
+    EnumNodePurityRule,
+    ModelNodePurityViolation,
+    ValidatorNodePurity,
+)
 
 # Import Topic Suffix validator (OMN-1537)
 from .validator_topic_suffix import (
@@ -163,6 +168,10 @@ from .validator_topic_suffix import (
     is_valid_topic_suffix,
     parse_topic_suffix,
     validate_topic_suffix,
+)
+from .validator_transport_import import (
+    ModelTransportImportViolation,
+    ValidatorTransportImport,
 )
 
 # =============================================================================
@@ -496,6 +505,11 @@ __all__ = [
     # Local path validator — detect machine-specific absolute paths
     "ValidatorLocalPaths",
     "ModelLocalPathViolation",
+    "ValidatorNodePurity",
+    "ModelNodePurityViolation",
+    "EnumNodePurityRule",
+    "ValidatorTransportImport",
+    "ModelTransportImportViolation",
     # Banned compose vars validator — compose↔contract topic drift (OMN-9062)
     "ValidatorBannedComposeVars",
     # Hardcoded topics validator — reject topic string literals (OMN-9152)
