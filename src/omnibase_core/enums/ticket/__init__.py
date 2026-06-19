@@ -27,6 +27,8 @@ from omnibase_core.enums.ticket.enum_mock_strategy import (
     EnumMockStrategy,
     MockStrategy,
 )
+from omnibase_core.enums.ticket.enum_proof_tier import EnumProofTier
+from omnibase_core.enums.ticket.enum_ticket_class import EnumTicketClass
 from omnibase_core.enums.ticket.enum_ticket_types import (
     PHASE_ALLOWED_ACTIONS,
     Action,
@@ -71,4 +73,7 @@ __all__ = [
     "EnumContractInterfaceSurface",
     # OMN-10241: DoD evidence check types
     "EnumDodCheckType",
+    # OMN-13338: tiered proof-packet enums
+    "EnumProofTier",
+    "EnumTicketClass",
 ]
