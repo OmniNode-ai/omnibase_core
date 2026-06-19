@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the backend_secret_discipline compute node.
+# Validates that committed routing-authority config contains no literal credentials
+# and that every cloud backend declares a logical secret reference.
+#
+# See: OMN-13305 — port check_backend_secret_discipline to core COMPUTE validator
+
+name: node_backend_secret_discipline_compute
+node_id: node_backend_secret_discipline_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Backend secret-ref / credential-ref discipline gate (OMN-13305, ported from OMN-12971). Validates that
+  committed routing-authority config contains no literal PEM/SA-JSON/bearer credentials, and that every
+  authenticated cloud backend declares a logical secret reference (secret_ref / api_key_ref / api_key_env
+  / credential_ref). ADC and API-key auth are mutually exclusive. Returns a ModelBackendSecretDisciplineOutput
+  verdict. #magic___^_^___line
+handler_routing:
+  default_handler: handler:NodeBackendSecretDisciplineCompute
+
+input_model: omnibase_core.validation.validator_backend_secret_discipline.ModelBackendSecretDisciplineInput
+output_model: omnibase_core.validation.validator_backend_secret_discipline.ModelBackendSecretDisciplineOutput
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 10000

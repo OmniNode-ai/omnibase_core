@@ -880,6 +880,19 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      # Backend Secret-Ref Discipline Gate (OMN-13305, ported from OMN-12971).
+      # Rejects literal PEM/SA-JSON/bearer credentials in committed routing-authority
+      # YAML. Requires every authenticated cloud backend to declare a logical
+      # secret ref (secret_ref/api_key_ref/api_key_env/credential_ref). ADC and
+      # API-key auth are mutually exclusive per backend. No warn-only mode.
+      - id: check-backend-secret-discipline
+        name: Backend Secret-Ref Discipline Gate (OMN-13305)
+        entry: uv run python -m omnibase_core.validation.validator_backend_secret_discipline
+        language: system
+        types_or: [yaml]
+        pass_filenames: true
+        stages: [pre-commit]
+
       # Canonical Inference Gate (OMN-13219).
       # Fails on non-canonical model-inference surfaces: shelled model CLIs
       # (codex/claude/gemini/opencode via subprocess/exec/shutil.which) and
