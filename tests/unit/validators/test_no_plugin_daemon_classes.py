@@ -5,10 +5,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-
-import pytest
+from typing import TYPE_CHECKING
 
 from omnibase_core.validators.no_plugin_daemon_classes import main, validate_paths
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def test_flags_fake_plugin_daemon_class(tmp_path: Path) -> None:
