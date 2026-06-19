@@ -63,6 +63,10 @@ omni-agent = "omnibase_core.cli.cli_commands:cli"
 # WARNING: For development and testing ONLY, not for production use
 omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
 check-local-paths = "omnibase_core.validation.validator_local_paths:main"
+# OMN-13293 (G1): the same local-paths check executed as a COMPUTE node over the
+# in-memory event bus (two-transport seam; Kafka backend in CI). Proven
+# equivalent to check-local-paths on the G1 corpus + 6999-file shadow-bake.
+check-local-paths-compute = "omnibase_core.validation.local_paths.runtime_local_paths:main"
 onex-validate-topics = "omnibase_core.validation.scripts.validate_topic_names:main"
 validate-string-versions = "omnibase_core.validation.scripts.validate_string_versions:main"
 onex-validate-links = "omnibase_core.scripts.validate_markdown_links:main"
@@ -308,6 +312,8 @@ ignore = [
 "scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_local_paths.py" = ["T201"]
+# OMN-13293: CLI runner for the local-paths COMPUTE validator prints findings.
+"src/omnibase_core/validation/local_paths/runtime_local_paths.py" = ["T201"]
 "src/omnibase_core/validation/antipattern_checker.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-11923)
 "src/omnibase_core/validation/validator_skill_backing_node.py" = ["T201"]
 "src/omnibase_core/validation/validator_patterns.py" = ["T201"]
