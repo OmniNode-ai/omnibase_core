@@ -289,6 +289,18 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # OMN-13284: Canonical Plugin* lifecycle guard (relocated from omnibase_infra).
+      # Plugin* classes are deterministic compute plugins only; daemon/service/worker
+      # lifecycles belong behind ONEX nodes/handlers. Core dogfoods its own export.
+      - id: no-plugin-daemon-classes
+        name: Block Plugin* daemon/service/worker classes (OMN-13284)
+        entry: uv run python -m omnibase_core.validators.no_plugin_daemon_classes src/omnibase_core
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/.*\.py$
+        pass_filenames: false
+        stages: [pre-commit]
+
       # CLASS vs FILE Naming Conventions:
       # - validate-naming-conventions: CLASS naming (ModelUser, EnumStatus, ProtocolEventBus)
       # - validate-file-naming-conventions: FILE naming (model_user.py, enum_status.py)
