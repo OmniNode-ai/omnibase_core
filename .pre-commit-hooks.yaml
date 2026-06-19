@@ -162,3 +162,17 @@
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
+
+- id: no-plugin-daemon-classes
+  name: Block Plugin* daemon/service/worker classes (OMN-13284)
+  description: >
+    Canonical Plugin* lifecycle guard (relocated from omnibase_infra, OMN-10123). AST-based: a class named
+    Plugin* may only be a deterministic compute plugin (direct PluginComputeBase subclass). Any Plugin* class
+    whose own name or a base name contains a lifecycle term (Daemon, Service, Worker, Runtime, Consumer,
+    Publisher, Controller, Server, Client) owns a forbidden lifecycle — move it behind an ONEX node/handler/
+    contract. Consumers reference this hook by id to enforce the canonical 3-primitives architecture (OMN-12525).
+  language: python
+  entry: python -m omnibase_core.validators.no_plugin_daemon_classes
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
