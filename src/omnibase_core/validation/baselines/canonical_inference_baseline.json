@@ -1,5 +1,66 @@
 {
   "schema_version": "1.0.0",
-  "count": 0,
-  "violations": []
+  "count": 10,
+  "violations": [
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/cli/cli_env.py",
+      "rule": "model-id-env-read",
+      "fingerprint": "ecc3a6e0711ff8e093820f2ac6c9a6b619cf1fb9cc47c0bedc3089227c46fa29"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/overseer_foreground_block.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "437ab964557aacf206a7561f70d5b9136d38a2fc046e8bce6d0b851e5e359473"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/shadow_validation.py",
+      "rule": "model-id-env-read",
+      "fingerprint": "c23b5f465bb76108d005bc44393b79689aedd87ca3792b31c76c8fccfc52acfb"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/review_pairing/adapters/adapter_codex_reviewer.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "b3f1f9cc532ac22b10d46b9fcbfce1b5ba8a8f2fca1e1318ab75ee492f497dab"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/handlers/adapter_delegation_router.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "05fc1ff8804bbcf139a1cf6a2cbae264e0cc2f7f1c4e57641b757d0641ab9ee9"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_fanout_orchestrator/handlers/handler_fanout.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "00a78faffe1bcdf09432a1ecc096403d243dc0a210ba9d80df57f04b24892362"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_fanout_orchestrator/handlers/handler_fanout.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "906f592becc3470591751a2e00ebe005117c69823b7b957825577bc203432330"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_overnight/handlers/handler_overnight.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "41ca48d49e9f8f8c8c269428bf734f996d2d8714c842b97245f0ba288d5f6489"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_platform_readiness/handlers/handler_platform_readiness.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "4d5d2974aec62e323d5ea9c276274dddc4a10a7c2cf33cf4e0b93a6e63215be9"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_session_orchestrator/handlers/handler_session_orchestrator.py",
+      "rule": "model-cli-shellout",
+      "fingerprint": "68e88df774bbec847e7630978e368fa38d2f90d17803b47d6bab84f537fb06d4"
+    }
+  ]
 }

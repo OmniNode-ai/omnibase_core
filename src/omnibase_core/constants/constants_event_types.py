@@ -73,6 +73,16 @@ TOPIC_VALIDATION_VIOLATIONS_BATCH_EVENT = (
     "onex.evt.validation.cross-repo-violations-batch.v1"
 )
 
+# Local-paths COMPUTE validator topics (OMN-13293). The two-transport runner is the
+# producer of the command and consumer of the result; the COMPUTE handler is the
+# consumer of the command and producer of the result.
+TOPIC_VALIDATION_LOCAL_PATH_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.local-path-scan-requested.v1"
+)
+TOPIC_VALIDATION_LOCAL_PATH_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.local-path-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.

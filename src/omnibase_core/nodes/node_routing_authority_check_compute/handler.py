@@ -50,10 +50,22 @@ from __future__ import annotations
 import ast
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
-from pydantic import BaseModel, ConfigDict
+
+from omnibase_core.models.validation.model_residue_entry import (
+    ModelResidueEntry,
+)
+from omnibase_core.models.validation.model_routing_authority_check_input import (
+    ModelRoutingAuthorityCheckInput,
+)
+from omnibase_core.models.validation.model_routing_authority_check_output import (
+    ModelRoutingAuthorityCheckOutput,
+)
+from omnibase_core.models.validation.model_routing_contract_entry import (
+    ModelRoutingContractEntry,
+)
 
 __all__ = [
     "NodeRoutingAuthorityCheckCompute",
@@ -64,149 +76,15 @@ __all__ = [
 ]
 
 # ---------------------------------------------------------------------------
-# Input/Output models (COMPUTE: pure, JSON-ledger-safe)
-# ---------------------------------------------------------------------------
-
-
-class ModelRoutingContractEntry(BaseModel):
-    """One contract whose model_routing must resolve from authority."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    contract_rel: str
-    """Path relative to repo_root."""
-
-    required_routing_keys: tuple[str, ...] = (
-        "provider",
-        "served_model_id",
-        "endpoint_ref",
-        "routing_source",
-    )
-
-
-class ModelResidueEntry(BaseModel):
-    """One residue file with a baselined violation count."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    file_rel: str
-    baseline_count: int
-    debt_ticket: str
-    description: str
-
-
-class ModelRoutingAuthorityCheckInput(BaseModel):
-    """Input payload for the routing-authority check COMPUTE handler.
-
-    All file *contents* are supplied by the caller (EFFECT boundary); the
-    handler never reads the filesystem directly, preserving COMPUTE purity.
-    """
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    # Positive proof
-    demo_path_contracts: tuple[ModelRoutingContractEntry, ...]
-    """Contract files to verify model_routing from authority."""
-
-    contract_contents: dict[str, str]
-    """Mapping of contract_rel -> raw YAML text."""
-
-    bifrost_config_rel: str = "src/omnimarket/configs/bifrost_delegation.yaml"
-    bifrost_config_content: str = ""
-    """Raw YAML text of bifrost_delegation.yaml; empty disables the audit."""
-
-    # Negative audit
-    demo_path_sources: tuple[str, ...]
-    """Source files subjected to the negative (env-read / literal) audit."""
-
-    source_contents: dict[str, str]
-    """Mapping of source_rel -> raw Python source text."""
-
-    # Residue ratchet
-    residue_entries: tuple[ModelResidueEntry, ...]
-    """Residue files with baselined violation counts."""
-
-    residue_contents: dict[str, str]
-    """Mapping of residue_rel -> raw Python source text."""
-
-    # YAML policy residue
-    yaml_policy_residue: tuple[ModelResidueEntry, ...] = ()
-    yaml_policy_contents: dict[str, str] = {}
-
-    # Skip tokens honoured by the negative audit
-    skip_tokens: tuple[str, ...] = (
-        "ONEX_FLAG_EXEMPT",
-        "ONEX_EXCLUDE",
-        "contract-config-ok",
-    )
-
-    # Provider literals forbidden in string literals on the demo path
-    provider_literal_tokens: tuple[str, ...] = (
-        "generativelanguage.googleapis.com",
-        "openrouter.ai",
-        "api.openai.com",
-        "api.anthropic.com",
-    )
-
-    # Fallback endpoint env-var names forbidden on the demo path
-    fallback_endpoint_env_tokens: tuple[str, ...] = (
-        "LLM_CODER_URL",
-        "LLM_REASONER_URL",
-        "LLM_BASE_URL",
-        "OPENROUTER_BASE_URL",
-        "endpoint_url_env",
-    )
-
-    # Secret-key arg hints: these ARE the sanctioned contract-native pattern
-    api_key_ref_hints: tuple[str, ...] = ("api_key", "api-key", "_KEY", "_TOKEN")
-
-    # Forbidden CLI-backend markers (OMN-13215)
-    cli_url_prefix: str = "cli://"
-    cli_agent_tiers: frozenset[str] = frozenset({"cli_agents"})
-
-
-class ModelPositiveProofEntry(BaseModel):
-    """Route-source proof for one demo-path contract."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    contract: str
-    provider: str | None
-    model: str | None
-    endpoint_ref: str | None
-    endpoint: str | None
-    route_source: str | None
-    field_sources: dict[str, str]
-    endpoint_source: str
-
-
-class ModelRoutingAuthorityCheckOutput(BaseModel):
-    """Output of the routing-authority check. JSON-ledger-safe (Pydantic BaseModel)."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    passed: bool
-    positive_ok: bool
-    negative_ok: bool
-    residue_ok: bool
-    shape_ok: bool
-
-    positive_proof: dict[str, Any]
-    negative_audit: dict[str, Any]
-    residue_audit: dict[str, Any]
-    provider_endpoint_shape_audit: dict[str, Any]
-
-    gate: str = "routing-authority-check"
-    ticket: str = "OMN-13306"
-    origin_tickets: tuple[str, ...] = ("OMN-12821", "OMN-12877", "OMN-12883")
-
-
-# ---------------------------------------------------------------------------
 # Scanning helpers (pure functions — no I/O)
 # ---------------------------------------------------------------------------
 
 _URL_PATTERN = re.compile(r"^https?://", re.IGNORECASE)
 _IP_PATTERN = re.compile(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}")
+
+
+def _load_yaml_document(text: str) -> object:
+    return yaml.load(text, Loader=yaml.SafeLoader)
 
 
 def _has_skip_token(line: str, skip_tokens: tuple[str, ...]) -> bool:
@@ -349,7 +227,7 @@ def _scan_literal_tokens(
     return violations
 
 
-def _count_yaml_env_var_fields(data: dict[str, Any]) -> int:
+def _count_yaml_env_var_fields(data: dict[str, object]) -> int:
     policies = data.get("policies", {})
     if not isinstance(policies, dict):
         return 0
@@ -478,10 +356,12 @@ class NodeRoutingAuthorityCheckCompute:
         residue = self._build_residue_audit(inp)
         shape = self._build_provider_endpoint_shape_audit(inp)
 
-        positive_ok = len(positive["errors"]) == 0 and len(positive["entries"]) > 0
-        negative_ok = negative["clean"]
-        residue_ok = residue["clean"]
-        shape_ok = shape["clean"]
+        positive_errors = cast(list[str], positive["errors"])
+        positive_entries = cast(list[dict[str, object]], positive["entries"])
+        positive_ok = len(positive_errors) == 0 and len(positive_entries) > 0
+        negative_ok = bool(negative["clean"])
+        residue_ok = bool(residue["clean"])
+        shape_ok = bool(shape["clean"])
         passed = positive_ok and negative_ok and residue_ok and shape_ok
 
         return ModelRoutingAuthorityCheckOutput(
@@ -525,8 +405,8 @@ class NodeRoutingAuthorityCheckCompute:
         if not bifrost_content:
             return None, None, f"{bifrost_rel}: content empty (skipped)"
         try:
-            data = yaml.safe_load(bifrost_content)
-        except Exception:  # noqa: BLE001  # fallback-ok: validator contract
+            data = _load_yaml_document(bifrost_content)
+        except yaml.YAMLError:
             return None, None, f"{bifrost_rel}: YAML parse error"
         backends = data.get("backends", []) if isinstance(data, dict) else []
         for backend in backends:
@@ -547,8 +427,8 @@ class NodeRoutingAuthorityCheckCompute:
 
     def _build_positive_proof(
         self, inp: ModelRoutingAuthorityCheckInput
-    ) -> dict[str, Any]:
-        entries: list[dict[str, Any]] = []
+    ) -> dict[str, object]:
+        entries: list[dict[str, object]] = []
         errors: list[str] = []
 
         for entry in inp.demo_path_contracts:
@@ -560,8 +440,8 @@ class NodeRoutingAuthorityCheckCompute:
                 continue
 
             try:
-                data = yaml.safe_load(contract_text)
-            except Exception:  # noqa: BLE001
+                data = _load_yaml_document(contract_text)
+            except yaml.YAMLError:
                 errors.append(f"{entry.contract_rel}: YAML parse error")
                 continue
 
@@ -577,7 +457,7 @@ class NodeRoutingAuthorityCheckCompute:
                 continue
 
             field_sources: dict[str, str] = {}
-            resolved_fields: dict[str, Any] = {}
+            resolved_fields: dict[str, object] = {}
             for key in entry.required_routing_keys:
                 value = model_routing.get(key)
                 if value is None or (isinstance(value, str) and not value.strip()):
@@ -631,8 +511,8 @@ class NodeRoutingAuthorityCheckCompute:
 
     def _build_negative_audit(
         self, inp: ModelRoutingAuthorityCheckInput
-    ) -> dict[str, Any]:
-        file_results: list[dict[str, Any]] = []
+    ) -> dict[str, object]:
+        file_results: list[dict[str, object]] = []
         errors: list[str] = []
 
         for src_rel in inp.demo_path_sources:
@@ -673,7 +553,9 @@ class NodeRoutingAuthorityCheckCompute:
                 }
             )
 
-        all_violations = [v for fr in file_results for v in fr["violations"]]
+        all_violations = [
+            v for fr in file_results for v in cast(list[str], fr["violations"])
+        ]
         return {
             "files": file_results,
             "errors": errors,
@@ -687,8 +569,8 @@ class NodeRoutingAuthorityCheckCompute:
 
     def _build_residue_audit(
         self, inp: ModelRoutingAuthorityCheckInput
-    ) -> dict[str, Any]:
-        file_results: list[dict[str, Any]] = []
+    ) -> dict[str, object]:
+        file_results: list[dict[str, object]] = []
         errors: list[str] = []
         new_violations: list[str] = []
 
@@ -731,8 +613,8 @@ class NodeRoutingAuthorityCheckCompute:
                 errors.append(f"residue YAML content missing: {yaml_entry.file_rel}")
                 continue
             try:
-                data = yaml.safe_load(yaml_text)
-            except Exception:  # noqa: BLE001
+                data = _load_yaml_document(yaml_text)
+            except yaml.YAMLError:
                 errors.append(f"{yaml_entry.file_rel}: YAML parse error")
                 continue
             if not isinstance(data, dict):
@@ -772,7 +654,7 @@ class NodeRoutingAuthorityCheckCompute:
 
     def _build_provider_endpoint_shape_audit(
         self, inp: ModelRoutingAuthorityCheckInput
-    ) -> dict[str, Any]:
+    ) -> dict[str, object]:
         if not inp.bifrost_config_content:
             return {
                 "config": inp.bifrost_config_rel,
@@ -783,8 +665,8 @@ class NodeRoutingAuthorityCheckCompute:
             }
 
         try:
-            data = yaml.safe_load(inp.bifrost_config_content)
-        except Exception:  # noqa: BLE001
+            data = _load_yaml_document(inp.bifrost_config_content)
+        except yaml.YAMLError:
             return {
                 "config": inp.bifrost_config_rel,
                 "backends": [],
@@ -810,7 +692,7 @@ class NodeRoutingAuthorityCheckCompute:
             }
 
         violations: list[str] = []
-        backend_results: list[dict[str, Any]] = []
+        backend_results: list[dict[str, object]] = []
 
         for backend in backends:
             if not isinstance(backend, dict):
@@ -830,11 +712,12 @@ class NodeRoutingAuthorityCheckCompute:
             )
             has_endpoint_url = bool(endpoint_url_text)
 
-            is_cli_backend = (
-                str(backend_id).startswith("cli-")
-                or endpoint_url_text.lower().startswith(inp.cli_url_prefix)
-                or tier in inp.cli_agent_tiers
+            backend_id_is_cli = str(backend_id).startswith("cli-")
+            endpoint_url_is_cli = endpoint_url_text.lower().startswith(
+                inp.cli_url_prefix
             )
+            tier_is_cli = tier in inp.cli_agent_tiers
+            is_cli_backend = any((backend_id_is_cli, endpoint_url_is_cli, tier_is_cli))
 
             backend_violations: list[str] = []
             if is_cli_backend:
