@@ -131,6 +131,38 @@ class ModelTaskDelegatedEvent(BaseModel):
             "pinned premium price could be resolved for the run."
         ),
     )
+    cost_tier_type: str = Field(
+        default="",
+        description=(
+            "Typed tier cost regime that priced this call (OMN-13234): "
+            "free_local | metered | budgeted. Empty when the serving tier had no "
+            "typed cost model (legacy flat-rate path)."
+        ),
+    )
+    cost_tier_name: str = Field(
+        default="",
+        description=(
+            "Routing tier name that served this task (OMN-13234): "
+            "local | cheap_cloud | cheap_frontier | claude."
+        ),
+    )
+    cost_measurement_source: str = Field(
+        default="",
+        description=(
+            "How cost_usd was measured (OMN-13234): free_local | metered | "
+            "budgeted_in_budget | budgeted_overage | budgeted_split | "
+            "manifest_compute | no_cost_model."
+        ),
+    )
+    budget_headroom_consumed_usd: float = Field(
+        default=0.0,
+        ge=0.0,
+        description=(
+            "Monthly-budget drawdown for budgeted tiers (OMN-13234): the "
+            "accounting cost of in-budget tokens served at 0 cash. 0 for "
+            "free_local / metered / overage tokens."
+        ),
+    )
 
 
 __all__: list[str] = [

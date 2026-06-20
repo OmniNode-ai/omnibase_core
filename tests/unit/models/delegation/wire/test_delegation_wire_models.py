@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from omnibase_core.models.delegation.wire import (
     TASK_DELEGATED_TOPIC_V1,
     EnumBudgetAction,
+    EnumTierCostType,
     ModelBaselineIntent,
     ModelBifrostDelegationConfig,
     ModelBudgetLimits,
@@ -36,6 +37,7 @@ from omnibase_core.models.delegation.wire import (
     ModelRoutingIntent,
     ModelRoutingTier,
     ModelTaskDelegatedEvent,
+    ModelTierCost,
     ModelTierModel,
     validate_acceptance_criteria,
 )
@@ -350,6 +352,85 @@ class TestModelRoutingTier:
 
         with pytest.raises(ValidationError):
             ModelRoutingTier(name="local", max_retries=-1)
+
+    def test_accepts_typed_cost_model(self) -> None:
+        """OMN-13234: ModelRoutingTier carries the typed cost model."""
+        tier = ModelRoutingTier(
+            name="cheap_cloud",
+            cost=ModelTierCost(
+                cost_type=EnumTierCostType.METERED,
+                rate_per_1k_usd=0.002,
+            ),
+        )
+        assert tier.cost is not None
+        assert tier.cost.cost_type is EnumTierCostType.METERED
+
+    def test_cost_defaults_none(self) -> None:
+        """A tier not yet migrated to the typed model has cost=None."""
+        tier = ModelRoutingTier(name="local")
+        assert tier.cost is None
+
+
+@pytest.mark.unit
+class TestModelTierCost:
+    def test_free_local_zero_rate(self) -> None:
+        cost = ModelTierCost(cost_type=EnumTierCostType.FREE_LOCAL)
+        assert cost.rate_per_1k_usd == 0.0
+        assert cost.monthly_cap_usd is None
+
+    def test_free_local_rejects_nonzero_rate(self) -> None:
+        with pytest.raises(ValidationError, match="rate_per_1k_usd == 0"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.FREE_LOCAL,
+                rate_per_1k_usd=0.002,
+            )
+
+    def test_free_local_rejects_cap(self) -> None:
+        with pytest.raises(ValidationError, match="must not declare monthly_cap_usd"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.FREE_LOCAL,
+                monthly_cap_usd=10.0,
+            )
+
+    def test_metered_requires_positive_rate(self) -> None:
+        with pytest.raises(ValidationError, match="rate_per_1k_usd > 0"):
+            ModelTierCost(cost_type=EnumTierCostType.METERED)
+
+    def test_metered_rejects_cap(self) -> None:
+        with pytest.raises(ValidationError, match="must not declare monthly_cap_usd"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.METERED,
+                rate_per_1k_usd=0.002,
+                monthly_cap_usd=10.0,
+            )
+
+    def test_budgeted_requires_cap_and_overage(self) -> None:
+        with pytest.raises(ValidationError, match="requires monthly_cap_usd"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.BUDGETED,
+                rate_per_1k_usd=0.001,
+            )
+        with pytest.raises(ValidationError, match="overage_rate_per_1k_usd > 0"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.BUDGETED,
+                rate_per_1k_usd=0.001,
+                monthly_cap_usd=10.0,
+            )
+
+    def test_budgeted_valid(self) -> None:
+        cost = ModelTierCost(
+            cost_type=EnumTierCostType.BUDGETED,
+            rate_per_1k_usd=0.001,
+            monthly_cap_usd=10.0,
+            overage_rate_per_1k_usd=0.003,
+        )
+        assert cost.monthly_cap_usd == 10.0
+        assert cost.overage_rate_per_1k_usd == 0.003
+
+    def test_frozen(self) -> None:
+        cost = ModelTierCost(cost_type=EnumTierCostType.FREE_LOCAL)
+        with pytest.raises(ValidationError):
+            cost.rate_per_1k_usd = 0.5  # type: ignore[misc]
 
 
 @pytest.mark.unit
