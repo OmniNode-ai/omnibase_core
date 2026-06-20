@@ -9,6 +9,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.delegation.wire.model_premium_counterfactual import (
+    ModelPremiumCounterfactual,
+)
 from omnibase_core.topics import TopicBase
 
 TASK_DELEGATED_TOPIC_V1 = TopicBase.TASK_DELEGATED
@@ -118,6 +121,20 @@ class ModelTaskDelegatedEvent(BaseModel):
         ge=0.0,
         description="Total estimated cost across all attempts.",
     )
+    premium_counterfactual: ModelPremiumCounterfactual | None = Field(
+        default=None,
+        description=(
+            "Pinned premium-model counterfactual for this task (OMN-13355). Carries "
+            "{model, price_in_per_1k, price_out_per_1k, as_of, tokens, "
+            "counterfactual_cost_usd} so cost_savings_usd (= counterfactual_cost_usd - "
+            "cost_usd) is auditable rather than an opaque estimate. None when no "
+            "pinned premium price could be resolved for the run."
+        ),
+    )
 
 
-__all__: list[str] = ["TASK_DELEGATED_TOPIC_V1", "ModelTaskDelegatedEvent"]
+__all__: list[str] = [
+    "TASK_DELEGATED_TOPIC_V1",
+    "ModelPremiumCounterfactual",
+    "ModelTaskDelegatedEvent",
+]
