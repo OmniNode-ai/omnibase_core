@@ -83,6 +83,17 @@ TOPIC_VALIDATION_LOCAL_PATH_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.local-path-scan-completed.v1"
 )
 
+# Private-IP COMPUTE validator topics (OMN-13294, G2). Same two-transport seam as
+# the local-paths canary: the runner is the producer of the command and consumer
+# of the result; the COMPUTE handler is the consumer of the command and producer
+# of the result.
+TOPIC_VALIDATION_PRIVATE_IP_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.private-ip-scan-requested.v1"
+)
+TOPIC_VALIDATION_PRIVATE_IP_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.private-ip-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.

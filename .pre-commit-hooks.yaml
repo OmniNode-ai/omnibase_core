@@ -45,6 +45,23 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-private-ip-compute
+  name: Check for hardcoded private-IP literals (COMPUTE node over the bus)
+  description: >
+    Detect hardcoded RFC1918 private-IP literals (10/8, 172.16/12, 192.168/16) that break portability
+    and leak environment config when code is distributed. Executed as a canonical COMPUTE node (omnibase_core.validation.private_ip.HandlerPrivateIpCompute)
+    dispatched over the in-memory event bus — the same two-transport seam as check-local-paths-compute
+    (in-memory locally, Kafka in CI; same handler, only the backend changes). The scanning logic was generated
+    by node_generation_consumer and accepted only because it passed a deterministic acceptance corpus
+    in the hardened sandbox (OMN-13294, G2; corpus seeded from node_aislop_sweep's RFC1918 ground truth).
+    Add `# onex-allow-internal-ip` to suppress a specific line, or `# onex-allow-file-internal-ip` to
+    suppress a documentation-heavy file whose subject IS IP literals.
+  language: python
+  entry: python -m omnibase_core.validation.private_ip.runtime_private_ip
+  types: [text]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-stub-implementations
   name: ONEX Stub Implementation Detector
   description: >

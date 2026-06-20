@@ -61,7 +61,7 @@ class ModelSessionContext(BaseModel):
         >>> # Both string and UUID session_id values are accepted (backward compatible)
         >>> context = ModelSessionContext(
         ...     session_id="550e8400-e29b-41d4-a716-446655440000",
-        ...     client_ip="192.168.1.100",
+        ...     client_ip="192.168.1.100",  # onex-allow-internal-ip OMN-13294 doc example
         ...     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         ...     locale="en-US",
         ... )

@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-internal-ip OMN-13294 reason="module/class docstrings document, by design, that IP-literal hosts are valid in artifact-reference URLs; the IPs are documentation, not config"
 
 """
 Handler Packaging Metadata Model.
