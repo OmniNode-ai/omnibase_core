@@ -14,10 +14,18 @@ on:
   schedule:
     - cron: "13 7 * * *"   # 07:13 UTC nightly
 
-# Prevent auto-cancellation for normal PR/push workflows, but cancel superseded
-# merge_group runs so stale merge-queue attempts do not accumulate.
+# Prevent auto-cancellation for normal PR/push workflows. For merge_group runs the
+# concurrency group MUST be unique per queued batch commit: GitHub forms one
+# merge_group commit per queue position, and keying the group on base_ref (shared
+# by every dev-targeted merge_group run) made each newly-formed batch commit cancel
+# the CI of the entries ahead of it, leaving the queue front permanently in
+# AWAITING_CHECKS (CI Summary never reported). Keying on github.ref — the
+# gh-readonly-queue/<base>/pr-<n>-<sha> ref, which is unique per batch commit —
+# gives every queued position its own CI run while still cancelling a superseded
+# re-attempt of the same batch commit. Mirrors the OMN-6488 test.yml fix already
+# applied in omnibase_infra. (OMN-12445)
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'merge_group' && github.event.merge_group.base_ref || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'merge_group' }}
 
 env:
