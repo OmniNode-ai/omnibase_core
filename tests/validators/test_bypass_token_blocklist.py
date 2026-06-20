@@ -272,5 +272,6 @@ class TestEmergencyBypassAlwaysFalse:
         # If this policy changes, add "emergency_bypass.enabled: true" to BYPASS_TOKENS
         # and update the count to 10.
         # For now: confirm that the 9-token list does NOT accidentally catch it.
+        assert not findings
         token_values = set(BYPASS_TOKENS)
         assert "emergency_bypass.enabled: true" not in token_values
