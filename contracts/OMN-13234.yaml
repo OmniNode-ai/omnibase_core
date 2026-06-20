@@ -1,0 +1,51 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13234"
+title: "Typed tier cost model on ModelRoutingTier (free_local / metered / budgeted)"
+summary: >
+  Add the canonical typed per-tier cost model to the delegation routing wire DTOs: EnumTierCostType (free_local
+  | metered | budgeted), ModelTierCost (rate/cap/overage with regime-aware validation), a `cost` field
+  on ModelRoutingTier, and cost-measurement carrier fields on ModelTaskDelegatedEvent (cost_tier_type,
+  cost_tier_name, cost_measurement_source, budget_headroom_consumed_usd). These are the shared cross-repo
+  models the omnimarket routing parser, pricing computation, and delegation_events projection consume
+  (OMN-13234).
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - "public_api"
+  - "events"
+evidence_requirements:
+  - kind: "tests"
+    description: "Delegation wire model unit tests green incl. ModelTierCost regime validation (free_local zero-rate, metered positive-rate, budgeted cap+overage) and ModelRoutingTier typed-cost acceptance."
+    command: "uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q"
+  - kind: "ci"
+    description: "mypy --strict green on the changed wire model module."
+    command: "uv run mypy src/omnibase_core/models/delegation/wire/model_routing_config.py --strict"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "Delegation wire model unit tests green incl. ModelTierCost regime validation (free_local
+      zero-rate, metered positive-rate, budgeted cap+overage) and ModelRoutingTier typed-cost acceptance."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q"
+  - id: "dod-002"
+    description: "mypy --strict green on the changed wire model module."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run mypy src/omnibase_core/models/delegation/wire/model_routing_config.py --strict"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure typed-model addition (Pydantic DTOs + enum) with no runtime
+      process, broker topic, or service deploy. Downstream consumers (omnimarket) pick the symbols up
+      on the next core pin bump."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-13234 adds typed delegation-wire DTOs (EnumTierCostType /
+          ModelTierCost / ModelRoutingTier.cost); no Docker image, daemon, broker topic, or service deploy
+          required'"
