@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
@@ -28,6 +29,7 @@ from omnibase_core.models.delegation.wire import (
     ModelDelegationShadowConfig,
     ModelInferenceIntent,
     ModelInferenceResponseData,
+    ModelPremiumCounterfactual,
     ModelQualityGateInput,
     ModelQualityGateIntent,
     ModelQualityGateResult,
@@ -548,6 +550,96 @@ class TestModelTaskDelegatedEvent:
 
     def test_topic_constant(self) -> None:
         assert TASK_DELEGATED_TOPIC_V1 == "onex.evt.omniclaude.task-delegated.v1"
+
+    def test_premium_counterfactual_default_none(self) -> None:
+        event = ModelTaskDelegatedEvent(
+            timestamp="2026-05-26T00:00:00Z",
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            delegated_to="local_qwen3",
+            quality_gate_passed=True,
+        )
+        assert event.premium_counterfactual is None
+
+    def test_carries_premium_counterfactual(self) -> None:
+        counterfactual = ModelPremiumCounterfactual(
+            model="claude-opus-4-6",
+            price_in_per_1k=Decimal("0.015"),
+            price_out_per_1k=Decimal("0.075"),
+            as_of="2026-02-01",
+            tokens_in=1000,
+            tokens_out=500,
+            counterfactual_cost_usd=Decimal("0.0525"),
+        )
+        event = ModelTaskDelegatedEvent(
+            timestamp="2026-05-26T00:00:00Z",
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            delegated_to="local_qwen3",
+            quality_gate_passed=True,
+            cost_usd=0.0,
+            cost_savings_usd=0.0525,
+            premium_counterfactual=counterfactual,
+        )
+        assert event.premium_counterfactual is not None
+        assert event.premium_counterfactual.model == "claude-opus-4-6"
+        assert event.premium_counterfactual.as_of == "2026-02-01"
+        # cost_savings_usd is the auditable counterfactual - actual.
+        assert event.premium_counterfactual.counterfactual_cost_usd - Decimal(
+            str(event.cost_usd)
+        ) == Decimal(str(event.cost_savings_usd))
+
+
+@pytest.mark.unit
+class TestModelPremiumCounterfactual:
+    """Auditable pinned premium counterfactual provenance (OMN-13355)."""
+
+    def _make(self, **overrides: object) -> ModelPremiumCounterfactual:
+        kwargs: dict[str, object] = {
+            "model": "claude-opus-4-6",
+            "price_in_per_1k": Decimal("0.015"),
+            "price_out_per_1k": Decimal("0.075"),
+            "as_of": "2026-02-01",
+            "tokens_in": 1000,
+            "tokens_out": 500,
+            "counterfactual_cost_usd": Decimal("0.0525"),
+        }
+        kwargs.update(overrides)
+        return ModelPremiumCounterfactual(**kwargs)  # type: ignore[arg-type]
+
+    def test_provenance_fields_present(self) -> None:
+        cf = self._make()
+        assert cf.model == "claude-opus-4-6"
+        assert cf.price_in_per_1k == Decimal("0.015")
+        assert cf.price_out_per_1k == Decimal("0.075")
+        assert cf.as_of == "2026-02-01"
+        assert cf.tokens_in == 1000
+        assert cf.tokens_out == 500
+        assert cf.counterfactual_cost_usd == Decimal("0.0525")
+        assert cf.pricing_source == "pricing_manifest"
+        assert cf.measured is False
+
+    def test_cost_is_recomputable(self) -> None:
+        cf = self._make()
+        recomputed = (
+            cf.price_in_per_1k * Decimal(cf.tokens_in)
+            + cf.price_out_per_1k * Decimal(cf.tokens_out)
+        ) / Decimal("1000")
+        assert recomputed == cf.counterfactual_cost_usd
+
+    def test_rejects_inconsistent_cost(self) -> None:
+        with pytest.raises(ValidationError):
+            self._make(counterfactual_cost_usd=Decimal("99.0"))
+
+    def test_frozen(self) -> None:
+        cf = self._make()
+        with pytest.raises(ValidationError):
+            cf.model = "gpt-4o"  # type: ignore[misc]
+
+    def test_calibration_measured_flag(self) -> None:
+        cf = self._make(pricing_source="calibration", measured=True)
+        assert cf.measured is True
+        assert cf.pricing_source == "calibration"
 
 
 @pytest.mark.unit

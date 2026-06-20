@@ -37,6 +37,9 @@ from omnibase_core.models.delegation.wire.model_orchestrator_intents import (
     ModelQualityGateIntent,
     ModelRoutingIntent,
 )
+from omnibase_core.models.delegation.wire.model_premium_counterfactual import (
+    ModelPremiumCounterfactual,
+)
 from omnibase_core.models.delegation.wire.model_quality_gate import (
     EnumQualityGateCategory,
     ModelQualityGateInput,
@@ -75,6 +78,7 @@ __all__: list[str] = [
     "ModelDelegationShadowConfig",
     "ModelInferenceIntent",
     "ModelInferenceResponseData",
+    "ModelPremiumCounterfactual",
     "ModelQualityGateInput",
     "ModelQualityGateIntent",
     "ModelQualityGateResult",
