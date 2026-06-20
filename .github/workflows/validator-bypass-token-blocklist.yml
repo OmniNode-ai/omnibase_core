@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Bypass-Token Blocklist Gate (OMN-13388)
+#
+# Required status check context: "bypass-token-blocklist / validate"
+#
+# Runs the validator unit tests then performs a repo-wide grep over the src/,
+# contracts/, and docs/ trees to ensure no bypass token has been introduced.
+#
+# Consumer repos wire this by adding the bypass-token-blocklist pre-commit hook
+# and mirroring this workflow in their own CI:
+#
+#   - repo: https://github.com/OmniNode-ai/omnibase_core
+#     rev: <tag>
+#     hooks:
+#       - id: bypass-token-blocklist
+#
+# LEAD FOLLOW-UP: After this PR merges, promote "bypass-token-blocklist / validate"
+# as a required status check across these repos (Settings → Branches → dev/main →
+# Require status checks):
+#   - OmniNode-ai/omnibase_core
+#   - OmniNode-ai/omnibase_infra
+#   - OmniNode-ai/omniclaude
+#   - OmniNode-ai/omnibase_spi
+#   - OmniNode-ai/omnibase_compat
+#   - OmniNode-ai/omnimarket
+#   - OmniNode-ai/omnidash
+#   - OmniNode-ai/onex_change_control
+# Each consumer repo also needs the bypass-token-blocklist pre-commit hook wired.
+
+name: Bypass-Token Blocklist
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: bypass-token-blocklist-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests (all 9 tokens, failing + passing cases)
+        run: |
+          uv run pytest tests/validators/test_bypass_token_blocklist.py -v
+
+      - name: Repo-wide bypass-token grep (src/ + contracts/ + docs/)
+        run: |
+          # Build --scan-tree args only for directories that exist in this repo
+          scan_args=()
+          for tree in src/ contracts/ docs/; do
+            if [ -d "$tree" ]; then
+              scan_args+=(--scan-tree "$tree")
+            fi
+          done
+          uv run python -m omnibase_core.validators.bypass_token_blocklist "${scan_args[@]}"
