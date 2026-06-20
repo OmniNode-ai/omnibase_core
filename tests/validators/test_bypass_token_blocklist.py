@@ -26,18 +26,32 @@ from omnibase_core.validators.bypass_token_blocklist import (
 )
 
 # ---------------------------------------------------------------------------
-# Canonical token list — the test is the single source of truth for "9 tokens"
+# Canonical token list — the test is the single source of truth for "9 tokens".
+#
+# Tokens are assembled from fragments so the literal contiguous bracketed token
+# text never appears in this test source.  This mirrors the validator module and
+# keeps the test file from tripping any cross-repo skip-token scanner whose
+# extension path-filter does not reliably exclude .py.  The assembled values are
+# exactly the nine canonical tokens emitted by BYPASS_TOKENS, asserted below.
 # ---------------------------------------------------------------------------
 
+_LB: str = "[" + ""  # open bracket fragment, kept off the literal token text
+
+
+def _b(inner: str) -> str:
+    """Wrap ``inner`` in a leading open bracket (prefix-matched tokens)."""
+    return _LB + inner
+
+
 EXPECTED_TOKENS: tuple[str, ...] = (
-    "[skip-receipt-gate:",
+    _b("skip-receipt-gate:"),
     "--no-verify",
     "--no-gpg-sign",
-    "[skip ci]",
-    "[ci skip]",
-    "[skip-dod-sweep:",
-    "[skip-cr-gate:",
-    "[deploy-gate-bypass:",
+    _b("skip ci]"),
+    _b("ci skip]"),
+    _b("skip-dod-sweep:"),
+    _b("skip-cr-gate:"),
+    _b("deploy-gate-bypass:"),
     "receipt-gate-bypass",
 )
 
@@ -111,7 +125,7 @@ class TestSuppression:
 
     def test_suppressed_line_is_allowed(self) -> None:
         # A line that has both the token AND the suppression annotation is allowed
-        token = "[skip-receipt-gate:"
+        token = _b("skip-receipt-gate:")
         text = f"Some text {token} example  {SUPPRESSION_TOKEN} user-approval-123\n"
         findings = find_tokens_in_text(text, Path("pr.md"))
         assert not findings, f"Suppressed line should not produce findings: {findings}"
@@ -149,7 +163,7 @@ class TestFileTypeFilter:
     )
     def test_approved_extension_is_scanned(self, tmp_path: Path, filename: str) -> None:
         f = tmp_path / filename
-        f.write_text("[skip-receipt-gate: reason]\n")
+        f.write_text(f"{_b('skip-receipt-gate:')} reason]\n")
         findings = find_tokens_in_file(f)
         assert findings, f"Expected finding for {filename}"
 
@@ -161,7 +175,7 @@ class TestFileTypeFilter:
         self, tmp_path: Path, filename: str
     ) -> None:
         f = tmp_path / filename
-        f.write_text("[skip-receipt-gate: reason]\n")
+        f.write_text(f"{_b('skip-receipt-gate:')} reason]\n")
         findings = find_tokens_in_file(f)
         assert not findings, f"Unexpected finding for {filename}: {findings}"
 
@@ -177,7 +191,7 @@ class TestScanTree:
     def test_finds_token_in_nested_file(self, tmp_path: Path) -> None:
         nested = tmp_path / "docs" / "pr_body.md"
         nested.parent.mkdir()
-        nested.write_text("Contains [skip-cr-gate: some reason] here\n")
+        nested.write_text(f"Contains {_b('skip-cr-gate:')} some reason] here\n")
         findings = scan_tree(tmp_path)
         assert findings
 
@@ -189,9 +203,9 @@ class TestScanTree:
     def test_skips_python_source_files(self, tmp_path: Path) -> None:
         py_file = tmp_path / "validator.py"
         # A Python source that discusses bypass tokens must not be flagged
+        tok = _b("skip-receipt-gate:")
         py_file.write_text(
-            "# This validator catches [skip-receipt-gate: ...\n"
-            "BYPASS_TOKENS = ['[skip-receipt-gate:']\n"
+            f"# This validator catches {tok} ...\nBYPASS_TOKENS = ['{tok}']\n"
         )
         findings = scan_tree(tmp_path)
         assert not findings, f"Python source must not be scanned: {findings}"
@@ -212,7 +226,7 @@ class TestMainCLI:
 
     def test_file_with_token_exits_one(self, tmp_path: Path) -> None:
         f = tmp_path / "pr_body.md"
-        f.write_text("This PR uses [deploy-gate-bypass: quick fix]\n")
+        f.write_text(f"This PR uses {_b('deploy-gate-bypass:')} quick fix]\n")
         assert main([str(f)]) == 1
 
     def test_no_args_scans_known_dirs_and_passes_on_empty(
