@@ -36,6 +36,8 @@ EXPECTED_EXPORTS: tuple[str, ...] = (
     "ModelPermissionContract",
     "ModelEvidenceRequirementContract",
     "ModelRendererCapabilityContract",
+    # Versioned design-token contract (OMN-13389)
+    "ModelRendererThemeContract",
 )
 
 
