@@ -84,6 +84,9 @@ from omnibase_core.models.dashboard.model_permission_contract import (
 from omnibase_core.models.dashboard.model_renderer_capability_contract import (
     ModelRendererCapabilityContract,
 )
+from omnibase_core.models.dashboard.model_renderer_theme_contract import (
+    ModelRendererThemeContract,
+)
 from omnibase_core.models.dashboard.model_status_item_config import (
     ModelStatusItemConfig,
 )
@@ -145,4 +148,6 @@ __all__: tuple[str, ...] = (
     "ModelPermissionContract",
     "ModelEvidenceRequirementContract",
     "ModelRendererCapabilityContract",
+    # Versioned design-token contract (OMN-13389)
+    "ModelRendererThemeContract",
 )
