@@ -32,6 +32,7 @@ from omnibase_core.cli.cli_contract_diff import (
     load_contract_yaml_file,
 )
 from omnibase_core.contract_graph.adapter_node_contract import (
+    _ROLE_TO_CANONICAL_NODE_TYPE,
     import_node_contract,
     round_trip_node_node,
 )
@@ -137,40 +138,102 @@ def _json_str_list(values: list[str]) -> list[JsonType]:
     return widened
 
 
-def normalize_node_contract(data: dict[str, JsonType]) -> dict[str, JsonType]:
+def normalize_node_contract(
+    data: dict[str, JsonType],
+    source_path: str | None = None,
+) -> dict[str, JsonType]:
     """Canonical normalized form of a backend node contract.
 
     The semantic projection a node-contract round-trip targets: handler_id,
-    name, node_type, sorted publish/subscribe topics, and input/output models.
+    name, node_type (always canonical lowercase), sorted publish/subscribe
+    topics (from both top-level and ``event_bus:`` section), and input/output
+    models.
+
     This is the baseline a no-op round-trip is diffed against — NOT the raw
-    source (which also carries descriptor/version/build noise the IR drops).
+    source (which also carries ``descriptor`` / ``state_transitions`` /
+    ``workflow_coordination`` / version/build noise the IR drops).
+
+    ``source_path`` is used as the node_id fallback when the contract declares
+    no ``handler_id``, ``name``, or ``node_id`` (state_machine /
+    workflow_coordination dialect contracts in ``contracts/runtime/``).
     """
+    from omnibase_core.contract_graph.adapter_node_contract import (
+        _NODE_TYPE_TO_ROLE,  # late import: avoids circular at module level
+        _node_id_from_source_path,  # late import: avoids circular at module level
+    )
+
     canonical = canonicalize_contract(data)
     handler_id = canonical.get("handler_id")
     name = canonical.get("name")
-    node_id = handler_id if isinstance(handler_id, str) and handler_id else name
-    if not isinstance(node_id, str) or not node_id:
-        raise ValueError(  # error-ok: input validation at the contract-import boundary
-            "node contract has no handler_id or name"
+    node_id_field = canonical.get("node_id")
+    node_id: str | None = (
+        handler_id
+        if isinstance(handler_id, str) and handler_id
+        else (
+            name
+            if isinstance(name, str) and name
+            else (
+                node_id_field
+                if isinstance(node_id_field, str) and node_id_field
+                else None
+            )
         )
-    node_type = canonical.get("node_type")
-    if not isinstance(node_type, str):
+    )
+    if node_id is None:
+        if source_path is not None:
+            node_id = _node_id_from_source_path(source_path)
+        else:
+            raise ValueError(  # error-ok: input validation at the contract-import boundary
+                "node contract has no handler_id, name, or node_id, and no source_path was provided"
+            )
+
+    node_type_raw = canonical.get("node_type")
+    if not isinstance(node_type_raw, str):
         raise ValueError(  # error-ok: input validation at the contract-import boundary
             "node contract has no string node_type"
         )
+    # Normalize UPPER_GENERIC tokens to canonical lowercase for the round-trip
+    # baseline so a REDUCER_GENERIC source round-trips to "reducer" — the same
+    # token round_trip_node_node emits.
+    if node_type_raw in _NODE_TYPE_TO_ROLE:
+        role = _NODE_TYPE_TO_ROLE[node_type_raw]
+        node_type_canonical: str = _ROLE_TO_CANONICAL_NODE_TYPE.get(role, node_type_raw)
+    else:
+        node_type_canonical = node_type_raw
 
     result: dict[str, JsonType] = {
         "handler_id": node_id,
         "name": name if isinstance(name, str) and name else node_id,
-        "node_type": node_type,
+        "node_type": node_type_canonical,
     }
 
-    publish = canonical.get("publish_topics")
-    if isinstance(publish, list) and publish:
-        result["publish_topics"] = _json_str_list(sorted(str(x) for x in publish))
-    subscribe = canonical.get("subscribe_topics")
-    if isinstance(subscribe, list) and subscribe:
-        result["subscribe_topics"] = _json_str_list(sorted(str(x) for x in subscribe))
+    # Extract topics from both top-level fields and nested event_bus: section
+    # (event_bus dialect). Union is taken when both are present.
+    def _collect_topics(key: str) -> list[str]:
+        top = canonical.get(key)
+        top_list: list[str] = (
+            [str(x) for x in top if isinstance(x, str)] if isinstance(top, list) else []
+        )
+        event_bus = canonical.get("event_bus")
+        nested_list: list[str] = []
+        if isinstance(event_bus, dict):
+            nested = event_bus.get(key)
+            if isinstance(nested, list):
+                nested_list = [str(x) for x in nested if isinstance(x, str)]
+        seen: set[str] = set(top_list)
+        combined: list[str] = list(top_list)
+        for t in nested_list:
+            if t not in seen:
+                combined.append(t)
+                seen.add(t)
+        return sorted(combined)
+
+    publish = _collect_topics("publish_topics")
+    if publish:
+        result["publish_topics"] = _json_str_list(publish)
+    subscribe = _collect_topics("subscribe_topics")
+    if subscribe:
+        result["subscribe_topics"] = _json_str_list(subscribe)
 
     input_model = canonical.get("input_model")
     if isinstance(input_model, str):
@@ -275,10 +338,16 @@ def round_trip_node_diff(
     Round-trips the IR node + its edges back to canonical normalized node form
     and compares it to ``normalize_node_contract(source)`` using the shipped
     semantic diff spine.
+
+    The IR node's ``source_ref.source_path`` is passed to
+    ``normalize_node_contract`` so that state_machine / workflow_coordination
+    dialect contracts (which declare no ``handler_id`` or ``name``) resolve
+    their node_id from the file path stem, matching what ``import_node_contract``
+    already does.
     """
     node = next(n for n in ir.nodes if n.node_id == node_id)
     round_tripped = round_trip_node_node(node, _edges_for(ir, node_id))
-    baseline = normalize_node_contract(source)
+    baseline = normalize_node_contract(source, source_path=node.source_ref.source_path)
     diffs = diff_contract_dicts(baseline, round_tripped)
     return categorize_diff_entries(diffs)
 
