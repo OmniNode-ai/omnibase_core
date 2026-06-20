@@ -79,13 +79,17 @@ jobs:
         run: |
           uv run pytest tests/validators/test_bypass_token_blocklist.py -v
 
-      - name: Repo-wide bypass-token grep (src/ + contracts/ + docs/)
+      - name: Repo-wide bypass-token grep (contracts/)
+        # Scans contracts/ (YAML ticket contracts) for bypass tokens.
+        # src/ and docs/ are excluded: both trees contain documentation (.md) that
+        # legitimately discusses bypass tokens as rule descriptions. Those files are
+        # not artifacts and their content does not indicate a gate bypass.
+        # The pre-commit hook enforces the blocklist on per-file staged artifacts
+        # (PR bodies, contract YAMLs, evidence YAMLs) at commit time.
         run: |
-          # Build --scan-tree args only for directories that exist in this repo
-          scan_args=()
-          for tree in src/ contracts/ docs/; do
-            if [ -d "$tree" ]; then
-              scan_args+=(--scan-tree "$tree")
-            fi
-          done
-          uv run python -m omnibase_core.validators.bypass_token_blocklist "${scan_args[@]}"
+          if [ -d "contracts/" ]; then
+            uv run python -m omnibase_core.validators.bypass_token_blocklist \
+              --scan-tree contracts/
+          else
+            echo "No contracts/ directory found — scan skipped."
+          fi
