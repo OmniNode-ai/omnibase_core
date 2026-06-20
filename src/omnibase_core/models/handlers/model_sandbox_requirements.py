@@ -73,7 +73,7 @@ def _validate_domain(domain: str) -> bool:
         - No scheme (http://) or path (/foo)
 
     IP Literal Policy:
-        IP literals (e.g., 192.168.1.1, [::1]) are NOT allowed in allowed_domains.
+        IP literals (e.g., 192.0.2.1, [::1]) are NOT allowed in allowed_domains.
         This is intentional and differs from artifact_reference (which allows IPs):
 
         - **allowed_domains** is a security allowlist for network access control.
@@ -249,7 +249,7 @@ class ModelSandboxRequirements(BaseModel):
                     f"Invalid domain(s) in allowed_domains: {invalid_domains}. "
                     f"Domains must be valid hostnames. Wildcard (*.) is allowed "
                     f"only at the leftmost label (e.g., '*.example.com'). "
-                    f"IP literals (e.g., 192.168.1.1, [::1]), schemes (http://), "
+                    f"IP literals (e.g., 192.0.2.1, [::1]), schemes (http://), "
                     f"and paths (/foo) are not allowed. For IP-based access, use "
                     f"an empty allowed_domains list with requires_network=True."
                 ),

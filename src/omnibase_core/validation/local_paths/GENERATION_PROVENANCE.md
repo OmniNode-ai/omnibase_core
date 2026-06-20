@@ -15,7 +15,7 @@ corpus. This file is the durable evidence of that generation + acceptance.
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) |
+| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip OMN-13294 generation-evidence endpoint -->
 | attempt_count | `1` (first-attempt success) |
 | usage_source | `measured` (real provider-reported token usage) |
 | contract_passed | `true` |

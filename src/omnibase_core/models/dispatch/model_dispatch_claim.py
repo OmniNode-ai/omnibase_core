@@ -35,7 +35,7 @@ class ModelDispatchClaim(BaseModel):
         description="sha1(kind|host|resource) — 40-char lowercase hex"
     )
     kind: str = Field(description="Logical operation kind, e.g. 'fix_containers'")
-    host: str = Field(description="Target host or scope, e.g. '192.168.86.201'")
+    host: str = Field(description="Target host or scope, e.g. '192.0.2.10'")
     resource: str = Field(description="Specific resource within the host")
     claimant: str = Field(
         description="Agent ID or session identifier that owns this claim"
