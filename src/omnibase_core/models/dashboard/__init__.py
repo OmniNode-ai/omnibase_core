@@ -78,6 +78,9 @@ from omnibase_core.models.dashboard.model_evidence_requirement_contract import (
 )
 from omnibase_core.models.dashboard.model_metric_threshold import ModelMetricThreshold
 from omnibase_core.models.dashboard.model_node_view import ModelNodeView
+from omnibase_core.models.dashboard.model_omnistudio_evidence_bundle import (
+    ModelOmniStudioEvidenceBundle,
+)
 from omnibase_core.models.dashboard.model_permission_contract import (
     ModelPermissionContract,
 )
@@ -87,6 +90,7 @@ from omnibase_core.models.dashboard.model_renderer_capability_contract import (
 from omnibase_core.models.dashboard.model_renderer_theme_contract import (
     ModelRendererThemeContract,
 )
+from omnibase_core.models.dashboard.model_review_packet import ModelReviewPacket
 from omnibase_core.models.dashboard.model_status_item_config import (
     ModelStatusItemConfig,
 )
@@ -150,4 +154,7 @@ __all__: tuple[str, ...] = (
     "ModelRendererCapabilityContract",
     # Versioned design-token contract (OMN-13389)
     "ModelRendererThemeContract",
+    # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
+    "ModelReviewPacket",
+    "ModelOmniStudioEvidenceBundle",
 )
