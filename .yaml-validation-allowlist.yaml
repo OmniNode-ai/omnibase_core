@@ -395,6 +395,16 @@ allowed_functions:
     added: "2024-10-15"
     review: "2026-06-13"
 
+  - function: "load_workflow_contract"
+    reason: >-
+      RuntimeLocal workflow contract loader (relocated from omnibase_infra in OMN-13444, local-first re-convergence).
+      Loads arbitrary user-authored workflow contract YAML before downstream node/handler resolution;
+      the workflow contract has no fixed Pydantic model in omnibase_core (the raw dict is read structurally
+      for terminal_event / handler_routing keys), so raw yaml.safe_load is the architecturally correct
+      pre-validation parse — same pattern as load_contract_yaml_file / publish_contract above.
+    added: "2026-06-21"
+    review: "2026-12-13"
+
   - function: "validate_contract_yaml"
     reason: >-
       Pre-validation step that checks YAML structure before type conversion - validates contract YAML
