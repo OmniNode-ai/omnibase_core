@@ -15,7 +15,7 @@ class ProtocolLocalRuntimePayloadModel(Protocol):
 
     def model_dump_json(self) -> str:
         """Serialize the payload as JSON."""
-        ...
+        raise NotImplementedError
 
 
 __all__: list[str] = ["ProtocolLocalRuntimePayloadModel"]

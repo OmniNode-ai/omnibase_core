@@ -20,15 +20,15 @@ class ProtocolLocalRuntimeBus(Protocol):
 
     async def start(self) -> None:
         """Start the bus."""
-        ...
+        raise NotImplementedError
 
     async def close(self) -> None:
         """Close the bus."""
-        ...
+        raise NotImplementedError
 
     async def publish(self, topic: str, key: object, value: bytes) -> object:
         """Publish serialized bytes to a topic."""
-        ...
+        raise NotImplementedError
 
     async def subscribe(
         self,
@@ -38,7 +38,7 @@ class ProtocolLocalRuntimeBus(Protocol):
         group_id: str,
     ) -> UnsubscribeCallback:
         """Subscribe to a topic and return an unsubscribe callback."""
-        ...
+        raise NotImplementedError
 
 
 __all__: list[str] = ["ProtocolLocalRuntimeBus", "UnsubscribeCallback"]

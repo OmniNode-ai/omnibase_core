@@ -13,7 +13,7 @@ class ProtocolLocalRuntimeDumpModel(Protocol):
 
     def model_dump(self, *, mode: str) -> object:
         """Dump the model into a JSON-compatible object."""
-        ...
+        raise NotImplementedError
 
 
 __all__: list[str] = ["ProtocolLocalRuntimeDumpModel"]
