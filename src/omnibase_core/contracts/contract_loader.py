@@ -443,10 +443,6 @@ class IncludeLoader(yaml.SafeLoader):
         self.max_file_size = max_file_size
         self.current_depth = current_depth
 
-    def dispose(self) -> None:
-        """Release PyYAML loader resources."""
-        super().dispose()  # type: ignore[no-untyped-call]
-
 
 def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
     """

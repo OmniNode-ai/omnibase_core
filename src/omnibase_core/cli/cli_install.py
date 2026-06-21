@@ -42,19 +42,7 @@ def _load_registry() -> dict[str, dict[str, str]]:
     """Load the installed nodes registry from disk."""
     path = _get_registry_path()
     if path.exists():
-        raw_registry: object = json.loads(path.read_text())
-        if not isinstance(raw_registry, dict):
-            return {}
-        registry: dict[str, dict[str, str]] = {}
-        for package_name, metadata in raw_registry.items():
-            if not isinstance(package_name, str) or not isinstance(metadata, dict):
-                continue
-            registry[package_name] = {
-                key: value
-                for key, value in metadata.items()
-                if isinstance(key, str) and isinstance(value, str)
-            }
-        return registry
+        return json.loads(path.read_text())
     return {}
 
 
