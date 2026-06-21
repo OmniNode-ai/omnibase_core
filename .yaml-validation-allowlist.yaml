@@ -128,6 +128,16 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/runtime/runtime_local.py"
+    reason: >-
+      RuntimeLocal workflow contract loader (load_workflow_contract), relocated from omnibase_infra in
+      OMN-13444 (local-first re-convergence). Loads arbitrary user-authored workflow contract YAML before
+      downstream node/handler resolution; the workflow contract has no fixed Pydantic model in omnibase_core
+      (the raw dict is read structurally for terminal_event / handler_routing keys), so raw yaml.safe_load
+      is the architecturally correct pre-validation parse — same pattern as validator_contracts.py above.
+    added: "2026-06-21"
+    review: "2026-12-13"
+
   - file: "src/omnibase_core/normalization/contract_validator.py"
     reason: >-
       Corpus validation entry point that must parse raw YAML to inspect bucket classification before selecting
