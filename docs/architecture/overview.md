@@ -5,6 +5,8 @@
 
 **Status**: ✅ Complete
 
+> **Provenance**: Import paths and node archetypes in this document were verified against `src/omnibase_core/` on this refresh (OMN-13460). The four node base classes (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) are exported from `omnibase_core.nodes`; service wrappers such as `ModelServiceCompute` live in `omnibase_core.infrastructure.infra_bases`.
+
 ## Overview
 
 This document provides a high-level overview of the ONEX architecture and its core components. The ONEX framework is built on a four-node pattern that provides clear separation of concerns, type safety, and scalable architecture for building distributed systems.
