@@ -16,6 +16,7 @@ packets in any order yield the same fingerprint. The bundle is frozen and
 from __future__ import annotations
 
 import hashlib
+import json
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -54,6 +55,7 @@ class ModelOmniStudioEvidenceBundle(BaseModel):
         fingerprint is invariant under packet reordering.
         """
         packet_hashes = sorted(packet.compute_packet_hash() for packet in self.packets)
-        joined = "\n".join([self.session_id, *packet_hashes])
-        digest = hashlib.sha256(joined.encode("utf-8")).hexdigest()
+        payload = {"packet_hashes": packet_hashes, "session_id": self.session_id}
+        canonical_payload = json.dumps(payload, separators=(",", ":"), sort_keys=True)
+        digest = hashlib.sha256(canonical_payload.encode("utf-8")).hexdigest()
         return f"sha256:{digest}"

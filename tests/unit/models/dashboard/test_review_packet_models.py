@@ -25,6 +25,8 @@ from omnibase_core.models.dashboard import (
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
+pytestmark = pytest.mark.unit
+
 
 def _sha256_ref(data: bytes) -> str:
     return f"sha256:{hashlib.sha256(data).hexdigest()}"
@@ -64,6 +66,7 @@ def test_review_packet_required_fields_and_types() -> None:
 def test_review_packet_is_frozen() -> None:
     packet = _make_packet()
     with pytest.raises(ValidationError):
+        # NOTE(OMN-13387): assignment is intentional to prove frozen model validation.
         packet.ir_hash = _sha256_ref(b"other")  # type: ignore[misc]
 
 
@@ -75,6 +78,7 @@ def test_review_packet_forbids_extra_fields() -> None:
             patch_hash=_sha256_ref(b"c"),
             validation_pipeline_version=ModelSemVer(major=1, minor=0, patch=0),
             receipt_gate_result=ModelReceiptGateResult(passed=True),
+            # NOTE(OMN-13387): unexpected kwarg is intentional to prove extra="forbid".
             extra_field="nope",  # type: ignore[call-arg]
         )
 
@@ -103,6 +107,7 @@ def test_review_packet_rejects_malformed_hash(bad_hash: str) -> None:
 
 def test_review_packet_missing_required_field() -> None:
     with pytest.raises(ValidationError):
+        # NOTE(OMN-13387): omitted required field is intentional validation coverage.
         ModelReviewPacket(  # type: ignore[call-arg]
             ir_hash=_sha256_ref(b"b"),
             patch_hash=_sha256_ref(b"c"),
@@ -171,6 +176,7 @@ def test_bundle_forbids_extra_fields() -> None:
     with pytest.raises(ValidationError):
         ModelOmniStudioEvidenceBundle(
             session_id="sess-1",
+            # NOTE(OMN-13387): unexpected kwarg is intentional to prove extra="forbid".
             extra="nope",  # type: ignore[call-arg]
         )
 
