@@ -357,6 +357,22 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: bypass-token-blocklist
+  name: Bypass-Token Blocklist (OMN-13388)
+  description: >
+    Enforce the 9-token bypass blocklist on every emitted artifact — backend and UI contract edits alike.
+    The canonical token list lives in BYPASS_TOKENS in the validator module (src/omnibase_core/validators/bypass_token_blocklist.py);
+    the tokens are not re-listed here so this hook definition does not self-block on the skip-gate scan.
+    Scanned file types: .md .yaml .yml .txt. Python source is excluded so validator source discussing
+    the tokens does not self-block. emergency_bypass.enabled is always false (schema-layer enforcement).
+    Suppression: add '# bypass-token-ok: <receipt-id>' on the SAME LINE as the token with a traceable
+    user-approval handle. See: OMN-13388 (Phase 4.3).
+  language: python
+  entry: python -m omnibase_core.validators.bypass_token_blocklist
+  types_or: [markdown, yaml, text]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: node-purity
   name: Node Purity Gate (no I/O in nodes, OMN-13283)
   description: >
