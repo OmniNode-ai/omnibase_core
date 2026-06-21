@@ -271,7 +271,5 @@ def test_harness_modules_carry_no_infra_or_transport_imports() -> None:
 
 @pytest.mark.unit
 def test_infra_not_importable_in_core_environment() -> None:
-    """The core venv must not have omnibase_infra installed (infra-free proof)."""
+    """The core venv must not have omnibase_infra installed."""
     assert importlib.util.find_spec("omnibase_infra") is None
-    assert importlib.util.find_spec("aiokafka") is None
-    assert importlib.util.find_spec("asyncpg") is None

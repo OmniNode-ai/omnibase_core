@@ -27,11 +27,11 @@ class ProtocolHarnessInferenceAdapter(Protocol):
     @property
     def adapter_id(self) -> str:
         """Return a stable adapter identifier for evidence/provenance."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol declaration only
 
     def infer(self, request: ModelInferenceRequest) -> ModelInferenceResult:
         """Run inference and return a completion."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol declaration only
 
 
 __all__ = ["ProtocolHarnessInferenceAdapter"]

@@ -24,15 +24,15 @@ class ProtocolHarnessProjectionStore(Protocol):
     @property
     def backend(self) -> str:
         """Return a human-readable backend identifier for evidence packets."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol declaration only
 
     def write(self, row: ModelProjectionRow) -> None:
         """Persist a single projection row."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol declaration only
 
     def read(self, correlation_id: UUID) -> ModelProjectionRow | None:
         """Read back the projection row for a correlation ID, or None."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol declaration only
 
 
 __all__ = ["ProtocolHarnessProjectionStore"]
