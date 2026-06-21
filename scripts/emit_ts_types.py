@@ -31,9 +31,11 @@ from omnibase_core.models.dashboard import (
     ModelComponentContract,
     ModelDataBindingContract,
     ModelEvidenceRequirementContract,
+    ModelOmniStudioEvidenceBundle,
     ModelPermissionContract,
     ModelRendererCapabilityContract,
     ModelRendererThemeContract,
+    ModelReviewPacket,
 )
 from omnibase_core.models.notifications import ModelStateTransitionNotification
 from omnibase_core.models.projectors import (
@@ -65,6 +67,9 @@ MODELS: dict[str, type[BaseModel]] = {
     "ModelRendererCapabilityContract": ModelRendererCapabilityContract,
     # Versioned design-token contract (OMN-13389)
     "ModelRendererThemeContract": ModelRendererThemeContract,
+    # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
+    "ModelReviewPacket": ModelReviewPacket,
+    "ModelOmniStudioEvidenceBundle": ModelOmniStudioEvidenceBundle,
 }
 
 
