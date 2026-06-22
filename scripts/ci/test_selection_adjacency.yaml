@@ -82,6 +82,7 @@ adjacency:
   dispatch: {reverse_deps: []}
   doctor: {reverse_deps: []}
   factories: {reverse_deps: [nodes, container]}
+  feature_flags: {reverse_deps: []}
   gate: {reverse_deps: []}
   infrastructure: {reverse_deps: []}
   integrations: {reverse_deps: []}
