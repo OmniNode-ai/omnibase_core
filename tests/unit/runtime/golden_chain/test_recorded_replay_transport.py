@@ -241,6 +241,64 @@ def test_record_fixture_writes_provenance_stamped_fixture(tmp_path: Path) -> Non
     assert resp.json()["choices"][0]["message"]["content"] == '{"verdict":"PASS"}'
 
 
+def test_relaxed_hash_mode_still_matches_model(tmp_path: Path) -> None:
+    """Relaxed-hash mode selects by endpoint+model, not blindly endpoint_matches[0]."""
+    right = _fixture(model=_MODEL, content='{"verdict":"PASS"}')
+    wrong = _fixture(model="some-other-model", content='{"verdict":"FAIL"}')
+    transport = RecordedReplayInferenceTransport(
+        [wrong, right], enforce_request_hash=False
+    )
+    with transport as client:
+        resp = client.post(
+            _ENDPOINT, json=_payload(model=_MODEL), headers={}, timeout=30.0
+        )
+    # Must return the fixture recorded for the live model, not the first match.
+    assert resp.json()["choices"][0]["message"]["content"] == '{"verdict":"PASS"}'
+
+
+def test_relaxed_hash_mode_no_model_for_endpoint_fails() -> None:
+    """Relaxed mode fails REQUEST_HASH_MISMATCH when no fixture matches the model."""
+    transport = RecordedReplayInferenceTransport(
+        [_fixture(model="recorded-model")], enforce_request_hash=False
+    )
+    with pytest.raises(GoldenChainReplayError) as exc:
+        with transport as client:
+            client.post(
+                _ENDPOINT, json=_payload(model="live-model"), headers={}, timeout=30.0
+            )
+    assert exc.value.failure_class is EnumGoldenChainFailureClass.REQUEST_HASH_MISMATCH
+
+
+def test_relaxed_hash_mode_missing_model_fails_closed() -> None:
+    """A missing 'model' in relaxed mode cannot select a trusted fixture."""
+    transport = RecordedReplayInferenceTransport(
+        [_fixture()], enforce_request_hash=False
+    )
+    payload = _payload()
+    del payload["model"]
+    with pytest.raises(GoldenChainReplayError) as exc:
+        with transport as client:
+            client.post(_ENDPOINT, json=payload, headers={}, timeout=30.0)
+    assert exc.value.failure_class is EnumGoldenChainFailureClass.ROUTE_NOT_RESOLVED
+
+
+def test_recorder_requires_routing_contract_present(tmp_path: Path) -> None:
+    """A missing required routing contract fails closed, not a 'none' sentinel."""
+    with pytest.raises(GoldenChainReplayError) as exc:
+        record_fixture(
+            output_path=tmp_path / "fx.json",
+            provider="zai",
+            model_id=_MODEL,
+            endpoint_ref="cloud-glm",
+            endpoint=_ENDPOINT,
+            request_payload=_payload(),
+            raw_response=_raw_response(),
+            routing_contract_path=tmp_path / "absent.yaml",
+            env={"OMN_RECORD_GOLDEN": "1"},  # local, no CI markers
+        )
+    assert exc.value.failure_class is EnumGoldenChainFailureClass.ROUTE_NOT_RESOLVED
+
+
 def test_recorder_rejects_tier_name_as_concrete_model(tmp_path: Path) -> None:
     contract = tmp_path / "bifrost.yaml"
     contract.write_text("backends: []\n")

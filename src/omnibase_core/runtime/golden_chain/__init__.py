@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 """Canonical recorded-from-real golden-chain replay harness (OMN-13499).
 
@@ -37,13 +37,15 @@ Epic: OMN-13498 (golden-chain de-fake) · Foundation: OMN-13499 (Phase 0).
 
 from __future__ import annotations
 
+from omnibase_core.enums.enum_golden_chain_failure_class import (
+    EnumGoldenChainFailureClass,
+)
+from omnibase_core.errors.error_golden_chain_replay import (
+    GoldenChainReplayError,
+)
 from omnibase_core.models.runtime.golden_chain.model_golden_chain_fixture import (
     ModelGoldenChainFixture,
     ModelGoldenChainProvenance,
-)
-from omnibase_core.runtime.golden_chain.failure_classes import (
-    EnumGoldenChainFailureClass,
-    GoldenChainReplayError,
 )
 from omnibase_core.runtime.golden_chain.record_guard import (
     record_mode_enabled,

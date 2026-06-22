@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 """Provenance-stamped fixture recorder for the golden-chain harness (OMN-13499).
 
@@ -22,15 +22,14 @@ import json
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
+from omnibase_core.enums.enum_golden_chain_failure_class import (
+    EnumGoldenChainFailureClass,
+)
+from omnibase_core.errors.error_golden_chain_replay import GoldenChainReplayError
 from omnibase_core.models.runtime.golden_chain.model_golden_chain_fixture import (
     ModelGoldenChainFixture,
     ModelGoldenChainProvenance,
-)
-from omnibase_core.runtime.golden_chain.failure_classes import (
-    EnumGoldenChainFailureClass,
-    GoldenChainReplayError,
 )
 from omnibase_core.runtime.golden_chain.record_guard import (
     require_record_mode_disabled,
@@ -49,12 +48,29 @@ def _hash_bytes(data: bytes) -> str:
     return "sha256:" + hashlib.sha256(data).hexdigest()
 
 
-def hash_contract_file(path: str | Path | None) -> str:
-    """Hash a routing-contract/overlay file, or the sentinel 'none' when absent."""
+def hash_contract_file(path: str | Path | None, *, required: bool = False) -> str:
+    """Hash a routing-contract/overlay file, or the sentinel 'none' when absent.
+
+    When ``required=True`` a missing path/file fails closed with a named replay
+    error instead of degrading to the sentinel — a required routing contract that
+    is absent must NOT yield a fixture that silently claims incomplete provenance.
+    """
     if path is None:
+        if required:
+            raise GoldenChainReplayError(
+                EnumGoldenChainFailureClass.ROUTE_NOT_RESOLVED,
+                "routing_contract_path is required but was None; refusing to "
+                "record a fixture with routing_contract_hash='none'.",
+            )
         return _OVERLAY_SENTINEL_NONE
     file_path = Path(path)
     if not file_path.is_file():
+        if required:
+            raise GoldenChainReplayError(
+                EnumGoldenChainFailureClass.ROUTE_NOT_RESOLVED,
+                f"routing contract file not found: {file_path}; refusing to "
+                "record a fixture with routing_contract_hash='none'.",
+            )
         return _OVERLAY_SENTINEL_NONE
     return _hash_bytes(file_path.read_bytes())
 
@@ -65,7 +81,7 @@ def build_provenance(
     model_id: str,
     endpoint_ref: str,
     endpoint: str,
-    request_payload: dict[str, Any],
+    request_payload: dict[str, object],
     routing_contract_path: str | Path,
     routing_overlay_path: str | Path | None,
 ) -> ModelGoldenChainProvenance:
@@ -80,7 +96,12 @@ def build_provenance(
             f"refusing to record a fixture pinned to delegation TIER name "
             f"{model_id!r}; the recorder requires a CONCRETE resolved model id.",
         )
-    messages = request_payload.get("messages") or []
+    raw_messages = request_payload.get("messages")
+    messages: list[dict[str, object]] = (
+        [item for item in raw_messages if isinstance(item, dict)]
+        if isinstance(raw_messages, list)
+        else []
+    )
     return ModelGoldenChainProvenance(
         provider=provider,
         model_id=model_id,
@@ -88,7 +109,7 @@ def build_provenance(
         endpoint=endpoint,
         request_hash=canonical_request_hash(request_payload),
         prompt_hash=canonical_prompt_hash(messages),
-        routing_contract_hash=hash_contract_file(routing_contract_path),
+        routing_contract_hash=hash_contract_file(routing_contract_path, required=True),
         routing_overlay_hash=hash_contract_file(routing_overlay_path),
         recorded_at=datetime.now(UTC).isoformat(),
         fixture_version=FIXTURE_VERSION,
@@ -102,8 +123,8 @@ def record_fixture(
     model_id: str,
     endpoint_ref: str,
     endpoint: str,
-    request_payload: dict[str, Any],
-    raw_response: dict[str, Any],
+    request_payload: dict[str, object],
+    raw_response: dict[str, object],
     routing_contract_path: str | Path,
     routing_overlay_path: str | Path | None = None,
     env: Mapping[str, str] | None = None,

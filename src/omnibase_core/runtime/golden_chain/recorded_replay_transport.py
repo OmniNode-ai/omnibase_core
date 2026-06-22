@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 """Canonical recorded-from-real replay transport for golden chains (OMN-13499).
 
@@ -32,16 +32,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
+from omnibase_core.enums.enum_golden_chain_failure_class import (
+    EnumGoldenChainFailureClass,
+)
+from omnibase_core.errors.error_golden_chain_replay import GoldenChainReplayError
 from omnibase_core.models.runtime.golden_chain.model_golden_chain_fixture import (
     ModelGoldenChainFixture,
 )
-from omnibase_core.runtime.golden_chain.failure_classes import (
-    EnumGoldenChainFailureClass,
-    GoldenChainReplayError,
-)
+from omnibase_core.runtime.golden_chain.replay_response import ReplayResponse
 
 # Delegation TIER names — a tier name reaching the inference layer as a model_key
 # is the OMN-13470 bug class. The transport rejects them so a recorded replay can
@@ -56,7 +58,7 @@ DELEGATION_TIER_NAMES: frozenset[str] = frozenset(
 _HASHED_REQUEST_KEYS = ("model", "messages", "max_tokens", "temperature")
 
 
-def _canonical_json(value: Any) -> str:
+def _canonical_json(value: object) -> str:
     """Stable JSON encoding for hashing (sorted keys, no whitespace drift)."""
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
@@ -65,7 +67,7 @@ def _sha256(text: str) -> str:
     return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def canonical_request_hash(payload: dict[str, Any]) -> str:
+def canonical_request_hash(payload: Mapping[str, object]) -> str:
     """Canonical hash over the load-bearing request fields (model/messages/params).
 
     Only the fields that determine WHICH model produced WHICH bytes are hashed:
@@ -76,7 +78,7 @@ def canonical_request_hash(payload: dict[str, Any]) -> str:
     return _sha256(_canonical_json(projected))
 
 
-def canonical_prompt_hash(messages: list[dict[str, Any]]) -> str:
+def canonical_prompt_hash(messages: list[dict[str, object]]) -> str:
     """Canonical hash over the prompt messages only (provenance / drift triage)."""
     return _sha256(_canonical_json(messages))
 
@@ -119,11 +121,16 @@ def load_fixture(path: str | Path) -> ModelGoldenChainFixture:
     return fixture
 
 
-def _extract_completion_text(raw_response: dict[str, Any]) -> str:
+def _extract_completion_text(raw_response: Mapping[str, object]) -> str:
     choices = raw_response.get("choices") or []
-    if not choices:
+    if not isinstance(choices, list) or not choices:
         return ""
-    message = choices[0].get("message") or {}
+    first_choice = choices[0]
+    if not isinstance(first_choice, dict):
+        return ""
+    message = first_choice.get("message") or {}
+    if not isinstance(message, dict):
+        return ""
     content = message.get("content")
     return content if isinstance(content, str) else ""
 
@@ -137,24 +144,6 @@ def _validate_completion(fixture: ModelGoldenChainFixture, path: Path) -> None:
             f"fixture {path} recorded an empty completion — a golden chain cannot "
             "prove an empty model response.",
         )
-
-
-class _ReplayResponse:
-    """Minimal ``httpx.Response``-shaped object the inference handlers consume."""
-
-    __slots__ = ("_json_body", "status_code")
-
-    def __init__(self, status_code: int, json_body: dict[str, Any]) -> None:
-        self.status_code = status_code
-        self._json_body = json_body
-
-    def json(self) -> dict[str, Any]:
-        return self._json_body
-
-    def raise_for_status(self) -> None:
-        # Recorded responses are 2xx by construction; a recorded error body is a
-        # distinct fixture the caller would assert on directly.
-        return None
 
 
 class RecordedReplayInferenceTransport:
@@ -196,7 +185,7 @@ class RecordedReplayInferenceTransport:
         self._fixtures = list(fixtures)
         self._enforce_request_hash = enforce_request_hash
         # Recorded calls captured for assertions (model, url, request_hash).
-        self.calls: list[dict[str, Any]] = []
+        self.calls: list[dict[str, object]] = []
 
     # ----- httpx.Client-shaped surface -------------------------------------
     def __enter__(self) -> RecordedReplayInferenceTransport:
@@ -209,10 +198,10 @@ class RecordedReplayInferenceTransport:
         self,
         url: str,
         *,
-        json: dict[str, Any] | None = None,
+        json: dict[str, object] | None = None,
         headers: dict[str, str] | None = None,
         timeout: float | None = None,
-    ) -> _ReplayResponse:
+    ) -> ReplayResponse:
         """Return recorded bytes for the live-constructed request, or fail closed."""
         payload = json or {}
         model = str(payload.get("model", ""))
@@ -256,11 +245,32 @@ class RecordedReplayInferenceTransport:
                 )
             fixture = hash_matches[0]
         else:
-            fixture = endpoint_matches[0]
+            # Relaxed-hash mode still enforces endpoint + concrete-model matching;
+            # a missing model_id cannot select a trusted fixture and fails closed.
+            if not model:
+                raise GoldenChainReplayError(
+                    EnumGoldenChainFailureClass.ROUTE_NOT_RESOLVED,
+                    "live payload is missing 'model'; relaxed-hash mode still "
+                    "requires a CONCRETE model_id to select a trusted fixture.",
+                )
+            model_matches = [
+                f for f in endpoint_matches if f.provenance.model_id == model
+            ]
+            if not model_matches:
+                recorded_models = sorted(
+                    {f.provenance.model_id for f in endpoint_matches}
+                )
+                raise GoldenChainReplayError(
+                    EnumGoldenChainFailureClass.REQUEST_HASH_MISMATCH,
+                    f"live path resolved model {model!r}, but no fixture for "
+                    f"endpoint {url!r} was recorded with that model. Recorded "
+                    f"models: {recorded_models}. Re-record if the backend changed.",
+                )
+            fixture = model_matches[0]
 
         # Concrete-model cross-check: the recorded provenance model must match the
-        # model the live path actually resolved (defense beyond the hash for the
-        # relaxed-hash path).
+        # model the live path actually resolved (defense beyond the hash, and a
+        # second guard on the strict-hash path).
         if model and model != fixture.provenance.model_id:
             raise GoldenChainReplayError(
                 EnumGoldenChainFailureClass.REQUEST_HASH_MISMATCH,
@@ -278,7 +288,7 @@ class RecordedReplayInferenceTransport:
                 "hand-written-fake tell, not recorded-from-real bytes.",
             )
 
-        return _ReplayResponse(status_code=200, json_body=dict(fixture.raw_response))
+        return ReplayResponse(status_code=200, json_body=dict(fixture.raw_response))
 
 
 __all__ = [
