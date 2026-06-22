@@ -176,6 +176,9 @@ from .enum_failure_type import EnumFailureType
 # Feature flag category enum (OMN-5566)
 from .enum_feature_flag_category import EnumFeatureFlagCategory
 
+# Feature flag gate-type enum (OMN-7776)
+from .enum_feature_flag_gate_type import EnumFeatureFlagGateType
+
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
 
@@ -637,6 +640,7 @@ __all__ = [
     "EnumOperationStatus",  # Canonical operation status (OMN-1310)
     "EnumExecutionStatus",  # Canonical execution status (OMN-1310)
     "EnumFeatureFlagCategory",  # Feature flag categories (OMN-5566)
+    "EnumFeatureFlagGateType",  # Feature flag gate types (OMN-7776)
     "EnumValidationLevel",
     "EnumValidationMode",
     "EnumValueType",

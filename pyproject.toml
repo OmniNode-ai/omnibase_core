@@ -156,7 +156,11 @@ packages = ["src/omnibase_core"]
 
 [tool.hatch.build]
 # Include YAML contract files in the wheel for PyPI installs (OMN-6484)
-artifacts = ["src/omnibase_core/**/*.yaml"]
+# and the generated feature-flag catalog JSON (OMN-7776).
+artifacts = [
+    "src/omnibase_core/**/*.yaml",
+    "src/omnibase_core/feature_flags/feature_flag_catalog.json",
+]
 
 [tool.ruff]
 target-version = "py312"
