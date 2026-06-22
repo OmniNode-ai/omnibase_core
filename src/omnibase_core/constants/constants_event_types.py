@@ -94,6 +94,18 @@ TOPIC_VALIDATION_PRIVATE_IP_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.private-ip-scan-completed.v1"
 )
 
+# No-faked-boundary COMPUTE validator topics (OMN-13497). Same two-transport seam
+# as the private-IP / local-paths validators: the runner is the producer of the
+# command and consumer of the result; the COMPUTE handler is the consumer of the
+# command and producer of the result. The validator bans hand-written fakes /
+# stubs of the platform's own inference / routing / dispatch boundary.
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.no-faked-boundary-scan-requested.v1"
+)
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.no-faked-boundary-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.
