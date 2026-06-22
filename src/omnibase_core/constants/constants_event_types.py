@@ -94,6 +94,18 @@ TOPIC_VALIDATION_PRIVATE_IP_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.private-ip-scan-completed.v1"
 )
 
+# Unfinished-work-marker COMPUTE validator topics (OMN-13480, G2 SEA-dogfood) —  # onex-allow-todo-marker OMN-13480 names the marker tokens as the validator subject
+# the marker tokens themselves are the validator's subject, not unfinished work.
+# Same two-transport seam as the local-paths / private-IP canaries:
+# the runner is the producer of the command and consumer of the result; the
+# COMPUTE handler is the consumer of the command and producer of the result.
+TOPIC_VALIDATION_TODO_MARKER_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.todo-marker-scan-requested.v1"
+)
+TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.todo-marker-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.
