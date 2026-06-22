@@ -170,6 +170,25 @@ class ModelTaskDelegatedEvent(BaseModel):
             "free_local / metered / overage tokens."
         ),
     )
+    tokens_input: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Prompt (input) tokens for the served inference (OMN-13408). Carried "
+            "so the delegation projection records real tokens even when this "
+            "compat task-delegated event is the last writer for a correlation_id; "
+            "previously unset (defaulted 0), clobbering the real tokens from the "
+            "delegation-completed/failed event in the projection upsert."
+        ),
+    )
+    tokens_output: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Completion (output) tokens for the served inference (OMN-13408). See "
+            "tokens_input."
+        ),
+    )
 
 
 __all__: list[str] = [
