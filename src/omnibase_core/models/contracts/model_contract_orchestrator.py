@@ -75,8 +75,11 @@ class ModelContractOrchestrator(MixinNodeTypeValidator, ModelContractBase):
     Strict typing is enforced: No Any types allowed in implementation.
     """
 
-    # Interface version for code generation stability
-    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
+    # Interface version for code generation stability.
+    # Bumped 1.0.0 -> 1.1.0 (OMN-12835): added typed contract-side execution-graph
+    # DAG binding via ModelWorkflowConfig.workflow_definition so declared
+    # execution_graph fields are no longer silently dropped on parse.
+    INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=1, patch=0)
 
     # Default node type for ORCHESTRATOR contracts (used by MixinNodeTypeValidator)
     _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.ORCHESTRATOR_GENERIC

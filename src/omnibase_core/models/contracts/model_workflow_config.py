@@ -12,6 +12,10 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.contracts.model_contract_workflow_definition import (
+    ModelContractWorkflowDefinition,
+)
+
 
 class ModelWorkflowConfig(BaseModel):
     """
@@ -62,6 +66,11 @@ class ModelWorkflowConfig(BaseModel):
     recovery_enabled: bool = Field(
         default=True,
         description="Enable automatic workflow recovery",
+    )
+
+    workflow_definition: ModelContractWorkflowDefinition | None = Field(
+        default=None,
+        description="Typed contract-side workflow definition with execution-graph DAG",
     )
 
     model_config = ConfigDict(
