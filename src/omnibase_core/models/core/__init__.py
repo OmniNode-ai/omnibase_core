@@ -31,7 +31,9 @@ from .model_environment_accessor import ModelEnvironmentAccessor
 from .model_error_details import ErrorContext, ModelErrorDetails, TContext
 
 # Feature flags pattern
+from .model_feature_flag_definition import ModelFeatureFlagDefinition
 from .model_feature_flag_metadata import ModelFeatureFlagMetadata
+from .model_feature_flag_resolution import ModelFeatureFlagResolution
 from .model_feature_flag_summary import ModelFeatureFlagSummary
 from .model_feature_flags import ModelFeatureFlags
 
@@ -150,7 +152,9 @@ __all__ = [
     "ModelErrorDetails",
     "TContext",
     # Feature flags pattern
+    "ModelFeatureFlagDefinition",
     "ModelFeatureFlagMetadata",
+    "ModelFeatureFlagResolution",
     "ModelFeatureFlagSummary",
     "ModelFeatureFlags",
     # Version information

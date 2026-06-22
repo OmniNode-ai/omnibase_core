@@ -1,0 +1,222 @@
+{
+  "generated_by": "omnibase_core/scripts/gen_feature_flag_catalog.py",
+  "ticket": "OMN-7776",
+  "flags": [
+    {
+      "name": "ENABLE_POSTGRES",
+      "description": "Enables Postgres-backed session and pattern storage.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "migration",
+      "category": "infrastructure"
+    },
+    {
+      "name": "ENABLE_QDRANT",
+      "description": "Enables Qdrant vector store for semantic pattern retrieval.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "migration",
+      "category": "infrastructure"
+    },
+    {
+      "name": "ENABLE_INTELLIGENCE_CACHE",
+      "description": "Caches intelligence node results to reduce LLM calls.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "USE_EVENT_ROUTING",
+      "description": "Routes commands/events through the ONEX event bus.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "migration",
+      "category": "runtime"
+    },
+    {
+      "name": "DUAL_PUBLISH_LEGACY_TOPICS",
+      "description": "Publishes to both new and legacy topic names during migration.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "migration",
+      "category": "infrastructure"
+    },
+    {
+      "name": "USE_ONEX_ROUTING_NODES",
+      "description": "Routes LLM calls through ONEX routing node graph.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "migration",
+      "category": "runtime"
+    },
+    {
+      "name": "ENABLE_PATTERN_QUALITY_FILTER",
+      "description": "Filters patterns below quality threshold before storage.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_DISABLED_PATTERN_FILTER",
+      "description": "Excludes disabled patterns from retrieval results.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_PHASE_1_VALIDATION",
+      "description": "Phase 1 validation gate: structural contract checks.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_PHASE_2_SEMANTIC",
+      "description": "Phase 2 validation gate: semantic consistency checks.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_PHASE_3_INTEGRATION",
+      "description": "Phase 3 validation gate: cross-service integration checks.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_PHASE_4_AI_QUORUM",
+      "description": "Phase 4 validation gate: multi-model AI quorum review.",
+      "default": false,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_LOCAL_INFERENCE_PIPELINE",
+      "description": "Routes inference to local GPU endpoints first.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_PATTERN_ENFORCEMENT",
+      "description": "Enforces pattern schema and lifecycle rules.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "USE_LLM_ROUTING",
+      "description": "Enables dynamic LLM routing via contract model_routing config.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "migration",
+      "category": "runtime"
+    },
+    {
+      "name": "ENABLE_DELEGATION",
+      "description": "Enables the cheapest-first delegation chain of responders.",
+      "default": true,
+      "service": "omniclaude",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_METRICS",
+      "description": "Emits runtime metrics from the ONEX node runtime.",
+      "default": true,
+      "service": "omnibase_infra",
+      "gate_type": "permanent",
+      "category": "observability"
+    },
+    {
+      "name": "ENABLE_IDEMPOTENCE",
+      "description": "Enforces idempotent envelope handling on the event bus.",
+      "default": true,
+      "service": "omnibase_infra",
+      "gate_type": "permanent",
+      "category": "infrastructure"
+    },
+    {
+      "name": "ENABLE_RUNTIME_LOG_BRIDGE",
+      "description": "Bridges runtime logs onto the structured log event topic.",
+      "default": false,
+      "service": "omnibase_infra",
+      "gate_type": "migration",
+      "category": "observability"
+    },
+    {
+      "name": "ENABLE_EVENT_INTELLIGENCE",
+      "description": "Enables event intelligence processing pipeline.",
+      "default": true,
+      "service": "omnidash",
+      "gate_type": "permanent",
+      "category": "intelligence"
+    },
+    {
+      "name": "ENABLE_KAFKA_LOGGING",
+      "description": "Routes structured logs through Kafka.",
+      "default": true,
+      "service": "omnidash",
+      "gate_type": "permanent",
+      "category": "observability"
+    },
+    {
+      "name": "ENABLE_REAL_TIME_EVENTS",
+      "description": "Opens WebSocket channel for live event stream.",
+      "default": true,
+      "service": "omnidash",
+      "gate_type": "permanent",
+      "category": "dashboard"
+    },
+    {
+      "name": "ENABLE_EVENT_PRELOAD",
+      "description": "Pre-fetches events on dashboard mount.",
+      "default": false,
+      "service": "omnidash",
+      "gate_type": "permanent",
+      "category": "dashboard"
+    },
+    {
+      "name": "ENABLE_RESPONSE_CACHE",
+      "description": "Enables response-level projection cache.",
+      "default": false,
+      "service": "omnidash",
+      "gate_type": "permanent",
+      "category": "dashboard"
+    },
+    {
+      "name": "ARCHON_ENABLE_EXTERNAL_GATEWAY",
+      "description": "Routes inference through external Archon gateway.",
+      "default": false,
+      "service": "omnidash",
+      "gate_type": "migration",
+      "category": "infrastructure"
+    },
+    {
+      "name": "VITE_USE_MOCK_DATA",
+      "description": "Forces fixture data in place of live projections.",
+      "default": false,
+      "service": "omnidash",
+      "gate_type": "permanent",
+      "category": "dashboard"
+    },
+    {
+      "name": "OMNIDASH_READ_MODEL_USE_CATALOG",
+      "description": "Switches read model to catalog-based source.",
+      "default": false,
+      "service": "omnidash",
+      "gate_type": "migration",
+      "category": "dashboard"
+    }
+  ]
+}
