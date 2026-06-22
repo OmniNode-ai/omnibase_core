@@ -75,6 +75,19 @@ class TestModelDelegationRequest:
         r = self._make()
         assert r.task_type == "test"
 
+    def test_context_pack_hash_defaults_to_off_arm(self) -> None:
+        r = self._make()
+        assert r.context_pack == ""
+        assert r.context_pack_hash == ""
+
+    def test_context_pack_hash_is_accepted(self) -> None:
+        r = self._make(
+            context_pack="Relevant repo facts.",
+            context_pack_hash="sha256:abc123",
+        )
+        assert r.context_pack == "Relevant repo facts."
+        assert r.context_pack_hash == "sha256:abc123"
+
     def test_compliance_budget_required_when_schema_key_set(self) -> None:
         with pytest.raises(ValueError, match="compliance_budget is required"):
             self._make(output_schema_key="some_schema")
@@ -607,6 +620,18 @@ class TestModelTaskDelegatedEvent:
         )
         assert event.topic == TASK_DELEGATED_TOPIC_V1
         assert event.escalation_count == 0
+        assert event.context_pack_hash == ""
+
+    def test_carries_context_pack_hash(self) -> None:
+        event = ModelTaskDelegatedEvent(
+            timestamp="2026-05-26T00:00:00Z",
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            delegated_to="local_qwen3",
+            quality_gate_passed=True,
+            context_pack_hash="sha256:ctx",
+        )
+        assert event.context_pack_hash == "sha256:ctx"
 
     def test_rejects_invalid_topic_and_negative_metrics(self) -> None:
         with pytest.raises(ValidationError):

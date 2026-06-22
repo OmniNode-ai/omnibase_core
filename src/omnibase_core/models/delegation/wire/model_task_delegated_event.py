@@ -89,6 +89,13 @@ class ModelTaskDelegatedEvent(BaseModel):
         default=None,
         description="Raw response received from the delegated model.",
     )
+    context_pack_hash: str = Field(
+        default="",
+        description=(
+            "Stable hash of the context pack injected into the delegated prompt. "
+            "Empty string means the OFF arm or no context pack."
+        ),
+    )
     pricing_manifest_version: int = Field(
         default=0,
         ge=0,
