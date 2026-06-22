@@ -94,6 +94,18 @@ TOPIC_VALIDATION_PRIVATE_IP_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.private-ip-scan-completed.v1"
 )
 
+# No-faked-boundary COMPUTE validator topics (OMN-13497). Same two-transport seam
+# as the private-IP / local-paths validators: the runner is the producer of the
+# command and consumer of the result; the COMPUTE handler is the consumer of the
+# command and producer of the result. The validator bans hand-written fakes /
+# stubs of the platform's own inference / routing / dispatch boundary.
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.no-faked-boundary-scan-requested.v1"
+)
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.no-faked-boundary-scan-completed.v1"
+)
+
 # Unfinished-work-marker COMPUTE validator topics (OMN-13480, G2 SEA-dogfood) —  # onex-allow-todo-marker OMN-13480 names the marker tokens as the validator subject
 # the marker tokens themselves are the validator's subject, not unfinished work.
 # Same two-transport seam as the local-paths / private-IP canaries:

@@ -179,6 +179,14 @@ def should_exclude_file(filepath: Path) -> bool:
     if filepath.name == "singleton_holders.py":
         return True
 
+    # Exclude the COMPUTE-validator scan I/O trios (OMN-13294 / OMN-13497).
+    # validation/<name>/models.py co-locates the tightly-coupled
+    # ScanInput + Finding + ScanResult DTOs of one generated COMPUTE validator
+    # (mirrors the private_ip sibling). A path-scoped exemption (not a global
+    # models.py exemption) keeps the rule strict everywhere else.
+    if filepath.name == "models.py" and "/validation/" in path_str:
+        return True
+
     # Exclude legacy files with multiple summary models
     # These are pre-existing and will be refactored in a separate PR
     legacy_multi_class_files = {
