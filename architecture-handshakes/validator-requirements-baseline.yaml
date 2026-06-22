@@ -87,8 +87,14 @@ classification:
     ci_workflow: backlog
     tracking: OMN-9048
   no-untracked-todos:
+    # G2 (OMN-13480, SEA-dogfood): generated + corpus-accepted unfinished-work-marker
+    # COMPUTE validator. pre_commit is WIRED and BLOCKING in core
+    # (check-todo-fixme-marker-compute), so it is required-and-satisfied (no
+    # pre_commit gap). The CI workflow wrapper is the remaining gap, tracked here
+    # like the other COMPUTE/bus validators.
+    pre_commit: required
     ci_workflow: backlog
-    tracking: OMN-9048
+    tracking: OMN-13480
   self-gating-workflows:
     pre_commit: backlog
     tracking: OMN-9048
