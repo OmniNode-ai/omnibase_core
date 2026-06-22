@@ -358,7 +358,7 @@ class TestArtifactRedactionAndSecrets:
     """Redaction state and secret-detection refusal."""
 
     def test_secret_detected_refuses_raw_write(self, store: ArtifactStore) -> None:
-        payload = b"export AWS_KEY=AKIAIOSFODNN7EXAMPLE\n"
+        payload = b"export AWS_KEY=AKIAIOSFODNN7EXAMPLE\n"  # pragma: allowlist secret
         with pytest.raises(ArtifactSecretDetectedError):
             store.write_blob(
                 payload,

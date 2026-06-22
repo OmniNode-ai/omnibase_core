@@ -27,5 +27,5 @@ class EnumArtifactRedactionState(StrEnum):
     RESTRICTED = "restricted"
     """Bytes are intact but read access is gated behind authorization."""
 
-    SECRET_DETECTED = "secret_detected"
+    SECRET_DETECTED = "secret_detected"  # pragma: allowlist secret
     """A secret was detected; raw bytes were refused and never persisted."""
