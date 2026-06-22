@@ -96,6 +96,20 @@ class ModelDelegationRequest(BaseModel):
         default=None,
         description="File context for the delegation, if any.",
     )
+    context_pack: str = Field(
+        default="",
+        description=(
+            "Optional assembled context injected ahead of the prompt for context "
+            "ON/OFF experiments. Empty string means no context pack."
+        ),
+    )
+    context_pack_hash: str = Field(
+        default="",
+        description=(
+            "Stable hash of context_pack for projection readback and ROI "
+            "measurement. Empty string means no context pack was injected."
+        ),
+    )
     correlation_id: UUID = Field(
         ...,
         description="Unique identifier for tracking through the pipeline.",
