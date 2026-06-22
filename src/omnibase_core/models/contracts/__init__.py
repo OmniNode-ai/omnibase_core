@@ -111,6 +111,7 @@ from .model_contract_base import ModelContractBase
 from .model_contract_compute import ModelContractCompute
 from .model_contract_config import ModelContractConfig
 from .model_contract_effect import ModelContractEffect
+from .model_contract_execution_graph import ModelContractExecutionGraph
 from .model_contract_fingerprint import ModelContractFingerprint
 from .model_contract_meta import (
     ModelContractMeta,
@@ -123,6 +124,9 @@ from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_patch import ModelContractPatch
 from .model_contract_reducer import ModelContractReducer
 from .model_contract_version import ModelContractVersion
+from .model_contract_workflow_definition import ModelContractWorkflowDefinition
+from .model_contract_workflow_metadata import ModelContractWorkflowMetadata
+from .model_contract_workflow_node import ModelContractWorkflowNode
 from .model_corpus_classification import ModelCorpusClassification
 
 # Database repository contract models (OMN-1782)
@@ -321,6 +325,10 @@ __all__ = [
     "ModelConditionValue",
     "ModelConditionValueList",
     "ModelWorkflowCondition",
+    "ModelContractExecutionGraph",
+    "ModelContractWorkflowDefinition",
+    "ModelContractWorkflowMetadata",
+    "ModelContractWorkflowNode",
     "ModelWorkflowConfig",
     "ModelWorkflowDependency",
     # Orchestrator dependency models
