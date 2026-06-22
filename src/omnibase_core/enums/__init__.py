@@ -8,6 +8,10 @@ organized by functional domains for better maintainability.
 """
 
 # Action status enum (OMN-1309)
+# Artifact-store retention/redaction states (OMN-13152)
+from .artifacts.enum_artifact_redaction_state import EnumArtifactRedactionState
+from .artifacts.enum_artifact_retention_class import EnumArtifactRetentionClass
+
 # Audit enforcement level (OMN-5232 — context integrity)
 from .audit.enum_audit_enforcement_level import EnumAuditEnforcementLevel
 from .enum_accessibility_tier import EnumAccessibilityTier
@@ -578,6 +582,8 @@ __all__ = [
     "get_core_error_description",
     "get_exit_code_for_core_error",
     # Artifact domain
+    "EnumArtifactRedactionState",
+    "EnumArtifactRetentionClass",
     "EnumArtifactType",
     # Category filter domain
     "EnumCategoryFilter",
