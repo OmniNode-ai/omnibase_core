@@ -31,6 +31,33 @@ Full provenance JSON (handler source + contract yaml + the above) lives with the
 omnimarket generation evidence for this ticket:
 `omnimarket/docs/evidence/OMN-13509/pin-hygiene.generation.json`.
 
+### Independent reproduction (replayability proof)
+
+The generation was independently RE-RUN through the same production path
+(`scripts/generation/drive_validator_generation.py --validator pin-hygiene`,
+the REAL `HandlerGenerationConsumer` against the live `.201:8000` local-coder
+model — NOT a fixture / echo harness). The second run is recorded at
+`omnimarket/docs/evidence/OMN-13509/pin-hygiene.reproduction.generation.json`.
+
+| Field | Original run | Reproduction run |
+|-------|--------------|------------------|
+| accepted | `true` | `true` |
+| corpus_checked / corpus_passed | `true` / `true` | `true` / `true` |
+| provider / model_id | `local` / `Qwen3.6-35B-A3B` | `local` / `Qwen3.6-35B-A3B` |
+| resolved_endpoint | `.201:8000/v1/chat/completions` | `.201:8000/v1/chat/completions` |
+| usage_source | `measured` | `measured` |
+| attempt_count | `1` | `3` |
+| handler_source | (generated A) | (generated B — differs) |
+
+The two runs produced DIFFERENT handler source and took a different number of
+attempts (the LLM is non-deterministic), yet BOTH were accepted because the
+**corpus — not the LLM — is the acceptance authority**: each independently
+generated scanner had to flag all 7 violation fixtures and pass all 5 clean
+fixtures in the hardened sandbox before acceptance. That a second, independently
+generated scanner also passes is the replayability proof for the marquee
+"omninode generates omninode" dogfood: the gate is reproducible across runs
+because acceptance is corpus-gated, not output-memorised.
+
 ## What the corpus required
 
 FLAG (violation) — a sibling git pin that is NOT an ancestor of the sibling's
