@@ -101,6 +101,7 @@ class TestModelDelegationRequest:
         with pytest.raises(ValueError, match="unsupported acceptance criteria"):
             self._make(acceptance_criteria=("not_a_real_criterion",))
 
+    @pytest.mark.unit
     def test_invalid_acceptance_criteria_error_lists_allowed_slugs(self) -> None:
         """Error message must name valid slugs so callers can self-correct (OMN-13542)."""
         with pytest.raises(ValueError) as exc_info:
@@ -111,6 +112,7 @@ class TestModelDelegationRequest:
         # At least one canonical slug must appear in the hint
         assert "response_non_empty" in msg
 
+    @pytest.mark.unit
     def test_invalid_acceptance_criteria_error_quotes_bad_values(self) -> None:
         """Unsupported values are quoted in the error so they are easy to identify."""
         with pytest.raises(ValueError) as exc_info:
@@ -125,6 +127,7 @@ class TestModelDelegationRequest:
         assert "'Must handle HTTP errors'" in msg
         assert "Allowed slugs:" in msg
 
+    @pytest.mark.unit
     def test_i4_strict_code_generation_free_text_criteria_rejected_with_actionable_error(
         self,
     ) -> None:
