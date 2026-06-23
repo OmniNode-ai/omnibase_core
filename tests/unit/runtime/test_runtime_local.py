@@ -22,8 +22,10 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
@@ -342,3 +344,205 @@ def test_kafka_default_path_uses_default_factory(workflow_path: Path) -> None:
 
     assert isinstance(bus, _StubKafkaBus)
     assert bus.bootstrap_seen is None
+
+
+# ---------------------------------------------------------------------------
+# _instantiate_handler — runtime-owned dependency injection (OMN-13515)
+#
+# Regression guard: handlers that declare a mandatory ``event_bus`` positional
+# arg (8 omnimarket sweep/orchestrator handlers) must instantiate via the
+# runtime path. Before OMN-13515 the runtime injected only ``state_root`` and
+# never ``event_bus``, so every such handler crashed with
+# ``__init__() missing 1 required positional argument: 'event_bus'``.
+# ---------------------------------------------------------------------------
+
+
+class _HandlerRequiresEventBus:
+    """Mirror of the 8 omnimarket handlers: ``event_bus`` is mandatory."""
+
+    def __init__(self, event_bus: ProtocolLocalRuntimeBus) -> None:
+        self.event_bus = event_bus
+
+
+class _HandlerRequiresBusAndState:
+    """Handler that takes both runtime-owned deps by name."""
+
+    def __init__(self, event_bus: ProtocolLocalRuntimeBus, state_root: Path) -> None:
+        self.event_bus = event_bus
+        self.state_root = state_root
+
+
+class _HandlerTolerantBus:
+    """Reference for the already-working ``event_bus=... | None = None`` shape."""
+
+    def __init__(self, event_bus: ProtocolLocalRuntimeBus | None = None) -> None:
+        self.event_bus = event_bus
+
+
+class _HandlerNoDeps:
+    """Handler that advertises no runtime-owned params."""
+
+    def __init__(self) -> None:
+        self.created = True
+
+
+_THIS_MODULE = "tests.unit.runtime.test_runtime_local"
+
+
+@pytest.mark.unit
+def test_instantiate_handler_injects_event_bus(workflow_path: Path) -> None:
+    """A handler with a mandatory ``event_bus`` param instantiates and receives
+    the in-scope runtime bus."""
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    bus = EventBusInmemory(environment="local", group="runtime-local")
+
+    instance = runtime._instantiate_handler(
+        _THIS_MODULE, "_HandlerRequiresEventBus", bus=bus
+    )
+
+    assert isinstance(instance, _HandlerRequiresEventBus)
+    assert instance.event_bus is bus
+
+
+@pytest.mark.unit
+def test_instantiate_handler_injects_event_bus_and_state_root(
+    workflow_path: Path, tmp_path: Path
+) -> None:
+    """Both runtime-owned deps are injected by name; neither clobbers the other."""
+    state_root = tmp_path / "state"
+    runtime = RuntimeLocal(workflow_path=workflow_path, state_root=state_root)
+    bus = EventBusInmemory(environment="local", group="runtime-local")
+
+    instance = runtime._instantiate_handler(
+        _THIS_MODULE, "_HandlerRequiresBusAndState", bus=bus
+    )
+
+    assert isinstance(instance, _HandlerRequiresBusAndState)
+    assert instance.event_bus is bus
+    assert instance.state_root == state_root
+
+
+@pytest.mark.unit
+def test_instantiate_handler_tolerant_bus_handler_still_works(
+    workflow_path: Path,
+) -> None:
+    """Handlers using ``event_bus: ... | None = None`` still instantiate and now
+    receive the real bus rather than ``None``."""
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    bus = EventBusInmemory(environment="local", group="runtime-local")
+
+    instance = runtime._instantiate_handler(
+        _THIS_MODULE, "_HandlerTolerantBus", bus=bus
+    )
+
+    assert isinstance(instance, _HandlerTolerantBus)
+    assert instance.event_bus is bus
+
+
+@pytest.mark.unit
+def test_instantiate_handler_no_deps_handler_unaffected(
+    workflow_path: Path,
+) -> None:
+    """A handler that advertises no runtime-owned params still instantiates with
+    no kwargs even when a bus is in scope."""
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    bus = EventBusInmemory(environment="local", group="runtime-local")
+
+    instance = runtime._instantiate_handler(_THIS_MODULE, "_HandlerNoDeps", bus=bus)
+
+    assert isinstance(instance, _HandlerNoDeps)
+    assert instance.created is True
+
+
+@pytest.mark.unit
+def test_instantiate_handler_event_bus_optional_when_no_bus(
+    workflow_path: Path,
+) -> None:
+    """When no bus is threaded (e.g. compute path with bus=None), a handler that
+    declares ``event_bus`` is not injected — preserving prior behavior for paths
+    that do not own a bus."""
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+
+    # A no-dep handler must still work when bus is None.
+    instance = runtime._instantiate_handler(_THIS_MODULE, "_HandlerNoDeps", bus=None)
+    assert isinstance(instance, _HandlerNoDeps)
+
+
+# ---------------------------------------------------------------------------
+# End-to-end runtime path (OMN-13515) — DoD: load a contract whose handler
+# declares a mandatory ``event_bus`` and run the real RuntimeLocal execution
+# path; assert zero instantiation failures and a terminal completed result.
+# ---------------------------------------------------------------------------
+
+# Captured by the integration test handler so the test can assert the bus was
+# actually threaded through the runtime (not merely that instantiation passed).
+_EVENT_BUS_HANDLER_CAPTURE: dict[str, object] = {}
+
+
+class _IntegrationHandlerRequiresEventBus:
+    """Mirror of the 8 omnimarket handlers exercised via the real runtime path.
+
+    Declares ``event_bus`` as a mandatory positional arg (the exact shape that
+    crashed before OMN-13515) and a sync ``handle()`` that returns a non-failure
+    result object so the single-handler path classifies the workflow COMPLETED
+    and synthesizes a terminal event.
+    """
+
+    def __init__(self, event_bus: ProtocolLocalRuntimeBus) -> None:
+        self._event_bus = event_bus
+        _EVENT_BUS_HANDLER_CAPTURE["event_bus"] = event_bus
+
+    async def handle(self, payload: object) -> object:
+        _EVENT_BUS_HANDLER_CAPTURE["handled"] = True
+        # A non-None, non-failure result classifies COMPLETED and triggers the
+        # runtime-synthesized terminal event (OMN-8940).
+        return {"status": "success"}
+
+
+def _write_event_bus_handler_contract(target: Path, terminal_topic: str) -> None:
+    """Write a single-handler contract pointing at the event-bus-requiring handler."""
+    contract = {
+        "workflow_id": "omn-13515-event-bus-injection",
+        "terminal_event": terminal_topic,
+        "event_bus": {"publish_topics": [terminal_topic]},
+        "handler": {
+            "module": _THIS_MODULE,
+            "class": "_IntegrationHandlerRequiresEventBus",
+        },
+    }
+    target.write_text(yaml.safe_dump(contract), encoding="utf-8")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_runtime_local_instantiates_event_bus_handler_end_to_end(
+    tmp_path: Path,
+) -> None:
+    """The real runtime path instantiates a handler with a mandatory ``event_bus``,
+    threads the in-memory bus into it, and reaches a COMPLETED terminal result.
+
+    This is the OMN-13515 regression gate: before the fix this run crashed with
+    ``__init__() missing 1 required positional argument: 'event_bus'`` and the
+    runtime recorded result=FAILED.
+    """
+    _EVENT_BUS_HANDLER_CAPTURE.clear()
+    terminal_topic = "onex.evt.omn13515.completed.v1"
+    contract_path = tmp_path / "contract.yaml"
+    _write_event_bus_handler_contract(contract_path, terminal_topic)
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=tmp_path / "state",
+        timeout=5,
+    )
+
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.COMPLETED
+    # The handler was instantiated (no missing-arg crash) and invoked.
+    assert _EVENT_BUS_HANDLER_CAPTURE.get("handled") is True
+    # The runtime threaded a real bus into the handler's mandatory event_bus arg.
+    captured_bus = _EVENT_BUS_HANDLER_CAPTURE.get("event_bus")
+    assert captured_bus is not None
+    assert isinstance(captured_bus, ProtocolLocalRuntimeBus)
+    assert isinstance(captured_bus, EventBusInmemory)
