@@ -146,3 +146,35 @@ EXIT=0
 
 A planted marker makes the gate exit non-zero; the revert restores green. The gate
 BLOCKS.
+
+## Required CI gate — enforcement, not detection (Rule 5)
+
+The pre-commit hook (`check-todo-fixme-marker-compute`) is the binding local gate
+(`--no-verify` is prohibited). To close the enforcement story so a pre-commit
+bypass cannot land an agent-left marker, the SAME `HandlerTodoMarkerCompute` is
+wired as a standalone CI workflow:
+
+```
+.github/workflows/validator-todo-marker.yml   (job: validate)
+```
+
+This mirrors the sibling generated validators (`validator-pin-hygiene.yml`,
+`validator-no-none-guard-publish.yml`) one-for-one. The workflow runs on every
+`pull_request` / `push` / `merge_group` against `main` / `develop` / `dev`:
+
+1. **Verifier** — `pytest tests/unit/validation/todo_marker/` (the corpus-pinned
+   parametrized tests are the acceptance authority; they fail first if the
+   handler ever drifts off the corpus invariant).
+2. **Enforcement** — runs `runtime_todo_marker` (the same in-memory-bus COMPUTE
+   handler the pre-commit hook uses) over **only the files the PR changed**
+   (diff vs base ref), excluding `tests/` + `docs/` (whose subject legitimately
+   IS the marker token). Exit non-zero on any agent-left marker → the check
+   fails.
+
+The CI scan is intentionally changed-files-only (not a full `src/` scan): a
+repo-wide blocking scan would fail on the legitimate pre-existing
+ticket-referenced markers and validator/contract source whose subject IS the
+marker pattern (the 66-token full-tree census above). Changed-files-only is the
+exact STAGED-only semantics of the `pass_filenames: true` pre-commit hook, so
+local and CI verdicts cannot drift. The CI scan command was proven fail-closed
+on a planted marker (`EXIT=1`) before landing.

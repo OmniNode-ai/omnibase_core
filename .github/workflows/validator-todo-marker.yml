@@ -1,0 +1,137 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Agent-left unfinished-work-marker gate [OMN-13480, G2 SEA-dogfood]
+#
+# Required status check context: "TODO Marker Validator / validate"
+#
+# Blocks agent-left TODO/FIXME/HACK unfinished-work markers in shipped source.
+# The scanning logic is a generated COMPUTE node (HandlerTodoMarkerCompute):
+# produced by node_generation_consumer (omnimarket) against the live model and
+# accepted ONLY because it passed a deterministic acceptance corpus
+# (corpus_todo_marker.TODO_MARKER_CORPUS) in the hardened sandbox on the FIRST
+# attempt. The corpus — not the LLM self-report — is the acceptance authority.
+#
+# Two-transport seam: the same HandlerTodoMarkerCompute runs over a swappable
+# event-bus backend. Pre-commit runs it on the in-memory backend over STAGED
+# files; this gate runs the SAME handler (via runtime_todo_marker) over the
+# files a PR changed, so local and CI verdicts cannot drift.
+#
+# Enforcement scope: this gate scans only the files the PR changed (mirroring
+# the pre-commit hook's pass_filenames / STAGED-only semantics). A full-tree
+# scan would fail on legitimate pre-existing ticket-referenced markers and
+# validator/contract source whose subject IS the marker token. Blocking only on
+# changed files prevents NEW agent-left markers from merging without forcing a
+# repo-wide cleanup first. Suppress a line with `# onex-allow-todo-marker`; a
+# documentation-heavy file whose subject IS the marker token with
+# `# onex-allow-file-todo-marker`.
+
+name: TODO Marker Validator
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: validator-todo-marker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      # Verifier: the corpus-pinned unit tests are the acceptance authority. If
+      # the handler ever drifts off the corpus invariant these fail first.
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validation/todo_marker/ -v
+
+      # Enforcement: run the SAME COMPUTE handler (via its bus runtime) over the
+      # files this PR/merge changed. Exit non-zero (fails the check) on any
+      # agent-left marker in changed text source. Mirrors the pre-commit hook's
+      # excludes (tests/ + docs/ reference the marker tokens as their subject).
+      - name: Scan changed files for agent-left markers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Resolve the base ref to diff against.
+          #  - pull_request: the PR base branch
+          #  - merge_group / push: the previous tip (event before SHA)
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          elif [ -n "${{ github.event.before }}" ] \
+               && git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            BASE_SHA="${{ github.event.before }}"
+          else
+            # Fallback: diff against the merge-base with origin/dev.
+            git fetch --no-tags --depth=200 origin dev || true
+            BASE_SHA="$(git merge-base HEAD origin/dev 2>/dev/null || git rev-parse HEAD~1)"
+          fi
+          echo "Diffing changed files against base: $BASE_SHA"
+
+          # Changed files in scope: text source, excluding tests/ and docs/ (whose
+          # subject legitimately IS the marker token) and the secrets baseline.
+          CHANGED="$(git diff --name-only --diff-filter=ACMR "$BASE_SHA"...HEAD \
+            | grep -E '\.(py|md|yaml|yml|json|sh|toml|txt|rst|cfg|ini)$' \
+            | grep -Ev '^(tests/|docs/|\.secrets\.baseline$|archived/|archive/)' \
+            || true)"
+
+          if [ -z "$CHANGED" ]; then
+            echo "No in-scope changed text files -- nothing to scan."
+            exit 0
+          fi
+
+          echo "Scanning changed files:"
+          echo "$CHANGED" | sed 's/^/  /'
+
+          # Only pass paths that still exist in the worktree (ACMR excludes
+          # deletions, but be defensive).
+          EXISTING=""
+          while IFS= read -r f; do
+            [ -f "$f" ] && EXISTING="$EXISTING $f"
+          done <<< "$CHANGED"
+
+          if [ -z "${EXISTING// /}" ]; then
+            echo "No existing in-scope changed files -- nothing to scan."
+            exit 0
+          fi
+
+          # Same COMPUTE handler over the in-memory bus as the pre-commit hook.
+          # Exit 1 on any finding -> the required check fails.
+          uv run python -m omnibase_core.validation.todo_marker.runtime_todo_marker $EXISTING
