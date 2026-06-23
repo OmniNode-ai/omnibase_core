@@ -414,9 +414,23 @@ class NodeRoutingAuthorityCheckCompute:
                 continue
             if backend.get("backend_id") != endpoint_ref:
                 continue
+            # Prefer logical secret refs over the legacy api_key_env.
+            # Resolution order: secret_ref > api_key_ref > api_key_env (OMN-12878).
+            # Explicit if-elif to avoid or-chain degradation (no-fallback gate).
+            _secret_ref = backend.get("secret_ref")
+            _api_key_ref = backend.get("api_key_ref")
+            _api_key_env = backend.get("api_key_env")
+            if _secret_ref:
+                key_ref: str | None = str(_secret_ref)
+            elif _api_key_ref:
+                key_ref = str(_api_key_ref)
+            elif _api_key_env:
+                key_ref = str(_api_key_env)
+            else:
+                key_ref = None
             return (
                 backend.get("endpoint_url"),
-                backend.get("api_key_env"),
+                key_ref,
                 f"{bifrost_rel}: backend_id={endpoint_ref!r} (overlay-merged at runtime)",
             )
         return (
