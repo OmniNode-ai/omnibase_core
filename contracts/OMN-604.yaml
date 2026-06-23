@@ -1,0 +1,58 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-604"
+title: "FSM state mutation protection - mutate only on successful transitions"
+summary: >
+  Ensures MixinFSMExecution mutates _fsm_state only after execute_transition returns success=True. Guard
+  rejections and raised transition errors leave current state and history untouched, while successful
+  transitions commit a fresh FSMState snapshot with deep-copied context to prevent caller-side mutation
+  from corrupting committed state.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Focused FSM mixin tests cover guard rejection, exceptions, success, and context isolation."
+    command: "uv run pytest tests/unit/mixins/test_mixin_fsm_execution.py -q"
+  - kind: "tests"
+    description: "Changed FSM execution module and tests pass focused lint and type checks."
+    command: "uv run ruff check src/omnibase_core/mixins/mixin_fsm_execution.py tests/unit/mixins/test_mixin_fsm_execution.py
+      && uv run mypy src/omnibase_core/mixins/mixin_fsm_execution.py --strict"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-fsm-mixin-tests"
+    description: "Focused FSM mixin tests pass, including OMN-604 guard-rejection and context-isolation
+      regressions."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/mixins/test_mixin_fsm_execution.py -q"
+  - id: "dod-lint-type"
+    description: "Changed FSM execution module and unit test file pass focused ruff and mypy strict checks."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run ruff check src/omnibase_core/mixins/mixin_fsm_execution.py tests/unit/mixins/test_mixin_fsm_execution.py
+          && uv run mypy src/omnibase_core/mixins/mixin_fsm_execution.py --strict"
+  - id: "dod-precommit"
+    description: "Pre-commit hooks pass for the changed implementation, tests, validators, contract, and
+      receipt files."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pre-commit run --files src/omnibase_core/mixins/mixin_fsm_execution.py tests/unit/mixins/test_mixin_fsm_execution.py
+          scripts/validation/validate-string-versions.py scripts/validation/validate-no-empty-directories.py
+          contracts/OMN-604.yaml drift/dod_receipts/OMN-604/dod-fsm-mixin-tests/command.yaml drift/dod_receipts/OMN-604/dod-lint-type/command.yaml
+          drift/dod_receipts/OMN-604/dod-precommit/command.yaml drift/dod_receipts/OMN-604/dod-deploy/command.yaml"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure library behavior and unit-test change; no live deploy or
+      runtime mutation is required before merge."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-604 changes FSM library behavior and unit tests only; no
+          Docker image, daemon, broker topic, runtime process, docker exec, or live service deploy is
+          required before merge'"
