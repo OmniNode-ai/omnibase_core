@@ -46,15 +46,15 @@ from omnibase_core.validation.pin_hygiene.models import ModelPinHygieneScanInput
 # was accepted against). Each entry is one annotated pin line. -----------------
 _VIOLATION_FIXTURES: tuple[str, ...] = (
     'omnibase-core = { git = "https://github.com/OmniNode-ai/omnibase_core.git", rev = "def4560000000000000000000000000000000000" }  # pin-ancestry: orphan',  # v-base-pyproject-rev
-    'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", rev = "0123456789abcdef0123456789abcdef01234567" }  # pin-ancestry: orphan',  # v-base-spi-rev
-    'omnibase-compat = { git = "https://github.com/OmniNode-ai/omnibase_compat.git", rev = "fedcba9876543210fedcba9876543210fedcba98" }  # pin-ancestry: orphan',  # v-base-compat-rev
+    'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", rev = "1111111111111111111111111111111111111111" }  # pin-ancestry: orphan',  # v-base-spi-rev
+    'omnibase-compat = { git = "https://github.com/OmniNode-ai/omnibase_compat.git", rev = "2222222222222222222222222222222222222222" }  # pin-ancestry: orphan',  # v-base-compat-rev
     '    "omnibase-core @ git+https://github.com/OmniNode-ai/omnibase_core.git@def4560000000000000000000000000000000000",  # pin-ancestry: orphan',  # v-mut-pep508-at-rev
     '    { name = "omnibase-core", git = "https://github.com/OmniNode-ai/omnibase_core.git?rev=def4560000000000000000000000000000000000" },  # pin-ancestry: orphan',  # v-mut-uvlock-qrev
     'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main" }  # pin-ancestry: orphan',  # v-mut-branch-main-diverged
     'omnibase-core = { git = "https://github.com/OmniNode-ai/omnibase_core.git", rev = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }  # pin-ancestry: unknown',  # v-mut-unknown-fail-closed
 )
 _CLEAN_FIXTURES: tuple[str, ...] = (
-    'omnibase-core = { git = "https://github.com/OmniNode-ai/omnibase_core.git", rev = "8ecb7efc17721dda2ce468b2e5051816ff8e89bc" }  # pin-ancestry: ancestor',  # c-base-pyproject-rev-ancestor
+    'omnibase-core = { git = "https://github.com/OmniNode-ai/omnibase_core.git", rev = "3333333333333333333333333333333333333333" }  # pin-ancestry: ancestor',  # c-base-pyproject-rev-ancestor
     '    "omnibase-core @ git+https://github.com/OmniNode-ai/omnibase_core.git@8ecb7efc17721dda2ce468b2e5051816ff8e89bc",  # pin-ancestry: ancestor',  # c-mut-pep508-at-rev-ancestor
     '    { name = "omnibase-core", git = "https://github.com/OmniNode-ai/omnibase_core.git?rev=8ecb7efc17721dda2ce468b2e5051816ff8e89bc" },  # pin-ancestry: ancestor',  # c-mut-uvlock-qrev-ancestor
     'some-thirdparty-lib = { git = "https://github.com/acme/thirdparty.git", rev = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" }  # pin-ancestry: orphan',  # c-mut-non-sibling-git-pin
