@@ -118,6 +118,19 @@ TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.todo-marker-scan-completed.v1"
 )
 
+# Sibling-pin-hygiene COMPUTE validator topics (OMN-13509). Same two-transport
+# seam as the private-IP / no-faked-boundary / todo-marker validators: the runner
+# is the producer of the command and consumer of the result; the COMPUTE handler
+# is the consumer of the command and producer of the result. The validator blocks
+# any sibling dependency pin (omnibase-core/spi/compat git rev or branch=) whose
+# pinned commit is NOT an ancestor of that sibling's dev HEAD.
+TOPIC_VALIDATION_PIN_HYGIENE_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.pin-hygiene-scan-requested.v1"
+)
+TOPIC_VALIDATION_PIN_HYGIENE_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.pin-hygiene-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.
