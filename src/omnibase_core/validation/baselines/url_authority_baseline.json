@@ -1,1296 +1,1296 @@
 {
-    "schema_version": "1.0.0",
-    "count": 215,
-    "violations": [
-        {
-            "repo": "omnibase_core",
-            "path": "examples/demo/handlers/support_assistant/handler_anthropic.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "e1a289119d3d1358f6cdf3e76266f1f160213fff5aec9ae642cb19d5d1101899"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "examples/demo/handlers/support_assistant/handler_local.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "7b0aeac4145d0b5421270aeae6cc022463f5f4406a5dd475ef4d43a7708a3855"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "examples/demo/handlers/support_assistant/handler_openai.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "bf799835300f8665db12abb90ae9f5f4c6d1cdbdc0afcb942879d3d55f7eb753"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "examples/demo/handlers/support_assistant/handler_openai.py",
-            "rule": "public-https-literal",
-            "fingerprint": "f811f1e5a4df1d9c8042299fe2dad0a37cf281b8cd1eae9d51d0ec5399d16547"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "scripts/emit_ts_types.py",
-            "rule": "public-https-literal",
-            "fingerprint": "49517946e67a010743926613607e217192833a4419ede0952411600ad5c303d8"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/doctor/checks/check_linear.py",
-            "rule": "public-https-literal",
-            "fingerprint": "616575581e98efa2826fbfb74e5beaa38214fd40552905067cb655bbdcf34a2a"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/models/handlers/model_artifact_ref.py",
-            "rule": "public-https-literal",
-            "fingerprint": "0f57ee9e1b9920c058c7e4f119248f0164442f432043087ce6838691331e0026"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/models/handlers/model_packaging_metadata_ref.py",
-            "rule": "public-https-literal",
-            "fingerprint": "e581c5786f36a9a424cdea11f3afcffe4f5298fba722e67a0ef0c5599bebe612"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/models/operations/model_change_proposal.py",
-            "rule": "public-https-literal",
-            "fingerprint": "05ff38ee1c4cc26e350a487fb3f54b551cbba9b4e90059929dd0a8efd1a7e7d6"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/models/operations/model_change_proposal.py",
-            "rule": "public-https-literal",
-            "fingerprint": "bc7c34f657d5f7574faf4c84ee0e1daaa249b170f65cee97f347b21547ecefe1"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/models/reducer/payloads/model_extension_payloads.py",
-            "rule": "public-https-literal",
-            "fingerprint": "ff358f1228f2c46bce0dce88334a9661c27995a10c1685ca5812e052887617bc"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/models/reducer/payloads/model_payload_http.py",
-            "rule": "public-https-literal",
-            "fingerprint": "1d271e1c0ec30348f10b437b01be085442b77301f45a9c6b8d0b7e6809ceaad0"
-        },
-        {
-            "repo": "omnibase_core",
-            "path": "src/omnibase_core/models/vector/model_vector_connection_config.py",
-            "rule": "public-https-literal",
-            "fingerprint": "50e72ba0afdcfd2e8ff263e257daecbdf9157327d0f5d0066d29b8b1559205de"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/check-pinned-wheels.py",
-            "rule": "public-https-literal",
-            "fingerprint": "b9a41a1fcc1b60ef0b5623138103614bd4930bcc33369887c021866ad796b3ec"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/check_dockerfile_pins.py",
-            "rule": "public-https-literal",
-            "fingerprint": "fdfcbe3bd728cb7a5e7051d7744af2cff2dde8de7f12938962a28c32e29969c0"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/disk_gc_plan.py",
-            "rule": "public-https-literal",
-            "fingerprint": "8ba7c563ba1fcecd75090c636eb9182cf297e15b6c4954bd6a329638f47a7510"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/dlq_replay.py",
-            "rule": "env-url-read",
-            "fingerprint": "409c6b940528bd2d92ce56b37474d2bd601e5ec8c97c51da762c853e666df2bf"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/emit_baselines_raw_snapshot.py",
-            "rule": "env-url-read",
-            "fingerprint": "7daaab63f9e7400b4d93eec359c5a85fa95734799b39e58c50c423889a3c3c2d"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/generate_ticket_plan.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "490a444282598066ff2c9bf148609e83b0717d772dc9beb90ce05296860fd641"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/monitor_logs.py",
-            "rule": "public-https-literal",
-            "fingerprint": "26b0328558dcf3b47f6eb4ac17f28aaf268a2adfe7b11cd00d4fdf2fa8e0937f"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/monitor_logs.py",
-            "rule": "public-https-literal",
-            "fingerprint": "26b0328558dcf3b47f6eb4ac17f28aaf268a2adfe7b11cd00d4fdf2fa8e0937f"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/run-migrations.py",
-            "rule": "env-url-read",
-            "fingerprint": "2f9a3303feb092c8c59e65539ac26ab9fcb7ad69a4c9de57f6924c0dae1752fd"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/seed-keycloak-clients.py",
-            "rule": "env-url-read",
-            "fingerprint": "1a0f6e8963fb5b5e48dd57f8b4360b278121f3c5520d817f2daa3d15c3b55bb4"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/update-plugin-pins.py",
-            "rule": "public-https-literal",
-            "fingerprint": "28caa77be6bb302ba7f78ce2c697f77f169c506a920399e76d8f8ede9a55ed04"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/validation/check_stale_todos.py",
-            "rule": "public-https-literal",
-            "fingerprint": "b8fd0e0dd673c67017723526959ec1ee1bbc5ff563fe9651138315e8b090f583"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "scripts/verify_error_triage_e2e.py",
-            "rule": "env-url-read",
-            "fingerprint": "e9323739c941ef7bf0e21d42d3fa459ce6dc518129e4d8301e17c956f92f6535"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/github/adapter_github_client.py",
-            "rule": "public-https-literal",
-            "fingerprint": "728ecbacf47d9d5a9c5751bfb16ee948214817389dc17f13250b2d6ce069f583"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/github/adapter_github_client.py",
-            "rule": "public-https-literal",
-            "fingerprint": "a191b7c137ed53c2d4307035f8da303864b203cd10cf40742530a5178685973a"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/llm/adapter_code_analysis_enrichment.py",
-            "rule": "env-url-read",
-            "fingerprint": "8e60a3d6ab04d217c5ea3133c81dfac5a0b4ca4a8d247f97f573a006572f789e"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/llm/adapter_code_review_analysis.py",
-            "rule": "env-url-read",
-            "fingerprint": "d0bdcf818a938b1bb900603ceff4c48d744cbe590f2b5b1138f2cc828286d501"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/llm/adapter_documentation_generation.py",
-            "rule": "env-url-read",
-            "fingerprint": "acbebb0f294b2213c479444b50109e379cc7a7b9471144cb68479f2214516d78"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/llm/adapter_llm_provider_openai.py",
-            "rule": "env-url-read",
-            "fingerprint": "187c608edfd416c50f7d26a564b13bfb6cda6d2a57e59c6c833330218ca1b9e7"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/llm/adapter_similarity_enrichment.py",
-            "rule": "env-url-read",
-            "fingerprint": "70b8399d4428017d332cdf85cb137b28ee17f0b0281ce258185529587bccb316"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/llm/adapter_similarity_enrichment.py",
-            "rule": "env-url-read",
-            "fingerprint": "d4b9d4bd8b52fd4c52c76c206944d0edbe47595cfc3bd01bf1079f6969a0f16c"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/llm/adapter_summarization_enrichment.py",
-            "rule": "env-url-read",
-            "fingerprint": "8eb0a3504b839fcdd7bc967032b16233906d8f0c54f82982ca97f07ac98752c6"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/project_tracker/adapter_project_tracker_linear.py",
-            "rule": "public-https-literal",
-            "fingerprint": "c2b1ae9f46fa27a2011894f39099b91df8921a46c306a726c8be6c59c5db4005"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/project_tracker/linear_graphql_project_tracker_adapter.py",
-            "rule": "public-https-literal",
-            "fingerprint": "4d38ccbbb7b1ae7c730da94d51b4988f1678fd6e8b6e5cc57f3873aeb6ca5491"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/adapters/ticket/adapter_ticket_service_linear.py",
-            "rule": "public-https-literal",
-            "fingerprint": "82213724f0cc2d6f298a36d3b193c311272adbebdbd993408ab980d88eec7ca1"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/cli/commands.py",
-            "rule": "env-url-read",
-            "fingerprint": "44aeaf06cd9cff4bc9bafd43a706d93c99fbb6465090d9f20bd8170ff2c2194c"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/cli/model_demo_reset_config.py",
-            "rule": "env-url-read",
-            "fingerprint": "7aef7b0d9d9521b63af286b8fdc2e41b72028c7c9ab627e8de2e4398b93e9fa7"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/event_bus/topic_violation_alerter.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "3427c73423e6d3b38a74f351a2bd5356fccb36330b1fc1f0b4ebcae72f917173"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/handlers/handler_gmail_api.py",
-            "rule": "public-https-literal",
-            "fingerprint": "ea6dc20bbefc6f7260f92487f4cca04d86f782c0b1c4bbe9f5021bf1aea2cd37"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/handlers/handler_gmail_api.py",
-            "rule": "public-https-literal",
-            "fingerprint": "f28fa0c4e3607ee1eee27fe54dc8b4fbf026983155e4adc79ac384da45a92e48"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/handlers/handler_linear_db_error_reporter.py",
-            "rule": "public-https-literal",
-            "fingerprint": "5733f89fef96edb38037bbede4b8ba3f4f50a07270640b6f48e05007206933c4"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/handlers/handler_slack_webhook.py",
-            "rule": "public-https-literal",
-            "fingerprint": "afaa711ed2dcd5a672f834eea2d160f5630cf64700cbfdd93b82410b04618f13"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/handlers/models/qdrant/model_qdrant_handler_config.py",
-            "rule": "env-url-read",
-            "fingerprint": "524f564c89d0df5e1ea1dbd9d3cec35e6214fa2bee05c2fc655f64274240bd4f"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_artifact_reconciliation_orchestrator/handlers/handler_plan_to_pr_comment.py",
-            "rule": "public-https-literal",
-            "fingerprint": "34f7e996675552f7fd77ae281974b0851c3bbaf990dee045b1373e7c7d0ddfb5"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_github_pr_poller_effect/handlers/handler_github_api_poll.py",
-            "rule": "public-https-literal",
-            "fingerprint": "5abc9e826b525c2689138230e33c9e1731cc9a5397e1c11d7656340698275017"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_llm_completion_effect/handlers/handler_llm_completion.py",
-            "rule": "env-url-read",
-            "fingerprint": "bf676524f882d4df7f7b46064addbb914fd54a96bc6752fd964f706e70a8558c"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/config_loader_bifrost.py",
-            "rule": "public-https-literal",
-            "fingerprint": "47e0418035bf9a0217e8f192583686deeaed027cc594d042cf547ad329c2ff53"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_llm_inference_effect/models/model_llm_inference_request.py",
-            "rule": "public-https-literal",
-            "fingerprint": "2ea02a45dd1a92fce615855e2979f067e5aebbf656921fb97b1a7a4218bfbee2"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_merge_gate_effect/handlers/handler_upsert_merge_gate.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "a528c9de644c5673fad36b45f80c8f4a3600fdf7cad3695303022f6d48b91879"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_registry_api_effect/handlers/handler_registry_api_get_health.py",
-            "rule": "env-url-read",
-            "fingerprint": "10c2bb1c18f4fb929c41b05dd4054588ef5878690bf444d58187ffd25a75d9a2"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/nodes/node_registry_api_effect/handlers/handler_registry_api_get_health.py",
-            "rule": "env-url-read",
-            "fingerprint": "591665b3e147aab472ba87e5a5751cd090f5a1c229375a5786706177a1a4d324"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/probes/capability_probe.py",
-            "rule": "env-url-read",
-            "fingerprint": "e50ada82bf01130585efe694e3efa9e1a9572d64bcb77caf945dfa36cb0c4cd6"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/runtime/runtime_host_process.py",
-            "rule": "env-url-read",
-            "fingerprint": "7999c1d4957748aae0731958b721b96ab12723a483383ec706798ab88b99973d"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/runtime/service_kernel.py",
-            "rule": "env-url-read",
-            "fingerprint": "4089dd1d1463dbd78814770d45eec27fe6a9fd7833029ba6a9bae524088b62ed"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/runtime/tracing.py",
-            "rule": "env-url-read",
-            "fingerprint": "7a60cab9ee74afdb1daa849b67eb7cbbcb29c9edea5f3a9bd1ea5cbc22ccb19b"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/services/agent_learning_extraction/config.py",
-            "rule": "env-url-read",
-            "fingerprint": "f0a213bf887af41f54768523486df3ae55e01be9dfe7599406c1dab1163ab2e2"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/services/post_merge/checks.py",
-            "rule": "public-https-literal",
-            "fingerprint": "fa93f3c68cc4ef98cf0b568ec5e655fc7638299c5f766a4765d4fc6b77128b9c"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/services/post_merge/consumer.py",
-            "rule": "public-https-literal",
-            "fingerprint": "6406fa6fd3ce6389a54a5d7c4b7b04c6a87ba114ee80ad062395b215aaf83714"
-        },
-        {
-            "repo": "omnibase_infra",
-            "path": "src/omnibase_infra/services/session_registry/decision_embedder.py",
-            "rule": "env-url-read",
-            "fingerprint": "2a677d4dab524b88981994246f06039a80f472aba400997db144f3de46308469"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/bash_guard.py",
-            "rule": "env-url-read",
-            "fingerprint": "dbc7099d510bf66ef331562b96bafe944441578122238b124686e7e15f961848"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/blocked_notifier.py",
-            "rule": "env-url-read",
-            "fingerprint": "908a6986906843eb110a31b6fe5058eed669bd91ba73cb38a9bc5e9db28cd847"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/classify_treatment.py",
-            "rule": "env-url-read",
-            "fingerprint": "dc81aac02369a08ccecc443e355e830d0ff0ae0f6b6c66bd923fcf21b059e66d"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/code_graph_query.py",
-            "rule": "env-url-read",
-            "fingerprint": "02de8d707b4753694b4977eb6ef8d693fcc7972d5671dbc0d74c80450b1ead3a"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/code_graph_query.py",
-            "rule": "env-url-read",
-            "fingerprint": "376540ed49044d07d524b4f91c6486f3e33b6ec3a8fc032c8459d19d81327226"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/code_graph_query.py",
-            "rule": "env-url-read",
-            "fingerprint": "ea4825130e3df4e2aee1b04864e06c6d79f41f3202622d3d460708d38b699f90"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/linear_done_verify.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "a3eb4a52322f2bd684f38669d4b71c2c9f174b626597020f6cbd61b7db80cde7"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/memory_fabric_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "c5a6e677127c05d7e8c5530c84912429f65bfd35c08293094e6b74097621f29f"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/pattern_enforcement.py",
-            "rule": "env-url-read",
-            "fingerprint": "7482160ebe0bda190f85455d92d60d462183f98e59d4ffcee0d1cd9c8f4a4e09"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/persona_context_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "c03916b69659e0af8dad6e6f4fcfa07d615c4eaf1dd96c64d9389fc14f7351fd"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/phoenix_otel_exporter.py",
-            "rule": "env-url-read",
-            "fingerprint": "c1dac6f914c0eec0f245257f9b5c2d96f38144ecf00cf95e75f659fbc032a740"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/phoenix_otel_exporter.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "d40b3d6c6319d816ff89c58a393a51f35c6d4468bf80274f699ab697b4b6edba"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/hooks/lib/shadow_validation.py",
-            "rule": "env-url-read",
-            "fingerprint": "43adc81cbf88899f2b2507a8dea94b66278db3e1e3c6004f1b6bc07276dc4d4d"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/_lib/decision_store/semantic_check.py",
-            "rule": "env-url-read",
-            "fingerprint": "1c51559e1b5ca08eac279dfcc8779f9cd7bb839860a8bd5b46e75d241404873f"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/_lib/gather_github_stats/gather_stats.py",
-            "rule": "public-https-literal",
-            "fingerprint": "7d96de3c72915fcdf7864bcba36174ba9a098834040a148f016751fe9d1e6b2a"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/_shared/qdrant_helper.py",
-            "rule": "public-https-literal",
-            "fingerprint": "7628fb7f1496f27adc3f56f279f293a8b395dc9fecccf603c23b12d5d610791f"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/_shared/qdrant_helper.py",
-            "rule": "public-https-literal",
-            "fingerprint": "d4a41873fafec42733bdce0a7727e99b94d86a60a82dd8ff3e3460d8997d554d"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/_shared/qdrant_helper.py",
-            "rule": "public-https-literal",
-            "fingerprint": "e384af2fc7a19888fdc54a5068f0135598e77ee3c438271d0ceb3f74539eb08e"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/changelog_audit/_lib/dispatch.py",
-            "rule": "public-https-literal",
-            "fingerprint": "8289627bc7cc99959d336b4fa7a4adab45764892037609a8c0835d49b2a16350"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/demo/_lib/dispatch.py",
-            "rule": "public-https-literal",
-            "fingerprint": "12ba5e9241dcd6eba6ea6a17442ce24a952b857f4d756984321e340daf4ea340"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/dispatch_engine/_lib/run.py",
-            "rule": "env-url-read",
-            "fingerprint": "f340ca1cee7393c64800bea01c98c182577a3872809ac874bbe173ac41e42871"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/env_sync_alert/_lib/check.py",
-            "rule": "public-https-literal",
-            "fingerprint": "bf914d698b552a0ad82ad6cd8f7c2c43449b7b1adeb1af6994d32593fbb5e854"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "plugins/onex/skills/system_status/check_database_health/_lib/execute.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "29aa7aed7f0d3f5c0dbed39970755d419d20ef003aa634b16ed6f11d4614e179"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "scripts/benchmark_manifest_performance.py",
-            "rule": "env-url-read",
-            "fingerprint": "60c10bbdeedd1976c652d52640b852c49b7c80b4ce4abeacf3c7ead5f2802132"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "scripts/benchmark_manifest_performance.py",
-            "rule": "env-url-read",
-            "fingerprint": "7a9282b9c5836a42d007ab18f8c9a16494f3e4af03c0060da6034743b2092646"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "scripts/benchmark_manifest_performance.py",
-            "rule": "env-url-read",
-            "fingerprint": "c922e859d400db4ada1cb9858d410e945e4bb2cdda51e388a4be726d134d6869"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "scripts/ci/run_golden_chain_live.py",
-            "rule": "env-url-read",
-            "fingerprint": "79ecadd5455ff789d5f66edec8eaec0c179bacb519a63d780532deb6a8804852"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "scripts/ci/run_golden_chain_live.py",
-            "rule": "env-url-read",
-            "fingerprint": "973e4a1a3bf31e1e868ce18b4ef8fc0cdcbf8e7c12e5364aa264c48d52f15a33"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "scripts/seed_decisions.py",
-            "rule": "env-url-read",
-            "fingerprint": "d5fd9305f0898b3a0e5aa397f43db1dced765f0f17bf6545afb21ac0cc7f068f"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/config/model_local_llm_config.py",
-            "rule": "env-url-read",
-            "fingerprint": "2a7fc303affc1f34974c96274b609c3dc21559ec9f9519d9a4921934550f0534"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/hooks/context_config.py",
-            "rule": "env-url-read",
-            "fingerprint": "3ee5b8d56bdad91310073376f8b3eb28c02e4a5001161a299c360614f566d612"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/hooks/context_config.py",
-            "rule": "env-url-read",
-            "fingerprint": "3ee5b8d56bdad91310073376f8b3eb28c02e4a5001161a299c360614f566d612"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/hooks/context_config.py",
-            "rule": "env-url-read",
-            "fingerprint": "f6bd18e3e98f137ff6f226163e87f69cd2c6b0daec58fa20b3836a670b4c420b"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/hooks/lib/code_context_resolver.py",
-            "rule": "env-url-read",
-            "fingerprint": "997810749a96661754b69e23c5a219c9db4cf3c5d2d731712b543c3d5793d37b"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/hooks/lib/code_context_sync.py",
-            "rule": "env-url-read",
-            "fingerprint": "75b5442912cb8d6a7543b8c801597cf1bdd688feeb7b26bd74a50fafcacb345d"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/hooks/lib/code_context_sync.py",
-            "rule": "env-url-read",
-            "fingerprint": "ee4bfac00eef71e9178896177c972d37b9a90d5791f2b50c04b6a2d2ab5becf2"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/core/manifest_injector.py",
-            "rule": "env-url-read",
-            "fingerprint": "ab75ea827d83555861d99c1052ea5473f063db1ad6212af467f21d4465880c42"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/core/manifest_injector.py",
-            "rule": "env-url-read",
-            "fingerprint": "bd6565fde1043249bfd0f35d5fde846a667955a3bc3eb6815eb218dc9293a3cd"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/consensus/quorum.py",
-            "rule": "public-https-literal",
-            "fingerprint": "0497a702f25b1577cabeec27b8245bf87e1a8f6cbcabb95ef130c1931f2a847d"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/consensus/quorum.py",
-            "rule": "env-url-read",
-            "fingerprint": "39d700dc611a040a12741e9677544c1095241871482d5f1e75de94d56ea5eb3d"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/consensus/quorum.py",
-            "rule": "public-https-literal",
-            "fingerprint": "7caaacb4c60f3326c21254b6867fd47d42943cd970fbd47e7357051b27dd15c3"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/diagnostics.py",
-            "rule": "env-url-read",
-            "fingerprint": "67d5fc5051fcbd0ce30b3d884d36c44a42341b6e69b196179b3413996533b5b9"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/diagnostics.py",
-            "rule": "env-url-read",
-            "fingerprint": "bc95fd58eac190f3cf1d2de24989b9052548e0e65794727f49d92715a6a7cf93"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/diagnostics.py",
-            "rule": "env-url-read",
-            "fingerprint": "bf6041864258c977ed530f96b897cfa214abf5367b539de3e5b5ee0439938f67"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/diagnostics.py",
-            "rule": "env-url-read",
-            "fingerprint": "cc36e741eb415388130b98bf8d5a237eb19e5f86c36db6202a9bc49c7e741615"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/lib/utils/diagnostics.py",
-            "rule": "env-url-read",
-            "fingerprint": "f1d0be94c06058f5f63bfa27947b28d9a62cc5a854b6a4a0ddccd67d16b5e5f0"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/nodes/node_golden_chain_sweep_orchestrator/__main__.py",
-            "rule": "env-url-read",
-            "fingerprint": "09a10c80289ce4976b427e2407f1c78f7cfa99919da5a2109a902f253fbede53"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/nodes/node_golden_chain_sweep_orchestrator/__main__.py",
-            "rule": "env-url-read",
-            "fingerprint": "4bf0ec5780a1f879404015a3862dbceb7beab57601ba49308649b0008ed4b6c3"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/nodes/node_transition_selector_effect/node.py",
-            "rule": "env-url-read",
-            "fingerprint": "877432896ec05ee6c0d5e1cb93d5db3a37b3986c303d34bec7e41e8d22676222"
-        },
-        {
-            "repo": "omniclaude",
-            "path": "src/omniclaude/services/session_registry_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "8dd31822a0447af62a5d2294a46e43ac08c05c6a9c1136550a0daef500ad87ef"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/backfill_pattern_projection.py",
-            "rule": "env-url-read",
-            "fingerprint": "0f2b2450f12fe2d5c4305769277c3efcbf65cdc6ec576ba29a178999787eb360"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/crawl_code_entities.py",
-            "rule": "env-url-read",
-            "fingerprint": "734468951ff58ab620b51d1e2df3c9bc5727c328b17370fda32d13106bbfdc91"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/run_promotion_check.py",
-            "rule": "env-url-read",
-            "fingerprint": "7a8d79dddfab369f36859e5531033c3e81b6ad7ddbec38684329833521567cd3"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/seed_learned_patterns.py",
-            "rule": "env-url-read",
-            "fingerprint": "4b920706f7f8f89b939ebb8e1a57495e7353eb96de4af5d00848f79e52a699bc"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/seed_patterns_from_families.py",
-            "rule": "env-url-read",
-            "fingerprint": "5d93a7247bf61cbfc745a2c127c1f0a5cfc477e14ce22feb41730796ee2e5abe"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/verify_pattern_lifecycle_e2e.py",
-            "rule": "env-url-read",
-            "fingerprint": "00558d76bf6b6e142d98c9e6d2001513f9ab63fad52038e7a3d7910d8e156e9f"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/verify_pattern_lifecycle_e2e.py",
-            "rule": "env-url-read",
-            "fingerprint": "2acd5187bd40897b49fa53a40fd71353d7661cb6643b20c5415000f2ce87f7e4"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "scripts/verify_pattern_lifecycle_e2e.py",
-            "rule": "env-url-read",
-            "fingerprint": "2ecafb0e6ad7aec20b5097d80950d1dd8f2237f942c62fa694b81091350f2062"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/adapters/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "523fc8950efce0aca62e5b3b701051c339581aa0497f41694f52c5c7d01ac879"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/adapters/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "d531bd9ddbad359780e646b9dd5dcf4d4ce2b50e4cfeaed144da553e8f9d4fd8"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/adapters/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "d531bd9ddbad359780e646b9dd5dcf4d4ce2b50e4cfeaed144da553e8f9d4fd8"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/adapters/plan_reviewer_gemini_client.py",
-            "rule": "public-https-literal",
-            "fingerprint": "75694ee9e36ed608ab91bf527b8807b77f21326d0c2b94ae02addcf77a6831d5"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/adapters/plan_reviewer_z_ai_client.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "501dc2f840726681e28dc2e257dca55f032a9caad6fd6fde2e6c9235dc22b99b"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/adapters/plan_reviewer_z_ai_client.py",
-            "rule": "public-https-literal",
-            "fingerprint": "5372d2e1d627ecf1eb4a3404576fcf6c6fd5044cadc22e2772c4b1727b855ccf"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/adapters/utilization_llm_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "5cffe8f36b01d257a70e8c9adcc5ee18edeea4cbcad8c8388fcf2ebaae4b477c"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_embedding_generation_effect/node.py",
-            "rule": "env-url-read",
-            "fingerprint": "9c844ffbc822f039580063bf13c6d014e752466b8f1fe0026ead5f6932d2c3a4"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
-            "rule": "env-url-read",
-            "fingerprint": "6f2a54606b24e2059e5ba09423accd307073c0a7640202e7556ae527d60f7e41"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
-            "rule": "env-url-read",
-            "fingerprint": "6f348a2337af7aa62e6040b76d9b2ef29504ad2bb8704c4097ca0dce78705cd6"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
-            "rule": "env-url-read",
-            "fingerprint": "74e202f4a911bae0dd0e9974ab06c4d15eecdba5f47160061b4208fe3a322c49"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
-            "rule": "env-url-read",
-            "fingerprint": "c6bea17f518c4fa901e609e1832a2418d30da2ec74f5a82b5e0c492ae7a4b1f3"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/models/model_navigation_retrieve_input.py",
-            "rule": "env-url-read",
-            "fingerprint": "e75824d1cee782c892e4e2d5eda5435781a3d882f9af612f154ba920eeceba8a"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/node.py",
-            "rule": "env-url-read",
-            "fingerprint": "5aab715e0481642f8385ca89383c29f5a4ddb81edca4c811935ab1be1c4757e7"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/node.py",
-            "rule": "env-url-read",
-            "fingerprint": "b77dd88a1d2a07e33d02357fc6bddef62b52a2f0942f782928d2c0d7c09abb5b"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/review_bot/github/client_github.py",
-            "rule": "public-https-literal",
-            "fingerprint": "6707604da750f2baf72447b42ea8c727eb5810eb16978d34e3dd3bc01325dd67"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/review_pairing/adapters/adapter_ai_reviewer.py",
-            "rule": "public-https-literal",
-            "fingerprint": "10a2eb5e12342b5b65540daca4c894533c2aa8898a9b8836e918e46bbdc9ba36"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/review_pairing/adapters/adapter_ruff.py",
-            "rule": "public-https-literal",
-            "fingerprint": "812aca1f0ed67f9743ebda284d2556e23de651444049d092e121c117f09ddda9"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/review_pairing/cli_calibration.py",
-            "rule": "env-url-read",
-            "fingerprint": "2e246893ef17f54603609cd00f186ecf40f3a83416ca3b1c79031306e6630f12"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/review_pairing/cli_calibration.py",
-            "rule": "env-url-read",
-            "fingerprint": "93183aa4f72433031492bee07d44dc8097d611ea44feecca85df60819d992393"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/rl/export.py",
-            "rule": "env-url-read",
-            "fingerprint": "339c12866899428f609ba2d41062a24c7f3f501625a71d3b576b59c1d911801c"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/rl/export.py",
-            "rule": "env-url-read",
-            "fingerprint": "75d3d5dddc71124c18d43a3e96d1e8fd8de0b9fe40e60b5b0aca6439f3a84e1f"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/rl/export.py",
-            "rule": "env-url-read",
-            "fingerprint": "98d9b59d12daf7158367857ff54e13ffa56ee455a23488be5bcee8e70030e045"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/rl/export.py",
-            "rule": "env-url-read",
-            "fingerprint": "fed6f79a86c60f0268c04afa525ff3c088be8fd7fcf78d1bc0599134d3b22727"
-        },
-        {
-            "repo": "omniintelligence",
-            "path": "src/omniintelligence/runtime/dispatch_handler_code_embed_graph.py",
-            "rule": "env-url-read",
-            "fingerprint": "6381995a52f85e8609044270adadd7a55e2a1a4ead6d4e39e4177f3d65d0935e"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "experiments/adk_eval/type_debt_scout_poc/handler_type_debt_scout.py",
-            "rule": "env-url-read",
-            "fingerprint": "6bf0d157755fd2da1fc821d4b934eb97c7ecdee368a183ed003a9fb2bb7ca7fa"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "experiments/adk_eval/type_debt_scout_poc/handler_type_debt_scout.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "bd153a8c98bb6ea2fd3db16861551c2a527faf7907baa701690c477a19fb0c16"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "scripts/run-projection-migrations.py",
-            "rule": "env-url-read",
-            "fingerprint": "b698c240ab91a25bd919c6c1307094e7a597dcbbe9c1eecdef0beec03e11b2f6"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/cli/cli_ab_compare_suite.py",
-            "rule": "env-url-read",
-            "fingerprint": "ca7031122195fa52d8a91110921125d6df562ca5e0eb6f9c7b8630d37ea3bb9b"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/cli/commands/trace.py",
-            "rule": "env-url-read",
-            "fingerprint": "2c25a84b8023c3e8d8bbebe12719e86fb9237a43d9ddbbbdda9a73b01d0c00f1"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/cli/commands/trace.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "5e0ef999930ffdb2fcb4e2c29a78d4d06b709c8d106fd4cddfc94467dd75ac85"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/github_api.py",
-            "rule": "public-https-literal",
-            "fingerprint": "ae7519dc33b87424703372d3dae584956f8fe9a79c8f1cd1f64900ff86449749"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/github_api.py",
-            "rule": "public-https-literal",
-            "fingerprint": "d3de354ca05e890d5eac07d6a5be7b2e2502ecb9629c7d3ab9b19b8ebdb73177"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/inference/bridge_config_loader.py",
-            "rule": "public-https-literal",
-            "fingerprint": "d22be9c42790ceb040563ef9c6353dc5188264120d47d0136c47e0bae961997d"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_agent_coordinator_orchestrator/__init__.py",
-            "rule": "env-url-read",
-            "fingerprint": "aba06dfa0bdcae4ab8dbaacd0a1c55255f2468f8693045c7da9df5cdd4e26c39"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_baseline_capture/handlers/probes/probe_linear_tickets.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "65e86d8166a87bea363c2c26832fccc7cc08f84357d0fc58f6fc4ee5d22f6c1c"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
-            "rule": "env-url-read",
-            "fingerprint": "194ee01ecb26669fc88a8671f6be4eeb675dd92e9877192f8c85aad39813a89b"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "2654b2477fcdf4e0f277296da3da26360399561abceddbad7a1d69297212a06a"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
-            "rule": "env-url-read",
-            "fingerprint": "c0a43d31acc3c72b7d5c32b02bbfef43925d81516c13cd4c5b987f59a741e0f0"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
-            "rule": "env-url-read",
-            "fingerprint": "f74fc79f42bc1b20a11696b415e033778c2cf3137f45017e161b029efe284e72"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
-            "rule": "env-url-read",
-            "fingerprint": "f867a8738c491d66b4076c91ac5f13639be35539b2780a7f802ed19b9536659d"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_build_loop_orchestrator/handlers/adapter_linear_fill.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "add60c115d70eaf74c3f955a1d638bfbb0b66755fa6902e84bbed88c70386fb1"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_build_loop_orchestrator/models/model_live_runner_config.py",
-            "rule": "public-https-literal",
-            "fingerprint": "d35fb8b41b0385845cb1df4ab08c21b354525604fea13f857c1861d7d2508167"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_ci_fix_effect/handlers/handler_ci_fix.py",
-            "rule": "public-https-literal",
-            "fingerprint": "3139eb2c78eb7bba7cb5061b2016cd0b961dcc266ad1d7d55b39d8a2f09df604"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_ci_rerun_effect/handlers/handler_ci_rerun.py",
-            "rule": "public-https-literal",
-            "fingerprint": "03456d6e2d2d63cfcf5ab57cc75170ae24b4a57d1928265579ac1d379680b177"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_demo_drift_detector/handlers/handler_demo_drift_detector.py",
-            "rule": "env-url-read",
-            "fingerprint": "5c29bc4330da55ecc219c8765d5935a72296db96aaa34b6a2917d8bef9e3a16d"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_demo_rehearsal/handlers/handler_demo_rehearsal.py",
-            "rule": "env-url-read",
-            "fingerprint": "99d2cdf4ffe32f166942569c687e703caa52d3a895b992ad1a421769d0b86923"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_dispatch_outcome_bridge_effect/handlers/handler_bridge.py",
-            "rule": "env-url-read",
-            "fingerprint": "041ba7668bfd4e08907ffaee2b1c42add54913e0185862d55ecf39b4147a01fd"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_github_diff_effect/handlers/handler_github_diff.py",
-            "rule": "public-https-literal",
-            "fingerprint": "93058ecfe0387c25d6c66575d32d8018b0ca976b4f26a02aea1cf5f4e9001048"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_github_review_effect/handlers/handler_github_review_effect.py",
-            "rule": "public-https-literal",
-            "fingerprint": "508a741aa0d9969d1ca20f433d2386ac7de7830c463589aa2c0629f46dbfa8c8"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
-            "rule": "env-url-read",
-            "fingerprint": "0fc9d5d6fbfb786a13393f72a09347aed1c2821e95bff797b6f50176a4eb1421"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
-            "rule": "env-url-read",
-            "fingerprint": "2f42330015c7a1363c8e6432c80ac9ca2726169cb6169837c3ff325b680e8a98"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
-            "rule": "env-url-read",
-            "fingerprint": "cb30ae44c0f50e568f868528251cab80c41ae3cc61b1d41720dd16f7114fa408"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
-            "rule": "env-url-read",
-            "fingerprint": "fa00cfc668cd002a515b70edc7163b8ac635464c860afef364908e657b8128c7"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
-            "rule": "env-url-read",
-            "fingerprint": "fd59e1fc59baa103d27148ae3d2d411ce7e8ad04220be379bc814d6c767248e4"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_linear_triage/handlers/handler_linear_triage.py",
-            "rule": "public-https-literal",
-            "fingerprint": "8a099f86585771ff429f27c51b91b49f6c3267a9c48b01f117cd9ca24d2f4843"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_linear_triage/handlers/handler_linear_triage.py",
-            "rule": "public-https-literal",
-            "fingerprint": "8df7558aec29a028580af160391f9f480a802d4dca4933c5f9dae1a2004b80ca"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/__init__.py",
-            "rule": "env-url-read",
-            "fingerprint": "aa9055302cce38c0caab09fa4a186b0e0654d0507e94a92b28b9bd75a033c611"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_merge_sweep_auto_merge_arm_effect/handlers/handler_auto_merge_arm.py",
-            "rule": "public-https-literal",
-            "fingerprint": "5982590be9c41ef7d13f9fca241dab336a5df4b031a9271eb0aadc8895d9141b"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_merge_sweep_compute/adapter_github_http.py",
-            "rule": "public-https-literal",
-            "fingerprint": "3bd90fe69d5b895c6ab8b3a246a875b07315b00b9735fb8ee8c04b50358b90b5"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_merge_sweep_compute/adapter_github_http.py",
-            "rule": "public-https-literal",
-            "fingerprint": "eee30fef1a006bdbc0d900df3d106c6b3994b1323ec8e4a8170c004443a051ed"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_nightly_loop_controller/models/model_nightly_loop.py",
-            "rule": "env-url-read",
-            "fingerprint": "2c13ef8a8ca5cf2a74ebbfc36b031c40c28a2a447552e2a1a81f41c74dc5bf44"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_nightly_loop_controller/models/model_nightly_loop.py",
-            "rule": "env-url-read",
-            "fingerprint": "33761828b453147db0cbe8bfbac30e362ba8f39bc33ee52c67126d61e0de9be4"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_nightly_loop_controller/models/model_nightly_loop.py",
-            "rule": "env-url-read",
-            "fingerprint": "4628063d107f9adf2453bfdd53cafaeff4a01ca7afe19c4690ea38ca40d754f6"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_pipeline_fill/handlers/handler_pipeline_fill.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "be787dc4d9b7e2de5d019c08220d8eb19f18331f9e1eb5a9f3ec6c84c79b0243"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_platform_diagnostics/handlers/dimension_checks.py",
-            "rule": "public-https-literal",
-            "fingerprint": "4026da52231d380e2f02201745901f8a41f8d20b0df1fdd961081b62df929bf2"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_platform_readiness/handlers/dimension_checks.py",
-            "rule": "public-https-literal",
-            "fingerprint": "704f7718001d924765f66376fd4443ff5cc473b37ed1f212ece03bccddf7e5fe"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_projection_llm_cost/backfill_llm_call_metrics.py",
-            "rule": "env-url-read",
-            "fingerprint": "aecbb8fc9299a29bc2ad59cfbb328afc09d46379186a14b82ff00658819af5ad"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_retention_cleanup/__main__.py",
-            "rule": "env-url-read",
-            "fingerprint": "8fc695b4d6395b213a593511a4513257b1bdce4ef33981534d93ad74352ed30e"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_session_orchestrator/handlers/handler_session_orchestrator.py",
-            "rule": "public-https-literal",
-            "fingerprint": "2998b191e422f44540213df727a06b4804a7d54525ff94d4cefe35c2d117af80"
-        },
-        {
-            "repo": "omnimarket",
-            "path": "src/omnimarket/nodes/node_swarm_fleet_discovery_effect/handlers/handler_swarm_fleet_discovery.py",
-            "rule": "url-const-assignment",
-            "fingerprint": "9a754452f320782aa48a4e4213936d12cae4cb429a618fc0add98be79e3cfa28"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "scripts/graphify_to_memgraph.py",
-            "rule": "env-url-read",
-            "fingerprint": "933db0450ad8e7863fa89b7405b24307a415ffa5e58e7c1d6569adfcbfb6bafe"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "scripts/graphify_to_memgraph.py",
-            "rule": "env-url-read",
-            "fingerprint": "acab52eba0024bed81d1989d7924705a718322d7bea3cd60e4124d6eab37fd72"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "scripts/graphify_to_qdrant.py",
-            "rule": "env-url-read",
-            "fingerprint": "36da0e563ed23176b12452ab88d0c8a282f1acb8e5e777f20c7e955ce7d64bc3"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "scripts/graphify_to_qdrant.py",
-            "rule": "env-url-read",
-            "fingerprint": "5c9e4ac38c7bfca4828de8d7ac48ed4955cca9b6d34209c3cdb417445ddd2711"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "scripts/graphify_to_qdrant.py",
-            "rule": "env-url-read",
-            "fingerprint": "68f1c94bb38e436898ea363bf425486ce0ae6a901ffd69ad95bfc59f4272c524"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/handlers/adapters/__init__.py",
-            "rule": "env-url-read",
-            "fingerprint": "465857e0dbb4c8471681116257708d38a395cd6905772505e160030afd9daa31"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/handlers/handler_subscription.py",
-            "rule": "env-url-read",
-            "fingerprint": "835fe3bb36b97bdc219169b6cfb0f278ba20ec5f9fdea94f262caf80ba2d45f9"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_agent_coordinator_orchestrator/__init__.py",
-            "rule": "env-url-read",
-            "fingerprint": "2dd3415d36aa3e6db1ac80bfd70943964a7a4d366f9b6f87d74cb6d3771481b6"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/__init__.py",
-            "rule": "env-url-read",
-            "fingerprint": "1c5902aa4802b7a373c4c9fc5972c0feb7a4eef2063f1ebd1c6ef7fae0259fbb"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
-            "rule": "env-url-read",
-            "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_qdrant_mock.py",
-            "rule": "env-url-read",
-            "fingerprint": "be8f7669a26348948da6baa64c9e05e9d5975304c734b6a0e8bde3c25f07bfe5"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/nodes/node_navigation_history_reducer/handlers/handler_navigation_history_reducer.py",
-            "rule": "env-url-read",
-            "fingerprint": "c5d1276ea177391f4455d5635addadddd71e1e625ef27fd40cc7bcd7477a61ee"
-        },
-        {
-            "repo": "omnimemory",
-            "path": "src/omnimemory/runtime/dispatch_handlers.py",
-            "rule": "env-url-read",
-            "fingerprint": "59ac993bef283ddc9a3a210e6281d995d60cc972824f5f9d2afa888b416bde9c"
-        }
-    ]
+  "schema_version": "1.0.0",
+  "count": 215,
+  "violations": [
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_anthropic.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "e1a289119d3d1358f6cdf3e76266f1f160213fff5aec9ae642cb19d5d1101899"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_openai.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "bf799835300f8665db12abb90ae9f5f4c6d1cdbdc0afcb942879d3d55f7eb753"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_openai.py",
+      "rule": "public-https-literal",
+      "fingerprint": "f811f1e5a4df1d9c8042299fe2dad0a37cf281b8cd1eae9d51d0ec5399d16547"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "scripts/emit_ts_types.py",
+      "rule": "public-https-literal",
+      "fingerprint": "49517946e67a010743926613607e217192833a4419ede0952411600ad5c303d8"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "scripts/emit_ts_types.py",
+      "rule": "public-https-literal",
+      "fingerprint": "49517946e67a010743926613607e217192833a4419ede0952411600ad5c303d8"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/doctor/checks/check_linear.py",
+      "rule": "public-https-literal",
+      "fingerprint": "616575581e98efa2826fbfb74e5beaa38214fd40552905067cb655bbdcf34a2a"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/handlers/model_packaging_metadata_ref.py",
+      "rule": "public-https-literal",
+      "fingerprint": "e581c5786f36a9a424cdea11f3afcffe4f5298fba722e67a0ef0c5599bebe612"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/operations/model_change_proposal.py",
+      "rule": "public-https-literal",
+      "fingerprint": "05ff38ee1c4cc26e350a487fb3f54b551cbba9b4e90059929dd0a8efd1a7e7d6"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/operations/model_change_proposal.py",
+      "rule": "public-https-literal",
+      "fingerprint": "bc7c34f657d5f7574faf4c84ee0e1daaa249b170f65cee97f347b21547ecefe1"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/reducer/payloads/model_extension_payloads.py",
+      "rule": "public-https-literal",
+      "fingerprint": "ff358f1228f2c46bce0dce88334a9661c27995a10c1685ca5812e052887617bc"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/reducer/payloads/model_payload_http.py",
+      "rule": "public-https-literal",
+      "fingerprint": "1d271e1c0ec30348f10b437b01be085442b77301f45a9c6b8d0b7e6809ceaad0"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/reducer/payloads/model_payload_http.py",
+      "rule": "public-https-literal",
+      "fingerprint": "1d271e1c0ec30348f10b437b01be085442b77301f45a9c6b8d0b7e6809ceaad0"
+    },
+    {
+      "repo": "omnibase_core",
+      "path": "src/omnibase_core/models/vector/model_vector_connection_config.py",
+      "rule": "public-https-literal",
+      "fingerprint": "50e72ba0afdcfd2e8ff263e257daecbdf9157327d0f5d0066d29b8b1559205de"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/check-pinned-wheels.py",
+      "rule": "public-https-literal",
+      "fingerprint": "b9a41a1fcc1b60ef0b5623138103614bd4930bcc33369887c021866ad796b3ec"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/check_dockerfile_pins.py",
+      "rule": "public-https-literal",
+      "fingerprint": "fdfcbe3bd728cb7a5e7051d7744af2cff2dde8de7f12938962a28c32e29969c0"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/disk_gc_plan.py",
+      "rule": "public-https-literal",
+      "fingerprint": "8ba7c563ba1fcecd75090c636eb9182cf297e15b6c4954bd6a329638f47a7510"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/dlq_replay.py",
+      "rule": "env-url-read",
+      "fingerprint": "409c6b940528bd2d92ce56b37474d2bd601e5ec8c97c51da762c853e666df2bf"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/emit_baselines_raw_snapshot.py",
+      "rule": "env-url-read",
+      "fingerprint": "7daaab63f9e7400b4d93eec359c5a85fa95734799b39e58c50c423889a3c3c2d"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/generate_ticket_plan.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "490a444282598066ff2c9bf148609e83b0717d772dc9beb90ce05296860fd641"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/monitor_logs.py",
+      "rule": "public-https-literal",
+      "fingerprint": "26b0328558dcf3b47f6eb4ac17f28aaf268a2adfe7b11cd00d4fdf2fa8e0937f"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/monitor_logs.py",
+      "rule": "public-https-literal",
+      "fingerprint": "26b0328558dcf3b47f6eb4ac17f28aaf268a2adfe7b11cd00d4fdf2fa8e0937f"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/run-migrations.py",
+      "rule": "env-url-read",
+      "fingerprint": "2f9a3303feb092c8c59e65539ac26ab9fcb7ad69a4c9de57f6924c0dae1752fd"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/seed-keycloak-clients.py",
+      "rule": "env-url-read",
+      "fingerprint": "1a0f6e8963fb5b5e48dd57f8b4360b278121f3c5520d817f2daa3d15c3b55bb4"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/update-plugin-pins.py",
+      "rule": "public-https-literal",
+      "fingerprint": "28caa77be6bb302ba7f78ce2c697f77f169c506a920399e76d8f8ede9a55ed04"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/validation/check_stale_todos.py",
+      "rule": "public-https-literal",
+      "fingerprint": "b8fd0e0dd673c67017723526959ec1ee1bbc5ff563fe9651138315e8b090f583"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/verify_error_triage_e2e.py",
+      "rule": "env-url-read",
+      "fingerprint": "e9323739c941ef7bf0e21d42d3fa459ce6dc518129e4d8301e17c956f92f6535"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/github/adapter_github_client.py",
+      "rule": "public-https-literal",
+      "fingerprint": "728ecbacf47d9d5a9c5751bfb16ee948214817389dc17f13250b2d6ce069f583"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/github/adapter_github_client.py",
+      "rule": "public-https-literal",
+      "fingerprint": "a191b7c137ed53c2d4307035f8da303864b203cd10cf40742530a5178685973a"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/llm/adapter_code_analysis_enrichment.py",
+      "rule": "env-url-read",
+      "fingerprint": "8e60a3d6ab04d217c5ea3133c81dfac5a0b4ca4a8d247f97f573a006572f789e"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/llm/adapter_code_review_analysis.py",
+      "rule": "env-url-read",
+      "fingerprint": "d0bdcf818a938b1bb900603ceff4c48d744cbe590f2b5b1138f2cc828286d501"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/llm/adapter_documentation_generation.py",
+      "rule": "env-url-read",
+      "fingerprint": "acbebb0f294b2213c479444b50109e379cc7a7b9471144cb68479f2214516d78"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/llm/adapter_llm_provider_openai.py",
+      "rule": "env-url-read",
+      "fingerprint": "187c608edfd416c50f7d26a564b13bfb6cda6d2a57e59c6c833330218ca1b9e7"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/llm/adapter_similarity_enrichment.py",
+      "rule": "env-url-read",
+      "fingerprint": "70b8399d4428017d332cdf85cb137b28ee17f0b0281ce258185529587bccb316"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/llm/adapter_similarity_enrichment.py",
+      "rule": "env-url-read",
+      "fingerprint": "d4b9d4bd8b52fd4c52c76c206944d0edbe47595cfc3bd01bf1079f6969a0f16c"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/llm/adapter_summarization_enrichment.py",
+      "rule": "env-url-read",
+      "fingerprint": "8eb0a3504b839fcdd7bc967032b16233906d8f0c54f82982ca97f07ac98752c6"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/project_tracker/adapter_project_tracker_linear.py",
+      "rule": "public-https-literal",
+      "fingerprint": "c2b1ae9f46fa27a2011894f39099b91df8921a46c306a726c8be6c59c5db4005"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/project_tracker/linear_graphql_project_tracker_adapter.py",
+      "rule": "public-https-literal",
+      "fingerprint": "4d38ccbbb7b1ae7c730da94d51b4988f1678fd6e8b6e5cc57f3873aeb6ca5491"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/adapters/ticket/adapter_ticket_service_linear.py",
+      "rule": "public-https-literal",
+      "fingerprint": "82213724f0cc2d6f298a36d3b193c311272adbebdbd993408ab980d88eec7ca1"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/cli/commands.py",
+      "rule": "env-url-read",
+      "fingerprint": "44aeaf06cd9cff4bc9bafd43a706d93c99fbb6465090d9f20bd8170ff2c2194c"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/cli/model_demo_reset_config.py",
+      "rule": "env-url-read",
+      "fingerprint": "7aef7b0d9d9521b63af286b8fdc2e41b72028c7c9ab627e8de2e4398b93e9fa7"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/event_bus/topic_violation_alerter.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "3427c73423e6d3b38a74f351a2bd5356fccb36330b1fc1f0b4ebcae72f917173"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/handlers/handler_gmail_api.py",
+      "rule": "public-https-literal",
+      "fingerprint": "ea6dc20bbefc6f7260f92487f4cca04d86f782c0b1c4bbe9f5021bf1aea2cd37"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/handlers/handler_gmail_api.py",
+      "rule": "public-https-literal",
+      "fingerprint": "f28fa0c4e3607ee1eee27fe54dc8b4fbf026983155e4adc79ac384da45a92e48"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/handlers/handler_linear_db_error_reporter.py",
+      "rule": "public-https-literal",
+      "fingerprint": "5733f89fef96edb38037bbede4b8ba3f4f50a07270640b6f48e05007206933c4"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/handlers/handler_slack_webhook.py",
+      "rule": "public-https-literal",
+      "fingerprint": "afaa711ed2dcd5a672f834eea2d160f5630cf64700cbfdd93b82410b04618f13"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/handlers/models/qdrant/model_qdrant_handler_config.py",
+      "rule": "env-url-read",
+      "fingerprint": "524f564c89d0df5e1ea1dbd9d3cec35e6214fa2bee05c2fc655f64274240bd4f"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_artifact_reconciliation_orchestrator/handlers/handler_plan_to_pr_comment.py",
+      "rule": "public-https-literal",
+      "fingerprint": "34f7e996675552f7fd77ae281974b0851c3bbaf990dee045b1373e7c7d0ddfb5"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_github_pr_poller_effect/handlers/handler_github_api_poll.py",
+      "rule": "public-https-literal",
+      "fingerprint": "5abc9e826b525c2689138230e33c9e1731cc9a5397e1c11d7656340698275017"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_llm_completion_effect/handlers/handler_llm_completion.py",
+      "rule": "env-url-read",
+      "fingerprint": "bf676524f882d4df7f7b46064addbb914fd54a96bc6752fd964f706e70a8558c"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/config_loader_bifrost.py",
+      "rule": "public-https-literal",
+      "fingerprint": "47e0418035bf9a0217e8f192583686deeaed027cc594d042cf547ad329c2ff53"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_llm_inference_effect/models/model_llm_inference_request.py",
+      "rule": "public-https-literal",
+      "fingerprint": "2ea02a45dd1a92fce615855e2979f067e5aebbf656921fb97b1a7a4218bfbee2"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_merge_gate_effect/handlers/handler_upsert_merge_gate.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "a528c9de644c5673fad36b45f80c8f4a3600fdf7cad3695303022f6d48b91879"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_registry_api_effect/handlers/handler_registry_api_get_health.py",
+      "rule": "env-url-read",
+      "fingerprint": "10c2bb1c18f4fb929c41b05dd4054588ef5878690bf444d58187ffd25a75d9a2"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_registry_api_effect/handlers/handler_registry_api_get_health.py",
+      "rule": "env-url-read",
+      "fingerprint": "591665b3e147aab472ba87e5a5751cd090f5a1c229375a5786706177a1a4d324"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/probes/capability_probe.py",
+      "rule": "env-url-read",
+      "fingerprint": "e50ada82bf01130585efe694e3efa9e1a9572d64bcb77caf945dfa36cb0c4cd6"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/runtime/runtime_host_process.py",
+      "rule": "env-url-read",
+      "fingerprint": "7999c1d4957748aae0731958b721b96ab12723a483383ec706798ab88b99973d"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/runtime/service_kernel.py",
+      "rule": "env-url-read",
+      "fingerprint": "4089dd1d1463dbd78814770d45eec27fe6a9fd7833029ba6a9bae524088b62ed"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/runtime/tracing.py",
+      "rule": "env-url-read",
+      "fingerprint": "7a60cab9ee74afdb1daa849b67eb7cbbcb29c9edea5f3a9bd1ea5cbc22ccb19b"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/services/agent_learning_extraction/config.py",
+      "rule": "env-url-read",
+      "fingerprint": "f0a213bf887af41f54768523486df3ae55e01be9dfe7599406c1dab1163ab2e2"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/services/post_merge/checks.py",
+      "rule": "public-https-literal",
+      "fingerprint": "fa93f3c68cc4ef98cf0b568ec5e655fc7638299c5f766a4765d4fc6b77128b9c"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/services/post_merge/consumer.py",
+      "rule": "public-https-literal",
+      "fingerprint": "6406fa6fd3ce6389a54a5d7c4b7b04c6a87ba114ee80ad062395b215aaf83714"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/services/session_registry/decision_embedder.py",
+      "rule": "env-url-read",
+      "fingerprint": "2a677d4dab524b88981994246f06039a80f472aba400997db144f3de46308469"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/bash_guard.py",
+      "rule": "env-url-read",
+      "fingerprint": "dbc7099d510bf66ef331562b96bafe944441578122238b124686e7e15f961848"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/blocked_notifier.py",
+      "rule": "env-url-read",
+      "fingerprint": "908a6986906843eb110a31b6fe5058eed669bd91ba73cb38a9bc5e9db28cd847"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/classify_treatment.py",
+      "rule": "env-url-read",
+      "fingerprint": "dc81aac02369a08ccecc443e355e830d0ff0ae0f6b6c66bd923fcf21b059e66d"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/code_graph_query.py",
+      "rule": "env-url-read",
+      "fingerprint": "02de8d707b4753694b4977eb6ef8d693fcc7972d5671dbc0d74c80450b1ead3a"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/code_graph_query.py",
+      "rule": "env-url-read",
+      "fingerprint": "376540ed49044d07d524b4f91c6486f3e33b6ec3a8fc032c8459d19d81327226"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/code_graph_query.py",
+      "rule": "env-url-read",
+      "fingerprint": "ea4825130e3df4e2aee1b04864e06c6d79f41f3202622d3d460708d38b699f90"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/linear_done_verify.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "a3eb4a52322f2bd684f38669d4b71c2c9f174b626597020f6cbd61b7db80cde7"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/memory_fabric_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "c5a6e677127c05d7e8c5530c84912429f65bfd35c08293094e6b74097621f29f"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/pattern_enforcement.py",
+      "rule": "env-url-read",
+      "fingerprint": "7482160ebe0bda190f85455d92d60d462183f98e59d4ffcee0d1cd9c8f4a4e09"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/persona_context_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "c03916b69659e0af8dad6e6f4fcfa07d615c4eaf1dd96c64d9389fc14f7351fd"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/phoenix_otel_exporter.py",
+      "rule": "env-url-read",
+      "fingerprint": "c1dac6f914c0eec0f245257f9b5c2d96f38144ecf00cf95e75f659fbc032a740"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/phoenix_otel_exporter.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "d40b3d6c6319d816ff89c58a393a51f35c6d4468bf80274f699ab697b4b6edba"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/shadow_validation.py",
+      "rule": "env-url-read",
+      "fingerprint": "43adc81cbf88899f2b2507a8dea94b66278db3e1e3c6004f1b6bc07276dc4d4d"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_lib/decision_store/semantic_check.py",
+      "rule": "env-url-read",
+      "fingerprint": "1c51559e1b5ca08eac279dfcc8779f9cd7bb839860a8bd5b46e75d241404873f"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_lib/gather_github_stats/gather_stats.py",
+      "rule": "public-https-literal",
+      "fingerprint": "7d96de3c72915fcdf7864bcba36174ba9a098834040a148f016751fe9d1e6b2a"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_shared/qdrant_helper.py",
+      "rule": "public-https-literal",
+      "fingerprint": "7628fb7f1496f27adc3f56f279f293a8b395dc9fecccf603c23b12d5d610791f"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_shared/qdrant_helper.py",
+      "rule": "public-https-literal",
+      "fingerprint": "d4a41873fafec42733bdce0a7727e99b94d86a60a82dd8ff3e3460d8997d554d"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_shared/qdrant_helper.py",
+      "rule": "public-https-literal",
+      "fingerprint": "e384af2fc7a19888fdc54a5068f0135598e77ee3c438271d0ceb3f74539eb08e"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/changelog_audit/_lib/dispatch.py",
+      "rule": "public-https-literal",
+      "fingerprint": "8289627bc7cc99959d336b4fa7a4adab45764892037609a8c0835d49b2a16350"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/demo/_lib/dispatch.py",
+      "rule": "public-https-literal",
+      "fingerprint": "12ba5e9241dcd6eba6ea6a17442ce24a952b857f4d756984321e340daf4ea340"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/dispatch_engine/_lib/run.py",
+      "rule": "env-url-read",
+      "fingerprint": "f340ca1cee7393c64800bea01c98c182577a3872809ac874bbe173ac41e42871"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/env_sync_alert/_lib/check.py",
+      "rule": "public-https-literal",
+      "fingerprint": "bf914d698b552a0ad82ad6cd8f7c2c43449b7b1adeb1af6994d32593fbb5e854"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/system_status/check_database_health/_lib/execute.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "29aa7aed7f0d3f5c0dbed39970755d419d20ef003aa634b16ed6f11d4614e179"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "scripts/benchmark_manifest_performance.py",
+      "rule": "env-url-read",
+      "fingerprint": "60c10bbdeedd1976c652d52640b852c49b7c80b4ce4abeacf3c7ead5f2802132"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "scripts/benchmark_manifest_performance.py",
+      "rule": "env-url-read",
+      "fingerprint": "7a9282b9c5836a42d007ab18f8c9a16494f3e4af03c0060da6034743b2092646"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "scripts/benchmark_manifest_performance.py",
+      "rule": "env-url-read",
+      "fingerprint": "c922e859d400db4ada1cb9858d410e945e4bb2cdda51e388a4be726d134d6869"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "scripts/ci/run_golden_chain_live.py",
+      "rule": "env-url-read",
+      "fingerprint": "79ecadd5455ff789d5f66edec8eaec0c179bacb519a63d780532deb6a8804852"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "scripts/ci/run_golden_chain_live.py",
+      "rule": "env-url-read",
+      "fingerprint": "973e4a1a3bf31e1e868ce18b4ef8fc0cdcbf8e7c12e5364aa264c48d52f15a33"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "scripts/seed_decisions.py",
+      "rule": "env-url-read",
+      "fingerprint": "d5fd9305f0898b3a0e5aa397f43db1dced765f0f17bf6545afb21ac0cc7f068f"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/config/model_local_llm_config.py",
+      "rule": "env-url-read",
+      "fingerprint": "2a7fc303affc1f34974c96274b609c3dc21559ec9f9519d9a4921934550f0534"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/context_config.py",
+      "rule": "env-url-read",
+      "fingerprint": "3ee5b8d56bdad91310073376f8b3eb28c02e4a5001161a299c360614f566d612"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/context_config.py",
+      "rule": "env-url-read",
+      "fingerprint": "3ee5b8d56bdad91310073376f8b3eb28c02e4a5001161a299c360614f566d612"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/context_config.py",
+      "rule": "env-url-read",
+      "fingerprint": "f6bd18e3e98f137ff6f226163e87f69cd2c6b0daec58fa20b3836a670b4c420b"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/lib/code_context_resolver.py",
+      "rule": "env-url-read",
+      "fingerprint": "997810749a96661754b69e23c5a219c9db4cf3c5d2d731712b543c3d5793d37b"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/lib/code_context_sync.py",
+      "rule": "env-url-read",
+      "fingerprint": "75b5442912cb8d6a7543b8c801597cf1bdd688feeb7b26bd74a50fafcacb345d"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/lib/code_context_sync.py",
+      "rule": "env-url-read",
+      "fingerprint": "ee4bfac00eef71e9178896177c972d37b9a90d5791f2b50c04b6a2d2ab5becf2"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/core/manifest_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "ab75ea827d83555861d99c1052ea5473f063db1ad6212af467f21d4465880c42"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/core/manifest_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "bd6565fde1043249bfd0f35d5fde846a667955a3bc3eb6815eb218dc9293a3cd"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/consensus/quorum.py",
+      "rule": "public-https-literal",
+      "fingerprint": "0497a702f25b1577cabeec27b8245bf87e1a8f6cbcabb95ef130c1931f2a847d"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/consensus/quorum.py",
+      "rule": "env-url-read",
+      "fingerprint": "39d700dc611a040a12741e9677544c1095241871482d5f1e75de94d56ea5eb3d"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/consensus/quorum.py",
+      "rule": "public-https-literal",
+      "fingerprint": "7caaacb4c60f3326c21254b6867fd47d42943cd970fbd47e7357051b27dd15c3"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/diagnostics.py",
+      "rule": "env-url-read",
+      "fingerprint": "67d5fc5051fcbd0ce30b3d884d36c44a42341b6e69b196179b3413996533b5b9"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/diagnostics.py",
+      "rule": "env-url-read",
+      "fingerprint": "bc95fd58eac190f3cf1d2de24989b9052548e0e65794727f49d92715a6a7cf93"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/diagnostics.py",
+      "rule": "env-url-read",
+      "fingerprint": "bf6041864258c977ed530f96b897cfa214abf5367b539de3e5b5ee0439938f67"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/diagnostics.py",
+      "rule": "env-url-read",
+      "fingerprint": "cc36e741eb415388130b98bf8d5a237eb19e5f86c36db6202a9bc49c7e741615"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/diagnostics.py",
+      "rule": "env-url-read",
+      "fingerprint": "f1d0be94c06058f5f63bfa27947b28d9a62cc5a854b6a4a0ddccd67d16b5e5f0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/nodes/node_golden_chain_sweep_orchestrator/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "09a10c80289ce4976b427e2407f1c78f7cfa99919da5a2109a902f253fbede53"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/nodes/node_golden_chain_sweep_orchestrator/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "4bf0ec5780a1f879404015a3862dbceb7beab57601ba49308649b0008ed4b6c3"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/nodes/node_transition_selector_effect/node.py",
+      "rule": "env-url-read",
+      "fingerprint": "877432896ec05ee6c0d5e1cb93d5db3a37b3986c303d34bec7e41e8d22676222"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/services/session_registry_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "8dd31822a0447af62a5d2294a46e43ac08c05c6a9c1136550a0daef500ad87ef"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/backfill_pattern_projection.py",
+      "rule": "env-url-read",
+      "fingerprint": "0f2b2450f12fe2d5c4305769277c3efcbf65cdc6ec576ba29a178999787eb360"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/crawl_code_entities.py",
+      "rule": "env-url-read",
+      "fingerprint": "734468951ff58ab620b51d1e2df3c9bc5727c328b17370fda32d13106bbfdc91"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/run_promotion_check.py",
+      "rule": "env-url-read",
+      "fingerprint": "7a8d79dddfab369f36859e5531033c3e81b6ad7ddbec38684329833521567cd3"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/seed_learned_patterns.py",
+      "rule": "env-url-read",
+      "fingerprint": "4b920706f7f8f89b939ebb8e1a57495e7353eb96de4af5d00848f79e52a699bc"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/seed_patterns_from_families.py",
+      "rule": "env-url-read",
+      "fingerprint": "5d93a7247bf61cbfc745a2c127c1f0a5cfc477e14ce22feb41730796ee2e5abe"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/verify_pattern_lifecycle_e2e.py",
+      "rule": "env-url-read",
+      "fingerprint": "00558d76bf6b6e142d98c9e6d2001513f9ab63fad52038e7a3d7910d8e156e9f"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/verify_pattern_lifecycle_e2e.py",
+      "rule": "env-url-read",
+      "fingerprint": "2acd5187bd40897b49fa53a40fd71353d7661cb6643b20c5415000f2ce87f7e4"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/verify_pattern_lifecycle_e2e.py",
+      "rule": "env-url-read",
+      "fingerprint": "2ecafb0e6ad7aec20b5097d80950d1dd8f2237f942c62fa694b81091350f2062"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/adapters/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "523fc8950efce0aca62e5b3b701051c339581aa0497f41694f52c5c7d01ac879"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/adapters/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "d531bd9ddbad359780e646b9dd5dcf4d4ce2b50e4cfeaed144da553e8f9d4fd8"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/adapters/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "d531bd9ddbad359780e646b9dd5dcf4d4ce2b50e4cfeaed144da553e8f9d4fd8"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/adapters/plan_reviewer_gemini_client.py",
+      "rule": "public-https-literal",
+      "fingerprint": "75694ee9e36ed608ab91bf527b8807b77f21326d0c2b94ae02addcf77a6831d5"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/adapters/plan_reviewer_z_ai_client.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "501dc2f840726681e28dc2e257dca55f032a9caad6fd6fde2e6c9235dc22b99b"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/adapters/plan_reviewer_z_ai_client.py",
+      "rule": "public-https-literal",
+      "fingerprint": "5372d2e1d627ecf1eb4a3404576fcf6c6fd5044cadc22e2772c4b1727b855ccf"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/adapters/utilization_llm_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "5cffe8f36b01d257a70e8c9adcc5ee18edeea4cbcad8c8388fcf2ebaae4b477c"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_embedding_generation_effect/node.py",
+      "rule": "env-url-read",
+      "fingerprint": "9c844ffbc822f039580063bf13c6d014e752466b8f1fe0026ead5f6932d2c3a4"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
+      "rule": "env-url-read",
+      "fingerprint": "6f2a54606b24e2059e5ba09423accd307073c0a7640202e7556ae527d60f7e41"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
+      "rule": "env-url-read",
+      "fingerprint": "6f348a2337af7aa62e6040b76d9b2ef29504ad2bb8704c4097ca0dce78705cd6"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
+      "rule": "env-url-read",
+      "fingerprint": "74e202f4a911bae0dd0e9974ab06c4d15eecdba5f47160061b4208fe3a322c49"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
+      "rule": "env-url-read",
+      "fingerprint": "c6bea17f518c4fa901e609e1832a2418d30da2ec74f5a82b5e0c492ae7a4b1f3"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/models/model_navigation_retrieve_input.py",
+      "rule": "env-url-read",
+      "fingerprint": "e75824d1cee782c892e4e2d5eda5435781a3d882f9af612f154ba920eeceba8a"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/node.py",
+      "rule": "env-url-read",
+      "fingerprint": "5aab715e0481642f8385ca89383c29f5a4ddb81edca4c811935ab1be1c4757e7"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/node.py",
+      "rule": "env-url-read",
+      "fingerprint": "b77dd88a1d2a07e33d02357fc6bddef62b52a2f0942f782928d2c0d7c09abb5b"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/review_bot/github/client_github.py",
+      "rule": "public-https-literal",
+      "fingerprint": "6707604da750f2baf72447b42ea8c727eb5810eb16978d34e3dd3bc01325dd67"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/review_pairing/adapters/adapter_ai_reviewer.py",
+      "rule": "public-https-literal",
+      "fingerprint": "10a2eb5e12342b5b65540daca4c894533c2aa8898a9b8836e918e46bbdc9ba36"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/review_pairing/adapters/adapter_ruff.py",
+      "rule": "public-https-literal",
+      "fingerprint": "812aca1f0ed67f9743ebda284d2556e23de651444049d092e121c117f09ddda9"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/review_pairing/cli_calibration.py",
+      "rule": "env-url-read",
+      "fingerprint": "2e246893ef17f54603609cd00f186ecf40f3a83416ca3b1c79031306e6630f12"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/review_pairing/cli_calibration.py",
+      "rule": "env-url-read",
+      "fingerprint": "93183aa4f72433031492bee07d44dc8097d611ea44feecca85df60819d992393"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/rl/export.py",
+      "rule": "env-url-read",
+      "fingerprint": "339c12866899428f609ba2d41062a24c7f3f501625a71d3b576b59c1d911801c"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/rl/export.py",
+      "rule": "env-url-read",
+      "fingerprint": "75d3d5dddc71124c18d43a3e96d1e8fd8de0b9fe40e60b5b0aca6439f3a84e1f"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/rl/export.py",
+      "rule": "env-url-read",
+      "fingerprint": "98d9b59d12daf7158367857ff54e13ffa56ee455a23488be5bcee8e70030e045"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/rl/export.py",
+      "rule": "env-url-read",
+      "fingerprint": "fed6f79a86c60f0268c04afa525ff3c088be8fd7fcf78d1bc0599134d3b22727"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/runtime/dispatch_handler_code_embed_graph.py",
+      "rule": "env-url-read",
+      "fingerprint": "6381995a52f85e8609044270adadd7a55e2a1a4ead6d4e39e4177f3d65d0935e"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "experiments/adk_eval/type_debt_scout_poc/handler_type_debt_scout.py",
+      "rule": "env-url-read",
+      "fingerprint": "6bf0d157755fd2da1fc821d4b934eb97c7ecdee368a183ed003a9fb2bb7ca7fa"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "experiments/adk_eval/type_debt_scout_poc/handler_type_debt_scout.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "bd153a8c98bb6ea2fd3db16861551c2a527faf7907baa701690c477a19fb0c16"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/run-projection-migrations.py",
+      "rule": "env-url-read",
+      "fingerprint": "b698c240ab91a25bd919c6c1307094e7a597dcbbe9c1eecdef0beec03e11b2f6"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/cli/cli_ab_compare_suite.py",
+      "rule": "env-url-read",
+      "fingerprint": "ca7031122195fa52d8a91110921125d6df562ca5e0eb6f9c7b8630d37ea3bb9b"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/cli/commands/trace.py",
+      "rule": "env-url-read",
+      "fingerprint": "2c25a84b8023c3e8d8bbebe12719e86fb9237a43d9ddbbbdda9a73b01d0c00f1"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/cli/commands/trace.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "5e0ef999930ffdb2fcb4e2c29a78d4d06b709c8d106fd4cddfc94467dd75ac85"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/github_api.py",
+      "rule": "public-https-literal",
+      "fingerprint": "ae7519dc33b87424703372d3dae584956f8fe9a79c8f1cd1f64900ff86449749"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/github_api.py",
+      "rule": "public-https-literal",
+      "fingerprint": "d3de354ca05e890d5eac07d6a5be7b2e2502ecb9629c7d3ab9b19b8ebdb73177"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/inference/bridge_config_loader.py",
+      "rule": "public-https-literal",
+      "fingerprint": "d22be9c42790ceb040563ef9c6353dc5188264120d47d0136c47e0bae961997d"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_agent_coordinator_orchestrator/__init__.py",
+      "rule": "env-url-read",
+      "fingerprint": "aba06dfa0bdcae4ab8dbaacd0a1c55255f2468f8693045c7da9df5cdd4e26c39"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_baseline_capture/handlers/probes/probe_linear_tickets.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "65e86d8166a87bea363c2c26832fccc7cc08f84357d0fc58f6fc4ee5d22f6c1c"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
+      "rule": "env-url-read",
+      "fingerprint": "194ee01ecb26669fc88a8671f6be4eeb675dd92e9877192f8c85aad39813a89b"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "2654b2477fcdf4e0f277296da3da26360399561abceddbad7a1d69297212a06a"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
+      "rule": "env-url-read",
+      "fingerprint": "c0a43d31acc3c72b7d5c32b02bbfef43925d81516c13cd4c5b987f59a741e0f0"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
+      "rule": "env-url-read",
+      "fingerprint": "f74fc79f42bc1b20a11696b415e033778c2cf3137f45017e161b029efe284e72"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/assemble_live.py",
+      "rule": "env-url-read",
+      "fingerprint": "f867a8738c491d66b4076c91ac5f13639be35539b2780a7f802ed19b9536659d"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/handlers/adapter_linear_fill.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "add60c115d70eaf74c3f955a1d638bfbb0b66755fa6902e84bbed88c70386fb1"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_build_loop_orchestrator/models/model_live_runner_config.py",
+      "rule": "public-https-literal",
+      "fingerprint": "d35fb8b41b0385845cb1df4ab08c21b354525604fea13f857c1861d7d2508167"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_ci_fix_effect/handlers/handler_ci_fix.py",
+      "rule": "public-https-literal",
+      "fingerprint": "3139eb2c78eb7bba7cb5061b2016cd0b961dcc266ad1d7d55b39d8a2f09df604"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_ci_rerun_effect/handlers/handler_ci_rerun.py",
+      "rule": "public-https-literal",
+      "fingerprint": "03456d6e2d2d63cfcf5ab57cc75170ae24b4a57d1928265579ac1d379680b177"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_drift_detector/handlers/handler_demo_drift_detector.py",
+      "rule": "env-url-read",
+      "fingerprint": "5c29bc4330da55ecc219c8765d5935a72296db96aaa34b6a2917d8bef9e3a16d"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_rehearsal/handlers/handler_demo_rehearsal.py",
+      "rule": "env-url-read",
+      "fingerprint": "99d2cdf4ffe32f166942569c687e703caa52d3a895b992ad1a421769d0b86923"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_dispatch_outcome_bridge_effect/handlers/handler_bridge.py",
+      "rule": "env-url-read",
+      "fingerprint": "041ba7668bfd4e08907ffaee2b1c42add54913e0185862d55ecf39b4147a01fd"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_github_diff_effect/handlers/handler_github_diff.py",
+      "rule": "public-https-literal",
+      "fingerprint": "93058ecfe0387c25d6c66575d32d8018b0ca976b4f26a02aea1cf5f4e9001048"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_github_review_effect/handlers/handler_github_review_effect.py",
+      "rule": "public-https-literal",
+      "fingerprint": "508a741aa0d9969d1ca20f433d2386ac7de7830c463589aa2c0629f46dbfa8c8"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
+      "rule": "env-url-read",
+      "fingerprint": "0fc9d5d6fbfb786a13393f72a09347aed1c2821e95bff797b6f50176a4eb1421"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
+      "rule": "env-url-read",
+      "fingerprint": "2f42330015c7a1363c8e6432c80ac9ca2726169cb6169837c3ff325b680e8a98"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
+      "rule": "env-url-read",
+      "fingerprint": "cb30ae44c0f50e568f868528251cab80c41ae3cc61b1d41720dd16f7114fa408"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
+      "rule": "env-url-read",
+      "fingerprint": "fa00cfc668cd002a515b70edc7163b8ac635464c860afef364908e657b8128c7"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_knowledge_health_probe_effect/handlers/handler_knowledge_health_probe_effect.py",
+      "rule": "env-url-read",
+      "fingerprint": "fd59e1fc59baa103d27148ae3d2d411ce7e8ad04220be379bc814d6c767248e4"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_linear_triage/handlers/handler_linear_triage.py",
+      "rule": "public-https-literal",
+      "fingerprint": "8a099f86585771ff429f27c51b91b49f6c3267a9c48b01f117cd9ca24d2f4843"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_linear_triage/handlers/handler_linear_triage.py",
+      "rule": "public-https-literal",
+      "fingerprint": "8df7558aec29a028580af160391f9f480a802d4dca4933c5f9dae1a2004b80ca"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/__init__.py",
+      "rule": "env-url-read",
+      "fingerprint": "aa9055302cce38c0caab09fa4a186b0e0654d0507e94a92b28b9bd75a033c611"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_memory_retrieval_effect/clients/embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "a1c7bbd324e2fe91f9173606632ef9ee4001eca2e183d3f139b0ff81a5c995b0"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_merge_sweep_auto_merge_arm_effect/handlers/handler_auto_merge_arm.py",
+      "rule": "public-https-literal",
+      "fingerprint": "5982590be9c41ef7d13f9fca241dab336a5df4b031a9271eb0aadc8895d9141b"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_merge_sweep_compute/adapter_github_http.py",
+      "rule": "public-https-literal",
+      "fingerprint": "3bd90fe69d5b895c6ab8b3a246a875b07315b00b9735fb8ee8c04b50358b90b5"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_merge_sweep_compute/adapter_github_http.py",
+      "rule": "public-https-literal",
+      "fingerprint": "eee30fef1a006bdbc0d900df3d106c6b3994b1323ec8e4a8170c004443a051ed"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_nightly_loop_controller/models/model_nightly_loop.py",
+      "rule": "env-url-read",
+      "fingerprint": "2c13ef8a8ca5cf2a74ebbfc36b031c40c28a2a447552e2a1a81f41c74dc5bf44"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_nightly_loop_controller/models/model_nightly_loop.py",
+      "rule": "env-url-read",
+      "fingerprint": "33761828b453147db0cbe8bfbac30e362ba8f39bc33ee52c67126d61e0de9be4"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_nightly_loop_controller/models/model_nightly_loop.py",
+      "rule": "env-url-read",
+      "fingerprint": "4628063d107f9adf2453bfdd53cafaeff4a01ca7afe19c4690ea38ca40d754f6"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_pipeline_fill/handlers/handler_pipeline_fill.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "be787dc4d9b7e2de5d019c08220d8eb19f18331f9e1eb5a9f3ec6c84c79b0243"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_platform_diagnostics/handlers/dimension_checks.py",
+      "rule": "public-https-literal",
+      "fingerprint": "4026da52231d380e2f02201745901f8a41f8d20b0df1fdd961081b62df929bf2"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_platform_readiness/handlers/dimension_checks.py",
+      "rule": "public-https-literal",
+      "fingerprint": "704f7718001d924765f66376fd4443ff5cc473b37ed1f212ece03bccddf7e5fe"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_projection_llm_cost/backfill_llm_call_metrics.py",
+      "rule": "env-url-read",
+      "fingerprint": "aecbb8fc9299a29bc2ad59cfbb328afc09d46379186a14b82ff00658819af5ad"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_retention_cleanup/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "8fc695b4d6395b213a593511a4513257b1bdce4ef33981534d93ad74352ed30e"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_session_orchestrator/handlers/handler_session_orchestrator.py",
+      "rule": "public-https-literal",
+      "fingerprint": "2998b191e422f44540213df727a06b4804a7d54525ff94d4cefe35c2d117af80"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_swarm_fleet_discovery_effect/handlers/handler_swarm_fleet_discovery.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "9a754452f320782aa48a4e4213936d12cae4cb429a618fc0add98be79e3cfa28"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "scripts/graphify_to_memgraph.py",
+      "rule": "env-url-read",
+      "fingerprint": "933db0450ad8e7863fa89b7405b24307a415ffa5e58e7c1d6569adfcbfb6bafe"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "scripts/graphify_to_memgraph.py",
+      "rule": "env-url-read",
+      "fingerprint": "acab52eba0024bed81d1989d7924705a718322d7bea3cd60e4124d6eab37fd72"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "scripts/graphify_to_qdrant.py",
+      "rule": "env-url-read",
+      "fingerprint": "36da0e563ed23176b12452ab88d0c8a282f1acb8e5e777f20c7e955ce7d64bc3"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "scripts/graphify_to_qdrant.py",
+      "rule": "env-url-read",
+      "fingerprint": "5c9e4ac38c7bfca4828de8d7ac48ed4955cca9b6d34209c3cdb417445ddd2711"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "scripts/graphify_to_qdrant.py",
+      "rule": "env-url-read",
+      "fingerprint": "68f1c94bb38e436898ea363bf425486ce0ae6a901ffd69ad95bfc59f4272c524"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/handlers/adapters/__init__.py",
+      "rule": "env-url-read",
+      "fingerprint": "465857e0dbb4c8471681116257708d38a395cd6905772505e160030afd9daa31"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/handlers/handler_subscription.py",
+      "rule": "env-url-read",
+      "fingerprint": "835fe3bb36b97bdc219169b6cfb0f278ba20ec5f9fdea94f262caf80ba2d45f9"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_agent_coordinator_orchestrator/__init__.py",
+      "rule": "env-url-read",
+      "fingerprint": "2dd3415d36aa3e6db1ac80bfd70943964a7a4d366f9b6f87d74cb6d3771481b6"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/__init__.py",
+      "rule": "env-url-read",
+      "fingerprint": "1c5902aa4802b7a373c4c9fc5972c0feb7a4eef2063f1ebd1c6ef7fae0259fbb"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py",
+      "rule": "env-url-read",
+      "fingerprint": "01a9544a231fa75982ef1db374fd3b539f56769b13a2db075b3ce8fce10cdfc1"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_qdrant_mock.py",
+      "rule": "env-url-read",
+      "fingerprint": "be8f7669a26348948da6baa64c9e05e9d5975304c734b6a0e8bde3c25f07bfe5"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_navigation_history_reducer/handlers/handler_navigation_history_reducer.py",
+      "rule": "env-url-read",
+      "fingerprint": "c5d1276ea177391f4455d5635addadddd71e1e625ef27fd40cc7bcd7477a61ee"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/runtime/dispatch_handlers.py",
+      "rule": "env-url-read",
+      "fingerprint": "59ac993bef283ddc9a3a210e6281d995d60cc972824f5f9d2afa888b416bde9c"
+    }
+  ]
 }

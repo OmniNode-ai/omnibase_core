@@ -178,7 +178,7 @@ class ModelNodeServiceConfig(BaseModel):
 
     def get_health_check_command(self) -> list[str]:
         """Get health check command for container deployment."""
-        url = f"http://localhost:{self.network.port}{self.health_check.check_path}"
+        url = f"http://localhost:{self.network.port}{self.health_check.check_path}"  # url-authority-ok: container self health-check
         return ["curl", "-f", url]
 
     def supports_scaling(self) -> bool:

@@ -34,7 +34,7 @@ Usage:
         # For push gateway (optional)
         backend = BackendMetricsPrometheus(
             prefix="myapp",
-            push_gateway_url="http://localhost:9091",
+            push_gateway_url="http://localhost:9091",  # url-authority-ok: local Prometheus example
             push_job_name="my_batch_job",
         )
         backend.record_gauge("batch_progress", 0.75)
@@ -101,8 +101,8 @@ def sanitize_url(url: str | None) -> str:
         'http://***:***@gateway:9091/metrics'
         >>> sanitize_url("https://admin:pass@pushgateway.example.com:9091")
         'https://***:***@pushgateway.example.com:9091'
-        >>> sanitize_url("http://localhost:9091")
-        'http://localhost:9091'
+        >>> sanitize_url("http://localhost:9091")  # url-authority-ok: sanitizer doctest
+        'http://localhost:9091'  # url-authority-ok: sanitizer doctest
         >>> sanitize_url(None)
         '<no-url>'
 
