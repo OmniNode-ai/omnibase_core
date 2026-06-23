@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-internal-ip OMN-13480 reason="docstring usage examples + the sanitize_url doctest use a localhost push-gateway URL as illustrative example/doctest data, not a runtime endpoint"
 
 """
 BackendMetricsPrometheus - Prometheus metrics backend implementation.
@@ -97,9 +98,9 @@ def sanitize_url(url: str | None) -> str:
         Returns '<no-url>' if url is None.
 
     Example:
-        >>> sanitize_url("http://user:secretpass@gateway:9091/metrics")
+        >>> sanitize_url("http://user:secretpass@gateway:9091/metrics")  # pragma: allowlist secret  # noqa: E501 — doctest input the fn redacts
         'http://***:***@gateway:9091/metrics'
-        >>> sanitize_url("https://admin:pass@pushgateway.example.com:9091")
+        >>> sanitize_url("https://admin:pass@pushgateway.example.com:9091")  # pragma: allowlist secret  # noqa: E501 — doctest input the fn redacts
         'https://***:***@pushgateway.example.com:9091'
         >>> sanitize_url("http://localhost:9091")  # url-authority-ok: sanitizer doctest
         'http://localhost:9091'  # url-authority-ok: sanitizer doctest

@@ -44,7 +44,7 @@ class ModelVectorConnectionConfig(BaseModel):
 
             config = ModelVectorConnectionConfig(
                 url="https://my-cluster.vectordb.io",
-                api_key="sk-xxxxx",
+                api_key="sk-xxxxx",  # pragma: allowlist secret  — docstring placeholder, not a real key
                 timeout=60.0,
                 pool_size=20,
             )

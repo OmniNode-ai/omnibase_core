@@ -1,4 +1,5 @@
 ---
+# onex-allow-file-todo-marker OMN-13480 reason="this is a validator-requirements registry; several validator descriptions (stub-implementations, no-untracked-todos) name the TODO/FIXME/HACK marker tokens as their SUBJECT — the tokens document what those validators block, they are not agent-left unfinished work"
 # Canonical validator requirements for OmniNode-ai downstream repos.
 #
 # This file is the single source of truth for which validators must be wired
@@ -102,6 +103,38 @@ required_validators:
     excludes:
       # Tests legitimately use example private IPs as test data; the gate targets
       # src/ where a hardcoded private IP is a real environment-config leak.
+      allowed: ["^tests/", "^docs/"]
+      forbidden: ["^src/"]
+    applies_to_repos: all
+
+  hardcoded-localhost-url:
+    description: |
+      Blocks hardcoded http(s)://localhost / http(s)://127.0.0.1 URL literals in
+      source. A quoted loopback URL is an endpoint-config leak that only resolves
+      on the author's box, never in CI / containers / the .201 server. Generated
+      by node_generation_consumer and corpus-accepted (OMN-13480, residual of
+      OMN-13294, G2); executed as a COMPUTE node over the event bus (in-memory
+      pre-commit, Kafka in CI). The COMPLEMENT of url-authority, whose
+      public-https-literal rule deliberately excludes localhost/loopback and whose
+      url-const-assignment rule only catches a loopback literal assigned to a
+      *_URL/*_ENDPOINT constant. Suppress a line with `# onex-allow-internal-ip`;
+      suppress a doc-heavy file whose subject is localhost URL literals with
+      `# onex-allow-file-internal-ip`.
+    central_source: "omnibase_core.validation.localhost_url.runtime_localhost_url"
+    pre_commit: required
+    ci_workflow: required
+    required_check_on_main: "validate-localhost-url / validate"
+    silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-localhost-url-compute"
+      - "localhost-url"
+    ci_workflow_keywords:
+      - "localhost_url"
+      - "localhost-url"
+    excludes:
+      # Tests + docs legitimately use example localhost URLs as test/example data;
+      # the gate targets src/ where a hardcoded localhost URL is a real
+      # endpoint-config leak.
       allowed: ["^tests/", "^docs/"]
       forbidden: ["^src/"]
     applies_to_repos: all

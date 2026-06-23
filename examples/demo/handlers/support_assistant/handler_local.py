@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-internal-ip OMN-13480 reason="this is a demo LocalLLMClient whose entire subject IS a local/self-hosted LLM endpoint; the docstring example and DEFAULT_ENDPOINT constant intentionally show a localhost vLLM URL as illustrative demonstration data, not a production runtime endpoint"
 
 """Local LLM client implementation using httpx.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
