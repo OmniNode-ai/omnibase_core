@@ -1,18 +1,16 @@
 ---
 schema_version: "1.0.0"
 ticket_id: "OMN-13542"
-title: "fix(OMN-13542): acceptance_criteria validation error is now actionable — names allowed slugs and max_words_per_sentence_N pattern"
+title: "fix(OMN-13542): acceptance_criteria validation error is now actionable — names allowed slugs and
+  max_words_per_sentence_N pattern"
 summary: >
-  Free-text acceptance_criteria strings were rejected with an opaque error
-  ('unsupported acceptance criteria: <text>') that gave callers no guidance on
-  valid forms. The fix improves validate_acceptance_criteria to quote the
-  rejected values and append the full allowed slug set plus the
-  max_words_per_sentence_N pattern. Three new tests cover the I4 strict
-  code_generation corpus case (OMN-13540).
+  Free-text acceptance_criteria strings were rejected with an opaque error ('unsupported acceptance criteria:
+  <text>') that gave callers no guidance on valid forms. The fix improves validate_acceptance_criteria
+  to quote the rejected values and append the full allowed slug set plus the max_words_per_sentence_N
+  pattern. Three new tests cover the I4 strict code_generation corpus case (OMN-13540).
 is_seam_ticket: false
 interface_change: false
-interfaces_touched:
-  - "models/delegation/wire/model_delegation_wire_request.py"
+interfaces_touched: []
 evidence_requirements:
   - kind: "tests"
     description: "Delegation wire model unit tests green including 3 new OMN-13542 cases"
@@ -36,10 +34,13 @@ dod_evidence:
     source: "manual"
     checks:
       - check_type: "command"
-        check_value: "uv run mypy src/omnibase_core/models/delegation/wire/model_delegation_wire_request.py --strict"
+        check_value: "uv run mypy src/omnibase_core/models/delegation/wire/model_delegation_wire_request.py
+          --strict"
   - id: "dod-deploy"
-    description: "Deploy-gate: wire DTO error message improvement only; no topic changes, no schema migrations, no Docker image rebuild required"
+    description: "Deploy-gate: wire DTO error message improvement only; no topic changes, no schema migrations,
+      no Docker image rebuild required"
     source: "manual"
     checks:
       - check_type: "command"
-        check_value: "echo 'deploy-gate: OMN-13542 improves error message in validate_acceptance_criteria only; no runtime deploy required'"
+        check_value: "echo 'deploy-gate: OMN-13542 improves error message in validate_acceptance_criteria
+          only; no runtime deploy required'"
