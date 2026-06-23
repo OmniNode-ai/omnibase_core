@@ -1,0 +1,20 @@
+{
+  "accepted": true,
+  "attempt_count": 1,
+  "clean_fixture_count": 4,
+  "contract_passed": true,
+  "contract_yaml": "name: node_onex_topic_validator\ncontract_version: \"1.0.0\"\nnode_type: compute\ninput_model:\n  name: ModelOnexTopicValidatorInput\n  module: omnimarket.nodes.node_onex_topic_validator.models\noutput_model:\n  name: ModelOnexTopicValidatorOutput\n  module: omnimarket.nodes.node_onex_topic_validator.models",
+  "corpus_checked": true,
+  "corpus_errors": [],
+  "corpus_passed": true,
+  "correlation_id": "omn-13294-g2-hardcoded-topic-string-c16a083e1635",
+  "endpoint_class": "local-coder",
+  "handler_source": "import re\n\ndef handle(input_data):\n    source = input_data.get('source', '')\n    findings = []\n\n    # Regex explanation:\n    # (?i): Case insensitive (though specification implies lowercase, 'onex' prefix is standard)\n    # (['\"]): Capture the quote character to preserve context if needed, or just match it.\n    # (?: ... ): Non-capturing group for the onex topic pattern.\n    # onex: The literal prefix.\n    # \\.: A dot.\n    # ([a-z0-9]+): First segment (lowercase alphanumeric).\n    # \\.: A dot.\n    # ([a-z0-9]+): Second segment.\n    # \\.: A dot.\n    # ([a-z0-9]+): Third segment (mandatory).\n    # (?: \\. [a-z0-9]+ )* : Optional fourth, fifth, etc. segments.\n    # \\1: The matching closing quote.\n\n    # We look for the pattern enclosed in quotes.\n    # Pattern: (['\"])onex\\.[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+(?:\\.[a-z0-9]+)*\\1\n    # We need to ensure it doesn't match longer import paths like \"omnimarket...\" or \"kafka...\".\n    # The prefix \"onex\" ensures it starts with onex.\n\n    pattern = re.compile(r\"\"\"\n        (['\"])                  # Opening quote\n        onex                    # Literal prefix\n        \\.                      # Dot\n        [a-z0-9]+               # Segment 1\n        \\.                      # Dot\n        [a-z0-9]+               # Segment 2\n        \\.                      # Dot\n        [a-z0-9]+               # Segment 3 (minimum 3 segments)\n        (?:                     # Optional additional segments\n            \\.\n            [a-z0-9]+\n        )*\n        \\1                      # Closing quote (backreference to opening quote)\n    \"\"\", re.VERBOSE | re.IGNORECASE)\n\n    lines = source.split('\\n')\n\n    for line_num, line in enumerate(lines, start=1):\n        matches = list(pattern.finditer(line))\n        for match in matches:\n            matched_text = match.group(0)\n            # Extract the actual topic string inside the quotes\n            # Remove the quotes from the match\n            topic_content = matched_text[1:-1]\n            findings.append({\n                'line': line_num,\n                'line_content': line.strip(),\n                'matched_topic': topic_content\n            })\n\n    return {'findings': findings}",
+  "model_id": "Qwen3.6-35B-A3B",
+  "provider": "local",
+  "resolved_endpoint": "http://192.168.86.201:8000/v1/chat/completions",
+  "routing_source": "contract",
+  "usage_source": "measured",
+  "validator": "hardcoded-topic-string",
+  "violation_fixture_count": 5
+}
