@@ -145,7 +145,7 @@ _CONST_URL_FROM_LITERAL: Final[re.Pattern[str]] = re.compile(
 #      * IPv4 loopback ``127.x.x.x`` and the wildcard bind address ``0.0.0.0``
 #      * IPv6 loopback ``[::1]``
 _LOCALHOST_LITERAL: Final[re.Pattern[str]] = re.compile(
-    r"""["']https?://(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1\])(?:[:/"']|$)""",
+    r"""["']https?://(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1\])(?:[:/?#"']|$)""",
     re.IGNORECASE,
 )
 
@@ -240,7 +240,7 @@ def _match_rule(raw_line: str, stripped: str) -> str | None:
         return RULE_PUBLIC_HTTPS
     # Bare loopback connection-target literal not captured by the rules above
     # (the public-https rule skips localhost; this is not a *_URL constant).
-    if _LOCALHOST_LITERAL.search(raw_line):
+    if _LOCALHOST_LITERAL.search(raw_line) and _is_connection_target(raw_line):
         return RULE_LOCALHOST_LITERAL
     return None
 

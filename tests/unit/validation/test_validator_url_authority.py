@@ -260,6 +260,18 @@ class TestLocalhostLiteral:
         assert len(vs) == 1
         assert vs[0].rule == RULE_LOCALHOST_LITERAL
 
+    def test_localhost_query_literal_detected(self) -> None:
+        src = 'resp = httpx.get("http://localhost?probe=1")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_loopback_fragment_literal_detected(self) -> None:
+        src = 'resp = httpx.get("http://127.0.0.1#dev")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
     def test_wildcard_bind_address_detected(self) -> None:
         src = 'probe("http://0.0.0.0:8080/ready")\n'
         vs = scan_source("r", "src/pkg/a.py", src)
@@ -297,6 +309,11 @@ class TestLocalhostLiteral:
     def test_localhost_in_test_path_skipped(self) -> None:
         src = 'resp = httpx.get("http://localhost:9000")\n'
         vs = scan_source("r", "tests/test_thing.py", src)
+        assert vs == []
+
+    def test_localhost_in_json_object_literal_skipped(self) -> None:
+        src = '{"callback":"http://localhost:9000"}\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
         assert vs == []
 
     def test_non_loopback_host_not_localhost_rule(self) -> None:
