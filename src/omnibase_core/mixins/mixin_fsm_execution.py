@@ -11,6 +11,7 @@ Typing: Strongly typed with strategic object usage for mixin kwargs and runtime 
 
 from __future__ import annotations
 
+import copy
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -81,6 +82,26 @@ class MixinFSMExecution:
         Returns:
             FSMTransitionResult with new state and intents
 
+        State Mutation Protection (OMN-604):
+            ``self._fsm_state`` is mutated **only** when the transition
+            succeeds (``result.success is True``). This is the single
+            authoritative write site for FSM state. The invariant holds on
+            every non-success path:
+
+            * **Guard rejection** (``result.success is False``): the pure
+              executor returns a non-success result without raising;
+              ``_fsm_state`` is left exactly as it was.
+            * **Exception** (``ModelOnexError`` raised by the executor, e.g.
+              invalid current state or unknown trigger): the exception
+              propagates *before* the guarded write below, so ``_fsm_state``
+              is never touched.
+
+            On success, the new snapshot stores a **deep copy** of the
+            execution ``context``. Sharing the caller's mutable dict would let
+            a post-transition mutation of that dict silently corrupt committed
+            FSM state; the deep copy makes the committed snapshot immutable
+            against external aliasing.
+
         Example:
             result = await self.execute_fsm_transition(
                 self.contract.state_machine,
@@ -102,7 +123,10 @@ class MixinFSMExecution:
             else fsm_contract.initial_state
         )
 
-        # Execute transition using pure function from utils
+        # Execute transition using pure function from utils.
+        # A raised ModelOnexError (invalid state / unknown trigger) propagates
+        # out of this call BEFORE the guarded write below — so _fsm_state is
+        # never mutated on the exception path (OMN-604).
         result = await execute_transition(
             fsm_contract,
             current_state,
@@ -110,17 +134,23 @@ class MixinFSMExecution:
             context,
         )
 
-        # Update internal state if successful
-        if result.success:
-            # Create new FSMState with updated current state and history
-            # Use list spread to maintain immutability by creating new list
-            previous_history = self._fsm_state.history if self._fsm_state else []
-            new_history = [*previous_history, result.old_state]
-            self._fsm_state = FSMState(
-                current_state=result.new_state,
-                context=context,
-                history=new_history,
-            )
+        # State mutation protection (OMN-604): mutate ONLY on success.
+        # A guard-rejected transition returns success=False (no raise); we
+        # must leave _fsm_state untouched so the FSM stays in current_state.
+        if not result.success:
+            return result
+
+        # Successful transition: build a fresh snapshot.
+        # - history is a new list (input history is never mutated in place)
+        # - context is deep-copied so later external mutation of the caller's
+        #   dict cannot corrupt committed FSM state
+        previous_history = self._fsm_state.history if self._fsm_state else []
+        new_history = [*previous_history, result.old_state]
+        self._fsm_state = FSMState(
+            current_state=result.new_state,
+            context=copy.deepcopy(context),
+            history=new_history,
+        )
 
         return result
 
