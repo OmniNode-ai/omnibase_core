@@ -284,11 +284,32 @@ class RuntimeLocal:
     # Handler instantiation (shared helper)
     # ------------------------------------------------------------------
 
-    def _instantiate_handler(self, module_name: str, class_name: str) -> object:
+    def _instantiate_handler(
+        self,
+        module_name: str,
+        class_name: str,
+        *,
+        bus: ProtocolLocalRuntimeBus | None = None,
+    ) -> object:
         """Import *module_name*, resolve *class_name*, and return an instance.
 
         Runtime-owned dependencies are injected explicitly when the constructor
-        advertises a supported parameter.
+        advertises a supported parameter:
+
+        * ``state_root`` — injected with the runtime's disk-state root.
+        * ``event_bus`` — injected with the in-scope runtime *bus* when one is
+          provided. Handlers that publish telemetry (e.g. the omnimarket sweep
+          and orchestrator handlers) declare a mandatory ``event_bus`` positional
+          arg; without this injection they fail to instantiate with
+          ``__init__() missing 1 required positional argument: 'event_bus'``
+          (OMN-13515). The bus is in scope at the event-driven and single-handler
+          call sites; the compute path owns no bus and passes ``bus=None``.
+
+        Args:
+            module_name: Dotted module path containing the handler class.
+            class_name: Handler class name within *module_name*.
+            bus: The runtime event bus, threaded from the calling execution path.
+                ``None`` on paths that own no bus (e.g. ``_run_compute``).
 
         Raises:
             ModelOnexError: If the module cannot be imported or the class is missing.
@@ -310,6 +331,8 @@ class RuntimeLocal:
             for param_name in sig.parameters:
                 if param_name == "state_root":
                     kwargs[param_name] = self.state_root
+                elif param_name == "event_bus" and bus is not None:
+                    kwargs[param_name] = bus
         except (ValueError, TypeError):
             # If signature inspection fails, instantiate with no kwargs.
             pass
@@ -458,7 +481,9 @@ class RuntimeLocal:
         handler_class = str(handler_class_name)
         self._handlers_wired = [f"{handler_module}.{handler_class}"]
 
-        handler_instance = self._instantiate_handler(handler_module, handler_class)
+        handler_instance = self._instantiate_handler(
+            handler_module, handler_class, bus=bus
+        )
 
         # Build initial payload from handler or contract input spec.
         # input_model may be a dotted string ("module.ClassName") — coerce to dict.
@@ -924,7 +949,7 @@ class RuntimeLocal:
 
         for entry in resolved_entries:
             handler_instance = self._instantiate_handler(
-                entry.handler_module, entry.handler_class
+                entry.handler_module, entry.handler_class, bus=bus
             )
 
             # Resolve the input model class. operation_match entries route by the
