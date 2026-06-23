@@ -131,6 +131,23 @@ TOPIC_VALIDATION_PIN_HYGIENE_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.pin-hygiene-scan-completed.v1"
 )
 
+# Hardcoded-topic-string COMPUTE validator topics (OMN-13294, G2 SEA-dogfood) —
+# this registry IS the canonical source of truth for onex.* topic literals, so it
+# carries the file-level suppression marker for its own validator below:
+# onex-allow-file-topic-literal OMN-13294 (this module declares topic literals as
+# its subject; they are the SOT, not contract drift).
+# Same two-transport seam as the private-IP / todo-marker / pin-hygiene validators:
+# the runner is the producer of the command and consumer of the result; the
+# COMPUTE handler is the consumer of the command and producer of the result. The
+# validator blocks any quoted onex.<a>.<b>.<c> topic literal pasted into handler
+# source instead of being declared in contract.yaml and resolved through it.
+TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.hardcoded-topic-scan-requested.v1"
+)
+TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.hardcoded-topic-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.
