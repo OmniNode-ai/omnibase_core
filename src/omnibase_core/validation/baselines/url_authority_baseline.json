@@ -1,24 +1,12 @@
 {
   "schema_version": "1.0.0",
-  "count": 226,
+  "count": 215,
   "violations": [
     {
       "repo": "omnibase_core",
       "path": "examples/demo/handlers/support_assistant/handler_anthropic.py",
       "rule": "url-const-assignment",
       "fingerprint": "e1a289119d3d1358f6cdf3e76266f1f160213fff5aec9ae642cb19d5d1101899"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "examples/demo/handlers/support_assistant/handler_local.py",
-      "rule": "url-const-assignment",
-      "fingerprint": "7b0aeac4145d0b5421270aeae6cc022463f5f4406a5dd475ef4d43a7708a3855"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "examples/demo/handlers/support_assistant/handler_local.py",
-      "rule": "localhost-literal",
-      "fingerprint": "9a34035abc0df91c677f0d24567cfa25b2e6068697782b96145f297449ae20b0"
     },
     {
       "repo": "omnibase_core",
@@ -34,24 +22,6 @@
     },
     {
       "repo": "omnibase_core",
-      "path": "examples/demo/handlers/support_assistant/model_config.py",
-      "rule": "localhost-literal",
-      "fingerprint": "bc6d491ef8c06fb6b3f9a3b5b5d1b1f08cd443b520207db1afa61a6e40fcb9ed"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "examples/demo/handlers/support_assistant/model_config.py",
-      "rule": "localhost-literal",
-      "fingerprint": "dda9679b96225687f7acb4ea36a5f39f95564509a569e8a1bca279947ffc2118"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "examples/demo/handlers/support_assistant/model_config.py",
-      "rule": "localhost-literal",
-      "fingerprint": "dda9679b96225687f7acb4ea36a5f39f95564509a569e8a1bca279947ffc2118"
-    },
-    {
-      "repo": "omnibase_core",
       "path": "scripts/emit_ts_types.py",
       "rule": "public-https-literal",
       "fingerprint": "49517946e67a010743926613607e217192833a4419ede0952411600ad5c303d8"
@@ -61,30 +31,6 @@
       "path": "scripts/emit_ts_types.py",
       "rule": "public-https-literal",
       "fingerprint": "49517946e67a010743926613607e217192833a4419ede0952411600ad5c303d8"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "src/omnibase_core/backends/metrics/__init__.py",
-      "rule": "localhost-literal",
-      "fingerprint": "de9e5a3f0ff742a91dbab696d0e9ed6a66afadbeb04250c70559ec620d901bdf"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "src/omnibase_core/backends/metrics/backend_metrics_prometheus.py",
-      "rule": "localhost-literal",
-      "fingerprint": "13eaeed0b1f5b7521430fa016081a1fb42dc348a610de4c5c5bca5b566203af5"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "src/omnibase_core/backends/metrics/backend_metrics_prometheus.py",
-      "rule": "localhost-literal",
-      "fingerprint": "4a5ecd79602ef9b02180d2e03ff7cc21547d94d50efdea77fc68c7fa562d1c48"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "src/omnibase_core/backends/metrics/backend_metrics_prometheus.py",
-      "rule": "localhost-literal",
-      "fingerprint": "a3f2ae55b38a84ceb6973350d8c8d1e51b0ce6679becc8f8cd62e5c5fdb07375"
     },
     {
       "repo": "omnibase_core",
@@ -127,18 +73,6 @@
       "path": "src/omnibase_core/models/reducer/payloads/model_payload_http.py",
       "rule": "public-https-literal",
       "fingerprint": "1d271e1c0ec30348f10b437b01be085442b77301f45a9c6b8d0b7e6809ceaad0"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "src/omnibase_core/models/services/model_node_service_config.py",
-      "rule": "localhost-literal",
-      "fingerprint": "b9d41e79e5a5b77aaf90700eb41920483569d692416528e7a5c2885640a8bb15"
-    },
-    {
-      "repo": "omnibase_core",
-      "path": "src/omnibase_core/models/vector/model_vector_connection_config.py",
-      "rule": "localhost-literal",
-      "fingerprint": "35e3715970fb61f0e05ae3034c7763c8a86bcebfeb4effc8d9f2fe20cae2dd98"
     },
     {
       "repo": "omnibase_core",
