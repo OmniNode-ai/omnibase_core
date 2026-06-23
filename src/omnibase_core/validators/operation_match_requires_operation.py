@@ -45,7 +45,7 @@ import sys
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 
-import yaml
+import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads adjacent contract.yaml files
 
 from omnibase_core.models.validation.model_operation_match_finding import (
     ModelOperationMatchFinding,
@@ -67,6 +67,7 @@ def validate_paths(paths: Sequence[Path]) -> list[ModelOperationMatchFinding]:
 def validate_file(path: Path) -> list[ModelOperationMatchFinding]:
     """Validate one contract.yaml file for operation_match entries missing ``operation``."""
     try:
+        # ONEX_EXCLUDE: manual_yaml - reading adjacent node contract for validation
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except (yaml.YAMLError, UnicodeDecodeError):
         # YAML/encoding validity is a separate contract-linter concern; this gate
@@ -175,4 +176,4 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())  # error-ok: CLI entry point requires SystemExit
