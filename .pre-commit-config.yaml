@@ -301,6 +301,18 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # OMN-13530: require an 'operation' field on operation_match handler entries.
+      # A missing operation makes the contract fail closed at RuntimeLocal startup
+      # ('handlers[i].operation is missing') — the 0.46.0 regression that took down
+      # the headless automation fleet. Core dogfoods its own export.
+      - id: operation-match-requires-operation
+        name: operation_match handler 'operation' field guard (OMN-13530)
+        entry: uv run python -m omnibase_core.validators.operation_match_requires_operation src/omnibase_core
+        language: system
+        files: (^|/)contract\.yaml$
+        pass_filenames: false
+        stages: [pre-commit]
+
       # CLASS vs FILE Naming Conventions:
       # - validate-naming-conventions: CLASS naming (ModelUser, EnumStatus, ProtocolEventBus)
       # - validate-file-naming-conventions: FILE naming (model_user.py, enum_status.py)
