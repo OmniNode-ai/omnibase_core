@@ -11,10 +11,7 @@ Zero custom Python code required - all state transitions defined declaratively.
 import copy
 import time
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, cast
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
+from typing import cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -42,10 +39,14 @@ from omnibase_core.models.reducer.model_reducer_fsm_metadata import (
 )
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.reducer.payloads.model_payload_log_event import (
+    ModelPayloadLogEvent,
+)
 from omnibase_core.models.reducer.payloads.model_payload_projection_intent import (
     ModelPayloadProjectionIntent,
 )
 from omnibase_core.types.type_json import JsonType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # 7-key FSM metadata contract (OMN-596, BETA-02).
 # All seven keys must be present in every ``ModelReducerOutput.metadata`` value
@@ -69,6 +70,14 @@ _ERR_FSM_METADATA_MISSING_KEYS = (
     "All 7 keys of the v1.0.4 metadata contract must be present (values may be "
     "None). See ModelReducerFsmMetadata for the canonical schema."
 )
+
+# Reserved-key contract for FSM execution context (OMN-592, BETA / Context
+# Construction section of CONTRACT_DRIVEN_NODEREDUCER_V1_0.md).
+# Keys with this prefix are reserved for system use inside the FSM execution
+# context. If user metadata supplies a key with this prefix it is NOT merged
+# into the context (the system value, if any, is never overwritten) and a
+# WARNING intent is emitted so the conflict is observable.
+_FSM_RESERVED_CONTEXT_PREFIX = "_fsm_"
 
 
 def _validate_fsm_metadata_keys(metadata: ModelReducerMetadata) -> None:
@@ -394,18 +403,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         # If trigger is provided in metadata, use it; otherwise default to "process"
         trigger = input_data.metadata.trigger or "process"
 
-        # Build context from input data - context contains serializable values
-        # Convert metadata to dict for context (excluding None values)
-        metadata_dict = input_data.metadata.model_dump(exclude_none=True)
-        # Cast input_data.data to JsonType since T_Input should be JSON-serializable
-        # but the generic type doesn't encode this constraint
-        input_data_value: JsonType = cast(JsonType, input_data.data)
-        context: SerializedDict = {
-            "input_data": input_data_value,
-            "reduction_type": input_data.reduction_type.value,
-            "operation_id": str(input_data.operation_id),
-            **metadata_dict,
-        }
+        # Build the FSM execution context from the reducer input (OMN-592).
+        # Returns (context, reserved_key_warnings): warnings are WARNING-level
+        # log intents emitted when user metadata supplies _fsm_*-prefixed keys.
+        context, reserved_key_warnings = self._build_fsm_context(input_data)
 
         # Execute FSM transition with timing measurement
         start_time = time.perf_counter()
@@ -476,9 +477,15 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         # The Effect executor is responsible for resolving these before advancing the pipeline.
         projection_intent_models = self._build_projection_intents(projection_intents)
 
-        # Combine FSM intents with projection intents.
-        # FSM intents come first (state management), projection intents follow (read model).
-        all_intents = (*fsm_result.intents, *projection_intent_models)
+        # Combine context-construction warnings, FSM intents, and projection intents.
+        # Reserved-key warnings (OMN-592) come first so the observability signal
+        # is not lost behind state/read-model intents, then FSM intents (state
+        # management), then projection intents (read model).
+        all_intents = (
+            *reserved_key_warnings,
+            *fsm_result.intents,
+            *projection_intent_models,
+        )
 
         output: ModelReducerOutput[T_Output] = ModelReducerOutput(
             result=cast(
@@ -499,6 +506,96 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         )
 
         return output
+
+    def _build_fsm_context(
+        self,
+        input_data: ModelReducerInput[T_Input],
+    ) -> tuple[SerializedDict, tuple[ModelIntent, ...]]:
+        """Construct the FSM execution context from reducer input (OMN-592).
+
+        Builds the serializable context dict passed to the FSM executor from a
+        ``ModelReducerInput``. The resulting context always carries three
+        system-owned keys plus the caller's (non-reserved) metadata:
+
+        Context structure:
+            * ``input_data``   -- the reducer payload (``input_data.data``),
+              cast to ``JsonType`` for serialization.
+            * ``reduction_type`` -- the reduction strategy value
+              (``input_data.reduction_type.value``).
+            * ``operation_id`` -- the operation UUID rendered as ``str``.
+            * ``**metadata``   -- every non-``None`` field from
+              ``input_data.metadata`` (``model_dump(exclude_none=True)``)
+              EXCEPT keys reserved for system use (see below).
+
+        Reserved keys:
+            Keys prefixed with ``_fsm_`` (``_FSM_RESERVED_CONTEXT_PREFIX``) are
+            reserved for system use. If the caller supplies such a key in
+            metadata it is **not** merged into the context — the system context
+            is never overwritten by caller input — and a ``WARNING``-level
+            ``log_event`` intent is emitted naming the rejected keys so the
+            conflict is observable. This follows the pure-FSM pattern: warn via
+            intent emission, never raise.
+
+        Args:
+            input_data: Reducer input carrying data, reduction type,
+                operation id, and metadata.
+
+        Returns:
+            A ``(context, warnings)`` tuple:
+              * ``context``  -- the assembled ``SerializedDict``.
+              * ``warnings`` -- a tuple of ``ModelIntent`` log-event intents
+                (empty when no reserved-key conflict occurred).
+        """
+        # Convert metadata to a plain dict for context merging (drop None values).
+        metadata_dict = input_data.metadata.model_dump(exclude_none=True)
+
+        # Separate caller metadata into mergeable vs reserved (_fsm_*) keys.
+        # Reserved keys are dropped from the merge and reported via a warning
+        # intent; the system context below is authoritative and never clobbered.
+        reserved_keys = sorted(
+            key for key in metadata_dict if key.startswith(_FSM_RESERVED_CONTEXT_PREFIX)
+        )
+        mergeable_metadata = {
+            key: value
+            for key, value in metadata_dict.items()
+            if not key.startswith(_FSM_RESERVED_CONTEXT_PREFIX)
+        }
+
+        # Cast input_data.data to JsonType since T_Input should be JSON-serializable
+        # but the generic type doesn't encode this constraint.
+        input_data_value: JsonType = cast(JsonType, input_data.data)
+        context: SerializedDict = {
+            "input_data": input_data_value,
+            "reduction_type": input_data.reduction_type.value,
+            "operation_id": str(input_data.operation_id),
+            **mergeable_metadata,
+        }
+
+        warnings: tuple[ModelIntent, ...] = ()
+        if reserved_keys:
+            warnings = (
+                ModelIntent(
+                    intent_type="log_event",
+                    target="logging_service",
+                    payload=ModelPayloadLogEvent(
+                        level="WARNING",
+                        message=(
+                            "Ignoring reserved FSM context keys supplied in "
+                            f"reducer metadata: {reserved_keys}. Keys prefixed "
+                            f"'{_FSM_RESERVED_CONTEXT_PREFIX}' are reserved for "
+                            "system use and are not merged into the FSM context."
+                        ),
+                        context={
+                            "operation_id": str(input_data.operation_id),
+                            "reserved_keys": reserved_keys,
+                            "reserved_prefix": _FSM_RESERVED_CONTEXT_PREFIX,
+                        },
+                    ),
+                    priority=3,
+                ),
+            )
+
+        return context, warnings
 
     def _build_projection_intents(
         self,
