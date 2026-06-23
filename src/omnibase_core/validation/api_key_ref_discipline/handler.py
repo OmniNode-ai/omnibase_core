@@ -26,26 +26,9 @@ For every bifrost-shaped config file supplied (mapping with a ``backends`` list)
 
 Suppression token: ``# api-key-env-ok:``
 
-Examples::
-
-    # VIOLATION — api_key_env without logical ref:
-    - backend_id: "cloud-gemini"
-      tier: "cheap_cloud"
-      api_key_env: "GEMINI_API_KEY"           # flagged
-
-    # CLEAN — logical api_key_ref declared:
-    - backend_id: "cloud-gemini"
-      tier: "cheap_cloud"
-      api_key_ref: "gemini_api_key"           # passes
-
-    # CLEAN — logical secret_ref declared:
-    - backend_id: "cloud-openai"
-      tier: "frontier_api"
-      secret_ref: "openai_secret_key"         # passes
-
-    # LEGACY EXEMPTION (migration in progress):
-    - backend_id: "cloud-legacy"
-      api_key_env: "LEGACY_KEY"  # api-key-env-ok: OMN-12878 migration tracked
+Examples are covered in the unit fixture corpus rather than embedded here, so
+the repo-wide secret scanner does not have to interpret YAML samples inside a
+Python docstring.
 
 Architecture: COMPUTE node — pure, deterministic, no filesystem/network/env I/O.
 All file loading is the EFFECT boundary's responsibility. The handler receives

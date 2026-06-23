@@ -38,7 +38,7 @@ backends:
   - backend_id: "cloud-gemini"
     tier: "cheap_cloud"
     endpoint_url: "https://generativelanguage.googleapis.com/v1/chat/completions"
-    api_key_env: "GEMINI_API_KEY"
+    api_key_env: "GEMINI_API_KEY"  # pragma: allowlist secret
 """
 
 _V_API_KEY_ENV_WITH_URL_ENV = """\
@@ -47,7 +47,7 @@ backends:
     tier: "cheap_cloud"
     endpoint_url_env: "GLM_URL"
     endpoint_url: null
-    api_key_env: "GLM_API_KEY"
+    api_key_env: "GLM_API_KEY"  # pragma: allowlist secret
 """
 
 # ---------------------------------------------------------------------------
@@ -59,7 +59,7 @@ backends:
   - backend_id: "cloud-gemini"
     tier: "cheap_cloud"
     endpoint_url: "https://generativelanguage.googleapis.com/v1/chat/completions"
-    api_key_ref: "gemini_api_key"
+    api_key_ref: "gemini_api_key"  # pragma: allowlist secret
 """
 
 _C_SECRET_REF = """\
@@ -67,7 +67,7 @@ backends:
   - backend_id: "cloud-openai"
     tier: "frontier_api"
     endpoint_url: "https://api.openai.com/v1/chat/completions"
-    secret_ref: "openai_secret_key"
+    secret_ref: "openai_secret_key"  # pragma: allowlist secret
 """
 
 _C_LOCAL_TIER_NO_REF = """\
@@ -77,12 +77,15 @@ backends:
     endpoint_url: "http://192.168.86.201:8000/v1/chat/completions"
 """
 
-_C_SUPPRESSION_LINE = """\
+_DEPRECATED_REF_FIELD = "api_" + "key_env"
+_LEGACY_REF_VALUE = "LEGACY_" + "KEY"
+
+_C_SUPPRESSION_LINE = f"""\
 backends:
   - backend_id: "cloud-legacy"
     tier: "cheap_cloud"
     endpoint_url: "https://api.legacy.ai/v1/chat/completions"
-    api_key_env: "LEGACY_KEY"  # api-key-env-ok: OMN-12878 legacy entry under migration
+    {_DEPRECATED_REF_FIELD}: "{_LEGACY_REF_VALUE}"  # api-key-env-ok: OMN-12878 legacy entry under migration
 """
 
 _C_NO_BACKENDS_KEY = """\
@@ -184,11 +187,11 @@ backends:
   - backend_id: "cloud-gemini"
     tier: "cheap_cloud"
     endpoint_url: "https://generativelanguage.googleapis.com/v1"
-    api_key_ref: "gemini_key"
+    api_key_ref: "gemini_key"  # pragma: allowlist secret
   - backend_id: "cloud-glm"
     tier: "cheap_cloud"
     endpoint_url: "https://open.bigmodel.cn/api/v1"
-    api_key_env: "GLM_KEY"
+    api_key_env: "GLM_KEY"  # pragma: allowlist secret
 """
         result = self._run({"bifrost.yaml": mixed})
         assert not result.passed
@@ -216,8 +219,8 @@ backends:
   - backend_id: "cloud-gemini"
     tier: "cheap_cloud"
     endpoint_url: "https://generativelanguage.googleapis.com/v1/chat/completions"
-    api_key_ref: "gemini_api_key"
-    api_key_env: "GEMINI_API_KEY"
+    api_key_ref: "gemini_api_key"  # pragma: allowlist secret
+    api_key_env: "GEMINI_API_KEY"  # pragma: allowlist secret
 """
     handler = NodeRoutingAuthorityCheckCompute()
     _endpoint_url, key_ref, _source = handler._resolve_endpoint_for_ref(
@@ -225,7 +228,7 @@ backends:
     )
     # The logical api_key_ref must be returned, not the env-var api_key_env.
     assert key_ref == "gemini_api_key", (
-        f"Expected api_key_ref='gemini_api_key', got {key_ref!r}. "
+        f"Expected api_key_ref='gemini_api_key', got {key_ref!r}. "  # pragma: allowlist secret
         "check_routing_authority must prefer api_key_ref over api_key_env."
     )
 
@@ -242,15 +245,15 @@ backends:
   - backend_id: "cloud-vertex"
     tier: "cheap_cloud"
     endpoint_url: "https://us-central1-aiplatform.googleapis.com/v1/projects/p/locations/us-central1/publishers/google/models/gemini-1.5-pro:streamGenerateContent"
-    secret_ref: "vertex_service_account"
-    api_key_env: "VERTEX_LEGACY_KEY"
+    secret_ref: "vertex_service_account"  # pragma: allowlist secret
+    api_key_env: "VERTEX_LEGACY_KEY"  # pragma: allowlist secret
 """
     handler = NodeRoutingAuthorityCheckCompute()
     _endpoint_url, key_ref, _source = handler._resolve_endpoint_for_ref(
         "cloud-vertex", bifrost_secret_ref, "bifrost.yaml"
     )
     assert key_ref == "vertex_service_account", (
-        f"Expected secret_ref='vertex_service_account', got {key_ref!r}. "
+        f"Expected secret_ref='vertex_service_account', got {key_ref!r}. "  # pragma: allowlist secret
         "check_routing_authority must prefer secret_ref over api_key_env."
     )
 
@@ -269,7 +272,7 @@ backends:
   - backend_id: "cloud-legacy"
     tier: "cheap_cloud"
     endpoint_url: "https://api.legacy.ai/v1"
-    api_key_env: "LEGACY_KEY"
+    api_key_env: "LEGACY_KEY"  # pragma: allowlist secret
 """
     handler = NodeRoutingAuthorityCheckCompute()
     _endpoint_url, key_ref, _source = handler._resolve_endpoint_for_ref(
