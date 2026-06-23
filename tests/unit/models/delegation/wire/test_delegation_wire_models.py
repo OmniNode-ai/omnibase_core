@@ -101,6 +101,63 @@ class TestModelDelegationRequest:
         with pytest.raises(ValueError, match="unsupported acceptance criteria"):
             self._make(acceptance_criteria=("not_a_real_criterion",))
 
+    def test_invalid_acceptance_criteria_error_lists_allowed_slugs(self) -> None:
+        """Error message must name valid slugs so callers can self-correct (OMN-13542)."""
+        with pytest.raises(ValueError) as exc_info:
+            self._make(acceptance_criteria=("not_a_real_criterion",))
+        msg = str(exc_info.value)
+        assert "Allowed slugs:" in msg
+        assert "max_words_per_sentence_N" in msg
+        # At least one canonical slug must appear in the hint
+        assert "response_non_empty" in msg
+
+    def test_invalid_acceptance_criteria_error_quotes_bad_values(self) -> None:
+        """Unsupported values are quoted in the error so they are easy to identify."""
+        with pytest.raises(ValueError) as exc_info:
+            self._make(
+                acceptance_criteria=(
+                    "Function must be typed with full PEP 604 type annotations",
+                    "Must handle HTTP errors",
+                )
+            )
+        msg = str(exc_info.value)
+        assert "'Function must be typed with full PEP 604 type annotations'" in msg
+        assert "'Must handle HTTP errors'" in msg
+        assert "Allowed slugs:" in msg
+
+    def test_i4_strict_code_generation_free_text_criteria_rejected_with_actionable_error(
+        self,
+    ) -> None:
+        """OMN-13542 / OMN-13540 I4: strict code_generation with realistic free-text
+        acceptance criteria must fail with a documented, actionable error naming valid
+        forms — not an opaque 'unsupported acceptance criteria: <text>' with no guidance.
+        """
+        free_text_criteria = (
+            "Function must be typed with full PEP 604 type annotations",
+            "Must handle HTTP errors with appropriate status codes",
+            "No global state mutations",
+            "All branches covered by at least one test",
+            "Docstring uses Google style",
+        )
+        with pytest.raises(ValueError) as exc_info:
+            self._make(
+                task_type="code_generation",
+                acceptance_criteria=free_text_criteria,
+            )
+        msg = str(exc_info.value)
+        # Error must be actionable: list the allowed set so the caller knows what to use
+        assert "Allowed slugs:" in msg, (
+            "Error must name the allowed slug set; got: " + msg
+        )
+        assert "max_words_per_sentence_N" in msg, (
+            "Error must document the max_words_per_sentence_N pattern; got: " + msg
+        )
+        # At least one of the bad inputs must be quoted in the message
+        assert any(f"'{c}'" in msg for c in free_text_criteria), (
+            "At least one unsupported criterion must be quoted in the error; got: "
+            + msg
+        )
+
     def test_valid_acceptance_criteria(self) -> None:
         r = self._make(acceptance_criteria=("response_non_empty",))
         assert "response_non_empty" in r.acceptance_criteria
