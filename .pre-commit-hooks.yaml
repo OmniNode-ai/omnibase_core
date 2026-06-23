@@ -451,3 +451,20 @@
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
+
+- id: operation-match-requires-operation
+  name: operation_match handler 'operation' field guard (OMN-13530)
+  description: >
+    Require a non-empty 'operation' field on every handler_routing.handlers[] entry whose routing_strategy
+    is operation_match — or absent, which RuntimeLocal._validate_routing defaults into the same branch.
+    A missing 'operation' makes the whole contract fail closed at runtime startup with 'handlers[i].operation
+    is missing' / result=failed, which is exactly the 0.46.0 regression that took down the headless automation
+    fleet (merge_sweep, ci_watch, auto_merge, build_loop, coderabbit_triage, create_ticket). This gate
+    blocks that regression from re-landing. Scope: checks ONLY the operation field, not the nested handler
+    block. Consumers reference this hook by id; it scans staged contract.yaml files (or src/ when none
+    are supplied).
+  language: python
+  entry: python -m omnibase_core.validators.operation_match_requires_operation
+  files: (^|/)contract\.yaml$
+  pass_filenames: true
+  stages: [pre-commit]

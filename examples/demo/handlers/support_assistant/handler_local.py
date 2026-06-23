@@ -11,7 +11,7 @@ Example:
     Using with local vLLM server::
 
         client = LocalLLMClient(
-            endpoint_url="http://localhost:8000",
+            endpoint_url="http://localhost:8000",  # url-authority-ok: local demo endpoint
             model_name="qwen2.5-14b",
         )
         response = await client.complete("Hello, how are you?")
@@ -44,7 +44,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
 # Default config - use localhost; override via LOCAL_LLM_ENDPOINT
-DEFAULT_ENDPOINT = "http://localhost:8000"
+DEFAULT_ENDPOINT = "http://localhost:8000"  # url-authority-ok: local demo default
 DEFAULT_MODEL = "qwen2.5-14b"
 DEFAULT_TIMEOUT = 60.0
 

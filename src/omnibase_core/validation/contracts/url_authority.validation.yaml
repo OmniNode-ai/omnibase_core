@@ -69,6 +69,15 @@ validation:
       severity: error
       enabled: true
 
+    - rule_id: localhost-literal
+      description: >-
+        Rejects hardcoded http(s):// loopback connection-target literals (localhost, 127.x.x.x, 0.0.0.0,
+        [::1]) that are not *_URL / *_ENDPOINT constants. The public-https rule skips localhost, so a
+        bare loopback literal would otherwise bypass the gate (OMN-13480). Resolve from the routing authority.
+        Suppress with # url-authority-ok: <reason>.
+      severity: error
+      enabled: true
+
   suppression_comments:
     - "# url-authority-ok:"
     - "# contract-config-ok:"

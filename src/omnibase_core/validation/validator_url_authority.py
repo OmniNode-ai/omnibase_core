@@ -7,7 +7,7 @@ Part of OMN-12803 (PR-2, the enforcement gate). Every URL and ``*_URL`` /
 ``*_ENDPOINT`` env read must resolve from a contract (routing authority /
 integration catalog), not a literal string or a bare env read.
 
-Detects three classes of violations in Python source files:
+Detects four classes of violations in Python source files:
 
 1. **public-https-literal** — a quoted ``https://`` URL targeting a public
    host with a dotted TLD.  Excludes localhost/loopback, example placeholders,
@@ -21,6 +21,14 @@ Detects three classes of violations in Python source files:
 3. **url-const-assignment** — module-level constant assignment whose name
    ends in ``URL`` or ``ENDPOINT``, sourced from ``os.environ`` or a bare
    ``https://`` literal.
+
+4. **localhost-literal** (OMN-13480) — a hardcoded ``http(s)://`` loopback
+   connection-target literal (``localhost``, ``127.x.x.x``, ``0.0.0.0``,
+   ``[::1]``) that is NOT a ``*_URL`` / ``*_ENDPOINT`` constant.  The
+   public-https rule deliberately skips localhost (no dotted TLD), so a bare
+   loopback literal passed directly to an HTTP client call was otherwise
+   invisible.  A connection target should resolve from the routing authority,
+   not a hardcoded loopback literal.
 
 Ratchet (OMN-12818, mirrors OMN-12791 receipt-honesty gate): existing
 violations are grandfathered by content fingerprint (sha256 of {repo, path,
@@ -78,11 +86,12 @@ import sys
 from pathlib import Path
 from typing import ClassVar, Final
 
-from pydantic import BaseModel, ConfigDict
-
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
+)
+from omnibase_core.models.validation.model_url_authority_violation import (
+    ModelUrlAuthorityViolation,
 )
 from omnibase_core.validation.validator_base import ValidatorBase
 
@@ -126,6 +135,20 @@ _CONST_URL_FROM_LITERAL: Final[re.Pattern[str]] = re.compile(
     r"""^[A-Z0-9_]*(?:URL|ENDPOINT)[A-Z0-9_]*\s*=\s*["']https?://""",
 )
 
+# 4. Hardcoded localhost / loopback connection-target literal (OMN-13480).
+#    The public-https rule deliberately skips localhost (no dotted TLD), and
+#    a bare loopback literal that is NOT assigned to a ``*_URL`` / ``*_ENDPOINT``
+#    constant is otherwise invisible — e.g. ``httpx.get("http://localhost:9000")``.
+#    A connection target should resolve from the routing authority, not a
+#    hardcoded loopback literal. Matches http(s):// to:
+#      * ``localhost`` (optionally with a ``:port``)
+#      * IPv4 loopback ``127.x.x.x`` and the wildcard bind address ``0.0.0.0``
+#      * IPv6 loopback ``[::1]``
+_LOCALHOST_LITERAL: Final[re.Pattern[str]] = re.compile(
+    r"""["']https?://(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1\])(?:[:/?#"']|$)""",
+    re.IGNORECASE,
+)
+
 # Suppression annotations.
 _SUPPRESS_ANNOTATION: Final[str] = "# url-authority-ok:"
 _CONFIG_PATH_ANNOTATION: Final[str] = "# contract-config-ok:"
@@ -140,6 +163,7 @@ _AUTHORITY_PATH_SUFFIXES: Final[tuple[str, ...]] = (
 RULE_PUBLIC_HTTPS: Final[str] = "public-https-literal"
 RULE_ENV_URL_READ: Final[str] = "env-url-read"
 RULE_CONST_ASSIGNMENT: Final[str] = "url-const-assignment"
+RULE_LOCALHOST_LITERAL: Final[str] = "localhost-literal"
 
 # Directories excluded from full-tree scans.
 _EXCLUDED_PARTS: Final[frozenset[str]] = frozenset(
@@ -160,24 +184,6 @@ _EXCLUDED_PARTS: Final[frozenset[str]] = frozenset(
 _DEFAULT_BASELINE: Final[Path] = (
     Path(__file__).parent / "baselines" / "url_authority_baseline.json"
 )
-
-
-# ---------------------------------------------------------------------------
-# Data model
-# ---------------------------------------------------------------------------
-
-
-class ModelUrlAuthorityViolation(BaseModel):
-    """A single url-authority finding with a content fingerprint for the ratchet."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
-
-    repo: str
-    path: str
-    line: int
-    rule: str
-    snippet: str
-    fingerprint: str
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +238,10 @@ def _match_rule(raw_line: str, stripped: str) -> str | None:
         return RULE_CONST_ASSIGNMENT
     if _PUBLIC_HTTPS_LITERAL.search(raw_line) and _is_connection_target(raw_line):
         return RULE_PUBLIC_HTTPS
+    # Bare loopback connection-target literal not captured by the rules above
+    # (the public-https rule skips localhost; this is not a *_URL constant).
+    if _LOCALHOST_LITERAL.search(raw_line) and _is_connection_target(raw_line):
+        return RULE_LOCALHOST_LITERAL
     return None
 
 
@@ -366,7 +376,7 @@ def assert_baseline_shrinks_only(before: set[str], after: set[str]) -> None:
     """
     added = after - before
     if added:
-        raise ValueError(
+        raise ValueError(  # error-ok: function-boundary validation guard (anti-gaming baseline check, CLI-surfaced)
             "url-authority baseline grew: "
             f"{len(added)} new fingerprint(s) added. The baseline is burn-down only "
             "— fix the violation or annotate with # url-authority-ok:, never add it "

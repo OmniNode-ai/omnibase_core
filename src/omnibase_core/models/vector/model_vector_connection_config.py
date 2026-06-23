@@ -37,7 +37,7 @@ class ModelVectorConnectionConfig(BaseModel):
             from omnibase_core.models.vector import ModelVectorConnectionConfig
 
             config = ModelVectorConnectionConfig(
-                url="http://localhost:6333",  # onex-allow-internal-ip OMN-13480 docstring example (Qdrant default), not a runtime endpoint
+                url="http://localhost:6333",  # url-authority-ok: local vector-store example
             )
 
         With authentication::

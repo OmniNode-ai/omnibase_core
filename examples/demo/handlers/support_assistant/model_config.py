@@ -65,7 +65,7 @@ class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]
     temperature: float = 0.7
     max_tokens: int = 500
     endpoint_env: str = "LOCAL_LLM_ENDPOINT"
-    default_endpoint: str = "http://localhost:8000"
+    default_endpoint: str = "http://localhost:8000"  # url-authority-ok: local demo default  # fallback-ok: local demo default
 
 
 # NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
@@ -132,7 +132,7 @@ class ModelConfig(BaseModel):  # type: ignore[explicit-any]
             config = ModelConfig(
                 provider="local",
                 model_name="qwen2.5-coder-14b",
-                endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),
+                endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),  # url-authority-ok: local demo example
             )
     """
 
@@ -277,5 +277,5 @@ ANTHROPIC_CONFIG = ModelConfig(
 LOCAL_CONFIG = ModelConfig(
     provider="local",
     model_name="qwen2.5-coder-14b",  # Qwen 2.5 Coder 14B - optimized for code tasks
-    endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),
+    endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),  # url-authority-ok: local demo default  # fallback-ok: local demo default
 )
