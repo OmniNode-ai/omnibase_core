@@ -8,7 +8,7 @@ check_value: "echo 'deploy-gate: OMN-13530 ships a static validator/pre-commit/C
 contract_sha256: "sha256:c4e7765bf57b7b5af03904c4824fe496c8fc1c2b6cbd791921839313a3348b27"
 status: PASS
 run_timestamp: "2026-06-23T14:45:00Z"
-commit_sha: "86d9d0f657eb460072bf1807be6aa6f31eb0fbdd"
+commit_sha: "86d9d0f657eb460072bf1807be6aa6f31eb0fbdd"  # pragma: allowlist secret
 branch: "jonah/omn-13530-omnibase_core-operation-match-field"
 pr_number: 1310
 runner: "codex"
