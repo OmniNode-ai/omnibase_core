@@ -131,6 +131,7 @@ class LocalhostUrlBusRunner:
         self, inputs: list[ModelLocalhostUrlScanInput]
     ) -> list[ModelLocalhostUrlScanResult]:
         """Dispatch every input over the bus and return verdicts in input order."""
+        self._results.clear()
         await self._bus.subscribe(
             COMMAND_TOPIC, on_message=self._on_command, group_id=_HANDLER_GROUP
         )
@@ -144,11 +145,17 @@ class LocalhostUrlBusRunner:
         # In-memory pub/sub delivers inline; a tick lets any scheduled callbacks
         # drain. Order-independence of findings is guaranteed inside the handler.
         await asyncio.sleep(0)
-        return [
-            self._results[scan_input.path]
+        missing = [
+            scan_input.path
             for scan_input in inputs
-            if scan_input.path in self._results
+            if scan_input.path not in self._results
         ]
+        if missing:
+            raise RuntimeError(
+                "localhost-url validator did not receive results for "
+                f"{len(missing)} input(s): {', '.join(missing[:5])}"
+            )
+        return [self._results[scan_input.path] for scan_input in inputs]
 
 
 def _iter_source_files(paths: list[Path]) -> Iterator[Path]:

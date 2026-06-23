@@ -178,6 +178,38 @@ def test_runner_over_in_memory_bus_flags_and_passes() -> None:
 
 
 @pytest.mark.unit
+def test_runner_fails_closed_when_result_is_missing() -> None:
+    from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+    from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
+    from omnibase_core.validation.localhost_url.runtime_localhost_url import (
+        LocalhostUrlBusRunner,
+    )
+
+    async def _run() -> None:
+        bus = EventBusInmemory()
+        await bus.start()
+        try:
+            runner = LocalhostUrlBusRunner(bus)
+
+            async def _drop_command(_message: ModelEventMessage) -> None:
+                return None
+
+            runner._on_command = _drop_command
+            with pytest.raises(RuntimeError, match="did not receive results"):
+                await runner.scan_inputs(
+                    [
+                        ModelLocalhostUrlScanInput(
+                            content='H = "http://localhost:8000"', path="lost.py"
+                        )
+                    ]
+                )
+        finally:
+            await bus.shutdown()
+
+    asyncio.run(_run())
+
+
+@pytest.mark.unit
 def test_findings_are_order_independent() -> None:
     # Two violations on different lines: stable sort by (line, column).
     src = 'A = "http://localhost/a"\nB = "https://127.0.0.1/b"'
