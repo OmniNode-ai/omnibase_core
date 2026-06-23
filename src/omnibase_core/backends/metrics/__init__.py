@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-internal-ip OMN-13480 reason="module docstring usage examples show a localhost push-gateway URL as illustrative example data, not a runtime endpoint"
 
 """
 Metrics Backends Module - Backend implementations for metrics collection.

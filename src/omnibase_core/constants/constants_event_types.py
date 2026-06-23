@@ -118,6 +118,20 @@ TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.todo-marker-scan-completed.v1"
 )
 
+# Localhost-URL COMPUTE validator topics (OMN-13480, G2 residual of OMN-13294).
+# Same two-transport seam as the local-paths / private-IP / todo-marker canaries:
+# the runner is the producer of the command and consumer of the result; the
+# COMPUTE handler is the consumer of the command and producer of the result. The
+# validator blocks hardcoded http(s)://localhost / http(s)://127.0.0.1 URL literals
+# (the loopback endpoints url-authority's public-https-literal rule deliberately
+# excludes).
+TOPIC_VALIDATION_LOCALHOST_URL_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.localhost-url-scan-requested.v1"
+)
+TOPIC_VALIDATION_LOCALHOST_URL_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.localhost-url-scan-completed.v1"
+)
+
 # Sibling-pin-hygiene COMPUTE validator topics (OMN-13509). Same two-transport
 # seam as the private-IP / no-faked-boundary / todo-marker validators: the runner
 # is the producer of the command and consumer of the result; the COMPUTE handler

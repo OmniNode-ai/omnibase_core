@@ -37,14 +37,14 @@ class ModelVectorConnectionConfig(BaseModel):
             from omnibase_core.models.vector import ModelVectorConnectionConfig
 
             config = ModelVectorConnectionConfig(
-                url="http://localhost:6333",
+                url="http://localhost:6333",  # onex-allow-internal-ip OMN-13480 docstring example (Qdrant default), not a runtime endpoint
             )
 
         With authentication::
 
             config = ModelVectorConnectionConfig(
                 url="https://my-cluster.vectordb.io",
-                api_key="sk-xxxxx",
+                api_key="sk-xxxxx",  # pragma: allowlist secret  — docstring placeholder, not a real key
                 timeout=60.0,
                 pool_size=20,
             )

@@ -325,6 +325,7 @@ def test_report_exit_code_zero_on_clean_repo(tmp_path: Path, spec_data: dict) ->
     pre_commit_ids = [
         "validate-local-paths",
         "check-private-ip-compute",  # OMN-13294 (G2): hardcoded private-IP scanner
+        "check-localhost-url-compute",  # OMN-13480 (G2 residual): hardcoded localhost-URL scanner
         "validate-spdx-headers",
         "no-hardcoded-topics",
         "check-stub-implementations",
