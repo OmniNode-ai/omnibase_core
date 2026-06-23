@@ -82,6 +82,7 @@ EXCLUDE_PATTERNS = [
     "examples",  # Exclude examples - may contain demonstration code with various version formats
     "protocols",  # Exclude Protocol classes (see rationale above)
     "hooks",  # Exclude hook models - types match external API contracts (e.g., Claude Code session_id is str)
+    "dod_receipts",  # Immutable DoD receipt schema uses external schema_version strings.
 ]
 
 

@@ -377,6 +377,17 @@ allowed_files:
     added: "2026-06-02"
     review: "2026-12-13"
 
+  - file: "src/omnibase_core/validators/operation_match_requires_operation.py"
+    reason: >-
+      operation_match operation-field guard (OMN-13530) — must read adjacent contract.yaml files from
+      the filesystem to inspect handler_routing.handlers[] for a missing operation field. There is no
+      single Pydantic contract model that round-trips every node's contract.yaml shape, and the guard
+      intentionally tolerates structurally-incomplete contracts (it asserts only the operation field),
+      so it parses the raw mapping with yaml.safe_load() and inspects routing_strategy/handlers directly.
+      Mirrors the contract_config_compliance.py validator pattern.
+    added: "2026-06-23"
+    review: "2026-12-23"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
