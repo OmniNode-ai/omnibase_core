@@ -262,6 +262,23 @@ def test_annotate_ancestry_resolves_real_git_state(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_annotate_ancestry_recomputes_existing_annotation(tmp_path: Path) -> None:
+    from omnibase_core.validation.pin_hygiene.runtime_pin_hygiene import (
+        annotate_ancestry,
+    )
+
+    _, orphan_sha = _make_sibling_repo(tmp_path)
+    forged = (
+        f'omnibase-core = {{ git = "x", rev = "{orphan_sha}" }}'
+        "  # pin-ancestry: ancestor"
+    )
+    annotated = annotate_ancestry(forged, tmp_path)
+    assert "# pin-ancestry: ancestor" not in annotated
+    assert "# pin-ancestry: orphan" in annotated
+    assert scan_source(annotated).flagged is True
+
+
+@pytest.mark.unit
 def test_branch_main_diverged_is_flagged_end_to_end(tmp_path: Path) -> None:
     # THE #2071 SHAPE: a branch=main sibling pin whose main has diverged from dev.
     from omnibase_core.validation.pin_hygiene.runtime_pin_hygiene import (
@@ -335,6 +352,33 @@ def test_pyproject_suppression_propagates_to_uvlock() -> None:
     other = 'source = { git = "https://github.com/OmniNode-ai/omnibase_core.git?rev=def4560000000000000000000000000000000000" }  # pin-ancestry: orphan'
     assert "onex-allow-pin-hygiene" not in _propagate_suppression(other, suppressed)
     assert scan_source(_propagate_suppression(other, suppressed)).flagged is True
+
+
+@pytest.mark.unit
+def test_uvlock_suppression_uses_nearest_pyproject_scope(tmp_path: Path) -> None:
+    from omnibase_core.validation.pin_hygiene.runtime_pin_hygiene import (
+        _suppressed_siblings_for_uvlock,
+    )
+
+    project_a = tmp_path / "project-a"
+    project_b = tmp_path / "project-b"
+    suppressed_by_root = {
+        project_a: {"omnibase_compat"},
+        project_b: {"omnibase_core"},
+    }
+
+    assert _suppressed_siblings_for_uvlock(
+        project_a / "uv.lock", suppressed_by_root
+    ) == {"omnibase_compat"}
+    assert _suppressed_siblings_for_uvlock(
+        project_b / "nested" / "uv.lock", suppressed_by_root
+    ) == {"omnibase_core"}
+    assert (
+        _suppressed_siblings_for_uvlock(
+            tmp_path / "unrelated" / "uv.lock", suppressed_by_root
+        )
+        == set()
+    )
 
 
 @pytest.mark.unit

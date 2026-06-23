@@ -57,6 +57,9 @@ from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.pin_hygiene.models import (
+    EnumPinAncestryVerdict,
+    EnumPinSibling,
+    EnumPinType,
     ModelPinHygieneFinding,
     ModelPinHygieneScanInput,
     ModelPinHygieneScanResult,
@@ -73,6 +76,9 @@ _SUPPRESSION_MARKER: Final[str] = "onex-allow-pin-hygiene"
 # unknown) and a MISSING annotation on a sibling git pin is a violation (fail
 # closed). Lower-cased before comparison.
 _CLEAN_VERDICT: Final[str] = "ancestor"
+_FINDING_VERDICTS: Final[set[str]] = {
+    verdict.value for verdict in EnumPinAncestryVerdict
+}
 
 # === GENERATED SCANNING REGEXES (OMN-13509) — preserved from the corpus-accepted
 # artifact (verbatim where correct). Each pattern recognises one pin syntax or the
@@ -135,17 +141,17 @@ _PATTERN_ANCESTRY: Final[re.Pattern[str]] = re.compile(
 )
 
 
-def _pin_type(line: str) -> str:
+def _pin_type(line: str) -> EnumPinType:
     """Classify a sibling git pin line by its syntax for the finding label."""
     if _PATTERN_REV.search(line):
-        return "rev"
+        return EnumPinType.REV
     if _PATTERN_PEP508.search(line):
-        return "pep-508"
+        return EnumPinType.PEP_508
     if _PATTERN_UVLOCK.search(line):
-        return "uv-lock-rev"
+        return EnumPinType.UV_LOCK_REV
     if _PATTERN_BRANCH.search(line):
-        return "branch"
-    return "unknown"
+        return EnumPinType.BRANCH
+    return EnumPinType.UNKNOWN
 
 
 def scan_source(content: str, path: str = "<input>") -> ModelPinHygieneScanResult:
@@ -195,14 +201,19 @@ def scan_source(content: str, path: str = "<input>") -> ModelPinHygieneScanResul
         )
         if verdict == _CLEAN_VERDICT:
             continue
+        finding_verdict = (
+            EnumPinAncestryVerdict(verdict)
+            if verdict in _FINDING_VERDICTS
+            else EnumPinAncestryVerdict.UNKNOWN
+        )
 
         findings.append(
             ModelPinHygieneFinding(
                 path=path,
                 line=lineno,
-                sibling=sibling,
+                sibling=EnumPinSibling(sibling),
                 pin_type=_pin_type(line),
-                verdict=verdict,
+                verdict=finding_verdict,
                 matched_text=stripped,
             )
         )

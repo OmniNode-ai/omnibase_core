@@ -209,19 +209,19 @@ def annotate_ancestry(content: str, omni_home: Path | None) -> str:
     This is the EFFECT: for each sibling git pin, resolve the sibling's dev HEAD
     from its canonical clone under ``omni_home`` and decide ancestor/orphan via
     git, appending ``# pin-ancestry: <verdict>``. ``unknown`` is appended (fail
-    closed) when the clone is missing or the commit cannot be resolved. Lines that
-    already carry an annotation, non-sibling lines, and version-range (no-git)
-    sibling lines are returned unchanged.
+    closed) when the clone is missing or the commit cannot be resolved. Existing
+    ancestry annotations are stripped and recomputed so a crafted comment cannot
+    bypass the gate. Non-sibling lines and version-range (no-git) sibling lines are
+    returned unchanged.
     """
     out: list[str] = []
     for line in content.splitlines():
-        if _PATTERN_ANCESTRY.search(line):
-            out.append(line)
-            continue
-        sib = _PATTERN_SIBLING.search(line)
+        normalized_line = _PATTERN_ANCESTRY.sub("", line).rstrip()
+        sib = _PATTERN_SIBLING.search(normalized_line)
         is_git_pin = any(
-            p.search(line) for p in (_PATTERN_REV, _PATTERN_PEP508, _PATTERN_UVLOCK)
-        ) or (_PATTERN_BRANCH.search(line) is not None)
+            p.search(normalized_line)
+            for p in (_PATTERN_REV, _PATTERN_PEP508, _PATTERN_UVLOCK)
+        ) or (_PATTERN_BRANCH.search(normalized_line) is not None)
         if sib is None or not is_git_pin:
             out.append(line)
             continue
@@ -231,10 +231,10 @@ def annotate_ancestry(content: str, omni_home: Path | None) -> str:
         verdict = "unknown"
         if repo is not None and (repo / ".git").exists():
             dev_head = _resolve_dev_head(repo)
-            pinned = _pinned_commit(line, repo)
+            pinned = _pinned_commit(normalized_line, repo)
             if dev_head is not None and pinned:
                 verdict = _is_ancestor(repo, pinned, dev_head)
-        out.append(f"{line}  # pin-ancestry: {verdict}")
+        out.append(f"{normalized_line}  # pin-ancestry: {verdict}")
     return "\n".join(out)
 
 
@@ -349,20 +349,31 @@ def _propagate_suppression(uvlock_text: str, suppressed: set[str]) -> str:
     return "\n".join(out)
 
 
+def _suppressed_siblings_for_uvlock(
+    uvlock_path: Path, suppressed_by_root: dict[Path, set[str]]
+) -> set[str]:
+    """Return suppressions from the nearest in-scope ancestor pyproject.toml."""
+    for root in uvlock_path.parents:
+        if root in suppressed_by_root:
+            return suppressed_by_root[root]
+    return set()
+
+
 async def _run(paths: list[Path], *, quiet: bool) -> int:
     omni_home = _omni_home()
     pin_files = list(_iter_pin_files(paths))
-    # Collect siblings suppressed in any in-scope pyproject.toml (source of truth)
-    # so their derived uv.lock entries inherit the (ticket-tracked) suppression.
-    suppressed: set[str] = set()
+    # Collect siblings suppressed per pyproject root (source of truth) so only that
+    # root's derived uv.lock entries inherit the ticket-tracked suppression.
+    suppressed_by_root: dict[Path, set[str]] = {}
     for fp in pin_files:
         if fp.name == "pyproject.toml":
-            suppressed |= _suppressed_siblings(_read_text(fp))
+            suppressed_by_root[fp.parent] = _suppressed_siblings(_read_text(fp))
 
     inputs: list[ModelPinHygieneScanInput] = []
     for fp in pin_files:
         text = _read_text(fp)
         if fp.name == "uv.lock":
+            suppressed = _suppressed_siblings_for_uvlock(fp, suppressed_by_root)
             text = _propagate_suppression(text, suppressed)
         inputs.append(
             ModelPinHygieneScanInput(

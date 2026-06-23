@@ -14,13 +14,46 @@ contract (mirrors the sibling ``validation/private_ip/models.py`` /
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = [
+    "EnumPinAncestryVerdict",
+    "EnumPinSibling",
+    "EnumPinType",
     "ModelPinHygieneFinding",
     "ModelPinHygieneScanInput",
     "ModelPinHygieneScanResult",
 ]
+
+
+class EnumPinSibling(StrEnum):
+    """Sibling dependency identifiers accepted on the scan contract."""
+
+    OMNIBASE_CORE = "omnibase-core"
+    OMNIBASE_SPI = "omnibase-spi"
+    OMNIBASE_COMPAT = "omnibase-compat"
+    OMNIBASE_CORE_REPO = "omnibase_core"
+    OMNIBASE_SPI_REPO = "omnibase_spi"
+    OMNIBASE_COMPAT_REPO = "omnibase_compat"
+
+
+class EnumPinType(StrEnum):
+    """Git pin syntax labels emitted by the scanner."""
+
+    REV = "rev"
+    PEP_508 = "pep-508"
+    UV_LOCK_REV = "uv-lock-rev"
+    BRANCH = "branch"
+    UNKNOWN = "unknown"
+
+
+class EnumPinAncestryVerdict(StrEnum):
+    """Resolved ancestry verdicts allowed on finding records."""
+
+    ORPHAN = "orphan"
+    UNKNOWN = "unknown"
 
 
 class ModelPinHygieneScanInput(BaseModel):
@@ -50,11 +83,13 @@ class ModelPinHygieneFinding(BaseModel):
 
     path: str = Field(description="Label of the source the violation was found in")
     line: int = Field(ge=1, description="1-based line number of the violation")
-    sibling: str = Field(description="Which sibling distribution the pin names")
-    pin_type: str = Field(
+    sibling: EnumPinSibling = Field(
+        description="Which sibling distribution or repo the pin names"
+    )
+    pin_type: EnumPinType = Field(
         description="Pin syntax: rev / pep-508 / uv-lock-rev / branch"
     )
-    verdict: str = Field(
+    verdict: EnumPinAncestryVerdict = Field(
         description="Resolved ancestry verdict that failed the gate: orphan / unknown"
     )
     matched_text: str = Field(description="The stripped source line that matched")

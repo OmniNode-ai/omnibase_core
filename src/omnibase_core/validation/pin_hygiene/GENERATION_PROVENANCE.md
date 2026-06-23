@@ -27,17 +27,17 @@ produced the seed for its own pin-hygiene gate.
 | clean_fixtures | `5` — all passed (0 findings) |
 | correlation_id | `omn-13294-g2-pin-hygiene-8a87f3c07361` |
 
-Full provenance JSON (handler source + contract yaml + the above) lives with the
-omnimarket generation evidence for this ticket:
-`omnimarket/docs/evidence/OMN-13509/pin-hygiene.generation.json`.
+Full provenance JSON (handler source + contract yaml + the above) is committed in
+this repository at `docs/evidence/OMN-13509/pin-hygiene.generation.json`.
 
 ### Independent reproduction (replayability proof)
 
 The generation was independently RE-RUN through the same production path
 (`scripts/generation/drive_validator_generation.py --validator pin-hygiene`,
 the REAL `HandlerGenerationConsumer` against the live `.201:8000` local-coder
-model — NOT a fixture / echo harness). The second run is recorded at
-`omnimarket/docs/evidence/OMN-13509/pin-hygiene.reproduction.generation.json`.
+model — NOT a fixture / echo harness). The second run is recorded in the paired
+omnimarket producer PR at
+`omnimarket:docs/evidence/OMN-13509/pin-hygiene.reproduction.generation.json`.
 
 | Field | Original run | Reproduction run |
 |-------|--------------|------------------|
