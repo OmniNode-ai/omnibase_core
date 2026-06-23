@@ -58,7 +58,6 @@ class EmptyDirectoryValidator:
         ".coverage",
         ".hypothesis",
         "src",  # Top-level src directory (contains package folders only)
-        "drift",  # Evidence/artifact tree; nested receipts may leave parent dirs fileless.
         "tmp",  # Workspace for custom commands (intentionally empty)
     }
 
