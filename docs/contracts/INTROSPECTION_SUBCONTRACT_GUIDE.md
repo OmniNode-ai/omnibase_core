@@ -369,7 +369,7 @@ introspection:
   require_authentication: true
   allowed_introspection_sources:
     - "192.0.2.0/24"
-    - "10.0.0.0/8"
+    - "10.0.0.0/8"  # doc-content-ok OMN-13572 illustrative RFC1918 CIDR range in a config example, not a host trace
   exclude_field_patterns:
     - password
     - secret

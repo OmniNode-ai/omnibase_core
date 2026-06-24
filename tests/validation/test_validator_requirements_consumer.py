@@ -341,6 +341,7 @@ def test_report_exit_code_zero_on_clean_repo(tmp_path: Path, spec_data: dict) ->
         "detect-secrets",
         "no-untracked-todos",
         "validate-no-transport-imports",
+        "check-doc-content-scan",  # OMN-13572: doc-content scan (applies_to_repos: [omnibase_core])
     ]
     _write_precommit(tmp_path, pre_commit_ids)
 

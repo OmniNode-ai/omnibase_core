@@ -320,6 +320,23 @@
   always_run: true
   stages: [pre-commit]
 
+- id: check-doc-content-scan
+  name: Doc-Content Scan Gate (OMN-13572)
+  description: >
+    Blocks local-environment traces (RFC1918 LAN IPs, .201/.200 host shorthand, personal /Users//home/
+    paths, ssh user@host, personal e-mail) and Linear OMN-<digits> ticket references in DOCUMENTATION
+    files (*.md / *.mdx / .rst / .txt / .adoc). The docs-facing union of CLAUDE.md Rule 6 and the knowledge-base
+    sanitizer. Generated + corpus-accepted COMPUTE validator (OMN-13569) executed over the in-memory event
+    bus (Kafka backend in CI). Exemptions (OMN-13572): onex_change_control/ paths are exempt from the
+    OMN-<digits> rule only (local-env rules still apply); contracts/ excluded from the OMN rule; a SKILL.md
+    `ticket: OMN-NNNN` frontmatter field is exempt. Suppress a line with `doc-content-ok`; suppress a
+    doc whose subject IS these traces with `doc-content-file-ok`.
+  language: python
+  entry: python -m omnibase_core.validation.doc_content_scan.runtime_doc_content_scan
+  types_or: [markdown, rst, text]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: backend-secret-discipline
   name: Backend Secret Discipline (OMN-13290)
   description: >
