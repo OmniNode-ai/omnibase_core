@@ -5,7 +5,7 @@
 **Status**: Active
 **Version**: 1.0.0
 **Last Updated**: 2026-01-03
-**Related Tickets**: OMN-1112, OMN-1113, OMN-1114, OMN-1162
+**Status**: Active
 
 ---
 
@@ -895,12 +895,12 @@ uv run pytest tests/unit/mixins/ tests/unit/pipeline/handlers/ -v
 - [ONEX_FOUR_NODE_ARCHITECTURE.md](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Node type overview
 - [THREADING.md](THREADING.md) - Thread safety considerations
 
-### Related Tickets
+### Related Work
 
-- **OMN-1112**: First Pure Handler Conversions
-- **OMN-1113**: Manifest Generation & Observability
-- **OMN-1114**: Pipeline Runner & Hook Registry
-- **OMN-1162**: Mixins to Handlers Refactor Documentation
+- First Pure Handler Conversions — introduced `HandlerCapabilityMetrics` and `HandlerCapabilityCaching`
+- Manifest Generation & Observability — execution manifest recording
+- Pipeline Runner & Hook Registry — `RunnerPipeline` and `RegistryHook` infrastructure
+- Mixins to Handlers Refactor Documentation — architectural rationale in `MIXINS_TO_HANDLERS_REFACTOR.md`
 
 ---
 

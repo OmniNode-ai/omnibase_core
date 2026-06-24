@@ -6,7 +6,7 @@
 > **Last Updated**: 2026-02-14
 > **Status**: Canonical Reference
 > **Purpose**: Organization-wide CI/CD standards for all OmniNode repositories
-> **Ticket**: OMN-2224
+> **Status**: Canonical Reference
 
 ---
 
@@ -248,7 +248,7 @@ checks:
     tier: A-Runtime
     workflow: test.yml
     gate: "Quality Gate"
-    rationale: "Enum architectural standards (OMN-1313)"
+    rationale: "Enum architectural standards"
 
   # Tier A-Runtime (Tests)
   - name: "Tests (Split N/20)"
@@ -539,7 +539,7 @@ checks:
     tier: A-Runtime
     workflow: test.yml
     gate: "Quality Gate"
-    rationale: "Enum architectural standards (OMN-1313)"
+    rationale: "Enum architectural standards"
 
   - name: "Tests (Split N/20)"
     tier: A-Runtime
@@ -697,4 +697,4 @@ jobs:
 **Document Version**: 1.0.0
 **Created**: 2026-02-14
 **Author**: ONEX Framework Team
-**Linear Ticket**: OMN-2224 (Phase 1)
+**Phase**: Phase 1

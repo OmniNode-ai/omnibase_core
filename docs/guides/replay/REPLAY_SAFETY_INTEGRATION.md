@@ -693,5 +693,5 @@ def record_decision_safely(
 
 ## Version History
 
-- **v0.6.3**: Initial release of replay safety enforcement (OMN-1150)
-- **v0.4.0**: Replay infrastructure foundation (OMN-1116)
+- **v0.6.3**: Initial release of replay safety enforcement
+- **v0.4.0**: Replay infrastructure foundation
