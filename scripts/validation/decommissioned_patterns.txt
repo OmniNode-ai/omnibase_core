@@ -17,6 +17,7 @@
 # --- Decommissioned M2 Ultra Kafka bus endpoint (OMN-4793, 2026-03) ---
 # M2 Ultra Redpanda decommissioned 2026-03-03. All references must use
 # localhost:19092 (local Docker) or localhost:29092 (cloud bus tunnel).
+# onex-allow-internal-ip: decommissioned pattern record — listed here so validators can detect stale references
 192.168.86.200:29092
 
 # --- Decommissioned Ollama LLM provider (OMN-4798, 2026-03) ---

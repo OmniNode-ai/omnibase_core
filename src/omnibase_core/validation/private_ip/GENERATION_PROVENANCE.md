@@ -1,3 +1,4 @@
+<!-- onex-allow-internal-ip OMN-13294: this provenance file's subject IS the private-IP validator; IP literals are intentional evidence (corpus invariants, planted violation proof, generation endpoint) -->
 # Private-IP COMPUTE Validator — Generation Provenance (OMN-13294, G2)
 
 This package's scanning logic (`handler.scan_source`) is a **generated artifact** —
@@ -90,6 +91,7 @@ SHADOW-BAKE PASS: zero hardcoded private-IP findings on the clean core tree.
 The gate (the runtime, not a self-report) was run against a planted violation and
 a reverted clean file:
 
+<!-- onex-allow-internal-ip OMN-13294: fail-closed proof — planted violation examples are intentional evidence of what the validator flags -->
 ```
 # planted file content:
 BROKER_HOST = "192.168.86.201"

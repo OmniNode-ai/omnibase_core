@@ -90,7 +90,7 @@ Rejected because co-equal ownership leaves the same lifecycle open to inconsiste
 
 ## References
 
-- Workspace ADR source: `/Users/jonah/Code/omni_home/docs/decisions/adr-2026-04-28-dispatch-lifecycle-canonical.md`
+- Workspace ADR source: `$OMNI_HOME/docs/decisions/adr-2026-04-28-dispatch-lifecycle-canonical.md`
 - Canonical model: `src/omnibase_core/models/dispatch/model_dispatch_lifecycle_event.py` (commit `2ddc0971`)
 - Lifecycle chain model: `src/omnibase_core/models/dispatch/model_lifecycle_chain.py` (commit `2ddc0971`)
 - State-machine tests: `tests/unit/models/dispatch/test_model_dispatch_lifecycle_event.py` (commit `2ddc0971`)

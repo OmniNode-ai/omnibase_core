@@ -20,7 +20,7 @@ produced the seed for its own pin-hygiene gate.
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | endpoint_class | `local-coder` |
-| resolved_endpoint | the live local-coder backend on the `.201` server |
+| resolved_endpoint | the live local-coder backend on the runtime host (`<onex-host>`) |
 | routing_source | `contract` (routing authority resolved provider/model/endpoint; the generator never selects its own model) |
 | usage_source | `measured` |
 | violation_fixtures | `7` (3 base + 4 adversarial mutation) — all flagged |
@@ -34,7 +34,7 @@ this repository at `docs/evidence/OMN-13509/pin-hygiene.generation.json`.
 
 The generation was independently RE-RUN through the same production path
 (`scripts/generation/drive_validator_generation.py --validator pin-hygiene`,
-the REAL `HandlerGenerationConsumer` against the live `.201:8000` local-coder
+the REAL `HandlerGenerationConsumer` against the live `<onex-host>:8000` local-coder
 model — NOT a fixture / echo harness). The second run is recorded in the paired
 omnimarket producer PR at
 `omnimarket:docs/evidence/OMN-13509/pin-hygiene.reproduction.generation.json`.
@@ -44,7 +44,7 @@ omnimarket producer PR at
 | accepted | `true` | `true` |
 | corpus_checked / corpus_passed | `true` / `true` | `true` / `true` |
 | provider / model_id | `local` / `Qwen3.6-35B-A3B` | `local` / `Qwen3.6-35B-A3B` |
-| resolved_endpoint | `.201:8000/v1/chat/completions` | `.201:8000/v1/chat/completions` |
+| resolved_endpoint | `<onex-host>:8000/v1/chat/completions` | `<onex-host>:8000/v1/chat/completions` |
 | usage_source | `measured` | `measured` |
 | attempt_count | `1` | `3` |
 | handler_source | (generated A) | (generated B — differs) |
