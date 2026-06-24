@@ -1291,6 +1291,19 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # OMN-13574 (Model B): prove the single required rollup (CI Summary) is
+      # AIRTIGHT — every opted-in spec-required validator is transitively
+      # required by the rollup job's needs graph and not swallowed by
+      # continue-on-error. Non-opted repos exit 0 (pilot scope, fleet OMN-13576).
+      - id: validate-rollup-coverage
+        name: Verify Model-B rollup coverage (OMN-13574)
+        entry: uv run python -m omnibase_core.validation.validator_rollup_coverage --repo omnibase_core
+          --repo-root .
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # OMN-9886: ValidatorRuntimeProfiles — every command-consuming
       # contract must declare runtime_profiles (top-level or under
       # descriptor) or be on the explicit allowlist with a reason.

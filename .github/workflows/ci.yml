@@ -1009,6 +1009,148 @@ jobs:
           echo "PRs touching dispatch / routing / handler-registration / message-envelope source surfaces" >> $GITHUB_STEP_SUMMARY
           echo "must include a real-dispatch-path test. Handler-isolation tests pass while live dispatch fails." >> $GITHUB_STEP_SUMMARY
 
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Naming Conventions (OMN-13574: Model B failing-rollup enforcement)
+  # validator-requirements.yaml requires `naming-conventions` (class + file
+  # naming). Previously this only ran in omni-standards-compliance.yml, which
+  # has NO aggregator and is NOT in branch protection — a real naming violation
+  # could slip past the required CI Summary rollup. Now it feeds quality-gate
+  # so a failure turns the single required rollup red. Mirrors the
+  # omni-standards-compliance `validate_class_naming.py` invocation.
+  naming-conventions:
+    name: Naming Conventions
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Validate class naming conventions
+        run: uv run python scripts/validate_class_naming.py
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Pydantic Patterns (OMN-13574: Model B failing-rollup enforcement)
+  # validator-requirements.yaml requires `pydantic-patterns`. The handshake
+  # consumer's CI keyword "pydantic" previously matched ONLY incidental
+  # `pip install pydantic` lines in receipt-gate / occ-preflight — there was NO
+  # real pydantic-patterns validator job in CI. This job runs the actual
+  # validator and feeds quality-gate so it gates the required rollup.
+  pydantic-patterns:
+    name: Pydantic Patterns
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Validate Pydantic patterns
+        run: |
+          # Match the pre-commit file scope: src/ excluding tests/, archived/,
+          # archive/, and scripts/validation/ (where the validator lives).
+          files=$(git ls-files 'src/**/*.py' \
+            | grep -vE '^(tests/|archived/|archive/|scripts/validation/)')
+          if [ -z "$files" ]; then
+            echo "No src/ Python files to validate."
+            exit 0
+          fi
+          # shellcheck disable=SC2086
+          uv run python scripts/validation/validate-pydantic-patterns.py $files
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # AI-Slop Patterns (OMN-13574: Model B failing-rollup enforcement)
+  # validator-requirements.yaml requires `aislop-patterns`. Previously this only
+  # ran in omni-standards-compliance.yml (`ai-slop-check`), which is NOT in
+  # branch protection. This copy runs the same strict scan over the full tracked
+  # tree and feeds quality-gate so a real AI-slop violation turns the required
+  # rollup red. Full-tree scan (not changed-files) avoids the merge_group /
+  # no-diff exit-0 hole on the required path.
+  aislop-patterns:
+    name: AI Slop Patterns
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Check tracked tree for AI-slop patterns (strict)
+        run: |
+          # Mirror the pre-commit / omni-standards exclude set: CHANGELOG.md,
+          # docs/, and intentional syntax-error fixtures.
+          files=$(git ls-files '*.py' '*.md' \
+            | grep -vE '^(CHANGELOG\.md|docs/|tests/fixtures/validation/)')
+          if [ -z "$files" ]; then
+            echo "No Python/Markdown files to scan."
+            exit 0
+          fi
+          # shellcheck disable=SC2086
+          uv run python scripts/validation/check_ai_slop.py --strict $files
+
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
@@ -1024,7 +1166,14 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, version-pin-check, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required]
+    # OMN-13574 (Model B): version-pin-check is intentionally NOT a need here.
+    # It carries continue-on-error: true (advisory until OMN-5132 range-pin +
+    # matrix alignment land), so its result is always "success" and it could
+    # never turn this gate red — listing it in needs implied a gate it does not
+    # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
+    # spec-required validators (validator-requirements.yaml) and are now needs so
+    # a real violation turns the single required CI Summary rollup red.
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns]
     if: always()
 
     steps:
@@ -1049,6 +1198,9 @@ jobs:
           no_env_fallbacks="${{ needs.no-env-fallbacks.result }}"
           demo_path_gate="${{ needs.demo-path-topic-coherence.result }}"
           dispatch_surface="${{ needs.dispatch-surface-test-required.result }}"
+          naming="${{ needs.naming-conventions.result }}"
+          pydantic="${{ needs.pydantic-patterns.result }}"
+          aislop="${{ needs.aislop-patterns.result }}"
 
           # Report each check
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
@@ -1069,6 +1221,9 @@ jobs:
           echo "| No Env Fallbacks (OMN-7227) | $no_env_fallbacks |" >> $GITHUB_STEP_SUMMARY
           echo "| Demo-Path Topic Coherence (OMN-12777) | $demo_path_gate |" >> $GITHUB_STEP_SUMMARY
           echo "| Dispatch-Surface Test Required (OMN-12960) | $dispatch_surface |" >> $GITHUB_STEP_SUMMARY
+          echo "| Naming Conventions (OMN-13574) | $naming |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pydantic Patterns (OMN-13574) | $pydantic |" >> $GITHUB_STEP_SUMMARY
+          echo "| AI Slop Patterns (OMN-13574) | $aislop |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
           if [[ "$lint" == "success" ]] && \
@@ -1086,7 +1241,10 @@ jobs:
              [[ "$breaking_schema" == "success" ]] && \
              [[ "$no_env_fallbacks" == "success" ]] && \
              [[ "$demo_path_gate" == "success" ]] && \
-             [[ "$dispatch_surface" == "success" ]]; then
+             [[ "$dispatch_surface" == "success" ]] && \
+             [[ "$naming" == "success" ]] && \
+             [[ "$pydantic" == "success" ]] && \
+             [[ "$aislop" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
             echo "All quality checks passed."
