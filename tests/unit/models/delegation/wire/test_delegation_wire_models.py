@@ -139,6 +139,7 @@ class TestModelDelegationRequest:
             "document",
             "research",
             "code_generation",
+            "code_review",
             "refactor",
             "reasoning",
             "complex_reasoning",
@@ -150,7 +151,14 @@ class TestModelDelegationRequest:
         ],
     )
     def test_all_compat_task_types_accepted(self, task_type: str) -> None:
-        """All 12 compat task_type values must be accepted (OMN-12663 parity fix)."""
+        """All compat task_type values must be accepted (OMN-12663 parity fix).
+
+        OMN-13541: ``code_review`` added — the consumer-facing delegation surface
+        (node_delegate_skill_orchestrator.allowed_task_types + the claude/codex
+        adapter) already accepts it, so the wire DTO must carry it or the bus
+        consumer rejects the command and emits no terminal event (Pattern-B
+        timeout, zero inference).
+        """
         r = self._make(task_type=task_type)
         assert r.task_type == task_type
 

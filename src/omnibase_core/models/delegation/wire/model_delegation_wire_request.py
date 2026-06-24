@@ -75,6 +75,7 @@ class ModelDelegationRequest(BaseModel):
         "document",
         "research",
         "code_generation",
+        "code_review",
         "refactor",
         "reasoning",
         "complex_reasoning",
