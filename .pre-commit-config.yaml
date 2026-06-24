@@ -1060,6 +1060,35 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # OMN-13572: doc-content scan — block local-environment traces (LAN IPs,
+      # .201/.200 host shorthand, personal /Users//home/ paths, ssh user@host,
+      # personal e-mail) and Linear OMN-<digits> ticket references in
+      # DOCUMENTATION files, executed as a COMPUTE node over the in-memory event
+      # bus (same two-transport seam as check-private-ip-compute; Kafka backend
+      # in CI). Generated + corpus-accepted (OMN-13569). Exemptions (OMN-13572):
+      # onex_change_control/ paths exempt from the OMN-<digits> rule only
+      # (local-env rules still apply); contracts/ excluded from the OMN rule; a
+      # SKILL.md `ticket: OMN-NNNN` frontmatter field is exempt. BLOCKING (no
+      # warn-only). Suppress a line with `doc-content-ok`; suppress a doc whose
+      # subject IS these traces with `doc-content-file-ok`. The runner's EFFECT
+      # boundary selects docs-only extensions, so non-doc files passed by
+      # pre-commit are filtered out before scanning.
+      - id: check-doc-content-scan
+        name: Doc-Content Scan Gate (OMN-13572)
+        entry: uv run python -m omnibase_core.validation.doc_content_scan.runtime_doc_content_scan
+        language: system
+        types_or: [markdown, rst, text]
+        # tests/ carry intentional doc-content fixtures (the violations the
+        # scanner-under-test must flag); archived/ is frozen history.
+        exclude: >-
+          (?x)^(
+            archived/|
+            archive/|
+            tests/
+          )
+        pass_filenames: true
+        stages: [pre-commit]
+
       # Receipt-Honesty Gate (OMN-12791 validator / OMN-12825 self-consume)
       # Scans staged DoD receipt YAMLs under drift/dod_receipts/ for gaming
       # patterns (echo probes marked PASS, deferred evidence in PASS receipts,

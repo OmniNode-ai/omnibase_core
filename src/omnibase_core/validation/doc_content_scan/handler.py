@@ -39,6 +39,11 @@ drop-in):
   but the local-environment rules (LAN IP / host shorthand / personal path / ssh /
   e-mail) still apply everywhere. This is a pure decision over the ``path`` LABEL
   string — the handler never opens the path.
+* A SKILL.md YAML-frontmatter ``ticket: OMN-NNNN`` field is exempt (OMN-13572):
+  it is a machine-readable binding of a skill to its tracking ticket, not a
+  leaked ticket reference in prose. The exemption is anchored to the line start
+  (a dedicated ``ticket:`` field), so an OMN id elsewhere on the value line, or
+  in body prose, still flags. Pure decision over the line TEXT — no file read.
 * ``localhost`` / ``127.0.0.1`` are LEFT by decision (portable, non-identifying);
   the RFC5737 documentation ranges (``192.0.2.x`` / ``198.51.100.x`` /
   ``203.0.113.x``) and ``example.com`` are the canonical illustrative placeholders
@@ -108,6 +113,17 @@ _PERSONAL_EMAIL: Final[re.Pattern[str]] = re.compile(
 # OMNINODE are not matched). Matches anywhere on the line — prose, parenthetical,
 # heading, list item, link target, or embedded filename.
 _TICKET_REFERENCE: Final[re.Pattern[str]] = re.compile(r"(?<![A-Za-z0-9_])OMN-\d+\b")
+
+# A skill-frontmatter ``ticket:`` field carrying an OMN id. A SKILL.md YAML
+# frontmatter line of the shape ``ticket: OMN-1234`` (optionally quoted) is a
+# legitimate machine-readable binding of a skill to its tracking ticket — not a
+# leaked ticket reference in prose — and is exempt by operator decision. The
+# anchor is the line start (after optional leading whitespace for nested YAML)
+# so only the dedicated field is exempt; an OMN id elsewhere on a ``ticket:``
+# value line, or in prose, still flags. Decided over the line TEXT only — pure.
+_SKILL_FRONTMATTER_TICKET: Final[re.Pattern[str]] = re.compile(
+    r"^\s*ticket:\s*['\"]?OMN-\d+\b"
+)
 
 # Line-level escape hatch: a line carrying this exact marker is suppressed.
 _SUPPRESSION_MARKER: Final[str] = "doc-content-ok"
@@ -219,8 +235,10 @@ def scan_source(content: str, path: str = "<input>") -> ModelDocContentScanResul
                     )
                 )
 
-        # Ticket reference — exempt under governance/contract trees.
-        if not ticket_exempt:
+        # Ticket reference — exempt under governance/contract trees, and exempt
+        # for a SKILL.md-style ``ticket: OMN-NNNN`` frontmatter field (a
+        # machine-readable skill→ticket binding, not a leaked prose reference).
+        if not ticket_exempt and not _SKILL_FRONTMATTER_TICKET.match(line):
             ticket = _TICKET_REFERENCE.search(line)
             if ticket is not None:
                 findings.append(

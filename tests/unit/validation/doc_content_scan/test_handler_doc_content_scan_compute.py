@@ -198,6 +198,38 @@ def test_ticket_reference_flagged_outside_exempt_trees() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Skill-frontmatter ticket: field exemption (OMN-13572)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "line",
+    [
+        "ticket: OMN-1234",
+        "ticket:   OMN-1234",
+        "ticket: 'OMN-1234'",
+        'ticket: "OMN-1234"',
+        "  ticket: OMN-1234",  # nested/indented frontmatter
+    ],
+)
+def test_skill_frontmatter_ticket_field_is_exempt(line: str) -> None:
+    # A SKILL.md ``ticket: OMN-NNNN`` frontmatter binding must NOT be flagged,
+    # even outside the governance/contract trees (default <input> path).
+    assert scan_source(line, path="plugins/onex/skills/foo/SKILL.md").flagged is False
+
+
+@pytest.mark.unit
+def test_skill_frontmatter_exemption_is_anchored_not_substring() -> None:
+    # The exemption is anchored to a dedicated ``ticket:`` FIELD at line start
+    # (operator rule: a line matching ^ticket:\s*OMN- must not flag). A line that
+    # does NOT start with the ticket: field still flags its OMN ids.
+    assert scan_source("# this references ticket: OMN-1234 inline").flagged is True
+    assert scan_source("blocked_by_ticket: OMN-1234").flagged is True
+    assert scan_source("description: see OMN-1234").flagged is True
+
+
+# ---------------------------------------------------------------------------
 # Suppression escape hatches
 # ---------------------------------------------------------------------------
 
