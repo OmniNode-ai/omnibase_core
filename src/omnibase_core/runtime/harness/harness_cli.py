@@ -115,6 +115,19 @@ def _build_adapter(args: argparse.Namespace) -> ProtocolHarnessInferenceAdapter:
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return CurlSubprocessInferenceAdapter(endpoint=args.endpoint, model=args.model)
+    # fixture replays a completion recorded from a real model call. There is no
+    # prompt-echo default: a run with no real or recorded inference must FAIL,
+    # never report success on nothing (OMN-13496).
+    if not args.fixture_completion or not args.fixture_completion.strip():
+        raise ModelOnexError(
+            message=(
+                "--fixture-completion is required when --inference=fixture; it must "
+                "be a completion recorded from a real model call (golden-chain "
+                "replay). Use --inference=curl for a live model. A fixture run with "
+                "no recorded completion is a false-green stub (OMN-13496)."
+            ),
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
     return RecordedFixtureInferenceAdapter(completion=args.fixture_completion)
 
 
@@ -169,9 +182,21 @@ def _parser() -> argparse.ArgumentParser:
             "--inference",
             choices=("fixture", "curl"),
             default="fixture",
-            help="Inference adapter (fixture=offline, curl=separate-binary LAN).",
+            help=(
+                "Inference adapter. fixture=replay a real-recorded completion "
+                "(requires --fixture-completion), curl=live model via separate-binary "
+                "LAN. There is no prompt-echo path."
+            ),
         )
-        sp.add_argument("--fixture-completion", default=None, dest="fixture_completion")
+        sp.add_argument(
+            "--fixture-completion",
+            default=None,
+            dest="fixture_completion",
+            help=(
+                "Completion recorded from a real model call to replay (required for "
+                "--inference=fixture). No prompt-echo / synthesized default."
+            ),
+        )
         sp.add_argument("--endpoint", default=None, help="curl inference endpoint.")
         sp.add_argument("--model", default="recorded-fixture")
         sp.add_argument(
