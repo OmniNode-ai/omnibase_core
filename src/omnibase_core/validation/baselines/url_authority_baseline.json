@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "count": 215,
+  "count": 212,
   "violations": [
     {
       "repo": "omnibase_core",
@@ -793,24 +793,6 @@
       "path": "src/omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py",
       "rule": "env-url-read",
       "fingerprint": "c6bea17f518c4fa901e609e1832a2418d30da2ec74f5a82b5e0c492ae7a4b1f3"
-    },
-    {
-      "repo": "omniintelligence",
-      "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/models/model_navigation_retrieve_input.py",
-      "rule": "env-url-read",
-      "fingerprint": "e75824d1cee782c892e4e2d5eda5435781a3d882f9af612f154ba920eeceba8a"
-    },
-    {
-      "repo": "omniintelligence",
-      "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/node.py",
-      "rule": "env-url-read",
-      "fingerprint": "5aab715e0481642f8385ca89383c29f5a4ddb81edca4c811935ab1be1c4757e7"
-    },
-    {
-      "repo": "omniintelligence",
-      "path": "src/omniintelligence/nodes/node_navigation_retriever_effect/node.py",
-      "rule": "env-url-read",
-      "fingerprint": "b77dd88a1d2a07e33d02357fc6bddef62b52a2f0942f782928d2c0d7c09abb5b"
     },
     {
       "repo": "omniintelligence",
