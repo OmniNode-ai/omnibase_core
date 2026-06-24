@@ -65,11 +65,7 @@ operation_bindings:
           bytes_written: "${result.bytes_written}"
 ```
 
-**Related Tickets**:
-- [OMN-1410](https://linear.app/omninode/issue/OMN-1410): Schema implementation (completed)
-- [OMN-1517](https://linear.app/omninode/issue/OMN-1517): Documentation (this document)
-- [OMN-1518](https://linear.app/omninode/issue/OMN-1518): Routing integration
-- [OMN-1519](https://linear.app/omninode/issue/OMN-1519): Runtime loader
+**Implementation notes**: Schema implementation is complete. Routing integration and runtime loader are follow-on work items.
 
 ---
 

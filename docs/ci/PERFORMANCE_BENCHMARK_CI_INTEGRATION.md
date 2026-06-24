@@ -516,7 +516,7 @@ Data:
 - GitHub Actions (2-core): 12.8ms P95 (threshold update needed)
 - Correlation ID: 95cac850-05a3-43e2-9e57-ccbbef683f43
 
-Related: OMN-594
+Related: performance threshold adjustment tracking
 """
 ```
 

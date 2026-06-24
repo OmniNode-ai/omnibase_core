@@ -5,7 +5,7 @@
 
 **Status**: ✅ Complete
 
-> **Provenance**: Import paths and node archetypes in this document were verified against `src/omnibase_core/` on this refresh (OMN-13460). The four node base classes (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) are exported from `omnibase_core.nodes`; service wrappers such as `ModelServiceCompute` live in `omnibase_core.infrastructure.infra_bases`.
+> **Provenance**: Import paths and node archetypes in this document were verified against `src/omnibase_core/` on a recent refresh. The four node base classes (`NodeCompute`, `NodeEffect`, `NodeReducer`, `NodeOrchestrator`) are exported from `omnibase_core.nodes`; service wrappers such as `ModelServiceCompute` live in `omnibase_core.infrastructure.infra_bases`.
 
 ## Overview
 
@@ -402,4 +402,4 @@ async def test_handle(handler):
 
 ## Epic 3 Handler Classification Results
 
-- [File I/O Services Classification (OMN-4010)](HANDLER_CLASSIFICATION_FILE_IO_SERVICES_3_4.md) — ServiceDiffFileStore, ServiceFileSink, OncpBuilder, OncpReader assessed; all KEEP AS SERVICE
+- [File I/O Services Classification](HANDLER_CLASSIFICATION_FILE_IO_SERVICES_3_4.md) — ServiceDiffFileStore, ServiceFileSink, OncpBuilder, OncpReader assessed; all KEEP AS SERVICE

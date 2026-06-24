@@ -4,7 +4,6 @@
 # Node Purity Guarantees
 
 > **Version**: 1.0.0
-> **Ticket**: OMN-156
 > **Status**: Enforced via AST checks in CI
 
 ## Overview

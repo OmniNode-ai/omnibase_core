@@ -8,7 +8,7 @@
 
 > **New in v0.4.1**: ModelHandlerContract provides the complete authoring surface for ONEX handlers with capability-based dependencies and embedded behavior descriptors.
 
-> **Migration Note (OMN-1436)**: As of v0.4.2, contracts use `contract_version: ModelSemVer` (structured object) instead of the deprecated `version: str` field. The string-based `version` field has been removed. All contracts must now use the structured version format with explicit `major`, `minor`, and `patch` fields.
+> **Migration Note**: As of v0.4.2, contracts use `contract_version: ModelSemVer` (structured object) instead of the deprecated `version: str` field. The string-based `version` field has been removed. All contracts must now use the structured version format with explicit `major`, `minor`, and `patch` fields.
 
 ## Table of Contents
 
@@ -577,7 +577,7 @@ handler_id="node.handler_123"
 - [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [Contract Profile Guide](../guides/CONTRACT_PROFILE_GUIDE.md)
 - [Node Building Guide](../guides/node-building/README.md)
-- [OMN-1117: Handler Contract Model & YAML Schema](https://linear.app/omninode/issue/OMN-1117)
+- [Handler Contract Model & YAML Schema](../architecture/CONTRACT_SYSTEM.md)
 
 ---
 

@@ -2,7 +2,6 @@
 
 # Deprecation Warning Configuration
 
-> **Linear Ticket**: OMN-199 - Configure pytest deprecation warning capture
 > **Phase**: 7 - Deprecation & CI Enforcement
 > **Last Updated**: 2026-02-14
 
@@ -24,7 +23,7 @@ In `pyproject.toml`, deprecation warnings are configured to display during test 
 
 ```toml
 filterwarnings = [
-    # === Deprecation Warning Capture (OMN-199, Phase 7) ===
+    # === Deprecation Warning Capture (Phase 7) ===
     # Display deprecation warnings during test runs so developers can address them
     # before v0.5.0 when these will become errors
     "default::DeprecationWarning",
@@ -234,4 +233,3 @@ Under the `[tool.pytest.ini_options]` section, in the `filterwarnings` array.
 
 **Last Updated**: 2026-02-14
 **Document Version**: 1.1.0
-**Linear Ticket**: OMN-199
