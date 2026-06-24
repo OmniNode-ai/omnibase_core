@@ -1,4 +1,4 @@
-# Local-Paths COMPUTE Validator — Generation Provenance (OMN-13293, G1)
+# Local-Paths COMPUTE Validator — Generation Provenance
 
 This package's scanning logic (`handler.scan_source`) is a **generated artifact**.
 It was produced by the canonical generator `node_generation_consumer` (omnimarket),
@@ -15,7 +15,7 @@ corpus. This file is the durable evidence of that generation + acceptance.
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip OMN-13294 generation-evidence endpoint -->
+| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip generation-evidence endpoint -->
 | attempt_count | `1` (first-attempt success) |
 | usage_source | `measured` (real provider-reported token usage) |
 | contract_passed | `true` |
@@ -123,4 +123,5 @@ does not produce. Fix: `node_generation_consumer._validate_generation` /
 `_check_handler_security` are now corpus-aware — for a validator-generation run
 (carrying a `validator_corpus`) the path-literal pre-filter is suppressed;
 correctness is enforced by the corpus gate in the hardened sandbox. The topic
-check stays unconditional. See omnimarket PR for OMN-13293.
+check stays unconditional. See the omnimarket producer PR for the associated
+fix.

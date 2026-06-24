@@ -1,5 +1,5 @@
-<!-- onex-allow-internal-ip OMN-13294: this provenance file's subject IS the private-IP validator; IP literals are intentional evidence (corpus invariants, planted violation proof, generation endpoint) -->
-# Private-IP COMPUTE Validator — Generation Provenance (OMN-13294, G2)
+<!-- onex-allow-internal-ip: this provenance file's subject IS the private-IP validator; IP literals are intentional evidence (corpus invariants, planted violation proof, generation endpoint) -->
+# Private-IP COMPUTE Validator — Generation Provenance
 
 This package's scanning logic (`handler.scan_source`) is a **generated artifact** —
 the first G2 mass-produced mechanical scanner of the validator-standardization
@@ -17,7 +17,7 @@ sandbox. This file is the durable evidence of that generation + acceptance.
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip OMN-13294 generation-evidence endpoint -->
+| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip generation-evidence endpoint -->
 | attempt_count | `3` (corpus-accepted on attempt 3 via the repair loop) |
 | usage_source | `measured` (real provider-reported token usage) |
 | contract_passed | `true` |
@@ -30,12 +30,12 @@ bifrost delegation overlay keyed by `endpoint_ref: local-coder`), not by the
 generator — generation never selects its own model. The driver is committed at
 `omnimarket/scripts/generation/drive_validator_generation.py`; the full
 generation+acceptance JSON is committed at
-`omnimarket/docs/evidence/OMN-13294/hardcoded-private-ip.generation.json`.
+`omnimarket/docs/evidence/hardcoded-private-ip.generation.json`.
 
 ## Acceptance authority — the corpus, not the LLM
 
-The generated scanner was accepted by `evaluate_corpus_acceptance` (OMN-13289, G0)
-against a fixture corpus of **7 violation fixtures (4 adversarial mutation cases)
+The generated scanner was accepted by `evaluate_corpus_acceptance` against a
+fixture corpus of **7 violation fixtures (4 adversarial mutation cases)
 + 5 clean fixtures (4 adversarial mutation cases)**, committed at
 `omnimarket/.../node_generation_consumer/validator_corpora/corpus_hardcoded_ip.py`.
 The corpus is seeded from the hand-authored ground-truth invariant
@@ -91,7 +91,7 @@ SHADOW-BAKE PASS: zero hardcoded private-IP findings on the clean core tree.
 The gate (the runtime, not a self-report) was run against a planted violation and
 a reverted clean file:
 
-<!-- onex-allow-internal-ip OMN-13294: fail-closed proof — planted violation examples are intentional evidence of what the validator flags -->
+<!-- onex-allow-internal-ip: fail-closed proof — planted violation examples are intentional evidence of what the validator flags -->
 ```
 # planted file content:
 BROKER_HOST = "192.168.86.201"

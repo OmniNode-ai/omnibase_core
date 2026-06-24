@@ -1,11 +1,11 @@
-# Generation Provenance — no-faked-boundary COMPUTE validator (OMN-13497)
+# Generation Provenance — no-faked-boundary COMPUTE validator
 
 This validator's scanning logic (`handler.scan_source`) was **generated**, not
 hand-written. It was produced by `node_generation_consumer` (omnimarket) running
 the REAL `HandlerGenerationConsumer` against the live local model, and accepted
 ONLY because it passed a deterministic acceptance corpus in the hardened sandbox.
 The corpus verdict — not the LLM's self-report — is the acceptance authority
-(memory `feedback_adversarial_receipts`, OMN-13289).
+(memory `feedback_adversarial_receipts`).
 
 ## Run summary
 
@@ -18,7 +18,7 @@ The corpus verdict — not the LLM's self-report — is the acceptance authority
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | endpoint_class | `local-coder` |
-| resolved_endpoint | the live local-coder backend on the `.201` server <!-- onex-allow-faked-boundary OMN-13497: provenance note --> |
+| resolved_endpoint | the live local-coder backend on the `.201` server <!-- onex-allow-faked-boundary provenance note --> |
 | routing_source | `contract` (routing authority resolved provider/model/endpoint; the generator never selects its own model) |
 | usage_source | `measured` |
 | violation_fixtures | `8` (4 base + 4 adversarial mutation) — all flagged |

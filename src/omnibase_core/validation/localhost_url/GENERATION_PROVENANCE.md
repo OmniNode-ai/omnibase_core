@@ -1,11 +1,10 @@
-# Localhost-URL COMPUTE Validator — Generation Provenance (OMN-13480, G2 residual of OMN-13294)
+# Localhost-URL COMPUTE Validator — Generation Provenance
 
 This package's scanning logic (`handler.scan_source`) is a **generated artifact** —
-the residual G2 mechanical scanner of the validator-standardization plan (§5 G2)
-under OMN-13294, captured as the localhost-URL coverage item of OMN-13480. It was
-produced by the canonical generator `node_generation_consumer` (omnimarket),
-local-model-first through the real delegation chain, and accepted **only** because
-it passed a deterministic acceptance corpus
+a residual G2 mechanical scanner of the validator-standardization plan (§5 G2),
+capturing the localhost-URL coverage item. It was produced by the canonical generator
+`node_generation_consumer` (omnimarket), local-model-first through the real delegation
+chain, and accepted **only** because it passed a deterministic acceptance corpus
 (`node_generation_consumer.validator_corpora.corpus_hardcoded_localhost_url`) in the
 hardened sandbox. This file is the durable evidence of that generation + acceptance.
 
@@ -17,7 +16,7 @@ hardened sandbox. This file is the durable evidence of that generation + accepta
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip OMN-13480 generation-evidence endpoint -->
+| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip generation-evidence endpoint -->
 | attempt_count | `3` (corpus-accepted on attempt 3 via the repair loop) |
 | usage_source | `measured` (real provider-reported token usage) |
 | contract_passed | `true` |
@@ -30,8 +29,8 @@ bifrost delegation overlay keyed by `endpoint_ref: local-coder`), not by the
 generator — generation never selects its own model. The driver is committed at
 `omnimarket/scripts/generation/drive_validator_generation.py`; the full
 generation+acceptance JSON is committed at
-`omnibase_core/docs/evidence/OMN-13480/hardcoded-localhost-url.generation.json` (and
-mirrored historically at `omnimarket/docs/evidence/OMN-13294/hardcoded-localhost-url.generation.json`
+`omnibase_core/docs/evidence/hardcoded-localhost-url.generation.json` (and
+mirrored historically at `omnimarket/docs/evidence/hardcoded-localhost-url.generation.json`
 from the original G2 batch).
 
 Re-running the driver is deterministic at the acceptance level: same corpus + same
@@ -40,15 +39,14 @@ generated scanner ⇒ same verdict. This provenance reflects a fresh
 
 ## Acceptance authority — the corpus, not the LLM
 
-The generated scanner was accepted by `evaluate_corpus_acceptance` (OMN-13289, G0)
-against a fixture corpus of **5 violation fixtures (3 adversarial mutation cases) +
+The generated scanner was accepted by `evaluate_corpus_acceptance` against a
+fixture corpus of **5 violation fixtures (3 adversarial mutation cases) +
 5 clean fixtures (3 adversarial mutation cases)**, committed at
 `omnimarket/.../node_generation_consumer/validator_corpora/corpus_hardcoded_localhost_url.py`.
 The corpus is seeded from the hand-authored ground-truth invariant
 `node_aislop_sweep._HARDCODED_CONFIG_PATTERNS` (`http(s)://localhost`,
-`http(s)://127.0.0.1`) and the CLAUDE.md "All URLs from contracts only" rule
-(epic OMN-12803), with the `# onex-allow-internal-ip` suppression marker named in
-CLAUDE.md Rule 6.
+`http(s)://127.0.0.1`) and the CLAUDE.md "All URLs from contracts only" rule,
+with the `# onex-allow-internal-ip` suppression marker named in CLAUDE.md Rule 6.
 
 Acceptance = the generated scanner flagged **every** violation fixture and produced
 **zero** findings on **every** clean fixture, by deterministic execution in the
@@ -84,13 +82,13 @@ Its verdicts are pinned to the acceptance corpus by the parametrized tests in
 This validator is the COMPLEMENT of the two pre-existing localhost-adjacent gates,
 not a duplicate (verified empirically before authoring):
 
-* `validator_url_authority` (OMN-12803) — its `public-https-literal` rule
+* `validator_url_authority` — its `public-https-literal` rule
   deliberately EXCLUDES localhost/loopback (it requires a dotted TLD), and its
   `url-const-assignment` rule only catches a loopback literal assigned to a
   `*_URL` / `*_ENDPOINT`-named constant. A loopback URL in any OTHER context — a
   call arg `client.connect("http://localhost:8000")`, a dict value, a list element,
   a non-URL-named variable, a function default — passes url-authority clean.
-* `scripts/validate_no_env_fallbacks.py` (OMN-10741) — only catches the
+* `scripts/validate_no_env_fallbacks.py` — only catches the
   fallback/default idiom (`os.environ.get("X", "localhost...")`,
   `default="localhost..."`, `${VAR:-localhost}`). A plain module constant
   `BASE_URL = "http://localhost:8000/v1"` passes it clean.

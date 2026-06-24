@@ -1,5 +1,5 @@
-<!-- onex-allow-file-topic-literal OMN-13294 reason="this provenance doc names onex.* topic literals as its subject (the corpus fixtures the scanner flags); they are evidence, not contract drift" -->
-# Hardcoded-topic-string COMPUTE Validator — Generation Provenance (OMN-13294, G2 SEA-dogfood)
+<!-- onex-allow-file-topic-literal reason="this provenance doc names onex.* topic literals as its subject (the corpus fixtures the scanner flags); they are evidence, not contract drift" -->
+# Hardcoded-topic-string COMPUTE Validator — Generation Provenance
 
 This package's scanning logic (`handler.scan_source`) is a **generated artifact** —
 the "agent lands what SEA generated" step of the validator-standardization plan.
@@ -11,7 +11,7 @@ deterministic acceptance corpus
 in the hardened sandbox. This file is the durable evidence of that generation +
 acceptance. The raw generation+acceptance JSON (including the verbatim generated
 `handle(input_data)` in its `handler_source` field) is committed at
-`docs/evidence/OMN-13294/hardcoded-topic-string.generation.json`.
+`docs/evidence/hardcoded-topic-string.generation.json`.
 
 ## Generation run (live)
 
@@ -23,7 +23,7 @@ acceptance. The raw generation+acceptance JSON (including the verbatim generated
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
 | endpoint_class | `local-coder` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip OMN-13294 generation-evidence endpoint -->
+| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip generation-evidence endpoint -->
 | attempt_count | `1` (corpus-accepted on the FIRST attempt) |
 | usage_source | `measured` (real provider-reported token usage) |
 | contract_passed | `true` |
@@ -44,8 +44,8 @@ unfinished-work-marker, no-faked-boundary, and pin-hygiene validators this sessi
 
 ## Acceptance authority — the corpus, not the LLM
 
-The generated scanner was accepted by `evaluate_corpus_acceptance` (OMN-13289, G0)
-against a fixture corpus of **5 violation fixtures (3 adversarial mutation cases) +
+The generated scanner was accepted by `evaluate_corpus_acceptance` against a
+fixture corpus of **5 violation fixtures (3 adversarial mutation cases) +
 4 clean fixtures (2 adversarial mutation cases)**, committed at
 `omnimarket/.../node_generation_consumer/validator_corpora/corpus_hardcoded_topic.py`.
 The corpus is seeded from the hand-authored ground-truth invariant
@@ -123,7 +123,8 @@ old advisory `# onex-topic-doc-example` marker). Flipping the full-src CI self-s
 to BLOCKING before those are annotated with `# onex-allow-topic-literal` would
 red-wedge the repo on day one.
 
-Following the proven `no_faked_boundary` (OMN-13497) precedent:
+Following the proven `no_faked_boundary` precedent (where the same graduated
+roll-out was applied):
 
 * The **pre-commit hook** (`check-hardcoded-topic-compute`) is **BLOCKING** with
   `pass_filenames: true` — it scans only STAGED files, so every NEW pasted topic
@@ -131,7 +132,7 @@ Following the proven `no_faked_boundary` (OMN-13497) precedent:
   block the repo (identical to how the G1 local-paths / G2 private-IP / unfinished-work-marker
   canaries landed).
 * The **CI self-scan** (`validator-hardcoded-topic.yml`) lands **`--report-only`**
-  for the OMN-13294 burn-down: it prints the legacy SOT population but exits 0.
+  for the burn-down: it prints the legacy SOT population but exits 0.
   Drop `--report-only` to flip to blocking once the population is annotated /
   reaches zero. The unit-test step (the corpus-acceptance proof) is fully BLOCKING.
 
