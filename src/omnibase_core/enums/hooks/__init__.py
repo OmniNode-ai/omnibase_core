@@ -17,9 +17,15 @@ from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_outcome impo
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_session_status import (
     EnumClaudeCodeSessionStatus,
 )
+from omnibase_core.enums.hooks.cursor.enum_cursor_hook_event_type import (
+    EnumCursorHookEventType,
+)
+from omnibase_core.enums.hooks.enum_agent_source import EnumAgentSource
 
 __all__ = [
+    "EnumAgentSource",
     "EnumClaudeCodeHookEventType",
     "EnumClaudeCodeSessionOutcome",
     "EnumClaudeCodeSessionStatus",
+    "EnumCursorHookEventType",
 ]
