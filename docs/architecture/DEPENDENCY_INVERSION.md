@@ -5,7 +5,7 @@
 > **Version**: 0.4.0
 > **Last Updated**: 2025-12-10
 > **Status**: Production
-> **Related Ticket**: OMN-220
+
 
 ## Overview
 

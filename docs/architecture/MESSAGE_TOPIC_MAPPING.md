@@ -471,5 +471,5 @@ category = get_topic_category("dev.order.commands.v1")
 ---
 
 **Last Updated**: 2025-12-19
-**Ticket**: OMN-933
+
 **Status**: Implemented

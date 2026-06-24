@@ -2,13 +2,13 @@
 
 # Handler Classification: omnibase_core File I/O Services (Epic 3 — Ticket 3.4)
 
-**Ticket**: OMN-4010
-**Epic**: OMN-4014 — Epic 3: Mixin/Service -> Handler Refactoring
+**Status**: Classification completed
+**Epic**: Epic 3: Mixin/Service -> Handler Refactoring
 **Status**: Final — KEEP AS SERVICE (abort conditions apply)
 **Last Updated**: 2026-03-08
-**Classification Rules**: OMN-4004 (`HANDLER_CLASSIFICATION_RULES.md` in omnibase_infra `docs/architecture/`)
-**Decision Matrix**: Section 3 of OMN-4004 classification rules
-**3.1 POC Finding**: OMN-4005 — postgres mixins KEEP AS MIXIN (utility-function pattern); evaluated independently per PR #706 guidance
+**Classification Rules**: `HANDLER_CLASSIFICATION_RULES.md` in omnibase_infra `docs/architecture/`
+**Decision Matrix**: Section 3 of the handler classification rules
+**3.1 POC Finding**: postgres mixins KEEP AS MIXIN (utility-function pattern); evaluated independently per PR #706 guidance
 
 ---
 
@@ -161,13 +161,13 @@ exist precisely to prevent refactoring that increases complexity without yieldin
 
 ---
 
-## Relation to 3.1 POC (OMN-4005)
+## Relation to the 3.1 POC
 
-The 3.1 POC (OMN-4005, PR #706) concluded KEEP AS MIXIN for the postgres utility-function
-mixins. That finding does not gate OMN-4010 (the PR explicitly states: "OMN-4010 should be
+The 3.1 POC (PR #706) concluded KEEP AS MIXIN for the postgres utility-function
+mixins. That finding does not gate this classification (the PR explicitly states: "this ticket should be
 evaluated independently — this finding is specific to utility-function mixins").
 
-OMN-4010 was evaluated independently. The outcome is KEEP AS SERVICE for all four targets,
+This classification was evaluated independently. The outcome is KEEP AS SERVICE for all four targets,
 reached via the abort conditions in Section 7 and Section 8, not the 3.1 POC finding.
 
 ---
@@ -182,11 +182,11 @@ locations unchanged.
 
 ## References
 
-- OMN-4004 — Handler classification rules (`HANDLER_CLASSIFICATION_RULES.md` in omnibase_infra)
-- OMN-4005 — POC 3.1 classification assessment (`HANDLER_CLASSIFICATION_POC_3_1.md` in omnibase_infra, PR #706)
+- Handler classification rules: `HANDLER_CLASSIFICATION_RULES.md` in omnibase_infra
+- POC 3.1 classification assessment: `HANDLER_CLASSIFICATION_POC_3_1.md` in omnibase_infra (PR #706)
 - `src/omnibase_core/services/diff/service_diff_file_store.py`
 - `src/omnibase_core/services/sinks/service_sink_file.py`
 - `src/omnibase_core/package/service_oncp_builder.py`
 - `src/omnibase_core/package/service_oncp_reader.py`
 - `src/omnibase_core/nodes/node_contract_verify_replay_compute/handler.py` (OncpReader usage)
-- OMN-4014 — parent epic
+- Parent epic: Epic 3 — Mixin/Service -> Handler Refactoring

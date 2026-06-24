@@ -5,13 +5,13 @@
 **Status**: In Progress (Phase 1 partially complete)
 **Version**: 0.2.0
 **Last Updated**: 2026-02-14
-**Related Tickets**: OMN-1113, OMN-1114, OMN-1116, OMN-1117, OMN-1162
+**Related areas**: Manifest Generation, Pipeline Runner, Replay Infrastructure, Handler Contract Model
 
 ---
 
 ## Table of Contents
 
-- [Breaking Changes (OMN-1117)](#breaking-changes-omn-1117)
+- [Breaking Changes: Handler Contract Model](#breaking-changes-handler-contract-model)
 1. [Current Mixin Architecture](#section-1-current-mixin-architecture)
 2. [Handler Architecture Vision](#section-2-handler-architecture-vision)
 3. [Migration Strategy](#section-3-migration-strategy)
@@ -26,7 +26,7 @@
 
 ---
 
-## Breaking Changes (OMN-1117)
+## Breaking Changes: Handler Contract Model
 
 > **Version Introduced**: 0.4.1
 > **Impact Level**: MEDIUM - New models, no existing code broken
@@ -34,7 +34,7 @@
 
 ### Overview
 
-The Handler Contract Model (OMN-1117) introduces two new foundational models for the handler architecture. These are **additive changes** - no existing models are deprecated or removed. However, understanding these new models is essential for adopting the handler-based approach.
+The Handler Contract Model introduces two new foundational models for the handler architecture. These are **additive changes** - no existing models are deprecated or removed. However, understanding these new models is essential for adopting the handler-based approach.
 
 ### New Models Introduced
 
@@ -137,7 +137,7 @@ Currently, there are **no deprecations**. The handler contract model is additive
 - JSON Schema: `src/omnibase_core/schemas/handler_contract.schema.json`
 - Handler Descriptor Tests: `tests/unit/models/handlers/test_model_handler_descriptor.py`
 - Handler Contract Tests: `tests/unit/models/contracts/test_model_handler_contract.py`
-- Related Ticket: OMN-1117
+
 
 ---
 
@@ -216,7 +216,7 @@ result = await pipeline.execute(node, envelope)
 
 ### Phase 1: Infrastructure (In Progress)
 
-**Tickets**: OMN-1114 (Pipeline Runner & Hook Registry), OMN-1117 (Handler Contract Model)
+**Scope**: Pipeline Runner, Hook Registry, and Handler Contract Model
 
 **Completed**:
 - `ModelHandlerContract` defined at `src/omnibase_core/models/contracts/model_handler_contract.py`
@@ -365,7 +365,7 @@ class ModelExecutionProfile(BaseModel):
 
 ## Section 7: Determinism and Replay Invariants
 
-**Reference Ticket**: OMN-1116 (Replay Infrastructure)
+**Reference**: Replay Infrastructure
 
 ### Determinism Requirements
 
@@ -458,12 +458,12 @@ class ModelActivationSource(BaseModel):
 ## Section 9: The Manifest
 
 > **Note**: The models described in this section are **target architecture** for
-> OMN-1113: Manifest Generation & Observability. Some foundational models
+> the Manifest Generation & Observability work. Some foundational models
 > (`ModelExecutionPlan`, `ModelPipelineHook`) have been implemented, but the
 > full `ModelExecutionManifest` and its dependent models are not yet available
 > in the codebase.
 
-**Reference Ticket**: OMN-1113 (Manifest Generation & Observability)
+**Reference**: Manifest Generation & Observability
 
 ### Purpose
 
@@ -798,7 +798,7 @@ Circular dependencies are detected at plan build time and raise `ModelOnexError(
 
 ## Section 11: Testing Strategy
 
-**Reference Ticket**: OMN-1109 (Testing Suite - Golden & Interaction Tests)
+**Reference**: Testing Suite — Golden & Interaction Tests
 
 ### Golden Manifest Tests
 
@@ -867,11 +867,11 @@ def test_redaction_logging_interaction():
 - [Contract System](CONTRACT_SYSTEM.md)
 - [Execution Profile](../guides/TESTING_GUIDE.md)
 
-## Related Tickets
+## Related Areas
 
-- **OMN-1113**: Manifest Generation & Observability (Section 9)
-- **OMN-1114**: Pipeline Runner & Hook Registry (Section 4)
-- **OMN-1116**: Replay Infrastructure (Section 7)
-- **OMN-1109**: Testing Suite (Section 11)
-- **OMN-1162**: This document
-- **OMN-1163**: Manifest Persistence (omnibase_infra)
+- **Manifest Generation & Observability** (Section 9)
+- **Pipeline Runner & Hook Registry** (Section 4)
+- **Replay Infrastructure** (Section 7)
+- **Testing Suite** (Section 11)
+- This document
+- **Manifest Persistence** (omnibase_infra)

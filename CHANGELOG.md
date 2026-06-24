@@ -1,91 +1,91 @@
 ## v0.45.0 (2026-06-17)
 
 ### Breaking Changes
-- refactor(OMN-13200): bump omnibase_core to v0.45.0 — removes ModelOnexEnvelope public API (deleted in #1250, B4). Canonical envelope is ModelEventEnvelope[T]. Minor bump per pre-1.0 semver convention for a breaking public-API deletion.
+- refactor bump omnibase_core to v0.45.0 — removes ModelOnexEnvelope public API (deleted in #1250, B4). Canonical envelope is ModelEventEnvelope[T]. Minor bump per pre-1.0 semver convention for a breaking public-API deletion.
 
 ## v0.44.2 (2026-06-07)
 
 ### Changes
-- chore(release)(OMN-12765): bump omnibase_core to v0.44.2 (#1217)
-- release(OMN-12765): promote dev integration to main (#1216)
+- chore(release) bump omnibase_core to v0.44.2 (#1217)
+- release promote dev integration to main (#1216)
 
 ## v0.44.1 (2026-06-07)
 
 ### Changes
-- chore(release)(OMN-12765): bump omnibase_core to v0.44.1 (#1213)
-- release(OMN-12765): promote core dev lane to main (#1211)
+- chore(release) bump omnibase_core to v0.44.1 (#1213)
+- release promote core dev lane to main (#1211)
 
 ## v0.44.0 (2026-06-06)
 
 ### Features
-- feat(OMN-13098): skill-dispatch receipt-mode validator (Phase 4b) (#1237)
-- feat(OMN-13093): minimal content-addressed ArtifactStore slice (Phase 1) (#1236)
-- feat(OMN-13091): ModelArtifactRef + ModelSkillResult[T] typed receipt models (#1235)
-- feat(OMN-12818): url-authority ratchet gate — ValidatorUrlAuthority (#1232)
-- feat(OMN-13026): transport-mock lint validator — bare AsyncMock/MagicMock on EventBus/transport surfaces (#1231)
-- feat(OMN-13026): protocol-conformance tests per Protocol + portable _rel_path baseline fix (#1234)
-- feat(OMN-12957): runtime-profile registry + unregistered/no-consumer-lane validator rules (#1229)
-- feat(OMN-12960): single transport-envelope unwrap predicate + dispatch-surface test gate (#1228)
-- feat(OMN-12857): add Bifrost logical secret refs (#1223)
-- feat(OMN-12791): receipt-honesty validator — fail gamed DoD receipts (#1219)
-- feat(OMN-12777): add demo-path topic coherence gate as pre-commit + required CI (#1218)
+- feat skill-dispatch receipt-mode validator (Phase 4b) (#1237)
+- feat minimal content-addressed ArtifactStore slice (Phase 1) (#1236)
+- feat ModelArtifactRef + ModelSkillResult[T] typed receipt models (#1235)
+- feat url-authority ratchet gate — ValidatorUrlAuthority (#1232)
+- feat transport-mock lint validator — bare AsyncMock/MagicMock on EventBus/transport surfaces (#1231)
+- feat protocol-conformance tests per Protocol + portable _rel_path baseline fix (#1234)
+- feat runtime-profile registry + unregistered/no-consumer-lane validator rules (#1229)
+- feat single transport-envelope unwrap predicate + dispatch-surface test gate (#1228)
+- feat add Bifrost logical secret refs (#1223)
+- feat receipt-honesty validator — fail gamed DoD receipts (#1219)
+- feat add demo-path topic coherence gate as pre-commit + required CI (#1218)
 
 ### Bug Fixes
-- fix(OMN-13061): hard-fail on contract_sha256=None in OCC eligibility validator (#1233)
-- fix(OMN-12961): reject typing.Protocol handler targets in ServiceHandlerResolver (#1230)
-- fix(OMN-12816): raise generation retry budget (#1221)
+- fix hard-fail on contract_sha256=None in OCC eligibility validator (#1233)
+- fix reject typing.Protocol handler targets in ServiceHandlerResolver (#1230)
+- fix raise generation retry budget (#1221)
 
 ### CI
-- ci(OMN-12825): wire receipt-honesty CI + pre-commit gate (queue-safe prep) (#1222)
+- ci wire receipt-honesty CI + pre-commit gate (queue-safe prep) (#1222)
 
 ## v0.43.0 (2026-05-31)
 
 ### Features
-- feat(OMN-12454): add gitignore-baseline-hook to propagation-targets.yaml (#1185)
-- feat(OMN-12453): wire gitignore-baseline as pre-commit hook + CI gate (#1184)
-- feat(OMN-12452): build gitignore_baseline validator + unit tests (#1183)
+- feat add gitignore-baseline-hook to propagation-targets.yaml (#1185)
+- feat wire gitignore-baseline as pre-commit hook + CI gate (#1184)
+- feat build gitignore_baseline validator + unit tests (#1183)
 
 ### Changed
-- refactor(OMN-12545): merge infra-only EnumDispatchStatus members into canonical core copy (#1187)
-- chore(OMN-12526): delete dead EnvelopeRouter scaffold (#1186)
-- ci(OMN-12477): add dev-only main-target-guard forward-port (#1182)
+- refactor merge infra-only EnumDispatchStatus members into canonical core copy (#1187)
+- chore delete dead EnvelopeRouter scaffold (#1186)
+- ci add dev-only main-target-guard forward-port (#1182)
 
 ## v0.42.0 (2026-05-21)
 
 ### Features
-- feat(OMN-11262): add canonical contract evidence storage models (#1113)
-- feat(OMN-11225): merge ModelOvernightContract into ModelSessionContract (#1107)
-- feat(OMN-11227): add phase budget and parallel dispatch fields (#1109)
-- feat(OMN-11272): add phase budget and parallel dispatch fields to ModelSessionPhaseSpec (#1117)
-- feat(OMN-11274): add unit tests asserting exact wire values for 5 session phase topics (#1115)
-- feat(OMN-9339, OMN-9340): extend normalization symmetry validator (#1114)
-- feat(OMN-9757): add normalize_contract_with_flags and expand normalization pipeline (#1112)
-- feat(OMN-9334): add runtime_sha_match DoD gate — classifier + receipt-gate integration (#1110)
-- feat(OMN-11228): register session phase topics in TopicBase (#1105)
-- feat(OMN-11221): add architectural invariant enforcement models and enums (#1104)
-- feat(OMN-11139): add OmniGate config loader (#1091)
-- feat(OMN-11140): add OmniGate diff hashing (#1089)
-- feat(OMN-11137): add OmniGate config model (#1088)
-- feat(OMN-11192): add ModelProjectionContract with freshness source (#1100)
-- feat(OMN-11193): add ModelDoctrineClause, ModelGatewayRouteBinding, projection health events (#1101)
-- feat(OMN-11132): configurable aislop validators with per-repo YAML overrides (#1093)
-- feat(OMN-11190): add ModelRuntimeManifest with ownership semantics (#1098)
-- feat(OMN-11191): add standard evidence bundle models (#1099)
-- feat(OMN-11194): register runtime manifest and projection health topics (#1102)
-- feat(OMN-11186): add pre-commit + CI validator blocking new os.environ/os.getenv additions (#1096)
-- feat(OMN-11189): add EnumDataProvenance, EnumDegradedBehavior, EnumDoctrineCoverage (#1097)
-- feat(OMN-11083): drive hook default mask from contract (#1087)
-- feat(OMN-11209): update scaffold templates with doctrine compliance fields (#1103)
+- feat add canonical contract evidence storage models (#1113)
+- feat merge ModelOvernightContract into ModelSessionContract (#1107)
+- feat add phase budget and parallel dispatch fields (#1109)
+- feat add phase budget and parallel dispatch fields to ModelSessionPhaseSpec (#1117)
+- feat add unit tests asserting exact wire values for 5 session phase topics (#1115)
+- feat extend normalization symmetry validator (#1114)
+- feat add normalize_contract_with_flags and expand normalization pipeline (#1112)
+- feat add runtime_sha_match DoD gate — classifier + receipt-gate integration (#1110)
+- feat register session phase topics in TopicBase (#1105)
+- feat add architectural invariant enforcement models and enums (#1104)
+- feat add OmniGate config loader (#1091)
+- feat add OmniGate diff hashing (#1089)
+- feat add OmniGate config model (#1088)
+- feat add ModelProjectionContract with freshness source (#1100)
+- feat add ModelDoctrineClause, ModelGatewayRouteBinding, projection health events (#1101)
+- feat configurable aislop validators with per-repo YAML overrides (#1093)
+- feat add ModelRuntimeManifest with ownership semantics (#1098)
+- feat add standard evidence bundle models (#1099)
+- feat register runtime manifest and projection health topics (#1102)
+- feat add pre-commit + CI validator blocking new os.environ/os.getenv additions (#1096)
+- feat add EnumDataProvenance, EnumDegradedBehavior, EnumDoctrineCoverage (#1097)
+- feat drive hook default mask from contract (#1087)
+- feat update scaffold templates with doctrine compliance fields (#1103)
 
 ### Bug Fixes
-- fix(OMN-11119): extend check-name validator to handle workflow_call composite check names (#1094)
-- fix(OMN-10980): resolve 9 class naming violations and flip naming gate to blocking (#1095)
-- fix(OMN-11156,OMN-11157,OMN-11158,OMN-11159,OMN-11160): flip 5 advisory gates to blocking (#1106)
+- fix extend check-name validator to handle workflow_call composite check names (#1094)
+- fix resolve 9 class naming violations and flip naming gate to blocking (#1095)
+- fix flip 5 advisory gates to blocking (#1106)
 
 ### Tests
-- test(OMN-11270): expand typed exit condition validation test coverage (#1118)
-- test(OMN-11269): add acceptance criteria tests for session/overnight contract unification (#1116)
-- test(OMN-9738): contract model validation enforcement integration tests (#1111)
+- test expand typed exit condition validation test coverage (#1118)
+- test add acceptance criteria tests for session/overnight contract unification (#1116)
+- test contract model validation enforcement integration tests (#1111)
 
 ### Other Changes
 - chore: bump omnibase-compat pin from >=0.3.1 to >=0.4.1 (compat v0.4.1 release)
@@ -94,18 +94,18 @@
 ## Unreleased
 
 ### Refactors
-- refactor(runtime): confirm RuntimeLocal has zero reducer-special-casing [OMN-9011] — `_persist_reducer_projection_if_applicable` was never merged to main (OMN-8946 PR #826 closed without merge); runtime is already uniform across all three execution paths.
+- refactor(runtime): confirm RuntimeLocal has zero reducer-special-casing  — `_persist_reducer_projection_if_applicable` was never merged to main ( PR #826 closed without merge); runtime is already uniform across all three execution paths.
 
 ## v0.38.0 (2026-04-03)
 
 ### Features
-- feat: add onex doctor CLI command [OMN-7344] (#774)
-- feat(cli): add OmniClaw tooling — install, scaffold, analyzer, porting [OMN-7194] (#773)
-- feat(models): add EnumChannelType and ModelChannelEnvelope for OmniClaw [OMN-7182, OMN-7183] (#772)
+- feat: add onex doctor CLI command  (#774)
+- feat(cli): add OmniClaw tooling — install, scaffold, analyzer, porting  (#773)
+- feat(models): add EnumChannelType and ModelChannelEnvelope for OmniClaw [(#772)
 
 ### Bug Fixes
-- fix(core): remove all localhost fallbacks, require env vars [OMN-7227] (#771)
-- fix(ci): auto-tag workflow matches chore: release PR titles [OMN-6909] (#770)
+- fix(core): remove all localhost fallbacks, require env vars  (#771)
+- fix(ci): auto-tag workflow matches chore: release PR titles  (#770)
 
 ### Other Changes
 - chore(deps): update deepdiff requirement (#768)
@@ -114,42 +114,42 @@
 ## v0.37.0 (2026-03-31)
 
 ### Added
-- feat(cli): add onex run command for local workflow execution [OMN-7068] (#758)
-- feat(compliance): add compliance orchestrator and workflow contract [OMN-7072] (#762)
-- feat(cli): add onex compliance check command [OMN-7073] (#763)
-- feat(compliance): add compliance evidence EFFECT node [OMN-7071] (#761)
-- feat(compliance): add contract compliance scanner COMPUTE node [OMN-7069] (#759)
+- feat(cli): add onex run command for local workflow execution  (#758)
+- feat(compliance): add compliance orchestrator and workflow contract  (#762)
+- feat(cli): add onex compliance check command  (#763)
+- feat(compliance): add compliance evidence EFFECT node  (#761)
+- feat(compliance): add contract compliance scanner COMPUTE node  (#759)
 
 ### Fixed
-- fix: add node_name to introspection payload from contract metadata [OMN-7088] (#766)
+- fix: add node_name to introspection payload from contract metadata  (#766)
 
 ## v0.36.0 (2026-03-31)
 
 ### Added
-- feat(container): add registry auto-configuration from entry points [OMN-7065] (#756)
-- feat(compliance): add compliance report REDUCER node [OMN-7070] (#760)
-- feat(cli): add onex registry status command [OMN-7066] (#755)
-- feat(event_bus): extract EventBusInmemory from omnibase_infra to core [OMN-7062]
-- feat(protocols): add ProtocolStateStore for unified state persistence [OMN-7061]
-- feat(entry_points): add onex.backends and onex.cli groups [OMN-7064] (#754)
+- feat(container): add registry auto-configuration from entry points  (#756)
+- feat(compliance): add compliance report REDUCER node  (#760)
+- feat(cli): add onex registry status command  (#755)
+- feat(event_bus): extract EventBusInmemory from omnibase_infra to core 
+- feat(protocols): add ProtocolStateStore for unified state persistence 
+- feat(entry_points): add onex.backends and onex.cli groups  (#754)
 
 ### Changed
-- ci: add onex compliance check as CI gate [OMN-7078] (#757)
+- ci: add onex compliance check as CI gate  (#757)
 
 ## v0.35.0 (2026-03-30)
 
 ### Added
-- feat(compliance): add compliance scanner, evidence, and orchestrator nodes [OMN-7069, OMN-7071, OMN-7072]
-- feat(cli): add onex compliance check and run commands [OMN-7073, OMN-7068]
+- feat(compliance): add compliance scanner, evidence, and orchestrator nodes [,
+- feat(cli): add onex compliance check and run commands [,
 
 ## v0.34.0 (2026-03-28)
 
 ### Added
-- feat(navigation): add NavigationFacade integration layer for cross-repo consumers [OMN-6599] (#740)
-- feat(ci): add auto-merge-on-open workflow [OMN-6571] (#742)
+- feat(navigation): add NavigationFacade integration layer for cross-repo consumers  (#740)
+- feat(ci): add auto-merge-on-open workflow  (#742)
 
 ### Fixed
-- fix(cli): add descriptive error messages to scaffolder stubs [OMN-6759] (#744)
+- fix(cli): add descriptive error messages to scaffolder stubs  (#744)
 
 ## v0.33.1 (2026-03-27)
 
@@ -159,42 +159,42 @@
 ## v0.33.0 (2026-03-26)
 
 ### Added
-- feat(contracts): add ModelHandlerContractExtended for infra YAML fields [OMN-6483] (#728)
+- feat(contracts): add ModelHandlerContractExtended for infra YAML fields  (#728)
 
 ### Fixed
-- fix: include runtime contract YAMLs as package-data [OMN-6440] (#726)
-- fix(ci): treat skipped test matrix as pass in Tests Gate [OMN-6693] (#734)
-- fix(tests): remove 52 stale skip guards for now-implemented EnumNodeType._KIND_MAP [OMN-6685] (#733)
+- fix: include runtime contract YAMLs as package-data  (#726)
+- fix(ci): treat skipped test matrix as pass in Tests Gate  (#734)
+- fix(tests): remove 52 stale skip guards for now-implemented EnumNodeType._KIND_MAP  (#733)
 
 ### Changed
 - chore(deps): bump actions/checkout from 4 to 6 (#725)
-- chore: standardize TODO markers with ticket references [OMN-6655] (#735)
+- chore: standardize TODO markers with ticket references  (#735)
 
 ## v0.32.0 (2026-03-25)
 
 ### Added
-- feat(plan): add ModelPlanContract lifecycle contract [OMN-6041] (#718)
-- feat(core): add control mode session overlay and treatment group classifier [OMN-5546] (#707)
-- feat(ticket): add contract grace period for pre-existing tickets [OMN-5461] (#706)
-- feat: contract-declared feature flags (T1-T3) [OMN-5566] (#708)
-- feat(events): add ModelEpisodeEvent for RL episode boundary tracking [OMN-5559] (#709)
-- feat(cli): add onex init project scaffolding command [OMN-5392] (#701)
+- feat(plan): add ModelPlanContract lifecycle contract  (#718)
+- feat(core): add control mode session overlay and treatment group classifier  (#707)
+- feat(ticket): add contract grace period for pre-existing tickets  (#706)
+- feat: contract-declared feature flags (T1-T3)  (#708)
+- feat(events): add ModelEpisodeEvent for RL episode boundary tracking  (#709)
+- feat(cli): add onex init project scaffolding command  (#701)
 - feat: add MixinTraceCapture to wire trace infrastructure into node execution (#723)
 
 ### Fixed
-- fix(contracts): add importlib.resources fallback for PyPI installs [OMN-6484] (#729)
-- fix: handler contract extra=ignore + importlib fallback [OMN-6465, OMN-6466] (#727)
-- fix(core): add description field, normalize node_type, thread contract metadata through introspection pipeline [OMN-6405] (#722)
-- fix: contract health -- compute purity + runtime contracts accessor [OMN-6337, OMN-6339] (#721)
-- fix(topics): migrate hardcoded discovery topics to taxonomy constants [OMN-5834] (#716)
-- fix: complete missing fields in core contracts [OMN-5701] (#711)
+- fix(contracts): add importlib.resources fallback for PyPI installs  (#729)
+- fix: handler contract extra=ignore + importlib fallback [(#727)
+- fix(core): add description field, normalize node_type, thread contract metadata through introspection pipeline  (#722)
+- fix: contract health -- compute purity + runtime contracts accessor [(#721)
+- fix(topics): migrate hardcoded discovery topics to taxonomy constants  (#716)
+- fix: complete missing fields in core contracts  (#711)
 
 ### Changed
-- ci: add validate-boundaries job in warn-only mode [OMN-6576] (#730)
-- ci(omnibase_core): rename test.yml -> ci.yml for cross-repo standardization [OMN-6212] (#719)
-- ci: deploy TODO enforcement hooks and workflows [OMN-5694, OMN-5695] (#714)
-- chore: replace OMN-TBD placeholders with real ticket numbers [OMN-5693] (#713)
-- chore: remove stale TODO for OMN-656 [OMN-5690] (#712)
+- ci: add validate-boundaries job in warn-only mode  (#730)
+- ci(omnibase_core): rename test.yml -> ci.yml for cross-repo standardization  (#719)
+- ci: deploy TODO enforcement hooks and workflows [(#714)
+- chore: replace placeholder ticket references with real ticket numbers  (#713)
+- chore: remove stale TODO for   (#712)
 
 ### Releases included
 - v0.31.1, v0.31.0, v0.30.2, v0.30.1, v0.30.0, v0.29.0, v0.28.0, v0.27.1, v0.27.0
@@ -202,95 +202,95 @@
 ## v0.30.0 (2026-03-20)
 
 ### Added
-- feat(core): add control mode session overlay and treatment group classifier [OMN-5546] (#707)
-- feat(ticket): add contract grace period for pre-existing tickets [OMN-5461] (#706)
-- feat: contract-declared feature flags (T1-T3) [OMN-5566] (#708)
-- feat(events): add ModelEpisodeEvent for RL episode boundary tracking [OMN-5559] (#709)
-- feat(cli): add onex init project scaffolding command [OMN-5392] (#701)
+- feat(core): add control mode session overlay and treatment group classifier  (#707)
+- feat(ticket): add contract grace period for pre-existing tickets  (#706)
+- feat: contract-declared feature flags (T1-T3)  (#708)
+- feat(events): add ModelEpisodeEvent for RL episode boundary tracking  (#709)
+- feat(cli): add onex init project scaffolding command  (#701)
 
 ## v0.29.0 (2026-03-19)
 
 ### Added
-- feat(ci): deploy CodeQL security scanning to omnibase_core [OMN-5421] (#704)
-- feat(cli): add onex new node scaffolding command [OMN-5393] (#702)
-- feat(sdk): make omnibase-spi optional + add CI guard against internal deps [OMN-5391] (#698)
-- feat(sdk): add external node discovery via Python entry points [OMN-5394] (#699)
-- feat(core): add ModelStepVerification and ModelOnboardingPolicy [OMN-5262, OMN-5264] (#691)
-- feat: add ModelTaskDispatch and ModelTaskTree for audit tracking [OMN-5233] (#686)
-- feat: add EnumAuditEnforcementLevel for context integrity [OMN-5232] (#685)
-- feat: add ModelContextIntegritySubcontract for WISC enforcement [OMN-5231] (#684)
+- feat(ci): deploy CodeQL security scanning to omnibase_core  (#704)
+- feat(cli): add onex new node scaffolding command  (#702)
+- feat(sdk): make omnibase-spi optional + add CI guard against internal deps  (#698)
+- feat(sdk): add external node discovery via Python entry points  (#699)
+- feat(core): add ModelStepVerification and ModelOnboardingPolicy [(#691)
+- feat: add ModelTaskDispatch and ModelTaskTree for audit tracking  (#686)
+- feat: add EnumAuditEnforcementLevel for context integrity  (#685)
+- feat: add ModelContextIntegritySubcontract for WISC enforcement  (#684)
 
 ### Fixed
-- fix: correct Kafka and Redis port defaults to external Docker ports [OMN-5217] (#689)
-- fix: make ModelTopicNaming.environment required, deprecate compose_full_topic [OMN-5216] (#690)
-- fix: remove INMEMORY default from event_bus_type fields [OMN-5218] (#688)
-- fix: remove divergent injection topic constants, fix baseline suffix tests [OMN-5250] (#687)
-- fix(ci): skip Version Pin Compliance for Dependabot PRs [OMN-5332] (#695)
-- fix(ci): checkout onex_change_control for version pin compliance [OMN-5132] (#683)
+- fix: correct Kafka and Redis port defaults to external Docker ports  (#689)
+- fix: make ModelTopicNaming.environment required, deprecate compose_full_topic  (#690)
+- fix: remove INMEMORY default from event_bus_type fields  (#688)
+- fix: remove divergent injection topic constants, fix baseline suffix tests  (#687)
+- fix(ci): skip Version Pin Compliance for Dependabot PRs  (#695)
+- fix(ci): checkout onex_change_control for version pin compliance  (#683)
 
 ### Changed
-- ci(omnibase_core): make mypy blocking + add ruff UP007 check [OMN-5132] (#703)
-- docs: define external SDK surface doctrine in CLAUDE.md [OMN-5395] (#700)
-- refactor(omnibase_core): convert ModelHealthStatus.status to HealthStatusEnum [OMN-5296] (#692)
-- chore(standards): fix mypy --strict errors [OMN-5132] (#697)
-- chore: wire no-hardcoded-topics pre-commit hook [OMN-5259] (#696)
+- ci(omnibase_core): make mypy blocking + add ruff UP007 check  (#703)
+- docs: define external SDK surface doctrine in CLAUDE.md  (#700)
+- refactor(omnibase_core): convert ModelHealthStatus.status to HealthStatusEnum  (#692)
+- chore(standards): fix mypy --strict errors  (#697)
+- chore: wire no-hardcoded-topics pre-commit hook  (#696)
 - chore(deps): bump the actions group with 2 updates (#694)
 - chore(deps-dev): update sqlglot requirement (#693)
 
 ## v0.27.0 (2026-03-13)
 
 ### Features
-- feat(scripts): rehome spdx-rollout.sh from omni_home [OMN-4922] (#671)
-- feat(ci): add forbidden-pattern scanner to CI [OMN-4801] (#662)
-- feat(cleanup): remove EnumOllamaErrorType and OLLAMA provider member (OMN-4849 Phase 2b) (#669)
+- feat(scripts): rehome spdx-rollout.sh from omni_home  (#671)
+- feat(ci): add forbidden-pattern scanner to CI  (#662)
+- feat(cleanup): remove EnumOllamaErrorType and OLLAMA provider member ( Phase 2b) (#669)
 
 ### Other Changes
-- ci(standards): add version pin compliance check [OMN-4806] (#663)
+- ci(standards): add version pin compliance check  (#663)
 
 ## v0.26.0 (2026-03-13)
 
 ### Features
-- feat(enums): add EventBusType enum; forbid inmemory production defaults [OMN-4794] (#660)
+- feat(enums): add EventBusType enum; forbid inmemory production defaults  (#660)
 
 ### Bug Fixes
-- fix(cleanup): purge dead endpoints from tests and examples (OMN-4837, OMN-4838) (#666)
-- fix(enums): normalize env string before production check to close bypass vector [OMN-4794] (#664)
-- fix(hygiene): remove decommissioned M2 bus endpoint from docstrings [OMN-4793] (#659)
+- fix(cleanup): purge dead endpoints from tests and examples () (#666)
+- fix(enums): normalize env string before production check to close bypass vector  (#664)
+- fix(hygiene): remove decommissioned M2 bus endpoint from docstrings  (#659)
 
 ### Other Changes
-- chore(pre-commit): standardize yamlfmt version to v0.21.0 [OMN-4858] (#665)
-- test(compliance): add PEP 604 annotation compliance regression test [OMN-4813] (#661)
+- chore(pre-commit): standardize yamlfmt version to v0.21.0  (#665)
+- test(compliance): add PEP 604 annotation compliance regression test  (#661)
 
 ## v0.25.1 (2026-03-12)
 
 ### Other Changes
-- fix(hygiene): block operational artifact commits (OMN-4569) (#657)
+- fix(hygiene): block operational artifact commits  (#657)
 - chore(deps): bump the actions group with 2 updates (#656)
 
 ## v0.24.1 (2026-03-08)
 
 ### Features
-- feat(enums): consolidate EnumMessageCategory — add infra-specific methods (from_suffix, is_event, is_command, is_intent) to canonical definition [OMN-4015] (#619)
+- feat(enums): consolidate EnumMessageCategory — add infra-specific methods (from_suffix, is_event, is_command, is_intent) to canonical definition  (#619)
 
 ## v0.24.0 (2026-03-07)
 
 ### Features
-- feat(validation): add cross-repo topic name CI validator [OMN-3740] (#604)
-- feat(cli): add validate-shape command for execution shapes [OMN-960] (#599)
-- feat(core): add ModelDeploymentTopology, EnumDeploymentMode with mode/local validator [OMN-3490] (#593)
+- feat(validation): add cross-repo topic name CI validator  (#604)
+- feat(cli): add validate-shape command for execution shapes  (#599)
+- feat(core): add ModelDeploymentTopology, EnumDeploymentMode with mode/local validator  (#593)
 
 ### Bug Fixes
-- fix(decorators): preserve return types in error handling decorators [OMN-1494] (#596)
-- fix(test): calibrate performance thresholds for self-hosted runners [OMN-3327] (#598)
-- fix(validators): replace manual validation with Pydantic constraints [OMN-852] (#597)
+- fix(decorators): preserve return types in error handling decorators  (#596)
+- fix(test): calibrate performance thresholds for self-hosted runners  (#598)
+- fix(validators): replace manual validation with Pydantic constraints  (#597)
 
 ### Other Changes
-- chore(hooks): add no-planning-docs pre-commit hook [OMN-3616] (#594)
+- chore(hooks): add no-planning-docs pre-commit hook  (#594)
 - chore: add no-env-file pre-commit hook (#603)
-- chore: fix pre-existing AI-slop violations for --strict mode [OMN-3669] (#601)
+- chore: fix pre-existing AI-slop violations for --strict mode  (#601)
 - chore(deps): bump the actions group with 5 updates (#602)
-- ci: add --strict AI-slop, dependabot github-actions [OMN-3662] (#600)
-- perf(compute): LRU-cache compiled regex patterns [OMN-504] (#595)
+- ci: add --strict AI-slop, dependabot github-actions  (#600)
+- perf(compute): LRU-cache compiled regex patterns  (#595)
 
 # Changelog
 
@@ -305,30 +305,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **ModelTicketContextBundle — provenance-stamped TCB artifact** [OMN-3104] (#590): Add `ModelTicketContextBundle` with provenance stamping for TCB generation workflow
-- **NodeCrossRepoValidationOrchestrator scheduled CI** [OMN-3336] (#591): Wire cross-repo validation orchestrator to scheduled CI for automated drift detection
+- **ModelTicketContextBundle — provenance-stamped TCB artifact**  (#590): Add `ModelTicketContextBundle` with provenance stamping for TCB generation workflow
+- **NodeCrossRepoValidationOrchestrator scheduled CI**  (#591): Wire cross-repo validation orchestrator to scheduled CI for automated drift detection
 
 ### Fixed
 
-- **Self-hosted runner routing labels** [OMN-3273] (#589): Correct self-hosted runner routing labels across workflows
+- **Self-hosted runner routing labels**  (#589): Correct self-hosted runner routing labels across workflows
 
 ### Changed
 
-- **Self-hosted runner routing rollout** (OMN-3279) (#588): Roll out self-hosted runner routing to omnibase_core CI workflows
-- **CHANGELOG excluded from AI-slop checker** [OMN-3204] (#586): Exclude CHANGELOG.md from AI-slop pattern detection to avoid false positives
-- **AI-slop checker v1.0 tuning** [OMN-3191] (#585): Scope `step_narration` pattern to markdown files only, reducing false positives in Python code
-- **Pre-commit violations cleanup** [OMN-3201] (#587): Fix remaining pre-commit violations across omnibase_core
+- **Self-hosted runner routing rollout**  (#588): Roll out self-hosted runner routing to omnibase_core CI workflows
+- **CHANGELOG excluded from AI-slop checker**  (#586): Exclude CHANGELOG.md from AI-slop pattern detection to avoid false positives
+- **AI-slop checker v1.0 tuning**  (#585): Scope `step_narration` pattern to markdown files only, reducing false positives in Python code
+- **Pre-commit violations cleanup**  (#587): Fix remaining pre-commit violations across omnibase_core
 
 ## [0.22.0] - 2026-02-28
 
 ### Added
 
-- **Canonical ModelRewardAssignedEvent** [OMN-2928] (#579): Add `ModelRewardAssignedEvent` bridging producer and consumer for reward signal lifecycle tracking
+- **Canonical ModelRewardAssignedEvent**  (#579): Add `ModelRewardAssignedEvent` bridging producer and consumer for reward signal lifecycle tracking
 - **Docstring-aware AI-slop checker + pre-commit hook + CI gate** (#581): Add infrastructure to detect AI-generated slop in docstrings with pre-commit integration and CI enforcement gate
 
 ### Fixed
 
-- **Canonical onex.evt.* topic alignment for validation events** [OMN-3042] (#583): Align validation event topics to canonical `onex.evt.*` format
+- **Canonical onex.evt.* topic alignment for validation events**  (#583): Align validation event topics to canonical `onex.evt.*` format
 
 ### Changed
 
@@ -348,36 +348,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Overlay stacking pipeline** [OMN-2757] (#563): Implement overlay stacking pipeline and wire `overlay_refs` for composable contract overlays
-- **Configurable validation strictness levels** [OMN-840] (#550): Add configurable strictness levels to the validation framework, enabling graduated enforcement from advisory to hard-fail
-- **Contract graph navigation module** [OMN-2540/2546/2554/2561] (#536): Implement graph-based contract navigation for traversing dependency relationships across the ONEX contract graph
-- **ModelRagQueries + `to_routing_config()` converter** [OMN-407] (#543): Add `ModelRagQueries`, `rag_queries` field to contracts, and `to_routing_config()` converter for RAG-driven routing
-- **ValidatorNode base class and validator registry** [OMN-2550] (#552): Implement `ValidatorNode` base class and `ValidatorRegistry` for declarative validator discovery and dispatch
-- **ValidationRequest, ValidationFinding, ValidationReport, ValidatorDescriptor** [OMN-2543] (#542): Add core validation data models for structured validation workflows — findings, reports, and validator descriptors
-- **Core data models for objective functions and reward architecture** [OMN-2537] (#538): Implement Pydantic models for objective functions, reward signals, and reward architecture contracts
+- **Overlay stacking pipeline**  (#563): Implement overlay stacking pipeline and wire `overlay_refs` for composable contract overlays
+- **Configurable validation strictness levels**  (#550): Add configurable strictness levels to the validation framework, enabling graduated enforcement from advisory to hard-fail
+- **Contract graph navigation module** [/2546/2554/2561] (#536): Implement graph-based contract navigation for traversing dependency relationships across the ONEX contract graph
+- **ModelRagQueries + `to_routing_config()` converter**  (#543): Add `ModelRagQueries`, `rag_queries` field to contracts, and `to_routing_config()` converter for RAG-driven routing
+- **ValidatorNode base class and validator registry**  (#552): Implement `ValidatorNode` base class and `ValidatorRegistry` for declarative validator discovery and dispatch
+- **ValidationRequest, ValidationFinding, ValidationReport, ValidatorDescriptor**  (#542): Add core validation data models for structured validation workflows — findings, reports, and validator descriptors
+- **Core data models for objective functions and reward architecture**  (#538): Implement Pydantic models for objective functions, reward signals, and reward architecture contracts
 - **`check_name` validator for required-checks drift prevention** (#533): Add `ValidatorCheckName` to detect drift between declared required status checks and actual workflow job names
-- **Core event models for GitHub PR, Git hook, and Linear snapshot** [OMN-2655] (#531): Add `ModelGitHubPREvent`, `ModelGitHookEvent`, and `ModelLinearSnapshot` for cross-tool event sourcing
+- **Core event models for GitHub PR, Git hook, and Linear snapshot**  (#531): Add `ModelGitHubPREvent`, `ModelGitHookEvent`, and `ModelLinearSnapshot` for cross-tool event sourcing
 - **`ValidatorLocalPaths` for hardcoded machine path detection** (#530): Add validator that detects hardcoded absolute machine paths in source files to prevent environment-specific drift
 - **Publish-on-tag CI release workflow**: Add `release.yml` triggered by `v*.*.*` tags that validates version alignment, builds wheel + sdist, publishes to PyPI via `PYPI_TOKEN`, generates checksums, and creates a GitHub Release with artifacts
 
 ### Fixed
 
-- **Class identity regression in fingerprint scanner** [OMN-2537] (#557): Resolve class identity regression where fingerprint scanner incorrectly resolved class references across module boundaries
+- **Class identity regression in fingerprint scanner**  (#557): Resolve class identity regression where fingerprint scanner incorrectly resolved class references across module boundaries
 
 ## [0.19.0] - 2026-02-23
 
 ### Added
 
-- **Intent Intelligence Pydantic models** [OMN-2486] (#526): Defined core models for the Intent Intelligence Framework — typed intent classifications, confidence scoring, and session-scoped intent graphs
-- **DecisionRecord Pydantic model and schema** [OMN-2464] (#528): Implemented `DecisionRecord` contract model for tracking agent model-selection decisions with full scoring breakdown and rationale
-- **ModelProjectionIntent + core projection types** [OMN-2460] (#523): Defined `ModelProjectionIntent` and supporting projection type contracts for the Projector-as-Effect-Node refactor
-- **EnumAgentState + ModelAgentStatusEvent** [OMN-1847] (#520): Implemented agent state enum and status event model for lifecycle observability
-- **Timeout configuration in ModelPerformanceRequirements** [OMN-1548] (#524): Added timeout fields to the performance requirements contract schema
+- **Intent Intelligence Pydantic models**  (#526): Defined core models for the Intent Intelligence Framework — typed intent classifications, confidence scoring, and session-scoped intent graphs
+- **DecisionRecord Pydantic model and schema**  (#528): Implemented `DecisionRecord` contract model for tracking agent model-selection decisions with full scoring breakdown and rationale
+- **ModelProjectionIntent + core projection types**  (#523): Defined `ModelProjectionIntent` and supporting projection type contracts for the Projector-as-Effect-Node refactor
+- **EnumAgentState + ModelAgentStatusEvent**  (#520): Implemented agent state enum and status event model for lifecycle observability
+- **Timeout configuration in ModelPerformanceRequirements**  (#524): Added timeout fields to the performance requirements contract schema
 
 ### Changed
 
-- **NodeReducer emits ModelProjectionIntent as blocking effect** [OMN-2509] (#527): NodeReducer now emits `ModelProjectionIntent` as a synchronous blocking effect before Kafka publish, enabling projection-as-effect-node pattern
-- **Standardized Makefile with CI-parity targets** [OMN-2335] (#525): Added top-level `Makefile` with `lint`, `type-check`, `test`, `test-unit`, `test-integration`, and `ci` targets matching CI pipeline behaviour
+- **NodeReducer emits ModelProjectionIntent as blocking effect**  (#527): NodeReducer now emits `ModelProjectionIntent` as a synchronous blocking effect before Kafka publish, enabling projection-as-effect-node pattern
+- **Standardized Makefile with CI-parity targets**  (#525): Added top-level `Makefile` with `lint`, `type-check`, `test`, `test-unit`, `test-integration`, and `ci` targets matching CI pipeline behaviour
 
 ### Dependencies
 
@@ -406,21 +406,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Migrate from Poetry to uv** [OMN-2232] (#512): Full build system migration from Poetry to uv for faster dependency resolution and simpler tooling
+- **Migrate from Poetry to uv**  (#512): Full build system migration from Poetry to uv for faster dependency resolution and simpler tooling
   - Replaced `poetry.lock` with `uv.lock`
   - Updated all CI workflows and developer commands to use `uv run`
   - Consolidated `pyproject.toml` configuration for uv compatibility
 
-- **Quality Gate, detect-secrets, and CI Summary** [OMN-2226] (#510): Enhanced CI pipeline with automated quality enforcement
+- **Quality Gate, detect-secrets, and CI Summary**  (#510): Enhanced CI pipeline with automated quality enforcement
   - Added quality gate workflow for merge-blocking checks
   - Integrated detect-secrets for credential leak prevention
   - CI summary report for at-a-glance pipeline status
 
-- **Required Status Checks for Branch Protection** [OMN-2183] (#504): Added required status checks to branch protection rules for stricter merge enforcement
+- **Required Status Checks for Branch Protection**  (#504): Added required status checks to branch protection rules for stricter merge enforcement
 
 ### Changed
 
-- **CI/CD Standards Document** [OMN-2224] (#511): Added comprehensive CI/CD standards documentation for cross-repo consistency
+- **CI/CD Standards Document**  (#511): Added comprehensive CI/CD standards documentation for cross-repo consistency
 
 - **Comprehensive Documentation Audit** (#509): Reviewed 141 documentation files for accuracy and consistency
   - Consolidated and removed stale documentation
@@ -432,7 +432,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **GeometricConflictClassifier for Parallel Agent Output Analysis** [OMN-1854] (#502): Deterministic classifier that analyzes parallel agent outputs and classifies conflicts geometrically using similarity metrics
+- **GeometricConflictClassifier for Parallel Agent Output Analysis**  (#502): Deterministic classifier that analyzes parallel agent outputs and classifies conflicts geometrically using similarity metrics
   - `classify()` is DETERMINISTIC (D4): same inputs always produce same output
   - `recommend_resolution()` is ADVISORY ONLY (GI-3): raises ValueError for OPPOSITE/AMBIGUOUS conflicts requiring human approval
   - Similarity engine handles dicts, strings, lists, and primitives
@@ -440,37 +440,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Orthogonality detection for non-overlapping dict changes
   - 49 unit tests covering all classification thresholds
 
-- **DB Ownership CI Twin for Runtime Assertion B1** [OMN-2150] (#501): CI workflow that provisions a temporary SQLite database, runs migrations, and verifies owner_service matches expectations
+- **DB Ownership CI Twin for Runtime Assertion B1**  (#501): CI workflow that provisions a temporary SQLite database, runs migrations, and verifies owner_service matches expectations
   - `ModelDbOwnershipMetadata`: Pydantic model for db_metadata table schema with naive datetime rejection
   - `validate_db_ownership`: contract-level ownership validator with `@validation_error_handling`
   - `scripts/check_db_ownership.py`: CI twin script (5 checks) with single-row constraint (`CHECK(id=1)`)
   - `check-db-ownership.yml`: GitHub Actions workflow
   - 16 unit tests covering model, validator, and CI twin logic
 
-- **Geometric Conflict Detail Models** [OMN-1853] (#500): Rich conflict analysis models for parallel agent output classification
+- **Geometric Conflict Detail Models**  (#500): Rich conflict analysis models for parallel agent output classification
   - `ModelGeometricConflictDetails`: similarity metrics, multi-axis analysis, and advisory recommendations
   - `ModelConflictResolutionResult`: resolution tracking with GI-3 enforcement (OPPOSITE/AMBIGUOUS require human approval)
   - `AUTO_RESOLVABLE_TYPES` frozenset for consistent conflict resolution routing
   - `validate_assignment=True` for merge package consistency
 
-- **Geometric Conflict Types in EnumMergeConflictType** [OMN-1852] (#499): 6 geometric conflict types from the Neumann pattern for classifying parallel agent output relationships
+- **Geometric Conflict Types in EnumMergeConflictType**  (#499): 6 geometric conflict types from the Neumann pattern for classifying parallel agent output relationships
   - ORTHOGONAL, LOW_CONFLICT, IDENTICAL, OPPOSITE, CONFLICTING, AMBIGUOUS
   - GI-3 invariant: OPPOSITE and AMBIGUOUS require human approval
 
-- **Handshake Policy Gate for Cross-Repo Compliance** [OMN-2086] (#498): Scheduled workflow and script that queries GitHub API to verify all active repos have check-handshake CI enforcement passing
+- **Handshake Policy Gate for Cross-Repo Compliance**  (#498): Scheduled workflow and script that queries GitHub API to verify all active repos have check-handshake CI enforcement passing
   - Shared `repos.conf` for DRY repo list management
   - `_parse_repos_conf.sh` helper for portable parsing (bash 3.2+)
   - `POLICY_GATE_TOKEN` for cross-repo private workflow access
   - Server-side branch filtering, URL-encoded branch names, `jq` dependency documented
 
-- **Handshake Self-Check Enforcement** [OMN-2083] (#497): CI workflow so omnibase_core verifies its own installed handshake matches the canonical source
+- **Handshake Self-Check Enforcement**  (#497): CI workflow so omnibase_core verifies its own installed handshake matches the canonical source
   - `.gitignore` updated for `.claude/*` with negation for `architecture-handshake.md`
   - 9 universal platform-wide rules added to all 8 architecture handshakes
   - Frozen 4 boundary-crossing models (`ModelOnexEnvelope`, `ModelOnexEnvelopeV1`, `ModelEnvelopeMetadata`, `ModelExtensionData`) with `frozen=True` + `from_attributes=True`
 
 ### Fixed
 
-- **Break Circular Import in FSM Package** [OMN-2048] (#496): Resolved circular import chain (`fsm/__init__` → `model_fsm_transition_result` → `reducer/__init__` → ... → `model_fsm_transition_result`)
+- **Break Circular Import in FSM Package**  (#496): Resolved circular import chain (`fsm/__init__` → `model_fsm_transition_result` → `reducer/__init__` → ... → `model_fsm_transition_result`)
   - Deferred `ModelFSMTransitionResult` import to `TYPE_CHECKING` + function-local import in `util_fsm_executor.py`
   - Replaced eager re-exports in `models/invariant/__init__.py` with `__getattr__` lazy-loading pattern
   - Cached lazy-loaded YAML functions in `globals()` to avoid repeated `__getattr__` calls
@@ -480,31 +480,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **EnumEvidenceTier for Evidence-Gated Promotion** [OMN-2043] (#494): New enum in the pattern_learning domain with four ordered tiers for threshold-based promotion decisions
+- **EnumEvidenceTier for Evidence-Gated Promotion**  (#494): New enum in the pattern_learning domain with four ordered tiers for threshold-based promotion decisions
   - Tiers: `UNMEASURED < OBSERVED < MEASURED < VERIFIED` with numeric weight ordering
   - Supports comparison operators (`__lt__`, `__le__`, `__gt__`, `__ge__`) via weight-based ordering
   - Coerces string operands to enum values for correct comparison semantics (avoids lexicographic ordering bugs)
 
-- **Event Typing and Schema Versioning for ModelEventEnvelope** [OMN-2035] (#493): Three new optional fields for explicit event dispatch and payload version tracking
+- **Event Typing and Schema Versioning for ModelEventEnvelope**  (#493): Three new optional fields for explicit event dispatch and payload version tracking
   - `event_type: str | None` — dot-path routing key for event dispatch
   - `payload_type: str | None` — Pydantic model class name for deserialization
   - `payload_schema_version: ModelSemVer | None` — payload schema version for evolution
   - Bumped `envelope_version` to 2.1.0; updated `TypedDictEventEnvelopeDict` and `to_dict_lazy()`
   - Full backwards compatibility — all fields default to `None`
 
-- **Interface Models for ModelTicketContract** [OMN-1971] (#490): Integrate interface definitions into ticket contracts for mock-based parallel development
+- **Interface Models for ModelTicketContract**  (#490): Integrate interface definitions into ticket contracts for mock-based parallel development
   - Added `interfaces_provided` and `interfaces_consumed` fields to `ModelTicketContract`
   - New `VERIFY_INTERFACE` variant in `EnumVerificationKind`
   - Updated `__repr__` to include interface counts for debugging
 
-- **ModelInterfaceProvided/Consumed and Supporting Enums** [OMN-1968] (#489): Frozen Pydantic models for interface definitions enabling mock-based parallel development
+- **ModelInterfaceProvided/Consumed and Supporting Enums**  (#489): Frozen Pydantic models for interface definitions enabling mock-based parallel development
   - `ModelInterfaceProvided` and `ModelInterfaceConsumed` — typed interface contracts
   - 4 new enums: `EnumInterfaceKind`, `EnumMockStrategy`, `EnumDefinitionFormat`, `EnumInterfaceSurface`
   - `EnumDefinitionLocation` replaces `Literal["inline", "file_ref"]` per enum policy
   - Cross-field validation: `definition_ref` required when `definition_location=FILE_REF`
   - 69 unit tests covering immutability, validation, and YAML round-trip
 
-- **Phase 3 Cross-Repo Validation Rules** [OMN-1906] (#488): Four new AST-based validation rules with fingerprinting for baseline tracking
+- **Phase 3 Cross-Repo Validation Rules**  (#488): Four new AST-based validation rules with fingerprinting for baseline tracking
   - `validator_duplicate_protocols` — detect protocol classes defined in multiple files
   - `validator_partition_key` — require explicit `partition_key` in topic configs
   - `validator_observability` — flag `print()`, raw `logging.getLogger()`, and `logging.Logger()` instantiation
@@ -517,12 +517,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Remove Legacy dev.omnimemory Topic Constants** [OMN-1554] (#492): Delete hardcoded `dev.omnimemory.*` module-level constants using the old naming convention
+- **Remove Legacy dev.omnimemory Topic Constants**  (#492): Delete hardcoded `dev.omnimemory.*` module-level constants using the old naming convention
   - Removed `INTENT_STORED_EVENT`, `INTENT_QUERY_REQUESTED_EVENT`, `INTENT_QUERY_RESPONSE_EVENT`
   - Replaced event_type defaults with ONEX-standard `onex.omnimemory.*` identifiers
   - Updated all tests to use inline string values
 
-- **Harden ModelTicketContract** [OMN-1819] (#491): UTC enforcement, type guards, and iterable support for ticket contracts
+- **Harden ModelTicketContract**  (#491): UTC enforcement, type guards, and iterable support for ticket contracts
   - UTC timezone enforcement validator for `created_at`/`updated_at` on deserialization
   - Type guard in `assert_action_allowed()` for non-str/non-enum inputs
   - Extended `research_notes` property to handle arbitrary iterables (tuple, set, generator)
@@ -531,7 +531,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactored
 
-- **Consolidate Error Models into ModelErrorDetails** [OMN-1765] (#486): Single canonical error model replacing three overlapping implementations
+- **Consolidate Error Models into ModelErrorDetails**  (#486): Single canonical error model replacing three overlapping implementations
   - Moved `ModelErrorDetails` from `models/services/` to `models/core/`
   - Removed `ModelBaseError` (simple string-based) and `ModelOnexErrorDetails` (medium complexity)
   - Migrated `ModelLogEntry` and `ModelValidateMessage` from inheritance to direct fields
@@ -543,25 +543,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Field Projection Validation for DB Repository Contracts** [OMN-1790]: Validate that SELECT column lists match contract field definitions
+- **Field Projection Validation for DB Repository Contracts** : Validate that SELECT column lists match contract field definitions
   - Ensures type safety between SQL queries and return type specifications
   - Detects mismatches between projected fields and model_ref schemas
 
-- **Positional Parameter Support ($N) for DB Repository Contracts** [OMN-1789]: Extend parameter validation to support PostgreSQL-style positional parameters
+- **Positional Parameter Support ($N) for DB Repository Contracts** : Extend parameter validation to support PostgreSQL-style positional parameters
   - Supports `$1`, `$2`, etc. alongside existing named `:param` syntax
   - Full validation for parameter count and ordering
 
-- **CTE and Subquery Table Extraction** [OMN-1791]: Enhanced SQL parsing for complex queries
+- **CTE and Subquery Table Extraction** : Enhanced SQL parsing for complex queries
   - Extract table references from Common Table Expressions (CTEs)
   - Parse subqueries to identify all accessed tables
   - Improves table access control validation accuracy
 
-- **Cross-Repo Validation Orchestrator** [OMN-1776]: Unified orchestration layer for running validators across multiple repositories
+- **Cross-Repo Validation Orchestrator** : Unified orchestration layer for running validators across multiple repositories
   - Centralized configuration for multi-repo validation runs
   - Aggregated reporting across repository boundaries
   - Support for parallel validation execution
 
-- **Pydantic Models for Agent YAML Schema Validation** [OMN-1902]: Type-safe models for validating agent configuration files
+- **Pydantic Models for Agent YAML Schema Validation** : Type-safe models for validating agent configuration files
   - `ModelAgentYamlSchema` - Root schema for agent YAML files
   - Validation for agent identity, capabilities, and routing configuration
   - Integration with existing contract validation infrastructure
@@ -570,19 +570,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **ModelMessageEnvelope with Cryptographic Signing** [OMN-1898]: Runtime-gateway-centric message envelope with Ed25519 signatures and Blake3 payload hashing for secure inter-service communication
+- **ModelMessageEnvelope with Cryptographic Signing** : Runtime-gateway-centric message envelope with Ed25519 signatures and Blake3 payload hashing for secure inter-service communication
   - `ModelMessageEnvelope[T]` - Generic signed envelope for typed payloads
   - `ModelEnvelopeSignature` - Signature metadata with algorithm and timestamp
   - `ModelEmitterIdentity` - Component identity for observability
   - `ProtocolKeyProvider` - Interface for key storage backends
   - Crypto utilities: Blake3 hasher, Ed25519 signer, FileKeyProvider
 
-- **Phase 1 Cross-Repo Validators** [OMN-1775]: Three new validation rules to prevent "2am incidents"
+- **Phase 1 Cross-Repo Validators** : Three new validation rules to prevent "2am incidents"
   - `rule_error_taxonomy` - Enforces canonical error module usage, proper ModelOnexError inheritance, and error_code requirements
   - `rule_contract_schema` - Validates contract YAML files have required fields (contract_version, node_type, name, description)
   - `rule_topic_naming` - Enforces ONEX topic naming conventions, detects invalid formats and hardcoded topic strings
 
-- **Injection Metrics Event Contracts** [OMN-1901]: Shared event payload models and topic constants for injection effectiveness metrics
+- **Injection Metrics Event Contracts** : Shared event payload models and topic constants for injection effectiveness metrics
   - `ModelContextUtilizationPayload` - Track context usage effectiveness
   - `ModelAgentMatchPayload` - Track agent routing accuracy
   - `ModelLatencyBreakdownPayload` - Detailed timing breakdown
@@ -597,7 +597,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **TypedDictPatternStorageMetadata** [OMN-1780]: Strongly-typed TypedDict for pattern storage metadata
+- **TypedDictPatternStorageMetadata** : Strongly-typed TypedDict for pattern storage metadata
   - Replaces `dict[str, Any]` with typed structure for `tags`, `learning_context`, and `additional_attributes`
   - Ensures JSON serialization compatibility with string-only additional attributes
 
@@ -605,7 +605,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **TicketContract Model for Contract-Driven Ticket Execution** [OMN-1807]: New models for defining ticket workflows with requirements, verification steps, and gates
+- **TicketContract Model for Contract-Driven Ticket Execution** : New models for defining ticket workflows with requirements, verification steps, and gates
   - `ModelTicketContract` - Main contract model with phases, requirements, and gates
   - `ModelClarifyingQuestion` - Structured questions for requirement gathering
   - `ModelRequirement` - Individual requirement with verification steps
@@ -614,11 +614,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `EnumTicketPhase`, `EnumTicketAction`, `EnumTicketStepStatus`, `EnumVerificationKind`, `EnumGateKind` - Supporting enums
   - `LinearClientProtocol`, `FileSystemProtocol`, `NotificationProtocol` - DI protocols for external integrations
 
-- **Architecture Constraint Maps** [OMN-1832]: Declarative architecture handshakes for 8 active repositories
+- **Architecture Constraint Maps** : Declarative architecture handshakes for 8 active repositories
   - YAML-based constraint definitions for cross-repo architectural rules
   - Install script for syncing constraints across repositories
 
-- **CI Enforcement for Version Verification** [OMN-1862]: Automated version checking in CI pipelines
+- **CI Enforcement for Version Verification** : Automated version checking in CI pipelines
   - Shell scripts for verifying version consistency
   - Pre-commit hooks for local validation
 
@@ -630,7 +630,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Contract-Driven DB Repository Schema and Validators** [OMN-1782]: Implement v1 of contract-driven database repository system for type-safe SQL operations
+- **Contract-Driven DB Repository Schema and Validators** : Implement v1 of contract-driven database repository system for type-safe SQL operations
   - `ModelDbParam` - Parameter definition with type-based constraints
   - `ModelDbReturn` - Return type specification (model_ref + many cardinality)
   - `ModelDbSafetyPolicy` - Opt-in flags for dangerous operations (DELETE/UPDATE without WHERE)
@@ -641,7 +641,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Named parameters only (`:param` style), fail-closed on CTEs/subqueries
   - 40+ unit tests and example YAML contract
 
-- **Adoption Enablement for Cross-Repo Validators** [OMN-1774]: Phase 0.5 implementation enabling incremental adoption through fingerprinting, baselines, and policy inheritance
+- **Adoption Enablement for Cross-Repo Validators** : Phase 0.5 implementation enabling incremental adoption through fingerprinting, baselines, and policy inheritance
   - Violation fingerprinting: deterministic SHA-256 based `hash(rule_id, file_path, symbol)[:16]`
   - Baseline mode: `--baseline-write` and `--baseline-enforce` CLI flags
   - JSON output hardening: counts by severity, rule_id, suppressed status
@@ -657,7 +657,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Contract-Driven Zero-Code Node Base Classes** [OMN-1731]: Enable fully declarative ONEX nodes where `class NodeMyEffect(NodeEffect): pass` works entirely from contract YAML
+- **Contract-Driven Zero-Code Node Base Classes** : Enable fully declarative ONEX nodes where `class NodeMyEffect(NodeEffect): pass` works entirely from contract YAML
   - `ModelProtocolDependency` - Protocol dependency declaration with name, protocol path, required flag, bind_as alias, and lazy_import support
   - `ModelProtocolsNamespace` - Immutable namespace for `self.protocols.<name>` access pattern
   - `resolver_handler` - Resolves handlers from `module:callable` import paths with caching
@@ -672,7 +672,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New error code `PROTOCOL_CONFIGURATION_ERROR` (126) for DI failures
   - 52 new invariant tests covering contract completeness, protocol resolution, namespace immutability
 
-- **Cross-Repository Conformance Validators** [OMN-1771]: Contract-driven validation system for enforcing code placement, import boundaries, and repo conventions
+- **Cross-Repository Conformance Validators** : Contract-driven validation system for enforcing code placement, import boundaries, and repo conventions
   - `ModelValidationPolicyContract` - Policy contract model for validation rules
   - `ModelValidationDiscoveryConfig` - Discovery configuration for finding files to validate
   - `ModelRuleConfigs` - Rule configuration models (repo_boundaries, forbidden_imports)
@@ -687,7 +687,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Request-Response Schema Support** [OMN-1760]: Added `request_response` field to `ModelEventBusSubcontract`
+- **Request-Response Schema Support** : Added `request_response` field to `ModelEventBusSubcontract`
   - `ModelRequestResponseConfig` - Top-level config containing list of request-response instances
   - `ModelRequestResponseInstance` - Individual pattern config with request topic, reply topics, timeout, consumer group mode
   - `ModelReplyTopics` - Completed/failed topic suffix pairs with ONEX naming validation
@@ -696,13 +696,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Non-empty instances list enforced to prevent silent no-op configurations
   - `auto_offset_reset` defaults to `"earliest"` to prevent race conditions in request-response patterns
   - Comprehensive test coverage (871 lines, 70+ test cases)
-  - Enables contract-driven request-response wiring in `omnibase_infra` (OMN-1742)
+  - Enables contract-driven request-response wiring in `omnibase_infra` 
 
 ## [0.10.1] - 2026-01-31
 
 ### Added
 
-- **Kafka Import Guard** [OMN-1745]: Extended CI guard to block direct Kafka imports
+- **Kafka Import Guard** : Extended CI guard to block direct Kafka imports
   - Renamed `validate-no-listener-apis.py` → `validate-no-kafka-listener-apis.py`
   - Added patterns for: `AIOKafkaConsumer`, `KafkaConsumer`, `AIOKafkaProducer`, `KafkaProducer`
   - Added `# kafka-import-ok:` bypass marker (alongside existing `# listener-api-ok:`)
@@ -714,7 +714,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- **Removed Listener Management from MixinEventBus** [OMN-1747]: Listener/consumer lifecycle code removed from `omnibase_core`
+- **Removed Listener Management from MixinEventBus** : Listener/consumer lifecycle code removed from `omnibase_core`
   - ⚠️ **BREAKING**: `MixinEventListener` mixin removed entirely
   - ⚠️ **BREAKING**: `ModelEventBusListenerHandle` model removed
   - ⚠️ **BREAKING**: `ProtocolEventBusListener` protocol removed
@@ -746,7 +746,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **CI Guard** [OMN-1747]: Pre-commit hook to prevent listener API reintroduction
+- **CI Guard** : Pre-commit hook to prevent listener API reintroduction
   - `scripts/validation/validate-no-listener-apis.py` - Validation script
   - `.pre-commit-config.yaml` - New `validate-no-listener-apis` hook
   - Guards against: `start_event_listener`, `stop_event_listener`, `_event_listener_loop`, `ModelEventBusListenerHandle`
@@ -755,16 +755,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Intent Classification Keywords Field** [OMN-1728]: Added `keywords: list[str]` field to `ModelIntentClassificationOutput`
+- **Intent Classification Keywords Field** : Added `keywords: list[str]` field to `ModelIntentClassificationOutput`
   - Captures keywords/features that contributed to the classification decision
   - Uses `default_factory=list` for safe mutable default
-  - Unblocks `ProtocolIntentGraph` conformance (OMN-1729, OMN-1730)
+  - Unblocks `ProtocolIntentGraph` conformance ()
 
 ## [0.9.10] - 2026-01-30
 
 ### Added
 
-- **Claude Code Tool Execution Content Model** [OMN-1701]: Added `ModelToolExecutionContent` and `EnumClaudeCodeToolName` for pattern learning
+- **Claude Code Tool Execution Content Model** : Added `ModelToolExecutionContent` and `EnumClaudeCodeToolName` for pattern learning
   - `EnumClaudeCodeToolName`: 26 Claude Code tool names with classification helpers
   - `ModelToolExecutionContent`: Tool execution capture model with dual-field pattern
   - Helper methods: `is_file_operation()`, `is_search_operation()`, `is_execution_tool()`, etc.
@@ -775,7 +775,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Platform Baseline Topic Suffix Constants** [OMN-1652]: Added individual topic suffix constants for cross-repository imports
+- **Platform Baseline Topic Suffix Constants** : Added individual topic suffix constants for cross-repository imports
   - `TOPIC_SUFFIX_CONTRACT_REGISTERED` - Contract registration event topic suffix
   - `TOPIC_SUFFIX_CONTRACT_DEREGISTERED` - Contract deregistration event topic suffix
   - `TOPIC_SUFFIX_NODE_HEARTBEAT` - Node heartbeat event topic suffix
@@ -786,7 +786,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Contract Publisher Mixin** [OMN-1655]: Added `MixinContractPublisher` for nodes to publish contracts on startup
+- **Contract Publisher Mixin** : Added `MixinContractPublisher` for nodes to publish contracts on startup
   - `publish_contract(contract_path)` - Reads YAML, computes SHA256 hash, publishes `ModelContractRegisteredEvent`
   - `publish_deregistration(reason)` - Publishes `ModelContractDeregisteredEvent` for graceful shutdown
   - `start_heartbeat(interval_seconds)` - Background task emitting `ModelNodeHeartbeatEvent`
@@ -797,16 +797,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Tool Failure Pattern Classification** [OMN-1609]: Added `EnumPatternKind.TOOL_FAILURE` for classifying tool failure patterns
+- **Tool Failure Pattern Classification** : Added `EnumPatternKind.TOOL_FAILURE` for classifying tool failure patterns
   - Distinct from `TOOL_USAGE` (success patterns vs failure patterns)
   - Covers recurring failures, failure sequences, recovery patterns, etc.
 
-- **Tool Execution Model** [OMN-1608]: Added `ModelToolExecution` to intelligence models
+- **Tool Execution Model** : Added `ModelToolExecution` to intelligence models
   - Frozen Pydantic model for structured tool execution data
   - Computed `directory` property derived from file path
   - Supports pattern extraction for tool usage analysis
 
-- **Contract Infrastructure Extensions** [OMN-1588]: Added ONEX infrastructure extension fields to `ModelContractBase`
+- **Contract Infrastructure Extensions** : Added ONEX infrastructure extension fields to `ModelContractBase`
   - `yaml_consumed_events`, `yaml_published_events`, `handler_routing` fields
   - New `ModelConsumedEventEntry` and `ModelPublishedEventEntry` models
   - Field validators normalize string lists to typed entries
@@ -817,7 +817,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Pattern Extraction Models** [OMN-1587]: Added models for intelligence pattern extraction
+- **Pattern Extraction Models** : Added models for intelligence pattern extraction
   - Canonical Pydantic models for code pattern analysis results
   - Support for extracting and representing code patterns from analysis pipelines
 
@@ -825,7 +825,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Topic Suffix Validation Utilities** [OMN-1537]: Added canonical topic suffix validation for contract-driven topic declaration
+- **Topic Suffix Validation Utilities** : Added canonical topic suffix validation for contract-driven topic declaration
   - `validate_topic_suffix()`, `parse_topic_suffix()`, `compose_full_topic()` utilities
   - `ModelTopicSuffixParts` and `ModelTopicValidationResult` models
   - `publish_topics`/`subscribe_topics` fields in `ModelEventBusSubcontract`
@@ -835,28 +835,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 
-- **Operation Bindings DSL** [OMN-1517]: Added comprehensive documentation for the `operation_bindings` declarative handler wiring schema
+- **Operation Bindings DSL** : Added comprehensive documentation for the `operation_bindings` declarative handler wiring schema
 
 ## [0.9.4] - 2026-01-25
 
 ### Added
 
-- **Intent Storage Event Models** [OMN-1513]: Added canonical event models for the intent storage pipeline
+- **Intent Storage Event Models** : Added canonical event models for the intent storage pipeline
   - `ModelEventPayloadBase`: Base class for embedded payloads (frozen, metadata-free)
   - `ModelIntentStoredEvent`: Emitted after intent storage to graph database
   - `ModelIntentQueryRequestedEvent`: Dashboard queries (distribution/session/recent)
   - `ModelIntentQueryResponseEvent`: Response with intent records
   - `IntentRecordPayload`: Lightweight intent record for query responses
 
-- **Operation Bindings Schema** [OMN-1410]: Added `operation_bindings` schema for declarative handler wiring
+- **Operation Bindings Schema** : Added `operation_bindings` schema for declarative handler wiring
 
-- **Session and Intent Classification Models** [OMN-1489] [OMN-1490]: Added session snapshot and intent classification models
+- **Session and Intent Classification Models**  : Added session snapshot and intent classification models
 
-- **Claude Code Hook Input Types** [OMN-1474]: Added integration types for Claude Code hooks
+- **Claude Code Hook Input Types** : Added integration types for Claude Code hooks
 
 ### Changed
 
-- **Handler Contract Refactor** [OMN-1465]: Renamed `handler_kind` to `node_archetype` in handler contracts for clarity
+- **Handler Contract Refactor** : Renamed `handler_kind` to `node_archetype` in handler contracts for clarity
 
 ## [0.9.1] - 2026-01-22
 
@@ -866,13 +866,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Contract Version Enforcement** [OMN-1436]: Strict enforcement of `contract_version` field - removed deprecated `version` field fallback in handler contracts
+- **Contract Version Enforcement** : Strict enforcement of `contract_version` field - removed deprecated `version` field fallback in handler contracts
 
 ## [0.9.0] - 2026-01-21
 
 ### ⚠️ BREAKING CHANGES
 
-#### Contract Version Field Rename [OMN-1431]
+#### Contract Version Field Rename 
 
 **`ModelContractBase.version` renamed to `contract_version`** to align with ONEX specification naming conventions.
 
@@ -905,7 +905,7 @@ contract = ModelContractCompute(
 - `ModelProfileReference.version`
 - `ModelValidatorSubcontract.version`
 
-#### Handler Contract Version Field Migration [OMN-1436]
+#### Handler Contract Version Field Migration 
 
 **`ModelHandlerContract.version` migrated to `contract_version: ModelSemVer`** with strict enforcement. Handler contracts now require the structured `contract_version` field instead of the legacy string-based `version` field.
 
@@ -962,11 +962,11 @@ contract = ModelHandlerContract(
 
 ### Added
 
-- **Metrics Emission Models**: New models for observability metrics emission with cardinality policies [OMN-1367]
+- **Metrics Emission Models**: New models for observability metrics emission with cardinality policies 
 
 ### Changed
 
-- **Header Cleanup**: Removed legacy SPDX headers from omnibase_core codebase [OMN-1360]
+- **Header Cleanup**: Removed legacy SPDX headers from omnibase_core codebase 
 
 ## [0.7.0] - 2026-01-15
 
@@ -974,7 +974,7 @@ contract = ModelHandlerContract(
 
 This release contains significant breaking changes to enum and type alias organization. These changes improve type safety, eliminate duplication, and establish canonical patterns for the codebase.
 
-#### Status Enum Consolidation [OMN-1310]
+#### Status Enum Consolidation 
 
 **57+ overlapping status enums consolidated into 4 canonical enums.** No backwards compatibility - duplicates removed outright.
 
@@ -1006,7 +1006,7 @@ status = EnumExecutionStatus.RUNNING
 health = EnumHealthStatus.HEALTHY
 ```
 
-#### Severity Enum Canonicalization [OMN-1311]
+#### Severity Enum Canonicalization 
 
 **5 severity enums merged into canonical `EnumSeverity`.** This establishes a single source of truth for severity levels across the codebase.
 
@@ -1033,7 +1033,7 @@ severity = EnumSeverity.ERROR
 invariant_sev = EnumSeverity.CRITICAL
 ```
 
-#### Literal Type Aliases Replaced with Canonical Enums [OMN-1308]
+#### Literal Type Aliases Replaced with Canonical Enums 
 
 **11 Literal type definitions removed** from `protocols/base/__init__.py` and replaced with proper enums.
 
@@ -1059,7 +1059,7 @@ from omnibase_core.enums import EnumServiceLifecycle
 lifecycle = EnumServiceLifecycle.SINGLETON
 ```
 
-#### Type Alias Consolidation [OMN-1294]
+#### Type Alias Consolidation 
 
 Duplicate type aliases consolidated to eliminate redundancy:
 
@@ -1070,7 +1070,7 @@ Duplicate type aliases consolidated to eliminate redundancy:
 | `ParameterValue` | `QueryParameterValue` | Renamed (different semantics) |
 | `ConfigValue` | `ScalarConfigValue` | Renamed (narrower semantics) |
 
-#### Enum Member Casing Standardization [OMN-1307]
+#### Enum Member Casing Standardization 
 
 **All enum members must use UPPER_SNAKE_CASE.** `EnumFileStatus` members renamed from lowercase to UPPER_SNAKE_CASE. String values unchanged for backward compatibility in serialized data.
 
@@ -1090,48 +1090,48 @@ class EnumFileStatus(str, Enum):
 
 ### Added
 
-- **EnumSeverity**: Canonical 6-level severity taxonomy (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with `StrValueHelper` mixin [OMN-1296]
-- **Enum Governance Checker**: `checker_enum_governance.py` for automated enforcement of enum standards [OMN-1296]
-- **Enum Member Casing Validator**: `checker_enum_member_casing.py` AST-based validator with pre-commit integration [OMN-1307]
-- **Literal Duplication Checker**: `checker_literal_duplication.py` to prevent Literal/Enum duplication [OMN-1308]
-- **ModelOmniMemoryContract**: YAML schema for OmniMemory contracts [OMN-1251]
-- **ManifestGenerator Callback**: `on_manifest_built` callback hook for pipeline manifest generation [OMN-1203]
-- **JSON-Safety Validation**: `ModelPayloadExtension` JSON-safety validation [OMN-1266]
-- **Container Public API**: `initialize_service_registry()` public API for container initialization [OMN-1265]
-- **Evidence Export Service**: Demo service with renderer refactoring [OMN-1200]
-- **ModelMemorySnapshot**: Unified state container for OmniMemory [OMN-1243]
-- **Non-Deterministic Effect Classification**: Effect classification system for replay safety [OMN-1147]
-- **Pydantic Conventions Validator**: Validator for Pydantic model patterns [OMN-1314]
-- **Invariant Violation Report Model**: Demo model for invariant violations [OMN-1206]
-- **Error Handling Patterns**: Standardized error handling patterns with decorators [OMN-1299]
-- **Support Assistant Handler**: Demo handler for model evaluation [OMN-1201]
-- **ADR-013 Status Taxonomy**: Architecture decision record for status enum taxonomy [OMN-1312]
+- **EnumSeverity**: Canonical 6-level severity taxonomy (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with `StrValueHelper` mixin 
+- **Enum Governance Checker**: `checker_enum_governance.py` for automated enforcement of enum standards 
+- **Enum Member Casing Validator**: `checker_enum_member_casing.py` AST-based validator with pre-commit integration 
+- **Literal Duplication Checker**: `checker_literal_duplication.py` to prevent Literal/Enum duplication 
+- **ModelOmniMemoryContract**: YAML schema for OmniMemory contracts 
+- **ManifestGenerator Callback**: `on_manifest_built` callback hook for pipeline manifest generation 
+- **JSON-Safety Validation**: `ModelPayloadExtension` JSON-safety validation 
+- **Container Public API**: `initialize_service_registry()` public API for container initialization 
+- **Evidence Export Service**: Demo service with renderer refactoring 
+- **ModelMemorySnapshot**: Unified state container for OmniMemory 
+- **Non-Deterministic Effect Classification**: Effect classification system for replay safety 
+- **Pydantic Conventions Validator**: Validator for Pydantic model patterns 
+- **Invariant Violation Report Model**: Demo model for invariant violations 
+- **Error Handling Patterns**: Standardized error handling patterns with decorators 
+- **Support Assistant Handler**: Demo handler for model evaluation 
+- **ADR-013 Status Taxonomy**: Architecture decision record for status enum taxonomy 
 
 ### Changed
 
-- **File Headers**: Unified file headers across omnibase_core codebase [OMN-1337]
-- **Type Annotations**: Modernized to PEP 604 union syntax (`X | Y` instead of `Union[X, Y]`) [OMN-1300]
-- **Pydantic Patterns**: Standardized Pydantic model patterns across codebase [OMN-1301]
-- **File/Class Naming**: Fixed naming convention violations [OMN-1298]
+- **File Headers**: Unified file headers across omnibase_core codebase 
+- **Type Annotations**: Modernized to PEP 604 union syntax (`X | Y` instead of `Union[X, Y]`) 
+- **Pydantic Patterns**: Standardized Pydantic model patterns across codebase 
+- **File/Class Naming**: Fixed naming convention violations 
 
 ### Fixed
 
 - **EnumValidationSeverity Import**: Removed broken import that blocked all enum imports [#397]
-- **Status String References**: Replaced hardcoded status strings with enum references [OMN-1309]
+- **Status String References**: Replaced hardcoded status strings with enum references 
 
 ### Refactored
 
-- **Type Ignore Comments**: Reduced `type: ignore` comments by 35% through proper typing [OMN-1073]
-- **AI Slop Patterns**: Removed AI-generated boilerplate patterns from codebase [OMN-1297]
+- **Type Ignore Comments**: Reduced `type: ignore` comments by 35% through proper typing 
+- **AI Slop Patterns**: Removed AI-generated boilerplate patterns from codebase 
 
 ## [0.6.6] - 2026-01-12
 
 ### Added
 
-- **EnumHandlerRoutingStrategy** (OMN-1295): Added enum for handler routing strategies replacing Literal type, improving type safety and IDE support
-- **Replay Safety Enforcement** (OMN-1150): Implemented replay safety enforcement for non-deterministic effects with audit trail and UUID injection services
-- **Baseline Health Report Models** (OMN-1198): Added baseline health report models, performance metrics, and stability calculator utilities
-- **Execution Detail View Models** (OMN-1197): Added execution detail view models and consolidated comparison models into replay module
+- **EnumHandlerRoutingStrategy**  Added enum for handler routing strategies replacing Literal type, improving type safety and IDE support
+- **Replay Safety Enforcement**  Implemented replay safety enforcement for non-deterministic effects with audit trail and UUID injection services
+- **Baseline Health Report Models**  Added baseline health report models, performance metrics, and stability calculator utilities
+- **Execution Detail View Models**  Added execution detail view models and consolidated comparison models into replay module
 
 ### Changed
 
@@ -1148,9 +1148,9 @@ class EnumFileStatus(str, Enum):
 
 ### Added
 
-- **MixinHandlerRouting** (OMN-1293): Added contract-driven handler routing mixin for flexible handler resolution
-- **Correlation ID Propagation** (OMN-601): Implemented correlation_id propagation across all intents for improved traceability
-- **ModelExecutionProfile Extensions** (OMN-1292): Extended ModelExecutionProfile and ModelExecutionConflict for ProtocolConstraintValidator
+- **MixinHandlerRouting**  Added contract-driven handler routing mixin for flexible handler resolution
+- **Correlation ID Propagation**  Implemented correlation_id propagation across all intents for improved traceability
+- **ModelExecutionProfile Extensions**  Extended ModelExecutionProfile and ModelExecutionConflict for ProtocolConstraintValidator
 
 ## [0.6.3] - 2026-01-08
 
@@ -1168,17 +1168,17 @@ class EnumFileStatus(str, Enum):
 
 ### Added
 
-- **Contract CLI Tooling** (OMN-1129): Added CLI commands for contract management and validation
-- **ModelHandlerPackaging** (OMN-1119): Added secure handler distribution with cryptographic signing and verification
-- **Diff Rendering & Storage Hooks** (OMN-1149): Added explainability output support with diff rendering capabilities
-- **Handler Contract Protocols** (OMN-1164): Migrated handler contract protocols from SPI to Core
-- **ModelProjectionResult** (OMN-1233): Added projection result model for projection operations
+- **Contract CLI Tooling**  Added CLI commands for contract management and validation
+- **ModelHandlerPackaging**  Added secure handler distribution with cryptographic signing and verification
+- **Diff Rendering & Storage Hooks**  Added explainability output support with diff rendering capabilities
+- **Handler Contract Protocols**  Migrated handler contract protocols from SPI to Core
+- **ModelProjectionResult**  Added projection result model for projection operations
 
 ## [0.6.0] - 2026-01-05
 
 ### ⚠️ BREAKING CHANGES
 
-#### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior [OMN-1117]
+#### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior 
 
 The `ModelHandlerBehaviorDescriptor` class has been renamed to `ModelHandlerBehavior`. The backwards compatibility shim (`model_handler_behavior_descriptor.py`) and alias have been **removed**.
 
@@ -1218,7 +1218,7 @@ find . -name "*.py" -exec sed -i 's/ModelHandlerBehaviorDescriptor/ModelHandlerB
 find . -name "*.py" -exec sed -i 's/model_handler_behavior_descriptor/model_handler_behavior/g' {} \;
 ```
 
-#### File Renames for Directory Prefix Naming Conventions [OMN-1222]
+#### File Renames for Directory Prefix Naming Conventions 
 
 Files across 4 directories have been renamed to follow consistent directory prefix naming conventions. **Direct module imports to old paths will fail with `ModuleNotFoundError`**.
 
@@ -1291,7 +1291,7 @@ grep -rn "from omnibase_core\.\(logging\|runtime\|validation\)\.\(core_logging\|
 # Recommended: Update to package-level imports for future compatibility
 ```
 
-#### Hook Typing Enforcement Enabled by Default [OMN-1157]
+#### Hook Typing Enforcement Enabled by Default 
 
 The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code building execution plans with typed hooks.
 
@@ -1368,7 +1368,7 @@ The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed
 - [ ] Add `enforce_hook_typing=False` to builders that need gradual migration
 - [ ] Run tests to verify no `HookTypeMismatchError` is raised unexpectedly
 
-#### Workflow Contract Model Hardening [OMN-654]
+#### Workflow Contract Model Hardening 
 
 The following workflow contract models now enforce **immutability** (`frozen=True`) and **field validation**:
 
@@ -1534,7 +1534,7 @@ def test_workflow_processing():
 - [ ] Run tests to verify `pydantic.ValidationError` is not raised unexpectedly
 - [ ] Verify thread safety requirements are met (frozen models are now safe to share)
 
-#### Model Relocations and Naming Conventions [OMN-1067]
+#### Model Relocations and Naming Conventions 
 
 Several model classes have been relocated from `mixins/` and `runtime/` to `models/` to follow ONEX file location conventions. Classes have been renamed from `Mixin*` to `Model*` prefix to reflect that they are Pydantic data models, not behavioral mixins.
 
@@ -1582,7 +1582,7 @@ node = ModelRuntimeNodeInstance(...)
 error = ModelErrorMetadata(...)
 ```
 
-#### UUID Type Strengthening [OMN-1067]
+#### UUID Type Strengthening 
 
 Several ID fields that were previously typed as `str` are now typed as `UUID`. Pydantic 2.11+ automatically coerces UUID strings to `UUID` objects, so string inputs are still accepted.
 
@@ -1611,7 +1611,7 @@ if str(metadata.stack_trace_id) == expected_uuid_string:
 
 **Note**: Invalid UUID strings will now raise `ValidationError` during model construction rather than being accepted as arbitrary strings.
 
-#### Security: Deprecated MD5/SHA-1 Hash Algorithms [OMN-699]
+#### Security: Deprecated MD5/SHA-1 Hash Algorithms 
 
 `ModelSessionAffinity` now deprecates MD5 and SHA-1 hash algorithms due to known cryptographic weaknesses. These algorithms are auto-converted to SHA-256 with a `DeprecationWarning`. **Support will be fully removed in v0.6.0.**
 
@@ -1635,7 +1635,7 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 **Recommendation**: Update configurations to use SHA-256 (default) before v0.6.0. Use SHA-384 or SHA-512 for high-security environments.
 
-#### MixinEventBus STRICT_BINDING_MODE Default Changed [OMN-1156]
+#### MixinEventBus STRICT_BINDING_MODE Default Changed 
 
 The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code calling `bind_*()` methods after the mixin is "in use" (after `start_event_listener()` or publish operations).
 
@@ -1681,7 +1681,7 @@ The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `
 - [ ] Add `STRICT_BINDING_MODE = False` to legacy classes that cannot be immediately fixed
 - [ ] Run tests to verify no `ModelOnexError` with `INVALID_STATE` is raised unexpectedly
 
-#### MixinEventBus Architecture Refactoring [OMN-1081]
+#### MixinEventBus Architecture Refactoring 
 
 `MixinEventBus` has been refactored to use composition with dedicated data models, separating state management from behavior. This change improves thread safety, eliminates MRO conflicts, and enables proper serialization of runtime state.
 
@@ -1895,7 +1895,7 @@ self.dispose_event_bus_resources()
 - [ ] **NEW**: Replace empty string binding with `ModelEventBusRuntimeState.reset()` to clear bindings
 - [ ] **NEW**: Watch for binding lock warnings indicating thread-safety violations
 
-#### Invariant Validation Returns Detailed Violation Model [OMN-1207]
+#### Invariant Validation Returns Detailed Violation Model 
 
 Invariant validation methods that previously returned `bool` or raised generic exceptions now return `ModelInvariantViolationDetail` on failure. This provides structured debugging information but changes the return type signature.
 
@@ -1924,141 +1924,141 @@ if isinstance(result, ModelInvariantViolationDetail):
 
 #### Replay & Trace Infrastructure
 
-- **Deterministic Replay Infrastructure**: Foundation for deterministic execution replay and validation [OMN-1116]
-- **ModelExecutionComparison**: Comparison model for baseline vs replay execution validation [OMN-1194]
-- **ModelEvidenceSummary**: Evidence summary model for aggregating corpus replay results [OMN-1195]
-- **ModelExecutionCorpus**: Corpus model for organizing and managing replay test sets [OMN-1202]
-- **Configuration Override Injection**: Configuration override injection for A/B testing scenarios [OMN-1205]
-- **Execution Trace Models**: Models for capturing and storing execution traces [OMN-1208]
-- **ServiceTraceRecording**: Service for recording execution traces to storage backends [OMN-1209]
+- **Deterministic Replay Infrastructure**: Foundation for deterministic execution replay and validation 
+- **ModelExecutionComparison**: Comparison model for baseline vs replay execution validation 
+- **ModelEvidenceSummary**: Evidence summary model for aggregating corpus replay results 
+- **ModelExecutionCorpus**: Corpus model for organizing and managing replay test sets 
+- **Configuration Override Injection**: Configuration override injection for A/B testing scenarios 
+- **Execution Trace Models**: Models for capturing and storing execution traces 
+- **ServiceTraceRecording**: Service for recording execution traces to storage backends 
 
 #### Contract System
 
-- **AST-Based Transport Import Validator**: Static analysis validator for transport layer import compliance [OMN-1039]
-- **YAML !include Directive Support**: Support for !include directives in YAML contract files for modular composition [OMN-1047]
-- **Handler Contract Model & YAML Schema**: ModelHandlerContract with comprehensive YAML schema for handler definitions [OMN-1117]
-- **ModelContractPatch**: Patch model for incremental contract modifications with validation [OMN-1126]
-- **Typed Contract Merge Engine**: Type-safe engine for merging contract definitions with conflict resolution [OMN-1127]
-- **Contract Validation Pipeline**: Multi-stage pipeline for validating contracts through configurable stages [OMN-1128]
-- **Contract Validation Event Schema**: Event schema for contract validation lifecycle events [OMN-1146]
-- **Contract Diff Model**: Model for computing and representing patch-level diffs between contracts [OMN-1148]
-- **Validation Pipeline Event Emission**: Event emission hooks for contract validation pipeline stages [OMN-1151]
+- **AST-Based Transport Import Validator**: Static analysis validator for transport layer import compliance 
+- **YAML !include Directive Support**: Support for !include directives in YAML contract files for modular composition 
+- **Handler Contract Model & YAML Schema**: ModelHandlerContract with comprehensive YAML schema for handler definitions 
+- **ModelContractPatch**: Patch model for incremental contract modifications with validation 
+- **Typed Contract Merge Engine**: Type-safe engine for merging contract definitions with conflict resolution 
+- **Contract Validation Pipeline**: Multi-stage pipeline for validating contracts through configurable stages 
+- **Contract Validation Event Schema**: Event schema for contract validation lifecycle events 
+- **Contract Diff Model**: Model for computing and representing patch-level diffs between contracts 
+- **Validation Pipeline Event Emission**: Event emission hooks for contract validation pipeline stages 
 
 #### Validation & Invariants
 
-- **Invariant Definition Models**: Models for defining and configuring invariant rules [OMN-1192]
-- **ServiceInvariantEvaluator**: Service for evaluating invariants against runtime state [OMN-1193]
-- **ModelInvariantViolationDetail**: Structured violation detail model for debugging invariant failures [OMN-1207]
+- **Invariant Definition Models**: Models for defining and configuring invariant rules 
+- **ServiceInvariantEvaluator**: Service for evaluating invariants against runtime state 
+- **ModelInvariantViolationDetail**: Structured violation detail model for debugging invariant failures 
 
 #### Pipeline & Execution
 
-- **ExecutionResolver**: Resolver for mapping handler contracts to executable implementations [OMN-1106]
-- **Runtime Execution Sequencing Model**: Model for defining execution ordering and dependencies [OMN-1108]
-- **Pure Handler Conversions**: Utilities for converting between handler types with type safety [OMN-1112]
-- **Execution Manifest Generation**: Generator for creating execution manifests from pipeline definitions [OMN-1113]
-- **Pipeline Runner & Hook Registry**: Pipeline execution engine with pluggable hook registry [OMN-1114]
+- **ExecutionResolver**: Resolver for mapping handler contracts to executable implementations 
+- **Runtime Execution Sequencing Model**: Model for defining execution ordering and dependencies 
+- **Pure Handler Conversions**: Utilities for converting between handler types with type safety 
+- **Execution Manifest Generation**: Generator for creating execution manifests from pipeline definitions 
+- **Pipeline Runner & Hook Registry**: Pipeline execution engine with pluggable hook registry 
 
 #### Observability
 
-- **Dispatch ID Propagation**: Correlation ID propagation through dispatch chains for distributed tracing [OMN-972]
-- **Prometheus Metrics Backend**: Prometheus-compatible metrics export backend [OMN-1188]
-- **Redis Cache Backend**: Redis-backed caching implementation for distributed deployments [OMN-1188]
+- **Dispatch ID Propagation**: Correlation ID propagation through dispatch chains for distributed tracing 
+- **Prometheus Metrics Backend**: Prometheus-compatible metrics export backend 
+- **Redis Cache Backend**: Redis-backed caching implementation for distributed deployments 
 
 #### Security
 
-- **AES-256-GCM Encryption**: Symmetric encryption support using AES-256-GCM for sensitive data [OMN-1077]
+- **AES-256-GCM Encryption**: Symmetric encryption support using AES-256-GCM for sensitive data 
 
 #### Handler & Capability System
 
-- **Handler Enums**: Enumeration types for handler classification and behavior [OMN-1085]
-- **Handler Descriptors**: Descriptor models for handler metadata and configuration [OMN-1086]
-- **Handler Metadata Models**: Comprehensive metadata models for handler introspection [OMN-1121]
-- **Capability Models**: Models for defining and advertising node capabilities [OMN-1122]
-- **Capability Factories**: Factory classes for capability instantiation and configuration [OMN-1123]
-- **Handler Contract Extensions**: Extended contract fields for advanced handler scenarios [OMN-1124]
-- **Handler Type Categories**: Category-based handler classification system [OMN-1125]
-- **Capability Dependencies**: Dependency declaration and resolution for capabilities [OMN-1152]
-- **Capability Providers**: Provider abstraction for capability implementations [OMN-1153]
-- **Capability Requirements**: Requirement specification for capability consumers [OMN-1154]
-- **Capability Requirement Bindings**: Binding mechanism connecting requirements to providers [OMN-1155]
-- **MixinEventBus Strict Binding Mode**: Fail-fast binding validation for event bus mixins [OMN-1156]
-- **ModelProjectorContract**: Contract model for projection/view definitions [OMN-1166]
+- **Handler Enums**: Enumeration types for handler classification and behavior 
+- **Handler Descriptors**: Descriptor models for handler metadata and configuration 
+- **Handler Metadata Models**: Comprehensive metadata models for handler introspection 
+- **Capability Models**: Models for defining and advertising node capabilities 
+- **Capability Factories**: Factory classes for capability instantiation and configuration 
+- **Handler Contract Extensions**: Extended contract fields for advanced handler scenarios 
+- **Handler Type Categories**: Category-based handler classification system 
+- **Capability Dependencies**: Dependency declaration and resolution for capabilities 
+- **Capability Providers**: Provider abstraction for capability implementations 
+- **Capability Requirements**: Requirement specification for capability consumers 
+- **Capability Requirement Bindings**: Binding mechanism connecting requirements to providers 
+- **MixinEventBus Strict Binding Mode**: Fail-fast binding validation for event bus mixins 
+- **ModelProjectorContract**: Contract model for projection/view definitions 
 
 #### NodeOrchestrator Compliance
 
-- **v1.0.1 Compliance Fixes**: NodeOrchestrator compliance with ONEX specification v1.0.1 [OMN-658]
-- **v1.0.2 Compliance Fixes**: Enhanced orchestration patterns for v1.0.2 specification [OMN-659]
-- **v1.0.3 Compliance Fixes**: Workflow coordination improvements for v1.0.3 specification [OMN-660]
-- **v1.0.4 Compliance Fixes**: Action lease semantics updates for v1.0.4 specification [OMN-661]
-- **v1.0.5 Compliance Fixes**: Final compliance updates for v1.0.5 specification [OMN-662]
-- **Node Protocol Definitions**: Protocol definitions for node type contracts [OMN-664]
+- **v1.0.1 Compliance Fixes**: NodeOrchestrator compliance with ONEX specification v1.0.1 
+- **v1.0.2 Compliance Fixes**: Enhanced orchestration patterns for v1.0.2 specification 
+- **v1.0.3 Compliance Fixes**: Workflow coordination improvements for v1.0.3 specification 
+- **v1.0.4 Compliance Fixes**: Action lease semantics updates for v1.0.4 specification 
+- **v1.0.5 Compliance Fixes**: Final compliance updates for v1.0.5 specification 
+- **Node Protocol Definitions**: Protocol definitions for node type contracts 
 
 #### Protocol & Type System
 
-- **Protocol ISP Split**: Interface Segregation Principle refactoring of monolithic protocols [OMN-1016]
-- **SemVer 2.0.0 Support**: Full Semantic Versioning 2.0.0 compliance with pre-release and build metadata [OMN-1020]
+- **Protocol ISP Split**: Interface Segregation Principle refactoring of monolithic protocols 
+- **SemVer 2.0.0 Support**: Full Semantic Versioning 2.0.0 compliance with pre-release and build metadata 
 
 #### Constants & Configuration
 
-- **Timeout Constants**: Centralized timeout configuration constants for consistency [OMN-1074]
-- **Field Limit Constants**: Centralized field size limit constants for validation [OMN-1076]
+- **Timeout Constants**: Centralized timeout configuration constants for consistency 
+- **Field Limit Constants**: Centralized field size limit constants for validation 
 
 #### Type Safety Improvements
 
-- **Typed Unions for Models**: Discriminated union types for model hierarchies [OMN-1008]
-- **Typed Metadata Models**: Strongly-typed metadata model replacements for dict[str, Any] [OMN-1009]
-- **Typed Union Utilities**: Utility functions for working with typed unions [OMN-1013]
-- **Typed Context Models**: Strongly-typed context models replacing generic dicts [OMN-1048, OMN-1049, OMN-1050, OMN-1051, OMN-1052, OMN-1053, OMN-1054]
-- **Any Type Removal (Errors Module)**: Eliminated dict[str, Any] from error models [OMN-1174]
-- **Any Type Removal (Events Module)**: Eliminated dict[str, Any] from event models [OMN-1175]
-- **Any Type Removal (Core Module)**: Eliminated dict[str, Any] from core models [OMN-1176]
-- **Any Type Removal (Validation Module)**: Eliminated dict[str, Any] from validation models [OMN-1177]
-- **Any Type Removal (Registry Module)**: Eliminated dict[str, Any] from registry models [OMN-1178]
-- **Any Type Removal (Infrastructure Module)**: Eliminated dict[str, Any] from infrastructure models [OMN-1179]
-- **PEP 604 Union Syntax Conversion**: Migrated Optional[X] and Union[X, Y] to X | Y syntax [OMN-1186]
+- **Typed Unions for Models**: Discriminated union types for model hierarchies 
+- **Typed Metadata Models**: Strongly-typed metadata model replacements for dict[str, Any] 
+- **Typed Union Utilities**: Utility functions for working with typed unions 
+- **Typed Context Models**: Strongly-typed context models replacing generic dicts [,
+- **Any Type Removal (Errors Module)**: Eliminated dict[str, Any] from error models 
+- **Any Type Removal (Events Module)**: Eliminated dict[str, Any] from event models 
+- **Any Type Removal (Core Module)**: Eliminated dict[str, Any] from core models 
+- **Any Type Removal (Validation Module)**: Eliminated dict[str, Any] from validation models 
+- **Any Type Removal (Registry Module)**: Eliminated dict[str, Any] from registry models 
+- **Any Type Removal (Infrastructure Module)**: Eliminated dict[str, Any] from infrastructure models 
+- **PEP 604 Union Syntax Conversion**: Migrated Optional[X] and Union[X, Y] to X | Y syntax 
 
 #### Change Management
 
-- **ModelChangeProposal**: Change proposal model for evaluating system changes [OMN-1196]
+- **ModelChangeProposal**: Change proposal model for evaluating system changes 
 
 #### File Naming Conventions
 
-- **Naming Convention Enforcement**: Automated enforcement of directory-based file naming prefixes [OMN-1224]
-- **Naming Convention Checker**: Pre-commit checker for file naming compliance [OMN-1225]
+- **Naming Convention Enforcement**: Automated enforcement of directory-based file naming prefixes 
+- **Naming Convention Checker**: Pre-commit checker for file naming compliance 
 
 ### Fixed
 
-- **Bare Except Replacement**: Replaced bare `except:` clauses with specific exception types [OMN-1064]
-- **Generic Exception Catches**: Replaced generic `except Exception` with specific exception handling [OMN-1075]
-- **Broken get_metadata() Pattern**: Fixed incorrect get_metadata() implementations across node types [OMN-1083]
+- **Bare Except Replacement**: Replaced bare `except:` clauses with specific exception types 
+- **Generic Exception Catches**: Replaced generic `except Exception` with specific exception handling 
+- **Broken get_metadata() Pattern**: Fixed incorrect get_metadata() implementations across node types 
 
 ### Changed
 
 #### Model Relocations and Renames
 
-- **ModelLogData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1066]
-- **ModelNodeIntrospectionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1067]
-- **ModelCompletionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change [OMN-1069]
-- **ModelRuntimeNodeInstance Relocation**: Moved from `runtime/` to `models/runtime/` with class rename [OMN-1070]
-- **ModelErrorMetadata Rename**: Renamed from ModelErrorContext to ModelErrorMetadata [OMN-1071]
+- **ModelLogData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change 
+- **ModelNodeIntrospectionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change 
+- **ModelCompletionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change 
+- **ModelRuntimeNodeInstance Relocation**: Moved from `runtime/` to `models/runtime/` with class rename 
+- **ModelErrorMetadata Rename**: Renamed from ModelErrorContext to ModelErrorMetadata 
 
 #### MixinEventBus Refactoring
 
-- **MixinEventBus Architecture**: Refactored to composition-based architecture with ModelEventBusRuntimeState and ModelEventBusListenerHandle [OMN-1081]
+- **MixinEventBus Architecture**: Refactored to composition-based architecture with ModelEventBusRuntimeState and ModelEventBusListenerHandle 
 
 #### File Naming Convention Renames
 
-- **Logging Module Renames**: Renamed files to follow `logging_*` prefix convention [OMN-1213]
-- **Runtime Module Renames**: Renamed files to follow `runtime_*` prefix convention [OMN-1214]
-- **Services Registry Renames**: Renamed files to follow `service_registry_*` prefix convention [OMN-1215]
-- **Validation Module Renames**: Renamed files to follow `validator_*` prefix convention [OMN-1216]
-- **Additional Logging Renames**: Secondary logging file renames for consistency [OMN-1217]
-- **Additional Runtime Renames**: Secondary runtime file renames for consistency [OMN-1218]
-- **Additional Services Renames**: Secondary services file renames for consistency [OMN-1219]
-- **Additional Validation Renames**: Secondary validation file renames for consistency [OMN-1220]
-- **Cross-Module Rename Coordination**: Coordinated renames across related modules [OMN-1221]
-- **Final Naming Convention Compliance**: Final pass ensuring all files follow conventions [OMN-1222]
-- **Import Path Updates**: Updated all import paths to reflect new file names [OMN-1223]
+- **Logging Module Renames**: Renamed files to follow `logging_*` prefix convention 
+- **Runtime Module Renames**: Renamed files to follow `runtime_*` prefix convention 
+- **Services Registry Renames**: Renamed files to follow `service_registry_*` prefix convention 
+- **Validation Module Renames**: Renamed files to follow `validator_*` prefix convention 
+- **Additional Logging Renames**: Secondary logging file renames for consistency 
+- **Additional Runtime Renames**: Secondary runtime file renames for consistency 
+- **Additional Services Renames**: Secondary services file renames for consistency 
+- **Additional Validation Renames**: Secondary validation file renames for consistency 
+- **Cross-Module Rename Coordination**: Coordinated renames across related modules 
+- **Final Naming Convention Compliance**: Final pass ensuring all files follow conventions 
+- **Import Path Updates**: Updated all import paths to reflect new file names 
 
 #### Envelope Model Updates
 
@@ -2070,7 +2070,7 @@ if isinstance(result, ModelInvariantViolationDetail):
 
 ### Fixed
 
-#### Missing Model Exports [OMN-989]
+#### Missing Model Exports 
 
 Exported 4 models from `omnibase_core.models.common` that existed but were not in the public API:
 
@@ -2152,7 +2152,7 @@ For error/warning models, prefer importing from `omnibase_core.errors` for seman
 
 ### Fixed
 
-#### PEP 604 Validator Fix for Dependent Repos [OMN-902]
+#### PEP 604 Validator Fix for Dependent Repos 
 - Fixed `union_usage_checker.py` to correctly detect PEP 604 union types (`X | Y`) at runtime
 - Added `types.UnionType` detection alongside existing `typing.Union` handling
 - This fix enables dependent repositories (omnibase_spi, omnibase_nodes, etc.) to use the validator without false positives
@@ -2178,7 +2178,7 @@ For error/warning models, prefer importing from `omnibase_core.errors` for seman
 
 ### Added
 
-#### Registration Models [OMN-913]
+#### Registration Models 
 - **ModelRegistrationPayload**: Typed payload for registration intents with comprehensive validation
   - PostgreSQL record storage with `ModelRegistrationRecordBase` type safety
   - Consul service configuration (service ID, name, tags, health checks)
@@ -2193,34 +2193,34 @@ For error/warning models, prefer importing from `omnibase_core.errors` for seman
 - All models follow ONEX patterns: frozen, extra="forbid", from_attributes=True
 - Comprehensive test coverage: 60 tests covering construction, validation, serialization, edge cases
 
-#### Core Intent Discriminated Union [OMN-912]
+#### Core Intent Discriminated Union 
 - Implemented discriminated union pattern for core intents using Pydantic's `Field(discriminator=...)`
 - Type-safe intent deserialization with automatic subclass selection
 - Enhanced IDE autocomplete and type checking for intent handling
 
-#### Concurrency Testing [OMN-863]
+#### Concurrency Testing 
 - Comprehensive concurrency tests for all four node types (Effect, Compute, Reducer, Orchestrator)
 - Validates thread-safety and parallel execution behavior
 - Tests concurrent access patterns and race condition prevention
 
-#### Integration Testing [OMN-864]
+#### Integration Testing 
 - Integration tests for `ModelReducerInput` → `ModelReducerOutput` flows
 - End-to-end validation of reducer state management
 - FSM transition testing with real workflow scenarios
 
 ### Changed
 
-#### Type Safety Improvements [OMN-848]
+#### Type Safety Improvements 
 - Replaced `dict[str, Any]` with strongly typed models across codebase
 - Fixed pyright warnings for improved type checking
 - Enhanced IDE support and compile-time safety
 
-#### Protocol Standardization [OMN-861]
+#### Protocol Standardization 
 - Added `ProtocolCircuitBreaker` interface for cross-repository standardization
 - Enables consistent circuit breaker patterns across ONEX ecosystem
 - Supports dependency injection with protocol-based service resolution
 
-#### Hybrid Type Elimination [OMN-847]
+#### Hybrid Type Elimination 
 - Eliminated hybrid dict types in favor of pure Pydantic models
 - Improved type safety and validation consistency
 - Enhanced serialization/deserialization reliability

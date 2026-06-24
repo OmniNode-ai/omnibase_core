@@ -3,7 +3,7 @@
 # Execution Shape Examples
 
 > **Version**: 1.0.0
-> **Ticket**: OMN-933
+
 > **Status**: Reference
 > **Last Updated**: 2025-12-19
 
