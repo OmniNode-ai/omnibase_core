@@ -1,6 +1,7 @@
 ---
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-todo-marker OMN-13480 reason="workflow audits TODO marker policy; marker strings are scanner input"
 
 # todo-audit-on-merge.yml
 #
@@ -42,7 +43,7 @@ jobs:
       }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Extract ticket ID from branch name
         id: extract

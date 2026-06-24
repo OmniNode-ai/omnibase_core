@@ -1,6 +1,7 @@
 ---
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-todo-marker OMN-13480 reason="workflow validates TODO marker policy; marker strings are scanner input"
 
 # stale-todo-gate.yml
 #
@@ -33,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
