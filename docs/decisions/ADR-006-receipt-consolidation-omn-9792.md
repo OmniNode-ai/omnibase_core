@@ -1,7 +1,6 @@
-# ADR-006: Receipt Type Consolidation onto ModelDodReceipt (OMN-9792)
+# ADR-006: Receipt Type Consolidation onto ModelDodReceipt
 
 **Date:** 2026-04-27
-**Ticket:** OMN-9792
 **Status:** Accepted
 
 ## Context
@@ -51,11 +50,11 @@ onex_change_control PR** (follow-up); no backwards-compat re-exports are added
 per CLAUDE.md policy. This omnibase_core PR only adds the `branch` and
 `working_dir` fields — the deletion lands in onex_change_control separately.
 
-### Forward-compatibility with OMN-9132
+### Forward-compatibility with post-merge probe extension
 
-OMN-9132 will extend `ModelDodReceipt` with a required `post_merge_probe` field
+A planned follow-up will extend `ModelDodReceipt` with a required `post_merge_probe` field
 (`ModelPostMergeProbe`). That field is intentionally **not** added here to preserve
-the non-breaking nature of this PR. OMN-9132 owns that addition.
+the non-breaking nature of this PR. That follow-up owns the addition.
 
 ## Consequences
 

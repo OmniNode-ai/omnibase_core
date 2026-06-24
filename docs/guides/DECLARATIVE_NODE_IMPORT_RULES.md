@@ -4,7 +4,7 @@
 
 **Version**: 1.0.0
 **Last Updated**: 2025-12-12
-**Related Issue**: OMN-203 (AST-based purity linter for declarative nodes)
+**Related Issue**: AST-based purity linter for declarative nodes
 
 ## Overview
 

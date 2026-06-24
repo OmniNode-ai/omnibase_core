@@ -366,7 +366,7 @@ class RoutingError(SubcontractExecutionError):
 
 #### Declarative Node Errors
 
-These error classes support the declarative node validation system introduced in PR #150 (OMN-177). They provide structured error handling for YAML contract binding, purity constraints, runtime execution, and capability validation.
+These error classes support the declarative node validation system introduced alongside PR #150. They provide structured error handling for YAML contract binding, purity constraints, runtime execution, and capability validation.
 
 ```python
 from omnibase_core.errors import (

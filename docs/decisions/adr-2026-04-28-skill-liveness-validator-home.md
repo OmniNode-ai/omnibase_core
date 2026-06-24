@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > OMN-10180 Validator Home
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > Skill Liveness Validator Home
 
 # ADR: Skill Liveness Validator Home
 
@@ -11,7 +11,7 @@
 | **Created** | 2026-04-28 |
 | **Last Updated** | 2026-04-28 |
 | **Author** | Codex (GPT-5) |
-| **Related Issue** | `OMN-10180` |
+| **Related Issue** | Skill liveness validator ownership |
 | **Implementation Home** | `src/omnibase_core/validation/` |
 
 ---

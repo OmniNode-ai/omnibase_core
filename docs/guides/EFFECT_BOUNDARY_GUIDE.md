@@ -4,7 +4,7 @@
 
 **Version**: 1.0.0
 **Last Updated**: 2026-01-14
-**Ticket**: OMN-1147 (Non-Deterministic Effect Classification)
+**Feature**: Non-Deterministic Effect Classification
 
 > **New in v0.6.4**: The effect boundary system provides a declarative way to annotate, classify, and enforce policies on non-deterministic effects. This enables replay-safe pipelines where external interactions (network, time, random, filesystem, database) are controlled during testing and replay execution.
 
@@ -859,4 +859,4 @@ for t in threads:
 ---
 
 **Version History**:
-- **v0.6.4**: Initial effect boundary system (OMN-1147)
+- **v0.6.4**: Initial effect boundary system (non-deterministic effect classification)

@@ -11,12 +11,12 @@
 | **Created** | 2026-01-12 |
 | **Last Updated** | 2026-02-14 |
 | **Author** | ONEX Framework Team |
-| **Related Issue** | OMN-1296 |
+| **Related Issue** | Status taxonomy and enum governance |
 | **Correlation ID** | `b8f4e2c1-7d3a-4f9e-a5b6-8c1d2e3f4a5b` |
 
 ## Executive Summary
 
-This ADR establishes a formal taxonomy for the 57+ status enums in omnibase_core, organizing them into semantic categories with canonical representatives. This taxonomy gates future consolidation work (OMN-1310, OMN-1311) and provides clear guidance on when to use each status category.
+This ADR establishes a formal taxonomy for the 57+ status enums in omnibase_core, organizing them into semantic categories with canonical representatives. This taxonomy gates future consolidation work and provides clear guidance on when to use each status category.
 
 ## Target Audience
 
@@ -334,7 +334,7 @@ This ADR explicitly **does not** cover:
 
 2. **Cross-Category Root Enum**: A unified `StatusBase` or `EnumStatus` root is not established. Each category remains independent.
 
-3. **Consolidation Implementation**: The actual merging of redundant enums (e.g., `EnumExecutionStatusV2` -> `EnumExecutionStatus`) is tracked in OMN-1310/OMN-1311.
+3. **Consolidation Implementation**: The actual merging of redundant enums (e.g., `EnumExecutionStatusV2` -> `EnumExecutionStatus`) is tracked in separate consolidation tickets for severity and status enums.
 
 4. **Mapping Rules**: Formal mapping between categories (e.g., how `EnumExecutionStatus.FAILED` maps to `EnumHealthStatus`) is deferred.
 
@@ -356,7 +356,7 @@ This ADR explicitly **does not** cover:
 
 ### Negative
 
-- **Partial Enforcement**: Enum governance checker (`checker_enum_governance.py`) is implemented and runs in pre-commit hooks, but currently operates in **warning mode** (uses `|| true` to avoid blocking commits). The checker reports violations but does not fail builds. It will become a blocking check after existing violations are addressed (tracked in OMN-1296).
+- **Partial Enforcement**: Enum governance checker (`checker_enum_governance.py`) is implemented and runs in pre-commit hooks, but currently operates in **warning mode** (uses `|| true` to avoid blocking commits). The checker reports violations but does not fail builds. It will become a blocking check after existing violations are addressed.
 - **Deferred Work**: FSM transitions and consolidation still required
 
 ---
@@ -370,8 +370,8 @@ This ADR explicitly **does not** cover:
 | ADR | Topic | Dependency |
 |-----|-------|------------|
 | ADR-007 (planned) | FSM Transition Semantics | This ADR |
-| OMN-1310 | Severity Enum Consolidation | This ADR |
-| OMN-1311 | Status Enum Consolidation | This ADR |
+| Severity Enum Consolidation | Collapse redundant severity enums onto canonical representatives | This ADR |
+| Status Enum Consolidation | Collapse redundant status enums onto canonical representatives | This ADR |
 
 ---
 

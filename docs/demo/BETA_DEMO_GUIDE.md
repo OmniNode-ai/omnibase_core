@@ -1,6 +1,6 @@
 # ONEX Beta Demo Guide
 
-> **Version**: 0.8.0 | **Status**: Beta | **Ticket**: OMN-1398
+> **Version**: 0.8.0 | **Status**: Beta
 
 This guide walks you through the ONEX demo system, which demonstrates model validation with corpus replay and invariant evaluation.
 
@@ -575,7 +575,7 @@ Warning: No mock response for sample_001
 
 - **Documentation**: This guide and `examples/demo/model-validate/README.md`
 - **CLI Help**: `uv run onex demo --help`
-- **Ticket**: Report issues referencing OMN-1398
+- **Issues**: Report issues via the repository issue tracker
 
 ---
 
