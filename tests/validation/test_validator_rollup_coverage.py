@@ -26,6 +26,8 @@ import yaml
 
 from omnibase_core.validation.validator_rollup_coverage import RollupCoverageVerifier
 
+pytestmark = pytest.mark.unit
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SPEC_PATH = REPO_ROOT / "architecture-handshakes" / "validator-requirements.yaml"
 PILOT_REPO = "omnibase_core"
@@ -161,3 +163,43 @@ def test_meta_needs_superset_of_spec_required_validators(
             f"{validator!r} is mapped for rollup coverage but does not apply to "
             f"{PILOT_REPO}"
         )
+
+
+def test_meta_full_equality_no_silent_escape(spec: dict[str, Any]) -> None:
+    """STRONG meta-invariant (CodeRabbit #3): the set of ci_workflow:required
+    validators that apply to the pilot must equal validator_jobs plus
+    grandfathered_validators — exactly. A NEW required validator that starts
+    applying to omnibase_core cannot silently escape Model B: it must be covered
+    (validator_jobs) or explicitly deferred (grandfathered_validators). This is
+    the reverse direction the forward-only check above could not catch."""
+    verifier = RollupCoverageVerifier(spec)
+    applicable = verifier.applicable_required_validators(PILOT_REPO)
+    cfg = spec["model_b_rollup_enforcement"]["repos"][PILOT_REPO]
+    mapped = set(cfg["validator_jobs"])
+    grandfathered = set(cfg.get("grandfathered_validators", []))
+    assert mapped.isdisjoint(grandfathered), (
+        f"a validator is both mapped and grandfathered: {mapped & grandfathered}"
+    )
+    union = mapped | grandfathered
+    escaped = applicable - union
+    assert not escaped, (
+        f"ci_workflow:required validators applying to {PILOT_REPO} that escape "
+        f"Model B (neither covered nor grandfathered): {sorted(escaped)} — add "
+        f"each to validator_jobs (covered) or grandfathered_validators (deferred)"
+    )
+    stale = union - applicable
+    assert not stale, (
+        f"validator_jobs/grandfathered_validators reference validators that are "
+        f"not ci_workflow:required for {PILOT_REPO}: {sorted(stale)}"
+    )
+
+
+def test_malformed_opt_in_raises_value_error(spec: dict[str, Any]) -> None:
+    """CodeRabbit #4: malformed opt-in config must surface as a deterministic
+    ValueError, never a raw KeyError/TypeError."""
+    mutated = copy.deepcopy(spec)
+    # Drop a required key from the pilot opt-in.
+    del mutated["model_b_rollup_enforcement"]["repos"][PILOT_REPO]["rollup_job"]
+    verifier = RollupCoverageVerifier(mutated)
+    with pytest.raises(ValueError, match="rollup_job"):
+        verifier.verify_repo(repo_name=PILOT_REPO, repo_root=REPO_ROOT)

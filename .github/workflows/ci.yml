@@ -175,18 +175,22 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
@@ -1092,7 +1096,7 @@ jobs:
           # Match the pre-commit file scope: src/ excluding tests/, archived/,
           # archive/, and scripts/validation/ (where the validator lives).
           files=$(git ls-files 'src/**/*.py' \
-            | grep -vE '^(tests/|archived/|archive/|scripts/validation/)')
+            | grep -vE '^(tests/|archived/|archive/|scripts/validation/)' || true)
           if [ -z "$files" ]; then
             echo "No src/ Python files to validate."
             exit 0
@@ -1143,7 +1147,7 @@ jobs:
           # Mirror the pre-commit / omni-standards exclude set: CHANGELOG.md,
           # docs/, and intentional syntax-error fixtures.
           files=$(git ls-files '*.py' '*.md' \
-            | grep -vE '^(CHANGELOG\.md|docs/|tests/fixtures/validation/)')
+            | grep -vE '^(CHANGELOG\.md|docs/|tests/fixtures/validation/)' || true)
           if [ -z "$files" ]; then
             echo "No Python/Markdown files to scan."
             exit 0
@@ -1193,6 +1197,10 @@ jobs:
           enum_gov="${{ needs.enum-governance.result }}"
           secrets="${{ needs.detect-secrets.result }}"
           sdk_boundary="${{ needs.sdk-boundary-check.result }}"
+          # OMN-13574: contract-compliance is in needs but was never captured in
+          # the gate logic — it could fail while quality-gate still passed. Same
+          # failing-rollup hole this ticket exists to close.
+          contract_compliance="${{ needs.contract-compliance.result }}"
           contract_config="${{ needs.contract-config-compliance.result }}"
           breaking_schema="${{ needs.breaking-schema-change.result }}"
           no_env_fallbacks="${{ needs.no-env-fallbacks.result }}"
@@ -1216,6 +1224,7 @@ jobs:
           echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
           echo "| SDK Boundary Guard | $sdk_boundary |" >> $GITHUB_STEP_SUMMARY
+          echo "| Contract Compliance | $contract_compliance |" >> $GITHUB_STEP_SUMMARY
           echo "| Contract-Config Compliance | $contract_config |" >> $GITHUB_STEP_SUMMARY
           echo "| Breaking-Schema-Change (OMN-12621) | $breaking_schema |" >> $GITHUB_STEP_SUMMARY
           echo "| No Env Fallbacks (OMN-7227) | $no_env_fallbacks |" >> $GITHUB_STEP_SUMMARY
@@ -1237,6 +1246,7 @@ jobs:
              [[ "$enum_gov" == "success" ]] && \
              [[ "$secrets" == "success" ]] && \
              [[ "$sdk_boundary" == "success" ]] && \
+             [[ "$contract_compliance" == "success" ]] && \
              [[ "$contract_config" == "success" ]] && \
              [[ "$breaking_schema" == "success" ]] && \
              [[ "$no_env_fallbacks" == "success" ]] && \

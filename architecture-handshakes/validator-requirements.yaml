@@ -602,16 +602,26 @@ model_b_rollup_enforcement:
         naming-conventions: ["naming-conventions"]
         pydantic-patterns: ["pydantic-patterns"]
         aislop-patterns: ["aislop-patterns"]
-        # The validators below are spec-required-CI but currently grandfathered
-        # in validator-requirements-baseline.yaml as MISSING_CI_WORKFLOW gaps for
-        # omnibase_core. They are intentionally NOT asserted by the rollup-
-        # coverage verifier yet — listing them here would force CI jobs the
-        # baseline says are not yet wired. They close (move out of the baseline
-        # and into validator_jobs) as their per-validator wiring lands:
-        #   spdx-headers, stub-implementations, single-class-per-file,
-        #   bandit-security, detect-secrets(pre-commit only),
-        #   no-hardcoded-topics, no-untracked-todos, hardcoded-local-paths,
-        #   hardcoded-private-ip, hardcoded-localhost-url.
+      # Machine-checkable intentional omissions. These validators are
+      # ci_workflow: required and apply to omnibase_core, but are currently
+      # grandfathered in validator-requirements-baseline.yaml as
+      # MISSING_CI_WORKFLOW gaps — wiring them as rollup-covered CI jobs is
+      # deferred to their own per-validator tickets. The meta-check asserts
+      # applicable_required_validators == validator_jobs.keys() ∪
+      # grandfathered_validators, so a NEW ci_workflow: required validator that
+      # starts applying to omnibase_core cannot silently escape Model B: it
+      # must be added to validator_jobs (covered) or here (explicitly deferred).
+      grandfathered_validators:
+        - spdx-headers
+        - stub-implementations
+        - single-class-per-file
+        - bandit-security
+        - no-hardcoded-topics
+        - no-untracked-todos
+        - hardcoded-local-paths
+        - hardcoded-private-ip
+        - hardcoded-localhost-url
+        - detect-secrets
 
 # Handshake metadata
 

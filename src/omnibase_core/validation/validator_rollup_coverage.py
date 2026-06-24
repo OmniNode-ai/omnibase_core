@@ -97,6 +97,25 @@ class RollupCoverageVerifier:
     def is_opted_in(self, repo_name: str) -> bool:
         return repo_name in self._repos
 
+    def applicable_required_validators(self, repo_name: str) -> set[str]:
+        """Spec validators that are ``ci_workflow: required`` AND apply to
+        ``repo_name``. This is the universe Model B must either cover
+        (``validator_jobs``) or explicitly defer (``grandfathered_validators``).
+        """
+        required = self._spec.get("required_validators", {})
+        out: set[str] = set()
+        if not isinstance(required, dict):
+            return out
+        for name, entry in required.items():
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("ci_workflow") != "required":
+                continue
+            applies = entry.get("applies_to_repos")
+            if applies == "all" or (isinstance(applies, list) and repo_name in applies):
+                out.add(str(name))
+        return out
+
     def verify_repo(
         self, *, repo_name: str, repo_root: Path
     ) -> list[ModelRollupCoverageGap]:
@@ -117,14 +136,25 @@ class RollupCoverageVerifier:
                 f"model_b_rollup_enforcement.repos[{repo_name!r}] must be a mapping"
             )
 
+        # Validate required keys + types up front so a malformed opt-in surfaces
+        # as a deterministic ValueError (per the verify_repo docstring), never a
+        # raw KeyError on indexing or a downstream TypeError when composing paths.
+        for key in ("rollup_workflow", "rollup_job", "required_rollup_context"):
+            value = cfg.get(key)
+            if not isinstance(value, str) or not value:
+                raise ValueError(  # error-ok: opt-in shape validation
+                    f"model_b_rollup_enforcement.repos[{repo_name!r}].{key} "
+                    f"must be a non-empty string, got {value!r}"
+                )
+        validator_jobs = cfg.get("validator_jobs")
+        if not isinstance(validator_jobs, dict):
+            raise ValueError(  # error-ok: opt-in shape validation
+                f"validator_jobs for {repo_name!r} must be a mapping, "
+                f"got {type(validator_jobs).__name__}"
+            )
         rollup_workflow = cfg["rollup_workflow"]
         rollup_job = cfg["rollup_job"]
         rollup_context = cfg["required_rollup_context"]
-        validator_jobs = cfg["validator_jobs"]
-        if not isinstance(validator_jobs, dict):
-            raise ValueError(  # error-ok: opt-in shape validation
-                f"validator_jobs for {repo_name!r} must be a mapping"
-            )
 
         workflow_path = repo_root / ".github" / "workflows" / rollup_workflow
         if not workflow_path.exists():
