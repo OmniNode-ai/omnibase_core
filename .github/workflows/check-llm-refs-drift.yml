@@ -38,13 +38,13 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # Check out the full repo so OMNI_HOME sub-path resolution works
           fetch-depth: 1
 
       - name: Checkout omnibase_infra for llm_endpoints.yaml
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_infra
           path: _omnibase_infra
@@ -52,7 +52,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout omnimarket for model_registry_v1.yaml
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnimarket
           path: _omnimarket

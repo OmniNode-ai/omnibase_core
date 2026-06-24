@@ -48,7 +48,7 @@ jobs:
       CHECK_EXTERNAL: ${{ inputs.check-external }}
       STANDALONE: ${{ inputs.standalone }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v7
 

@@ -48,7 +48,7 @@ jobs:
       repos: ${{ steps.emit.outputs.repos }}
       new_sha: ${{ steps.sha.outputs.sha }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Resolve new SHA
         id: sha
@@ -100,12 +100,12 @@ jobs:
       REPO: ${{ matrix.repo }}
     steps:
       - name: Checkout omnibase_core (manifest + script)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           path: omnibase_core
 
       - name: Checkout downstream (${{ matrix.repo }})
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/${{ matrix.repo }}
           token: ${{ secrets.CROSS_REPO_PAT }}
