@@ -468,3 +468,20 @@
   files: (^|/)contract\.yaml$
   pass_filenames: true
   stages: [pre-commit]
+
+- id: dispatched-contract-operation
+  name: dispatched contract handlers[0].operation guard (OMN-13324)
+  description: >
+    Require a non-empty 'operation' field on handlers[0] of every dispatched node contract — any contract.yaml
+    that declares a non-empty handler_routing.handlers list. The dispatch-envelope unwrap (node_dod_verify
+    test_dispatch_envelope_unwrap) resolves the primary handler's operation from handler_routing.handlers[0].operation;
+    a missing value surfaces as 'handlers[0].operation is missing' and the dispatch never resolves an
+    operation. Unlike operation-match-requires-operation (OMN-13530), this gate is strategy-agnostic:
+    it asserts handlers[0].operation even for payload_type_match dispatch targets, because the unwrap
+    reads it regardless of routing_strategy. Consumers reference this hook by id; it scans staged contract.yaml
+    files (or src/ when none are supplied).
+  language: python
+  entry: python -m omnibase_core.validators.dispatched_contract_operation
+  files: (^|/)contract\.yaml$
+  pass_filenames: true
+  stages: [pre-commit]
