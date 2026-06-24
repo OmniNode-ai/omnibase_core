@@ -386,7 +386,7 @@ def test_deterministic_processing(mock_registry):
 
 This section demonstrates the complete workflow from decorator annotation through policy enforcement.
 
-### Step 1: Annotate Effect Boundaries
+### Annotate Effect Boundaries
 
 ```python
 # my_service/effects.py
@@ -422,7 +422,7 @@ def get_current_timestamp() -> str:
     return datetime.now(timezone.utc).isoformat()
 ```
 
-### Step 2: Configure Mock Registry
+### Configure Mock Registry
 
 ```python
 # my_service/testing/mocks.py
@@ -456,7 +456,7 @@ def create_test_registry() -> ServiceEffectMockRegistry:
     return registry
 ```
 
-### Step 3: Implement Policy Enforcement
+### Implement Policy Enforcement
 
 ```python
 # my_service/runtime/enforcer.py
@@ -519,7 +519,7 @@ class EffectEnforcer:
         return func(*args, **kwargs)
 ```
 
-### Step 4: Use in Tests
+### Use in Tests
 
 ```python
 # tests/test_user_service.py
@@ -560,7 +560,7 @@ def test_multiple_calls_deterministic(enforcer):
     assert result1 == result2  # Deterministic!
 ```
 
-### Step 5: Use in CI/CD with STRICT Mode
+### Use in CI/CD With STRICT Mode
 
 ```python
 # my_service/runtime/ci_enforcer.py

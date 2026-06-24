@@ -297,7 +297,7 @@ Pre-existing violations may be temporarily allowlisted while being addressed:
 ```python
 # In scripts/check_transport_imports.py
 TEMPORARY_ALLOWLIST: frozenset[str] = frozenset({
-    "mixins/mixin_health_check.py",  # TODO: Refactor to use ProtocolHttpClient
+    "mixins/mixin_health_check.py",  # Tracked cleanup: refactor to use ProtocolHttpClient
 })
 ```
 

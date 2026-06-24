@@ -1,3 +1,5 @@
+<!-- onex-allow-file-todo-marker reason="repository policy guide intentionally documents TODO marker examples" -->
+
 # CLAUDE.md - Omnibase Core
 
 > **Python**: 3.12+ | **Framework**: ONEX Core | **Package Manager**: uv | **Shared Standards**: See **`~/.claude/CLAUDE.md`** for shared development standards (Python, Git, testing, architecture principles) and infrastructure configuration (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).

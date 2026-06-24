@@ -1,3 +1,5 @@
+<!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
+
 ## v0.45.0 (2026-06-17)
 
 ### Breaking Changes
@@ -2444,7 +2446,7 @@ Actions now include `lease_id` and `epoch` for idempotent retries, preventing du
 - [ ] Update error handling to use declarative patterns
 - [ ] Run tests to verify behavior
 
-#### Step 1: Update Imports
+#### 1. Update Imports
 ```python
 # Before (v0.3.x) - Old declarative import paths
 from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeReducerDeclarative
@@ -2453,7 +2455,7 @@ from omnibase_core.infrastructure.nodes.node_reducer_declarative import NodeRedu
 from omnibase_core.nodes import NodeReducer
 ```
 
-#### Step 2: Update Class Inheritance
+#### 2. Update Class Inheritance
 ```python
 # Before (v0.3.x)
 class MyReducer(NodeReducerBase):
@@ -2464,12 +2466,12 @@ class MyReducer(NodeReducer):
     pass
 ```
 
-#### Step 3: Adopt FSM/Workflow Patterns
+#### 3. Adopt FSM/Workflow Patterns
 - **Reducer nodes**: Implement `ModelIntent` emission instead of direct state updates
 - **Orchestrator nodes**: Use `ModelAction` with lease management for coordination
 - See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for detailed examples
 
-#### Step 4: Update Error Handling
+#### 4. Update Error Handling
 ```python
 # Before (v0.3.x) - Imperative error handling
 class MyReducer(NodeReducerBase):
