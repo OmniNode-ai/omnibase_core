@@ -53,6 +53,7 @@ concurrency:
 jobs:
   propagate:
     name: Propagate ${{ inputs.propagation_name || 'release-triggered' }}
+    if: github.event_name != 'pull_request'
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
