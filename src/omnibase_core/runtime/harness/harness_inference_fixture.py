@@ -2,12 +2,17 @@
 # SPDX-License-Identifier: MIT
 """Recorded-fixture inference adapter for the local runtime harness (OMN-13420).
 
-Fully offline; returns a recorded completion. The default adapter for proof runs
-so the DoD ("no LAN required") holds with zero config.
+Fully offline; replays a completion that was **recorded from a real model call**
+(golden-chain replay). It never derives the completion from the prompt: a
+prompt-echo would let a harness run report ``terminal_status: success`` while
+generating nothing — a false-green stub (OMN-13496). A recorded completion is
+therefore mandatory; constructing the adapter without one fails fast.
 """
 
 from __future__ import annotations
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.harness.model_inference_request import (
     ModelInferenceRequest,
 )
@@ -17,15 +22,23 @@ from omnibase_core.models.runtime.harness.model_inference_result import (
 
 
 class RecordedFixtureInferenceAdapter:
-    """Offline inference adapter — returns a recorded completion. No LAN, no I/O.
+    """Offline inference adapter — replays a recorded completion. No LAN, no I/O.
 
-    When ``completion`` is omitted it echoes a deterministic completion derived
-    from the prompt so runs are reproducible.
+    ``completion`` MUST be a non-empty string recorded from a real model call.
+    There is no prompt-echo / prompt-derived default: that path produced a
+    false-green where a run generated nothing yet reported success (OMN-13496).
     """
 
-    def __init__(
-        self, completion: str | None = None, model: str = "recorded-fixture"
-    ) -> None:
+    def __init__(self, completion: str, model: str = "recorded-fixture") -> None:
+        if not completion.strip():
+            raise ModelOnexError(
+                message=(
+                    "RecordedFixtureInferenceAdapter requires a non-empty completion "
+                    "recorded from a real model call; prompt-echo / empty completions "
+                    "are a false-green stub (OMN-13496)."
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         self._completion = completion
         self._model = model
 
@@ -35,14 +48,9 @@ class RecordedFixtureInferenceAdapter:
         return "fixture"
 
     def infer(self, request: ModelInferenceRequest) -> ModelInferenceResult:
-        """Return the recorded (or prompt-echoed) completion."""
-        completion = (
-            self._completion
-            if self._completion is not None
-            else f"[recorded] {request.prompt}"
-        )
+        """Return the recorded completion (replayed, never derived from the prompt)."""
         return ModelInferenceResult(
-            completion=completion,
+            completion=self._completion,
             model=self._model,
             adapter=self.adapter_id,
         )

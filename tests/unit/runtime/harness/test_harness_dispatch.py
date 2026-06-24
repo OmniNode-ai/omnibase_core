@@ -22,6 +22,7 @@ from uuid import uuid4
 import pytest
 
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.runtime.harness.model_harness_command import (
     ModelHarnessCommand,
@@ -52,6 +53,7 @@ from omnibase_core.runtime.harness.harness_cli import (
     build_evidence_packet,
     run_workflow,
 )
+from omnibase_core.runtime.harness.harness_cli import main as cli_main
 
 
 @pytest.mark.unit
@@ -100,7 +102,7 @@ def test_emitted_topics_follow_command_infer_completed_order() -> None:
             correlation_id=uuid4(),
             task_type="harness",
             max_tokens=16,
-            adapter=RecordedFixtureInferenceAdapter(),
+            adapter=RecordedFixtureInferenceAdapter(completion="HOP"),
             store=store,
         )
     )
@@ -136,7 +138,7 @@ def test_projection_readback_matches_written_row() -> None:
 @pytest.mark.unit
 def test_handlers_satisfy_protocol_message_handler() -> None:
     """All three harness handlers structurally satisfy ProtocolMessageHandler."""
-    adapter = RecordedFixtureInferenceAdapter()
+    adapter = RecordedFixtureInferenceAdapter(completion="OK")
     store = SqliteProjectionStore()
     handlers = (
         HarnessOrchestratorHandler("delegation"),
@@ -152,7 +154,8 @@ def test_handlers_satisfy_protocol_message_handler() -> None:
 def test_adapters_satisfy_protocols() -> None:
     """Inference + projection adapters satisfy their structural protocols."""
     assert isinstance(
-        RecordedFixtureInferenceAdapter(), ProtocolHarnessInferenceAdapter
+        RecordedFixtureInferenceAdapter(completion="OK"),
+        ProtocolHarnessInferenceAdapter,
     )
     assert isinstance(
         CurlSubprocessInferenceAdapter(endpoint="http://x/v1", model="m"),
@@ -168,7 +171,7 @@ def test_bus_is_core_in_memory_impl() -> None:
     """The harness bus is the core EventBusInmemory — never an infra bus."""
     harness, _ = build_workflow(
         workflow="delegation",
-        adapter=RecordedFixtureInferenceAdapter(),
+        adapter=RecordedFixtureInferenceAdapter(completion="OK"),
         store=SqliteProjectionStore(),
     )
     assert isinstance(harness.bus, EventBusInmemory)
@@ -176,12 +179,43 @@ def test_bus_is_core_in_memory_impl() -> None:
 
 
 @pytest.mark.unit
-def test_recorded_fixture_adapter_echoes_prompt_by_default() -> None:
-    """The default fixture adapter is deterministic and offline."""
-    adapter = RecordedFixtureInferenceAdapter()
+def test_recorded_fixture_adapter_replays_recorded_completion_verbatim() -> None:
+    """The fixture adapter replays the recorded completion, never the prompt."""
+    adapter = RecordedFixtureInferenceAdapter(completion="recorded-from-real")
     out = adapter.infer(ModelInferenceRequest(prompt="echo me"))
-    assert out.completion == "[recorded] echo me"
+    assert out.completion == "recorded-from-real"
+    assert "echo me" not in out.completion
     assert out.adapter == "fixture"
+
+
+@pytest.mark.unit
+def test_recorded_fixture_adapter_rejects_empty_completion() -> None:
+    """A blank recorded completion is a false-green stub — construction fails."""
+    for blank in ("", "   "):
+        with pytest.raises(ModelOnexError):
+            RecordedFixtureInferenceAdapter(completion=blank)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("workflow", ["delegation", "sea"])
+def test_cli_fixture_run_fails_without_recorded_completion(workflow: str) -> None:
+    """A fixture run with no recorded completion cannot reach success (OMN-13496).
+
+    The prompt-echo default is gone: ``--inference=fixture`` with no
+    ``--fixture-completion`` must raise rather than report ``success`` on a run
+    that generated nothing. There is no argv that reaches ``terminal_status:
+    success`` without a real or recorded-from-real inference.
+    """
+    with pytest.raises(ModelOnexError):
+        cli_main(
+            [
+                workflow,
+                "--prompt",
+                "generate a COMPUTE node that returns the SHA-256 hex digest",
+                "--inference",
+                "fixture",
+            ]
+        )
 
 
 @pytest.mark.unit
@@ -209,7 +243,7 @@ def test_build_evidence_packet_is_infra_free_and_complete() -> None:
     """The evidence packet carries the infra-free proof fields."""
     correlation_id = uuid4()
     store = SqliteProjectionStore()
-    adapter = RecordedFixtureInferenceAdapter()
+    adapter = RecordedFixtureInferenceAdapter(completion="EVIDENCE")
     result, projection = asyncio.run(
         run_workflow(
             workflow="delegation",
