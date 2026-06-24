@@ -318,7 +318,7 @@ src/omnibase_core/
 ├── adapters/               # Adapter utilities
 ├── agents/                 # Agent support models
 ├── analysis/               # Analysis helpers
-├── artifacts/              # Content-addressed ArtifactStore (OMN-13093)
+├── artifacts/              # Content-addressed ArtifactStore
 ├── backends/               # Cache (Redis) and metrics (Prometheus, in-memory)
 ├── cli/                    # CLI commands
 ├── constants/              # Project constants
@@ -329,7 +329,7 @@ src/omnibase_core/
 ├── crypto/                 # Blake3 hashing, Ed25519 signing
 ├── decorators/             # Utility decorators (@standard_error_handling)
 ├── discovery/              # Node discovery utilities
-├── dispatch/               # Dispatch bus client (OMN-12960)
+├── dispatch/               # Dispatch bus client
 ├── doctor/                 # onex doctor health-check registry and checks
 ├── enums/                  # Core enumerations (300+ enums, 6 subdirectories)
 ├── errors/                 # Error handling (ModelOnexError)
@@ -364,7 +364,7 @@ src/omnibase_core/
 └── topics.py               # Canonical wire-format Kafka topic names (TopicBase, build_topic)
 ```
 
-> **Provenance**: The package structure above was verified against `src/omnibase_core/` on this refresh (OMN-13460). The four node archetypes, `onex` CLI entrypoints, and `onex.nodes`/`onex.backends`/`onex.doctor` entry-point groups are declared in `pyproject.toml`.
+> **Provenance**: The package structure above was verified against `src/omnibase_core/` on a recent refresh. The four node archetypes, `onex` CLI entrypoints, and `onex.nodes`/`onex.backends`/`onex.doctor` entry-point groups are declared in `pyproject.toml`.
 
 ---
 

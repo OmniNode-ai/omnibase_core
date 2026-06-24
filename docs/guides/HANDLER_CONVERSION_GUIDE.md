@@ -5,7 +5,7 @@
 **Status**: Active
 **Version**: 1.0.0
 **Last Updated**: 2026-01-03
-**Related Tickets**: OMN-1112, OMN-1113, OMN-1114, OMN-1162
+**Status**: Active
 
 ---
 
@@ -371,7 +371,7 @@ src/omnibase_core/pipeline/handlers/
 
 ## Step-by-Step Conversion Process
 
-### Step 1: Identify Mixin Functionality
+### Identify Mixin Functionality
 
 Analyze the existing mixin to understand:
 - What configuration options does it have?
@@ -397,7 +397,7 @@ class MixinMetrics:
     def reset_metrics(self) -> None
 ```
 
-### Step 2: Design Handler Interface (Pydantic Model)
+### Design Handler Interface (Pydantic Model)
 
 Convert the mixin to a Pydantic model:
 
@@ -452,7 +452,7 @@ class HandlerCapabilityMetrics(BaseModel):
         self._metrics_data.clear()
 ```
 
-### Step 3: Write TDD Tests Based on Existing Mixin Tests
+### Write TDD Tests Based on Existing Mixin Tests
 
 Before implementing, write tests based on existing mixin tests:
 
@@ -536,11 +536,11 @@ class TestHandlerCapabilityMetrics:
         assert handler.get_metrics()["standalone_metric"]["value"] == 123.0
 ```
 
-### Step 4: Implement Handler
+### Implement Handler
 
 Implement the handler to make all tests pass. Follow the design from Step 2.
 
-### Step 5: Verify All Original Tests Pass
+### Verify All Original Tests Pass
 
 Ensure the handler provides the same functionality as the original mixin:
 
@@ -552,7 +552,7 @@ uv run pytest tests/unit/pipeline/handlers/test_capability_metrics.py -v
 uv run pytest tests/unit/mixins/test_mixin_metrics.py -v
 ```
 
-### Step 6: Document in Conversion Checklist
+### Document in Conversion Checklist
 
 Update the conversion checklist (see [HANDLER_CONVERSION_CHECKLIST.md](HANDLER_CONVERSION_CHECKLIST.md)):
 
@@ -895,12 +895,12 @@ uv run pytest tests/unit/mixins/ tests/unit/pipeline/handlers/ -v
 - [ONEX_FOUR_NODE_ARCHITECTURE.md](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Node type overview
 - [THREADING.md](THREADING.md) - Thread safety considerations
 
-### Related Tickets
+### Related Work
 
-- **OMN-1112**: First Pure Handler Conversions
-- **OMN-1113**: Manifest Generation & Observability
-- **OMN-1114**: Pipeline Runner & Hook Registry
-- **OMN-1162**: Mixins to Handlers Refactor Documentation
+- First Pure Handler Conversions — introduced `HandlerCapabilityMetrics` and `HandlerCapabilityCaching`
+- Manifest Generation & Observability — execution manifest recording
+- Pipeline Runner & Hook Registry — `RunnerPipeline` and `RegistryHook` infrastructure
+- Mixins to Handlers Refactor Documentation — architectural rationale in `MIXINS_TO_HANDLERS_REFACTOR.md`
 
 ---
 

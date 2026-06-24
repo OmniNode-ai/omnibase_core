@@ -368,7 +368,7 @@ introspection:
   redact_sensitive_info: true
   require_authentication: true
   allowed_introspection_sources:
-    - "192.168.1.0/24"
+    - "192.0.2.0/24"
     - "10.0.0.0/8"
   exclude_field_patterns:
     - password

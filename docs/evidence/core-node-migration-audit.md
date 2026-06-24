@@ -1,10 +1,10 @@
-# OMN-11546 Core Node Migration Audit
+# Core Node Migration Audit
 
 Date: 2026-05-22
 
 ## Scope
 
-This audit classifies the six files named by OMN-11546 before any core to infra
+This audit classifies the six files reviewed before any core to infra
 migration work starts:
 
 - `src/omnibase_core/nodes/node_reducer.py`
@@ -52,7 +52,7 @@ Create the next implementation ticket for `RuntimeLocal` only:
 
 ## Evidence Commands
 
-Commands run from the OMN-11546 worktree:
+Commands run from the migration worktree:
 
 ```bash
 wc -l src/omnibase_core/nodes/node_reducer.py \

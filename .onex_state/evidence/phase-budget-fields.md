@@ -1,6 +1,6 @@
-# DoD Evidence — OMN-11272
+# DoD Evidence — Phase Budget and Parallel Dispatch Fields
 
-**Ticket:** OMN-11272 — Add phase budget and parallel dispatch fields to ModelSessionPhaseSpec
+**Feature:** Add phase budget and parallel dispatch fields to ModelSessionPhaseSpec
 **Verification grade:** medium — unit tests on model fields
 **Date:** 2026-05-19
 

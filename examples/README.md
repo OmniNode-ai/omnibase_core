@@ -41,6 +41,5 @@ these files will be updated to use the new location after migration.
 
 ## Related
 
-- **Ticket**: OMN-664 ([BETA-07] NodeOrchestrator v1.0.5 Compliance)
-- **Spec context**: example-contract location guidance summarized in this file
+- **Spec context**: example-contract location guidance summarized in this file; see v1.0.5 compliance work ([BETA-07] NodeOrchestrator v1.0.5 Compliance)
 - **Fix Reference**: v1.0.5 Fix 56 - Example Contract Location

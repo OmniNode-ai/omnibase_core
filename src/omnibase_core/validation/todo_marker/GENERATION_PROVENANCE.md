@@ -1,5 +1,6 @@
-<!-- onex-allow-file-todo-marker OMN-13480 reason="this provenance doc names the TODO/FIXME/HACK marker token as its subject; the tokens are not unfinished work" -->
-# Unfinished-work-marker COMPUTE Validator — Generation Provenance (OMN-13480, G2 SEA-dogfood)
+<!-- onex-allow-file-todo-marker reason="this provenance doc names the TODO/FIXME/HACK marker token as its subject; the tokens are not unfinished work" -->
+<!-- doc-content-file-ok reason="generation provenance: the IP literal is the live endpoint used during generation; evidence, not config" -->
+# Unfinished-work-marker COMPUTE Validator — Generation Provenance
 
 This package's scanning logic (`handler.scan_source`) is a **generated artifact** —
 the "agent lands what SEA generated" step of the validator-standardization plan.
@@ -26,7 +27,7 @@ suppression comment).
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
 | endpoint_class | `local-coder` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip OMN-13480 generation-evidence endpoint -->
+| resolved_endpoint | `http://<onex-host>:8000/v1/chat/completions` (local-coder backend) |
 | attempt_count | `1` (corpus-accepted on the FIRST attempt) |
 | usage_source | `measured` (real provider-reported token usage) |
 | contract_passed | `true` |
@@ -44,8 +45,8 @@ generator — generation never selects its own model.
 
 ## Acceptance authority — the corpus, not the LLM
 
-The generated scanner was accepted by `evaluate_corpus_acceptance` (OMN-13289, G0)
-against a fixture corpus of **5 violation fixtures (3 adversarial mutation cases) +
+The generated scanner was accepted by `evaluate_corpus_acceptance` against a
+fixture corpus of **5 violation fixtures (3 adversarial mutation cases) +
 4 clean fixtures (3 adversarial mutation cases)**, committed at
 `omnimarket/.../node_generation_consumer/validator_corpora/corpus_todo_marker.py`.
 The corpus is seeded from the hand-authored ground-truth invariant

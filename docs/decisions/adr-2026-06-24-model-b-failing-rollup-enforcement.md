@@ -8,7 +8,7 @@
 | **Status** | 🟢 **IMPLEMENTED (pilot)** |
 | **Created** | 2026-06-24 |
 | **Author** | ONEX Framework Team |
-| **Related Issue** | OMN-13574 (pilot), epic OMN-13573; fleet rollout OMN-13576 |
+| **Related Issue** | Failing-rollup validator enforcement pilot; fleet rollout planned |
 | **Audit** | `docs/audits/2026-06-24-validator-enforcement-deficiency-audit/INDEX.md` |
 
 ---
@@ -75,7 +75,7 @@ Three mechanisms enforce airtightness:
    `model_b_rollup_enforcement.repos` lists only the pilot (omnibase_core). The
    legacy consumer reads only `required_validators` + `known_repos` and ignores
    the new block, so the other 11 repos' `validate-validator-requirements`
-   handshake is byte-for-byte unchanged. Fleet rollout is OMN-13576.
+   handshake is byte-for-byte unchanged. Fleet rollout is tracked separately.
 
 ## Why Model B over Model A
 
@@ -100,7 +100,7 @@ Three mechanisms enforce airtightness:
   intentionally **not** asserted by the rollup verifier yet — they remain in
   `validator-requirements-baseline.yaml` as `MISSING_CI_WORKFLOW` and graduate
   into `validator_jobs` as their wiring lands.
-- Fleet rollout (OMN-13576) adds the other 11 repos to
+- Fleet rollout adds the other 11 repos to
   `model_b_rollup_enforcement.repos`, each with its own rollup mapping.
 
 ## Verification

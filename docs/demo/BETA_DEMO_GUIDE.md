@@ -1,6 +1,6 @@
 # ONEX Beta Demo Guide
 
-> **Version**: 0.8.0 | **Status**: Beta | **Ticket**: OMN-1398
+> **Version**: 0.8.0 | **Status**: Beta
 
 This guide walks you through the ONEX demo system, which demonstrates model validation with corpus replay and invariant evaluation.
 
@@ -431,13 +431,13 @@ uv run onex demo run \
 
 ## Adding New Scenarios
 
-### Step 1: Create Directory Structure
+### Create Directory Structure
 
 ```bash
 mkdir -p examples/demo/my-scenario/{corpus,mock-responses}
 ```
 
-### Step 2: Add Contract and Invariants
+### Add Contract and Invariants
 
 **File**: `examples/demo/my-scenario/contract.yaml`
 
@@ -463,7 +463,7 @@ output_constraints:
   # Your constraints
 ```
 
-### Step 3: Add Corpus Samples
+### Add Corpus Samples
 
 Create YAML files in `corpus/`:
 
@@ -475,7 +475,7 @@ input_field: "Your input data"
 # ... more fields
 ```
 
-### Step 4: Add Mock Responses
+### Add Mock Responses
 
 Create JSON files in `mock-responses/`:
 
@@ -487,7 +487,7 @@ Create JSON files in `mock-responses/`:
 }
 ```
 
-### Step 5: Test Discovery
+### Test Discovery
 
 ```bash
 # Verify scenario is discovered
@@ -497,7 +497,7 @@ uv run onex demo list
 # my-scenario    My custom demo scenario
 ```
 
-### Step 6: Run Your Scenario
+### Run Your Scenario
 
 ```bash
 uv run onex demo run --scenario my-scenario
@@ -575,7 +575,7 @@ Warning: No mock response for sample_001
 
 - **Documentation**: This guide and `examples/demo/model-validate/README.md`
 - **CLI Help**: `uv run onex demo --help`
-- **Ticket**: Report issues referencing OMN-1398
+- **Issues**: Report issues via the repository issue tracker
 
 ---
 

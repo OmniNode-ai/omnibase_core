@@ -233,8 +233,8 @@ from omnibase_core.enums import (
     # Health and status domain
     EnumHealthCheckType,
     EnumHealthDetailType,
-    EnumHealthStatus,     # Canonical health status (OMN-1310)
-    EnumExecutionStatus,  # Canonical execution status (OMN-1310)
+    EnumHealthStatus,     # Canonical health status
+    EnumExecutionStatus,  # Canonical execution status
 
     # Many more...
 )
@@ -706,4 +706,4 @@ These import paths were verified during the v0.4.0 migration:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 1.0.0 | 2025-12-09 | OMN-151 | Initial creation for v0.4.0 migration |
+| 1.0.0 | 2025-12-09 | Initial creation for v0.4.0 migration |

@@ -164,7 +164,7 @@ uv run python scripts/validation/check_stub_implementations.py
 # Validate protocol exports
 uv run python scripts/check_protocol_exports.py
 
-# Validate class naming conventions (OMN-1071)
+# Validate class naming conventions
 uv run python scripts/validate_class_naming.py
 # With fix suggestions:
 uv run python scripts/validate_class_naming.py --fix-suggestions

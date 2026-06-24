@@ -1,11 +1,11 @@
-# Generation Provenance — sibling-pin-hygiene COMPUTE validator (OMN-13509)
+# Generation Provenance — sibling-pin-hygiene COMPUTE validator
 
 This validator's scanning logic (`handler.scan_source`) was **generated**, not
 hand-written. It was produced by `node_generation_consumer` (omnimarket) running
 the REAL `HandlerGenerationConsumer` against the live local model, and accepted
 ONLY because it passed a deterministic acceptance corpus in the hardened sandbox.
 The corpus verdict — not the LLM's self-report — is the acceptance authority
-(memory `feedback_adversarial_receipts`, OMN-13289). This was the marquee
+(memory `feedback_adversarial_receipts`). This was the marquee
 "omninode generates omninode" dogfood: the platform's own SEA generation node
 produced the seed for its own pin-hygiene gate.
 
@@ -20,7 +20,7 @@ produced the seed for its own pin-hygiene gate.
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | endpoint_class | `local-coder` |
-| resolved_endpoint | the live local-coder backend on the `.201` server |
+| resolved_endpoint | the live local-coder backend on the runtime host (`<onex-host>`) |
 | routing_source | `contract` (routing authority resolved provider/model/endpoint; the generator never selects its own model) |
 | usage_source | `measured` |
 | violation_fixtures | `7` (3 base + 4 adversarial mutation) — all flagged |
@@ -28,23 +28,23 @@ produced the seed for its own pin-hygiene gate.
 | correlation_id | `omn-13294-g2-pin-hygiene-8a87f3c07361` |
 
 Full provenance JSON (handler source + contract yaml + the above) is committed in
-this repository at `docs/evidence/OMN-13509/pin-hygiene.generation.json`.
+this repository at `docs/evidence/pin-hygiene.generation.json`.
 
 ### Independent reproduction (replayability proof)
 
 The generation was independently RE-RUN through the same production path
 (`scripts/generation/drive_validator_generation.py --validator pin-hygiene`,
-the REAL `HandlerGenerationConsumer` against the live `.201:8000` local-coder
+the REAL `HandlerGenerationConsumer` against the live `<onex-host>:8000` local-coder
 model — NOT a fixture / echo harness). The second run is recorded in the paired
 omnimarket producer PR at
-`omnimarket:docs/evidence/OMN-13509/pin-hygiene.reproduction.generation.json`.
+`omnimarket:docs/evidence/pin-hygiene.reproduction.generation.json`.
 
 | Field | Original run | Reproduction run |
 |-------|--------------|------------------|
 | accepted | `true` | `true` |
 | corpus_checked / corpus_passed | `true` / `true` | `true` / `true` |
 | provider / model_id | `local` / `Qwen3.6-35B-A3B` | `local` / `Qwen3.6-35B-A3B` |
-| resolved_endpoint | `.201:8000/v1/chat/completions` | `.201:8000/v1/chat/completions` |
+| resolved_endpoint | `<onex-host>:8000/v1/chat/completions` | `<onex-host>:8000/v1/chat/completions` |
 | usage_source | `measured` | `measured` |
 | attempt_count | `1` | `3` |
 | handler_source | (generated A) | (generated B — differs) |
@@ -68,7 +68,7 @@ FLAG (violation) — a sibling git pin that is NOT an ancestor of the sibling's
 - the same divergence in the PEP-508 `@<sha>` form and the uv.lock `?rev=<sha>`
   form (adversarial mutations — same divergence, different syntax);
 - a `branch = "main"` sibling pin whose branch has diverged from dev
-  (`# pin-ancestry: orphan`) — the literal #2071 shape;
+  (`# pin-ancestry: orphan`) — the literal shape that drove this validator's design;
 - a pin whose ancestry could not be resolved (`# pin-ancestry: unknown`) — fail
   CLOSED, must flag.
 

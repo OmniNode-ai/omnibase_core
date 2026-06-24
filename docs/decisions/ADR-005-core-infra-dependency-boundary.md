@@ -12,7 +12,7 @@
 | **Created** | 2025-12-26 |
 | **Last Updated** | 2025-12-26 |
 | **Author** | ONEX Framework Team |
-| **Related Issue** | [OMN-1015](https://linear.app/omninode/issue/OMN-1015) |
+| **Related Issue** | Fix aiohttp architecture violation in omnibase_core |
 | **Implementation Commit** | `f3c370b6` - Remove aiohttp direct dependency from omnibase_core |
 | **Related ADR** | [ADR-001](./ADR-001-protocol-based-di-architecture.md) - Protocol-Based DI Architecture |
 
@@ -455,8 +455,8 @@ The script applies two types of exclusions:
 
 ### Related Issues
 
-- **OMN-1015**: Fix aiohttp architecture violation in omnibase_core
-- **OMN-220**: Transport import validation (original tracking issue)
+- Fix aiohttp architecture violation in omnibase_core (resolved in commit f3c370b6)
+- Transport import validation enforcement (original tracking work)
 
 ### External References
 

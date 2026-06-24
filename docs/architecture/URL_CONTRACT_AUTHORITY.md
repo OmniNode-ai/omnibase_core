@@ -1,6 +1,6 @@
 # URL Contract Authority
 
-**Status**: Active — OMN-12804 (part of OMN-12803 URL-authority epic)
+**Status**: Active
 **Schema version**: v1.0.0
 
 ---
@@ -76,7 +76,7 @@ committed YAML.
 
 ## Gate enforcement
 
-`ValidatorUrlAuthority` (OMN-12818) enforces the "no URLs in source" rule as
+`ValidatorUrlAuthority` enforces the "no URLs in source" rule as
 a pre-commit hook (`check-url-authority`) and a required CI job
 (`URL Authority Gate`) on every ONEX repo. Violations are detected in three
 classes:
@@ -120,8 +120,7 @@ fingerprint files live at:
 | `omnibase_core` | `src/omnibase_core/validation/baselines/url_authority_baseline.json` | 13 |
 | `omnibase_infra` | `config/validation/url_authority_baseline.json` | 48 |
 
-Burn-down tickets: OMN-12806 (omnibase_core), OMN-12807 (omnibase_infra),
-OMN-12808 (other repos).
+Per-repo burn-down work covers omnibase_core, omnibase_infra, and other downstream repositories.
 
 ---
 
@@ -138,9 +137,9 @@ repo's `.pre-commit-config.yaml`:
     - id: check-stub-implementations
     - id: transport-mock-lint          # if the repo has that hook too
       args: [--baseline, config/validation/transport_mock_baseline.yaml]
-    # OMN-12804: url-authority ratchet.  Existing violations frozen in
+    # url-authority ratchet.  Existing violations frozen in
     # config/validation/url_authority_baseline.json.
-    # New violations are blocked; burn-down tracked by OMN-12807.
+    # New violations are blocked; burn-down tracked per-repo.
     - id: check-url-authority
       args:
         - --repo
@@ -156,7 +155,7 @@ omnibase_core pattern:
 
 ```yaml
 url-authority-gate:
-  name: URL Authority Gate (OMN-12804)
+  name: URL Authority Gate
   runs-on: [self-hosted, linux]
   steps:
     - uses: actions/checkout@v4
@@ -169,7 +168,7 @@ url-authority-gate:
           --baseline config/validation/url_authority_baseline.json
 ```
 
-See OMN-13026 / PR #1962 in omnibase_infra for the reference pattern used to
+See PR #1962 in omnibase_infra for the reference pattern used to
 wire transport-mock-lint; url-authority follows the same structure.
 
 ---
@@ -179,6 +178,5 @@ wire transport-mock-lint; url-authority follows the same structure.
 - `src/omnibase_core/validation/validator_url_authority.py` — gate implementation
 - `src/omnibase_core/validation/baselines/url_authority_baseline.json` — core baseline
 - `src/omnibase_core/contracts/integrations/catalog.yaml` — this authority catalog
-- OMN-12803 — parent epic (all-URLs-from-contracts)
-- OMN-12818 — gate implementation PR
-- OMN-12806 / OMN-12807 / OMN-12808 — per-repo burn-down tickets
+- `src/omnibase_core/validation/validator_url_authority.py` — gate implementation (see also the entries above)
+- Per-repo burn-down baseline files track migration progress for each repository

@@ -1,6 +1,6 @@
-## OMN-13197 — Remove the `onex.runtime.intents` hardcoded topic + dead intent-publisher path
+## Remove the `onex.runtime.intents` hardcoded topic + dead intent-publisher path
 
-A-followup of **OMN-13188** (the **OMN-12803** "all topics/URLs from contracts only" family). Tracked separately per Q3 of the platform-debt plan so it does not block the A1–A5 sequence.
+A followup of the "all topics/URLs from contracts only" platform-debt cleanup family. Tracked separately per Q3 of the platform-debt plan so it does not block the A1–A5 sequence.
 
 ### Decision (per DoD: contract-source the topic OR confirm-and-delete the dead path)
 
@@ -9,7 +9,7 @@ A-followup of **OMN-13188** (the **OMN-12803** "all topics/URLs from contracts o
 - No contract anywhere declares `onex.runtime.intents` (`find ... contract.yaml -exec grep onex.runtime.intents` → no matches). The `contracts/intent_publisher.yaml` referenced in the mixin docstring was **never authored** (phantom reference).
 - `ServiceTopicRegistry` (the contract-topic resolution mechanism) lives in `omnibase_infra`; `omnibase_core` cannot import it (repo layering: compat → core → spi → infra).
 
-The mechanism was **architecturally dead from both sides** (verified in OMN-13188 / OMN-13192):
+The mechanism was **architecturally dead from both sides** (verified in an earlier cleanup pass):
 
 - `MixinIntentPublisher` — the **sole** publisher — had **ZERO production call sites** (never instantiated outside tests).
 - `onex.runtime.intents` had **ZERO Kafka consumers**: `IntentExecutor` is a synchronous in-memory runtime service called from `ServiceDispatchResultApplier`, not a topic subscriber.
@@ -40,11 +40,11 @@ Per doctrine, a dead mechanism is debt to **delete**, not park / guard / migrate
 
 ### Receipt / OCC
 - Evidence-Source: `2322a07e139c35bbd85f131395ce07ec44200713`
-- Evidence-Ticket: OMN-13197
+- Evidence-Ticket: (see OCC receipt PR)
 
-Paired OCC receipt PR: contracts/OMN-13197.yaml + drift/dod_receipts/OMN-13197/... (linked below).
+Paired OCC receipt PR: contracts/receipt + drift/dod_receipts/... (linked below).
 
-Cross-reference: OMN-12803, OMN-13188, OMN-13192.
+Cross-reference: platform-debt topics cleanup, prior passes in this family.
 
 
 Paired OCC receipt PR: https://github.com/OmniNode-ai/onex_change_control/pull/2706

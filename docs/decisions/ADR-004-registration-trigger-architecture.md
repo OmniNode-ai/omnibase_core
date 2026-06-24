@@ -12,7 +12,7 @@
 | **Created** | 2025-12-19 |
 | **Last Updated** | 2025-12-19 |
 | **Author** | Claude Code (AI Assistant) |
-| **Related Issue** | [OMN-943](https://linear.app/omninode/issue/OMN-943) |
+| **Related Issue** | Canonical node registration event structure |
 | **Implementation** | `src/omnibase_core/models/discovery/model_nodeintrospectionevent.py` |
 
 ---
@@ -411,7 +411,7 @@ await event_bus.publish(
 
 ### Related Issues
 
-- **OMN-943**: Define canonical node registration event structure
+- PR tracking canonical node registration event structure definition
 
 ---
 

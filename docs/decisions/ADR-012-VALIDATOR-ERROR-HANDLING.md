@@ -4,7 +4,7 @@
 
 **Status**: Accepted
 **Date**: 2026-01-18
-**Context**: PR #205 (OMN-594) - Reducer Output Validation Enhancement
+**Context**: PR #205 - Reducer Output Validation Enhancement
 **Correlation ID**: `adr-012-validator-errors`
 
 ---
@@ -864,5 +864,5 @@ def test_pydantic_version_compatibility():
 
 **Last Updated**: 2026-01-18
 **Author**: Claude Code (Polymorphic Agent)
-**Reviewers**: PR #205 (OMN-594)
+**Reviewers**: PR #205
 **Status**: Accepted ✅

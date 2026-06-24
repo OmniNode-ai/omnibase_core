@@ -74,7 +74,7 @@ dod_evidence:
         check_value: "uv run pytest tests/unit/contract_graph/test_contract_graph_adapters.py -k deterministic
           -q"
       - check_type: "command"
-        check_value: "echo 'deterministic IR True; hash manifest in .onex_state/evidence/OMN-13132/deterministic-ir-evidence.txt'"
+        check_value: "echo 'deterministic IR True; hash manifest in .onex_state/evidence/deterministic-ir/deterministic-ir-evidence.txt'"
   - id: "dod-no-op-round-trip-zero-diff"
     description: >
       No-op round-trip (import a contract into IR, round-trip the IR node + its edges back to canonical

@@ -1190,7 +1190,7 @@ cleanup = ModelPipelineHook(
 
 ## Migration Notes
 
-### Hook Typing Enforcement (OMN-1157) - Breaking Change
+### Hook Typing Enforcement - Breaking Change (v0.6.0+)
 
 **Version**: v0.6.0+
 
@@ -1327,4 +1327,4 @@ from omnibase_core.pipeline import (
 
 **Last Updated**: 2026-01-01
 **Version**: 1.1.0
-**Related PR**: #291 (OMN-1114), OMN-1157 (enforce_hook_typing default change)
+**Related PR**: #291 — Pipeline Runner & Hook Registry; `enforce_hook_typing` default changed to `True` in v0.6.0

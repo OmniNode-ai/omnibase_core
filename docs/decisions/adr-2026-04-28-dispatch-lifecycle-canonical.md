@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > OMN-10180 Dispatch Lifecycle Canonical
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > Dispatch Lifecycle Canonical
 
 # ADR: Dispatch Lifecycle Canonical Source
 
@@ -11,7 +11,7 @@
 | **Created** | 2026-04-28 |
 | **Last Updated** | 2026-04-28 |
 | **Author** | Codex (GPT-5) |
-| **Related Issue** | `OMN-10180` |
+| **Related Issue** | Dispatch lifecycle canonical source |
 | **Canonical Model** | `src/omnibase_core/models/dispatch/model_dispatch_lifecycle_event.py` |
 
 ---
@@ -72,7 +72,7 @@ Concretely:
 ### Neutral
 
 - YAML and file-backed lifecycle records may continue to exist as compatibility outputs, receipts, or derived views.
-- This ADR does not bundle any downstream rename or migration work into `OMN-10180`; it only establishes canonical ownership and semantics.
+- This ADR does not bundle any downstream rename or migration work into scope; it only establishes canonical ownership and semantics.
 
 ## Alternatives Rejected
 
@@ -90,7 +90,7 @@ Rejected because co-equal ownership leaves the same lifecycle open to inconsiste
 
 ## References
 
-- Workspace ADR source: `/Users/jonah/Code/omni_home/docs/decisions/adr-2026-04-28-dispatch-lifecycle-canonical.md`
+- Workspace ADR source: `$OMNI_HOME/docs/decisions/adr-2026-04-28-dispatch-lifecycle-canonical.md`
 - Canonical model: `src/omnibase_core/models/dispatch/model_dispatch_lifecycle_event.py` (commit `2ddc0971`)
 - Lifecycle chain model: `src/omnibase_core/models/dispatch/model_lifecycle_chain.py` (commit `2ddc0971`)
 - State-machine tests: `tests/unit/models/dispatch/test_model_dispatch_lifecycle_event.py` (commit `2ddc0971`)

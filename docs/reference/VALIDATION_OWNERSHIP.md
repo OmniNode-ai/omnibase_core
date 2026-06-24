@@ -2,7 +2,7 @@
 
 **Owner:** `omnibase_core`
 **Last verified:** 2026-06-16
-**Verification:** `pyproject.toml`, validation scripts, OMN-9599 docs pass
+**Verification:** `pyproject.toml`, validation scripts, docs pass
 
 This page defines which validation surfaces Core owns and how downstream repos
 should consume them.
@@ -29,7 +29,7 @@ Core publishes these validator entrypoints in `pyproject.toml`.
 | `check-local-paths` | `omnibase_core` | Detect machine-specific absolute paths in text files. | `uv run check-local-paths docs src scripts` |
 | `validate-string-versions` | `omnibase_core` | Detect string version literals that should use version models or constants. | `uv run validate-string-versions src` |
 | `onex` | `omnibase_core` | Core CLI command group. | `uv run onex --help` |
-| `onex-demo-path-topic-gate` | `omnibase_core` | Enforce topic coherence on demo-path contracts; fails on mismatched topics. | `uv run onex-demo-path-topic-gate` (OMN-12777) |
+| `onex-demo-path-topic-gate` | `omnibase_core` | Enforce topic coherence on demo-path contracts; fails on mismatched topics. | `uv run onex-demo-path-topic-gate` |
 
 ## Pre-Commit and CI Gate Validators (no standalone CLI entrypoint)
 
@@ -37,14 +37,14 @@ The following validators ship as pre-commit hooks and required CI gates but are
 not exposed as standalone `[project.scripts]` entrypoints. They run automatically
 on every commit and in every CI run.
 
-| Validator | Ticket | Purpose |
-|-----------|--------|---------|
-| `ValidatorUrlAuthority` | OMN-12818 | URL-authority ratchet gate: rejects new commits that introduce bare or unauthorized base URLs. |
-| `ValidatorReceiptHonesty` | OMN-12791 | Fails gamed DoD receipts where PASS status is claimed while probe_stdout reads PENDING or a fake verifier is used. |
-| `ValidatorRuntimeProfiles` | OMN-12957 | Enforces runtime-profile registry rules; rejects unregistered profiles and no-consumer-lane mismatches. |
-| `gitignore_baseline` validator | OMN-12452/12453 | Baseline gitignore validator: ensures `.gitignore` files match the propagated baseline. |
-| Transport-mock lint validator | OMN-13026 | Rejects bare `AsyncMock`/`MagicMock` on `EventBus` or transport surfaces in tests. |
-| Skill-dispatch receipt-mode validator | OMN-13098 | Enforces correct receipt mode on skill-dispatch paths (Phase 4b). |
+| Validator | Purpose |
+|-----------|---------|
+| `ValidatorUrlAuthority` | URL-authority ratchet gate: rejects new commits that introduce bare or unauthorized base URLs. |
+| `ValidatorReceiptHonesty` | Fails gamed DoD receipts where PASS status is claimed while probe_stdout reads PENDING or a fake verifier is used. |
+| `ValidatorRuntimeProfiles` | Enforces runtime-profile registry rules; rejects unregistered profiles and no-consumer-lane mismatches. |
+| `gitignore_baseline` validator | Baseline gitignore validator: ensures `.gitignore` files match the propagated baseline. |
+| Transport-mock lint validator | Rejects bare `AsyncMock`/`MagicMock` on `EventBus` or transport surfaces in tests. |
+| Skill-dispatch receipt-mode validator | Enforces correct receipt mode on skill-dispatch paths (Phase 4b). |
 
 ## Markdown Link Validation
 

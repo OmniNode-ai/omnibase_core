@@ -326,7 +326,7 @@ Key rules:
 
 - The `contract_version` field is **required** on all contracts.
 - The optional `node_version` field tracks the implementation version separately.
-- The deprecated string-based `version` field has been removed (see OMN-1436).
+- The deprecated string-based `version` field has been removed.
 - Pre-release and build metadata are supported per SemVer 2.0.0.
 
 ### Version Comparison

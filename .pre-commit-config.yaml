@@ -1269,7 +1269,7 @@ repos:
 
       # OMN-4801: Forbidden/decommissioned pattern scanner
       # Prevents reintroduction of decommissioned endpoints, deprecated providers,
-      # and forbidden configuration values listed in decommissioned_patterns.txt.
+      # and forbidden configuration values listed in decommissioned_patterns.conf.
       - id: check-forbidden-patterns
         name: Decommissioned Pattern Scanner
         entry: bash scripts/check_forbidden_patterns.sh

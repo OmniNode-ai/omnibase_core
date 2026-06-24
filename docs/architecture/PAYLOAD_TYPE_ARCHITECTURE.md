@@ -1,6 +1,6 @@
 > **Navigation**: [Home](../INDEX.md) > [Architecture](./overview.md) > Payload Type Architecture
 
-# Payload Type Architecture (OMN-1008)
+# Payload Type Architecture
 
 **Status**: Implemented
 **Author**: OmniNode Team

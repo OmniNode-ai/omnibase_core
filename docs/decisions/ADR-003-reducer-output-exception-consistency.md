@@ -13,7 +13,7 @@
 | **Last Updated** | 2025-12-16 |
 | **Author** | Claude Code (AI Assistant) |
 | **Related PR** | [#205](https://github.com/OmniNode-ai/omnibase_core/pull/205) |
-| **Related Issue** | [OMN-594](https://linear.app/omninode/issue/OMN-594) |
+| **Related Issue** | Reducer output validation unit tests |
 | **Correlation ID** | `95cac850-05a3-43e2-9e57-ccbbef683f43` |
 | **Implementation** | `src/omnibase_core/models/reducer/model_reducer_output.py` |
 
@@ -602,8 +602,7 @@ Concurrency tests in separate file `tests/unit/models/reducer/test_model_reducer
 
 ### Related Issues
 
-- **OMN-594**: Comprehensive unit tests for core I/O models
-- **PR #205**: Implementation of sentinel validation and test coverage
+- **PR #205**: Implementation of sentinel validation and comprehensive unit tests for core I/O models
 
 ---
 

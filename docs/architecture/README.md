@@ -2,7 +2,6 @@
 
 **Owner:** `omnibase_core`
 **Last mapped:** 2026-04-24
-**Mapping source:** OMN-9599 entrypoint pass
 
 This is the architecture entrypoint for `omnibase_core`. It is a first-pass map
 of the architecture docs, not a line-by-line content audit of every page. Use it

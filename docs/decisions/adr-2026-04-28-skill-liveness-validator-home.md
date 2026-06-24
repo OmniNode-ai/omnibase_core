@@ -1,4 +1,4 @@
-> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > OMN-10180 Validator Home
+> **Navigation**: [Home](../INDEX.md) > [Decisions](README.md) > Skill Liveness Validator Home
 
 # ADR: Skill Liveness Validator Home
 
@@ -11,7 +11,7 @@
 | **Created** | 2026-04-28 |
 | **Last Updated** | 2026-04-28 |
 | **Author** | Codex (GPT-5) |
-| **Related Issue** | `OMN-10180` |
+| **Related Issue** | Skill liveness validator ownership |
 | **Implementation Home** | `src/omnibase_core/validation/` |
 
 ---
@@ -86,7 +86,7 @@ Rejected because compat should remain focused on DTOs and compatibility seams, n
 
 ## References
 
-- Workspace ADR source: `/Users/jonah/Code/omni_home/docs/decisions/adr-2026-04-28-skill-liveness-validator-home.md`
+- Workspace ADR source: `$OMNI_HOME/docs/decisions/adr-2026-04-28-skill-liveness-validator-home.md`
 - Validation ownership precedent: `src/omnibase_core/nodes/node_validator.py` (commit `2ddc0971`)
 - Validation ownership precedent: `src/omnibase_core/mixins/mixin_node_type_validator.py` (commit `2ddc0971`)
 - Validation ownership precedent: `src/omnibase_core/models/core/model_node_action_validator.py` (commit `2ddc0971`)

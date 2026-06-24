@@ -2,7 +2,6 @@
 
 # ModelAction Typed Payloads
 
-**Issue**: OMN-1008 - Replace `dict[str, Any]` in ModelAction with typed payloads
 **Status**: COMPLETE (v0.4.0)
 **Last Updated**: 2025-12-26
 

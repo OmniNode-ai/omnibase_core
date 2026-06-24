@@ -1,11 +1,11 @@
-# Golden-Chain Harness — Authoring Guide (OMN-13499)
+# Golden-Chain Harness — Authoring Guide
 
 The canonical recorded-from-real golden-chain harness lives in
 `omnibase_core.runtime.golden_chain`. Every migrated or new golden chain across
 the platform (omnimarket, omniclaude, omnibase_core) MUST use ONLY this harness.
 Do not hand-write a fake inference adapter, `patch("httpx.Client")`, or
 `MagicMock` the router/dispatch in a golden chain — those are the exact
-boundary-fakes the `check-no-faked-boundary` validator (OMN-13497) bans.
+boundary-fakes the `check-no-faked-boundary` validator bans.
 
 ## The one rule
 
@@ -61,7 +61,7 @@ final POST.
 | `INVALID_FIXTURE` | fixture missing / unparseable / provenance incomplete |
 | `EMPTY_COMPLETION` | recorded completion is empty/whitespace |
 | `ECHO_COMPLETION` | recorded completion echoes the request (the fake tell) |
-| `ROUTE_NOT_RESOLVED` | posted to an un-recorded endpoint, or a delegation **tier name** reached inference as a `model_key` (the OMN-13470 bug class) |
+| `ROUTE_NOT_RESOLVED` | posted to an un-recorded endpoint, or a delegation **tier name** reached inference as a `model_key` (a bug class where tier names are not resolved to concrete models before dispatch) |
 | `REQUEST_HASH_MISMATCH` | the live request (model / messages / max_tokens / temperature) does not match the recorded `request_hash` — the route or request drifted |
 
 A wrong route therefore **fails the replay** instead of "succeeding anyway".
@@ -107,7 +107,7 @@ routing_contract_hash · routing_overlay_hash · recorded_at · fixture_version
 ```
 
 `fixture_hash(fixture)` gives a stable content hash for the nightly drift report
-(OMN-13503 / Phase 4).
+(Phase 4 nightly drift report).
 
 ## Migration discipline
 
