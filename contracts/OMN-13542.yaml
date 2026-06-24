@@ -1,0 +1,46 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13542"
+title: "fix(OMN-13542): acceptance_criteria validation error is now actionable — names allowed slugs and
+  max_words_per_sentence_N pattern"
+summary: >
+  Free-text acceptance_criteria strings were rejected with an opaque error ('unsupported acceptance criteria:
+  <text>') that gave callers no guidance on valid forms. The fix improves validate_acceptance_criteria
+  to quote the rejected values and append the full allowed slug set plus the max_words_per_sentence_N
+  pattern. Three new tests cover the I4 strict code_generation corpus case (OMN-13540).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Delegation wire model unit tests green including 3 new OMN-13542 cases"
+    command: "uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -v"
+  - kind: "ci"
+    description: "omnibase_core PR CI checks pass"
+    command: "gh pr checks --repo OmniNode-ai/omnibase_core"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-unit-tests"
+    description: "85 delegation wire model tests pass including 3 new OMN-13542 actionable-error cases"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -v"
+  - id: "dod-mypy"
+    description: "mypy --strict passes on changed file"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run mypy src/omnibase_core/models/delegation/wire/model_delegation_wire_request.py
+          --strict"
+  - id: "dod-deploy"
+    description: "Deploy-gate: wire DTO error message improvement only; no topic changes, no schema migrations,
+      no Docker image rebuild required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-13542 improves error message in validate_acceptance_criteria
+          only; no runtime deploy required'"
