@@ -1,3 +1,4 @@
+<!-- doc-content-file-ok reason="generation provenance: the runtime host shorthand is the live backend reference during generation; evidence, not config" -->
 # Generation Provenance — no-faked-boundary COMPUTE validator
 
 This validator's scanning logic (`handler.scan_source`) was **generated**, not
@@ -18,7 +19,7 @@ The corpus verdict — not the LLM's self-report — is the acceptance authority
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | endpoint_class | `local-coder` |
-| resolved_endpoint | the live local-coder backend on the `.201` server <!-- onex-allow-faked-boundary provenance note --> |
+| resolved_endpoint | the live local-coder backend on the runtime host (`<onex-host>`) |
 | routing_source | `contract` (routing authority resolved provider/model/endpoint; the generator never selects its own model) |
 | usage_source | `measured` |
 | violation_fixtures | `8` (4 base + 4 adversarial mutation) — all flagged |

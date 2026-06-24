@@ -1,3 +1,4 @@
+<!-- doc-content-file-ok reason="generation provenance: the IP literal is the live endpoint used during generation; evidence, not config" -->
 # Localhost-URL COMPUTE Validator — Generation Provenance
 
 This package's scanning logic (`handler.scan_source`) is a **generated artifact** —
@@ -16,7 +17,7 @@ hardened sandbox. This file is the durable evidence of that generation + accepta
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip generation-evidence endpoint -->
+| resolved_endpoint | `http://<onex-host>:8000/v1/chat/completions` (local-coder backend) |
 | attempt_count | `3` (corpus-accepted on attempt 3 via the repair loop) |
 | usage_source | `measured` (real provider-reported token usage) |
 | contract_passed | `true` |

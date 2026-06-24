@@ -20,7 +20,7 @@ acceptance.
 | provider | `local` |
 | model_id | `Qwen3.6-35B-A3B` |
 | routing_source | `contract` |
-| resolved_endpoint | `http://192.168.86.201:8000/v1/chat/completions` (local-coder backend) | <!-- onex-allow-internal-ip generation-evidence endpoint -->
+| resolved_endpoint | `http://<onex-host>:8000/v1/chat/completions` (local-coder backend) |
 | endpoint_class | `local-coder` |
 | attempt_count | `1` (corpus-accepted on the FIRST attempt — no repair loop needed) |
 | usage_source | `measured` (real provider-reported token usage) |
@@ -47,7 +47,7 @@ fixture corpus of **15 violation fixtures (9 adversarial mutation cases)
 `omnimarket/.../node_generation_consumer/validator_corpora/corpus_doc_content_scan.py`.
 The corpus is seeded from the hand-authored ground-truth invariant — the docs-facing
 union of CLAUDE.md Rule 6 (no hardcoded LAN IPs / personal absolute paths) and the
-knowledge-base sanitizer (strip ticket ids / IPs / `.201` / private URLs / e-mail) —
+knowledge-base sanitizer (strip ticket ids / IPs / host shorthands / private URLs / e-mail) —
 and the `doc-content-ok` / `doc-content-file-ok` suppression markers.
 
 Acceptance = the generated scanner flagged **every** violation fixture and produced
@@ -63,7 +63,7 @@ The boundary cases the clean fixtures pin: `localhost` / `127.0.0.1` (LEFT by
 decision), the RFC5737 documentation IP ranges (`192.0.2.x` / `198.51.100.x` /
 `203.0.113.x`), `example.com`, the portable env-var forms (`$OMNI_HOME` /
 `${ONEX_HOST}` / `Path.home()`), a decimal token `$0.200` and a SemVer `v1.201.0`
-(NOT a `.201`/`.200` host shorthand), the `doc-content-ok` suppression marker, and
+(NOT an octet-suffix host shorthand), the `doc-content-ok` suppression marker, and
 the `OMNI_HOME` / `OMNINODE` tokens that are NOT the ticket-reference shape.
 
 The corpus is a TEXT-only acceptance authority (the sandbox only ever sees
@@ -81,7 +81,7 @@ canonical `line` / `column` / `violation_type` / `matched_text` / `context` find
 shape (mirroring the sibling private-IP / hardcoded-topic validators), de-duplicates
 to at most one finding per (line, class) in a stable source order, and adds the
 PATH-based ticket-reference exemptions the text-only corpus could not express. The
-`re` patterns are octet-parsed (LAN IP), guarded against digit-prefixed `.200`/`.201`
+`re` patterns are octet-parsed (LAN IP), guarded against digit-prefixed octet-suffix host shorthands
 tokens (host shorthand), and bounded to standalone ticket-reference tokens (so
 `OMNI_HOME` / `OMNINODE` never match). Verdicts are pinned to the acceptance corpus
 by the parametrized tests in

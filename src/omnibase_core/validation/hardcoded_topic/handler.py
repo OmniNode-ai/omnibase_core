@@ -17,7 +17,7 @@ below the topic shape, a non-``onex`` dotted ``kafka.cluster.broker.id`` string)
 The corpus verdict — not the LLM's self-report — was the acceptance authority
 (memory ``feedback_adversarial_receipts``). See ``GENERATION_PROVENANCE.md`` for
 the full run; the raw generated ``handle(input_data)`` is committed verbatim in
-``docs/evidence/OMN-13294/hardcoded-topic-string.generation.json``.
+``docs/evidence/hardcoded-topic-string/hardcoded-topic-string.generation.json``.
 
 The core scan is the regex ``(['"])onex\\.[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+
 (?:\\.[a-z0-9]+)*\\1`` over each line — the SAME ``onex.<a>.<b>.<c>`` topic shape

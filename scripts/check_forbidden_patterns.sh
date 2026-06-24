@@ -4,7 +4,7 @@
 #
 # check_forbidden_patterns.sh — Scan src/ for decommissioned/forbidden patterns (OMN-4801)
 #
-# Reads patterns from scripts/validation/decommissioned_patterns.txt (one per line).
+# Reads patterns from scripts/validation/decommissioned_patterns.conf (one per line).
 # Lines beginning with '#' and empty lines are ignored.
 # Exits non-zero if any match is found in src/; prints file:line for each hit.
 #
@@ -23,7 +23,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 SCAN_DIR="${SCAN_DIR:-${REPO_ROOT}/src}"
-PATTERNS_FILE="${PATTERNS_FILE:-${SCRIPT_DIR}/validation/decommissioned_patterns.txt}"
+PATTERNS_FILE="${PATTERNS_FILE:-${SCRIPT_DIR}/validation/decommissioned_patterns.conf}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -74,7 +74,7 @@ if [[ ${FOUND} -eq 1 ]]; then
         echo "${result}" >&2
     done
     echo "" >&2
-    echo "Remove or replace these references. See scripts/validation/decommissioned_patterns.txt" >&2
+    echo "Remove or replace these references. See scripts/validation/decommissioned_patterns.conf" >&2
     echo "for context on what was decommissioned and why." >&2
     exit 1
 fi

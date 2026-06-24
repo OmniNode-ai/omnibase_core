@@ -129,8 +129,8 @@
 - feat(container): add registry auto-configuration from entry points  (#756)
 - feat(compliance): add compliance report REDUCER node  (#760)
 - feat(cli): add onex registry status command  (#755)
-- feat(event_bus): extract EventBusInmemory from omnibase_infra to core 
-- feat(protocols): add ProtocolStateStore for unified state persistence 
+- feat(event_bus): extract EventBusInmemory from omnibase_infra to core
+- feat(protocols): add ProtocolStateStore for unified state persistence
 - feat(entry_points): add onex.backends and onex.cli groups  (#754)
 
 ### Changed
@@ -696,7 +696,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Non-empty instances list enforced to prevent silent no-op configurations
   - `auto_offset_reset` defaults to `"earliest"` to prevent race conditions in request-response patterns
   - Comprehensive test coverage (871 lines, 70+ test cases)
-  - Enables contract-driven request-response wiring in `omnibase_infra` 
+  - Enables contract-driven request-response wiring in `omnibase_infra`
 
 ## [0.10.1] - 2026-01-31
 
@@ -872,7 +872,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚠️ BREAKING CHANGES
 
-#### Contract Version Field Rename 
+#### Contract Version Field Rename
 
 **`ModelContractBase.version` renamed to `contract_version`** to align with ONEX specification naming conventions.
 
@@ -905,7 +905,7 @@ contract = ModelContractCompute(
 - `ModelProfileReference.version`
 - `ModelValidatorSubcontract.version`
 
-#### Handler Contract Version Field Migration 
+#### Handler Contract Version Field Migration
 
 **`ModelHandlerContract.version` migrated to `contract_version: ModelSemVer`** with strict enforcement. Handler contracts now require the structured `contract_version` field instead of the legacy string-based `version` field.
 
@@ -962,11 +962,11 @@ contract = ModelHandlerContract(
 
 ### Added
 
-- **Metrics Emission Models**: New models for observability metrics emission with cardinality policies 
+- **Metrics Emission Models**: New models for observability metrics emission with cardinality policies
 
 ### Changed
 
-- **Header Cleanup**: Removed legacy SPDX headers from omnibase_core codebase 
+- **Header Cleanup**: Removed legacy SPDX headers from omnibase_core codebase
 
 ## [0.7.0] - 2026-01-15
 
@@ -974,7 +974,7 @@ contract = ModelHandlerContract(
 
 This release contains significant breaking changes to enum and type alias organization. These changes improve type safety, eliminate duplication, and establish canonical patterns for the codebase.
 
-#### Status Enum Consolidation 
+#### Status Enum Consolidation
 
 **57+ overlapping status enums consolidated into 4 canonical enums.** No backwards compatibility - duplicates removed outright.
 
@@ -1006,7 +1006,7 @@ status = EnumExecutionStatus.RUNNING
 health = EnumHealthStatus.HEALTHY
 ```
 
-#### Severity Enum Canonicalization 
+#### Severity Enum Canonicalization
 
 **5 severity enums merged into canonical `EnumSeverity`.** This establishes a single source of truth for severity levels across the codebase.
 
@@ -1033,7 +1033,7 @@ severity = EnumSeverity.ERROR
 invariant_sev = EnumSeverity.CRITICAL
 ```
 
-#### Literal Type Aliases Replaced with Canonical Enums 
+#### Literal Type Aliases Replaced with Canonical Enums
 
 **11 Literal type definitions removed** from `protocols/base/__init__.py` and replaced with proper enums.
 
@@ -1059,7 +1059,7 @@ from omnibase_core.enums import EnumServiceLifecycle
 lifecycle = EnumServiceLifecycle.SINGLETON
 ```
 
-#### Type Alias Consolidation 
+#### Type Alias Consolidation
 
 Duplicate type aliases consolidated to eliminate redundancy:
 
@@ -1070,7 +1070,7 @@ Duplicate type aliases consolidated to eliminate redundancy:
 | `ParameterValue` | `QueryParameterValue` | Renamed (different semantics) |
 | `ConfigValue` | `ScalarConfigValue` | Renamed (narrower semantics) |
 
-#### Enum Member Casing Standardization 
+#### Enum Member Casing Standardization
 
 **All enum members must use UPPER_SNAKE_CASE.** `EnumFileStatus` members renamed from lowercase to UPPER_SNAKE_CASE. String values unchanged for backward compatibility in serialized data.
 
@@ -1090,39 +1090,39 @@ class EnumFileStatus(str, Enum):
 
 ### Added
 
-- **EnumSeverity**: Canonical 6-level severity taxonomy (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with `StrValueHelper` mixin 
-- **Enum Governance Checker**: `checker_enum_governance.py` for automated enforcement of enum standards 
-- **Enum Member Casing Validator**: `checker_enum_member_casing.py` AST-based validator with pre-commit integration 
-- **Literal Duplication Checker**: `checker_literal_duplication.py` to prevent Literal/Enum duplication 
-- **ModelOmniMemoryContract**: YAML schema for OmniMemory contracts 
-- **ManifestGenerator Callback**: `on_manifest_built` callback hook for pipeline manifest generation 
-- **JSON-Safety Validation**: `ModelPayloadExtension` JSON-safety validation 
-- **Container Public API**: `initialize_service_registry()` public API for container initialization 
-- **Evidence Export Service**: Demo service with renderer refactoring 
-- **ModelMemorySnapshot**: Unified state container for OmniMemory 
-- **Non-Deterministic Effect Classification**: Effect classification system for replay safety 
-- **Pydantic Conventions Validator**: Validator for Pydantic model patterns 
-- **Invariant Violation Report Model**: Demo model for invariant violations 
-- **Error Handling Patterns**: Standardized error handling patterns with decorators 
-- **Support Assistant Handler**: Demo handler for model evaluation 
-- **ADR-013 Status Taxonomy**: Architecture decision record for status enum taxonomy 
+- **EnumSeverity**: Canonical 6-level severity taxonomy (DEBUG, INFO, WARNING, ERROR, CRITICAL, FATAL) with `StrValueHelper` mixin
+- **Enum Governance Checker**: `checker_enum_governance.py` for automated enforcement of enum standards
+- **Enum Member Casing Validator**: `checker_enum_member_casing.py` AST-based validator with pre-commit integration
+- **Literal Duplication Checker**: `checker_literal_duplication.py` to prevent Literal/Enum duplication
+- **ModelOmniMemoryContract**: YAML schema for OmniMemory contracts
+- **ManifestGenerator Callback**: `on_manifest_built` callback hook for pipeline manifest generation
+- **JSON-Safety Validation**: `ModelPayloadExtension` JSON-safety validation
+- **Container Public API**: `initialize_service_registry()` public API for container initialization
+- **Evidence Export Service**: Demo service with renderer refactoring
+- **ModelMemorySnapshot**: Unified state container for OmniMemory
+- **Non-Deterministic Effect Classification**: Effect classification system for replay safety
+- **Pydantic Conventions Validator**: Validator for Pydantic model patterns
+- **Invariant Violation Report Model**: Demo model for invariant violations
+- **Error Handling Patterns**: Standardized error handling patterns with decorators
+- **Support Assistant Handler**: Demo handler for model evaluation
+- **ADR-013 Status Taxonomy**: Architecture decision record for status enum taxonomy
 
 ### Changed
 
-- **File Headers**: Unified file headers across omnibase_core codebase 
-- **Type Annotations**: Modernized to PEP 604 union syntax (`X | Y` instead of `Union[X, Y]`) 
-- **Pydantic Patterns**: Standardized Pydantic model patterns across codebase 
-- **File/Class Naming**: Fixed naming convention violations 
+- **File Headers**: Unified file headers across omnibase_core codebase
+- **Type Annotations**: Modernized to PEP 604 union syntax (`X | Y` instead of `Union[X, Y]`)
+- **Pydantic Patterns**: Standardized Pydantic model patterns across codebase
+- **File/Class Naming**: Fixed naming convention violations
 
 ### Fixed
 
 - **EnumValidationSeverity Import**: Removed broken import that blocked all enum imports [#397]
-- **Status String References**: Replaced hardcoded status strings with enum references 
+- **Status String References**: Replaced hardcoded status strings with enum references
 
 ### Refactored
 
-- **Type Ignore Comments**: Reduced `type: ignore` comments by 35% through proper typing 
-- **AI Slop Patterns**: Removed AI-generated boilerplate patterns from codebase 
+- **Type Ignore Comments**: Reduced `type: ignore` comments by 35% through proper typing
+- **AI Slop Patterns**: Removed AI-generated boilerplate patterns from codebase
 
 ## [0.6.6] - 2026-01-12
 
@@ -1178,7 +1178,7 @@ class EnumFileStatus(str, Enum):
 
 ### ⚠️ BREAKING CHANGES
 
-#### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior 
+#### ModelHandlerBehaviorDescriptor Renamed to ModelHandlerBehavior
 
 The `ModelHandlerBehaviorDescriptor` class has been renamed to `ModelHandlerBehavior`. The backwards compatibility shim (`model_handler_behavior_descriptor.py`) and alias have been **removed**.
 
@@ -1218,7 +1218,7 @@ find . -name "*.py" -exec sed -i 's/ModelHandlerBehaviorDescriptor/ModelHandlerB
 find . -name "*.py" -exec sed -i 's/model_handler_behavior_descriptor/model_handler_behavior/g' {} \;
 ```
 
-#### File Renames for Directory Prefix Naming Conventions 
+#### File Renames for Directory Prefix Naming Conventions
 
 Files across 4 directories have been renamed to follow consistent directory prefix naming conventions. **Direct module imports to old paths will fail with `ModuleNotFoundError`**.
 
@@ -1291,7 +1291,7 @@ grep -rn "from omnibase_core\.\(logging\|runtime\|validation\)\.\(core_logging\|
 # Recommended: Update to package-level imports for future compatibility
 ```
 
-#### Hook Typing Enforcement Enabled by Default 
+#### Hook Typing Enforcement Enabled by Default
 
 The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code building execution plans with typed hooks.
 
@@ -1368,7 +1368,7 @@ The default value of `BuilderExecutionPlan.enforce_hook_typing` has been changed
 - [ ] Add `enforce_hook_typing=False` to builders that need gradual migration
 - [ ] Run tests to verify no `HookTypeMismatchError` is raised unexpectedly
 
-#### Workflow Contract Model Hardening 
+#### Workflow Contract Model Hardening
 
 The following workflow contract models now enforce **immutability** (`frozen=True`) and **field validation**:
 
@@ -1534,7 +1534,7 @@ def test_workflow_processing():
 - [ ] Run tests to verify `pydantic.ValidationError` is not raised unexpectedly
 - [ ] Verify thread safety requirements are met (frozen models are now safe to share)
 
-#### Model Relocations and Naming Conventions 
+#### Model Relocations and Naming Conventions
 
 Several model classes have been relocated from `mixins/` and `runtime/` to `models/` to follow ONEX file location conventions. Classes have been renamed from `Mixin*` to `Model*` prefix to reflect that they are Pydantic data models, not behavioral mixins.
 
@@ -1582,7 +1582,7 @@ node = ModelRuntimeNodeInstance(...)
 error = ModelErrorMetadata(...)
 ```
 
-#### UUID Type Strengthening 
+#### UUID Type Strengthening
 
 Several ID fields that were previously typed as `str` are now typed as `UUID`. Pydantic 2.11+ automatically coerces UUID strings to `UUID` objects, so string inputs are still accepted.
 
@@ -1611,7 +1611,7 @@ if str(metadata.stack_trace_id) == expected_uuid_string:
 
 **Note**: Invalid UUID strings will now raise `ValidationError` during model construction rather than being accepted as arbitrary strings.
 
-#### Security: Deprecated MD5/SHA-1 Hash Algorithms 
+#### Security: Deprecated MD5/SHA-1 Hash Algorithms
 
 `ModelSessionAffinity` now deprecates MD5 and SHA-1 hash algorithms due to known cryptographic weaknesses. These algorithms are auto-converted to SHA-256 with a `DeprecationWarning`. **Support will be fully removed in v0.6.0.**
 
@@ -1635,7 +1635,7 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 **Recommendation**: Update configurations to use SHA-256 (default) before v0.6.0. Use SHA-384 or SHA-512 for high-security environments.
 
-#### MixinEventBus STRICT_BINDING_MODE Default Changed 
+#### MixinEventBus STRICT_BINDING_MODE Default Changed
 
 The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `False` to `True`. This is a **fail-fast behavior change** that affects code calling `bind_*()` methods after the mixin is "in use" (after `start_event_listener()` or publish operations).
 
@@ -1681,7 +1681,7 @@ The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `
 - [ ] Add `STRICT_BINDING_MODE = False` to legacy classes that cannot be immediately fixed
 - [ ] Run tests to verify no `ModelOnexError` with `INVALID_STATE` is raised unexpectedly
 
-#### MixinEventBus Architecture Refactoring 
+#### MixinEventBus Architecture Refactoring
 
 `MixinEventBus` has been refactored to use composition with dedicated data models, separating state management from behavior. This change improves thread safety, eliminates MRO conflicts, and enables proper serialization of runtime state.
 
@@ -1895,7 +1895,7 @@ self.dispose_event_bus_resources()
 - [ ] **NEW**: Replace empty string binding with `ModelEventBusRuntimeState.reset()` to clear bindings
 - [ ] **NEW**: Watch for binding lock warnings indicating thread-safety violations
 
-#### Invariant Validation Returns Detailed Violation Model 
+#### Invariant Validation Returns Detailed Violation Model
 
 Invariant validation methods that previously returned `bool` or raised generic exceptions now return `ModelInvariantViolationDetail` on failure. This provides structured debugging information but changes the return type signature.
 
@@ -1924,141 +1924,141 @@ if isinstance(result, ModelInvariantViolationDetail):
 
 #### Replay & Trace Infrastructure
 
-- **Deterministic Replay Infrastructure**: Foundation for deterministic execution replay and validation 
-- **ModelExecutionComparison**: Comparison model for baseline vs replay execution validation 
-- **ModelEvidenceSummary**: Evidence summary model for aggregating corpus replay results 
-- **ModelExecutionCorpus**: Corpus model for organizing and managing replay test sets 
-- **Configuration Override Injection**: Configuration override injection for A/B testing scenarios 
-- **Execution Trace Models**: Models for capturing and storing execution traces 
-- **ServiceTraceRecording**: Service for recording execution traces to storage backends 
+- **Deterministic Replay Infrastructure**: Foundation for deterministic execution replay and validation
+- **ModelExecutionComparison**: Comparison model for baseline vs replay execution validation
+- **ModelEvidenceSummary**: Evidence summary model for aggregating corpus replay results
+- **ModelExecutionCorpus**: Corpus model for organizing and managing replay test sets
+- **Configuration Override Injection**: Configuration override injection for A/B testing scenarios
+- **Execution Trace Models**: Models for capturing and storing execution traces
+- **ServiceTraceRecording**: Service for recording execution traces to storage backends
 
 #### Contract System
 
-- **AST-Based Transport Import Validator**: Static analysis validator for transport layer import compliance 
-- **YAML !include Directive Support**: Support for !include directives in YAML contract files for modular composition 
-- **Handler Contract Model & YAML Schema**: ModelHandlerContract with comprehensive YAML schema for handler definitions 
-- **ModelContractPatch**: Patch model for incremental contract modifications with validation 
-- **Typed Contract Merge Engine**: Type-safe engine for merging contract definitions with conflict resolution 
-- **Contract Validation Pipeline**: Multi-stage pipeline for validating contracts through configurable stages 
-- **Contract Validation Event Schema**: Event schema for contract validation lifecycle events 
-- **Contract Diff Model**: Model for computing and representing patch-level diffs between contracts 
-- **Validation Pipeline Event Emission**: Event emission hooks for contract validation pipeline stages 
+- **AST-Based Transport Import Validator**: Static analysis validator for transport layer import compliance
+- **YAML !include Directive Support**: Support for !include directives in YAML contract files for modular composition
+- **Handler Contract Model & YAML Schema**: ModelHandlerContract with comprehensive YAML schema for handler definitions
+- **ModelContractPatch**: Patch model for incremental contract modifications with validation
+- **Typed Contract Merge Engine**: Type-safe engine for merging contract definitions with conflict resolution
+- **Contract Validation Pipeline**: Multi-stage pipeline for validating contracts through configurable stages
+- **Contract Validation Event Schema**: Event schema for contract validation lifecycle events
+- **Contract Diff Model**: Model for computing and representing patch-level diffs between contracts
+- **Validation Pipeline Event Emission**: Event emission hooks for contract validation pipeline stages
 
 #### Validation & Invariants
 
-- **Invariant Definition Models**: Models for defining and configuring invariant rules 
-- **ServiceInvariantEvaluator**: Service for evaluating invariants against runtime state 
-- **ModelInvariantViolationDetail**: Structured violation detail model for debugging invariant failures 
+- **Invariant Definition Models**: Models for defining and configuring invariant rules
+- **ServiceInvariantEvaluator**: Service for evaluating invariants against runtime state
+- **ModelInvariantViolationDetail**: Structured violation detail model for debugging invariant failures
 
 #### Pipeline & Execution
 
-- **ExecutionResolver**: Resolver for mapping handler contracts to executable implementations 
-- **Runtime Execution Sequencing Model**: Model for defining execution ordering and dependencies 
-- **Pure Handler Conversions**: Utilities for converting between handler types with type safety 
-- **Execution Manifest Generation**: Generator for creating execution manifests from pipeline definitions 
-- **Pipeline Runner & Hook Registry**: Pipeline execution engine with pluggable hook registry 
+- **ExecutionResolver**: Resolver for mapping handler contracts to executable implementations
+- **Runtime Execution Sequencing Model**: Model for defining execution ordering and dependencies
+- **Pure Handler Conversions**: Utilities for converting between handler types with type safety
+- **Execution Manifest Generation**: Generator for creating execution manifests from pipeline definitions
+- **Pipeline Runner & Hook Registry**: Pipeline execution engine with pluggable hook registry
 
 #### Observability
 
-- **Dispatch ID Propagation**: Correlation ID propagation through dispatch chains for distributed tracing 
-- **Prometheus Metrics Backend**: Prometheus-compatible metrics export backend 
-- **Redis Cache Backend**: Redis-backed caching implementation for distributed deployments 
+- **Dispatch ID Propagation**: Correlation ID propagation through dispatch chains for distributed tracing
+- **Prometheus Metrics Backend**: Prometheus-compatible metrics export backend
+- **Redis Cache Backend**: Redis-backed caching implementation for distributed deployments
 
 #### Security
 
-- **AES-256-GCM Encryption**: Symmetric encryption support using AES-256-GCM for sensitive data 
+- **AES-256-GCM Encryption**: Symmetric encryption support using AES-256-GCM for sensitive data
 
 #### Handler & Capability System
 
-- **Handler Enums**: Enumeration types for handler classification and behavior 
-- **Handler Descriptors**: Descriptor models for handler metadata and configuration 
-- **Handler Metadata Models**: Comprehensive metadata models for handler introspection 
-- **Capability Models**: Models for defining and advertising node capabilities 
-- **Capability Factories**: Factory classes for capability instantiation and configuration 
-- **Handler Contract Extensions**: Extended contract fields for advanced handler scenarios 
-- **Handler Type Categories**: Category-based handler classification system 
-- **Capability Dependencies**: Dependency declaration and resolution for capabilities 
-- **Capability Providers**: Provider abstraction for capability implementations 
-- **Capability Requirements**: Requirement specification for capability consumers 
-- **Capability Requirement Bindings**: Binding mechanism connecting requirements to providers 
-- **MixinEventBus Strict Binding Mode**: Fail-fast binding validation for event bus mixins 
-- **ModelProjectorContract**: Contract model for projection/view definitions 
+- **Handler Enums**: Enumeration types for handler classification and behavior
+- **Handler Descriptors**: Descriptor models for handler metadata and configuration
+- **Handler Metadata Models**: Comprehensive metadata models for handler introspection
+- **Capability Models**: Models for defining and advertising node capabilities
+- **Capability Factories**: Factory classes for capability instantiation and configuration
+- **Handler Contract Extensions**: Extended contract fields for advanced handler scenarios
+- **Handler Type Categories**: Category-based handler classification system
+- **Capability Dependencies**: Dependency declaration and resolution for capabilities
+- **Capability Providers**: Provider abstraction for capability implementations
+- **Capability Requirements**: Requirement specification for capability consumers
+- **Capability Requirement Bindings**: Binding mechanism connecting requirements to providers
+- **MixinEventBus Strict Binding Mode**: Fail-fast binding validation for event bus mixins
+- **ModelProjectorContract**: Contract model for projection/view definitions
 
 #### NodeOrchestrator Compliance
 
-- **v1.0.1 Compliance Fixes**: NodeOrchestrator compliance with ONEX specification v1.0.1 
-- **v1.0.2 Compliance Fixes**: Enhanced orchestration patterns for v1.0.2 specification 
-- **v1.0.3 Compliance Fixes**: Workflow coordination improvements for v1.0.3 specification 
-- **v1.0.4 Compliance Fixes**: Action lease semantics updates for v1.0.4 specification 
-- **v1.0.5 Compliance Fixes**: Final compliance updates for v1.0.5 specification 
-- **Node Protocol Definitions**: Protocol definitions for node type contracts 
+- **v1.0.1 Compliance Fixes**: NodeOrchestrator compliance with ONEX specification v1.0.1
+- **v1.0.2 Compliance Fixes**: Enhanced orchestration patterns for v1.0.2 specification
+- **v1.0.3 Compliance Fixes**: Workflow coordination improvements for v1.0.3 specification
+- **v1.0.4 Compliance Fixes**: Action lease semantics updates for v1.0.4 specification
+- **v1.0.5 Compliance Fixes**: Final compliance updates for v1.0.5 specification
+- **Node Protocol Definitions**: Protocol definitions for node type contracts
 
 #### Protocol & Type System
 
-- **Protocol ISP Split**: Interface Segregation Principle refactoring of monolithic protocols 
-- **SemVer 2.0.0 Support**: Full Semantic Versioning 2.0.0 compliance with pre-release and build metadata 
+- **Protocol ISP Split**: Interface Segregation Principle refactoring of monolithic protocols
+- **SemVer 2.0.0 Support**: Full Semantic Versioning 2.0.0 compliance with pre-release and build metadata
 
 #### Constants & Configuration
 
-- **Timeout Constants**: Centralized timeout configuration constants for consistency 
-- **Field Limit Constants**: Centralized field size limit constants for validation 
+- **Timeout Constants**: Centralized timeout configuration constants for consistency
+- **Field Limit Constants**: Centralized field size limit constants for validation
 
 #### Type Safety Improvements
 
-- **Typed Unions for Models**: Discriminated union types for model hierarchies 
-- **Typed Metadata Models**: Strongly-typed metadata model replacements for dict[str, Any] 
-- **Typed Union Utilities**: Utility functions for working with typed unions 
+- **Typed Unions for Models**: Discriminated union types for model hierarchies
+- **Typed Metadata Models**: Strongly-typed metadata model replacements for dict[str, Any]
+- **Typed Union Utilities**: Utility functions for working with typed unions
 - **Typed Context Models**: Strongly-typed context models replacing generic dicts [,
-- **Any Type Removal (Errors Module)**: Eliminated dict[str, Any] from error models 
-- **Any Type Removal (Events Module)**: Eliminated dict[str, Any] from event models 
-- **Any Type Removal (Core Module)**: Eliminated dict[str, Any] from core models 
-- **Any Type Removal (Validation Module)**: Eliminated dict[str, Any] from validation models 
-- **Any Type Removal (Registry Module)**: Eliminated dict[str, Any] from registry models 
-- **Any Type Removal (Infrastructure Module)**: Eliminated dict[str, Any] from infrastructure models 
-- **PEP 604 Union Syntax Conversion**: Migrated Optional[X] and Union[X, Y] to X | Y syntax 
+- **Any Type Removal (Errors Module)**: Eliminated dict[str, Any] from error models
+- **Any Type Removal (Events Module)**: Eliminated dict[str, Any] from event models
+- **Any Type Removal (Core Module)**: Eliminated dict[str, Any] from core models
+- **Any Type Removal (Validation Module)**: Eliminated dict[str, Any] from validation models
+- **Any Type Removal (Registry Module)**: Eliminated dict[str, Any] from registry models
+- **Any Type Removal (Infrastructure Module)**: Eliminated dict[str, Any] from infrastructure models
+- **PEP 604 Union Syntax Conversion**: Migrated Optional[X] and Union[X, Y] to X | Y syntax
 
 #### Change Management
 
-- **ModelChangeProposal**: Change proposal model for evaluating system changes 
+- **ModelChangeProposal**: Change proposal model for evaluating system changes
 
 #### File Naming Conventions
 
-- **Naming Convention Enforcement**: Automated enforcement of directory-based file naming prefixes 
-- **Naming Convention Checker**: Pre-commit checker for file naming compliance 
+- **Naming Convention Enforcement**: Automated enforcement of directory-based file naming prefixes
+- **Naming Convention Checker**: Pre-commit checker for file naming compliance
 
 ### Fixed
 
-- **Bare Except Replacement**: Replaced bare `except:` clauses with specific exception types 
-- **Generic Exception Catches**: Replaced generic `except Exception` with specific exception handling 
-- **Broken get_metadata() Pattern**: Fixed incorrect get_metadata() implementations across node types 
+- **Bare Except Replacement**: Replaced bare `except:` clauses with specific exception types
+- **Generic Exception Catches**: Replaced generic `except Exception` with specific exception handling
+- **Broken get_metadata() Pattern**: Fixed incorrect get_metadata() implementations across node types
 
 ### Changed
 
 #### Model Relocations and Renames
 
-- **ModelLogData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change 
-- **ModelNodeIntrospectionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change 
-- **ModelCompletionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change 
-- **ModelRuntimeNodeInstance Relocation**: Moved from `runtime/` to `models/runtime/` with class rename 
-- **ModelErrorMetadata Rename**: Renamed from ModelErrorContext to ModelErrorMetadata 
+- **ModelLogData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change
+- **ModelNodeIntrospectionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change
+- **ModelCompletionData Relocation**: Moved from `mixins/` to `models/mixins/` with Mixin→Model prefix change
+- **ModelRuntimeNodeInstance Relocation**: Moved from `runtime/` to `models/runtime/` with class rename
+- **ModelErrorMetadata Rename**: Renamed from ModelErrorContext to ModelErrorMetadata
 
 #### MixinEventBus Refactoring
 
-- **MixinEventBus Architecture**: Refactored to composition-based architecture with ModelEventBusRuntimeState and ModelEventBusListenerHandle 
+- **MixinEventBus Architecture**: Refactored to composition-based architecture with ModelEventBusRuntimeState and ModelEventBusListenerHandle
 
 #### File Naming Convention Renames
 
-- **Logging Module Renames**: Renamed files to follow `logging_*` prefix convention 
-- **Runtime Module Renames**: Renamed files to follow `runtime_*` prefix convention 
-- **Services Registry Renames**: Renamed files to follow `service_registry_*` prefix convention 
-- **Validation Module Renames**: Renamed files to follow `validator_*` prefix convention 
-- **Additional Logging Renames**: Secondary logging file renames for consistency 
-- **Additional Runtime Renames**: Secondary runtime file renames for consistency 
-- **Additional Services Renames**: Secondary services file renames for consistency 
-- **Additional Validation Renames**: Secondary validation file renames for consistency 
-- **Cross-Module Rename Coordination**: Coordinated renames across related modules 
-- **Final Naming Convention Compliance**: Final pass ensuring all files follow conventions 
-- **Import Path Updates**: Updated all import paths to reflect new file names 
+- **Logging Module Renames**: Renamed files to follow `logging_*` prefix convention
+- **Runtime Module Renames**: Renamed files to follow `runtime_*` prefix convention
+- **Services Registry Renames**: Renamed files to follow `service_registry_*` prefix convention
+- **Validation Module Renames**: Renamed files to follow `validator_*` prefix convention
+- **Additional Logging Renames**: Secondary logging file renames for consistency
+- **Additional Runtime Renames**: Secondary runtime file renames for consistency
+- **Additional Services Renames**: Secondary services file renames for consistency
+- **Additional Validation Renames**: Secondary validation file renames for consistency
+- **Cross-Module Rename Coordination**: Coordinated renames across related modules
+- **Final Naming Convention Compliance**: Final pass ensuring all files follow conventions
+- **Import Path Updates**: Updated all import paths to reflect new file names
 
 #### Envelope Model Updates
 
@@ -2070,7 +2070,7 @@ if isinstance(result, ModelInvariantViolationDetail):
 
 ### Fixed
 
-#### Missing Model Exports 
+#### Missing Model Exports
 
 Exported 4 models from `omnibase_core.models.common` that existed but were not in the public API:
 
@@ -2152,7 +2152,7 @@ For error/warning models, prefer importing from `omnibase_core.errors` for seman
 
 ### Fixed
 
-#### PEP 604 Validator Fix for Dependent Repos 
+#### PEP 604 Validator Fix for Dependent Repos
 - Fixed `union_usage_checker.py` to correctly detect PEP 604 union types (`X | Y`) at runtime
 - Added `types.UnionType` detection alongside existing `typing.Union` handling
 - This fix enables dependent repositories (omnibase_spi, omnibase_nodes, etc.) to use the validator without false positives
@@ -2178,7 +2178,7 @@ For error/warning models, prefer importing from `omnibase_core.errors` for seman
 
 ### Added
 
-#### Registration Models 
+#### Registration Models
 - **ModelRegistrationPayload**: Typed payload for registration intents with comprehensive validation
   - PostgreSQL record storage with `ModelRegistrationRecordBase` type safety
   - Consul service configuration (service ID, name, tags, health checks)
@@ -2193,34 +2193,34 @@ For error/warning models, prefer importing from `omnibase_core.errors` for seman
 - All models follow ONEX patterns: frozen, extra="forbid", from_attributes=True
 - Comprehensive test coverage: 60 tests covering construction, validation, serialization, edge cases
 
-#### Core Intent Discriminated Union 
+#### Core Intent Discriminated Union
 - Implemented discriminated union pattern for core intents using Pydantic's `Field(discriminator=...)`
 - Type-safe intent deserialization with automatic subclass selection
 - Enhanced IDE autocomplete and type checking for intent handling
 
-#### Concurrency Testing 
+#### Concurrency Testing
 - Comprehensive concurrency tests for all four node types (Effect, Compute, Reducer, Orchestrator)
 - Validates thread-safety and parallel execution behavior
 - Tests concurrent access patterns and race condition prevention
 
-#### Integration Testing 
+#### Integration Testing
 - Integration tests for `ModelReducerInput` → `ModelReducerOutput` flows
 - End-to-end validation of reducer state management
 - FSM transition testing with real workflow scenarios
 
 ### Changed
 
-#### Type Safety Improvements 
+#### Type Safety Improvements
 - Replaced `dict[str, Any]` with strongly typed models across codebase
 - Fixed pyright warnings for improved type checking
 - Enhanced IDE support and compile-time safety
 
-#### Protocol Standardization 
+#### Protocol Standardization
 - Added `ProtocolCircuitBreaker` interface for cross-repository standardization
 - Enables consistent circuit breaker patterns across ONEX ecosystem
 - Supports dependency injection with protocol-based service resolution
 
-#### Hybrid Type Elimination 
+#### Hybrid Type Elimination
 - Eliminated hybrid dict types in favor of pure Pydantic models
 - Improved type safety and validation consistency
 - Enhanced serialization/deserialization reliability
