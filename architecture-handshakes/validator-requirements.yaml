@@ -549,6 +549,80 @@ required_validators:
       - omnibase_infra
       - omninode_infra
 
+# ---------------------------------------------------------------------------
+# Model B — failing-rollup enforcement (OMN-13574, epic OMN-13573)
+# ---------------------------------------------------------------------------
+# DECISION (operator-locked): keep ONE required aggregate rollup context per
+# repo (NOT granular per-validator branch-protection contexts, "Model A"), but
+# make the rollup AIRTIGHT so it goes red if ANY spec-required validator
+# sub-job fails. The audit
+# (docs/audits/2026-06-24-validator-enforcement-deficiency-audit/) found that a
+# repo can be "baseline-clean" (every validator wired as a pre-commit hook and
+# present as a CI keyword) while the live required rollup does NOT actually gate
+# several of those validators — they run in a workflow with no aggregator that
+# is not in branch protection (e.g. omni-standards-compliance.yml), or behind
+# continue-on-error, or matched only by an incidental keyword (e.g. "pydantic"
+# matching `pip install pydantic`).
+#
+# This block is PER-REPO OPT-IN (pilot). Only repos listed under
+# `model_b_rollup_enforcement.repos` are verified by the Model-B rollup-coverage
+# verifier (validator_rollup_coverage.py). The legacy ValidatorRequirements
+# consumer schema and behaviour are UNCHANGED, so the other 11 repos' handshake
+# gate (`validate-validator-requirements`) keeps passing exactly as before.
+# Fleet rollout to the remaining repos is OMN-13576.
+#
+# For each opted-in repo:
+#   required_rollup_context  — the single branch-protection required check that
+#                              is the airtight rollup (must be live-required and
+#                              emitted by `rollup_workflow`).
+#   rollup_workflow          — the workflow file (under .github/workflows/) that
+#                              emits `required_rollup_context` as a job name.
+#   rollup_job               — the job key in that workflow whose `name` equals
+#                              `required_rollup_context`; the verifier walks its
+#                              transitive `needs` graph.
+#   validator_jobs           — maps each spec-required validator (that applies to
+#                              this repo and has ci_workflow: required) to the
+#                              job key(s) in `rollup_workflow` that run it. The
+#                              verifier asserts the rollup transitively depends on
+#                              at least one listed job for every such validator,
+#                              and that none of those jobs carry
+#                              continue-on-error: true (which would swallow a
+#                              failure before it reaches the rollup).
+model_b_rollup_enforcement:
+  repos:
+    omnibase_core:
+      required_rollup_context: "CI Summary"
+      rollup_workflow: "ci.yml"
+      rollup_job: "ci-summary"
+      validator_jobs:
+        ruff-format-check: ["lint"]
+        mypy-type-check: ["lint", "mypy-validation-scripts"]
+        enum-governance: ["enum-governance"]
+        arch-002-no-transport-imports: ["core-infra-boundary", "mypy-validation-scripts"]
+        naming-conventions: ["naming-conventions"]
+        pydantic-patterns: ["pydantic-patterns"]
+        aislop-patterns: ["aislop-patterns"]
+      # Machine-checkable intentional omissions. These validators are
+      # ci_workflow: required and apply to omnibase_core, but are currently
+      # grandfathered in validator-requirements-baseline.yaml as
+      # MISSING_CI_WORKFLOW gaps — wiring them as rollup-covered CI jobs is
+      # deferred to their own per-validator tickets. The meta-check asserts
+      # applicable_required_validators == validator_jobs.keys() ∪
+      # grandfathered_validators, so a NEW ci_workflow: required validator that
+      # starts applying to omnibase_core cannot silently escape Model B: it
+      # must be added to validator_jobs (covered) or here (explicitly deferred).
+      grandfathered_validators:
+        - spdx-headers
+        - stub-implementations
+        - single-class-per-file
+        - bandit-security
+        - no-hardcoded-topics
+        - no-untracked-todos
+        - hardcoded-local-paths
+        - hardcoded-private-ip
+        - hardcoded-localhost-url
+        - detect-secrets
+
 # Handshake metadata
 
 metadata:

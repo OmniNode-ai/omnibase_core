@@ -16,7 +16,8 @@ interfaces_touched:
   - "events"
 evidence_requirements:
   - kind: "tests"
-    description: "Delegation wire model unit tests green incl. ModelTierCost regime validation (free_local zero-rate, metered positive-rate, budgeted cap+overage) and ModelRoutingTier typed-cost acceptance."
+    description: "Delegation wire model unit tests green incl. ModelTierCost regime validation (free_local
+      zero-rate, metered positive-rate, budgeted cap+overage) and ModelRoutingTier typed-cost acceptance."
     command: "uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q"
   - kind: "ci"
     description: "mypy --strict green on the changed wire model module."

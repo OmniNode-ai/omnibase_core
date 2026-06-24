@@ -49,3 +49,15 @@ jobs:
             --repo omnibase_core \
             --repo-root . \
             --baseline architecture-handshakes/validator-requirements-baseline.yaml
+
+      # OMN-13574 (Model B): prove the single required rollup (CI Summary) is
+      # AIRTIGHT — its transitive needs graph reaches a non-failure-swallowing
+      # job for every opted-in spec-required validator. Per-repo opt-in
+      # (model_b_rollup_enforcement.repos); non-opted repos exit 0 (pilot scope,
+      # fleet rollout OMN-13576). This is the enforcement half of Model B (the
+      # consumer above only proves presence, not that the rollup gates).
+      - name: Verify Model-B rollup coverage (OMN-13574)
+        run: |
+          uv run python -m omnibase_core.validation.validator_rollup_coverage \
+            --repo omnibase_core \
+            --repo-root .

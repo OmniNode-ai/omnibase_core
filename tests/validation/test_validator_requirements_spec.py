@@ -34,6 +34,9 @@ REQUIRED_TOP_LEVEL_KEYS = {
     "required_validators",
     "metadata",
     "known_repos",
+    # OMN-13574: per-repo Model-B failing-rollup opt-in. Additive; the legacy
+    # consumer ignores it so the other 11 repos' handshake is unaffected.
+    "model_b_rollup_enforcement",
 }
 
 REQUIRED_VALIDATOR_FIELDS = {
