@@ -162,6 +162,20 @@ TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_COMPLETED_EVENT = (
     "onex.evt.validation.hardcoded-topic-scan-completed.v1"
 )
 
+# Doc-content-scan COMPUTE validator topics (OMN-13569, G2). Same two-transport
+# seam as the private-IP / hardcoded-topic validators: the runner is the producer
+# of the command and consumer of the result; the COMPUTE handler is the consumer
+# of the command and producer of the result. The validator blocks local-environment
+# traces (LAN IP literals, .201/.200 host shorthand, personal /Users|/home paths,
+# ssh user@host lines, personal e-mail addresses) and Linear ticket references
+# (OMN-<digits>) in documentation files (*.md / .mdx / .rst / .txt / .adoc).
+TOPIC_VALIDATION_DOC_CONTENT_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.doc-content-scan-requested.v1"
+)
+TOPIC_VALIDATION_DOC_CONTENT_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.doc-content-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.
