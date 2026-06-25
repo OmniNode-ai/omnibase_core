@@ -394,6 +394,7 @@ ignore = [
 "scripts/emit_ts_types.py" = ["T201"]  # CLI output for omnidash-v2 TS type generation
 "scripts/validate_deterministic_skill_routing.py" = ["T201"]  # CLI output for CI gate report
 "scripts/migrate_dod_receipts.py" = ["T201"]  # CLI output for legacy DoD receipt migration [OMN-9790]
+"scripts/check_release_identity.py" = ["T201"]  # CLI output for release-identity gate report [OMN-13411]
 "scripts/validation/validate_no_new_env_vars.py" = ["T201"]  # CLI output for pre-commit hook report (OMN-11186)
 # Test files: print() used for debug output and test diagnostics — bulk removal deferred
 "tests/**/*.py" = ["T201"]
