@@ -1,10 +1,17 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
-# Runtime Profiles — ValidatorRuntimeProfiles gate [OMN-9886]
+# Runtime Profiles — ValidatorRuntimeProfiles gate [OMN-9886 / OMN-13330 unique job id]
 #
 # Canonical CI gate for `omnibase_core.validation.validator_runtime_profiles`.
-# Required status check context: "Runtime Profiles / validate".
+# Required status check context: "runtime-profiles".
+#
+# The job id/name is deliberately unique ("runtime-profiles"), NOT the shared
+# "validate" used by core's other validator workflows. GitHub surfaces the
+# check-run context as the bare job name, so a shared "validate" name collides
+# across 14 unrelated core workflows and cannot be made a required status check
+# without forcing all 14. A unique job id yields a unique, safely-requirable
+# context so this gate can be flipped REQUIRED (OMN-13330).
 #
 # Plan: docs/plans/2026-04-26-runtime-lifecycle-hardening-plan.md (Task 4,
 # Wave 1 core enforcement).
@@ -13,9 +20,9 @@
 #   1. unit pytest for the validator (regression guard)
 #   2. self-scan of omnibase_core's own contract.yaml files; must exit 0
 #
-# Consumer repos (omnimarket, omnibase_infra) wire this by adding the
-# validate-runtime-profiles hook entry to their own .pre-commit-config.yaml
-# and mirroring the `validate` job in their own CI.
+# Consumer repos (omnimarket, omnibase_infra, omniclaude) wire this by adding
+# the validate-runtime-profiles hook entry to their own .pre-commit-config.yaml
+# and mirroring the `runtime-profiles` job in their own CI.
 
 name: Runtime Profiles
 
@@ -36,8 +43,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: validate
+  runtime-profiles:
+    name: runtime-profiles
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
