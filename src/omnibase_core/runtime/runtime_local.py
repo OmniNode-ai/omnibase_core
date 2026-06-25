@@ -1543,6 +1543,72 @@ class RuntimeLocal:
         logger.info("RuntimeLocal: result=%s", self._result.value)
         return self._result
 
+    @staticmethod
+    def _inject_missing_run_identity(
+        model_cls: type[BaseModel], raw: dict[str, object]
+    ) -> dict[str, object]:
+        """Inject runtime-owned defaults for required run-identity fields absent from raw.
+
+        Mirrors the no-input-file auto-fill branch (OMN-13591): for any required
+        field declared on *model_cls* that is missing from *raw*, synthesise a sensible
+        runtime-owned default so the strict ``model_cls(**raw)`` call succeeds.
+
+        Rules:
+        - ``uuid.UUID`` → fresh ``uuid.uuid4()``
+        - ``datetime`` → ``datetime.now(UTC)``
+        - ``str`` → ``YYYYMMDD-HHMMSS-<random6>`` (satisfies ``min_length=1`` and
+          common ``[A-Za-z0-9._-]+`` patterns used by run-id fields)
+
+        Caller-supplied values are never overwritten — this is injection of defaults
+        only for absent keys.  Non-UUID, non-datetime, non-str required fields are
+        left for the model validator to reject with a clear error.
+
+        Returns a new dict (does not mutate *raw*).
+        """
+        import typing
+        from datetime import UTC
+        from datetime import datetime as _dt
+
+        # Fast path: if the raw dict already provides every field return it unchanged.
+        missing_required = {
+            name
+            for name, fi in model_cls.model_fields.items()
+            if fi.is_required() and name not in raw
+        }
+        if not missing_required:
+            return raw
+
+        injected: dict[str, object] = dict(raw)
+        now = _dt.now(UTC)
+        # Timestamp slug: YYYYMMDD-HHMMSS-<6-char hex> — satisfies min_length=1
+        # and the [A-Za-z0-9._-]+ pattern common on run-id fields (OMN-13591).
+        run_id_slug = f"{now:%Y%m%d-%H%M%S}-{uuid.uuid4().hex[:6]}"
+
+        for field_name in missing_required:
+            ann = model_cls.model_fields[field_name].annotation
+            # Unwrap Optional[X] / X | None → resolve the inner type.
+            origin = typing.get_origin(ann)
+            args = typing.get_args(ann)
+            if origin is typing.Union and type(None) in args:
+                # Optional field — runtime does not inject; let the model handle it.
+                continue
+            if ann is uuid.UUID:
+                injected[field_name] = uuid.uuid4()
+            elif ann is _dt:
+                injected[field_name] = now
+            elif ann is str:
+                injected[field_name] = run_id_slug
+            # Other types: leave absent; model validation will report the gap.
+
+        logger.debug(
+            "RuntimeLocal: injected run-identity defaults for missing required fields "
+            "%s on %s.%s (OMN-13591)",
+            sorted(set(injected) - set(raw)),
+            model_cls.__module__,
+            model_cls.__name__,
+        )
+        return injected
+
     def _build_initial_payload(self, input_spec: RawWorkflowMap) -> object | None:
         """Import and instantiate the input model from the contract's input spec.
 
@@ -1581,7 +1647,12 @@ class RuntimeLocal:
                     message=msg,
                 ) from exc
             try:
+                # OMN-13591: inject runtime-owned run-identity for required fields
+                # that are absent from the caller-supplied input file, mirroring
+                # the no-input-file auto-fill branch so all dispatch paths are
+                # consistent. Caller-supplied values are never overwritten.
                 if isinstance(raw, dict):
+                    raw = self._inject_missing_run_identity(cls, raw)
                     return cls(**raw)
                 return cls.model_validate(raw)
             except (TypeError, ValueError) as exc:
