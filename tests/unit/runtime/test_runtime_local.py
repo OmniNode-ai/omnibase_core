@@ -546,3 +546,202 @@ async def test_runtime_local_instantiates_event_bus_handler_end_to_end(
     assert captured_bus is not None
     assert isinstance(captured_bus, ProtocolLocalRuntimeBus)
     assert isinstance(captured_bus, EventBusInmemory)
+
+
+# ---------------------------------------------------------------------------
+# OMN-13591 regression: _build_initial_payload input-file branch must inject
+# runtime-owned run-identity (correlation_id, run_id) for required fields that
+# are absent from the caller-supplied input file — mirroring the no-input-file
+# auto-fill path so ALL dispatch paths are consistent.
+# ---------------------------------------------------------------------------
+
+import json
+import re
+import uuid as _uuid_module
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class _ModelRequiresRunIdentity(BaseModel):
+    """Minimal stand-in for any start-model that requires run-identity fields.
+
+    Mirrors the critical constraints on ModelPrLifecycleStartCommand:
+    - correlation_id: required UUID
+    - run_id: required str with min_length=1 and alphanum pattern
+    - repos: optional str with default
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    correlation_id: _uuid_module.UUID = Field(..., description="Unique run ID.")
+    run_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        pattern=r"^[A-Za-z0-9._-]+$",
+        description="Timestamped run identifier.",
+    )
+    repos: str = Field(default="", description="Optional repo filter.")
+
+
+class _ModelRequiresOnlyCorrelationId(BaseModel):
+    """Start-model that only requires correlation_id (UUID), not run_id.
+
+    Verifies the fix is targeted — only fields that are both required AND absent
+    from the input file get injected.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    correlation_id: _uuid_module.UUID = Field(..., description="Unique run ID.")
+    task_name: str = Field(default="default-task")
+
+
+_THIS_MODULE_FOR_IDENTITY = "tests.unit.runtime.test_runtime_local"
+
+
+def _write_contract_for_model(
+    target: Path, model_class_name: str, terminal_topic: str
+) -> None:
+    """Write a single-handler contract referencing a model in this test module."""
+    contract: dict[str, Any] = {
+        "workflow_id": "omn-13591-run-identity-test",
+        "terminal_event": terminal_topic,
+        "event_bus": {"publish_topics": [terminal_topic]},
+        "handler": {
+            "module": _THIS_MODULE_FOR_IDENTITY,
+            "class": "_HandlerNoDeps",
+            "input_model": {
+                "module": _THIS_MODULE_FOR_IDENTITY,
+                "class": model_class_name,
+            },
+        },
+    }
+    target.write_text(yaml.safe_dump(contract), encoding="utf-8")
+
+
+@pytest.mark.unit
+def test_build_initial_payload_input_file_injects_correlation_id_and_run_id(
+    tmp_path: Path,
+    workflow_path: Path,
+) -> None:
+    """Regression: input-file branch must inject required run-identity fields.
+
+    BEFORE the fix (OMN-13591):
+        _build_initial_payload called cls(**raw) directly → ValidationError:
+        correlation_id and run_id are required but absent → ModelOnexError raised.
+
+    AFTER the fix:
+        Runtime injects a fresh uuid4 for correlation_id and a timestamped slug
+        for run_id when those required fields are absent from the input file,
+        then validates successfully. The caller-supplied optional field (repos)
+        is preserved unchanged.
+    """
+    # Caller writes a partial input file — has repos but NOT the required
+    # run-identity fields. This is exactly what cli_skill.py produces for
+    # args-taking skills like merge_sweep.
+    input_file = tmp_path / "merge_sweep_input.json"
+    caller_repos = "omnimarket,onex_change_control"
+    input_file.write_text(json.dumps({"repos": caller_repos}), encoding="utf-8")
+
+    runtime = RuntimeLocal(
+        workflow_path=workflow_path,
+        input_path=input_file,
+    )
+
+    input_spec = {
+        "module": _THIS_MODULE_FOR_IDENTITY,
+        "class": "_ModelRequiresRunIdentity",
+    }
+
+    # This must NOT raise ModelOnexError — the pre-fix behavior.
+    payload = runtime._build_initial_payload(input_spec)
+
+    assert payload is not None, "Expected a valid payload object, got None"
+    assert isinstance(payload, _ModelRequiresRunIdentity)
+
+    # Runtime-injected: correlation_id must be a valid UUID (not null/empty).
+    assert isinstance(payload.correlation_id, _uuid_module.UUID)
+
+    # Runtime-injected: run_id must satisfy the model's constraints.
+    assert len(payload.run_id) >= 1
+    assert re.match(r"^[A-Za-z0-9._-]+$", payload.run_id), (
+        f"run_id {payload.run_id!r} does not match expected pattern"
+    )
+
+    # Caller-supplied: repos must be preserved unchanged.
+    assert payload.repos == caller_repos
+
+
+@pytest.mark.unit
+def test_build_initial_payload_input_file_preserves_caller_provided_correlation_id(
+    tmp_path: Path,
+    workflow_path: Path,
+) -> None:
+    """When the caller's input file already includes correlation_id, the runtime
+    must NOT overwrite it — caller-supplied values take precedence.
+
+    This prevents a race condition where a caller deliberately sets a specific
+    correlation_id for cross-system tracing and the runtime silently replaces it.
+    """
+    caller_correlation_id = _uuid_module.uuid4()
+    input_file = tmp_path / "input_with_correlation.json"
+    input_file.write_text(
+        json.dumps(
+            {
+                "correlation_id": str(caller_correlation_id),
+                "run_id": "20260625-120000-abc123",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    runtime = RuntimeLocal(
+        workflow_path=workflow_path,
+        input_path=input_file,
+    )
+
+    input_spec = {
+        "module": _THIS_MODULE_FOR_IDENTITY,
+        "class": "_ModelRequiresRunIdentity",
+    }
+
+    payload = runtime._build_initial_payload(input_spec)
+
+    assert payload is not None
+    assert isinstance(payload, _ModelRequiresRunIdentity)
+    # Caller's correlation_id must be preserved exactly.
+    assert payload.correlation_id == caller_correlation_id
+    assert payload.run_id == "20260625-120000-abc123"
+
+
+@pytest.mark.unit
+def test_build_initial_payload_input_file_injects_only_missing_required_fields(
+    tmp_path: Path,
+    workflow_path: Path,
+) -> None:
+    """Only required fields absent from the input file receive injected defaults.
+
+    A model that only requires correlation_id (not run_id) must have only
+    correlation_id injected — no extra keys are synthesized.
+    """
+    input_file = tmp_path / "input_partial.json"
+    input_file.write_text(json.dumps({}), encoding="utf-8")
+
+    runtime = RuntimeLocal(
+        workflow_path=workflow_path,
+        input_path=input_file,
+    )
+
+    input_spec = {
+        "module": _THIS_MODULE_FOR_IDENTITY,
+        "class": "_ModelRequiresOnlyCorrelationId",
+    }
+
+    payload = runtime._build_initial_payload(input_spec)
+
+    assert payload is not None
+    assert isinstance(payload, _ModelRequiresOnlyCorrelationId)
+    assert isinstance(payload.correlation_id, _uuid_module.UUID)
+    # task_name has a default — not injected, just uses the model default.
+    assert payload.task_name == "default-task"
