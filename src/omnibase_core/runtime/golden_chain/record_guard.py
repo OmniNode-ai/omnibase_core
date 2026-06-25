@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 """Record-mode authority guard for the canonical golden-chain harness (OMN-13499).
 
@@ -22,6 +22,9 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 _RECORD_ENV = "OMN_RECORD_GOLDEN"
 _NIGHTLY_RECORD_ENV = "OMN_GOLDEN_NIGHTLY_RECORD"
@@ -58,12 +61,16 @@ def require_record_mode_disabled(env: Mapping[str, str] | None = None) -> None:
     if not record_mode_enabled(source):
         return
     if _in_ci(source) and not _approved_nightly(source):
-        raise RuntimeError(
-            "Golden-chain RECORD mode (OMN_RECORD_GOLDEN=1) was requested inside a "
-            "CI run that is not an approved nightly record job. PR CI must REPLAY "
-            "fixtures only and must never mint/refresh a fixture (no accidental "
-            "regeneration). Record fixtures manually with a real endpoint, or via "
-            "the gated nightly record workflow (OMN_GOLDEN_NIGHTLY_RECORD=1)."
+        raise ModelOnexError(
+            message=(
+                "Golden-chain RECORD mode (OMN_RECORD_GOLDEN=1) was requested inside "
+                "a CI run that is not an approved nightly record job. PR CI must "
+                "REPLAY fixtures only and must never mint/refresh a fixture (no "
+                "accidental regeneration). Record fixtures manually with a real "
+                "endpoint, or via the gated nightly record workflow "
+                "(OMN_GOLDEN_NIGHTLY_RECORD=1)."
+            ),
+            error_code=EnumCoreErrorCode.INVALID_STATE,
         )
 
 

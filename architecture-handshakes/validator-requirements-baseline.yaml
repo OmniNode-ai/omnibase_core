@@ -110,9 +110,10 @@ classification:
   single-class-per-file:
     ci_workflow: backlog
     tracking: OMN-9048
-  spdx-headers:
-    ci_workflow: backlog
-    tracking: OMN-9048
+  # spdx-headers: WIRED + REMOVED 2026-06-25 (OMN-13576). The `spdx-headers` CI
+  # job in ci.yml now runs the validator over the full tree and feeds
+  # quality-gate → CI Summary, so the MISSING_CI_WORKFLOW gap no longer
+  # reproduces. Keeping a stale entry here would fail the gate.
   stub-implementations:
     ci_workflow: backlog
     tracking: OMN-9048
@@ -151,9 +152,8 @@ gaps:
   - repo: omnibase_core
     validator: single-class-per-file
     kind: MISSING_CI_WORKFLOW
-  - repo: omnibase_core
-    validator: spdx-headers
-    kind: MISSING_CI_WORKFLOW
+  # spdx-headers MISSING_CI_WORKFLOW removed 2026-06-25 (OMN-13576) — now WIRED
+  # as the `spdx-headers` CI job feeding quality-gate → CI Summary.
   - repo: omnibase_core
     validator: stub-implementations
     kind: MISSING_CI_WORKFLOW

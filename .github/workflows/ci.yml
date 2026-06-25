@@ -1211,6 +1211,64 @@ jobs:
           # shellcheck disable=SC2086
           uv run python -m omnibase_core.validation.doc_content_scan.runtime_doc_content_scan $files
 
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # SPDX Headers (OMN-13576: burn down validator-requirements baseline ratchet)
+  # validator-requirements.yaml requires `spdx-headers` (ci_workflow: required) on
+  # all repos. The pre-commit hook (validate-spdx-headers) was wired but no CI job
+  # ran it — it was grandfathered in validator-requirements-baseline.yaml as a
+  # MISSING_CI_WORKFLOW gap. This job runs the SAME validator the pre-commit hook
+  # runs, over the full tracked tree mirroring the hook's files:/exclude: scope,
+  # and feeds quality-gate so a missing/incorrect SPDX header turns the single
+  # required CI Summary rollup red. Full-tree scan (not changed-files) avoids the
+  # merge_group / no-diff exit-0 hole on the required path.
+  spdx-headers:
+    name: SPDX Headers
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Validate SPDX headers (OMN-13576)
+        run: |
+          # Mirror the pre-commit hook (validate-spdx-headers) file scope:
+          # files: ^(src|tests|scripts|examples)/.*\.(py|sh|bash|yml|yaml|toml)$
+          # exclude: ^(archived/|archive/)
+          files=$(git ls-files \
+            'src/**/*.py' 'src/**/*.sh' 'src/**/*.bash' 'src/**/*.yml' 'src/**/*.yaml' 'src/**/*.toml' \
+            'tests/**/*.py' 'tests/**/*.sh' 'tests/**/*.bash' 'tests/**/*.yml' 'tests/**/*.yaml' 'tests/**/*.toml' \
+            'scripts/**/*.py' 'scripts/**/*.sh' 'scripts/**/*.bash' 'scripts/**/*.yml' 'scripts/**/*.yaml' 'scripts/**/*.toml' \
+            'examples/**/*.py' 'examples/**/*.sh' 'examples/**/*.bash' 'examples/**/*.yml' 'examples/**/*.yaml' 'examples/**/*.toml' \
+            | grep -vE '^(archived/|archive/)' || true)
+          if [ -z "$files" ]; then
+            echo "No SPDX-eligible files to validate."
+            exit 0
+          fi
+          # shellcheck disable=SC2086
+          uv run python scripts/validation/validate_spdx_headers.py $files
+
   # No-new-os-environ gate (OMN-13566) — canonical AST-based env-read enforcement.
   # Blocks ALL os.environ/os.getenv reads outside KEEP_ALLOWLIST. Feeds quality-gate
   # so a violation turns the single required CI Summary rollup red. The deliberate
@@ -1272,7 +1330,7 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
     if: always()
 
     steps:
@@ -1306,6 +1364,7 @@ jobs:
           aislop="${{ needs.aislop-patterns.result }}"
           doc_content="${{ needs.doc-content-scan.result }}"
           no_new_os_environ="${{ needs.no-new-os-environ.result }}"
+          spdx_headers="${{ needs.spdx-headers.result }}"
 
           # Report each check
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
@@ -1332,6 +1391,7 @@ jobs:
           echo "| AI Slop Patterns (OMN-13574) | $aislop |" >> $GITHUB_STEP_SUMMARY
           echo "| Doc-Content Scan (OMN-13572) | $doc_content |" >> $GITHUB_STEP_SUMMARY
           echo "| No New os.environ Reads (OMN-13566) | $no_new_os_environ |" >> $GITHUB_STEP_SUMMARY
+          echo "| SPDX Headers (OMN-13576) | $spdx_headers |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
           if [[ "$lint" == "success" ]] && \
@@ -1355,7 +1415,8 @@ jobs:
              [[ "$pydantic" == "success" ]] && \
              [[ "$aislop" == "success" ]] && \
              [[ "$doc_content" == "success" ]] && \
-             [[ "$no_new_os_environ" == "success" ]]; then
+             [[ "$no_new_os_environ" == "success" ]] && \
+             [[ "$spdx_headers" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
             echo "All quality checks passed."
