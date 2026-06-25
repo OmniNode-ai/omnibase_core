@@ -1395,6 +1395,16 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # OMN-13566: Canonical AST env-read gate replacing the regex ratchet.
+      - id: no-new-os-environ
+        name: No New os.environ/os.getenv Reads (OMN-13566)
+        entry: uv run python -m omnibase_core.validators.no_new_os_environ
+        language: system
+        types: [python]
+        exclude: ^(tests/|scripts/|examples/)
+        pass_filenames: true
+        stages: [pre-commit]
+
       # OMN-5063: Block untyped metadata dict fields
       # Centralized in onex_change_control (OMN-5135)
       - id: no-untyped-metadata

@@ -45,8 +45,12 @@ import argparse
 import ast
 import sys
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
 from pathlib import Path
+
+from omnibase_core.models.validation.model_env_read_finding import (
+    ModelEnvReadFinding,
+)
+from omnibase_core.validators.env_read_visitor import EnvReadVisitor
 
 # ---------------------------------------------------------------------------
 # Keep allowlist — ONLY approved bootstrap / path-resolution / CI env vars.
@@ -239,122 +243,11 @@ KEEP_ALLOWLIST: frozenset[str] = frozenset(
 )
 
 # Inline suppression annotation
-_SUPPRESSION_TOKEN = "# env-read-ok"
+_SUPPRESSION_MARKER = "# env-read-ok"
 
 # Directories to skip unconditionally (pre-commit passes individual files, but
 # validate_file is also called directly from validate_paths which walks dirs).
 _SKIP_DIR_SEGMENTS: frozenset[str] = frozenset({"tests", "scripts", "examples"})
-
-
-# ---------------------------------------------------------------------------
-# Finding dataclass
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class EnvReadFinding:
-    """One env-read violation found by the validator."""
-
-    path: Path
-    line: int
-    col: int
-    var_name: str
-    raw_line: str
-
-    def format(self) -> str:
-        return (
-            f"{self.path}:{self.line}:{self.col}: "
-            f"os.environ/os.getenv read of {self.var_name!r} "
-            f"outside KEEP_ALLOWLIST"
-        )
-
-
-# ---------------------------------------------------------------------------
-# AST visitor
-# ---------------------------------------------------------------------------
-
-
-class _EnvReadVisitor(ast.NodeVisitor):
-    """Walk an AST looking for os.environ / os.getenv reads."""
-
-    def __init__(self, source_lines: list[str]) -> None:
-        self._lines = source_lines
-        self.findings: list[tuple[int, int, str]] = []  # (line, col, var_name)
-
-    def visit_Subscript(self, node: ast.Subscript) -> None:
-        """Detect os.environ[KEY]."""
-        if _is_os_environ_attr(node.value):
-            var_name = _extract_constant_string(node.slice)
-            if var_name is not None and self._should_flag(node.lineno, var_name):
-                self.findings.append((node.lineno, node.col_offset, var_name))
-        self.generic_visit(node)
-
-    def visit_Call(self, node: ast.Call) -> None:
-        """Detect os.environ.get(KEY) and os.getenv(KEY)."""
-        if _is_os_environ_get(node.func) or _is_os_getenv(node.func):
-            var_name = _first_arg_string(node)
-            if var_name is not None and self._should_flag(node.lineno, var_name):
-                self.findings.append((node.lineno, node.col_offset, var_name))
-        self.generic_visit(node)
-
-    def _should_flag(self, lineno: int, var_name: str) -> bool:
-        if var_name in KEEP_ALLOWLIST:
-            return False
-        raw = self._lines[lineno - 1] if lineno <= len(self._lines) else ""
-        return _SUPPRESSION_TOKEN not in raw
-
-
-# ---------------------------------------------------------------------------
-# AST helpers
-# ---------------------------------------------------------------------------
-
-
-def _is_os_environ_attr(node: ast.expr) -> bool:
-    """Return True for the ``os.environ`` attribute expression."""
-    return (
-        isinstance(node, ast.Attribute)
-        and node.attr == "environ"
-        and isinstance(node.value, ast.Name)
-        and node.value.id == "os"
-    )
-
-
-def _is_os_environ_get(node: ast.expr) -> bool:
-    """Return True for ``os.environ.get`` attribute chain."""
-    return (
-        isinstance(node, ast.Attribute)
-        and node.attr == "get"
-        and _is_os_environ_attr(node.value)
-    )
-
-
-def _is_os_getenv(node: ast.expr) -> bool:
-    """Return True for ``os.getenv`` attribute expression."""
-    return (
-        isinstance(node, ast.Attribute)
-        and node.attr == "getenv"
-        and isinstance(node.value, ast.Name)
-        and node.value.id == "os"
-    )
-
-
-def _extract_constant_string(node: ast.expr) -> str | None:
-    """Extract a string constant from a subscript slice."""
-    if isinstance(node, ast.Constant) and isinstance(node.value, str):
-        return node.value
-    return None
-
-
-def _first_arg_string(node: ast.Call) -> str | None:
-    """Extract the first positional argument as a string constant, if any."""
-    if node.args:
-        return _extract_constant_string(node.args[0])
-    return None
-
-
-# ---------------------------------------------------------------------------
-# Path skip logic
-# ---------------------------------------------------------------------------
 
 
 def _should_skip_path(path: Path) -> bool:
@@ -369,7 +262,7 @@ def _should_skip_path(path: Path) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def validate_file(path: Path) -> list[EnvReadFinding]:
+def validate_file(path: Path) -> list[ModelEnvReadFinding]:
     """Return all env-read violations in *path*.
 
     Returns an empty list when the file should be skipped (test/scripts dir,
@@ -389,11 +282,15 @@ def validate_file(path: Path) -> list[EnvReadFinding]:
         return []
 
     lines = source.splitlines()
-    visitor = _EnvReadVisitor(lines)
+    visitor = EnvReadVisitor(
+        lines,
+        keep_allowlist=KEEP_ALLOWLIST,
+        suppression_marker=_SUPPRESSION_MARKER,
+    )
     visitor.visit(tree)
 
     return [
-        EnvReadFinding(
+        ModelEnvReadFinding(
             path=path,
             line=lineno,
             col=col,
@@ -404,9 +301,9 @@ def validate_file(path: Path) -> list[EnvReadFinding]:
     ]
 
 
-def validate_paths(paths: Sequence[Path]) -> list[EnvReadFinding]:
+def validate_paths(paths: Sequence[Path]) -> list[ModelEnvReadFinding]:
     """Validate all Python files under the supplied paths."""
-    findings: list[EnvReadFinding] = []
+    findings: list[ModelEnvReadFinding] = []
     for path in _iter_python_files(paths):
         findings.extend(validate_file(path))
     return findings
@@ -488,4 +385,4 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())  # error-ok: validator CLI process exit
