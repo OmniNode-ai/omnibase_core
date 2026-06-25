@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Release-identity gate [OMN-13411]
+#
+# Required status check context: "Release Identity Validator / validate"
+#
+# Blocks merging a packaged-source change (src/**) onto an already-published
+# version string. omnibase_core is a published PyPI package that downstream repos
+# pin and `uv sync` against; if src/ changes but project.version is NOT bumped
+# past the latest published tag, two distinct code states ship under one wheel
+# version. That is the literal meta-root-cause behind OMN-13402 (A3) / OMN-13405
+# (A6): core dev HEAD carried unreleased modules while still labelled 0.45.0 (==
+# the published wheel that lacked them), and a workspace build crash-looped on the
+# missing import because the version string could not disambiguate the two states.
+#
+# This is the omnibase_core port of the omnibase_infra release-identity gate
+# (OMN-13412, scripts/check_release_identity.py). Same blocking direction, same
+# src/**-only enforcement, same docs/tests/CI exemption.
+
+name: Release Identity Validator
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: validator-release-identity-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Full history + tags so the gate can resolve the latest published tag
+          # and diff against the PR base.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run release-identity unit tests
+        run: |
+          uv run pytest tests/scripts/test_check_release_identity.py -v
+
+      - name: No code merged onto a published version without a bump
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.pull_request.base.ref || 'dev' }}"
+          git fetch --quiet origin "${BASE}" || true
+          uv run python scripts/check_release_identity.py --base "origin/${BASE}"

@@ -1262,6 +1262,22 @@ repos:
           - no:testmon
         stages: [pre-push]
 
+      # Release-Identity Gate (OMN-13411)
+      # Blocks merging a packaged-source (src/**) change onto an already-published
+      # version string. omnibase_core is a published PyPI package; if src/ changes
+      # but project.version is NOT bumped past the latest published tag, two code
+      # states ship under one wheel version (the OMN-13402/OMN-13405 crash). Port
+      # of the omnibase_infra release-identity gate (OMN-13412). The script does
+      # its own diff/tag resolution; pass_filenames=false because it inspects the
+      # whole worktree, not a per-file list.
+      - id: check-release-identity
+        name: No code merged onto a published version without a bump (OMN-13411)
+        entry: uv run python scripts/check_release_identity.py
+        language: system
+        files: ^(src/.*\.py|pyproject\.toml)$
+        pass_filenames: false
+        stages: [pre-commit]
+
       # Enum Governance Validation (OMN-1313)
       # Enforces enum governance rules to prevent enum/status duplication:
       # - E001: Enum members must use UPPER_SNAKE_CASE
