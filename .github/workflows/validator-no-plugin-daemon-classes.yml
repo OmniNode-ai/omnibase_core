@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# No Plugin Daemon Classes — Plugin* lifecycle guard gate [OMN-13309 / OMN-13284]
+#
+# Canonical CI gate for `omnibase_core.validators.no_plugin_daemon_classes`.
+# Required status check context: "no-plugin-daemon-classes".
+#
+# The job id/name is deliberately unique ("no-plugin-daemon-classes"), NOT the
+# shared "validate" used by some of core's other validator workflows. GitHub
+# surfaces the check-run context as the bare job name, so a shared name collides
+# across unrelated workflows and cannot be made a required status check without
+# forcing all of them. A unique job id yields a unique, safely-requirable context
+# so this gate can be flipped REQUIRED (matching OMN-13330's pattern for
+# runtime-profiles / OMN-13328 receipt-honesty).
+#
+# Plan: docs/tracking/2026-06-18-validator-standardization-remediation-plan.md
+# (§3 W9 — relocate no-plugin-daemon-classes to omnibase_core + enforce).
+#
+# Rationale (Operating Rule #5, "enforcement not detection"): the canonical
+# Plugin* lifecycle guard already exists as a pre-commit hook exported from
+# omnibase_core/.pre-commit-hooks.yaml and consumed remotely by omnibase_infra,
+# omnimarket, and omniclaude. A pre-commit-only check is advisory — it does not
+# block a PR that bypasses local hooks. This workflow makes the same validator a
+# server-side merge gate on omnibase_core itself.
+#
+# This workflow runs on omnibase_core:
+#   1. unit pytest for the validator (regression guard, incl. the self-scan test)
+#   2. self-scan of omnibase_core's own src/ Python tree; must exit 0
+#
+# Consumer repos (omnimarket, omnibase_infra, omniclaude) already wire the
+# remote `no-plugin-daemon-classes` pre-commit hook; mirroring this CI job in
+# their own pipelines is tracked separately per the remediation plan.
+
+name: No Plugin Daemon Classes
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: no-plugin-daemon-classes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  no-plugin-daemon-classes:
+    name: no-plugin-daemon-classes
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run no-plugin-daemon-classes unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_no_plugin_daemon_classes.py \
+            -v
+
+      - name: Self-scan omnibase_core src/
+        run: uv run python -m omnibase_core.validators.no_plugin_daemon_classes src/

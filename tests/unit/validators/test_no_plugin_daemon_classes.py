@@ -164,3 +164,19 @@ class PluginBatchWorker(WorkerBase):
     captured = capsys.readouterr()
     assert exit_code == 1
     assert "PluginBatchWorker" in captured.err
+
+
+def test_omnibase_core_src_tree_is_clean() -> None:
+    """Self-scan regression: omnibase_core's own src/ must own zero banned Plugin*.
+
+    This pins the exact contract the CI gate's "Self-scan omnibase_core src/" step
+    relies on (validator-no-plugin-daemon-classes.yml, OMN-13309). If any future
+    change adds a Plugin* lifecycle class to core's source tree, this unit test and
+    the CI self-scan fail together rather than the regression slipping through.
+    """
+    src_root = Path(__file__).resolve().parents[3] / "src"
+    assert src_root.is_dir(), f"expected core src/ at {src_root}"
+
+    findings = validate_paths([src_root])
+
+    assert findings == [], "\n".join(f.format() for f in findings)
