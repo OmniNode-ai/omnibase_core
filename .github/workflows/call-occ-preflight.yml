@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OCC Preflight caller — gates auto-merge and merge_group on OCC eligibility.
+# (OMN-10485 / OMN-10482 epic; required-everywhere wiring: OMN-13332)
+#
+# This workflow wires the reusable occ-preflight check (hosted in omnibase_core)
+# as a required status check in this repo. Every auto-merging repo follows the
+# same pattern: a `call-occ-preflight.yml` that delegates to the reusable.
+#
+# Required status check name: "occ-preflight / eligibility"
+#
+# Invariants enforced by the reusable workflow (do NOT modify here):
+#   I2: merge_group events re-run eligibility fully (cache disabled in reusable).
+#   I3: OCC's own PRs validate against in-tree checkout (handled inside reusable).
+#   I4: OCC fetch failure is a hard FAIL.
+
+name: OCC Preflight
+
+on:
+  pull_request:
+    branches: [main, dev, "hotfix/**"]
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  occ-preflight:
+    uses: OmniNode-ai/omnibase_core/.github/workflows/occ-preflight.yml@main
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
