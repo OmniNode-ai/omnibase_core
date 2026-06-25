@@ -72,6 +72,19 @@ KNOWN_REPOS = {
     "omninode_infra",
     "omniweb",
     "onex_change_control",
+    # OMN-13579: ungoverned public repos onboarded
+    "omnibase",
+    "omnicursor",
+    "onex-self-extending-agent",
+    "knowledge-base",
+}
+
+# Ungoverned public repos onboarded in OMN-13579.
+NEW_ONBOARDED_REPOS = {
+    "omnibase",
+    "omnicursor",
+    "onex-self-extending-agent",
+    "knowledge-base",
 }
 
 
@@ -217,3 +230,51 @@ def test_critical_validators_present(spec: dict[str, Any]) -> None:
     present = set(spec["required_validators"].keys())
     missing = required_names - present
     assert not missing, f"critical validators missing from spec: {missing}"
+
+
+def test_new_public_repos_in_known_repos(spec: dict[str, Any]) -> None:
+    """OMN-13579: the four previously ungoverned public repos must appear in
+    known_repos so the consumer can validate against them.
+
+    Repos: omnibase (meta/registry), omnicursor (Python), onex-self-extending-agent
+    (Python), knowledge-base (Python + docs).
+    """
+    known = set(spec.get("known_repos", []))
+    missing = NEW_ONBOARDED_REPOS - known
+    assert not missing, (
+        f"OMN-13579: newly onboarded repos not in known_repos: {missing}"
+    )
+
+
+def test_new_public_repos_covered_by_universal_validators(spec: dict[str, Any]) -> None:
+    """OMN-13579: the four onboarded repos must be covered by at least the
+    universal validators (applies_to_repos: 'all'). This is guaranteed once they
+    appear in known_repos — but verifying it explicitly locks the contract so a
+    future narrowing of a 'all' validator cannot silently drop coverage.
+    """
+    universal_validators = [
+        name
+        for name, entry in spec["required_validators"].items()
+        if entry["applies_to_repos"] == "all"
+    ]
+    assert universal_validators, "expected at least one 'all' validator"
+    known = set(spec.get("known_repos", []))
+    missing_from_known = NEW_ONBOARDED_REPOS - known
+    assert not missing_from_known, (
+        f"repos not in known_repos so 'all' coverage is broken: {missing_from_known}"
+    )
+
+
+def test_doc_content_scan_applies_to_knowledge_base(spec: dict[str, Any]) -> None:
+    """OMN-13579: knowledge-base is a doc-heavy repo — doc_content_scan must
+    apply to it, since the ticket explicitly calls out 'doc_content_scan applies
+    to these repos too where docs exist'."""
+    validators = spec["required_validators"]
+    dcs = validators.get("doc-content-scan")
+    assert dcs is not None, "doc-content-scan validator missing from spec"
+    applies = dcs["applies_to_repos"]
+    if applies == "all":
+        return
+    assert "knowledge-base" in applies, (
+        "doc-content-scan must apply to knowledge-base (docs exist)"
+    )
