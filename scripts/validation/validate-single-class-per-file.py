@@ -200,6 +200,7 @@ def should_exclude_file(filepath: Path) -> bool:
         "model_routing_config.py",  # ModelTierModel + ModelRoutingTier + ModelDelegationConfig (hierarchy)
         "model_quality_gate.py",  # ModelQualityGateInput + ModelQualityGateResult (paired gate DTOs)
         "model_bifrost_delegation_config.py",  # 7 tightly-coupled Bifrost gateway config DTOs
+        "model_golden_chain_fixture.py",  # ModelGoldenChainProvenance + ModelGoldenChainFixture (fixture + embedded provenance); pre-existing OMN-13499 file surfaced by spdx-headers CI gate wiring (OMN-13576); split tracked separately
     }
 
     # Exclude validator files with small helper classes

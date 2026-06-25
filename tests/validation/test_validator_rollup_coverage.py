@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
 """Meta-check tests for Model-B rollup coverage (OMN-13574, epic OMN-13573).
@@ -191,6 +191,25 @@ def test_meta_full_equality_no_silent_escape(spec: dict[str, Any]) -> None:
     assert not stale, (
         f"validator_jobs/grandfathered_validators reference validators that are "
         f"not ci_workflow:required for {PILOT_REPO}: {sorted(stale)}"
+    )
+
+
+def test_spdx_headers_is_wired_not_grandfathered(spec: dict[str, Any]) -> None:
+    """OMN-13576: spdx-headers graduated from grandfathered → validator_jobs.
+
+    Locks the burn-down: spdx-headers must be a covered rollup validator (its CI
+    job feeds quality-gate → CI Summary) and must NOT be listed as a deferred
+    grandfathered gap. A revert that re-grandfathers spdx-headers turns this red.
+    """
+    cfg = spec["model_b_rollup_enforcement"]["repos"][PILOT_REPO]
+    assert "spdx-headers" in cfg["validator_jobs"], (
+        "spdx-headers must be covered in validator_jobs (OMN-13576 wiring)"
+    )
+    assert "spdx-headers" not in cfg.get("grandfathered_validators", []), (
+        "spdx-headers must NOT be grandfathered — it is now a wired CI gate"
+    )
+    assert cfg["validator_jobs"]["spdx-headers"] == ["spdx-headers"], (
+        "spdx-headers must map to the 'spdx-headers' ci.yml job"
     )
 
 

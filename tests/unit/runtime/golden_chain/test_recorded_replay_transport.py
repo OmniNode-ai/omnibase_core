@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 """Unit tests for the canonical golden-chain replay harness (OMN-13499).
 
@@ -20,6 +20,7 @@ from typing import Any
 
 import pytest
 
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.golden_chain.model_golden_chain_fixture import (
     ModelGoldenChainFixture,
 )
@@ -189,7 +190,7 @@ def test_record_mode_disabled_passes_outside_ci() -> None:
 
 
 def test_record_mode_fails_closed_in_pr_ci() -> None:
-    with pytest.raises(RuntimeError, match="must REPLAY fixtures only"):
+    with pytest.raises(ModelOnexError, match="must REPLAY fixtures only"):
         require_record_mode_disabled({"OMN_RECORD_GOLDEN": "1", "CI": "true"})
 
 
@@ -200,7 +201,7 @@ def test_record_mode_allowed_in_nightly() -> None:
 
 
 def test_record_fixture_blocked_in_pr_ci(tmp_path: Path) -> None:
-    with pytest.raises(RuntimeError, match="must REPLAY fixtures only"):
+    with pytest.raises(ModelOnexError, match="must REPLAY fixtures only"):
         record_fixture(
             output_path=tmp_path / "x.json",
             provider="zai",

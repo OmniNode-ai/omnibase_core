@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
 """Model-B rollup-coverage verifier for validator-requirements.yaml (OMN-13574).
@@ -70,11 +70,15 @@ class RollupCoverageVerifier:
     """Verify that a repo's required rollup transitively covers every opted-in
     spec-required validator, with no failure-swallowing on the covering jobs."""
 
-    def __init__(self, spec: dict[str, Any]) -> None:
+    def __init__(
+        self, spec: dict[str, Any]
+    ) -> None:  # ONEX_EXCLUDE: dict_str_any — raw validator-requirements.yaml document
         self._spec = spec
         enforcement = spec.get("model_b_rollup_enforcement")
         repos = enforcement.get("repos", {}) if isinstance(enforcement, dict) else {}
-        self._repos: dict[str, Any] = repos if isinstance(repos, dict) else {}
+        self._repos: dict[str, Any] = (
+            repos if isinstance(repos, dict) else {}
+        )  # ONEX_EXCLUDE: dict_str_any — opt-in block keyed by repo name
 
     @classmethod
     def from_spec_path(cls, spec_path: Path) -> RollupCoverageVerifier:
@@ -232,7 +236,9 @@ class RollupCoverageVerifier:
         return gaps
 
     @staticmethod
-    def _swallows_failure(job: dict[str, Any]) -> bool:
+    def _swallows_failure(
+        job: dict[str, Any],
+    ) -> bool:  # ONEX_EXCLUDE: dict_str_any — raw workflow job mapping from YAML
         # continue-on-error: true makes the job result "success" even when its
         # steps fail, so an aggregator reading needs.<job>.result can never go
         # red on it. Treat literal true and the string "true".
@@ -240,7 +246,9 @@ class RollupCoverageVerifier:
         return value is True or (isinstance(value, str) and value.strip() == "true")
 
     @staticmethod
-    def _transitive_needs(jobs: dict[str, Any], start: str) -> set[str]:
+    def _transitive_needs(
+        jobs: dict[str, Any], start: str
+    ) -> set[str]:  # ONEX_EXCLUDE: dict_str_any — raw workflow jobs mapping from YAML
         """All jobs transitively reachable through ``needs`` edges from ``start``."""
         seen: set[str] = set()
         queue: deque[str] = deque(_as_list(jobs.get(start, {}).get("needs")))
