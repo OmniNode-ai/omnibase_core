@@ -180,6 +180,21 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: no-new-os-environ
+  name: No New os.environ/os.getenv Reads (OMN-13566)
+  description: >
+    Canonical AST-based gate: block ALL os.environ[KEY], os.environ.get(KEY), and os.getenv(KEY) reads
+    outside the explicit KEEP_ALLOWLIST of structurally required bootstrap/path/CI vars. This is the canonical
+    generalisation of check-env-reads.sh (OMN-11069/11186) deployed from omnibase_core as a pre-commit
+    hook + REQUIRED CI status check on all repos. Exempts test files (tests/), scripts/, and lines annotated
+    with `# env-read-ok: <reason>`. Extend KEEP_ALLOWLIST in omnibase_core.validators.no_new_os_environ
+    via a CODEOWNERS-reviewed PR. Suppression: # env-read-ok: <reason>. DoD: OMN-13566.
+  language: python
+  entry: python -m omnibase_core.validators.no_new_os_environ
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-hardcoded-topics-v2
   name: Hardcoded ONEX Topic Strings (contract-driven)
   description: >
