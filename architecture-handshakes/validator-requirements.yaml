@@ -54,9 +54,9 @@ known_repos:
 #   - silent_skip_allowed: false (no advisory modes per feedback_no_informational_gates)
 #   - excludes.forbidden: regex patterns the exclude list MUST NOT contain
 #   - excludes.allowed: regex patterns the exclude list MAY contain (fixtures only)
-#   - applies_to_repos: which of the 12 repos must have this validator wired.
-#     "all" = all 12. Override with a list for validators that legitimately
-#     skip some repos (e.g., Python validators skip omniweb PHP).
+#   - applies_to_repos: which repos must have this validator wired.
+#     "all" = all known_repos. Override with a list for validators that legitimately
+#     skip some repos (e.g., Python validators skip omniweb PHP, omnibase meta-repo).
 #   - central_source: canonical module/script location
 #   - pre_commit_hook_ids: list of acceptable pre-commit hook id substrings.
 #     The consumer accepts any repo whose .pre-commit-config.yaml contains at
@@ -616,15 +616,15 @@ required_validators:
       Suppress a line with `doc-content-ok`; suppress a doc whose subject IS these
       traces with `doc-content-file-ok`.
 
-      ENFORCEMENT SCOPE (OMN-13572 pilot): wired + required on omnibase_core
-      (pre-commit hook check-doc-content-scan + the doc-content-scan CI job that
-      feeds the airtight CI Summary rollup, registered in
-      model_b_rollup_enforcement). applies_to_repos is the pilot repo only; fleet
-      rollout to the remaining repos is OMN-13576 (a global required: true would
-      surface MISSING_PRE_COMMIT / MISSING_CI_WORKFLOW gaps on the other 11 repos
-      that have not yet wired the hook, breaking their handshake gate before their
-      wiring lands — so enforcement rides the Model B per-repo rollout, exactly
-      like naming-conventions / pydantic-patterns / aislop-patterns).
+      ENFORCEMENT SCOPE: wired + required on omnibase_core (pre-commit hook
+      check-doc-content-scan + the doc-content-scan CI job that feeds the airtight
+      CI Summary rollup, registered in model_b_rollup_enforcement).
+      OMN-13579 extends applies_to_repos to knowledge-base, omnibase, omnicursor,
+      and onex-self-extending-agent (all have docs/ with .md content). Wiring the
+      pre-commit hook + CI job in those repos is tracked under OMN-13576 (fleet
+      rollout) — adding them here surfaces MISSING_PRE_COMMIT / MISSING_CI_WORKFLOW
+      gaps in the consumer, which is the correct ratchet posture before wiring lands.
+      Further fleet rollout to the remaining repos is also OMN-13576.
     central_source: "omnibase_core.validation.doc_content_scan.runtime_doc_content_scan"
     pre_commit: required
     ci_workflow: required
