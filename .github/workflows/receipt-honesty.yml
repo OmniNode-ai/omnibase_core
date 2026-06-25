@@ -1,9 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
-# Receipt-Honesty Gate [OMN-12791 validator / OMN-12825 CI wiring]
+# Receipt-Honesty Gate [OMN-12791 validator / OMN-12825 CI wiring / OMN-13328 unique job id]
 #
-# Required status check context: "Receipt Honesty / validate"
+# Required status check context: "receipt-honesty"
+#
+# The job id/name is deliberately unique ("receipt-honesty"), NOT the shared
+# "validate" used by core's other validator workflows. GitHub surfaces the
+# check-run context as the bare job name, so a shared "validate" name collides
+# across 14 unrelated core workflows and cannot be made a required status check
+# without forcing all 14. A unique job id yields a unique, safely-requirable
+# context (OMN-13328).
 #
 # Runs the receipt-honesty validator unit tests (proves the validator is
 # importable and behaving on the runner), then scans any in-repo DoD receipt
@@ -36,8 +43,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: validate
+  receipt-honesty:
+    name: receipt-honesty
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
