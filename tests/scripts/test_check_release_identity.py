@@ -117,16 +117,22 @@ def test_explicit_changed_file_overrides_base(mod, monkeypatch):
 def test_live_invocation_smoke():
     """Real subprocess run against the actual repo must succeed (version ahead).
 
-    The worktree pyproject is ahead of the latest published tag, so a real run
-    with no --base (strict mode) must exit 0 — proving the script is importable
-    and wired correctly end to end.
+    The subprocess sees a local published-version tag regardless of checkout tag
+    depth, so the strict-mode run proves the script is importable and wired
+    correctly end to end.
     """
-    result = subprocess.run(
-        ["python", str(_SCRIPT)],
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=_SCRIPT.resolve().parents[1],
-    )
-    assert result.returncode == 0, result.stderr
-    assert "ahead of latest published" in result.stdout
+    repo = _SCRIPT.resolve().parents[1]
+    smoke_tag = "v0.45.999999"
+    subprocess.run(["git", "tag", "-f", smoke_tag, "HEAD"], cwd=repo, check=True)
+    try:
+        result = subprocess.run(
+            ["python", str(_SCRIPT)],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=repo,
+        )
+        assert result.returncode == 0, result.stderr
+        assert "ahead of latest published" in result.stdout
+    finally:
+        subprocess.run(["git", "tag", "-d", smoke_tag], cwd=repo, check=False)
