@@ -601,6 +601,35 @@ required_validators:
     applies_to_repos:
       - omnibase_core
 
+  no-new-os-environ:
+    description: |
+      Canonical AST-based gate: block ALL os.environ[KEY], os.environ.get(KEY),
+      and os.getenv(KEY) reads outside the explicit KEEP_ALLOWLIST of
+      structurally required bootstrap/path/CI vars. Generalises the infra
+      check-env-reads.sh (OMN-11069/11186) as a single canonical implementation
+      deployed from omnibase_core. Converts the platform from "block new vs
+      frozen 685 baseline" to "zero env reads outside the named bootstrap set."
+      KEEP_ALLOWLIST is the only permitted escape, reviewed in CODEOWNERS.
+      Suppression: # env-read-ok: <reason> (structural bootstrap seams only).
+      Exempts tests/, scripts/, examples/. DoD proof: deliberate red-test corpus
+      in test_no_new_os_environ.py asserts the gate catches real violations.
+      OMN-13566 (Wave-4 env-read enforcement ratchet).
+    central_source: "omnibase_core.validators.no_new_os_environ"
+    pre_commit: required
+    ci_workflow: required
+    required_check_on_main: "CI Summary"
+    silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "no-new-os-environ"
+    ci_workflow_keywords:
+      - "no_new_os_environ"
+      - "no-new-os-environ"
+    excludes:
+      allowed: ["^tests/", "^scripts/", "^examples/"]
+      forbidden: ["^src/"]
+    applies_to_repos:
+      - omnibase_core
+
 # ---------------------------------------------------------------------------
 # Model B — failing-rollup enforcement (OMN-13574, epic OMN-13573)
 # ---------------------------------------------------------------------------
@@ -655,6 +684,7 @@ model_b_rollup_enforcement:
         pydantic-patterns: ["pydantic-patterns"]
         aislop-patterns: ["aislop-patterns"]
         doc-content-scan: ["doc-content-scan"]
+        no-new-os-environ: ["no-new-os-environ"]
       # Machine-checkable intentional omissions. These validators are
       # ci_workflow: required and apply to omnibase_core, but are currently
       # grandfathered in validator-requirements-baseline.yaml as
