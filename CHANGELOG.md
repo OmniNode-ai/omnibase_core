@@ -1,5 +1,10 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
+## v0.46.0 (2026-06-25)
+
+### Breaking Changes
+- bump omnibase_core to v0.46.0 — RuntimeLocal relocated from omnibase_infra into omnibase_core (runtime is now core-resident); runtime protocols are core-resident rather than spi (avoids a core->spi circular dependency); and node configuration migrates from environment-variable reads to contract + overlay resolution. Minor bump per pre-1.0 semver convention for breaking surface relocations and the env->contract config migration.
+
 ## v0.45.0 (2026-06-17)
 
 ### Breaking Changes
