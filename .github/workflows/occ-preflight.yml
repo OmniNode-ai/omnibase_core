@@ -5,9 +5,9 @@
 # and merge_group promotion. (OMN-10485 / OMN-10482 epic)
 #
 # Design invariants:
-#   I1. PR metadata and OCC main SHA are resolved exactly once (in `preflight`).
+#   I1. PR metadata and OCC evidence SHA are resolved exactly once (in `preflight`).
 #       All eligibility steps consume the snapshot; they do not re-fetch mutable state.
-#   I2. `merge_group` events re-run eligibility fully against the current OCC main SHA.
+#   I2. `merge_group` events re-run eligibility fully against the pinned OCC evidence SHA.
 #       A cached PASS from the PR-open event cannot satisfy a merge_group run.
 #   I3. OCC's own PRs validate evidence from the PR diff (in-tree checkout) to avoid
 #       the circular dependency of checking OCC main while merging into OCC main.
@@ -134,7 +134,52 @@ jobs:
             : > /tmp/pr_number.txt
           fi
 
-      # I3: OCC's own PRs use in-tree checkout; other repos check out OCC main.
+      # I1: Resolve Evidence-Source to an exact OCC SHA before checkout.
+      # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
+      - name: Resolve Evidence-Source
+        id: resolve_evidence_source
+        if: github.repository != 'OmniNode-ai/onex_change_control'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pr_body="$(cat /tmp/pr_body.txt 2>/dev/null || true)"
+          evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//; s/^[[:space:]]+//; s/[[:space:]]+$//' || true)"
+
+          if [ -z "$evidence_source" ]; then
+            echo "::error::OCC PREFLIGHT FAILED: PR body is missing required 'Evidence-Source:' line. Add one of: 'Evidence-Source: OCC#<PR-number>' or 'Evidence-Source: <occ-sha>'"
+            exit 1
+          fi
+
+          if printf '%s' "$evidence_source" | grep -qiE '^OCC#[0-9]+$'; then
+            occ_pr_num="$(printf '%s' "$evidence_source" | sed -E 's/^OCC#//i')"
+            occ_json="$(gh pr view "$occ_pr_num" --repo "OmniNode-ai/onex_change_control" --json state,headRefOid,mergeCommit 2>/dev/null || true)"
+            occ_state="$(printf '%s' "$occ_json" | jq -r '.state // ""' 2>/dev/null || true)"
+            if [ "$occ_state" = "MERGED" ]; then
+              occ_sha="$(printf '%s' "$occ_json" | jq -r '.mergeCommit.oid // ""' 2>/dev/null || true)"
+            else
+              occ_sha="$(printf '%s' "$occ_json" | jq -r '.headRefOid // ""' 2>/dev/null || true)"
+            fi
+            if [ -z "$occ_sha" ]; then
+              echo "::error::OCC PREFLIGHT FAILED: OCC PR #${occ_pr_num} could not be resolved — OCC unavailable or PR not found."
+              exit 1
+            fi
+          elif printf '%s' "$evidence_source" | grep -qiE '^[0-9a-f]{7,40}$'; then
+            occ_sha="$(gh api "repos/OmniNode-ai/onex_change_control/commits/${evidence_source}" --jq '.sha' 2>/dev/null || true)"
+            if [ -z "$occ_sha" ]; then
+              echo "::error::OCC PREFLIGHT FAILED: Evidence-Source SHA could not be canonicalized to a full OCC commit SHA."
+              exit 1
+            fi
+          else
+            echo "::error::OCC PREFLIGHT FAILED: Evidence-Source value '${evidence_source}' is not a valid OCC#<number> or hex SHA."
+            exit 1
+          fi
+
+          echo "sha=${occ_sha}" >> "$GITHUB_OUTPUT"
+          echo "::notice::Evidence-Source resolved to OCC SHA: ${occ_sha}"
+
+      # I3: OCC's own PRs use in-tree checkout; other repos check out pinned OCC evidence.
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
       - name: Check out onex_change_control (for contracts + receipts)
         if: github.repository != 'OmniNode-ai/onex_change_control'
@@ -142,7 +187,7 @@ jobs:
         with:
           repository: OmniNode-ai/onex_change_control
           path: .onex_change_control
-          ref: main
+          ref: ${{ steps.resolve_evidence_source.outputs.sha }}
           fetch-depth: 1
 
       # Pin the OCC SHA used for eligibility evaluation. Once resolved here, all
@@ -304,10 +349,13 @@ jobs:
           mkdir -p /tmp/occ-preflight-wheels
           (cd "$core_path" && uv build --wheel --out-dir /tmp/occ-preflight-wheels)
 
-          uv pip install --python "$venv_py" --no-deps --no-index \
-            --find-links /tmp/occ-preflight-wheels \
-            --reinstall-package omnibase-core \
-            omnibase-core
+          core_wheel="$(find /tmp/occ-preflight-wheels -maxdepth 1 -type f -name 'omnibase_core-*.whl' | head -1)"
+          if [ -z "$core_wheel" ]; then
+            echo "::error::omnibase_core wheel was not produced"
+            exit 1
+          fi
+
+          uv pip install --python "$venv_py" --no-deps --reinstall-package omnibase-core "$core_wheel"
 
           # Export the venv interpreter for the downstream gate steps so they run
           # against this install instead of bare `python` (the system interpreter).
