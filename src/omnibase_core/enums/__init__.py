@@ -174,6 +174,10 @@ from .enum_execution_shape import EnumExecutionShape, EnumMessageCategory
 from .enum_execution_status import EnumExecutionStatus
 from .enum_execution_trigger import EnumExecutionTrigger
 
+# Shared Experiment Result Contract enums (OMN-13613)
+from .enum_experiment_status import EnumExperimentStatus
+from .enum_experiment_type import EnumExperimentType
+
 # Failure type enums (OMN-1236)
 from .enum_failure_type import EnumFailureType
 
@@ -622,6 +626,8 @@ __all__ = [
     "EnumExecutionMode",
     "EnumExecutionShape",
     "EnumExecutionTrigger",
+    "EnumExperimentStatus",
+    "EnumExperimentType",
     "EnumMessageCategory",
     # Log level domain
     "EnumLogLevel",
