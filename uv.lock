@@ -698,7 +698,7 @@ dependencies = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.46.0"
+version = "0.46.1"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
