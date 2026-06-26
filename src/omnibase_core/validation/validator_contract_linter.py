@@ -46,6 +46,7 @@ See Also:
     - scripts/lint_contract.py: Original standalone linting script
 """
 
+import ast
 import logging
 import re
 import sys
@@ -88,6 +89,7 @@ RULE_REQUIRED_FIELDS = "required_fields"
 RULE_RECOMMENDED_FIELDS = "recommended_fields"
 RULE_NAMING_CONVENTION = "naming_convention"
 RULE_MODEL_PREFIX = "model_prefix"
+RULE_MODEL_CLASS_EXISTS = "model_class_exists"
 RULE_FINGERPRINT_FORMAT = "fingerprint_format"
 RULE_FINGERPRINT_MATCH = "fingerprint_match"
 RULE_SCHEMA_VALIDATION = "schema_validation"
@@ -195,6 +197,180 @@ def _detect_contract_type(data: dict[str, object]) -> str | None:
         return "orchestrator"
 
     return None
+
+
+# Sentinel module prefix used by the SEA generation pipeline for models that are
+# inlined into the single generated handler.py rather than living in a real,
+# importable package. A contract that points its model at this sentinel (or at no
+# module at all) declares an *inline* model whose existence can only be proven
+# against the handler source.
+_GENERATED_INLINE_MODULE_PREFIX = "generated"
+
+
+def _extract_declared_inline_model_class_name(model_field: object) -> str:
+    """Extract a contract-declared model class name *iff* it is an inline model.
+
+    The model-class-existence check (OMN-13609) is meaningful only for the
+    SEA-style generated-node form, where the model class is inlined into the
+    single generated ``handler.py``. Two declaration shapes occur:
+
+        * Nested mapping: ``input_model: {name: ModelFooInput, module: ...}``
+        * Flat string:    ``input_model: pkg.module.ModelFooInput`` (bare or dotted)
+
+    A model is treated as **inline** (in scope) only when it is NOT a
+    fully-qualified importable reference to a real package:
+
+        * flat bare name (no dot, e.g. ``ModelFooInput``) → inline;
+        * nested mapping whose ``module`` is absent or the ``generated`` inline
+          sentinel → inline;
+
+    A dotted importable path (``omnibase_core.models...ModelX``) or a nested
+    mapping with a real importable ``module`` is a hand-authored canonical node
+    whose model lives in its own module — out of scope (existence is proven by
+    import resolution / schema validation, not by scanning ``handler.py``).
+
+    Returns the bare class name when the model is inline, else the empty string.
+    """
+    if isinstance(model_field, dict):
+        name = model_field.get("name", "")
+        if not isinstance(name, str) or not name:
+            return ""
+        module = model_field.get("module", "")
+        module = module if isinstance(module, str) else ""
+        if not module or module.split(".")[0] == _GENERATED_INLINE_MODULE_PREFIX:
+            return name
+        return ""
+    if isinstance(model_field, str) and model_field:
+        # A dotted path is a real importable reference (hand-authored) — skip.
+        if "." in model_field:
+            return ""
+        return model_field
+    return ""
+
+
+def validate_model_class_existence(
+    contract_data: dict[str, object],
+    handler_source: str,
+    *,
+    path: Path,
+    severity: EnumSeverity = EnumSeverity.ERROR,
+) -> list[ModelValidationIssue]:
+    """Validate that contract-declared model classes exist in the handler source.
+
+    Canonical home (OMN-13609, WS-C Phase 1.1) for the model-class-existence
+    check ported from the SEA generation pipeline. A generated node inlines its
+    ``input_model`` / ``output_model`` classes into a single ``handler.py``; those
+    declared names must be bound at the top level of that handler. If an inline
+    model class is undefined in the handler, the contract is rejected.
+
+    Scope: the check applies ONLY to **inline** model declarations (the generated
+    form — a bare class name, or a nested mapping with no/`generated` module).
+    Hand-authored canonical nodes declare a fully-qualified dotted importable path
+    (``omnibase_core.models...ModelX``); those models live in their own module and
+    are resolved by import, so they are deliberately out of scope (see
+    :func:`_extract_declared_inline_model_class_name`).
+
+    Both the contract linter (file-based, via the co-located ``handler.py``) and
+    ``node_generation_consumer`` (string-based, on freshly generated source)
+    invoke this single function — the platform owns the logic, the node does not
+    re-implement it.
+
+    Args:
+        contract_data: Parsed contract YAML mapping.
+        handler_source: Generated handler module source code.
+        path: Contract file path used for issue attribution.
+        severity: Severity to assign to any violation found.
+
+    Returns:
+        List of ``ModelValidationIssue`` for inline model classes that are not
+        bound at the top level of the handler. Empty when all inline classes are
+        bound, no inline model is declared, or the handler source cannot be
+        AST-parsed (a syntax error is reported by the separate syntax check, not
+        masked here).
+    """
+    input_model_name = _extract_declared_inline_model_class_name(
+        contract_data.get("input_model")
+    )
+    output_model_name = _extract_declared_inline_model_class_name(
+        contract_data.get("output_model")
+    )
+
+    if not input_model_name and not output_model_name:
+        return []
+
+    try:
+        tree = ast.parse(handler_source)
+    except SyntaxError:
+        # Syntax errors are owned by the dedicated syntax check; do not mask
+        # them with a (misleading) model-class verdict here.
+        return []
+
+    handler_names = _collect_handler_top_level_names(tree)
+
+    issues: list[ModelValidationIssue] = []
+    for label, model_name in (
+        ("input_model", input_model_name),
+        ("output_model", output_model_name),
+    ):
+        if model_name and model_name not in handler_names:
+            issues.append(
+                ModelValidationIssue(
+                    severity=severity,
+                    message=(
+                        f"Contract-declared {label} '{model_name}' is not bound at "
+                        "the top level of the generated handler (no defining class, "
+                        "import, or assignment)"
+                    ),
+                    code=RULE_MODEL_CLASS_EXISTS,
+                    file_path=path,
+                    line_number=1,
+                    rule_name=RULE_MODEL_CLASS_EXISTS,
+                    suggestion=(
+                        f"Define or import {model_name} in the handler, or update "
+                        f"the contract's {label} to match the handler's class name"
+                    ),
+                    context={
+                        "declared_model": model_name,
+                        "model_field": label,
+                        "handler_names": ", ".join(sorted(handler_names)),
+                    },
+                )
+            )
+
+    return issues
+
+
+def _collect_handler_top_level_names(tree: ast.Module) -> set[str]:
+    """Collect every name bound at the top level of a handler module.
+
+    A contract-declared model class is "present" in the handler when its name is
+    bound at module scope by any of:
+
+        * a class definition (``class ModelFooInput: ...`` — the single-file
+          generated-node form, ported from the SEA pipeline);
+        * an import (``from generated.models import ModelFooInput`` /
+          ``import x as ModelFooInput`` — the canonical multi-module form used by
+          hand-authored nodes that keep models in separate modules);
+        * a module-level assignment (``ModelFooInput = ...`` — an alias).
+
+    All three make the declared name resolvable in the handler namespace, which
+    is the real invariant; restricting to ``ClassDef`` only (as the SEA check
+    did) would falsely reject canonical nodes that import their models.
+    """
+    names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            names.add(node.name)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            for alias in node.names:
+                names.add(alias.asname or alias.name.split(".")[0])
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    names.add(target.id)
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names.add(node.target.id)
+    return names
 
 
 class ValidatorContractLinter(ValidatorBase):
@@ -675,6 +851,70 @@ class ValidatorContractLinter(ValidatorBase):
 
         return issues
 
+    def _validate_model_class_existence(
+        self,
+        data: dict[str, object],
+        path: Path,
+        contract: ModelValidatorSubcontract,
+    ) -> list[ModelValidationIssue]:
+        """Guardrail: contract-declared model classes must exist in the handler.
+
+        OMN-13609 (WS-C Phase 1.1): ported from the SEA generation pipeline. When
+        a contract is co-located with a generated handler module (the canonical
+        generated-node layout writes ``contract.yaml`` + ``handler.py`` in the
+        same directory), the contract's ``input_model`` / ``output_model`` class
+        names must be defined as top-level classes in that handler.
+
+        The check only runs when a sibling handler module is present; a
+        contract-only directory yields no issue (existence cannot be proven
+        either way, and absence of a handler is not a contract violation in the
+        linter's per-file model). All logic lives in the module-level
+        :func:`validate_model_class_existence` so node_generation_consumer can
+        invoke the same authority on freshly generated source.
+
+        Args:
+            data: Parsed contract YAML mapping.
+            path: Path to the contract file.
+            contract: The validator contract.
+
+        Returns:
+            List of validation issues for declared model classes absent from the
+            co-located handler.
+        """
+        handler_path = self._resolve_handler_path(path)
+        if handler_path is None:
+            return []
+
+        try:
+            handler_source = handler_path.read_text(encoding="utf-8")
+        except FILE_IO_ERRORS:
+            # fallback-ok: handler unreadable - the model-class check cannot run;
+            # other checks/tooling surface the read failure.
+            return []
+
+        severity = self._get_severity(
+            self._get_rule_by_id(RULE_MODEL_CLASS_EXISTS, contract),
+            contract,
+        )
+        return validate_model_class_existence(
+            data,
+            handler_source,
+            path=path,
+            severity=severity,
+        )
+
+    @staticmethod
+    def _resolve_handler_path(contract_path: Path) -> Path | None:
+        """Resolve the generated handler module co-located with a contract.
+
+        The canonical generated-node layout writes ``handler.py`` beside
+        ``contract.yaml``. Returns the handler path when it exists, else None.
+        """
+        handler_path = contract_path.parent / "handler.py"
+        if handler_path.is_file():
+            return handler_path
+        return None
+
     def _validate_fingerprint_format(
         self,
         data: dict[str, object],
@@ -908,12 +1148,15 @@ class ValidatorContractLinter(ValidatorBase):
         issues: list[ModelValidationIssue] = []
         severity = self._get_severity(rule, contract)
 
-        # Only warn on seam contracts (those with event wiring)
-        has_events = bool(
-            data.get("event_subscriptions")
-            or data.get("yaml_consumed_events")
-            or data.get("yaml_published_events")
+        # Only warn on seam contracts (those with event wiring). Explicit any()
+        # over the event-wiring fields — not an or-chain (check-no-fallbacks gate,
+        # OMN-13609 self-touch).
+        event_wiring_fields = (
+            "event_subscriptions",
+            "yaml_consumed_events",
+            "yaml_published_events",
         )
+        has_events = any(data.get(field) for field in event_wiring_fields)
         if not has_events:
             return issues
 
@@ -972,6 +1215,11 @@ class ValidatorContractLinter(ValidatorBase):
         # Run guardrail checks (always run, not rule-dependent)
         # These prevent regression from field name migrations
         issues.extend(self._validate_deprecated_field_names(data, path, contract))
+
+        # Guardrail (OMN-13609): contract-declared model classes must exist in
+        # the co-located generated handler. Always run when a sibling
+        # handler.py is present; a no-op otherwise.
+        issues.extend(self._validate_model_class_existence(data, path, contract))
 
         # Get rules
         required_rule = self._get_rule_by_id(RULE_REQUIRED_FIELDS, contract)
@@ -1042,6 +1290,7 @@ __all__ = [
     "RULE_FINGERPRINT_FORMAT",
     "RULE_FINGERPRINT_MATCH",
     "RULE_GOLDEN_PATH_RECOMMENDED",
+    "RULE_MODEL_CLASS_EXISTS",
     "RULE_MODEL_PREFIX",
     "RULE_NAMING_CONVENTION",
     "RULE_RECOMMENDED_FIELDS",
@@ -1050,4 +1299,5 @@ __all__ = [
     "RULE_YAML_SYNTAX",
     "SNAKE_CASE_PATTERN",
     "ValidatorContractLinter",
+    "validate_model_class_existence",
 ]
