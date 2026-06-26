@@ -341,6 +341,21 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # OMN-13609 (WS-C Phase 1.1): a generated node's contract-declared inline
+      # input_model / output_model class names must be bound at the top level of
+      # the co-located handler.py. Ported from the SEA pipeline model_types check;
+      # the authoritative logic lives in the canonical validator platform
+      # (omnibase_core.validation.validator_contract_linter.validate_model_class_existence)
+      # which this guard invokes. Only inline generated models are in scope —
+      # hand-authored nodes that declare a dotted importable model path are skipped.
+      - id: generated-node-model-class-exists
+        name: generated-node model-class-existence guard (OMN-13609)
+        entry: uv run python -m omnibase_core.validators.generated_node_model_class_exists src/omnibase_core
+        language: system
+        files: (^|/)contract\.yaml$
+        pass_filenames: false
+        stages: [pre-commit]
+
       # CLASS vs FILE Naming Conventions:
       # - validate-naming-conventions: CLASS naming (ModelUser, EnumStatus, ProtocolEventBus)
       # - validate-file-naming-conventions: FILE naming (model_user.py, enum_status.py)
@@ -450,7 +465,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py)
         stages: [pre-commit]
         # validate_string_versions.py: validation script that must load YAML to validate it (OMN-4402)
 

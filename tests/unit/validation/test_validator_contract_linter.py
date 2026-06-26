@@ -365,5 +365,317 @@ class TestValidatorContractLinterInit:
         assert validator.registry is registry
 
 
+# =============================================================================
+# Model Class Existence Tests (OMN-13609 - WS-C Phase 1.1)
+#
+# Ported from SEA pipeline/validator.py model_types check: a generated node's
+# contract-declared input_model/output_model class names must exist as top-level
+# classes in the co-located generated handler. If a declared class name is
+# undefined in the handler, the validator rejects the contract.
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestValidateModelClassExistence:
+    """Tests for the model-class-existence check (OMN-13609)."""
+
+    def test_undefined_model_class_is_rejected(self, tmp_path: Path) -> None:
+        """Contract declaring a model class absent from the handler is rejected."""
+        from omnibase_core.validation.validator_contract_linter import (
+            RULE_MODEL_CLASS_EXISTS,
+            validate_model_class_existence,
+        )
+
+        contract_data: dict[str, object] = {
+            "name": "node_foo",
+            "contract_version": "1.0.0",
+            "node_type": "compute",
+            "input_model": {"name": "ModelFooInput", "module": "generated.models"},
+            "output_model": {"name": "ModelFooOutput", "module": "generated.models"},
+        }
+        handler_source = (
+            "from pydantic import BaseModel\n"
+            "\n"
+            "class ModelBarInput(BaseModel):\n"
+            "    value: int\n"
+            "\n"
+            "class ModelFooOutput(BaseModel):\n"
+            "    result: int\n"
+            "\n"
+            "def handle(input_data: dict) -> dict:\n"
+            "    return {'result': input_data.get('value', 0)}\n"
+        )
+
+        issues = validate_model_class_existence(
+            contract_data,
+            handler_source,
+            path=tmp_path / "contract.yaml",
+            severity=EnumSeverity.ERROR,
+        )
+
+        assert len(issues) == 1
+        assert issues[0].code == RULE_MODEL_CLASS_EXISTS
+        assert issues[0].severity == EnumSeverity.ERROR
+        assert "ModelFooInput" in issues[0].message
+
+    def test_all_model_classes_present_passes(self, tmp_path: Path) -> None:
+        """Contract whose declared model classes all exist in the handler passes."""
+        from omnibase_core.validation.validator_contract_linter import (
+            validate_model_class_existence,
+        )
+
+        contract_data: dict[str, object] = {
+            "name": "node_foo",
+            "contract_version": "1.0.0",
+            "node_type": "compute",
+            "input_model": {"name": "ModelFooInput", "module": "generated.models"},
+            "output_model": {"name": "ModelFooOutput", "module": "generated.models"},
+        }
+        handler_source = (
+            "from pydantic import BaseModel\n"
+            "\n"
+            "class ModelFooInput(BaseModel):\n"
+            "    value: int\n"
+            "\n"
+            "class ModelFooOutput(BaseModel):\n"
+            "    result: int\n"
+            "\n"
+            "def handle(input_data: dict) -> dict:\n"
+            "    return {'result': input_data.get('value', 0)}\n"
+        )
+
+        issues = validate_model_class_existence(
+            contract_data,
+            handler_source,
+            path=tmp_path / "contract.yaml",
+            severity=EnumSeverity.ERROR,
+        )
+
+        assert issues == []
+
+    def test_bare_flat_string_model_field_is_checked(self, tmp_path: Path) -> None:
+        """A bare (un-dotted) flat-string model name is the inline form: checked."""
+        from omnibase_core.validation.validator_contract_linter import (
+            RULE_MODEL_CLASS_EXISTS,
+            validate_model_class_existence,
+        )
+
+        contract_data: dict[str, object] = {
+            "name": "node_foo",
+            "contract_version": "1.0.0",
+            "node_type": "compute",
+            "input_model": "ModelFlatInput",
+            "output_model": "ModelFlatOutput",
+        }
+        handler_source = (
+            "from pydantic import BaseModel\n"
+            "\n"
+            "class ModelFlatInput(BaseModel):\n"
+            "    value: int\n"
+            "\n"
+            "def handle(input_data: dict) -> dict:\n"
+            "    return {'result': 0}\n"
+        )
+
+        issues = validate_model_class_existence(
+            contract_data,
+            handler_source,
+            path=tmp_path / "contract.yaml",
+            severity=EnumSeverity.ERROR,
+        )
+
+        assert len(issues) == 1
+        assert issues[0].code == RULE_MODEL_CLASS_EXISTS
+        assert "ModelFlatOutput" in issues[0].message
+
+    def test_dotted_importable_path_is_out_of_scope(self, tmp_path: Path) -> None:
+        """A fully-qualified dotted model path is a hand-authored reference whose
+        model lives in its own module: out of scope, never flagged here."""
+        from omnibase_core.validation.validator_contract_linter import (
+            validate_model_class_existence,
+        )
+
+        contract_data: dict[str, object] = {
+            "name": "node_foo",
+            "contract_version": "1.0.0",
+            "node_type": "compute",
+            "input_model": "omnibase_core.models.nodes.foo.ModelFooInput",
+            "output_model": "omnibase_core.models.nodes.foo.ModelFooOutput",
+        }
+        # Handler does not define/import the model names at all — still no issue,
+        # because dotted references are resolved by import, not by handler scan.
+        handler_source = (
+            "def handle(input_data: dict) -> dict:\n    return {'result': 0}\n"
+        )
+
+        issues = validate_model_class_existence(
+            contract_data,
+            handler_source,
+            path=tmp_path / "contract.yaml",
+            severity=EnumSeverity.ERROR,
+        )
+
+        assert issues == []
+
+    def test_nested_model_imported_into_handler_passes(self, tmp_path: Path) -> None:
+        """Inline model declared with the generated sentinel, satisfied by an
+        import binding in the handler (not only a ClassDef)."""
+        from omnibase_core.validation.validator_contract_linter import (
+            validate_model_class_existence,
+        )
+
+        contract_data: dict[str, object] = {
+            "name": "node_foo",
+            "contract_version": "1.0.0",
+            "node_type": "compute",
+            "input_model": {"name": "ModelFooInput", "module": "generated.models"},
+        }
+        handler_source = (
+            "from generated.models import ModelFooInput\n"
+            "\n"
+            "def handle(input_data: dict) -> dict:\n"
+            "    return {'result': 0}\n"
+        )
+
+        issues = validate_model_class_existence(
+            contract_data,
+            handler_source,
+            path=tmp_path / "contract.yaml",
+            severity=EnumSeverity.ERROR,
+        )
+
+        assert issues == []
+
+    def test_unparseable_handler_yields_no_class_existence_issue(
+        self, tmp_path: Path
+    ) -> None:
+        """A handler that cannot be AST-parsed yields no model-class issue.
+
+        Syntax errors are owned by the separate syntax check; the model-class
+        check emits nothing rather than masking a syntax error.
+        """
+        from omnibase_core.validation.validator_contract_linter import (
+            validate_model_class_existence,
+        )
+
+        contract_data: dict[str, object] = {
+            "name": "node_foo",
+            "contract_version": "1.0.0",
+            "node_type": "compute",
+            "input_model": {"name": "ModelFooInput", "module": "generated.models"},
+        }
+        handler_source = "def handle(:\n    pass\n"  # invalid syntax
+
+        issues = validate_model_class_existence(
+            contract_data,
+            handler_source,
+            path=tmp_path / "contract.yaml",
+            severity=EnumSeverity.ERROR,
+        )
+
+        assert issues == []
+
+
+@pytest.mark.unit
+class TestModelClassExistenceWiredInLinter:
+    """The check is wired into the per-file linter loop via co-located handler."""
+
+    def test_contract_with_undefined_model_class_fails_linter(
+        self, tmp_path: Path
+    ) -> None:
+        """A generated node dir (contract.yaml + handler.py) with a mismatched
+        model class name is rejected by ValidatorContractLinter.validate()."""
+        from omnibase_core.validation.validator_contract_linter import (
+            RULE_MODEL_CLASS_EXISTS,
+        )
+
+        node_dir = tmp_path / "node_foo"
+        node_dir.mkdir()
+        (node_dir / "contract.yaml").write_text(
+            "name: node_foo\n"
+            'contract_version: "1.0.0"\n'
+            "node_type: compute\n"
+            "description: A foo node\n"
+            "input_model:\n"
+            "  name: ModelFooInput\n"
+            "  module: generated.models\n"
+            "output_model:\n"
+            "  name: ModelFooOutput\n"
+            "  module: generated.models\n",
+            encoding="utf-8",
+        )
+        (node_dir / "handler.py").write_text(
+            "from pydantic import BaseModel\n"
+            "\n"
+            "class ModelWrongInput(BaseModel):\n"
+            "    value: int\n"
+            "\n"
+            "class ModelFooOutput(BaseModel):\n"
+            "    result: int\n"
+            "\n"
+            "def handle(input_data: dict) -> dict:\n"
+            "    return {'result': 0}\n",
+            encoding="utf-8",
+        )
+
+        contract = create_test_contract(target_patterns=["**/contract.yaml"])
+        validator = ValidatorContractLinter(contract=contract)
+        result = validator.validate(node_dir / "contract.yaml")
+
+        assert not result.is_valid
+        codes = {issue.code for issue in result.issues}
+        assert RULE_MODEL_CLASS_EXISTS in codes
+        assert any(
+            "ModelFooInput" in issue.message
+            for issue in result.issues
+            if issue.code == RULE_MODEL_CLASS_EXISTS
+        )
+
+    def test_contract_with_matching_model_classes_passes_linter(
+        self, tmp_path: Path
+    ) -> None:
+        """A generated node dir whose handler defines all declared model classes
+        produces no model-class-existence issue."""
+        from omnibase_core.validation.validator_contract_linter import (
+            RULE_MODEL_CLASS_EXISTS,
+        )
+
+        node_dir = tmp_path / "node_foo"
+        node_dir.mkdir()
+        (node_dir / "contract.yaml").write_text(
+            "name: node_foo\n"
+            'contract_version: "1.0.0"\n'
+            "node_type: compute\n"
+            "description: A foo node\n"
+            "input_model:\n"
+            "  name: ModelFooInput\n"
+            "  module: generated.models\n"
+            "output_model:\n"
+            "  name: ModelFooOutput\n"
+            "  module: generated.models\n",
+            encoding="utf-8",
+        )
+        (node_dir / "handler.py").write_text(
+            "from pydantic import BaseModel\n"
+            "\n"
+            "class ModelFooInput(BaseModel):\n"
+            "    value: int\n"
+            "\n"
+            "class ModelFooOutput(BaseModel):\n"
+            "    result: int\n"
+            "\n"
+            "def handle(input_data: dict) -> dict:\n"
+            "    return {'result': 0}\n",
+            encoding="utf-8",
+        )
+
+        contract = create_test_contract(target_patterns=["**/contract.yaml"])
+        validator = ValidatorContractLinter(contract=contract)
+        result = validator.validate(node_dir / "contract.yaml")
+
+        codes = {issue.code for issue in result.issues}
+        assert RULE_MODEL_CLASS_EXISTS not in codes
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
