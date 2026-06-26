@@ -282,6 +282,39 @@ class TestModelDelegationResult:
         assert r.terminal_failure_reason is None
         assert r.attempts_count == 1
 
+    def test_context_pack_hash_defaults_to_off_arm(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+        assert r.context_pack_hash == ""
+
+    def test_context_pack_hash_round_trips(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+            context_pack_hash="sha256:ctxpack",
+        )
+        dumped = r.model_dump()
+        assert dumped["context_pack_hash"] == "sha256:ctxpack"
+        restored = ModelDelegationResult.model_validate(dumped)
+        assert restored.context_pack_hash == "sha256:ctxpack"
+        assert restored == r
+
     def test_rejects_invalid_metric_ranges(self) -> None:
         with pytest.raises(ValidationError):
             ModelDelegationResult(

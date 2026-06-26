@@ -115,6 +115,14 @@ class ModelDelegationResult(BaseModel):
         ge=0.0,
         description="Estimated cost of the final attempt.",
     )
+    context_pack_hash: str = Field(
+        default="",
+        description=(
+            "Stable sha256 hash of the context pack injected into the delegated "
+            "prompt, propagated onto the terminal result for ROI correlation. "
+            "Empty string means the OFF arm or no context pack."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_total_tokens(self) -> Self:
