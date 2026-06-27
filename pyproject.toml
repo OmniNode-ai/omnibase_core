@@ -105,6 +105,12 @@ onex-validate-topics = "omnibase_core.validation.scripts.validate_topic_names:ma
 validate-string-versions = "omnibase_core.validation.scripts.validate_string_versions:main"
 onex-validate-links = "omnibase_core.scripts.validate_markdown_links:main"
 onex-demo-path-topic-gate = "omnibase_core.validation.validator_demo_path_topic_coherence:main"
+# OMN-13663: projection exposure⇄column drift validator. Reconciles every
+# projection node contract.yaml's projection_api.exposures against the
+# materialized columns of the table/view each reads from (extracted from the
+# node's migration DDL). Existence drift fails the build; identity/tier/cost
+# columns omitted from every exposure warn (the cost_tier_name class of bug).
+check-projection-exposure-drift = "omnibase_core.validators.projection_exposure_drift:main"
 
 [project.entry-points."onex.backends"]
 event_bus_inmemory = "omnibase_core.event_bus.event_bus_inmemory:EventBusInmemory"

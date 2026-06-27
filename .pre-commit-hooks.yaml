@@ -517,3 +517,21 @@
   files: (^|/)contract\.yaml$
   pass_filenames: true
   stages: [pre-commit]
+
+- id: check-projection-exposure-drift
+  name: Projection exposure-column drift (OMN-13663)
+  description: >
+    Reconcile every projection node contract.yaml's projection_api.exposures against the materialized
+    columns of the table/view each exposure reads from (extracted from the node's migration DDL — CREATE
+    TABLE / ALTER TABLE ADD COLUMN / CREATE [OR REPLACE] VIEW). EXISTENCE (blocking): every exposure column/json_columns
+    entry MUST exist among the materialized columns; a phantom column makes the projection query fail
+    at runtime. OMISSION (warn): a materialized identity/tier/cost column (cost_tier, tier, *_id, correlation_id,
+    cost_*, savings_*, tokens_*) not surfaced by ANY exposure is the cost_tier_name class of bug (OMN-13649)
+    — the column existed in DDL (migration 0018) but was dropped at the projection boundary; annotate
+    intentional omissions in .projection-exposure-allowlist.yaml. Scans the repo root (cwd); pass_filenames
+    is false so it re-reconciles whenever a contract.yaml or a migration .sql changes.
+  language: python
+  entry: python -m omnibase_core.validators.projection_exposure_drift
+  files: (^|/)(contract\.yaml|migrations/.*\.sql)$
+  pass_filenames: false
+  stages: [pre-commit]
