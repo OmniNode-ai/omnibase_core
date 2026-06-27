@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# dispatch-surface-test-ok: removes dead validators referencing undefined names; no live dispatch behaviour changed (OMN-12547)
 
 """
 Handler Routing Subcontract Model — wrapper shape (OMN-12547 S-1c).
