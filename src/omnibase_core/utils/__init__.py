@@ -32,6 +32,11 @@ from .util_hash import (
     deterministic_jitter,
     string_to_uuid,
 )
+from .util_omni_home_paths import (
+    resolve_evidence_root,
+    resolve_omnibase_infra_path,
+    resolve_worktrees_root,
+)
 from .util_validators import convert_dict_to_frozen_pairs, convert_list_to_tuple
 
 # Note: parse_datetime is lazy-loaded via __getattr__ to avoid circular imports
@@ -64,6 +69,9 @@ __all__ = [
     "get_contract_attr",
     "has_contract_attr",
     "parse_datetime",
+    "resolve_evidence_root",
+    "resolve_omnibase_infra_path",
+    "resolve_worktrees_root",
     "string_to_uuid",
 ]
 
