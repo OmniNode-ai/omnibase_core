@@ -67,9 +67,11 @@ def _canonical_effect() -> dict[str, Any]:
             "routing_strategy": "operation_match",
             "handlers": [
                 {
-                    "routing_key": "e2e.run",
-                    "handler_key": "handle_e2e_run",
-                    "priority": 0,
+                    "operation": "e2e.run",
+                    "handler": {
+                        "name": "HandlerE2ERun",
+                        "module": "e2e.handlers",
+                    },
                 }
             ],
         },
@@ -106,9 +108,11 @@ def _canonical_compute() -> dict[str, Any]:
             "routing_strategy": "operation_match",
             "handlers": [
                 {
-                    "routing_key": "e2e.compute",
-                    "handler_key": "handle_e2e_compute",
-                    "priority": 0,
+                    "operation": "e2e.compute",
+                    "handler": {
+                        "name": "HandlerE2ECompute",
+                        "module": "e2e.handlers",
+                    },
                 }
             ],
         },
@@ -130,9 +134,11 @@ def _canonical_reducer() -> dict[str, Any]:
             "routing_strategy": "operation_match",
             "handlers": [
                 {
-                    "routing_key": "e2e.reduce",
-                    "handler_key": "handle_e2e_reduce",
-                    "priority": 0,
+                    "operation": "e2e.reduce",
+                    "handler": {
+                        "name": "HandlerE2EReduce",
+                        "module": "e2e.handlers",
+                    },
                 }
             ],
         },
@@ -153,9 +159,11 @@ def _canonical_orchestrator() -> dict[str, Any]:
             "routing_strategy": "operation_match",
             "handlers": [
                 {
-                    "routing_key": "e2e.orchestrate",
-                    "handler_key": "handle_e2e_orchestrate",
-                    "priority": 0,
+                    "operation": "e2e.orchestrate",
+                    "handler": {
+                        "name": "HandlerE2EOrchestrate",
+                        "module": "e2e.handlers",
+                    },
                 }
             ],
         },
