@@ -328,7 +328,7 @@ def test_handler_routing_adds_version_default() -> None:
 
 
 @pytest.mark.unit
-def test_handler_routing_derives_routing_key_from_supported_operation() -> None:
+def test_handler_routing_derives_operation_from_supported_operation() -> None:
     raw = {
         "handler_routing": {
             "routing_strategy": "operation_match",
@@ -343,8 +343,8 @@ def test_handler_routing_derives_routing_key_from_supported_operation() -> None:
     }
     result = normalize_handler_routing(raw)
     h = result["handler_routing"]["handlers"][0]
-    assert h["routing_key"] == "auth_gate.evaluate"
-    assert h["handler_key"] == "handler_auth_gate"
+    assert h["operation"] == "auth_gate.evaluate"
+    assert h["handler"] == {"name": "HandlerAuthGate", "module": "foo.bar"}
 
 
 @pytest.mark.unit
@@ -364,7 +364,7 @@ def test_handler_routing_preserves_non_dict_handler_entries() -> None:
     result = normalize_handler_routing(raw)
     handlers = result["handler_routing"]["handlers"]
     assert handlers[0] == "legacy-malformed-handler"
-    assert handlers[1]["routing_key"] == "auth_gate.evaluate"
+    assert handlers[1]["operation"] == "auth_gate.evaluate"
 
 
 @pytest.mark.unit
@@ -383,7 +383,7 @@ def test_handler_routing_multi_operation_handler_flagged() -> None:
     }
     result = normalize_handler_routing(raw)
     h = result["handler_routing"]["handlers"][0]
-    assert h["routing_key"] == "foo.a"
+    assert h["operation"] == "foo.a"
     assert h.get("_normalization_flag") == "multi_operation_requires_human_review"
 
 
@@ -523,7 +523,8 @@ class TestComposeNormalizationPipeline:
         assert isinstance(handlers, list)
         first = handlers[0]
         assert isinstance(first, dict)
-        assert first["routing_key"] == "foo.run"
+        assert first["operation"] == "foo.run"
+        assert first["handler"] == {"name": "HandlerFoo", "module": "bar"}
 
     def test_pipeline_does_not_mutate_input(self) -> None:
         raw: dict[str, object] = {

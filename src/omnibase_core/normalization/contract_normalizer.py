@@ -41,7 +41,6 @@ Functions in this module:
 from __future__ import annotations
 
 import copy
-import re
 from collections.abc import Mapping
 from functools import lru_cache
 from typing import cast
@@ -62,8 +61,6 @@ _MULTI_OP_FLAG: str = "multi_operation_requires_human_review"
 _NORMALIZATION_FLAG_KEY: str = "_normalization_flag"
 _NORMALIZATION_PIPELINE_VERSION: str = "migration_normalization_v1"
 
-_PASCAL_TO_SNAKE_BOUNDARY_1 = re.compile(r"(.)([A-Z][a-z]+)")
-_PASCAL_TO_SNAKE_BOUNDARY_2 = re.compile(r"([a-z0-9])([A-Z])")
 _ANNOTATIONS_FORBIDDEN_KEYS: frozenset[str] = frozenset(
     {
         "topic",
@@ -157,19 +154,15 @@ def normalize_io_model_ref(raw: dict[str, object]) -> dict[str, object]:
     return result
 
 
-def _pascal_to_snake(name: str) -> str:
-    s1 = _PASCAL_TO_SNAKE_BOUNDARY_1.sub(r"\1_\2", name)
-    return _PASCAL_TO_SNAKE_BOUNDARY_2.sub(r"\1_\2", s1).lower()
-
-
 def normalize_handler_routing(raw: dict[str, object]) -> dict[str, object]:
     """Normalize legacy ``handler_routing`` block to canonical subcontract shape.
 
-    Adds the default version, derives ``routing_key`` from
-    ``supported_operations``/``handler_type``, and derives ``handler_key`` by
-    snake-casing ``handler.name``. Multi-op handlers receive
+    Adds the default version, derives ``operation`` from legacy
+    ``routing_key``/``supported_operations``/``handler_type``, and ensures each
+    entry carries the canonical ``handler`` reference required by the live
+    five-field shape. Multi-op handlers receive
     ``_normalization_flag = "multi_operation_requires_human_review"`` because
-    picking ``ops[0]`` as the routing key is a synthetic guess.
+    picking ``ops[0]`` as the operation is a synthetic guess.
 
     No-op when ``handler_routing`` is absent. Input is never mutated.
     """
@@ -194,21 +187,28 @@ def normalize_handler_routing(raw: dict[str, object]) -> dict[str, object]:
             normalized_handlers.append(h)
             continue
         nh: dict[str, object] = dict(h)
-        if "routing_key" not in nh:
+        if "operation" not in nh:
+            routing_key = nh.get("routing_key")
+            if isinstance(routing_key, str) and routing_key:
+                nh["operation"] = routing_key
+        if "operation" not in nh:
             ops_raw = nh.get("supported_operations", [])
             ops = ops_raw if isinstance(ops_raw, list) else []
             if len(ops) == 1:
-                nh["routing_key"] = ops[0]
+                nh["operation"] = ops[0]
             elif len(ops) > 1:
-                nh["routing_key"] = ops[0]
+                nh["operation"] = ops[0]
                 nh["_normalization_flag"] = _MULTI_OP_FLAG
             elif "handler_type" in nh:
-                nh["routing_key"] = nh["handler_type"]
-        if "handler_key" not in nh:
-            nested = nh.get("handler", {})
-            name = nested.get("name", "") if isinstance(nested, dict) else ""
-            if isinstance(name, str) and name:
-                nh["handler_key"] = _pascal_to_snake(name)
+                nh["operation"] = nh["handler_type"]
+        nested = nh.get("handler", {})
+        if not isinstance(nested, dict) or "name" not in nested:
+            handler_key = nh.get("handler_key")
+            if isinstance(handler_key, str) and handler_key:
+                nh["handler"] = {"name": handler_key, "module": ""}
+        elif "module" not in nested:
+            nested["module"] = ""
+            nh["handler"] = nested
         normalized_handlers.append(nh)
     hr["handlers"] = normalized_handlers
     return result
@@ -491,8 +491,8 @@ def compose_normalization_pipeline(raw: Mapping[str, object]) -> dict[str, objec
        and top-level topic keys.
     3. :func:`normalize_io_model_ref` — convert ``{name, module}`` dict
        refs to dotted strings.
-    4. :func:`normalize_handler_routing` — derive routing_key /
-       handler_key / version on the routing block.
+    4. :func:`normalize_handler_routing` — derive operation /
+       handler / version on the routing block.
     5. :func:`normalize_omnimarket_v0_contract` — conditional on
        :func:`is_omnimarket_v0`; rewrites the omnimarket v0 shape.
     6. :func:`normalize_dod_evidence` — map legacy ``kind`` → ``type``.

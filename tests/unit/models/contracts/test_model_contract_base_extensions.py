@@ -32,6 +32,7 @@ from omnibase_core.models.contracts.subcontracts import (
     ModelHandlerRoutingEntry,
     ModelHandlerRoutingSubcontract,
 )
+from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -468,13 +469,19 @@ class TestHandlerRoutingField:
         assert contract.handler_routing is None
 
     def test_handler_routing_subcontract_accepted(self) -> None:
-        """Test that ModelHandlerRoutingSubcontract is accepted."""
+        """Test that ModelHandlerRoutingSubcontract is accepted (5-field live shape)."""
         routing = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
             handlers=[
                 ModelHandlerRoutingEntry(
-                    routing_key="ModelEventJobCreated",
-                    handler_key="handle_job_created",
+                    handler=ModelHandlerRef(
+                        name="HandlerJobCreated",
+                        module="myapp.handlers.handler_job_created",
+                    ),
+                    event_model=ModelHandlerRef(
+                        name="ModelEventJobCreated",
+                        module="myapp.models",
+                    ),
                 ),
             ],
         )
@@ -482,7 +489,9 @@ class TestHandlerRoutingField:
         assert contract.handler_routing is not None
         assert len(contract.handler_routing.handlers) == 1
         assert (
-            contract.handler_routing.handlers[0].routing_key == "ModelEventJobCreated"
+            contract.handler_routing.handlers[0].event_model is not None
+            and contract.handler_routing.handlers[0].event_model.name
+            == "ModelEventJobCreated"
         )
 
     def test_handler_routing_dict_accepted(self) -> None:
@@ -492,8 +501,14 @@ class TestHandlerRoutingField:
                 "version": {"major": 1, "minor": 0, "patch": 0},
                 "handlers": [
                     {
-                        "routing_key": "ModelEventJobCreated",
-                        "handler_key": "handle_job_created",
+                        "handler": {
+                            "name": "HandlerJobCreated",
+                            "module": "myapp.handlers.handler_job_created",
+                        },
+                        "event_model": {
+                            "name": "ModelEventJobCreated",
+                            "module": "myapp.models",
+                        },
                     },
                 ],
                 "default_handler": "handle_unknown",
@@ -524,8 +539,14 @@ class TestFullContractIntegration:
                 version=ModelSemVer(major=1, minor=0, patch=0),
                 handlers=[
                     ModelHandlerRoutingEntry(
-                        routing_key="ModelEventA",
-                        handler_key="handle_a",
+                        handler=ModelHandlerRef(
+                            name="HandlerEventA",
+                            module="myapp.handlers.handler_event_a",
+                        ),
+                        event_model=ModelHandlerRef(
+                            name="ModelEventA",
+                            module="myapp.models",
+                        ),
                     ),
                 ],
             ),

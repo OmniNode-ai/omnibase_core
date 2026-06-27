@@ -11,6 +11,7 @@ from __future__ import annotations
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 from omnibase_core.models.container.model_protocols_namespace import (
     ModelProtocolsNamespace,
 )
@@ -33,163 +34,91 @@ from omnibase_core.resolution.resolver_handler import (
 pytestmark = pytest.mark.unit
 
 
-class TestZeroCodeContractCompleteness:
-    """Tests that zero-code contracts meet all requirements."""
+def _handler_entry(
+    name: str,
+    *,
+    operation: str | None = None,
+    event_type: str | None = None,
+    event_model: dict[str, str] | None = None,
+) -> ModelHandlerRoutingEntry:
+    return ModelHandlerRoutingEntry(
+        handler={"name": name, "module": "tests.handlers"},
+        operation=operation,
+        event_type=event_type,
+        event_model=event_model,
+    )
 
-    def test_handler_routing_requires_default_handler(self) -> None:
-        """default_handler must be present when handler_routing is declared."""
+
+class TestHandlerRoutingLiveShape:
+    """Tests for the canonical five-field handler routing shape."""
+
+    def test_operation_match_builds_routing_table(self) -> None:
         subcontract = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
+            routing_strategy=EnumHandlerRoutingStrategy.OPERATION_MATCH,
             handlers=[
-                ModelHandlerRoutingEntry(
-                    routing_key="test",
-                    handler_key="handle_test",
-                    callable="mymodule:handle_test",
+                _handler_entry("HandlerA", operation="event.a"),
+                _handler_entry("HandlerB", operation="event.b"),
+            ],
+        )
+
+        assert subcontract.build_routing_table() == {
+            "event.a": ["HandlerA"],
+            "event.b": ["HandlerB"],
+        }
+
+    def test_payload_type_match_builds_routing_table(self) -> None:
+        subcontract = ModelHandlerRoutingSubcontract(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            routing_strategy=EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH,
+            handlers=[
+                _handler_entry(
+                    "HandlerUserCreated",
+                    event_model={
+                        "name": "ModelUserCreated",
+                        "module": "tests.models",
+                    },
                 )
             ],
-            default_handler=None,  # Missing!
         )
-        errors = subcontract.validate_zero_code_requirements()
-        assert any("default_handler" in e for e in errors)
 
-    def test_handler_routing_requires_non_empty_handlers(self) -> None:
-        """handlers[] cannot be empty when handler_routing is declared."""
-        # Note: Empty handlers with default_handler set is valid at model level
-        # but fails zero-code requirements validation
+        assert subcontract.build_routing_table() == {
+            "ModelUserCreated": ["HandlerUserCreated"]
+        }
+
+    def test_topic_pattern_builds_routing_table_from_event_type(self) -> None:
         subcontract = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            handlers=[],
-            default_handler="handle_test",
-        )
-        errors = subcontract.validate_zero_code_requirements()
-        assert any("cannot be empty" in e for e in errors)
-
-    def test_default_handler_must_exist_in_handlers(self) -> None:
-        """default_handler must match a handler_key in handlers[]."""
-        subcontract = ModelHandlerRoutingSubcontract(
-            version=ModelSemVer(major=1, minor=0, patch=0),
+            routing_strategy=EnumHandlerRoutingStrategy.TOPIC_PATTERN,
             handlers=[
-                ModelHandlerRoutingEntry(
-                    routing_key="test",
-                    handler_key="handle_test",
-                    callable="mymodule:handle_test",
-                )
+                _handler_entry("HandlerLifecycle", event_type="omni.lifecycle.*"),
             ],
-            default_handler="nonexistent_handler",  # Not in handlers!
         )
-        errors = subcontract.validate_zero_code_requirements()
-        assert any("not found in handlers" in e for e in errors)
 
-    def test_no_duplicate_handler_keys(self) -> None:
-        """Duplicate handler_key values should fail at parse time."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelHandlerRoutingSubcontract(
-                version=ModelSemVer(major=1, minor=0, patch=0),
-                handlers=[
-                    ModelHandlerRoutingEntry(
-                        routing_key="test1",
-                        handler_key="handle_test",  # Duplicate
-                        callable="mymodule:handle_test",
-                    ),
-                    ModelHandlerRoutingEntry(
-                        routing_key="test2",
-                        handler_key="handle_test",  # Duplicate
-                        callable="mymodule:handle_test2",
-                    ),
-                ],
-                default_handler="handle_test",
-            )
-        assert "Duplicate handler_key" in str(exc_info.value)
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert subcontract.build_routing_table() == {
+            "omni.lifecycle.*": ["HandlerLifecycle"]
+        }
 
-    def test_no_duplicate_routing_keys(self) -> None:
-        """Duplicate routing_key values should fail at parse time."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelHandlerRoutingSubcontract(
-                version=ModelSemVer(major=1, minor=0, patch=0),
-                handlers=[
-                    ModelHandlerRoutingEntry(
-                        routing_key="same_key",  # Duplicate
-                        handler_key="handle_a",
-                        callable="mymodule:handle_a",
-                    ),
-                    ModelHandlerRoutingEntry(
-                        routing_key="same_key",  # Duplicate
-                        handler_key="handle_b",
-                        callable="mymodule:handle_b",
-                    ),
-                ],
-                default_handler="handle_a",
-            )
-        assert "Duplicate routing_key" in str(exc_info.value)
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
-
-    def test_valid_zero_code_contract_passes_validation(self) -> None:
-        """A properly configured contract passes all validations."""
+    def test_missing_discriminator_is_skipped_for_active_strategy(self) -> None:
         subcontract = ModelHandlerRoutingSubcontract(
             version=ModelSemVer(major=1, minor=0, patch=0),
-            handlers=[
-                ModelHandlerRoutingEntry(
-                    routing_key="test",
-                    handler_key="handle_test",
-                    callable="mymodule:handle_test",
-                )
-            ],
-            default_handler="handle_test",
+            routing_strategy=EnumHandlerRoutingStrategy.OPERATION_MATCH,
+            handlers=[_handler_entry("HandlerA", event_type="event.a")],
         )
-        errors = subcontract.validate_zero_code_requirements()
-        assert errors == []
 
-    def test_empty_config_requires_default_or_handlers(self) -> None:
-        """Empty configuration (no handlers, no default) raises at construction."""
-        with pytest.raises(ModelOnexError) as exc_info:
-            ModelHandlerRoutingSubcontract(
-                version=ModelSemVer(major=1, minor=0, patch=0),
-                handlers=[],
-                default_handler=None,
-            )
-        assert "Empty routing configuration" in str(exc_info.value)
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert subcontract.build_routing_table() == {}
 
-    def test_handler_routing_builds_routing_table(self) -> None:
-        """build_routing_table returns properly structured routing table."""
-        subcontract = ModelHandlerRoutingSubcontract(
-            version=ModelSemVer(major=1, minor=0, patch=0),
-            handlers=[
-                ModelHandlerRoutingEntry(
-                    routing_key="EventA",
-                    handler_key="handle_a",
-                    priority=10,
-                ),
-                ModelHandlerRoutingEntry(
-                    routing_key="EventB",
-                    handler_key="handle_b",
-                    priority=0,
-                ),
-            ],
-            default_handler="handle_a",
+    def test_legacy_extra_fields_are_ignored_during_transition(self) -> None:
+        entry = ModelHandlerRoutingEntry(
+            handler={"name": "HandlerEvent", "module": "tests.handlers"},
+            routing_key="legacy.event",
+            handler_key="handle_legacy_event",
+            priority=10,
         )
-        routing_table = subcontract.build_routing_table()
-        assert "EventA" in routing_table
-        assert "EventB" in routing_table
-        assert routing_table["EventA"] == ["handle_a"]
-        assert routing_table["EventB"] == ["handle_b"]
 
-    def test_get_all_handler_keys_includes_default(self) -> None:
-        """get_all_handler_keys includes both handlers and default_handler."""
-        subcontract = ModelHandlerRoutingSubcontract(
-            version=ModelSemVer(major=1, minor=0, patch=0),
-            handlers=[
-                ModelHandlerRoutingEntry(
-                    routing_key="EventA",
-                    handler_key="handle_a",
-                )
-            ],
-            default_handler="fallback_handler",
-        )
-        all_keys = subcontract.get_all_handler_keys()
-        assert "handle_a" in all_keys
-        assert "fallback_handler" in all_keys
+        assert entry.handler.name == "HandlerEvent"
+        assert not hasattr(entry, "routing_key")
+        assert not hasattr(entry, "handler_key")
 
 
 class TestProtocolDependencyValidation:
@@ -469,105 +398,45 @@ class TestHandlerResolver:
 
 
 class TestHandlerRoutingEntryValidation:
-    """Tests for individual handler routing entry validation."""
+    """Tests for individual live-shape handler routing entries."""
 
-    def test_callable_format_validation(self) -> None:
-        """Callable must be in module:function format."""
-        with pytest.raises(ValueError, match=r"module\.path:function"):
-            ModelHandlerRoutingEntry(
-                routing_key="test",
-                handler_key="handle_test",
-                callable="invalid_format_no_colon",
-            )
+    def test_handler_reference_is_required(self) -> None:
+        with pytest.raises(ValueError, match="handler"):
+            ModelHandlerRoutingEntry(operation="event.run")
 
-    def test_callable_empty_parts_fail(self) -> None:
-        """Callable with empty module or function parts fail."""
-        with pytest.raises(ValueError, match="Invalid callable"):
-            ModelHandlerRoutingEntry(
-                routing_key="test",
-                handler_key="handle_test",
-                callable=":empty_module",
-            )
-
-        with pytest.raises(ValueError, match="Invalid callable"):
-            ModelHandlerRoutingEntry(
-                routing_key="test",
-                handler_key="handle_test",
-                callable="empty_callable:",
-            )
-
-    def test_routing_key_strips_whitespace(self) -> None:
-        """Leading/trailing whitespace is stripped from routing_key."""
+    def test_valid_entry_with_all_live_fields(self) -> None:
         entry = ModelHandlerRoutingEntry(
-            routing_key="  EventType  ",
-            handler_key="handle_event",
+            handler={"name": "HandlerJobCreated", "module": "myapp.handlers"},
+            event_model={"name": "ModelEventJobCreated", "module": "myapp.models"},
+            operation="job.created",
+            event_type="omni.job.created",
+            message_category="EVENT",
         )
-        assert entry.routing_key == "EventType"
 
-    def test_handler_key_strips_whitespace(self) -> None:
-        """Leading/trailing whitespace is stripped from handler_key."""
+        assert entry.handler.name == "HandlerJobCreated"
+        assert entry.event_model is not None
+        assert entry.event_model.name == "ModelEventJobCreated"
+        assert entry.operation == "job.created"
+        assert entry.event_type == "omni.job.created"
+        assert entry.message_category == "EVENT"
+
+    def test_legacy_extra_fields_do_not_become_model_attributes(self) -> None:
         entry = ModelHandlerRoutingEntry(
-            routing_key="EventType",
-            handler_key="  handle_event  ",
-        )
-        assert entry.handler_key == "handle_event"
-
-    def test_whitespace_only_routing_key_fails(self) -> None:
-        """Whitespace-only routing_key is rejected."""
-        with pytest.raises(ValueError, match="empty or whitespace"):
-            ModelHandlerRoutingEntry(
-                routing_key="   ",
-                handler_key="handle_event",
-            )
-
-    def test_whitespace_only_handler_key_fails(self) -> None:
-        """Whitespace-only handler_key is rejected."""
-        with pytest.raises(ValueError, match="empty or whitespace"):
-            ModelHandlerRoutingEntry(
-                routing_key="EventType",
-                handler_key="   ",
-            )
-
-    def test_priority_bounds_enforced(self) -> None:
-        """Priority must be within -1000 to 1000 range."""
-        # Valid boundaries
-        entry_low = ModelHandlerRoutingEntry(
-            routing_key="test", handler_key="handle", priority=-1000
-        )
-        entry_high = ModelHandlerRoutingEntry(
-            routing_key="test2", handler_key="handle2", priority=1000
-        )
-        assert entry_low.priority == -1000
-        assert entry_high.priority == 1000
-
-        # Out of bounds should fail
-        with pytest.raises(Exception):  # Pydantic validation error
-            ModelHandlerRoutingEntry(
-                routing_key="test", handler_key="handle", priority=-1001
-            )
-
-        with pytest.raises(Exception):  # Pydantic validation error
-            ModelHandlerRoutingEntry(
-                routing_key="test", handler_key="handle", priority=1001
-            )
-
-    def test_valid_entry_with_all_fields(self) -> None:
-        """Valid entry with all optional fields set."""
-        from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
-
-        entry = ModelHandlerRoutingEntry(
+            handler={"name": "HandlerJobCreated", "module": "myapp.handlers"},
             routing_key="ModelEventJobCreated",
             handler_key="handle_job_created",
-            message_category=EnumMessageCategory.EVENT,
             priority=-10,
             output_events=["ModelEventJobStarted", "ModelEventJobFailed"],
             callable="myapp.handlers:handle_job_created",
             lazy_import=True,
         )
-        assert entry.routing_key == "ModelEventJobCreated"
-        assert entry.handler_key == "handle_job_created"
-        assert entry.message_category == EnumMessageCategory.EVENT
-        assert entry.priority == -10
-        assert len(entry.output_events) == 2
-        assert entry.callable == "myapp.handlers:handle_job_created"
-        assert entry.lazy_import is True
+
+        for field in (
+            "routing_key",
+            "handler_key",
+            "priority",
+            "output_events",
+            "callable",
+            "lazy_import",
+        ):
+            assert not hasattr(entry, field)

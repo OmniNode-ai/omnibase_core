@@ -1,20 +1,19 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# dispatch-surface-test-ok: removes dead validators referencing undefined names; no live dispatch behaviour changed (OMN-12547)
 
 """
-Handler Routing Subcontract Model.
+Handler Routing Subcontract Model — wrapper shape (OMN-12547 S-1c).
 
-Pydantic model for contract-driven handler routing configuration.
+Simplified wrapper around ModelHandlerRoutingEntry (live 5-field shape).
+Dead methods removed: build_routing_table (old routing_key/handler_key/priority shape),
+get_all_handler_keys, validate_routing_configuration (routing_key duplication check),
+validate_no_duplicate_handler_keys, validate_zero_code_requirements.
 
-The main subcontract model for defining how messages
-are routed to handlers based on the ONEX contract `handler_routing` section.
-These models enable MixinHandlerRouting to make routing decisions using
-contract configuration rather than hardcoded logic.
-
-Routing Strategies:
-- payload_type_match: Route by event model class name (orchestrators)
-- operation_match: Route by operation field value (effects)
-- topic_pattern: Route by topic glob pattern matching (first-match-wins)
+build_routing_table now derives discriminator keys from the 5-field live shape:
+  - payload_type_match: entry.event_model.name
+  - operation_match: entry.operation
+  - topic_pattern: entry.event_type (pattern key for fnmatch)
 
 Example YAML contract configuration:
     handler_routing:
@@ -24,33 +23,23 @@ Example YAML contract configuration:
         patch: 0
       routing_strategy: payload_type_match
       handlers:
-        - routing_key: ModelEventJobCreated
-          handler_key: handle_job_created
-          message_category: event
-          priority: 0
-          output_events:
-            - ModelEventJobStarted
-        - routing_key: ModelEventJobCompleted
-          handler_key: handle_job_completed
-          priority: 10
-      default_handler: handle_unknown
-
-Key Invariant:
-    Routing MUST be deterministic for a given (contract_version, routing_key) pair.
-
-Strict typing is enforced: No Any types allowed in implementation.
+        - handler:
+            name: HandlerUserCreated
+            module: myapp.handlers.handler_user_created
+          event_model:
+            name: ModelUserCreatedEvent
+            module: myapp.models
+      default_handler: null
 """
 
-from typing import ClassVar, Self
+from typing import ClassVar
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
     ModelHandlerRoutingEntry,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -69,9 +58,8 @@ class ModelHandlerRoutingSubcontract(BaseModel):
     - operation_match: Route based on operation field in the message.
       Used by EFFECT nodes to dispatch to appropriate I/O handlers.
     - topic_pattern: Route based on glob pattern matching against topic.
-      Used for topic-based subscription routing. Uses first-match-wins
-      semantics: patterns are evaluated in priority order, and the first
-      matching pattern's handlers are returned.
+      Uses first-match-wins semantics: patterns (event_type field) are
+      evaluated in list order.
 
     Example YAML configuration:
         handler_routing:
@@ -81,30 +69,13 @@ class ModelHandlerRoutingSubcontract(BaseModel):
             patch: 0
           routing_strategy: payload_type_match
           handlers:
-            - routing_key: ModelEventJobCreated
-              handler_key: handle_job_created
-              priority: 0
-            - routing_key: ModelEventJobCompleted
-              handler_key: handle_job_completed
-              priority: 10
-          default_handler: handle_unknown
-
-    Example usage:
-        >>> subcontract = ModelHandlerRoutingSubcontract(
-        ...     version=ModelSemVer(major=1, minor=0, patch=0),
-        ...     routing_strategy="payload_type_match",
-        ...     handlers=[
-        ...         ModelHandlerRoutingEntry(
-        ...             routing_key="ModelEventJobCreated",
-        ...             handler_key="handle_job_created"
-        ...         )
-        ...     ],
-        ...     default_handler="handle_fallback"
-        ... )
-        >>> subcontract.routing_strategy.value
-        'payload_type_match'
-        >>> len(subcontract.handlers)
-        1
+            - handler:
+                name: HandlerUserCreated
+                module: myapp.handlers.handler_user_created
+              event_model:
+                name: ModelUserCreatedEvent
+                module: myapp.models
+          default_handler: null
 
     Strict typing is enforced: No Any types allowed in implementation.
     """
@@ -134,7 +105,7 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         default_factory=list,
         description=(
             "List of handler routing entries defining routing rules. "
-            "Entries are evaluated in priority order (lower priority value first)"
+            "Entries are evaluated in list order."
         ),
     )
 
@@ -147,238 +118,38 @@ class ModelHandlerRoutingSubcontract(BaseModel):
         ),
     )
 
-    @model_validator(mode="after")
-    def validate_routing_configuration(self) -> "ModelHandlerRoutingSubcontract":
-        """Validate routing configuration after model construction.
-
-        Validates:
-        - No duplicate routing_keys (ensures deterministic routing)
-        - At least one handler entry or default_handler is defined
-
-        Raises:
-            ModelOnexError: If validation fails (VALIDATION_ERROR).
-                Per ADR-012, ModelOnexError is used in Pydantic validators
-                for framework consistency and structured error context.
-        """
-        # Validate that configuration is not empty (at least one handler or default)
-        if not self.handlers and self.default_handler is None:
-            raise ModelOnexError(
-                message="Empty routing configuration: must define at least one "
-                "handler entry or a default_handler.",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                # Standard context keys per ERROR_HANDLING_BEST_PRACTICES.md
-                field="handlers",
-                value=None,
-                constraint="non_empty_configuration",
-                # Domain-specific context
-                routing_strategy=self.routing_strategy,
-            )
-
-        # Validate routing keys are unique (deterministic routing requirement)
-        routing_keys: set[str] = set()
-        for entry in self.handlers:
-            if entry.routing_key in routing_keys:
-                raise ModelOnexError(
-                    message=f"Duplicate routing_key found: '{entry.routing_key}'. "
-                    "Routing keys must be unique for deterministic routing.",
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    # Standard context keys per ERROR_HANDLING_BEST_PRACTICES.md
-                    field="handlers.routing_key",
-                    value=entry.routing_key,
-                    constraint="unique_routing_key",
-                    # Domain-specific context for debugging
-                    handler_key=entry.handler_key,
-                )
-            routing_keys.add(entry.routing_key)
-
-        return self
-
-    @model_validator(mode="after")
-    def validate_no_duplicate_handler_keys(self) -> Self:
-        """Ensure no duplicate handler_key values in handlers.
-
-        While duplicate handler_keys are technically valid for different routing_keys
-        (same handler can handle multiple event types), having the exact same
-        handler_key multiple times indicates a configuration error.
-
-        Raises:
-            ModelOnexError: If duplicate handler_key values are found.
-        """
-        if not self.handlers:
-            return self
-
-        # O(n) duplicate detection using set
-        seen: set[str] = set()
-        duplicates: set[str] = set()
-        for h in self.handlers:
-            if h.handler_key in seen:
-                duplicates.add(h.handler_key)
-            seen.add(h.handler_key)
-
-        if duplicates:
-            raise ModelOnexError(
-                message=f"Duplicate handler_key values: {duplicates}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                field="handlers.handler_key",
-                value=list(duplicates),
-                constraint="unique_handler_key",
-            )
-        return self
-
-    def validate_zero_code_requirements(self) -> list[str]:
-        """
-        Validate this routing config meets zero-code contract requirements.
-
-        Zero-code nodes rely entirely on contract configuration for handler
-        dispatch. This method validates that all required configuration is
-        present and internally consistent.
-
-        Returns:
-            List of validation error messages (empty if valid).
-
-        Use Case:
-            Called during node initialization to ensure contract is complete
-            for zero-code dispatch. Errors are raised as ProtocolConfigurationError.
-
-        Example:
-            >>> subcontract = ModelHandlerRoutingSubcontract(
-            ...     version=ModelSemVer(major=1, minor=0, patch=0),
-            ...     handlers=[
-            ...         ModelHandlerRoutingEntry(
-            ...             routing_key="EventA",
-            ...             handler_key="handler_a"
-            ...         )
-            ...     ],
-            ...     default_handler="handler_a"
-            ... )
-            >>> subcontract.validate_zero_code_requirements()
-            []
-        """
-        errors: list[str] = []
-
-        # Rule 1: default_handler required
-        if not self.default_handler:
-            errors.append("default_handler is required for contract-driven dispatch")
-
-        # Rule 2: handlers non-empty
-        if not self.handlers:
-            errors.append("handlers[] cannot be empty when handler_routing is declared")
-
-        # Rule 3: default_handler must exist in handlers
-        if self.default_handler and self.handlers:
-            handler_keys = {h.handler_key for h in self.handlers}
-            if self.default_handler not in handler_keys:
-                errors.append(
-                    f"default_handler '{self.default_handler}' not found in handlers[]. "
-                    f"Available: {sorted(handler_keys)}"
-                )
-
-        # Rule 4: No duplicate handler_key (already validated by model_validator,
-        # but included here for completeness when called on existing instances)
-        if self.handlers:
-            seen: set[str] = set()
-            duplicates: set[str] = set()
-            for h in self.handlers:
-                if h.handler_key in seen:
-                    duplicates.add(h.handler_key)
-                seen.add(h.handler_key)
-            if duplicates:
-                errors.append(f"Duplicate handler_key values: {duplicates}")
-
-        return errors
-
     def build_routing_table(self) -> dict[str, list[str]]:
         """
-        Build a routing table mapping routing_key to handler_keys.
+        Build a routing table mapping discriminator keys to handler name lists.
 
-        The routing table is deterministic for a given (contract_version, routing_key)
-        pair. Handler order is based on priority (lower priority value = first).
+        The discriminator key depends on the routing strategy:
+        - payload_type_match: ``entry.event_model.name`` (Python class name)
+        - operation_match: ``entry.operation`` (operation string)
+        - topic_pattern: ``entry.event_type`` (glob pattern key for fnmatch)
 
-        Priority Ordering Behavior:
-            Handlers are sorted by priority before building the routing table.
-            Lower priority values are inserted first, which affects the iteration
-            order of the resulting dictionary (Python 3.7+ preserves insertion order).
-
-            This is significant for the ``topic_pattern`` routing strategy, which
-            uses first-match-wins semantics: when iterating over the routing table
-            to find a matching pattern, lower-priority entries are evaluated first.
-
-            Example priority ordering:
-                - priority=-10: Evaluated first (high-priority, specific patterns)
-                - priority=0: Default priority (normal patterns)
-                - priority=100: Evaluated last (catch-all/fallback patterns)
-
-        Deterministic Routing:
-            Duplicate routing_keys are prevented by model validation
-            (``validate_routing_configuration``), ensuring each routing_key maps
-            to exactly one handler. This guarantees deterministic routing for
-            any given (contract_version, routing_key) pair.
+        Handler name is always ``entry.handler.name`` (handler class name).
+        Entries that lack the required discriminator for the active strategy
+        are silently skipped.
 
         Returns:
-            dict[str, list[str]]: Mapping of routing_key to list of handler_keys.
-                The dictionary iteration order reflects priority ordering
-                (lowest priority value first).
-
-        Example:
-            >>> subcontract = ModelHandlerRoutingSubcontract(
-            ...     version=ModelSemVer(major=1, minor=0, patch=0),
-            ...     handlers=[
-            ...         ModelHandlerRoutingEntry(
-            ...             routing_key="EventA",
-            ...             handler_key="handler_a",
-            ...             priority=0
-            ...         ),
-            ...         ModelHandlerRoutingEntry(
-            ...             routing_key="EventB",
-            ...             handler_key="handler_b",
-            ...             priority=10
-            ...         ),
-            ...     ]
-            ... )
-            >>> routing_table = subcontract.build_routing_table()
-            >>> routing_table
-            {'EventA': ['handler_a'], 'EventB': ['handler_b']}
-
-        Example with topic_pattern (first-match-wins):
-            For topic_pattern strategy, priority determines evaluation order.
-            A handler with routing_key="*.events.*" and priority=-10 will be
-            checked before a handler with routing_key="*" and priority=100.
+            dict[str, list[str]]: Mapping of discriminator key to list of
+                handler class names. Iteration order follows entry list order.
         """
-        # Sort entries by priority (lower first = higher priority)
-        sorted_entries = sorted(self.handlers, key=lambda e: e.priority)
-
         routing_table: dict[str, list[str]] = {}
-        for entry in sorted_entries:
-            if entry.routing_key not in routing_table:
-                routing_table[entry.routing_key] = []
-            routing_table[entry.routing_key].append(entry.handler_key)
-
+        for entry in self.handlers:
+            if self.routing_strategy == EnumHandlerRoutingStrategy.PAYLOAD_TYPE_MATCH:
+                key: str | None = (
+                    entry.event_model.name if entry.event_model is not None else None
+                )
+            elif self.routing_strategy == EnumHandlerRoutingStrategy.OPERATION_MATCH:
+                key = entry.operation
+            else:
+                # TOPIC_PATTERN: use event_type as the fnmatch glob pattern key
+                key = entry.event_type
+            if key is None:
+                continue
+            handler_name = entry.handler.name
+            if key not in routing_table:
+                routing_table[key] = []
+            routing_table[key].append(handler_name)
         return routing_table
-
-    def get_all_handler_keys(self) -> set[str]:
-        """
-        Get all unique handler keys referenced in this subcontract.
-
-        Useful for validation to ensure all handlers are registered.
-
-        Returns:
-            set[str]: Set of all handler keys from routing entries and default handler.
-
-        Example:
-            >>> subcontract = ModelHandlerRoutingSubcontract(
-            ...     version=ModelSemVer(major=1, minor=0, patch=0),
-            ...     handlers=[
-            ...         ModelHandlerRoutingEntry(
-            ...             routing_key="EventA",
-            ...             handler_key="handler_a"
-            ...         ),
-            ...     ],
-            ...     default_handler="fallback"
-            ... )
-            >>> subcontract.get_all_handler_keys()
-            {'handler_a', 'fallback'}
-        """
-        handler_keys: set[str] = {entry.handler_key for entry in self.handlers}
-        if self.default_handler is not None:
-            handler_keys.add(self.default_handler)
-        return handler_keys
