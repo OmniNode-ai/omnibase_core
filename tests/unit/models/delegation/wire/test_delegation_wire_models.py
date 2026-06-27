@@ -315,6 +315,39 @@ class TestModelDelegationResult:
         assert restored.context_pack_hash == "sha256:ctxpack"
         assert restored == r
 
+    def test_cost_tier_name_defaults_empty(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+        assert r.cost_tier_name == ""
+
+    def test_cost_tier_name_round_trips(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+            cost_tier_name="local",
+        )
+        dumped = r.model_dump()
+        assert dumped["cost_tier_name"] == "local"
+        restored = ModelDelegationResult.model_validate(dumped)
+        assert restored.cost_tier_name == "local"
+        assert restored == r
+
     def test_rejects_invalid_metric_ranges(self) -> None:
         with pytest.raises(ValidationError):
             ModelDelegationResult(
