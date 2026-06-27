@@ -19,6 +19,7 @@ Related:
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -71,7 +72,8 @@ class MockMessageHandler:
         return ModelDispatchResult(
             status=EnumDispatchStatus.SUCCESS,
             topic="test.events",
-            handler_id=self._handler_id,
+            dispatcher_id=self._handler_id,
+            started_at=datetime.now(UTC),
         )
 
 
