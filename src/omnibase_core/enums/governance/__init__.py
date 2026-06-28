@@ -35,6 +35,7 @@ from omnibase_core.enums.governance.enum_drift_severity import EnumDriftSeverity
 from omnibase_core.enums.governance.enum_eval_metric_type import EnumEvalMetricType
 from omnibase_core.enums.governance.enum_eval_mode import EnumEvalMode
 from omnibase_core.enums.governance.enum_eval_verdict import EnumEvalVerdict
+from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.governance.enum_evidence_kind import EnumEvidenceKind
 from omnibase_core.enums.governance.enum_finding_severity import EnumFindingSeverity
 from omnibase_core.enums.governance.enum_integration_surface import (
@@ -65,6 +66,7 @@ __all__ = [
     "EnumEvalMetricType",
     "EnumEvalMode",
     "EnumEvalVerdict",
+    "EnumEvidenceClass",
     "EnumEvidenceKind",
     "EnumFindingSeverity",
     "EnumIntegrationSurface",

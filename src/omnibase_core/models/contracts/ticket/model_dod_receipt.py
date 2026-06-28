@@ -54,6 +54,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_proof_packet import ModelProofPacket
 
@@ -249,6 +250,16 @@ class ModelDodReceipt(BaseModel):
             "the per-class tier requirement is enforced at the gate, not on every "
             "receipt unconditionally. F1 autobind (OMN-13317) fills the packet's "
             "source fields (evidence_source_sha, evidence_ticket, verifier)."
+        ),
+    )
+    evidence_class: EnumEvidenceClass | None = Field(
+        default=None,
+        description=(
+            "Provenance class of this proof surface (OMN-13024). When set to "
+            "UI_DASHBOARD the receipt-gate requires a Playwright proxy-origin "
+            "network trace and rejects direct curl/wget/httpx probes. When set "
+            "to BACKEND a direct HTTP probe is accepted (opt-out of the UI gate). "
+            "None lets the gate infer the class from the probe_command."
         ),
     )
 

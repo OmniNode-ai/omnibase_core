@@ -28,6 +28,8 @@ Decision matrix:
     - Receipt missing probe_command/stdout → FAIL ("missing probe_command|probe_stdout")
     - Receipt verifier == runner          → FAIL ("self-attestation: ... ADVISORY")
     - Receipt status != PASS              → FAIL ("failing receipt (ADVISORY|FAIL|PENDING)")
+    - UI-class evidence w/o Playwright    → FAIL ("ui-class evidence requires Playwright proxy-origin trace")
+    - UI-class trace hits backend port    → FAIL ("ui-class evidence requires Playwright proxy-origin trace")
     - Override token: free-text reason   → FAIL (must use approved allowlist id)
     - Override token: unknown id         → FAIL ("unknown approval id")
     - Override token: expired            → FAIL ("approval expired")
@@ -92,6 +94,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 from omnibase_core.models.contracts.ticket.model_receipt_check_result import (
@@ -167,6 +170,119 @@ EVIDENCE_CLASS_PATTERN = re.compile(
     r"^Evidence-Class:\s+(promotion|hotfix)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
+
+# UI evidence-class gate (OMN-13024, A-2)
+# ---------------------------------------
+# UI / dashboard evidence cannot be proven by a direct HTTP probe against a
+# backend port — that proves the API responds, not that the dashboard renders
+# the data through its proxy origin. UI-class receipts must come from a
+# Playwright run whose captured network trace originates from the dashboard
+# proxy origin, not a direct backend port.
+
+# Direct HTTP-client invocations that are inadequate proof for UI-class work.
+_HTTP_CLIENT_RE = re.compile(r"\b(?:curl|wget|httpx)\b", re.IGNORECASE)
+# A Playwright run reference in a probe_command.
+_PLAYWRIGHT_RE = re.compile(r"playwright", re.IGNORECASE)
+# An absolute http(s) URL in a captured network trace: captures (host[:port], path).
+_HTTP_URL_RE = re.compile(r"https?://([^/\s]+)(/\S*)?", re.IGNORECASE)
+# A logged HTTP request line (absolute or relative target) in a network trace.
+_REQUEST_LINE_RE = re.compile(
+    r"\b(?:GET|POST|PUT|PATCH|DELETE|HEAD)\b\s+\S+",
+    re.IGNORECASE,
+)
+# Message fragment shared by every UI evidence-class rejection so operators and
+# CI greps can match the gate by a single stable substring.
+_UI_EVIDENCE_FAILURE_PREFIX = "ui-class evidence requires Playwright proxy-origin trace"
+
+
+def classify_evidence_class(receipt: ModelDodReceipt) -> EnumEvidenceClass:
+    """Resolve the evidence class of a receipt (OMN-13024, A-2).
+
+    Precedence:
+
+    1. An explicit ``evidence_class`` field on the receipt always wins —
+       ``BACKEND`` opts a legitimate HTTP-client probe out of the UI gate,
+       ``UI_DASHBOARD`` forces full proxy-origin validation.
+    2. Otherwise infer from ``probe_command``: a direct ``curl``/``wget``/
+       ``httpx`` invocation that does **not** reference Playwright is
+       classified ``UI_DASHBOARD`` (the inadequate-proof shape this gate
+       exists to reject). Everything else is ``UNCLASSIFIED``.
+    """
+    if receipt.evidence_class is not None:
+        return receipt.evidence_class
+    command = receipt.probe_command
+    if _PLAYWRIGHT_RE.search(command):
+        return EnumEvidenceClass.UNCLASSIFIED
+    if _HTTP_CLIENT_RE.search(command):
+        return EnumEvidenceClass.UI_DASHBOARD
+    return EnumEvidenceClass.UNCLASSIFIED
+
+
+def _network_trace_status(probe_stdout: str) -> str:
+    """Classify a captured probe_stdout as a proxy-origin network trace.
+
+    Returns one of:
+
+    - ``"no_trace"`` — no HTTP request was captured at all.
+    - ``"cross_origin"`` — an ``/api`` request targets a host:port that is not
+      the page origin (a direct backend-port call that bypasses the proxy).
+    - ``"ok"`` — at least one request was captured and every absolute ``/api``
+      request shares the page origin (proxied / same-origin).
+
+    The page origin is inferred as any host:port that serves a non-``/api``
+    path (the document / asset load). Relative ``/api`` requests are
+    same-origin by construction and never count as cross-origin.
+    """
+    urls = _HTTP_URL_RE.findall(probe_stdout)
+    has_request = bool(urls) or bool(_REQUEST_LINE_RE.search(probe_stdout))
+    if not has_request:
+        return "no_trace"
+    page_origins = {host for host, path in urls if "api" not in (path or "").lower()}
+    api_origins = {host for host, path in urls if "api" in (path or "").lower()}
+    cross_origin = {host for host in api_origins if host not in page_origins}
+    if cross_origin:
+        return "cross_origin"
+    return "ok"
+
+
+def _check_ui_evidence_class(
+    receipt: ModelDodReceipt, receipt_path: Path
+) -> str | None:
+    """Reject UI/dashboard-class evidence lacking a Playwright proxy-origin trace.
+
+    Returns ``None`` when the receipt is not UI-class or satisfies the
+    proxy-origin requirement; otherwise an operator-facing failure reason.
+    """
+    if classify_evidence_class(receipt) is not EnumEvidenceClass.UI_DASHBOARD:
+        return None
+
+    if not _PLAYWRIGHT_RE.search(receipt.probe_command):
+        return (
+            f"{_UI_EVIDENCE_FAILURE_PREFIX}: receipt at {receipt_path} is "
+            f"ui/dashboard-class (probe_command={receipt.probe_command!r}) but does "
+            "not reference a Playwright run. UI/dashboard evidence cannot be proven "
+            "by a direct curl/wget/httpx probe against a backend port — re-run the "
+            "probe via `npx playwright test ...` against the dashboard proxy origin "
+            "and capture the network trace in probe_stdout."
+        )
+
+    trace_status = _network_trace_status(receipt.probe_stdout)
+    if trace_status == "no_trace":
+        return (
+            f"{_UI_EVIDENCE_FAILURE_PREFIX}: receipt at {receipt_path} is "
+            "ui/dashboard-class and references Playwright but probe_stdout contains "
+            "no captured network trace. Capture the Playwright network trace showing "
+            "proxy-origin requests."
+        )
+    if trace_status == "cross_origin":
+        return (
+            f"{_UI_EVIDENCE_FAILURE_PREFIX}: receipt at {receipt_path} network trace "
+            "targets a direct backend port instead of the dashboard proxy origin. "
+            "The trace must show same-origin proxied requests, not a cross-origin "
+            "backend-port call."
+        )
+    return None
+
 
 # The SHA of the commit that merged OMN-10419 (Task 9 / T6a). PRs opened after
 # this SHA are required to include Evidence-Source. PRs opened before it are
@@ -446,6 +562,13 @@ def _check_one_receipt(
     )
     if adversarial_validated_failure is not None:
         return fail(adversarial_validated_failure)
+
+    # UI evidence-class guard (OMN-13024, A-2): UI/dashboard-class receipts must
+    # carry a Playwright proxy-origin network trace; a direct curl/wget/httpx
+    # probe (or a trace that hits a direct backend port) is rejected.
+    ui_evidence_failure = _check_ui_evidence_class(receipt, receipt_path)
+    if ui_evidence_failure is not None:
+        return fail(ui_evidence_failure)
 
     if receipt.check_type == CHECK_TYPE_RUNTIME_SHA_MATCH:
         runtime_sha_result = classify_runtime_sha_match_receipt(receipt)
@@ -1142,6 +1265,7 @@ __all__ = [
     "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
     "_CONTRACT_SHA256_REQUIRED_AFTER",
+    "classify_evidence_class",
     "compute_contract_sha256",
     "parse_evidence_source",
     "parse_pr_opened_at",
