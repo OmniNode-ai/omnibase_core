@@ -518,6 +518,22 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-fsm-handler-drift
+  name: FSM YAML-vs-handler drift guard (OMN-13735)
+  description: >
+    Reconcile every reducer contract.yaml's state_machine.transitions (filtered by the fsm_handler_binding.state_filter
+    for each declared FSM type) against the handler module's exported VALID_TRANSITIONS and GUARD_CONDITIONS
+    Python symbols via AST literal evaluation — no import required. EXISTENCE (blocking): every contract
+    transition MUST appear in VALID_TRANSITIONS with the correct to_state; any handler transition not
+    in the contract is also a block; guard field/value mismatches block. Zero allowlist entries. Scans
+    the repo root (cwd); pass_filenames is false so it re-reconciles whenever a contract.yaml or a handler
+    .py changes.
+  language: python
+  entry: python -m omnibase_core.validators.fsm_handler_drift
+  files: (^|/)(contract\.yaml|handlers/handler_.*\.py)$
+  pass_filenames: false
+  stages: [pre-commit]
+
 - id: check-projection-exposure-drift
   name: Projection exposure-column drift (OMN-13663)
   description: >

@@ -301,6 +301,20 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # OMN-13735: reconcile every reducer contract.yaml's state_machine.transitions
+      # (filtered by the declared fsm_handler_binding.state_filter) against the handler
+      # module's VALID_TRANSITIONS / GUARD_CONDITIONS symbols via AST literal eval. Any
+      # (from_state, trigger)->to_state or guard field/value divergence blocks; zero
+      # allowlist. Core dogfoods its own export (no fsm_handler_binding contracts here yet,
+      # so this scan exits 0 until one is added).
+      - id: check-fsm-handler-drift
+        name: FSM YAML-vs-handler drift guard (OMN-13735)
+        entry: uv run python -m omnibase_core.validators.fsm_handler_drift src/
+        language: system
+        files: (^|/)(contract\.yaml|handlers/handler_.*\.py)$
+        pass_filenames: false
+        stages: [pre-commit]
+
       # OMN-13530: require an 'operation' field on operation_match handler entries.
       # A missing operation makes the contract fail closed at RuntimeLocal startup
       # ('handlers[i].operation is missing') — the 0.46.0 regression that took down

@@ -111,6 +111,11 @@ onex-demo-path-topic-gate = "omnibase_core.validation.validator_demo_path_topic_
 # node's migration DDL). Existence drift fails the build; identity/tier/cost
 # columns omitted from every exposure warn (the cost_tier_name class of bug).
 check-projection-exposure-drift = "omnibase_core.validators.projection_exposure_drift:main"
+# OMN-13735: FSM YAML-vs-handler drift validator. Reconciles every reducer
+# contract.yaml's state_machine.transitions (filtered by fsm_handler_binding.state_filter)
+# against the handler's VALID_TRANSITIONS and GUARD_CONDITIONS Python symbols via AST.
+# Fails on any (from_state, trigger)->to_state or guard divergence; zero allowlist entries.
+check-fsm-handler-drift = "omnibase_core.validators.fsm_handler_drift:main"
 
 [project.entry-points."onex.backends"]
 event_bus_inmemory = "omnibase_core.event_bus.event_bus_inmemory:EventBusInmemory"
