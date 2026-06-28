@@ -6,5 +6,8 @@
 from omnibase_core.models.logging.model_log_node_identifier import (
     ModelLogNodeIdentifier,
 )
+from omnibase_core.models.logging.model_structured_log_entry import (
+    ModelStructuredLogEntry,
+)
 
-__all__ = ["ModelLogNodeIdentifier"]
+__all__ = ["ModelLogNodeIdentifier", "ModelStructuredLogEntry"]

@@ -266,6 +266,7 @@ from .enum_label_violation_type import EnumLabelViolationType
 # Language and localization enums
 from .enum_language_code import EnumLanguageCode
 from .enum_likelihood import EnumLikelihood
+from .enum_log_entry_status import EnumLogEntryStatus
 from .enum_log_format import EnumLogFormat
 
 # Log level enum
@@ -370,6 +371,9 @@ from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
 
+# Retrieval source type enum (OMN-5231 — context integrity)
+from .enum_redaction_state import EnumRedactionState
+
 # Reducer-related enums (from nodes)
 from .enum_reducer_capability import EnumReducerCapability
 from .enum_reducer_types import (
@@ -399,8 +403,6 @@ from .enum_resource_unit import EnumResourceUnit
 from .enum_response_header_transformation_type import (
     EnumResponseHeaderTransformationType,
 )
-
-# Retrieval source type enum (OMN-5231 — context integrity)
 from .enum_retrieval_source_type import EnumRetrievalSourceType
 from .enum_return_type import EnumReturnType
 
@@ -437,6 +439,9 @@ from .enum_skill_result_status import EnumSkillResultStatus, SkillResultStatus
 
 # State update operation enum
 from .enum_state_update_operation import EnumStateUpdateOperation
+
+# Suppression decision enum (OMN-13703 — ModelStructuredLogEntry schema)
+from .enum_suppression_decision import EnumSuppressionDecision
 
 # Validator mode enum (OMN-9767 — corpus classification/normalization layer Phase 3, parent OMN-9757)
 from .enum_validator_mode import EnumValidatorMode
@@ -629,8 +634,11 @@ __all__ = [
     "EnumExperimentStatus",
     "EnumExperimentType",
     "EnumMessageCategory",
-    # Log level domain
+    # Log level domain (OMN-13703: structured log entry schema)
+    "EnumLogEntryStatus",
     "EnumLogLevel",
+    "EnumRedactionState",
+    "EnumSuppressionDecision",
     # Health and status domain
     "EnumHealthCheckType",
     "EnumHealthDetailType",
