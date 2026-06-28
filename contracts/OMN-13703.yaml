@@ -1,0 +1,70 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13703"
+title: "feat(OMN-13703): Phase 3a — ModelStructuredLogEntry schema unification + platform log-entry topic
+  registration"
+summary: >
+  Adds canonical ModelStructuredLogEntry Pydantic model to omnibase_core (frozen, strongly typed, no defensive
+  defaults) with artifact_refs, source_system, operation, LogEntryStatus, RedactionState, SuppressionDecision,
+  correlation_id, session_id, node_id, and timestamp. Registers TopicBase.PLATFORM_LOG_ENTRY in topic_registry.yaml
+  with durability_tier: durable and schema_ref pointing to ModelStructuredLogEntry.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - events
+  - topics
+  - public_api
+evidence_requirements:
+  - kind: "tests"
+    description: "ModelStructuredLogEntry unit tests pass (21 tests, no live infra)"
+    command: "uv run pytest tests/unit/models/logging/test_model_structured_log_entry.py -v -m unit"
+  - kind: "ci"
+    description: "mypy --strict passes on all touched modules"
+    command: "uv run mypy src/omnibase_core/models/logging/ src/omnibase_core/enums/enum_log_entry_status.py
+      src/omnibase_core/enums/enum_redaction_state.py src/omnibase_core/enums/enum_suppression_decision.py
+      --strict"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-model-exists"
+    description: "ModelStructuredLogEntry model exists in omnibase_core.models.logging with all required
+      fields"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "python -c 'from omnibase_core.models.logging.model_structured_log_entry import ModelStructuredLogEntry;
+          assert all(f in ModelStructuredLogEntry.model_fields for f in [\"artifact_refs\", \"source_system\",
+          \"operation\", \"correlation_id\", \"session_id\", \"node_id\", \"timestamp\"]); print(\"fields-ok\")'"
+  - id: "dod-topic-registry"
+    description: "topic_registry.yaml registers TopicBase.PLATFORM_LOG_ENTRY with durability_tier: durable"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "grep -F 'durability_tier: durable' src/omnibase_core/contracts/topic_registry.yaml
+          && grep -F 'PLATFORM_LOG_ENTRY' src/omnibase_core/events/topics.py && echo 'topic-registry-ok'"
+  - id: "dod-unit-tests"
+    description: "21 unit tests pass for ModelStructuredLogEntry with no live infra"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/models/logging/test_model_structured_log_entry.py -v -m
+          unit"
+  - id: "dod-mypy"
+    description: "mypy --strict clean on all touched modules"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run mypy src/omnibase_core/models/logging/ src/omnibase_core/enums/enum_log_entry_status.py
+          src/omnibase_core/enums/enum_redaction_state.py src/omnibase_core/enums/enum_suppression_decision.py
+          --strict"
+  - id: "dod-deploy"
+    description: "Deploy-gate: ships pure model schema additions + topic registry YAML; no Docker, daemon,
+      broker, or runtime service deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-13703 adds static Pydantic models and a YAML topic registry;
+          no Docker image, daemon, broker topic, runtime process, or service deploy is required before
+          merge'"
