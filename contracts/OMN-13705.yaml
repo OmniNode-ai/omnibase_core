@@ -1,0 +1,33 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13705"
+title: "Add unit tests for gate/receipt_canonical.py (35% → ≥90% coverage)"
+summary: "Creates tests/unit/gate/test_receipt_canonical.py covering _normalize_json (NFC passthrough,
+  list recursion, dict key-sort, scalar passthrough), canonical_receipt_payload (deterministic bytes,
+  exclude_signature=True/False, valid JSON output), and compute_receipt_schema_fingerprint (sha256:-prefixed
+  64-hex string, deterministic). Pure computation — no subprocess, network, or live infra dependency."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "receipt_canonical unit tests achieve ≥90% coverage on the module"
+    command: "uv run pytest tests/unit/gate/test_receipt_canonical.py -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-001"
+    description: "19 unit tests for receipt_canonical functions pass without live services"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/gate/test_receipt_canonical.py -v"
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: test-only addition, no runtime process, Docker image, broker topic,
+      daemon, or service deploy required"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-13705 adds unit tests only; no runtime deploy required'"
