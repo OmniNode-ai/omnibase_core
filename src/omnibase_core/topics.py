@@ -659,6 +659,13 @@ class TopicBase(StrEnum):
     PLATFORM_PROJECTION_RECOVERED = "onex.evt.platform.projection-recovered.v1"
     """Emitted when a degraded projection recovers to healthy state."""
 
+    # ==========================================================================
+    # Platform structured log entry (OMN-13703)
+    # Canonical log-entry topic consumed by node_log_projection and omnidash.
+    # ==========================================================================
+    PLATFORM_LOG_ENTRY = "onex.evt.platform.log-entry.v1"  # onex-topic-sot
+    """Structured log entry events; schema: StructuredLogEntry (omnibase_core)."""
+
 
 def _validate_topic_segment(segment: str, name: str) -> str:
     """Validate a single topic segment (prefix or base segment).

@@ -10,6 +10,7 @@ import json
 import os
 import stat
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -371,6 +372,132 @@ class TestFileKeyProviderValidation:
         assert provider.has_key("valid-runtime") is True
         assert provider.has_key("invalid-runtime") is False
         assert provider.get_public_key("valid-runtime") == valid_key
+
+
+@pytest.mark.unit
+class TestFileKeyProviderLoadKeyErrors:
+    """Error-path tests for _load_keys() — covers lines 103-104 and 117-123."""
+
+    def test_skips_non_string_key_value_on_load(self, tmp_path: Path) -> None:
+        """Key whose JSON value is not a string triggers TypeError in
+        base64.urlsafe_b64decode(), caught at lines 103-104.
+
+        base64.urlsafe_b64decode() requires a bytes-like object or str.
+        Passing None (JSON null) or an int raises TypeError, which is exactly
+        what the inner except (ValueError, TypeError) is designed to handle.
+        The provider must skip those entries and continue loading others.
+        """
+        key_file = tmp_path / "keys.json"
+        # JSON null -> Python None; JSON 42 -> Python int.
+        # Both cause TypeError when passed to base64.urlsafe_b64decode().
+        key_file.write_text('{"keys": {"null-runtime": null, "int-runtime": 42}}')
+        key_file.chmod(0o600)
+
+        provider = FileKeyProvider(key_file)
+
+        assert provider.has_key("null-runtime") is False
+        assert provider.has_key("int-runtime") is False
+        assert provider.list_runtime_ids() == []
+
+    def test_mixed_valid_and_non_string_key_value_on_load(self, tmp_path: Path) -> None:
+        """Valid keys are loaded; keys whose JSON value is a non-string are skipped
+        (lines 103-104).
+
+        Ensures the inner exception handler skips the bad entry without
+        preventing subsequent valid entries from loading.
+        """
+        key_file = tmp_path / "keys.json"
+        valid_key = generate_keypair().public_key_bytes
+        valid_b64 = base64.urlsafe_b64encode(valid_key).decode()
+        # Inline JSON so the 'bad' value is genuinely a non-string (integer).
+        key_file.write_text(
+            json.dumps({"keys": {"valid-runtime": valid_b64, "bad-runtime": 99}})
+        )
+        key_file.chmod(0o600)
+
+        provider = FileKeyProvider(key_file)
+
+        assert provider.has_key("valid-runtime") is True
+        assert provider.get_public_key("valid-runtime") == valid_key
+        assert provider.has_key("bad-runtime") is False
+
+    def test_handles_non_utf8_file_gracefully(self, tmp_path: Path) -> None:
+        """File with invalid UTF-8 bytes triggers UnicodeDecodeError, caught as
+        ValueError by the outer except (KeyError, ValueError) (lines 117-123).
+
+        Provider must start with an empty key set rather than raising.
+        """
+        key_file = tmp_path / "keys.json"
+        # 0xff 0xfe are invalid in UTF-8; read_text(encoding="utf-8") will raise
+        # UnicodeDecodeError which is a subclass of ValueError.
+        key_file.write_bytes(b"\xff\xfe\x80\x81 not valid utf-8")
+        key_file.chmod(0o600)
+
+        provider = FileKeyProvider(key_file)
+
+        assert provider.list_runtime_ids() == []
+
+
+@pytest.mark.unit
+class TestFileKeyProviderSaveOSError:
+    """Error-path tests for _save_keys() — covers lines 235-247.
+
+    The atomic write in _save_keys() wraps temp-file operations in an OSError
+    handler that cleans up the fd and temp file before re-raising.  Three
+    sub-paths need individual exercise:
+      235-239, 242-244, 247  — main cleanup (os.fsync raises)
+      240-241                — inner except for os.close failure
+      245-246                — inner except for Path.unlink failure
+    """
+
+    def test_save_keys_oserror_propagates(self, tmp_path: Path) -> None:
+        """OSError from os.fsync() during _save_keys() is re-raised after cleanup
+        (covers lines 235, 237-239, 242-244, 247).
+
+        Both fd and temp_path are non-None when fsync raises, so the cleanup
+        branches for fd-close and temp-unlink both execute before the re-raise.
+        """
+        key_file = tmp_path / "keys.json"
+        provider = FileKeyProvider(key_file)
+        keypair = generate_keypair()
+
+        with patch("os.fsync", side_effect=OSError("simulated disk error")):
+            with pytest.raises(OSError, match="simulated disk error"):
+                provider.register_key("runtime-001", keypair.public_key_bytes)
+
+    def test_save_keys_fd_close_failure_suppressed(self, tmp_path: Path) -> None:
+        """Inner OSError when os.close(fd) fails during cleanup is suppressed
+        (covers lines 240-241).
+
+        Simulates the case where the fd is already invalid when cleanup runs.
+        The outer OSError is still propagated; the inner one is silently ignored.
+        """
+        key_file = tmp_path / "keys.json"
+        provider = FileKeyProvider(key_file)
+        keypair = generate_keypair()
+
+        with patch("os.fsync", side_effect=OSError("disk full")):
+            with patch("os.close", side_effect=OSError("bad file descriptor")):
+                with pytest.raises(OSError, match="disk full"):
+                    provider.register_key("runtime-001", keypair.public_key_bytes)
+
+    def test_save_keys_temp_unlink_failure_suppressed(self, tmp_path: Path) -> None:
+        """Inner OSError when Path.unlink() fails during cleanup is suppressed
+        (covers lines 245-246).
+
+        Simulates the case where the temp file cannot be removed during cleanup.
+        The outer OSError is still propagated; the unlink failure is ignored.
+        """
+        key_file = tmp_path / "keys.json"
+        provider = FileKeyProvider(key_file)
+        keypair = generate_keypair()
+
+        with patch("os.fsync", side_effect=OSError("disk full")):
+            with patch.object(
+                Path, "unlink", side_effect=OSError("read-only filesystem")
+            ):
+                with pytest.raises(OSError, match="disk full"):
+                    provider.register_key("runtime-001", keypair.public_key_bytes)
 
 
 if __name__ == "__main__":
