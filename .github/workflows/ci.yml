@@ -1832,11 +1832,11 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@552200ce4ac3dae5ac38d2fe1adf17adc7b8a7ac # main
+      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@77f63a25b67db14dbca603ed8f841c3c5c4ee93e # dev
         with:
           checks: "boundary-parity"
           warn-only: "false"
-          repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,onex_change_control"
+          repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket,onex_change_control"
 
   # API-STABLE check_name: "CI Summary"
   # Aggregates Quality Gate + Tests Gate into a single top-level status.
