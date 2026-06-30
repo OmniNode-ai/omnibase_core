@@ -30,7 +30,7 @@ Usage:
     ...     node_id="compute-abc123",
     ...     node_type="compute",
     ...     status="active",
-    ...     host="192.168.1.100",
+    ...     host="192.168.1.100",  # onex-allow-internal-ip OMN-13294 doc example
     ...     port=8080,
     ... )
     >>>

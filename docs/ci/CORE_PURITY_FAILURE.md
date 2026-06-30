@@ -3,7 +3,7 @@
 # Node Purity Check Failure Guide
 
 **Status**: Active
-**Related**: OMN-203 (Declarative Node Purity Linter)
+**Related**: Declarative Node Purity Linter (see `scripts/check_node_purity.py`)
 **CI Job**: `node-purity-check`
 
 ## Overview

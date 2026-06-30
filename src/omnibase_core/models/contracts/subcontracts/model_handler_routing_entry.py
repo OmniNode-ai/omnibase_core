@@ -2,178 +2,66 @@
 # SPDX-License-Identifier: MIT
 
 """
-Handler Routing Entry Model.
+Handler Routing Entry Model — canonical 5-field live shape (OMN-12547 S-1c).
 
-NOTE: This module uses `from __future__ import annotations` for consistency
-with model_handler_routing_subcontract.py and to enable forward references.
+Replaces the dead routing_key/handler_key shape with the live infra shape
+(OMN-7654). Each entry identifies a handler class reference plus optional
+discriminators used by the runtime dispatcher:
 
-Pydantic model for a single handler routing entry in contract-driven
-handler routing configuration.
+  - event_model: for payload_type_match routing (class name + module)
+  - operation: for operation_match routing (e.g. "tick", "store")
+  - event_type: optional dot-path alias for bus-level event_type discrimination;
+    also used as the pattern key for topic_pattern routing strategy
+  - message_category: per-handler category override (EVENT, COMMAND, INTENT)
 
-Example YAML:
-    - routing_key: ModelEventJobCreated
-      handler_key: handle_job_created
-      callable: myapp.handlers:handle_job_created
-      lazy_import: false
-      message_category: event
-      priority: 0
-      output_events:
-        - ModelEventJobStarted
-
-Strict typing is enforced: No Any types allowed in implementation.
+The extra="ignore" policy tolerates old YAML fields (routing_key, handler_key,
+priority, output_events, callable, lazy_import) during transition. A follow-up
+PR will enforce extra="forbid" once all consumers carry the live shape.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from pydantic import BaseModel, ConfigDict, Field
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
 
 
 class ModelHandlerRoutingEntry(BaseModel):
-    """
-    Single handler routing entry for contract-driven message routing.
-
-    Each entry defines a mapping from a routing key to a handler identifier,
-    with optional metadata for message categorization and priority ordering.
-
-    The routing_key interpretation depends on the parent subcontract's
-    routing_strategy:
-    - payload_type_match: routing_key is the event model class name
-      (e.g., "ModelEventJobCreated")
-    - operation_match: routing_key is the operation string
-      (e.g., "create_user", "http.get")
-    - topic_pattern: routing_key is a glob pattern for topic matching
-      (e.g., "*.events.*", "dev.user.commands.*")
-
-    Example:
-        >>> entry = ModelHandlerRoutingEntry(
-        ...     routing_key="ModelEventJobCreated",
-        ...     handler_key="handle_job_created",
-        ...     message_category=EnumMessageCategory.EVENT,
-        ...     priority=0,
-        ...     output_events=["ModelEventJobStarted"],
-        ...     callable="myapp.handlers:handle_job_created",
-        ...     lazy_import=False
-        ... )
-        >>> entry.routing_key
-        'ModelEventJobCreated'
-        >>> entry.handler_key
-        'handle_job_created'
-        >>> entry.callable
-        'myapp.handlers:handle_job_created'
-
-    Strict typing is enforced: No Any types allowed in implementation.
-    """
+    """Single handler routing entry in the canonical 5-field live shape (OMN-12547)."""
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from YAML contracts
-        use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,
-        from_attributes=True,  # pytest-xdist compatibility
+        frozen=True,
+        extra="ignore",  # Tolerates old YAML fields during migration
+        from_attributes=True,
     )
 
-    routing_key: str = Field(
-        ...,  # Required
-        description=(
-            "The key used for routing decisions. Interpretation depends on "
-            "routing_strategy: event model name (payload_type_match), "
-            "operation string (operation_match), or topic pattern (topic_pattern)"
-        ),
-        min_length=1,
+    handler: ModelHandlerRef = Field(..., description="Handler class reference")
+    event_model: ModelHandlerRef | None = Field(
+        default=None,
+        description="Event model reference (payload_type_match strategy)",
     )
-
-    handler_key: str = Field(
-        ...,  # Required
-        description=(
-            "Handler registry key for lookup. Must match a registered "
-            "handler method name or handler registry key"
-        ),
-        min_length=1,
+    operation: str | None = Field(
+        default=None,
+        description="Operation name (operation_match strategy)",
     )
-
-    message_category: EnumMessageCategory | None = Field(
+    event_type: str | None = Field(
         default=None,
         description=(
-            "Optional message category (EVENT, COMMAND, INTENT) for filtering. "
-            "If specified, only messages matching this category are routed "
-            "to this handler"
+            "Optional contract-declared event_type alias "
+            "(e.g. 'omnimarket.pr-lifecycle-orchestrator-start'). When present, "
+            "the dispatcher is indexed under this wire-level string in addition to "
+            "event_model.name, so publishers that set ModelEventEnvelope.event_type "
+            "to the dot-path string resolve to the handler without needing the "
+            "Python class name on the wire (OMN-9215). Also used as the pattern key "
+            "for topic_pattern routing strategy."
         ),
     )
-
-    priority: int = Field(
-        default=0,
-        ge=-1000,
-        le=1000,
-        description=(
-            "Handler priority for ordering when multiple handlers match. "
-            "Lower values = higher priority (evaluated first in routing table). "
-            "Range: -1000 to 1000. Default 0 for normal priority. "
-            "For topic_pattern strategy with first-match-wins semantics: "
-            "use negative values (e.g., -100) for patterns that must match first "
-            "(specific patterns), use positive values (e.g., 100) for fallback "
-            "or catch-all patterns (e.g., '*' wildcard)"
-        ),
-    )
-
-    output_events: list[str] = Field(
-        default_factory=list,
-        description=(
-            "List of event model class names that this handler may emit. "
-            "Used for documentation, validation, and graph analysis"
-        ),
-    )
-
-    callable: str | None = Field(
+    message_category: str | None = Field(
         default=None,
         description=(
-            "Fully qualified import path to handler callable in 'module.path:function' format. "
-            "Example: 'myapp.handlers:handle_user_created'. "
-            "Required for zero-code contract-driven dispatch."
+            "Optional per-handler message category override from contract YAML "
+            "(EVENT, COMMAND, or INTENT). Required for mixed-topic contracts so "
+            "command handlers do not inherit the category of the contract's first "
+            "subscribed topic."
         ),
     )
-
-    lazy_import: bool = Field(
-        default=False,
-        description=(
-            "If true, defer handler import until first dispatch (cold-start optimization). "
-            "If false (default), import and validate at node initialization."
-        ),
-    )
-
-    @field_validator("callable")
-    @classmethod
-    def validate_callable_format(cls, v: str | None) -> str | None:
-        """Validate callable path format if provided."""
-        if v is None:
-            return v
-        if ":" not in v:
-            raise ValueError(
-                f"callable must be in 'module.path:function' format, got: {v}"
-            )
-        module_path, callable_name = v.rsplit(":", 1)
-        if not module_path or not callable_name:
-            raise ValueError(f"Invalid callable format: {v}")
-        return v
-
-    @field_validator("routing_key", "handler_key", mode="before")
-    @classmethod
-    def strip_and_validate_whitespace(cls, v: Any) -> Any:
-        """
-        Strip whitespace and reject empty/whitespace-only values.
-
-        This prevents contract typos where keys contain leading/trailing
-        whitespace or are entirely whitespace.
-
-        Uses Any type hints because mode="before" validators receive
-        raw input values before type coercion.
-        """
-        if not isinstance(v, str):
-            return v  # Let Pydantic handle type validation
-        stripped = v.strip()
-        if not stripped:
-            # error-ok: Pydantic field_validator requires ValueError
-            raise ValueError("Value cannot be empty or whitespace-only")
-        return stripped

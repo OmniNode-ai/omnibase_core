@@ -73,6 +73,109 @@ TOPIC_VALIDATION_VIOLATIONS_BATCH_EVENT = (
     "onex.evt.validation.cross-repo-violations-batch.v1"
 )
 
+# Local-paths COMPUTE validator topics (OMN-13293). The two-transport runner is the
+# producer of the command and consumer of the result; the COMPUTE handler is the
+# consumer of the command and producer of the result.
+TOPIC_VALIDATION_LOCAL_PATH_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.local-path-scan-requested.v1"
+)
+TOPIC_VALIDATION_LOCAL_PATH_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.local-path-scan-completed.v1"
+)
+
+# Private-IP COMPUTE validator topics (OMN-13294, G2). Same two-transport seam as
+# the local-paths canary: the runner is the producer of the command and consumer
+# of the result; the COMPUTE handler is the consumer of the command and producer
+# of the result.
+TOPIC_VALIDATION_PRIVATE_IP_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.private-ip-scan-requested.v1"
+)
+TOPIC_VALIDATION_PRIVATE_IP_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.private-ip-scan-completed.v1"
+)
+
+# No-faked-boundary COMPUTE validator topics (OMN-13497). Same two-transport seam
+# as the private-IP / local-paths validators: the runner is the producer of the
+# command and consumer of the result; the COMPUTE handler is the consumer of the
+# command and producer of the result. The validator bans hand-written fakes /
+# stubs of the platform's own inference / routing / dispatch boundary.
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.no-faked-boundary-scan-requested.v1"
+)
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.no-faked-boundary-scan-completed.v1"
+)
+
+# Unfinished-work-marker COMPUTE validator topics (OMN-13480, G2 SEA-dogfood) —  # onex-allow-todo-marker OMN-13480 names the marker tokens as the validator subject
+# the marker tokens themselves are the validator's subject, not unfinished work.
+# Same two-transport seam as the local-paths / private-IP canaries:
+# the runner is the producer of the command and consumer of the result; the
+# COMPUTE handler is the consumer of the command and producer of the result.
+TOPIC_VALIDATION_TODO_MARKER_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.todo-marker-scan-requested.v1"
+)
+TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.todo-marker-scan-completed.v1"
+)
+
+# Localhost-URL COMPUTE validator topics (OMN-13480, G2 residual of OMN-13294).
+# Same two-transport seam as the local-paths / private-IP / todo-marker canaries:
+# the runner is the producer of the command and consumer of the result; the
+# COMPUTE handler is the consumer of the command and producer of the result. The
+# validator blocks hardcoded http(s)://localhost / http(s)://127.0.0.1 URL literals
+# (the loopback endpoints url-authority's public-https-literal rule deliberately
+# excludes).
+TOPIC_VALIDATION_LOCALHOST_URL_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.localhost-url-scan-requested.v1"
+)
+TOPIC_VALIDATION_LOCALHOST_URL_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.localhost-url-scan-completed.v1"
+)
+
+# Sibling-pin-hygiene COMPUTE validator topics (OMN-13509). Same two-transport
+# seam as the private-IP / no-faked-boundary / todo-marker validators: the runner
+# is the producer of the command and consumer of the result; the COMPUTE handler
+# is the consumer of the command and producer of the result. The validator blocks
+# any sibling dependency pin (omnibase-core/spi/compat git rev or branch=) whose
+# pinned commit is NOT an ancestor of that sibling's dev HEAD.
+TOPIC_VALIDATION_PIN_HYGIENE_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.pin-hygiene-scan-requested.v1"
+)
+TOPIC_VALIDATION_PIN_HYGIENE_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.pin-hygiene-scan-completed.v1"
+)
+
+# Hardcoded-topic-string COMPUTE validator topics (OMN-13294, G2 SEA-dogfood) —
+# this registry IS the canonical source of truth for onex.* topic literals, so it
+# carries the file-level suppression marker for its own validator below:
+# onex-allow-file-topic-literal OMN-13294 (this module declares topic literals as
+# its subject; they are the SOT, not contract drift).
+# Same two-transport seam as the private-IP / todo-marker / pin-hygiene validators:
+# the runner is the producer of the command and consumer of the result; the
+# COMPUTE handler is the consumer of the command and producer of the result. The
+# validator blocks any quoted onex.<a>.<b>.<c> topic literal pasted into handler
+# source instead of being declared in contract.yaml and resolved through it.
+TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.hardcoded-topic-scan-requested.v1"
+)
+TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.hardcoded-topic-scan-completed.v1"
+)
+
+# Doc-content-scan COMPUTE validator topics (OMN-13569, G2). Same two-transport
+# seam as the private-IP / hardcoded-topic validators: the runner is the producer
+# of the command and consumer of the result; the COMPUTE handler is the consumer
+# of the command and producer of the result. The validator blocks local-environment
+# traces (LAN IP literals, .201/.200 host shorthand, personal /Users|/home paths,
+# ssh user@host lines, personal e-mail addresses) and Linear ticket references
+# (OMN-<digits>) in documentation files (*.md / .mdx / .rst / .txt / .adoc).
+TOPIC_VALIDATION_DOC_CONTENT_SCAN_REQUESTED_CMD = (
+    "onex.cmd.validation.doc-content-scan-requested.v1"
+)
+TOPIC_VALIDATION_DOC_CONTENT_SCAN_COMPLETED_EVENT = (
+    "onex.evt.validation.doc-content-scan-completed.v1"
+)
+
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.

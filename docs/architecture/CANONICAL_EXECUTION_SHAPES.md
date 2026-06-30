@@ -4,7 +4,7 @@
 # ONEX Canonical Execution Shapes
 
 > **Version**: 1.0.0
-> **Ticket**: OMN-933
+> **Status**: Specification
 > **Status**: Specification
 > **Last Updated**: 2025-12-19
 

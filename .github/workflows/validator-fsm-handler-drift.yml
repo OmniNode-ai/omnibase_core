@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# FSM Handler Drift Guard — YAML-vs-handler drift gate (OMN-13735)
+#
+# Canonical CI gate for `omnibase_core.validators.fsm_handler_drift`.
+# Required status check context: "fsm-handler-drift".
+#
+# The validator reconciles every reducer contract.yaml's state_machine.transitions
+# (filtered by fsm_handler_binding.state_filter for each declared FSM type) against
+# the handler module's exported VALID_TRANSITIONS and GUARD_CONDITIONS Python symbols
+# via AST literal evaluation — no import required, no allowlist.
+#
+# This workflow runs on omnibase_core:
+#   1. Unit pytest for the validator (regression guard, incl. synthetic divergence cases)
+#   2. Self-scan of omnibase_core's own src/ — must produce zero findings (omnibase_core
+#      has no reducer handlers with fsm_handler_binding, so the scan is a no-op that
+#      confirms the validator exits 0 on a clean repo)
+#
+# Consumer repos (omnimarket) wire the remote `check-fsm-handler-drift` pre-commit hook
+# and their own CI job that scans their src/ for real fsm_handler_binding contracts.
+
+name: FSM Handler Drift Guard
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: fsm-handler-drift-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fsm-handler-drift:
+    name: fsm-handler-drift
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run fsm-handler-drift unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_fsm_handler_drift.py \
+            -v
+
+      - name: Self-scan omnibase_core src/ (must exit 0 — no fsm_handler_binding contracts here)
+        run: uv run python -m omnibase_core.validators.fsm_handler_drift src/

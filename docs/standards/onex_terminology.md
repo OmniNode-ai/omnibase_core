@@ -770,7 +770,7 @@ For comprehensive guidance, see: `docs/guides/node-building/08_COMMON_PITFALLS.m
 **Document Version**: 1.0.0
 **Created**: 2025-12-19
 **Author**: ONEX Framework Team
-**Linear Ticket**: OMN-931
+**Status**: Canonical Reference
 
 **Changelog**:
 - 1.0.0 (2025-12-19): Initial canonical terminology document

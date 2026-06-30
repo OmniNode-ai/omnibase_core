@@ -29,11 +29,18 @@ EXPECTED_EXPORTS: tuple[str, ...] = (
     # UI Contract Primitives (OMN-13130 — Phase 0)
     "ModelComponentContract",
     "ModelActionContract",
+    # Action-gate risk/confidence policy (OMN-13131 — ADR D2)
+    "ModelActionGatePolicy",
     "ModelDataBindingContract",
     "EnumBindingOrderDirection",
     "ModelPermissionContract",
     "ModelEvidenceRequirementContract",
     "ModelRendererCapabilityContract",
+    # Versioned design-token contract (OMN-13389)
+    "ModelRendererThemeContract",
+    # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
+    "ModelReviewPacket",
+    "ModelOmniStudioEvidenceBundle",
 )
 
 

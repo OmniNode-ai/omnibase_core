@@ -8,6 +8,10 @@ organized by functional domains for better maintainability.
 """
 
 # Action status enum (OMN-1309)
+# Artifact-store retention/redaction states (OMN-13152)
+from .artifacts.enum_artifact_redaction_state import EnumArtifactRedactionState
+from .artifacts.enum_artifact_retention_class import EnumArtifactRetentionClass
+
 # Audit enforcement level (OMN-5232 — context integrity)
 from .audit.enum_audit_enforcement_level import EnumAuditEnforcementLevel
 from .enum_accessibility_tier import EnumAccessibilityTier
@@ -170,11 +174,18 @@ from .enum_execution_shape import EnumExecutionShape, EnumMessageCategory
 from .enum_execution_status import EnumExecutionStatus
 from .enum_execution_trigger import EnumExecutionTrigger
 
+# Shared Experiment Result Contract enums (OMN-13613)
+from .enum_experiment_status import EnumExperimentStatus
+from .enum_experiment_type import EnumExperimentType
+
 # Failure type enums (OMN-1236)
 from .enum_failure_type import EnumFailureType
 
 # Feature flag category enum (OMN-5566)
 from .enum_feature_flag_category import EnumFeatureFlagCategory
+
+# Feature flag gate-type enum (OMN-7776)
+from .enum_feature_flag_gate_type import EnumFeatureFlagGateType
 
 # Function-related enums
 from .enum_function_language import EnumFunctionLanguage
@@ -255,6 +266,7 @@ from .enum_label_violation_type import EnumLabelViolationType
 # Language and localization enums
 from .enum_language_code import EnumLanguageCode
 from .enum_likelihood import EnumLikelihood
+from .enum_log_entry_status import EnumLogEntryStatus
 from .enum_log_format import EnumLogFormat
 
 # Log level enum
@@ -359,6 +371,9 @@ from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
 
+# Retrieval source type enum (OMN-5231 — context integrity)
+from .enum_redaction_state import EnumRedactionState
+
 # Reducer-related enums (from nodes)
 from .enum_reducer_capability import EnumReducerCapability
 from .enum_reducer_types import (
@@ -388,8 +403,6 @@ from .enum_resource_unit import EnumResourceUnit
 from .enum_response_header_transformation_type import (
     EnumResponseHeaderTransformationType,
 )
-
-# Retrieval source type enum (OMN-5231 — context integrity)
 from .enum_retrieval_source_type import EnumRetrievalSourceType
 from .enum_return_type import EnumReturnType
 
@@ -426,6 +439,9 @@ from .enum_skill_result_status import EnumSkillResultStatus, SkillResultStatus
 
 # State update operation enum
 from .enum_state_update_operation import EnumStateUpdateOperation
+
+# Suppression decision enum (OMN-13703 — ModelStructuredLogEntry schema)
+from .enum_suppression_decision import EnumSuppressionDecision
 
 # Validator mode enum (OMN-9767 — corpus classification/normalization layer Phase 3, parent OMN-9757)
 from .enum_validator_mode import EnumValidatorMode
@@ -578,6 +594,8 @@ __all__ = [
     "get_core_error_description",
     "get_exit_code_for_core_error",
     # Artifact domain
+    "EnumArtifactRedactionState",
+    "EnumArtifactRetentionClass",
     "EnumArtifactType",
     # Category filter domain
     "EnumCategoryFilter",
@@ -613,9 +631,14 @@ __all__ = [
     "EnumExecutionMode",
     "EnumExecutionShape",
     "EnumExecutionTrigger",
+    "EnumExperimentStatus",
+    "EnumExperimentType",
     "EnumMessageCategory",
-    # Log level domain
+    # Log level domain (OMN-13703: structured log entry schema)
+    "EnumLogEntryStatus",
     "EnumLogLevel",
+    "EnumRedactionState",
+    "EnumSuppressionDecision",
     # Health and status domain
     "EnumHealthCheckType",
     "EnumHealthDetailType",
@@ -637,6 +660,7 @@ __all__ = [
     "EnumOperationStatus",  # Canonical operation status (OMN-1310)
     "EnumExecutionStatus",  # Canonical execution status (OMN-1310)
     "EnumFeatureFlagCategory",  # Feature flag categories (OMN-5566)
+    "EnumFeatureFlagGateType",  # Feature flag gate types (OMN-7776)
     "EnumValidationLevel",
     "EnumValidationMode",
     "EnumValueType",

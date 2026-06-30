@@ -318,17 +318,18 @@ src/omnibase_core/
 ├── adapters/               # Adapter utilities
 ├── agents/                 # Agent support models
 ├── analysis/               # Analysis helpers
-├── artifacts/              # Content-addressed ArtifactStore (OMN-13093)
+├── artifacts/              # Content-addressed ArtifactStore
 ├── backends/               # Cache (Redis) and metrics (Prometheus, in-memory)
 ├── cli/                    # CLI commands
 ├── constants/              # Project constants
 ├── container/              # DI container implementation
 ├── context/                # Application context
+├── contract_graph/         # Contract/UI-component graph adapters + canonical hash + importer
 ├── contracts/              # Contract management
 ├── crypto/                 # Blake3 hashing, Ed25519 signing
 ├── decorators/             # Utility decorators (@standard_error_handling)
 ├── discovery/              # Node discovery utilities
-├── dispatch/               # Dispatch bus client (OMN-12960)
+├── dispatch/               # Dispatch bus client
 ├── doctor/                 # onex doctor health-check registry and checks
 ├── enums/                  # Core enumerations (300+ enums, 6 subdirectories)
 ├── errors/                 # Error handling (ModelOnexError)
@@ -345,20 +346,25 @@ src/omnibase_core/
 ├── nodes/                  # EFFECT, COMPUTE, REDUCER, ORCHESTRATOR
 ├── normalization/          # Normalization pipeline
 ├── overlays/               # Contract overlay support
+├── package/                # ONCP package manifest models + builder/reader services
 ├── pipeline/               # Execution plan builders, runners
 ├── protocols/              # Protocol definitions
 ├── rendering/              # Report renderers (CLI, HTML, JSON, Markdown, Diff)
 ├── resolution/             # Execution, handler, protocol dependency resolvers
 ├── runtime/                # Runtime components (handler registry, message dispatch)
 ├── schemas/                # JSON Schema definitions
+├── scripts/                # Console-script entrypoints (e.g. onex-validate-links)
 ├── services/               # Service implementations
 ├── tools/                  # Mypy plugins
 ├── types/                  # TypedDict definitions
 ├── utils/                  # Utility functions
 ├── validators/             # Standalone validator modules
 ├── validation/             # Validation framework + cross-repo validators + DB validators
-└── workflows/              # Workflow support models
+├── workflows/              # Workflow support models
+└── topics.py               # Canonical wire-format Kafka topic names (TopicBase, build_topic)
 ```
+
+> **Provenance**: The package structure above was verified against `src/omnibase_core/` on a recent refresh. The four node archetypes, `onex` CLI entrypoints, and `onex.nodes`/`onex.backends`/`onex.doctor` entry-point groups are declared in `pyproject.toml`.
 
 ---
 

@@ -36,6 +36,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.validation.validator_url_authority import (
     RULE_CONST_ASSIGNMENT,
     RULE_ENV_URL_READ,
+    RULE_LOCALHOST_LITERAL,
     RULE_PUBLIC_HTTPS,
     ValidatorUrlAuthority,
     assert_baseline_shrinks_only,
@@ -223,6 +224,105 @@ class TestScanSource:
         v1 = scan_source("r", "src/pkg/a.py", src1)[0]
         v2 = scan_source("r", "src/pkg/a.py", src2)[0]
         assert v1.fingerprint != v2.fingerprint
+
+
+# ---------------------------------------------------------------------------
+# Unit: localhost / loopback literal coverage (OMN-13480)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestLocalhostLiteral:
+    """OMN-13480: hardcoded loopback connection-target literals are flagged.
+
+    The public-https rule deliberately skips localhost (no dotted TLD); these
+    cases prove the dedicated localhost-literal rule closes that gap without
+    re-firing for placeholders or suppressed lines (no false positives).
+    """
+
+    def test_http_localhost_with_port_detected(self) -> None:
+        # Planted adversarial case: a bare loopback literal passed to a client
+        # call — NOT a *_URL constant, so only the localhost rule can catch it.
+        src = 'resp = httpx.get("http://localhost:9000/v1/chat")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_https_localhost_detected(self) -> None:
+        src = 'client.post("https://localhost/health")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_ipv4_loopback_detected(self) -> None:
+        src = 'conn = connect("http://127.0.0.1:5432")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_localhost_query_literal_detected(self) -> None:
+        src = 'resp = httpx.get("http://localhost?probe=1")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_loopback_fragment_literal_detected(self) -> None:
+        src = 'resp = httpx.get("http://127.0.0.1#dev")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_wildcard_bind_address_detected(self) -> None:
+        src = 'probe("http://0.0.0.0:8080/ready")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_ipv6_loopback_detected(self) -> None:
+        src = 'ping("http://[::1]:6379")\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_LOCALHOST_LITERAL
+
+    def test_localhost_url_const_still_const_assignment(self) -> None:
+        # A *_URL constant holding a localhost literal stays url-const-assignment
+        # (env-url-read / const rules win earlier in _match_rule) — behavior is
+        # unchanged for the case that was already covered.
+        src = 'LOCAL_LLM_URL = "http://localhost:8000"\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_CONST_ASSIGNMENT
+
+    def test_localhost_suppression_annotation_clears(self) -> None:
+        src = (
+            'resp = httpx.get("http://localhost:9000")'
+            "  # url-authority-ok: dev-only probe\n"
+        )
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert vs == []
+
+    def test_localhost_in_comment_skipped(self) -> None:
+        src = "# call http://localhost:9000 during local dev\n"
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert vs == []
+
+    def test_localhost_in_test_path_skipped(self) -> None:
+        src = 'resp = httpx.get("http://localhost:9000")\n'
+        vs = scan_source("r", "tests/test_thing.py", src)
+        assert vs == []
+
+    def test_localhost_in_json_object_literal_skipped(self) -> None:
+        src = '{"callback":"http://localhost:9000"}\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert vs == []
+
+    def test_non_loopback_host_not_localhost_rule(self) -> None:
+        # A real public host that merely starts with 'localhost' must not trip
+        # the loopback rule; the public-https rule owns it (dotted TLD present).
+        src = 'url = "https://localhost-proxy.service.io/api"\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_PUBLIC_HTTPS
 
 
 # ---------------------------------------------------------------------------

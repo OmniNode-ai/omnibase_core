@@ -1,6 +1,5 @@
 # ONEX Mixin Inventory
 
-**Ticket**: OMN-1115
 **Status**: Complete
 **Last Updated**: 2026-03-08
 

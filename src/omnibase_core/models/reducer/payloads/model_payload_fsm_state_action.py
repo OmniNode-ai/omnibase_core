@@ -25,7 +25,7 @@ Example:
     ...     state_name="authenticated",
     ...     action_type="on_enter",
     ...     action_name="log_user_session",
-    ...     parameters={"user_id": "user-123", "ip": "192.168.1.1"},
+    ...     parameters={"user_id": "user-123", "ip": "192.168.1.1"},  # onex-allow-internal-ip OMN-13294 doc example
     ...     fsm_id=uuid4(),
     ... )
 
@@ -72,7 +72,7 @@ class ModelPayloadFSMStateAction(ModelIntentPayloadBase):
         ...     state_name="authenticated",
         ...     action_type="on_enter",
         ...     action_name="log_user_session",
-        ...     parameters={"user_id": "user-123", "ip": "192.168.1.1"},
+        ...     parameters={"user_id": "user-123", "ip": "192.168.1.1"},  # onex-allow-internal-ip OMN-13294 doc example
         ...     fsm_id=uuid4(),
         ... )
     """

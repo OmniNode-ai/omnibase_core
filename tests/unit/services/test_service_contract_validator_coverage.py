@@ -244,6 +244,21 @@ class TestValidateModelCompliance:
         result = v.validate_model_compliance(code, _VALID_EFFECT_YAML)
         assert any("Any" in w for w in result.warnings)
 
+    def test_qualified_pydantic_basemodel_is_detected(self) -> None:
+        v = ServiceContractValidator()
+        code = (
+            "import pydantic\n"
+            "class ModelFooInput(pydantic.BaseModel):\n"
+            "    value: str\n"
+            "class ModelFooOutput(pydantic.BaseModel):\n"
+            "    result: bool\n"
+        )
+        result = v.validate_model_compliance(code, _VALID_EFFECT_YAML)
+        assert not any(
+            "No Pydantic model classes" in violation for violation in result.violations
+        )
+        assert not any("not found" in violation for violation in result.violations)
+
     def test_non_model_class_naming_warns(self) -> None:
         v = ServiceContractValidator()
         code = (

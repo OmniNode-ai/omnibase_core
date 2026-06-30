@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# command-category handler 'event_model' gate [OMN-13028]
+#
+# Required status check context: "command-category Event Model Validator / validate"
+#
+# Runs the validator unit tests, then self-scans omnibase_core/src for any
+# handler_routing entry tagged 'message_category: command' that omits 'event_model'.
+# A command entry with no event_model is the OMN-13003 failure (command handler with
+# no event_model) — ladder layer 1 of the OMN-13003/13005 top-10 failure. Consumer
+# repos wire this by adding the command-category-requires-event-model pre-commit hook
+# and a mirror of the `validate` job in their own CI.
+
+name: command-category Event Model Validator
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: validator-command-category-event-model-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_command_category_requires_event_model.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.command_category_requires_event_model src/omnibase_core

@@ -53,6 +53,7 @@ concurrency:
 jobs:
   propagate:
     name: Propagate ${{ inputs.propagation_name || 'release-triggered' }}
+    if: github.event_name != 'pull_request'
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
@@ -60,7 +61,7 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -111,7 +112,7 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
         uses: actions/setup-python@v6

@@ -22,7 +22,7 @@ class ModelNetworkRestrictions(BaseModel):
     # IP-based restrictions
     allowed_ip_ranges: list[str] = Field(
         default_factory=list,
-        description="Allowed IP ranges in CIDR notation (e.g., 192.168.1.0/24)",
+        description="Allowed IP ranges in CIDR notation (e.g., 192.168.1.0/24)",  # onex-allow-internal-ip OMN-13294 doc example (CIDR notation)
     )
 
     blocked_ip_ranges: list[str] = Field(
@@ -215,7 +215,11 @@ class ModelNetworkRestrictions(BaseModel):
         """Create restricted network policy."""
         return cls(
             whitelist_mode=True,
-            allowed_ip_ranges=["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+            allowed_ip_ranges=[
+                "10.0.0.0/8",  # onex-allow-internal-ip OMN-13294 example RFC1918 CIDR allowlist
+                "172.16.0.0/12",  # onex-allow-internal-ip OMN-13294 example RFC1918 CIDR allowlist
+                "192.168.0.0/16",  # onex-allow-internal-ip OMN-13294 example RFC1918 CIDR allowlist
+            ],
             geo_blocking_enabled=True,
             allowed_countries=["US", "CA", "GB", "AU"],
             block_vpn_connections=True,

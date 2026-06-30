@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# operation_match handler 'operation' field gate [OMN-13530]
+#
+# Required status check context: "operation_match Operation Field Validator / validate"
+#
+# Runs the validator unit tests, then self-scans omnibase_core/src for any
+# operation_match (or absent-strategy) handler_routing entry missing 'operation'.
+# A missing operation makes the contract fail closed at RuntimeLocal startup
+# ('handlers[i].operation is missing') — the 0.46.0 regression that took down the
+# headless automation fleet. Consumer repos wire this by adding the
+# operation-match-requires-operation pre-commit hook and a mirror of the
+# `validate` job in their own CI.
+
+name: operation_match Operation Field Validator
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: validator-operation-match-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_operation_match_requires_operation.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.operation_match_requires_operation src/omnibase_core

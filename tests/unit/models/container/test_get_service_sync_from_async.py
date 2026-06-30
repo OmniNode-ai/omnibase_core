@@ -10,8 +10,9 @@ asyncio.run() cannot be called from a running event loop`` in that scenario,
 breaking all auto-wiring.
 
 OMN-9241 Task 6 supersedes the inline ``_run_coro_sync`` helper (PR #853) with
-the canonical ``omnibase_compat.concurrency.run_coro_sync`` import. These tests
-lock in that contract:
+the canonical ``omnibase_compat.concurrency.run_coro_sync`` import. OMN-13763
+graduates ``run_coro_sync`` from omnibase_compat into omnibase_core so the
+spine no longer depends on compat at runtime. These tests lock in that contract:
 
 1. ``get_service_sync`` run inside ``asyncio.run`` does not raise the
    forbidden ``RuntimeError``.
@@ -19,9 +20,9 @@ lock in that contract:
    referenced in the plan) run inside ``asyncio.run`` returns a container
    without raising.
 3. ``model_onex_container.py`` imports ``run_coro_sync`` from
-   ``omnibase_compat.concurrency`` rather than shipping its own inline copy —
-   enforced via ``inspect.getsource`` grep so a future rebase cannot
-   silently reintroduce a duplicate helper.
+   ``omnibase_core.utils.util_run_coro_sync`` (OMN-13763) — not from
+   omnibase_compat — enforced via ``inspect.getsource`` grep so a future
+   rebase cannot silently reintroduce either an inline copy or a compat import.
 """
 
 from __future__ import annotations
@@ -148,23 +149,28 @@ def _collect_asyncio_run_lines_outside_except(source: str) -> list[int]:
 
 @pytest.mark.unit
 def test_container_delegates_to_compat_run_coro_sync() -> None:
-    """Source must use ``omnibase_compat.concurrency.run_coro_sync``, not an inline copy.
+    """Source must use ``omnibase_core.utils.util_run_coro_sync.run_coro_sync``, not compat or inline.
 
-    This lock-in prevents a future rebase from silently reintroducing the
-    inline ``_run_coro_sync`` helper (as existed in PR #853) — which would
-    defeat the purpose of extracting the helper into ``omnibase_compat``.
-
-    omnibase-compat is an optional dep (SDK boundary rule). The import is
-    wrapped in try/except ImportError with an inline fallback that calls
-    asyncio.run() internally — that one location is exempted by the AST check.
+    OMN-13763 graduates ``run_coro_sync`` from omnibase_compat into omnibase_core
+    so the spine no longer depends on compat at runtime. This lock-in prevents:
+    - Reintroducing the inline ``_run_coro_sync`` helper (as existed in PR #853)
+    - Re-adding the omnibase_compat import (compat is no longer a spine dep)
     """
     source = inspect.getsource(model_onex_container)
 
-    # Contract-first: the canonical try-import pattern is present.
-    assert "from omnibase_compat.concurrency import run_coro_sync" in source, (
-        "model_onex_container.py must attempt to import run_coro_sync from "
-        "omnibase_compat.concurrency (OMN-9237). The inline _run_coro_sync "
-        "helper from PR #853 is superseded and should be removed."
+    # Contract-first: the canonical core import is present (OMN-13763 graduation).
+    assert (
+        "from omnibase_core.utils.util_run_coro_sync import run_coro_sync" in source
+    ), (
+        "model_onex_container.py must import run_coro_sync from "
+        "omnibase_core.utils.util_run_coro_sync (OMN-13763). The compat import "
+        "is removed as part of evacuating run_coro_sync from omnibase_compat into core."
+    )
+
+    # The old compat import must be gone (OMN-13763: compat dep removed from spine).
+    assert "from omnibase_compat.concurrency import run_coro_sync" not in source, (
+        "model_onex_container.py must NOT import run_coro_sync from omnibase_compat "
+        "(OMN-13763): the function now lives in omnibase_core.utils.util_run_coro_sync."
     )
 
     # Explicitly assert no duplicate private inline helper definition remains.

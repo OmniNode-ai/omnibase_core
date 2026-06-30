@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
@@ -14,6 +15,7 @@ from pydantic import ValidationError
 from omnibase_core.models.delegation.wire import (
     TASK_DELEGATED_TOPIC_V1,
     EnumBudgetAction,
+    EnumTierCostType,
     ModelBaselineIntent,
     ModelBifrostDelegationConfig,
     ModelBudgetLimits,
@@ -28,12 +30,14 @@ from omnibase_core.models.delegation.wire import (
     ModelDelegationShadowConfig,
     ModelInferenceIntent,
     ModelInferenceResponseData,
+    ModelPremiumCounterfactual,
     ModelQualityGateInput,
     ModelQualityGateIntent,
     ModelQualityGateResult,
     ModelRoutingIntent,
     ModelRoutingTier,
     ModelTaskDelegatedEvent,
+    ModelTierCost,
     ModelTierModel,
     validate_acceptance_criteria,
 )
@@ -71,6 +75,19 @@ class TestModelDelegationRequest:
         r = self._make()
         assert r.task_type == "test"
 
+    def test_context_pack_hash_defaults_to_off_arm(self) -> None:
+        r = self._make()
+        assert r.context_pack == ""
+        assert r.context_pack_hash == ""
+
+    def test_context_pack_hash_is_accepted(self) -> None:
+        r = self._make(
+            context_pack="Relevant repo facts.",
+            context_pack_hash="sha256:abc123",
+        )
+        assert r.context_pack == "Relevant repo facts."
+        assert r.context_pack_hash == "sha256:abc123"
+
     def test_compliance_budget_required_when_schema_key_set(self) -> None:
         with pytest.raises(ValueError, match="compliance_budget is required"):
             self._make(output_schema_key="some_schema")
@@ -83,6 +100,66 @@ class TestModelDelegationRequest:
     def test_invalid_acceptance_criteria(self) -> None:
         with pytest.raises(ValueError, match="unsupported acceptance criteria"):
             self._make(acceptance_criteria=("not_a_real_criterion",))
+
+    @pytest.mark.unit
+    def test_invalid_acceptance_criteria_error_lists_allowed_slugs(self) -> None:
+        """Error message must name valid slugs so callers can self-correct (OMN-13542)."""
+        with pytest.raises(ValueError) as exc_info:
+            self._make(acceptance_criteria=("not_a_real_criterion",))
+        msg = str(exc_info.value)
+        assert "Allowed slugs:" in msg
+        assert "max_words_per_sentence_N" in msg
+        # At least one canonical slug must appear in the hint
+        assert "response_non_empty" in msg
+
+    @pytest.mark.unit
+    def test_invalid_acceptance_criteria_error_quotes_bad_values(self) -> None:
+        """Unsupported values are quoted in the error so they are easy to identify."""
+        with pytest.raises(ValueError) as exc_info:
+            self._make(
+                acceptance_criteria=(
+                    "Function must be typed with full PEP 604 type annotations",
+                    "Must handle HTTP errors",
+                )
+            )
+        msg = str(exc_info.value)
+        assert "'Function must be typed with full PEP 604 type annotations'" in msg
+        assert "'Must handle HTTP errors'" in msg
+        assert "Allowed slugs:" in msg
+
+    @pytest.mark.unit
+    def test_i4_strict_code_generation_free_text_criteria_rejected_with_actionable_error(
+        self,
+    ) -> None:
+        """OMN-13542 / OMN-13540 I4: strict code_generation with realistic free-text
+        acceptance criteria must fail with a documented, actionable error naming valid
+        forms — not an opaque 'unsupported acceptance criteria: <text>' with no guidance.
+        """
+        free_text_criteria = (
+            "Function must be typed with full PEP 604 type annotations",
+            "Must handle HTTP errors with appropriate status codes",
+            "No global state mutations",
+            "All branches covered by at least one test",
+            "Docstring uses Google style",
+        )
+        with pytest.raises(ValueError) as exc_info:
+            self._make(
+                task_type="code_generation",
+                acceptance_criteria=free_text_criteria,
+            )
+        msg = str(exc_info.value)
+        # Error must be actionable: list the allowed set so the caller knows what to use
+        assert "Allowed slugs:" in msg, (
+            "Error must name the allowed slug set; got: " + msg
+        )
+        assert "max_words_per_sentence_N" in msg, (
+            "Error must document the max_words_per_sentence_N pattern; got: " + msg
+        )
+        # At least one of the bad inputs must be quoted in the message
+        assert any(f"'{c}'" in msg for c in free_text_criteria), (
+            "At least one unsupported criterion must be quoted in the error; got: "
+            + msg
+        )
 
     def test_valid_acceptance_criteria(self) -> None:
         r = self._make(acceptance_criteria=("response_non_empty",))
@@ -122,6 +199,7 @@ class TestModelDelegationRequest:
             "document",
             "research",
             "code_generation",
+            "code_review",
             "refactor",
             "reasoning",
             "complex_reasoning",
@@ -133,7 +211,14 @@ class TestModelDelegationRequest:
         ],
     )
     def test_all_compat_task_types_accepted(self, task_type: str) -> None:
-        """All 12 compat task_type values must be accepted (OMN-12663 parity fix)."""
+        """All compat task_type values must be accepted (OMN-12663 parity fix).
+
+        OMN-13541: ``code_review`` added — the consumer-facing delegation surface
+        (node_delegate_skill_orchestrator.allowed_task_types + the claude/codex
+        adapter) already accepts it, so the wire DTO must carry it or the bus
+        consumer rejects the command and emits no terminal event (Pattern-B
+        timeout, zero inference).
+        """
         r = self._make(task_type=task_type)
         assert r.task_type == task_type
 
@@ -196,6 +281,72 @@ class TestModelDelegationResult:
         assert r.escalation_history == ()
         assert r.terminal_failure_reason is None
         assert r.attempts_count == 1
+
+    def test_context_pack_hash_defaults_to_off_arm(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+        assert r.context_pack_hash == ""
+
+    def test_context_pack_hash_round_trips(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+            context_pack_hash="sha256:ctxpack",
+        )
+        dumped = r.model_dump()
+        assert dumped["context_pack_hash"] == "sha256:ctxpack"
+        restored = ModelDelegationResult.model_validate(dumped)
+        assert restored.context_pack_hash == "sha256:ctxpack"
+        assert restored == r
+
+    def test_cost_tier_name_defaults_empty(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+        assert r.cost_tier_name == ""
+
+    def test_cost_tier_name_round_trips(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+            cost_tier_name="local",
+        )
+        dumped = r.model_dump()
+        assert dumped["cost_tier_name"] == "local"
+        restored = ModelDelegationResult.model_validate(dumped)
+        assert restored.cost_tier_name == "local"
+        assert restored == r
 
     def test_rejects_invalid_metric_ranges(self) -> None:
         with pytest.raises(ValidationError):
@@ -348,6 +499,85 @@ class TestModelRoutingTier:
 
         with pytest.raises(ValidationError):
             ModelRoutingTier(name="local", max_retries=-1)
+
+    def test_accepts_typed_cost_model(self) -> None:
+        """OMN-13234: ModelRoutingTier carries the typed cost model."""
+        tier = ModelRoutingTier(
+            name="cheap_cloud",
+            cost=ModelTierCost(
+                cost_type=EnumTierCostType.METERED,
+                rate_per_1k_usd=0.002,
+            ),
+        )
+        assert tier.cost is not None
+        assert tier.cost.cost_type is EnumTierCostType.METERED
+
+    def test_cost_defaults_none(self) -> None:
+        """A tier not yet migrated to the typed model has cost=None."""
+        tier = ModelRoutingTier(name="local")
+        assert tier.cost is None
+
+
+@pytest.mark.unit
+class TestModelTierCost:
+    def test_free_local_zero_rate(self) -> None:
+        cost = ModelTierCost(cost_type=EnumTierCostType.FREE_LOCAL)
+        assert cost.rate_per_1k_usd == 0.0
+        assert cost.monthly_cap_usd is None
+
+    def test_free_local_rejects_nonzero_rate(self) -> None:
+        with pytest.raises(ValidationError, match="rate_per_1k_usd == 0"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.FREE_LOCAL,
+                rate_per_1k_usd=0.002,
+            )
+
+    def test_free_local_rejects_cap(self) -> None:
+        with pytest.raises(ValidationError, match="must not declare monthly_cap_usd"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.FREE_LOCAL,
+                monthly_cap_usd=10.0,
+            )
+
+    def test_metered_requires_positive_rate(self) -> None:
+        with pytest.raises(ValidationError, match="rate_per_1k_usd > 0"):
+            ModelTierCost(cost_type=EnumTierCostType.METERED)
+
+    def test_metered_rejects_cap(self) -> None:
+        with pytest.raises(ValidationError, match="must not declare monthly_cap_usd"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.METERED,
+                rate_per_1k_usd=0.002,
+                monthly_cap_usd=10.0,
+            )
+
+    def test_budgeted_requires_cap_and_overage(self) -> None:
+        with pytest.raises(ValidationError, match="requires monthly_cap_usd"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.BUDGETED,
+                rate_per_1k_usd=0.001,
+            )
+        with pytest.raises(ValidationError, match="overage_rate_per_1k_usd > 0"):
+            ModelTierCost(
+                cost_type=EnumTierCostType.BUDGETED,
+                rate_per_1k_usd=0.001,
+                monthly_cap_usd=10.0,
+            )
+
+    def test_budgeted_valid(self) -> None:
+        cost = ModelTierCost(
+            cost_type=EnumTierCostType.BUDGETED,
+            rate_per_1k_usd=0.001,
+            monthly_cap_usd=10.0,
+            overage_rate_per_1k_usd=0.003,
+        )
+        assert cost.monthly_cap_usd == 10.0
+        assert cost.overage_rate_per_1k_usd == 0.003
+
+    def test_frozen(self) -> None:
+        cost = ModelTierCost(cost_type=EnumTierCostType.FREE_LOCAL)
+        with pytest.raises(ValidationError):
+            cost.rate_per_1k_usd = 0.5  # type: ignore[misc]
 
 
 @pytest.mark.unit
@@ -524,6 +754,18 @@ class TestModelTaskDelegatedEvent:
         )
         assert event.topic == TASK_DELEGATED_TOPIC_V1
         assert event.escalation_count == 0
+        assert event.context_pack_hash == ""
+
+    def test_carries_context_pack_hash(self) -> None:
+        event = ModelTaskDelegatedEvent(
+            timestamp="2026-05-26T00:00:00Z",
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            delegated_to="local_qwen3",
+            quality_gate_passed=True,
+            context_pack_hash="sha256:ctx",
+        )
+        assert event.context_pack_hash == "sha256:ctx"
 
     def test_rejects_invalid_topic_and_negative_metrics(self) -> None:
         with pytest.raises(ValidationError):
@@ -548,6 +790,96 @@ class TestModelTaskDelegatedEvent:
 
     def test_topic_constant(self) -> None:
         assert TASK_DELEGATED_TOPIC_V1 == "onex.evt.omniclaude.task-delegated.v1"
+
+    def test_premium_counterfactual_default_none(self) -> None:
+        event = ModelTaskDelegatedEvent(
+            timestamp="2026-05-26T00:00:00Z",
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            delegated_to="local_qwen3",
+            quality_gate_passed=True,
+        )
+        assert event.premium_counterfactual is None
+
+    def test_carries_premium_counterfactual(self) -> None:
+        counterfactual = ModelPremiumCounterfactual(
+            model="claude-opus-4-6",
+            price_in_per_1k=Decimal("0.015"),
+            price_out_per_1k=Decimal("0.075"),
+            as_of="2026-02-01",
+            tokens_in=1000,
+            tokens_out=500,
+            counterfactual_cost_usd=Decimal("0.0525"),
+        )
+        event = ModelTaskDelegatedEvent(
+            timestamp="2026-05-26T00:00:00Z",
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            delegated_to="local_qwen3",
+            quality_gate_passed=True,
+            cost_usd=0.0,
+            cost_savings_usd=0.0525,
+            premium_counterfactual=counterfactual,
+        )
+        assert event.premium_counterfactual is not None
+        assert event.premium_counterfactual.model == "claude-opus-4-6"
+        assert event.premium_counterfactual.as_of == "2026-02-01"
+        # cost_savings_usd is the auditable counterfactual - actual.
+        assert event.premium_counterfactual.counterfactual_cost_usd - Decimal(
+            str(event.cost_usd)
+        ) == Decimal(str(event.cost_savings_usd))
+
+
+@pytest.mark.unit
+class TestModelPremiumCounterfactual:
+    """Auditable pinned premium counterfactual provenance (OMN-13355)."""
+
+    def _make(self, **overrides: object) -> ModelPremiumCounterfactual:
+        kwargs: dict[str, object] = {
+            "model": "claude-opus-4-6",
+            "price_in_per_1k": Decimal("0.015"),
+            "price_out_per_1k": Decimal("0.075"),
+            "as_of": "2026-02-01",
+            "tokens_in": 1000,
+            "tokens_out": 500,
+            "counterfactual_cost_usd": Decimal("0.0525"),
+        }
+        kwargs.update(overrides)
+        return ModelPremiumCounterfactual(**kwargs)  # type: ignore[arg-type]
+
+    def test_provenance_fields_present(self) -> None:
+        cf = self._make()
+        assert cf.model == "claude-opus-4-6"
+        assert cf.price_in_per_1k == Decimal("0.015")
+        assert cf.price_out_per_1k == Decimal("0.075")
+        assert cf.as_of == "2026-02-01"
+        assert cf.tokens_in == 1000
+        assert cf.tokens_out == 500
+        assert cf.counterfactual_cost_usd == Decimal("0.0525")
+        assert cf.pricing_source == "pricing_manifest"
+        assert cf.measured is False
+
+    def test_cost_is_recomputable(self) -> None:
+        cf = self._make()
+        recomputed = (
+            cf.price_in_per_1k * Decimal(cf.tokens_in)
+            + cf.price_out_per_1k * Decimal(cf.tokens_out)
+        ) / Decimal("1000")
+        assert recomputed == cf.counterfactual_cost_usd
+
+    def test_rejects_inconsistent_cost(self) -> None:
+        with pytest.raises(ValidationError):
+            self._make(counterfactual_cost_usd=Decimal("99.0"))
+
+    def test_frozen(self) -> None:
+        cf = self._make()
+        with pytest.raises(ValidationError):
+            cf.model = "gpt-4o"  # type: ignore[misc]
+
+    def test_calibration_measured_flag(self) -> None:
+        cf = self._make(pricing_source="calibration", measured=True)
+        assert cf.measured is True
+        assert cf.pricing_source == "calibration"
 
 
 @pytest.mark.unit

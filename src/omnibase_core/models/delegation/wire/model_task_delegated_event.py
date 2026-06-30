@@ -9,6 +9,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.delegation.wire.model_premium_counterfactual import (
+    ModelPremiumCounterfactual,
+)
 from omnibase_core.topics import TopicBase
 
 TASK_DELEGATED_TOPIC_V1 = TopicBase.TASK_DELEGATED
@@ -86,6 +89,13 @@ class ModelTaskDelegatedEvent(BaseModel):
         default=None,
         description="Raw response received from the delegated model.",
     )
+    context_pack_hash: str = Field(
+        default="",
+        description=(
+            "Stable hash of the context pack injected into the delegated prompt. "
+            "Empty string means the OFF arm or no context pack."
+        ),
+    )
     pricing_manifest_version: int = Field(
         default=0,
         ge=0,
@@ -118,6 +128,71 @@ class ModelTaskDelegatedEvent(BaseModel):
         ge=0.0,
         description="Total estimated cost across all attempts.",
     )
+    premium_counterfactual: ModelPremiumCounterfactual | None = Field(
+        default=None,
+        description=(
+            "Pinned premium-model counterfactual for this task (OMN-13355). Carries "
+            "{model, price_in_per_1k, price_out_per_1k, as_of, tokens, "
+            "counterfactual_cost_usd} so cost_savings_usd (= counterfactual_cost_usd - "
+            "cost_usd) is auditable rather than an opaque estimate. None when no "
+            "pinned premium price could be resolved for the run."
+        ),
+    )
+    cost_tier_type: str = Field(
+        default="",
+        description=(
+            "Typed tier cost regime that priced this call (OMN-13234): "
+            "free_local | metered | budgeted. Empty when the serving tier had no "
+            "typed cost model (legacy flat-rate path)."
+        ),
+    )
+    cost_tier_name: str = Field(
+        default="",
+        description=(
+            "Routing tier name that served this task (OMN-13234): "
+            "local | cheap_cloud | cheap_frontier | claude."
+        ),
+    )
+    cost_measurement_source: str = Field(
+        default="",
+        description=(
+            "How cost_usd was measured (OMN-13234): free_local | metered | "
+            "budgeted_in_budget | budgeted_overage | budgeted_split | "
+            "manifest_compute | no_cost_model."
+        ),
+    )
+    budget_headroom_consumed_usd: float = Field(
+        default=0.0,
+        ge=0.0,
+        description=(
+            "Monthly-budget drawdown for budgeted tiers (OMN-13234): the "
+            "accounting cost of in-budget tokens served at 0 cash. 0 for "
+            "free_local / metered / overage tokens."
+        ),
+    )
+    tokens_input: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Prompt (input) tokens for the served inference (OMN-13408). Carried "
+            "so the delegation projection records real tokens even when this "
+            "compat task-delegated event is the last writer for a correlation_id; "
+            "previously unset (defaulted 0), clobbering the real tokens from the "
+            "delegation-completed/failed event in the projection upsert."
+        ),
+    )
+    tokens_output: int = Field(
+        default=0,
+        ge=0,
+        description=(
+            "Completion (output) tokens for the served inference (OMN-13408). See "
+            "tokens_input."
+        ),
+    )
 
 
-__all__: list[str] = ["TASK_DELEGATED_TOPIC_V1", "ModelTaskDelegatedEvent"]
+__all__: list[str] = [
+    "TASK_DELEGATED_TOPIC_V1",
+    "ModelPremiumCounterfactual",
+    "ModelTaskDelegatedEvent",
+]

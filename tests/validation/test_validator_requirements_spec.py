@@ -34,6 +34,9 @@ REQUIRED_TOP_LEVEL_KEYS = {
     "required_validators",
     "metadata",
     "known_repos",
+    # OMN-13574: per-repo Model-B failing-rollup opt-in. Additive; the legacy
+    # consumer ignores it so the other 11 repos' handshake is unaffected.
+    "model_b_rollup_enforcement",
 }
 
 REQUIRED_VALIDATOR_FIELDS = {
@@ -69,6 +72,19 @@ KNOWN_REPOS = {
     "omninode_infra",
     "omniweb",
     "onex_change_control",
+    # OMN-13579: ungoverned public repos onboarded
+    "omnibase",
+    "omnicursor",
+    "onex-self-extending-agent",
+    "knowledge-base",
+}
+
+# Ungoverned public repos onboarded in OMN-13579.
+NEW_ONBOARDED_REPOS = {
+    "omnibase",
+    "omnicursor",
+    "onex-self-extending-agent",
+    "knowledge-base",
 }
 
 
@@ -214,3 +230,79 @@ def test_critical_validators_present(spec: dict[str, Any]) -> None:
     present = set(spec["required_validators"].keys())
     missing = required_names - present
     assert not missing, f"critical validators missing from spec: {missing}"
+
+
+def test_new_public_repos_in_known_repos(spec: dict[str, Any]) -> None:
+    """OMN-13579: the four previously ungoverned public repos must appear in
+    known_repos so the consumer can validate against them.
+
+    Repos: omnibase (meta/registry), omnicursor (Python), onex-self-extending-agent
+    (Python), knowledge-base (Python + docs).
+    """
+    known = set(spec.get("known_repos", []))
+    missing = NEW_ONBOARDED_REPOS - known
+    assert not missing, (
+        f"OMN-13579: newly onboarded repos not in known_repos: {missing}"
+    )
+
+
+def test_new_public_repos_covered_by_universal_validators(spec: dict[str, Any]) -> None:
+    """OMN-13579: the four onboarded repos must be covered by the known universal
+    validators (applies_to_repos: 'all'). Locking the expected universal validator
+    names prevents a silent narrowing (converting 'all' to a list) from removing
+    coverage without a test failure.
+    """
+    # These validators were 'all' when OMN-13579 was authored. Narrowing any of
+    # them to a list silently drops the four onboarded repos unless this test fails.
+    expected_universal = {
+        "hardcoded-local-paths",
+        "hardcoded-private-ip",
+        "hardcoded-localhost-url",
+        "spdx-headers",
+        "self-gating-workflows",
+        "aislop-patterns",
+        "detect-secrets",
+        "no-untracked-todos",
+    }
+    actual_universal = {
+        name
+        for name, entry in spec["required_validators"].items()
+        if entry["applies_to_repos"] == "all"
+    }
+    narrowed = expected_universal - actual_universal
+    assert not narrowed, (
+        f"validators that were 'all' are now narrowed, silently dropping "
+        f"coverage of the OMN-13579 repos: {narrowed}"
+    )
+    known = set(spec.get("known_repos", []))
+    missing_from_known = NEW_ONBOARDED_REPOS - known
+    assert not missing_from_known, (
+        f"repos not in known_repos so 'all' coverage is broken: {missing_from_known}"
+    )
+
+
+def test_doc_content_scan_applies_to_all_omn13579_doc_repos(
+    spec: dict[str, Any],
+) -> None:
+    """OMN-13579: doc_content_scan must apply to all four onboarded repos — they
+    all have docs/ directories. The ticket DoD says 'doc_content_scan applies to
+    these repos too where docs exist'. Protecting only knowledge-base leaves the
+    other three silently unprotected.
+    """
+    doc_repos = {
+        "knowledge-base",
+        "omnibase",
+        "omnicursor",
+        "onex-self-extending-agent",
+    }
+    validators = spec["required_validators"]
+    dcs = validators.get("doc-content-scan")
+    assert dcs is not None, "doc-content-scan validator missing from spec"
+    applies = dcs["applies_to_repos"]
+    if applies == "all":
+        return
+    missing = doc_repos - set(applies)
+    assert not missing, (
+        f"doc-content-scan must apply to all OMN-13579 doc repos (all have docs/); "
+        f"missing: {missing}"
+    )

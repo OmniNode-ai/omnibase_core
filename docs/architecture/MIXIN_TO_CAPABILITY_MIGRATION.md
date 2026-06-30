@@ -1,6 +1,5 @@
 # Mixin-to-Capability Migration Plan
 
-**Ticket**: OMN-1115
 **Status**: Inventory Complete, Migration Planning Ready
 **Last Updated**: 2026-03-08
 

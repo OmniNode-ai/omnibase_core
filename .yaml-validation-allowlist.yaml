@@ -28,6 +28,18 @@
 # These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
 # in the architecture. They need raw YAML access to prepare data for model validation.
 allowed_files:
+  - file: "src/omnibase_core/validation/validator_canonical_inference.py"
+    reason: >-
+      Canonical-inference gate structural agent-invocation carve-out (OMN-13249). To tell an agent-invocation
+      EFFECT (which legitimately shells a coding agent) from a banned inference tier, the gate reads ONE
+      structural fact — descriptor.agent_invocation — from the enclosing node contract.yaml. contract.yaml
+      schemas vary by node_type (ModelContractCompute/Effect/Reducer/Orchestrator) and the gate must tolerate
+      ANY contract shape while reading a single boolean; no single Pydantic model applies, so raw yaml.safe_load
+      extracts the flat fact (same architectural pattern as validator_banned_compose_vars.py and mixin_contract_publisher.py).
+      The result is coerced to a strict bool (descriptor.get(...) is True).
+    added: "2026-06-18"
+    review: "2026-12-13"
+
   - file: "src/omnibase_core/validation/validator_architecture.py"
     reason: >-
       Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
@@ -115,6 +127,16 @@ allowed_files:
       YAML to ensure it meets contract schema requirements
     added: "2024-10-15"
     review: "2026-06-13"
+
+  - file: "src/omnibase_core/runtime/runtime_local.py"
+    reason: >-
+      RuntimeLocal workflow contract loader (load_workflow_contract), relocated from omnibase_infra in
+      OMN-13444 (local-first re-convergence). Loads arbitrary user-authored workflow contract YAML before
+      downstream node/handler resolution; the workflow contract has no fixed Pydantic model in omnibase_core
+      (the raw dict is read structurally for terminal_event / handler_routing keys), so raw yaml.safe_load
+      is the architecturally correct pre-validation parse — same pattern as validator_contracts.py above.
+    added: "2026-06-21"
+    review: "2026-12-13"
 
   - file: "src/omnibase_core/normalization/contract_validator.py"
     reason: >-
@@ -355,6 +377,17 @@ allowed_files:
     added: "2026-06-02"
     review: "2026-12-13"
 
+  - file: "src/omnibase_core/validators/operation_match_requires_operation.py"
+    reason: >-
+      operation_match operation-field guard (OMN-13530) — must read adjacent contract.yaml files from
+      the filesystem to inspect handler_routing.handlers[] for a missing operation field. There is no
+      single Pydantic contract model that round-trips every node's contract.yaml shape, and the guard
+      intentionally tolerates structurally-incomplete contracts (it asserts only the operation field),
+      so it parses the raw mapping with yaml.safe_load() and inspects routing_strategy/handlers directly.
+      Mirrors the contract_config_compliance.py validator pattern.
+    added: "2026-06-23"
+    review: "2026-12-23"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
@@ -382,6 +415,16 @@ allowed_functions:
       inspects YAML structure before model instantiation
     added: "2024-10-15"
     review: "2026-06-13"
+
+  - function: "load_workflow_contract"
+    reason: >-
+      RuntimeLocal workflow contract loader (relocated from omnibase_infra in OMN-13444, local-first re-convergence).
+      Loads arbitrary user-authored workflow contract YAML before downstream node/handler resolution;
+      the workflow contract has no fixed Pydantic model in omnibase_core (the raw dict is read structurally
+      for terminal_event / handler_routing keys), so raw yaml.safe_load is the architecturally correct
+      pre-validation parse — same pattern as load_contract_yaml_file / publish_contract above.
+    added: "2026-06-21"
+    review: "2026-12-13"
 
   - function: "validate_contract_yaml"
     reason: >-

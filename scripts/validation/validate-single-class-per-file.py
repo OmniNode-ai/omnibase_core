@@ -179,6 +179,14 @@ def should_exclude_file(filepath: Path) -> bool:
     if filepath.name == "singleton_holders.py":
         return True
 
+    # Exclude the COMPUTE-validator scan I/O trios (OMN-13294 / OMN-13497).
+    # validation/<name>/models.py co-locates the tightly-coupled
+    # ScanInput + Finding + ScanResult DTOs of one generated COMPUTE validator
+    # (mirrors the private_ip sibling). A path-scoped exemption (not a global
+    # models.py exemption) keeps the rule strict everywhere else.
+    if filepath.name == "models.py" and "/validation/" in path_str:
+        return True
+
     # Exclude legacy files with multiple summary models
     # These are pre-existing and will be refactored in a separate PR
     legacy_multi_class_files = {
@@ -192,6 +200,7 @@ def should_exclude_file(filepath: Path) -> bool:
         "model_routing_config.py",  # ModelTierModel + ModelRoutingTier + ModelDelegationConfig (hierarchy)
         "model_quality_gate.py",  # ModelQualityGateInput + ModelQualityGateResult (paired gate DTOs)
         "model_bifrost_delegation_config.py",  # 7 tightly-coupled Bifrost gateway config DTOs
+        "model_golden_chain_fixture.py",  # ModelGoldenChainProvenance + ModelGoldenChainFixture (fixture + embedded provenance); pre-existing OMN-13499 file surfaced by spdx-headers CI gate wiring (OMN-13576); split tracked separately
     }
 
     # Exclude validator files with small helper classes

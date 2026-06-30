@@ -43,6 +43,28 @@ Related:
 from omnibase_core.protocols.runtime.protocol_handler_registry import (
     ProtocolHandlerRegistry,
 )
+from omnibase_core.protocols.runtime.protocol_harness_inference_adapter import (
+    ProtocolHarnessInferenceAdapter,
+)
+from omnibase_core.protocols.runtime.protocol_harness_projection_store import (
+    ProtocolHarnessProjectionStore,
+)
+from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
+    ProtocolLocalRuntimeBus,
+    UnsubscribeCallback,
+)
+from omnibase_core.protocols.runtime.protocol_local_runtime_callable_target import (
+    ProtocolLocalRuntimeCallableTarget,
+)
+from omnibase_core.protocols.runtime.protocol_local_runtime_dump_model import (
+    ProtocolLocalRuntimeDumpModel,
+)
+from omnibase_core.protocols.runtime.protocol_local_runtime_message import (
+    ProtocolLocalRuntimeMessage,
+)
+from omnibase_core.protocols.runtime.protocol_local_runtime_payload_model import (
+    ProtocolLocalRuntimePayloadModel,
+)
 from omnibase_core.protocols.runtime.protocol_message_handler import (
     ProtocolMessageHandler,
 )
@@ -52,6 +74,14 @@ from omnibase_core.protocols.runtime.protocol_runtime_skill_client import (
 
 __all__ = [
     "ProtocolHandlerRegistry",
+    "ProtocolHarnessInferenceAdapter",
+    "ProtocolHarnessProjectionStore",
+    "ProtocolLocalRuntimeBus",
+    "ProtocolLocalRuntimeCallableTarget",
+    "ProtocolLocalRuntimeDumpModel",
+    "ProtocolLocalRuntimeMessage",
+    "ProtocolLocalRuntimePayloadModel",
     "ProtocolMessageHandler",
     "ProtocolRuntimeSkillClient",
+    "UnsubscribeCallback",
 ]

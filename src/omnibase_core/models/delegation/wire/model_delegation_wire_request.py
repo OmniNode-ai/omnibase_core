@@ -48,7 +48,14 @@ MAX_WORDS_PER_SENTENCE_RE = re.compile(r"^max_words_per_sentence_([1-9]\d*)$")
 
 
 def validate_acceptance_criteria(criteria: tuple[str, ...]) -> tuple[str, ...]:
-    """Validate request-level quality criteria before they enter dispatch."""
+    """Validate request-level quality criteria before they enter dispatch.
+
+    Each criterion must be a slug from ``SUPPORTED_ACCEPTANCE_CRITERIA`` or match
+    the ``max_words_per_sentence_N`` pattern (e.g. ``max_words_per_sentence_20``).
+    Free-text strings are not accepted: every criterion maps to a concrete
+    deterministic or heuristic check in the quality gate; an unrecognised slug
+    has no implementation and would silently be evaluated as ``MALFORMED``.
+    """
     unsupported = [
         item
         for item in criteria
@@ -56,9 +63,15 @@ def validate_acceptance_criteria(criteria: tuple[str, ...]) -> tuple[str, ...]:
         and not MAX_WORDS_PER_SENTENCE_RE.match(item)
     ]
     if unsupported:
-        joined = ", ".join(sorted(unsupported))
+        joined = ", ".join(f"'{item}'" for item in sorted(unsupported))
+        allowed = ", ".join(sorted(SUPPORTED_ACCEPTANCE_CRITERIA))
         # error-ok: wire DTO boundary check; pydantic model_validator surface, not an OnexError call site
-        raise ValueError(f"unsupported acceptance criteria: {joined}")
+        raise ValueError(
+            f"unsupported acceptance criteria: {joined}. "
+            f"Each criterion must be a slug from the allowed set or match "
+            f"'max_words_per_sentence_N' (e.g. 'max_words_per_sentence_20'). "
+            f"Allowed slugs: {allowed}"
+        )
     return criteria
 
 
@@ -75,6 +88,7 @@ class ModelDelegationRequest(BaseModel):
         "document",
         "research",
         "code_generation",
+        "code_review",
         "refactor",
         "reasoning",
         "complex_reasoning",
@@ -95,6 +109,20 @@ class ModelDelegationRequest(BaseModel):
     source_file_path: str | None = Field(
         default=None,
         description="File context for the delegation, if any.",
+    )
+    context_pack: str = Field(
+        default="",
+        description=(
+            "Optional assembled context injected ahead of the prompt for context "
+            "ON/OFF experiments. Empty string means no context pack."
+        ),
+    )
+    context_pack_hash: str = Field(
+        default="",
+        description=(
+            "Stable hash of context_pack for projection readback and ROI "
+            "measurement. Empty string means no context pack was injected."
+        ),
     )
     correlation_id: UUID = Field(
         ...,

@@ -33,6 +33,7 @@ __all__ = [
     "epic",  # Epic-team execution state models (OMN-3871)
     "events",
     "execution",
+    "experiment",  # Shared Experiment Result Contract (OMN-13613)
     "handlers",
     "hooks",  # External hook models (Claude Code - OMN-1474)
     "infrastructure",

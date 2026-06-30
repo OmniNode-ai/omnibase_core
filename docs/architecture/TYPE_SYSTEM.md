@@ -568,7 +568,7 @@ When a `type: ignore` comment is necessary, always use a specific error code and
 
 ```python
 # CORRECT -- specific code + explanation
-# NOTE(OMN-1234): mypy false-positive due to Protocol-based DI resolution.
+# NOTE(TICKET-ID): mypy false-positive due to Protocol-based DI resolution.
 value = container.get_service("ProtocolLogger")  # type: ignore[arg-type]
 
 # WRONG -- generic ignore

@@ -79,6 +79,7 @@ def test_cross_repo_boundary_validation_clones_all_boundary_repos() -> None:
         "omnibase_infra",
         "omnibase_core",
         "omnimemory",
+        "omnimarket",
         "onex_change_control",
     }
 

@@ -340,7 +340,7 @@ class ModelContractBase(BaseModel, ABC):
     validation_rules: ModelValidationRules | None = None
     protocol_dependencies: list[ModelProtocolDependency] = Field(default_factory=list)
 
-    # Infrastructure extensions (OMN-1588)
+    # Infrastructure extensions
     handler_routing: ModelHandlerRoutingSubcontract | None = None
     yaml_consumed_events: list[str | ModelConsumedEventEntry] = Field(default_factory=list)
     yaml_published_events: list[str | ModelPublishedEventEntry] = Field(default_factory=list)

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for ValidatorCanonicalInference (OMN-13219).
+"""Tests for ValidatorCanonicalInference (OMN-13219, OMN-13249).
 
 Covers:
 - Detection of both violation classes (model-cli-shellout, model-id-env-read)
@@ -13,6 +13,10 @@ Covers:
 - Baseline helpers: load_baseline, serialize_baseline, assert_baseline_shrinks_only
 - ValidatorBase integration (validate() returns ModelValidationResult)
 - CLI entry point: --all, staged-files, exit codes, seed, baseline-growth reject
+- Structural agent-invocation carve-out (OMN-13249): a model-CLI shell-out is
+  permitted iff the enclosing node contract.yaml declares
+  ``descriptor.agent_invocation: true``; otherwise it still fails closed. The
+  permission is a contract fact, NOT a widened free-text suppression.
 """
 
 from __future__ import annotations
@@ -36,6 +40,8 @@ from omnibase_core.validation.validator_canonical_inference import (
     RULE_MODEL_ENV_READ,
     ValidatorCanonicalInference,
     assert_baseline_shrinks_only,
+    contract_permits_agent_invocation,
+    find_enclosing_contract,
     load_baseline,
     make_fingerprint,
     partition_against_baseline,
@@ -514,3 +520,313 @@ class TestCLI:
             ]
         )
         assert rc == 1
+
+
+# ---------------------------------------------------------------------------
+# Structural agent-invocation carve-out (OMN-13249)
+# ---------------------------------------------------------------------------
+
+
+def _node_with_contract(
+    tmp_path: Path,
+    *,
+    descriptor: str,
+    handler_src: str,
+    handler_rel: str = "handler.py",
+    node_dir: str = "src/omnibase_infra/nodes/node_thing",
+) -> Path:
+    """Materialize a node dir with a contract.yaml + a handler source file.
+
+    Returns the path to the written handler file.
+    """
+    base = tmp_path / node_dir
+    handler = base / handler_rel
+    handler.parent.mkdir(parents=True, exist_ok=True)
+    handler.write_text(textwrap.dedent(handler_src), encoding="utf-8")
+    (base / "contract.yaml").write_text(
+        textwrap.dedent(
+            f"""\
+            handler_id: node.thing
+            name: thing
+            node_type: effect
+            descriptor:
+            {textwrap.indent(textwrap.dedent(descriptor), "  ")}
+            """
+        ),
+        encoding="utf-8",
+    )
+    return handler
+
+
+_SHELLOUT = 'subprocess.run(["codex", "exec", prompt])\n'
+
+
+@pytest.mark.unit
+class TestContractDiscovery:
+    def test_find_enclosing_contract_in_node_root(self, tmp_path: Path) -> None:
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=_SHELLOUT,
+        )
+        found = find_enclosing_contract(handler)
+        assert found is not None
+        assert found.name == "contract.yaml"
+        assert found.parent == handler.parent
+
+    def test_find_enclosing_contract_walks_up_from_handlers_subdir(
+        self, tmp_path: Path
+    ) -> None:
+        # infra layout: handlers live in a handlers/ subdir below contract.yaml.
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=_SHELLOUT,
+            handler_rel="handlers/handler_invoke.py",
+        )
+        found = find_enclosing_contract(handler)
+        assert found is not None
+        assert found.parent == handler.parent.parent
+
+    def test_find_enclosing_contract_none_when_absent(self, tmp_path: Path) -> None:
+        f = tmp_path / "src" / "loose.py"
+        f.parent.mkdir(parents=True)
+        f.write_text(_SHELLOUT, encoding="utf-8")
+        assert find_enclosing_contract(f) is None
+
+    def test_contract_permits_when_flag_true(self, tmp_path: Path) -> None:
+        handler = _node_with_contract(
+            tmp_path, descriptor="agent_invocation: true\n", handler_src=_SHELLOUT
+        )
+        contract = find_enclosing_contract(handler)
+        assert contract is not None
+        assert contract_permits_agent_invocation(contract) is True
+
+    def test_contract_denies_when_flag_absent(self, tmp_path: Path) -> None:
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="node_archetype: effect\npurity: side_effecting\n",
+            handler_src=_SHELLOUT,
+        )
+        contract = find_enclosing_contract(handler)
+        assert contract is not None
+        assert contract_permits_agent_invocation(contract) is False
+
+    def test_contract_denies_when_flag_false(self, tmp_path: Path) -> None:
+        handler = _node_with_contract(
+            tmp_path, descriptor="agent_invocation: false\n", handler_src=_SHELLOUT
+        )
+        contract = find_enclosing_contract(handler)
+        assert contract is not None
+        assert contract_permits_agent_invocation(contract) is False
+
+    def test_contract_denies_on_truthy_non_bool(self, tmp_path: Path) -> None:
+        # A string "true" must NOT be honored — only a real YAML boolean true.
+        handler = _node_with_contract(
+            tmp_path, descriptor='agent_invocation: "true"\n', handler_src=_SHELLOUT
+        )
+        contract = find_enclosing_contract(handler)
+        assert contract is not None
+        assert contract_permits_agent_invocation(contract) is False
+
+
+@pytest.mark.unit
+class TestAgentInvocationCarveOut:
+    def test_shellout_fails_closed_without_agent_invocation(
+        self, tmp_path: Path
+    ) -> None:
+        """(1) A model-CLI shell-out in a node WITHOUT the flag still fails closed."""
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="node_archetype: effect\n",
+            handler_src=_SHELLOUT,
+        )
+        vs = scan_source("r", "src/x/handler.py", _SHELLOUT, source_path=handler)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MODEL_CLI_SHELLOUT
+
+    def test_shellout_permitted_with_agent_invocation(self, tmp_path: Path) -> None:
+        """(2) The SAME shell-out passes inside an agent_invocation: true node."""
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=_SHELLOUT,
+        )
+        vs = scan_source("r", "src/x/handler.py", _SHELLOUT, source_path=handler)
+        assert vs == [], f"agent_invocation node must be permitted, got: {vs}"
+
+    def test_env_read_not_permitted_by_agent_invocation(self, tmp_path: Path) -> None:
+        """The flag only carves out the shell-out surface, NOT env-resolved models.
+
+        agent_invocation declares "this node legitimately shells a coding agent";
+        it never licenses resolving a model id from an env var.
+        """
+        env_src = 'model = os.environ["LLM_MODEL"]\n'
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=env_src,
+        )
+        vs = scan_source("r", "src/x/handler.py", env_src, source_path=handler)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MODEL_ENV_READ
+
+    def test_no_source_path_means_fail_closed(self) -> None:
+        """Without a filesystem path the gate cannot read a contract → fail closed.
+
+        scan_source's text-only call sites (no source_path) must keep the prior
+        fail-closed behavior — the carve-out is opt-in via a real on-disk path.
+        """
+        vs = scan_source("r", "src/x/handler.py", _SHELLOUT)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MODEL_CLI_SHELLOUT
+
+
+@pytest.mark.unit
+class TestAgentInvocationCarveOutIntegration:
+    def test_validator_red_without_agent_invocation(self, tmp_path: Path) -> None:
+        """(1) ValidatorBase path: shell-out outside an agent node → RED."""
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="node_archetype: effect\n",
+            handler_src=_SHELLOUT,
+        )
+        v = ValidatorCanonicalInference(
+            contract=_open_contract(),
+            repo="test_repo",
+            baseline_path=_empty_baseline(tmp_path),
+            repo_root=tmp_path,
+        )
+        result = v.validate_file(handler)
+        assert not result.is_valid, f"Expected RED but got: {result.issues}"
+        assert result.issues[0].code == RULE_MODEL_CLI_SHELLOUT
+
+    def test_validator_green_with_agent_invocation(self, tmp_path: Path) -> None:
+        """(2) ValidatorBase path: same shell-out inside an agent node → GREEN."""
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=_SHELLOUT,
+        )
+        v = ValidatorCanonicalInference(
+            contract=_open_contract(),
+            repo="test_repo",
+            baseline_path=_empty_baseline(tmp_path),
+            repo_root=tmp_path,
+        )
+        result = v.validate_file(handler)
+        assert result.is_valid, f"Expected GREEN but got: {result.issues}"
+
+    def test_codex_as_inference_tier_still_fails_if_reintroduced(
+        self, tmp_path: Path
+    ) -> None:
+        """(3) The codex-as-inference-tier baseline shape still FAILS.
+
+        A bare shell-out in a routing/inference module that is NOT inside an
+        agent_invocation node is exactly OMN-13215's banned tier — the flag must
+        not whitewash it. No enclosing agent contract → still RED.
+        """
+        f = tmp_path / "src" / "delegation" / "routing_tier_invoker.py"
+        f.parent.mkdir(parents=True)
+        f.write_text(_SHELLOUT, encoding="utf-8")
+        v = ValidatorCanonicalInference(
+            contract=_open_contract(),
+            repo="test_repo",
+            baseline_path=_empty_baseline(tmp_path),
+            repo_root=tmp_path,
+        )
+        result = v.validate_file(f)
+        assert not result.is_valid, "codex-as-tier must still fail closed"
+        assert result.issues[0].code == RULE_MODEL_CLI_SHELLOUT
+
+    def test_sibling_inference_module_not_covered_by_agent_node_contract(
+        self, tmp_path: Path
+    ) -> None:
+        """An agent node's contract must not bleed onto an unrelated sibling tree.
+
+        The carve-out is scoped to the node dir that owns the contract.yaml, not
+        to arbitrary files elsewhere in the repo.
+        """
+        # An agent node exists ...
+        _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=_SHELLOUT,
+            node_dir="src/omnibase_infra/nodes/node_agent",
+        )
+        # ... but a shell-out in a different, contract-less module still fails.
+        rogue = tmp_path / "src" / "delegation" / "rogue.py"
+        rogue.parent.mkdir(parents=True)
+        rogue.write_text(_SHELLOUT, encoding="utf-8")
+        v = ValidatorCanonicalInference(
+            contract=_open_contract(),
+            repo="test_repo",
+            baseline_path=_empty_baseline(tmp_path),
+            repo_root=tmp_path,
+        )
+        result = v.validate_file(rogue)
+        assert not result.is_valid
+        assert result.issues[0].code == RULE_MODEL_CLI_SHELLOUT
+
+    def test_cli_staged_shellout_in_agent_node_exit_0(self, tmp_path: Path) -> None:
+        """CLI staged-files mode: an agent-node shell-out passes (exit 0)."""
+        from omnibase_core.validation.validator_canonical_inference import main
+
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=_SHELLOUT,
+        )
+        rc = main(
+            [
+                str(handler),
+                "--repo",
+                "r",
+                "--repo-root",
+                str(tmp_path),
+                "--baseline",
+                str(_empty_baseline(tmp_path)),
+            ]
+        )
+        assert rc == 0
+
+    def test_cli_staged_shellout_outside_agent_node_exit_1(
+        self, tmp_path: Path
+    ) -> None:
+        """CLI staged-files mode: a non-agent shell-out still fails (exit 1)."""
+        from omnibase_core.validation.validator_canonical_inference import main
+
+        handler = _node_with_contract(
+            tmp_path,
+            descriptor="node_archetype: effect\n",
+            handler_src=_SHELLOUT,
+        )
+        rc = main(
+            [
+                str(handler),
+                "--repo",
+                "r",
+                "--repo-root",
+                str(tmp_path),
+                "--baseline",
+                str(_empty_baseline(tmp_path)),
+            ]
+        )
+        assert rc == 1
+
+    def test_full_tree_scan_permits_agent_node_only(self, tmp_path: Path) -> None:
+        """scan_tree carve-out: agent-node shell-out passes, rogue one is reported."""
+        _node_with_contract(
+            tmp_path,
+            descriptor="agent_invocation: true\n",
+            handler_src=_SHELLOUT,
+            node_dir="src/omnibase_infra/nodes/node_agent",
+        )
+        rogue = tmp_path / "src" / "delegation" / "rogue.py"
+        rogue.parent.mkdir(parents=True)
+        rogue.write_text(_SHELLOUT, encoding="utf-8")
+
+        vs = scan_tree("r", tmp_path)
+        reported = {v.path for v in vs}
+        assert any(p.endswith("rogue.py") for p in reported), reported
+        assert not any("node_agent" in p for p in reported), reported

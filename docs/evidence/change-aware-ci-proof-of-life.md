@@ -8,7 +8,6 @@ captured until the workflow-modifying PRs (#936–#939) land on `main`.
 
 A follow-up worker must execute the runbook below once the stack is merged.
 
-Linear ticket: OMN-9861
 Plan: `docs/plans/change-aware-ci-omnibase-core.md`
 
 ---
@@ -63,7 +62,7 @@ git checkout -b jonah/omn-9861-proof-cli origin/main
 # Add a trailing blank line to cli/__init__.py (or a trivial docstring edit)
 echo "" >> src/omnibase_core/cli/__init__.py
 git add src/omnibase_core/cli/__init__.py
-git commit -m "chore(OMN-9861): proof-of-life — cli whitespace edit"
+git commit -m "chore: proof-of-life — cli whitespace edit"
 
 # Before pushing the smart-suite branch, record the existing test-durations cache keys.
 gh api "repos/OmniNode-ai/omnibase_core/actions/caches?key=test-durations" \
@@ -73,8 +72,8 @@ git push -u origin jonah/omn-9861-proof-cli
 
 gh pr create \
   --repo OmniNode-ai/omnibase_core \
-  --title "OMN-9861: proof-of-life small-scope (cli only)" \
-  --body "Proof-of-life PR for OMN-9861. Touches only cli/__init__.py — expect smart-mode, split_count=1."
+  --title "proof-of-life small-scope (cli only)" \
+  --body "Proof-of-life PR. Touches only cli/__init__.py — expect smart-mode, split_count=1."
 ```
 
 Record the PR number: **SMALL_PR=<N>**
@@ -158,13 +157,13 @@ git fetch origin main
 git checkout -b jonah/omn-9861-proof-shared origin/main
 echo "" >> src/omnibase_core/models/__init__.py
 git add src/omnibase_core/models/__init__.py
-git commit -m "chore(OMN-9861): proof-of-life — shared models whitespace edit"
+git commit -m "chore: proof-of-life — shared models whitespace edit"
 git push -u origin jonah/omn-9861-proof-shared
 
 gh pr create \
   --repo OmniNode-ai/omnibase_core \
-  --title "OMN-9861: proof-of-life shared-module (models/__init__.py)" \
-  --body "Proof-of-life PR for OMN-9861. Touches models/__init__.py — expect full suite, split_count=40."
+  --title "proof-of-life shared-module (models/__init__.py)" \
+  --body "Proof-of-life PR. Touches models/__init__.py — expect full suite, split_count=40."
 ```
 
 Record the PR number: **SHARED_PR=<N>**
@@ -251,7 +250,7 @@ Then commit:
 
 ```bash
 git add docs/evidence/change-aware-ci-proof-of-life.md
-git commit -m "docs(OMN-9861): proof of life — change-aware CI test selection (live evidence captured)"
+git commit -m "docs: proof of life — change-aware CI test selection (live evidence captured)"
 git push
 ```
 
@@ -303,7 +302,7 @@ PENDING
 
 ---
 
-## Acceptance Criteria (from OMN-9861)
+## Acceptance Criteria
 
 Per the ticket's exact acceptance criteria:
 

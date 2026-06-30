@@ -58,6 +58,6 @@ Related docs:
 ## Historical Material
 
 The old protocol architecture audit was removed from primary Core docs during
-the OMN-9599 documentation refresh. The current repository-relevant truth is
+an earlier documentation refresh. The current repository-relevant truth is
 captured above: Core owns Core-native protocols; SPI depends on Core; Core must
 not import SPI or infrastructure implementations.

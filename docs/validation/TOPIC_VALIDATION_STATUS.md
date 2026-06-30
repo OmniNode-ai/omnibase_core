@@ -2,7 +2,7 @@
 
 **Owner:** `omnibase_core`
 **Last verified:** 2026-04-24
-**Verification:** `uv run onex-validate-topics . --verbose`, OMN-9599 docs pass
+**Verification:** `uv run onex-validate-topics . --verbose`, docs pass
 
 This page records the current Core-owned topic validation boundary.
 
@@ -46,10 +46,9 @@ Failure categories:
 
 ## Cleanup Boundary
 
-Cleanup sequencing was executed across PRs #890 (OMN-9589, OMN-9588, OMN-9591)
-and #892 (OMN-9586, OMN-9587). Remaining violations are tracked in OMN-9599.
-That history is execution context, not the current topic architecture source of
-truth.
+Cleanup sequencing was executed across PRs #890 and #892 in an earlier pass.
+Remaining violations were tracked and resolved; that history is execution
+context, not the current topic architecture source of truth.
 
 Current truth lives in:
 

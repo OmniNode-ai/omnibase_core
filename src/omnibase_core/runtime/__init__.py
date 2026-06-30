@@ -5,17 +5,32 @@
 ONEX Runtime Module.
 
 Runtime infrastructure for ONEX node execution,
-including contract file loading.
+including contract file loading and the local runtime orchestrator.
 
 Components:
     - FileRegistry: Loads YAML contract files with fail-fast validation
+    - RuntimeLocal: Local runtime orchestrator for contract-declared workflows
+    - LocalRuntimeBusAdapter: Bridges ONEX handlers to the in-memory event bus
 
 Related:
     - OMN-229: FileRegistry for contract file loading
+    - OMN-13444: RuntimeLocal relocated from omnibase_infra (local-first re-convergence)
 """
 
 from omnibase_core.runtime.runtime_file_registry import FileRegistry
+from omnibase_core.runtime.runtime_local import (
+    ResolvedRoutingEntry,
+    RuntimeLocal,
+    load_workflow_contract,
+    parse_backend_overrides,
+)
+from omnibase_core.runtime.runtime_local_adapter import LocalRuntimeBusAdapter
 
 __all__ = [
     "FileRegistry",
+    "LocalRuntimeBusAdapter",
+    "ResolvedRoutingEntry",
+    "RuntimeLocal",
+    "load_workflow_contract",
+    "parse_backend_overrides",
 ]

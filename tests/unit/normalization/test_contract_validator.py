@@ -51,9 +51,11 @@ def _clean_effect_contract() -> dict[str, Any]:
             "routing_strategy": "operation_match",
             "handlers": [
                 {
-                    "routing_key": "foo.run",
-                    "handler_key": "handle_foo_run",
-                    "priority": 0,
+                    "operation": "foo.run",
+                    "handler": {
+                        "name": "HandlerFooRun",
+                        "module": "foo.bar.handlers",
+                    },
                 }
             ],
         },

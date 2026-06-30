@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# topic_registry.yaml — canonical ONEX event-bus topic registry.
+#
+# This file is the authoritative record of every ONEX topic that has been
+# formally registered with:
+#   - a durability tier (durable | transient | ephemeral)
+#   - a schema_ref pointing at the canonical Pydantic model
+#   - the owning service/system
+#
+# Resolution contract:
+#   Topic names here must match the corresponding TopicBase enum value in
+#   omnibase_core.topics (topics.py). The enum value is the wire name.
+#
+# Durability tiers:
+#   durable   — broker retains data; consumers can replay (e.g. Kafka with
+#               retention > 0).  Use for audit, projection, governance.
+#   transient — broker drops data on consumer disconnect; no replay guarantee.
+#   ephemeral — in-memory only; never routed through a durable broker.
+#
+# Adding a new topic:
+#   1. Add a TopicBase entry in topics.py with the # onex-topic-sot marker.
+#   2. Add an entry below in alphabetical order by topic name.
+#   3. Set schema_ref to the fully-qualified Pydantic class name.
+#   4. Run the topic drift check: python -m omnibase_core.validation.validator_hardcoded_topics
+#   5. Cite this file in the PR body.
+
+schema_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+topics:
+  # ---------------------------------------------------------------------------
+  # Platform — runtime health
+  # ---------------------------------------------------------------------------
+  - topic: onex.evt.platform.log-entry.v1  # onex-topic-sot
+    introduced_in: OMN-13703
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: omnibase_core.models.logging.model_structured_log_entry.ModelStructuredLogEntry
+    description: >
+      Structured log entry emitted by any ONEX handler or node onto the event bus.  Consumed by node_log_projection
+      (omnimarket) to build queryable log state and by omnidash for live log streaming.
+    tags:
+      - platform
+      - logging
+      - projection
+
+  - topic: onex.evt.platform.runtime-manifest-published.v1  # onex-topic-sot
+    introduced_in: OMN-11194
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: ~
+    description: >
+      Emitted when the runtime node manifest is published or refreshed.
+    tags:
+      - platform
+      - runtime
+
+  - topic: onex.evt.platform.projection-degraded.v1  # onex-topic-sot
+    introduced_in: OMN-11194
+    owner: omnibase_core
+    durability_tier: transient
+    schema_ref: ~
+    description: >
+      Emitted when a projection enters a degraded state (lag, errors, staleness).
+    tags:
+      - platform
+      - projection
+      - health
+
+  - topic: onex.evt.platform.projection-recovered.v1  # onex-topic-sot
+    introduced_in: OMN-11194
+    owner: omnibase_core
+    durability_tier: transient
+    schema_ref: ~
+    description: >
+      Emitted when a degraded projection recovers to healthy state.
+    tags:
+      - platform
+      - projection
+      - health

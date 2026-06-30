@@ -51,7 +51,7 @@ Handler enums provide typed classifications for handler systems in the ONEX fram
 
 **Purpose**: Behavioral classification of handlers (pure vs impure, deterministic vs non-deterministic).
 
-**Added**: v0.4.0 (OMN-1085)
+**Added**: v0.4.0
 
 ```python
 from omnibase_core.enums import EnumHandlerTypeCategory
@@ -88,7 +88,7 @@ elif category == EnumHandlerTypeCategory.EFFECT:
 
 **Purpose**: Unified handler capabilities that span all node types.
 
-**Added**: v0.4.0 (OMN-1085)
+**Added**: v0.4.0
 
 ```python
 from omnibase_core.enums import EnumHandlerCapability
@@ -136,7 +136,7 @@ if EnumHandlerCapability.CACHE in handler.capabilities:
 
 **Purpose**: Capabilities specific to COMPUTE nodes in the four-node architecture.
 
-**Added**: v0.4.0 (OMN-1085)
+**Added**: v0.4.0
 
 ```python
 from omnibase_core.enums import EnumComputeCapability
@@ -165,7 +165,7 @@ if EnumComputeCapability.TRANSFORM in handler.capabilities:
 
 **Purpose**: Capabilities specific to EFFECT nodes in the four-node architecture.
 
-**Added**: v0.4.0 (OMN-1085)
+**Added**: v0.4.0
 
 ```python
 from omnibase_core.enums import EnumEffectCapability
@@ -196,7 +196,7 @@ if EnumEffectCapability.HTTP in handler.capabilities:
 
 **Purpose**: Typed command identifiers for handler operations.
 
-**Added**: v0.4.0 (OMN-1085)
+**Added**: v0.4.0
 
 ```python
 from omnibase_core.enums import EnumHandlerCommandType
@@ -440,7 +440,7 @@ health_status = EnumHealthStatus.HEALTHY
 
 **Purpose**: Canonical execution status for ONEX lifecycle tracking.
 
-**Updated**: v0.6.4 (OMN-1310) - Consolidated from multiple status enums.
+**Updated**: v0.6.4 — Consolidated from multiple status enums.
 
 ```python
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
@@ -512,7 +512,7 @@ if EnumExecutionStatus.is_cancelled(status):
 
 **Purpose**: Canonical workflow status for ONEX workflow lifecycle.
 
-**Updated**: v0.6.4 (OMN-1310) - Consolidated from EnumWorkflowState and enum_workflow_coordination.EnumWorkflowStatus.
+**Updated**: v0.6.4 — Consolidated from `EnumWorkflowState` and `enum_workflow_coordination.EnumWorkflowStatus`.
 
 ```python
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
@@ -570,7 +570,7 @@ assert not EnumWorkflowStatus.is_error_state(status)  # Not an error
 
 **Purpose**: Canonical operation status for API and service operations.
 
-**Updated**: v0.6.4 (OMN-1310) - Consolidated from enum_execution.EnumOperationStatus.
+**Updated**: v0.6.4 — Consolidated from `enum_execution.EnumOperationStatus`.
 
 ```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
@@ -878,7 +878,7 @@ This classification hierarchy enables:
 3. **Capability-based selection**: Choose handlers that support required features
 4. **Type-safe dispatching**: Use typed commands instead of magic strings
 
-### Status Enum Relationships (OMN-1310)
+### Status Enum Relationships
 
 Status enums are organized by semantic category:
 

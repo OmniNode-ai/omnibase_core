@@ -1,0 +1,35 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-13530"
+title: "Validator requiring operation on operation_match handler entries"
+summary: >
+  Adds an omnibase_core validator, pre-commit hook, and CI workflow that fail when handler_routing entries
+  using operation_match, or the runtime's absent-strategy default branch, omit a non-empty operation field.
+  This is the enforcement gate for the routing regression that broke multiple headless automation contracts.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "Operation-match validator unit tests and local hook wiring pass."
+    command: "uv run pytest tests/unit/validators/test_operation_match_requires_operation.py -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-omnibase-core-pr-1310"
+    description: "omnibase_core PR #1310 adds the validator, model, hook exports, CI workflow, and unit
+      tests."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view ${PR_NUMBER} --repo ${REPO} --json headRefOid -q .headRefOid"
+  - id: "dod-deploy-no-runtime-impact"
+    description: "Static validation gate only; no live deploy, runtime process, broker topic, or schema
+      migration required before merge."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-13530 ships a static validator/pre-commit/CI gate; no live
+          deploy required before merge'"

@@ -4,7 +4,7 @@
 
 **Purpose**: Track the conversion of mixins to composition-based handlers for the ONEX pipeline.
 
-**Related Ticket**: OMN-1112 - First Pure Handler Conversions
+**Purpose**: First Pure Handler Conversions
 
 **Last Updated**: 2026-01-03
 
@@ -43,8 +43,8 @@ First conversions demonstrating the mixin-to-handler pattern with stub implement
 
 | Mixin | Handler | Status | Ticket | Notes |
 |-------|---------|--------|--------|-------|
-| `MixinMetrics` | `HandlerCapabilityMetrics` | Completed | OMN-1112 | First conversion - stub impl |
-| `MixinCaching` | `HandlerCapabilityCaching` | Completed | OMN-1112 | First conversion - stub impl |
+| `MixinMetrics` | `HandlerCapabilityMetrics` | Completed | — | First conversion - stub impl |
+| `MixinCaching` | `HandlerCapabilityCaching` | Completed | — | First conversion - stub impl |
 
 ### MixinMetrics -> HandlerCapabilityMetrics
 
@@ -54,7 +54,7 @@ First conversions demonstrating the mixin-to-handler pattern with stub implement
 - [x] All original mixin tests pass
 - [x] Handler works standalone (no inheritance)
 - [x] Added to `pipeline/handlers/__init__.py`
-- [x] Ticket closed: OMN-1112
+- [x] Conversion complete
 
 **Location**: `src/omnibase_core/pipeline/handlers/handler_capability_metrics.py`
 
@@ -66,7 +66,7 @@ First conversions demonstrating the mixin-to-handler pattern with stub implement
 - [x] All original mixin tests pass
 - [x] Handler works standalone (no inheritance)
 - [x] Added to `pipeline/handlers/__init__.py`
-- [x] Ticket closed: OMN-1112
+- [x] Conversion complete
 
 **Location**: `src/omnibase_core/pipeline/handlers/handler_capability_caching.py`
 

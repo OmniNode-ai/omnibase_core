@@ -4,7 +4,7 @@
 
 **Version**: 1.0.0
 **Last Updated**: 2025-12-12
-**Related Issue**: OMN-203 (AST-based purity linter for declarative nodes)
+**Related Issue**: AST-based purity linter for declarative nodes
 
 ## Overview
 
@@ -524,7 +524,7 @@ Found 3 purity violations in 1 file.
 
 ## Migration Guide
 
-### Step 1: Identify Violations
+### Identify Violations
 
 Run the linter to find all violations:
 
@@ -545,7 +545,7 @@ uv run python scripts/check_node_purity.py --json
 uv run python scripts/check_node_purity.py --strict
 ```
 
-### Step 2: Replace `Any` with Typed Alternatives
+### Replace `Any` With Typed Alternatives
 
 **Before** (violation):
 ```python
@@ -580,7 +580,7 @@ class NodeDataProcessor(NodeCompute):
         ...
 ```
 
-### Step 3: Move Side Effects to NodeEffect
+### Move Side Effects to NodeEffect
 
 **Before** (violation in NodeCompute):
 ```python
@@ -609,7 +609,7 @@ class NodeDataProcessorEvents(NodeEffect):
         return ModelEffectOutput(success=True)
 ```
 
-### Step 4: Replace Event Mixins with Intents
+### Replace Event Mixins With Intents
 
 For reducers that need to trigger side effects, use the Intent pattern:
 
@@ -645,7 +645,7 @@ class NodeMetricsReducer(NodeReducer, MixinIntentPublisher):
         )
 ```
 
-### Step 5: Validate Migration
+### Validate Migration
 
 After migration, verify:
 

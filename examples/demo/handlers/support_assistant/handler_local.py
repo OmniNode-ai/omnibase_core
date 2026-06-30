@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-internal-ip OMN-13480 reason="this is a demo LocalLLMClient whose entire subject IS a local/self-hosted LLM endpoint; the docstring example and DEFAULT_ENDPOINT constant intentionally show a localhost vLLM URL as illustrative demonstration data, not a production runtime endpoint"
 
 """Local LLM client implementation using httpx.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
@@ -10,7 +11,7 @@ Example:
     Using with local vLLM server::
 
         client = LocalLLMClient(
-            endpoint_url="http://localhost:8000",
+            endpoint_url="http://localhost:8000",  # url-authority-ok: local demo endpoint
             model_name="qwen2.5-14b",
         )
         response = await client.complete("Hello, how are you?")
@@ -43,7 +44,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
 # Default config - use localhost; override via LOCAL_LLM_ENDPOINT
-DEFAULT_ENDPOINT = "http://localhost:8000"
+DEFAULT_ENDPOINT = "http://localhost:8000"  # url-authority-ok: local demo default
 DEFAULT_MODEL = "qwen2.5-14b"
 DEFAULT_TIMEOUT = 60.0
 

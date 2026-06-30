@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# generated-node model-class-existence gate [OMN-13609]
+#
+# Required status check context:
+#   "generated-node model-class-existence Validator / validate"
+#
+# WS-C Phase 1.1 (epic OMN-13604). Ported from the SEA generation pipeline's
+# model_types check, the authoritative logic lives in the canonical validator
+# platform (omnibase_core.validation.validator_contract_linter.validate_model_class_existence).
+# This gate runs the validator unit tests, then self-scans omnibase_core/src for
+# any generated node whose contract declares an inline input_model / output_model
+# class name that is not bound at the top level of the co-located handler.py.
+# Hand-authored nodes that declare a fully-qualified dotted importable model path
+# are deliberately out of scope. Consumer repos wire this by adding the
+# generated-node-model-class-exists pre-commit hook and a mirror of the `validate`
+# job in their own CI.
+
+name: generated-node model-class-existence Validator
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+  merge_group:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: validator-generated-node-model-class-exists-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_generated_node_model_class_exists.py \
+            tests/unit/validation/test_validator_contract_linter.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.generated_node_model_class_exists src/omnibase_core

@@ -82,6 +82,38 @@ _FORBIDDEN_IMPORT_PATTERNS = [
 ]
 
 
+def _is_basemodel_subclass(node: ast.ClassDef) -> bool:
+    """Return whether a class inherits from a BaseModel-like class."""
+    return any("BaseModel" in ast.unparse(base).split(".")[-1] for base in node.bases)
+
+
+def _extract_annotated_model_fields(
+    node: ast.ClassDef,
+) -> list[TypedDictModelFieldInfo]:
+    """Extract annotated field names and types from a model class."""
+    fields: list[TypedDictModelFieldInfo] = []
+    for item in node.body:
+        if not isinstance(item, ast.AnnAssign) or not isinstance(item.target, ast.Name):
+            continue
+
+        fields.append(
+            {
+                "name": item.target.id,
+                "type": ast.unparse(item.annotation) if item.annotation else "Any",
+            }
+        )
+    return fields
+
+
+def _build_model_class_info(node: ast.ClassDef) -> TypedDictModelClassInfo:
+    """Build validator metadata for a Pydantic model class."""
+    return {
+        "name": node.name,
+        "fields": _extract_annotated_model_fields(node),
+        "bases": [ast.unparse(base) for base in node.bases],
+    }
+
+
 @dataclass
 class _ComplianceRuleImpl:
     """Concrete implementation of ProtocolComplianceRule."""
@@ -661,35 +693,8 @@ class ServiceContractValidator:
         model_classes: list[TypedDictModelClassInfo] = []
 
         for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
-                # Check if it's a BaseModel subclass
-                for base in node.bases:
-                    if isinstance(base, ast.Name) and "BaseModel" in base.id:
-                        # Extract fields
-                        fields: list[TypedDictModelFieldInfo] = []
-                        for item in node.body:
-                            if isinstance(item, ast.AnnAssign) and isinstance(
-                                item.target, ast.Name
-                            ):
-                                field_name = item.target.id
-                                field_type = (
-                                    ast.unparse(item.annotation)
-                                    if item.annotation
-                                    else "Any"
-                                )
-                                field_info: TypedDictModelFieldInfo = {
-                                    "name": field_name,
-                                    "type": field_type,
-                                }
-                                fields.append(field_info)
-
-                        model_info: TypedDictModelClassInfo = {
-                            "name": node.name,
-                            "fields": fields,
-                            "bases": [ast.unparse(b) for b in node.bases],
-                        }
-                        model_classes.append(model_info)
-                        break
+            if isinstance(node, ast.ClassDef) and _is_basemodel_subclass(node):
+                model_classes.append(_build_model_class_info(node))
 
         return model_classes
 

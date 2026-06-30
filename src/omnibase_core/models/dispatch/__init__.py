@@ -9,7 +9,10 @@ based on topic category and message type, and publishes handler outputs.
 
 Exports:
 - **ModelDispatchRoute**: Routing rules that map topic patterns to handlers
-- **ModelDispatchResult**: Results of dispatch operations with metrics
+- **ModelDispatchResult**: Results of dispatch operations with metrics (rich shape, OMN-12546)
+- **ModelDispatchOutputs**: Validated list of output topics from a dispatch operation
+- **ModelDispatchMetadata**: Strongly-typed metadata for dispatch operations
+- **ModelHandlerRef**: Handler class reference for contract handler_routing
 - **ModelHandlerRegistration**: Handler registration metadata
 - **EnumDispatchStatus**: Status values for dispatch outcomes
 
@@ -71,13 +74,15 @@ Usage:
     >>> route.matches_topic("dev.user.events.v1")
     True
     >>>
-    >>> # Create a dispatch result
+    >>> # Create a dispatch result (started_at is required on the rich shape)
+    >>> from datetime import datetime, UTC
     >>> result = ModelDispatchResult(
     ...     dispatch_id=uuid4(),
     ...     status=EnumDispatchStatus.SUCCESS,
     ...     topic="dev.user.events.v1",
     ...     route_id="user-route",
-    ...     handler_id="user-handler",
+    ...     dispatcher_id="user-handler",
+    ...     started_at=datetime.now(UTC),
     ... )
 
 See Also:
@@ -117,9 +122,12 @@ from omnibase_core.models.dispatch.model_dispatch_eval_result import (
 from omnibase_core.models.dispatch.model_dispatch_lifecycle_event import (
     ModelDispatchLifecycleEvent,
 )
+from omnibase_core.models.dispatch.model_dispatch_metadata import ModelDispatchMetadata
+from omnibase_core.models.dispatch.model_dispatch_outputs import ModelDispatchOutputs
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
 from omnibase_core.models.dispatch.model_handler_registration import (
     ModelHandlerRegistration,
 )
@@ -161,10 +169,13 @@ __all__ = [
     "ModelDispatchBusTerminalResult",
     "ModelDispatchLifecycleEvent",
     "ModelDispatchEvalResult",
+    "ModelDispatchMetadata",
+    "ModelDispatchOutputs",
     "ModelDispatchResult",
     "ModelDispatchRoute",
     "ModelCallRecord",
     "ModelHandlerOutput",
+    "ModelHandlerRef",
     "ModelHandlerRegistration",
     "ModelParsedTopic",
     "ModelSkillResult",

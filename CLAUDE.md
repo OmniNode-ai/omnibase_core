@@ -1,3 +1,5 @@
+<!-- onex-allow-file-todo-marker reason="repository policy guide intentionally documents TODO marker examples" -->
+
 # CLAUDE.md - Omnibase Core
 
 > **Python**: 3.12+ | **Framework**: ONEX Core | **Package Manager**: uv | **Shared Standards**: See **`~/.claude/CLAUDE.md`** for shared development standards (Python, Git, testing, architecture principles) and infrastructure configuration (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
@@ -36,7 +38,7 @@ These are non-negotiable architectural truths:
 
 ---
 
-## Agent Behavioral Rules (OMN-6888)
+## Agent Behavioral Rules
 
 ### Autonomous mode safety rails
 
@@ -153,7 +155,7 @@ When spawning polymorphic agents or AI assistants:
 
 **Enforcement**: Pydantic validator at `ModelHandlerOutput` constructor + runtime validation + CI `node-purity-check` job.
 
-### Runtime-synthesized terminal events (OMN-8940)
+### Runtime-synthesized terminal events
 
 Synchronous-return handlers invoked via `RuntimeLocal._run_single_handler` receive
 a **runtime-synthesized terminal event** after successful result classification.
@@ -251,11 +253,11 @@ failure would be worse than a documented failure event.
 | Replay/Corpus System | `src/omnibase_core/models/replay/`, `services/replay/`, `protocols/replay/` |
 | DB Validation | `src/omnibase_core/validation/db/` |
 | Claude Code Hooks | `src/omnibase_core/models/hooks/`, `enums/hooks/` |
-| ArtifactStore | `src/omnibase_core/artifacts/artifact_store.py` — content-addressed artifact storage (OMN-13093) |
+| ArtifactStore | `src/omnibase_core/artifacts/artifact_store.py` — content-addressed artifact storage |
 | Dispatch Bus Client | `src/omnibase_core/dispatch/dispatch_bus_client.py` — typed dispatch surface over the event bus |
 | Doctor Health Checks | `src/omnibase_core/doctor/` — extensible health-check registry; checks registered in `onex.doctor` entry-point group |
 | In-Memory Event Bus | `src/omnibase_core/event_bus/event_bus_inmemory.py` — registered in `onex.backends` entry-point group |
-| OmniGate | `src/omnibase_core/gate/` — config loader, diff hash, receipt canonical (OMN-11137/11139/11140) |
+| OmniGate | `src/omnibase_core/gate/` — config loader, diff hash, receipt canonical |
 
 ### File Naming Conventions
 
@@ -299,9 +301,9 @@ failure would be worse than a documented failure event.
 
 **Mutable defaults**: ALWAYS use `default_factory` — e.g. `items: list[str] = Field(default_factory=list)`
 
-### Plan Contract Enforcement Fields (OMN-8421)
+### Plan Contract Enforcement Fields
 
-`ModelPlanContract` carries plan-level enforcement metadata for the OMN-8416 plan → epic → tickets → PR → dogfood chain. When adding a new plan, set `epic_id` (Linear epic in `^OMN-\d+$` format), `plan_phases`, `success_criteria` (via `ModelDoDItem`), and `halt_conditions` at the top level — not in `context`. The existing `phase: EnumPlanPhase` lifecycle field is distinct from `plan_phases: list[str]` and must not be confused.
+`ModelPlanContract` carries plan-level enforcement metadata for the plan → epic → tickets → PR → dogfood chain. When adding a new plan, set `epic_id` (Linear epic identifier), `plan_phases`, `success_criteria` (via `ModelDoDItem`), and `halt_conditions` at the top level — not in `context`. The existing `phase: EnumPlanPhase` lifecycle field is distinct from `plan_phases: list[str]` and must not be confused.
 
 **See**: [Pydantic Best Practices](docs/conventions/PYDANTIC_BEST_PRACTICES.md)
 
@@ -313,7 +315,7 @@ failure would be worse than a documented failure event.
 
 ```python
 # Correct - with Linear ticket
-# TODO(OMN-1234): Add validation for edge case
+# TODO(TICKET-ID): Add validation for edge case
 
 # Wrong - missing ticket
 # TODO: Fix this later
@@ -323,7 +325,7 @@ failure would be worse than a documented failure event.
 
 ```python
 # Correct - specific code + explanation
-# NOTE(OMN-1234): mypy false-positive due to Protocol-based DI.
+# NOTE(TICKET-ID): mypy false-positive due to Protocol-based DI.
 value = container.get_service("ProtocolLogger")  # type: ignore[arg-type]
 
 # Wrong - generic ignore

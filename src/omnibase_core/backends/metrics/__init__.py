@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-internal-ip OMN-13480 reason="module docstring usage examples show a localhost push-gateway URL as illustrative example data, not a runtime endpoint"
 
 """
 Metrics Backends Module - Backend implementations for metrics collection.
@@ -40,7 +41,7 @@ Prometheus Usage (when prometheus-client is installed):
         # Create a Prometheus backend
         backend = BackendMetricsPrometheus(
             prefix="myapp",
-            push_gateway_url="http://localhost:9091",  # Optional
+            push_gateway_url="http://localhost:9091",  # Optional  # url-authority-ok: local Prometheus example
         )
         backend.record_gauge("memory_usage", 1024.0)
         backend.push()  # Push to gateway if configured

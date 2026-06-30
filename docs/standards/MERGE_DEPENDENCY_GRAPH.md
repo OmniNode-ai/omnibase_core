@@ -6,7 +6,7 @@
 > **Last Updated**: 2026-02-24
 > **Status**: Canonical Reference
 > **Purpose**: Cross-repo merge ordering for coordinated multi-repo releases
-> **Ticket**: OMN-2290
+> **Status**: Canonical Reference
 
 ---
 
@@ -293,4 +293,4 @@ Merge in any order:
 **Document Version**: 1.0.0
 **Created**: 2026-02-24
 **Author**: ONEX Framework Team
-**Linear Ticket**: OMN-2290
+**Author**: ONEX Framework Team

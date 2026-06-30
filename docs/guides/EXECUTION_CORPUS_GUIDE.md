@@ -517,7 +517,7 @@ handlers = corpus.get_unique_handlers()
 - **Source Code**: `omnibase_core.models.replay.model_execution_corpus`
 - **Manifest Model**: `omnibase_core.models.manifest.model_execution_manifest`
 - **Replay Context**: `omnibase_core.models.replay.model_replay_context`
-- **Related Issue**: OMN-1202
+- **Related Model**: See `omnibase_core.models.replay.model_execution_corpus`
 
 ---
 
