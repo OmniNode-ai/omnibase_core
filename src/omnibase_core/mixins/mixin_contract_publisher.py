@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -59,6 +60,8 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_publisher import (
 
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+logger = logging.getLogger(__name__)
 
 
 class MixinContractPublisher:
@@ -300,9 +303,15 @@ class MixinContractPublisher:
                 await asyncio.sleep(interval_seconds)
             except asyncio.CancelledError:
                 raise  # Propagate cancellation
-            except Exception:  # noqa: BLE001  # fallback-ok: heartbeat transient errors must not stop liveness signals
-                # Swallow error and continue heartbeating - transient errors shouldn't
-                # stop liveness signals. Consumers can detect issues via heartbeat gaps.
+            except Exception as exc:  # noqa: BLE001  # fallback-ok: heartbeat transient errors must not stop liveness signals
+                # Log-and-continue heartbeating - transient errors shouldn't stop
+                # liveness signals. Consumers can detect issues via heartbeat gaps,
+                # but the failure must be observable instead of silently swallowed.
+                logger.warning(
+                    "contract heartbeat emit failed; continuing liveness loop: %s",
+                    exc,
+                    exc_info=True,
+                )
                 await asyncio.sleep(interval_seconds)
 
     async def _emit_heartbeat(self) -> None:
