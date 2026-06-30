@@ -688,15 +688,6 @@ wheels = [
 ]
 
 [[package]]
-name = "omnibase-compat"
-version = "0.3.1"
-source = { git = "https://github.com/OmniNode-ai/omnibase_compat.git?branch=main#d86ee00a8b585f9bf32b1ec7c8e785843e4957b0" }
-dependencies = [
-    { name = "pydantic" },
-    { name = "typing-extensions" },
-]
-
-[[package]]
 name = "omnibase-core"
 version = "0.46.1"
 source = { editable = "." }
@@ -722,13 +713,9 @@ cache = [
 cli = [
     { name = "psutil" },
 ]
-compat = [
-    { name = "omnibase-compat" },
-]
 full = [
     { name = "aiokafka" },
     { name = "confluent-kafka" },
-    { name = "omnibase-compat" },
     { name = "omnibase-spi" },
     { name = "prometheus-client" },
     { name = "psutil" },
@@ -788,8 +775,6 @@ requires-dist = [
     { name = "dependency-injector", specifier = ">=4.48.3,<5.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "jsonschema", specifier = ">=4.25.1,<5.0.0" },
-    { name = "omnibase-compat", marker = "extra == 'compat'", git = "https://github.com/OmniNode-ai/omnibase_compat.git?branch=main" },
-    { name = "omnibase-compat", marker = "extra == 'full'", git = "https://github.com/OmniNode-ai/omnibase_compat.git?branch=main" },
     { name = "omnibase-spi", marker = "extra == 'full'", specifier = ">=0.20.2" },
     { name = "omnibase-spi", marker = "extra == 'spi'", specifier = ">=0.20.2" },
     { name = "prometheus-client", marker = "extra == 'full'", specifier = ">=0.21.0,<1.0.0" },
@@ -806,7 +791,7 @@ requires-dist = [
     { name = "tree-sitter", specifier = ">=0.25.2,<0.26" },
     { name = "tree-sitter-python", specifier = ">=0.25.0,<0.26" },
 ]
-provides-extras = ["spi", "compat", "cli", "kafka", "cache", "metrics", "sql-parser", "full"]
+provides-extras = ["spi", "cli", "kafka", "cache", "metrics", "sql-parser", "full"]
 
 [package.metadata.requires-dev]
 dev = [
