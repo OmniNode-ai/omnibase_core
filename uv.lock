@@ -799,7 +799,7 @@ dev = [
     { name = "hypothesis", specifier = ">=6.150" },
     { name = "interrogate", specifier = ">=1.7.0" },
     { name = "mypy", specifier = ">=1.19.1" },
-    { name = "onex-change-control", git = "https://github.com/OmniNode-ai/onex_change_control.git?branch=main" },
+    { name = "onex-change-control", git = "https://github.com/OmniNode-ai/onex_change_control.git?rev=41054810a25db826a4c649f491a2d980bffb0c17" },
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "prometheus-client", specifier = ">=0.21.0,<1.0.0" },
     { name = "psutil", specifier = ">=7.2.1" },
@@ -836,7 +836,7 @@ wheels = [
 [[package]]
 name = "onex-change-control"
 version = "0.1.0"
-source = { git = "https://github.com/OmniNode-ai/onex_change_control.git?branch=main#41054810a25db826a4c649f491a2d980bffb0c17" }
+source = { git = "https://github.com/OmniNode-ai/onex_change_control.git?rev=41054810a25db826a4c649f491a2d980bffb0c17#41054810a25db826a4c649f491a2d980bffb0c17" }
 dependencies = [
     { name = "colorama" },
     { name = "pydantic" },
