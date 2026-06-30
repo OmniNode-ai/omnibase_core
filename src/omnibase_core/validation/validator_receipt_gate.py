@@ -114,6 +114,13 @@ from omnibase_core.validation.runtime_sha_match import (
 _CONTRACT_SHA256_REQUIRED_AFTER = datetime(2026, 4, 30, 0, 0, 0, tzinfo=UTC)
 
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
+# Captures each ``omn-<n>(-<n>)*`` cluster on a branch name (OMN-13395). A single
+# PR branch may address several tickets via the ``omn-A-B(-C...)`` convention —
+# e.g. ``jonah/omn-13234-13362-...`` — where only the leading id sits behind the
+# literal ``OMN-`` prefix. The branch axis uses this to test the Evidence-Ticket's
+# number for membership in the cluster. Operates on an upper-cased branch string,
+# matching the case discipline of ``_verify_ticket_identity``.
+DUAL_TICKET_BRANCH_CLUSTER_PATTERN = re.compile(r"(?<![A-Z0-9])OMN-(\d+(?:-\d+)*)")
 CLOSING_KEYWORD_PATTERN = re.compile(
     r"\b(?:Closes|Fixes|Resolves|Implements)\b[:\s]+OMN-(\d+)\b",
     re.IGNORECASE,
@@ -856,7 +863,25 @@ def _verify_ticket_identity(
 
     # Axis 2: Branch name.
     if branch_name is not None:
-        if exact_ticket_pattern.search(branch_name.upper()) is None:
+        branch_upper = branch_name.upper()
+        branch_matches = exact_ticket_pattern.search(branch_upper) is not None
+        if not branch_matches:
+            # Dual-ticket branch convention (OMN-13395): a branch addressing
+            # multiple tickets encodes them as one ``omn-<n>(-<n>)*`` cluster
+            # (e.g. ``jonah/omn-13234-13362-...``). The exact-token pattern above
+            # only matches a literal ``OMN-<n>``, so a trailing id in such a
+            # cluster (preceded by ``-``, not ``OMN-``) never matches. Test the
+            # Evidence-Ticket's number for membership in each cluster's run.
+            ticket_number = re.search(r"(\d+)$", ticket_upper)
+            if ticket_number is not None:
+                target = ticket_number.group(1)
+                branch_matches = any(
+                    target in cluster.split("-")
+                    for cluster in DUAL_TICKET_BRANCH_CLUSTER_PATTERN.findall(
+                        branch_upper
+                    )
+                )
+        if not branch_matches:
             return (
                 f"IDENTITY BINDING FAILED: branch name does not reference {evidence_ticket}. "
                 f"branch={branch_name!r}, Evidence-Ticket={evidence_ticket!r}. "

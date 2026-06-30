@@ -381,3 +381,147 @@ class TestTicketIdentityBinding:
 
         # Gate should proceed to receipt verification, not fail on missing Evidence-Ticket
         assert result.passed, result.message
+
+
+@pytest.mark.unit
+class TestDualTicketBranchBinding:
+    """Branch-axis matcher tolerates dual-ticket branch names (OMN-13395).
+
+    A single PR branch may address two (or more) tickets, encoded by the
+    ``omn-A-B(-C...)`` convention — e.g. ``jonah/omn-13234-13362-...``. The
+    full-token identity pattern only matches a literal ``OMN-<n>`` token, so a
+    trailing id in such a cluster (``13362``, preceded by ``-`` rather than
+    ``OMN-``) never matched the branch axis. The fix scans every ``omn-<cluster>``
+    run on the branch and tests the Evidence-Ticket's number for membership.
+
+    Axis 1 (PR title) is left unchanged — titles use the comma form
+    ``OMN-A, OMN-B`` that the existing token pattern already handles — so each
+    case below references the Evidence-Ticket in the PR title directly.
+    """
+
+    def _pr_body(self, ticket: str) -> str:
+        return f"Closes {ticket}\n\nEvidence-Source: abc123\nEvidence-Ticket: {ticket}"
+
+    def test_dual_ticket_branch_omn_a_b_passes(self, tmp_path: Path) -> None:
+        """omn-A-B branch with Evidence-Ticket=OMN-B passes the branch axis."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-13362")
+        _write_receipt(receipts, "OMN-13362")
+
+        result = validate_pr_receipts(
+            pr_body=self._pr_body("OMN-13362"),
+            pr_title="feat(OMN-13362): typed tier cost and dual table",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-13234-13362-typed-tier-cost-and-dual-table",
+        )
+
+        assert result.passed, result.message
+
+    def test_dual_ticket_branch_omn_b_a_passes(self, tmp_path: Path) -> None:
+        """omn-B-A branch (Evidence-Ticket leads) passes the branch axis."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-13362")
+        _write_receipt(receipts, "OMN-13362")
+
+        result = validate_pr_receipts(
+            pr_body=self._pr_body("OMN-13362"),
+            pr_title="feat(OMN-13362): typed tier cost and dual table",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-13362-13234-typed-tier-cost-and-dual-table",
+        )
+
+        assert result.passed, result.message
+
+    def test_dual_ticket_branch_first_ticket_passes(self, tmp_path: Path) -> None:
+        """Either member of an omn-A-B branch satisfies the branch axis."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-13234")
+        _write_receipt(receipts, "OMN-13234")
+
+        result = validate_pr_receipts(
+            pr_body=self._pr_body("OMN-13234"),
+            pr_title="feat(OMN-13234): typed tier cost and dual table",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-13234-13362-typed-tier-cost-and-dual-table",
+        )
+
+        assert result.passed, result.message
+
+    def test_triple_ticket_branch_member_passes(self, tmp_path: Path) -> None:
+        """A middle member of an omn-A-B-C cluster satisfies the branch axis."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-13200")
+        _write_receipt(receipts, "OMN-13200")
+
+        result = validate_pr_receipts(
+            pr_body=self._pr_body("OMN-13200"),
+            pr_title="feat(OMN-13200): three ticket cluster",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-13100-13200-13300-three-ticket-cluster",
+        )
+
+        assert result.passed, result.message
+
+    def test_single_ticket_branch_still_passes(self, tmp_path: Path) -> None:
+        """Regression: a plain single-ticket branch keeps passing the branch axis."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-13362")
+        _write_receipt(receipts, "OMN-13362")
+
+        result = validate_pr_receipts(
+            pr_body=self._pr_body("OMN-13362"),
+            pr_title="feat(OMN-13362): typed tier cost",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-13362-typed-tier-cost",
+        )
+
+        assert result.passed, result.message
+
+    def test_dual_ticket_branch_non_member_fails(self, tmp_path: Path) -> None:
+        """A ticket absent from the branch cluster still fails the branch axis."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-9999")
+        _write_receipt(receipts, "OMN-9999")
+
+        result = validate_pr_receipts(
+            pr_body=self._pr_body("OMN-9999"),
+            pr_title="feat(OMN-9999): unrelated ticket",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-13234-13362-typed-tier-cost-and-dual-table",
+        )
+
+        assert not result.passed
+        assert "branch" in result.message.lower()
+        assert "omn-9999" in result.message.lower()
+
+    def test_dual_ticket_branch_numeric_prefix_non_member_fails(
+        self, tmp_path: Path
+    ) -> None:
+        """A numeric-prefix near-miss (omn-133621) is not a cluster member."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-13362")
+        _write_receipt(receipts, "OMN-13362")
+
+        result = validate_pr_receipts(
+            pr_body=self._pr_body("OMN-13362"),
+            pr_title="feat(OMN-13362): typed tier cost",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-13234-133621-wrong-suffix",
+        )
+
+        assert not result.passed
+        assert "branch" in result.message.lower()
