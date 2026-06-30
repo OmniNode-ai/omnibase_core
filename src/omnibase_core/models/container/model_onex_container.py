@@ -77,7 +77,6 @@ if TYPE_CHECKING:
         ProtocolPerformanceMonitor,
     )
 
-import asyncio
 import os
 import tempfile
 import threading
@@ -87,25 +86,8 @@ from pathlib import Path
 # Import needed for type annotations
 from uuid import UUID, uuid4
 
-# OMN-9241: prefer the canonical helper from omnibase_compat (OMN-9237, PR #64)
-# when installed; fall back to an inline equivalent so omnibase-core works as a
-# standalone SDK without the optional compat extra.
-try:
-    from omnibase_compat.concurrency import run_coro_sync
-except ImportError:
-    import concurrent.futures
-    from collections.abc import Coroutine
-    from typing import Any, TypeVar
-
-    _RunT = TypeVar("_RunT")
-
-    def run_coro_sync(coro: "Coroutine[Any, Any, _RunT]") -> "_RunT":
-        try:
-            asyncio.get_running_loop()
-        except RuntimeError:
-            return asyncio.run(coro)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            return executor.submit(asyncio.run, coro).result()
+# OMN-13763: run_coro_sync graduated from omnibase_compat into omnibase_core (OMN-9237).
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
 
 # Import context-based container management

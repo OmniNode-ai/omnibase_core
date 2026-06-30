@@ -148,16 +148,12 @@ node_contract_verify_replay_compute = "omnibase_core.nodes.node_contract_verify_
 
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
-# omnibase-compat provides run_coro_sync (OMN-9237) for sync-from-async bridging.
-# Optional so omnibase-core can be installed as a standalone SDK without it;
-# model_onex_container falls back to an inline equivalent when not installed.
-compat = ["omnibase-compat>=0.4.2,<1.0.0"]
 cli = ["psutil>=7.2.1"]
 kafka = ["aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0"]
 cache = ["redis>=5.0.0,<9.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
-full = ["omnibase-spi>=0.20.2", "omnibase-compat>=0.4.2,<1.0.0", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
+full = ["omnibase-spi>=0.20.2", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
 
 [dependency-groups]
 dev = [
@@ -188,11 +184,6 @@ dev = [
 
 [tool.uv.sources]
 onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_control.git", branch = "main" }
-# Pinned to compat main while compat v0.4.2 (2026-05-31 release wave) is unpublished on PyPI.
-# Switch to a PyPI pin after omnibase-compat v0.4.2 publishes.
-# OMN-13522: compat main has diverged from compat dev (off-dev-line); the OMN-13509
-# gate landing in this same PR found this real divergence — re-pin tracked in OMN-13522.
-omnibase-compat = { git = "https://github.com/OmniNode-ai/omnibase_compat.git", branch = "main" }  # onex-allow-pin-hygiene OMN-13522
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnibase_core"]
