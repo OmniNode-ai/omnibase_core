@@ -16,6 +16,7 @@ Tests the sanitize_context_for_logging() class method including:
 - Type preservation for non-string values
 """
 
+import re
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -736,3 +737,138 @@ class TestValidateNoPII:
         assert is_valid is False
         # Should report exactly one violation for this single value
         assert len(violations) == 1
+
+
+def _patch_re_compile_counter(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    """Patch ``re.compile`` with a counting wrapper and return the call log.
+
+    The module under test does ``import re`` and calls ``re.compile`` on that
+    shared ``re`` module object, so patching ``re.compile`` here is observed by
+    the code under test. The returned list records each compiled pattern string.
+    """
+    compiled: list[str] = []
+    real_compile = re.compile
+
+    def counting_compile(
+        pattern: str | re.Pattern[str],
+        flags: int | re.RegexFlag = 0,
+    ) -> re.Pattern[str]:
+        compiled.append(str(pattern))
+        return real_compile(pattern, flags)
+
+    monkeypatch.setattr(re, "compile", counting_compile)
+    return compiled
+
+
+@pytest.mark.unit
+class TestCompiledPiiPatternCaching:
+    """OMN-823: precompiled PII regex patterns.
+
+    Verifies that the default PII patterns are compiled once at class-load
+    time (cached in ``_COMPILED_PII_PATTERNS``) and that redaction / detection
+    output is byte-for-byte identical to the raw-string baseline.
+    """
+
+    def test_compiled_patterns_built_once_at_class_scope(self) -> None:
+        """The compiled-pattern list is a stable, class-level cache.
+
+        Accessing the ClassVar twice yields the same list object, proving it
+        was built once at class definition (not rebuilt per access/call).
+        """
+        first = ModelWorkflowStateSnapshot._COMPILED_PII_PATTERNS
+        second = ModelWorkflowStateSnapshot._COMPILED_PII_PATTERNS
+        assert first is second
+
+    def test_compiled_patterns_correspond_to_raw_source_of_truth(self) -> None:
+        """Each compiled pattern maps 1:1 to its raw ``_PII_PATTERNS`` entry.
+
+        ``_PII_PATTERNS`` stays the raw source of truth; the compiled list is
+        derived from it with identical pattern text and replacement strings.
+        """
+        raw = ModelWorkflowStateSnapshot._PII_PATTERNS
+        compiled = ModelWorkflowStateSnapshot._COMPILED_PII_PATTERNS
+        assert len(compiled) == len(raw)
+        for (raw_pattern, raw_replacement), (compiled_pattern, replacement) in zip(
+            raw, compiled, strict=True
+        ):
+            assert isinstance(compiled_pattern, re.Pattern)
+            assert compiled_pattern.pattern == raw_pattern
+            assert replacement == raw_replacement
+
+    def test_pattern_labels_align_with_compiled_patterns(self) -> None:
+        """validate_no_pii labels stay aligned 1:1 with the compiled patterns."""
+        assert len(ModelWorkflowStateSnapshot._PII_PATTERN_LABELS) == len(
+            ModelWorkflowStateSnapshot._COMPILED_PII_PATTERNS
+        )
+
+    @pytest.mark.parametrize(
+        ("raw_value", "expected"),
+        [
+            ("john.doe@example.com", "[EMAIL_REDACTED]"),
+            ("555-123-4567", "[PHONE_REDACTED]"),
+            ("123-45-6789", "[SSN_REDACTED]"),
+            ("192.168.1.1", "[IP_REDACTED]"),
+            ("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "[IPV6_REDACTED]"),
+        ],
+    )
+    def test_redaction_output_identical_for_each_pii_type(
+        self, raw_value: str, expected: str
+    ) -> None:
+        """Redaction output matches the raw-string baseline for every PII type."""
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            {"field": raw_value}
+        )
+        assert result["field"] == expected
+
+    def test_additional_patterns_still_applied(self) -> None:
+        """Dynamic additional_patterns are compiled per-call and applied."""
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            {"field": "internal-token-XYZ"},
+            additional_patterns=[(r"internal-token-\w+", "[CUSTOM_REDACTED]")],
+        )
+        assert result["field"] == "[CUSTOM_REDACTED]"
+
+    def test_default_path_does_not_recompile_patterns(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The hot path uses precompiled patterns — no re.compile per call.
+
+        Sanitizing with only the default PII set must not invoke ``re.compile``;
+        that is the whole point of caching. Custom/UUID patterns (dynamic or
+        opt-in) are still compiled per-call and are exercised separately.
+        """
+        compiled = _patch_re_compile_counter(monkeypatch)
+
+        context = {
+            "email": "john.doe@example.com",
+            "phone": "555-123-4567",
+            "ssn": "123-45-6789",
+            "ip": "192.168.1.1",
+        }
+        ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert compiled == []
+
+    def test_uuid_opt_in_compiled_per_call(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """redact_uuids=True compiles exactly one extra (opt-in) pattern."""
+        compiled = _patch_re_compile_counter(monkeypatch)
+
+        context = {"user_id": "550e8400-e29b-41d4-a716-446655440000"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_uuids=True
+        )
+        assert result["user_id"] == "[UUID_REDACTED]"
+        assert len(compiled) == 1
+
+    def test_validate_no_pii_uses_compiled_patterns(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """validate_no_pii reuses the precompiled set — no re.compile per call."""
+        compiled = _patch_re_compile_counter(monkeypatch)
+
+        is_valid, _violations = ModelWorkflowStateSnapshot.validate_no_pii(
+            {"email": "user@example.com", "ip": "10.0.0.1"}
+        )
+        assert is_valid is False
+        assert compiled == []

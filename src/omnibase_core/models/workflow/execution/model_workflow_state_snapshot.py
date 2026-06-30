@@ -305,6 +305,27 @@ class ModelWorkflowStateSnapshot(BaseModel):
         ),
     ]
 
+    # Precompiled form of _PII_PATTERNS, built once at class-definition time so
+    # the hot sanitize/validate loops never recompile the default patterns on
+    # every call (OMN-823). _PII_PATTERNS above stays the raw source of truth
+    # (still referenced by docstrings/examples); this list is derived from it.
+    _COMPILED_PII_PATTERNS: ClassVar[list[tuple[re.Pattern[str], str]]] = [
+        (re.compile(pattern), replacement) for pattern, replacement in _PII_PATTERNS
+    ]
+
+    # Human-readable labels for the default PII patterns, in the SAME order as
+    # _PII_PATTERNS / _COMPILED_PII_PATTERNS. Used only by validate_no_pii() to
+    # describe detected violations; kept length-aligned with the compiled list.
+    _PII_PATTERN_LABELS: ClassVar[tuple[str, ...]] = (
+        "EMAIL",
+        "CREDIT_CARD",
+        "PHONE",
+        "SSN",
+        "IPV4",
+        "IPV6",
+        "API_KEY",
+    )
+
     # UUID pattern is SEPARATE from default PII patterns (opt-in redaction).
     # UUIDs are often NOT PII - they may be system-generated identifiers like
     # workflow_id, step_id, correlation_id, etc. that are useful for debugging.
@@ -504,14 +525,23 @@ class ModelWorkflowStateSnapshot(BaseModel):
               UUIDs are typically system-generated identifiers useful for debugging,
               not personally identifiable information.
         """
-        # Build pattern list: start with default PII patterns
-        patterns: list[tuple[str, str]] = list(cls._PII_PATTERNS)
-        # Optionally include UUID pattern
+        # Build the working list as COMPILED patterns. Start from the precompiled
+        # default PII set (OMN-823: compiled once at class load, not recompiled per
+        # call), then add the opt-in UUID pattern and any dynamic additional_patterns
+        # — both compiled per-call because they vary by call, not by class.
+        compiled_patterns: list[tuple[re.Pattern[str], str]] = list(
+            cls._COMPILED_PII_PATTERNS
+        )
+        # Optionally include UUID pattern (opt-in)
         if redact_uuids:
-            patterns.append(cls._UUID_PATTERN)
+            uuid_pattern, uuid_replacement = cls._UUID_PATTERN
+            compiled_patterns.append((re.compile(uuid_pattern), uuid_replacement))
         # Add any custom patterns
         if additional_patterns:
-            patterns.extend(additional_patterns)
+            compiled_patterns.extend(
+                (re.compile(pattern), replacement)
+                for pattern, replacement in additional_patterns
+            )
         redact_keys_lower = {k.lower() for k in (redact_keys or [])}
 
         def _sanitize_value(value: object, key: str | None = None) -> object:
@@ -522,8 +552,8 @@ class ModelWorkflowStateSnapshot(BaseModel):
 
             if isinstance(value, str):
                 result = value
-                for pattern, replacement in patterns:
-                    result = re.sub(pattern, replacement, result)
+                for compiled, replacement in compiled_patterns:
+                    result = compiled.sub(replacement, result)
                 return result
             elif isinstance(value, dict):
                 return {k: _sanitize_value(v, k) for k, v in value.items()}
@@ -592,62 +622,35 @@ class ModelWorkflowStateSnapshot(BaseModel):
             - For audit logging, consider using both methods: validate first, then
               sanitize before logging if PII is found.
         """
-        # Build pattern list with labels for reporting
-        pattern_labels: list[tuple[str, str, str]] = [
-            (r"\b[\w.+-]+@[\w.-]+\.\w{2,}\b", "EMAIL", "[EMAIL_REDACTED]"),
-            (r"\b(?:\d{4}[-\s]?){3}\d{4}\b", "CREDIT_CARD", "[CREDIT_CARD_REDACTED]"),
-            (
-                r"(?<!\d)(?:\+1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b",
-                "PHONE",
-                "[PHONE_REDACTED]",
-            ),
-            (r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b", "SSN", "[SSN_REDACTED]"),
-            (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "IPV4", "[IP_REDACTED]"),
-            (
-                r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"
-                r"|(?<![0-9a-fA-F:])::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}\b"
-                r"|\b(?:[0-9a-fA-F]{1,4}:)+:(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}\b"
-                r"|\b(?:[0-9a-fA-F]{1,4}:){1,7}:(?![0-9a-fA-F])"
-                r"|(?<![0-9a-fA-F:])::(?![0-9a-fA-F:])",
-                "IPV6",
-                "[IPV6_REDACTED]",
-            ),
-            (
-                r"\b(?:sk_(?:live|test)_[a-zA-Z0-9]{24,})\b"
-                r"|\b(?:pk_(?:live|test)_[a-zA-Z0-9]{24,})\b"
-                r"|\b(?:AKIA[0-9A-Z]{16})\b"
-                r"|\b(?:ghp_[a-zA-Z0-9]{36})\b"
-                r"|\b(?:gho_[a-zA-Z0-9]{36})\b"
-                r"|\b(?:github_pat_[a-zA-Z0-9_]{22,})\b"
-                r"|\b(?:xox[baprs]-[a-zA-Z0-9-]{10,})\b"
-                r"|\b(?:api[_-]?key[_-]?[a-zA-Z0-9]{20,})\b",
-                "API_KEY",
-                "[API_KEY_REDACTED]",
-            ),
+        # Reuse the precompiled default PII set (OMN-823) paired with reporting
+        # labels, in the same order. _PII_PATTERNS / _COMPILED_PII_PATTERNS is the
+        # single source of truth for the patterns; only the labels live separately.
+        # strict=True fails loudly if the labels ever drift out of length-alignment.
+        compiled_labels: list[tuple[re.Pattern[str], str]] = [
+            (compiled, label)
+            for (compiled, _replacement), label in zip(
+                cls._COMPILED_PII_PATTERNS, cls._PII_PATTERN_LABELS, strict=True
+            )
         ]
 
-        # Optionally include UUID pattern
+        # Optionally include UUID pattern (opt-in; compiled per-call)
         if check_uuids:
-            pattern_labels.append(
-                (
-                    r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b",
-                    "UUID",
-                    "[UUID_REDACTED]",
-                )
-            )
+            uuid_pattern, _uuid_replacement = cls._UUID_PATTERN
+            compiled_labels.append((re.compile(uuid_pattern), "UUID"))
 
-        # Add any custom patterns
+        # Add any custom patterns (dynamic; compiled per-call)
         if additional_patterns:
-            for pattern, label in additional_patterns:
-                pattern_labels.append((pattern, label, f"[{label}_REDACTED]"))
+            compiled_labels.extend(
+                (re.compile(pattern), label) for pattern, label in additional_patterns
+            )
 
         violations: list[str] = []
 
         def _scan_value(value: object, path: str) -> None:
             """Recursively scan a value for PII patterns."""
             if isinstance(value, str):
-                for pattern, label, _replacement in pattern_labels:
-                    if re.search(pattern, value):
+                for compiled, label in compiled_labels:
+                    if compiled.search(value):
                         violations.append(
                             f"Detected PII pattern ({label}) at path: {path}"
                         )
