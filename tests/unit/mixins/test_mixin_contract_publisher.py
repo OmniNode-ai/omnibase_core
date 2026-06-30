@@ -10,6 +10,7 @@ Validates ONEX standards for contract lifecycle events (OMN-1655).
 import asyncio
 import hashlib
 import json
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -649,6 +650,69 @@ capabilities:
 
         # Publisher should not have been called
         contract_publisher.mock_publisher_ref.publish.assert_not_called()
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_heartbeat_loop_logs_on_emit_failure(
+        self,
+        contract_publisher: MockNodeWithContractPublisher,
+        temp_contract_file: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Heartbeat loop logs a warning when an emit fails, then keeps looping.
+
+        Regression for OMN-1690: the transient-error branch previously swallowed
+        the exception silently. It must now emit an observable warning (with the
+        exception message and traceback) before continuing the liveness loop.
+        """
+        await contract_publisher.publish_contract(temp_contract_file)
+
+        emit_calls = 0
+
+        async def failing_then_succeeding_emit() -> None:
+            nonlocal emit_calls
+            emit_calls += 1
+            if emit_calls == 1:
+                raise RuntimeError("transient publish failure")
+
+        monkeypatch.setattr(
+            contract_publisher, "_emit_heartbeat", failing_then_succeeding_emit
+        )
+
+        with caplog.at_level(
+            logging.WARNING,
+            logger="omnibase_core.mixins.mixin_contract_publisher",
+        ):
+            # Drive the loop directly with a tiny interval so the failing emit,
+            # the warning log, and a subsequent successful emit all occur quickly.
+            loop_task = asyncio.create_task(contract_publisher._heartbeat_loop(0.01))
+            # Wait until the failing emit has been observed and logged.
+            for _ in range(100):
+                await asyncio.sleep(0.01)
+                if emit_calls >= 2:
+                    break
+            loop_task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await loop_task
+
+        # The failing emit was retried (loop continued, not aborted).
+        assert emit_calls >= 2
+
+        warnings = [
+            record
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+            and record.name == "omnibase_core.mixins.mixin_contract_publisher"
+        ]
+        assert warnings, "expected a warning log from the heartbeat loop"
+        assert any(
+            "contract heartbeat emit failed" in record.getMessage()
+            and "transient publish failure" in record.getMessage()
+            for record in warnings
+        )
+        # Traceback must be attached so the failure is fully observable.
+        assert any(record.exc_info is not None for record in warnings)
 
     # ========================================================================
     # Event Field Tests
