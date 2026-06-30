@@ -183,7 +183,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_control.git", branch = "main" }
+onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_control.git", rev = "41054810a25db826a4c649f491a2d980bffb0c17" }  # pragma: allowlist secret  # OMN-13762: pinned to immutable SHA (was branch="main"; v0.1.0, last OCC version without omnibase-core circular dep)  # onex-allow-pin-hygiene OMN-13762
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnibase_core"]
