@@ -689,7 +689,7 @@ wheels = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.46.1"
+version = "0.46.2"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
@@ -788,7 +788,7 @@ requires-dist = [
     { name = "ruamel-yaml", specifier = ">=0.18.0" },
     { name = "sqlglot", marker = "extra == 'full'", specifier = ">=26.0.0,<31.0.0" },
     { name = "sqlglot", marker = "extra == 'sql-parser'", specifier = ">=26.0.0,<31.0.0" },
-    { name = "tree-sitter", specifier = ">=0.25.2,<0.26" },
+    { name = "tree-sitter", specifier = ">=0.25.2,<0.27" },
     { name = "tree-sitter-python", specifier = ">=0.25.0,<0.26" },
 ]
 provides-extras = ["spi", "cli", "kafka", "cache", "metrics", "sql-parser", "full"]
