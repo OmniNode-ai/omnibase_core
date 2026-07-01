@@ -113,6 +113,41 @@ from omnibase_core.validation.runtime_sha_match import (
 # earlier PRs get ADVISORY downgrade for the 7-day legacy window (OMN-10421).
 _CONTRACT_SHA256_REQUIRED_AFTER = datetime(2026, 4, 30, 0, 0, 0, tzinfo=UTC)
 
+# OMN-13762: Trusted dependency-bot authors exempt from the receipt / OCC
+# evidence gates. A dependency-bump PR (Dependabot, Renovate) is opened by an
+# automated bot and structurally cannot cite a Linear ticket, an Evidence-Source,
+# or an OCC receipt — the receipt gate's premise (a human-authored, ticket-backed
+# change) does not apply. The receipt-gate and occ-preflight reusable workflows
+# short-circuit their evidence steps for these authors, identifying the author
+# from GitHub-verified PR metadata (never from PR body text). This frozenset is
+# the canonical allowlist mirrored by the bash `case` guards in
+# ``.github/workflows/receipt-gate.yml`` and ``.github/workflows/occ-preflight.yml``.
+# Both the gh CLI login form ("app/dependabot") and the raw API/event login form
+# ("dependabot[bot]") are listed because the two surfaces report differently.
+DEPENDENCY_BOT_AUTHORS: frozenset[str] = frozenset(
+    {
+        "dependabot[bot]",
+        "app/dependabot",
+        "dependabot",
+        "renovate[bot]",
+        "app/renovate",
+        "renovate",
+    }
+)
+
+
+def is_dependency_bot_author(author_login: str | None) -> bool:
+    """Return True when ``author_login`` is a trusted dependency-bot identity.
+
+    Used to decide whether the receipt / OCC evidence gates apply. The match is
+    exact against :data:`DEPENDENCY_BOT_AUTHORS`; a near-miss login (e.g.
+    ``dependabot-fork``) is NOT exempt. ``None``/empty is never exempt.
+    """
+    if not author_login:
+        return False
+    return author_login in DEPENDENCY_BOT_AUTHORS
+
+
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
 # Captures each ``omn-<n>(-<n>)*`` cluster on a branch name (OMN-13395). A single
 # PR branch may address several tickets via the ``omn-A-B(-C...)`` convention —

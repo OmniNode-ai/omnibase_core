@@ -66,11 +66,66 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 1
 
+      # OMN-13762: Dependency-bot PRs (Dependabot, Renovate) are authored by bots
+      # that structurally cannot cite a Linear ticket, an Evidence-Source, or an
+      # OCC receipt. Detect a trusted dependency-bot author up front from
+      # GitHub-verified PR metadata (never from caller-supplied body text) and
+      # skip the eligibility steps below. The job still concludes `success` (its
+      # remaining steps are skipped, not failed), so the
+      # `occ-preflight / eligibility` status check passes WITHOUT a skip token.
+      # The allowlist mirrors validator_receipt_gate.DEPENDENCY_BOT_AUTHORS.
+      - name: Detect dependency-bot author (occ-preflight exemption)
+        id: bot_exempt
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+
+          # Resolve the PR number for both pull_request and merge_group events.
+          if [ -n "${PR_NUMBER:-}" ]; then
+            resolved_pr_num="$PR_NUMBER"
+          elif [ -n "${MERGE_GROUP_HEAD_REF:-}" ]; then
+            resolved_pr_num="$(printf '%s' "$MERGE_GROUP_HEAD_REF" | sed -E 's@^.*/pr-([0-9]+)-.*$@\1@')"
+            [ "$resolved_pr_num" = "$MERGE_GROUP_HEAD_REF" ] && resolved_pr_num=""
+          else
+            resolved_pr_num=""
+          fi
+
+          # GitHub-verified author identity. Prefer the API login; fall back to
+          # the event-payload login when the API is unavailable.
+          author_login=""
+          if [ -n "$resolved_pr_num" ]; then
+            author_login="$(gh pr view "$resolved_pr_num" --repo "${{ github.repository }}" --json author --jq '.author.login' 2>/dev/null || true)"
+          fi
+          if [ -z "$author_login" ]; then
+            author_login="${PR_EVENT_AUTHOR:-}"
+          fi
+
+          # Trusted dependency-bot allowlist. Matches the gh CLI login form
+          # ("app/dependabot") and the raw API/event login form
+          # ("dependabot[bot]"). Keep in sync with
+          # validator_receipt_gate.DEPENDENCY_BOT_AUTHORS.
+          exempt="false"
+          case "$author_login" in
+            "dependabot[bot]"|"app/dependabot"|"dependabot"|"renovate[bot]"|"app/renovate"|"renovate")
+              exempt="true"
+              ;;
+          esac
+
+          if [ "$exempt" = "true" ]; then
+            echo "::notice::OCC-preflight exemption (OMN-13762): PR authored by trusted dependency bot '${author_login}'. Dependency-bump PRs carry no Linear ticket or OCC receipt; the eligibility gate is not applicable. Eligibility steps are skipped; the job still reports success."
+          fi
+          echo "exempt=${exempt}" >> "$GITHUB_OUTPUT"
+
       # I1: Resolve all mutable GitHub state exactly once.
       # Writes /tmp/pr_{body,title,author,branch,number}.txt and
       # /tmp/pr_commit_{shas,texts}.txt for downstream steps.
       - name: Resolve PR snapshot
         id: resolve
+        if: steps.bot_exempt.outputs.exempt != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -138,7 +193,7 @@ jobs:
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
       - name: Resolve Evidence-Source
         id: resolve_evidence_source
-        if: github.repository != 'OmniNode-ai/onex_change_control'
+        if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -182,7 +237,7 @@ jobs:
       # I3: OCC's own PRs use in-tree checkout; other repos check out pinned OCC evidence.
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
       - name: Check out onex_change_control (for contracts + receipts)
-        if: github.repository != 'OmniNode-ai/onex_change_control'
+        if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/onex_change_control
@@ -194,6 +249,7 @@ jobs:
       # subsequent steps use this exact SHA — never re-fetching. (I1, I2)
       - name: Resolve OCC evidence SHA
         id: occ_sha
+        if: steps.bot_exempt.outputs.exempt != 'true'
         run: |
           set -euo pipefail
           repo_short="${GITHUB_REPOSITORY##*/}"
@@ -220,11 +276,13 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Set up Python 3.13
+        if: steps.bot_exempt.outputs.exempt != 'true'
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
       - name: Install uv
+        if: steps.bot_exempt.outputs.exempt != 'true'
         uses: astral-sh/setup-uv@v7
 
       # OMN-12565: Runner Python write-contract preflight.
@@ -241,6 +299,7 @@ jobs:
       # on a fresh runner). This preflight asserts that contract up front and
       # fails loudly if it is violated, before any install or gate step runs.
       - name: Preflight runner Python write contract
+        if: steps.bot_exempt.outputs.exempt != 'true'
         env:
           OCC_PREFLIGHT_VENV: ${{ github.workspace }}/.occ-preflight-venv
         run: |
@@ -274,7 +333,7 @@ jobs:
       # Install omnibase_compat and omnibase_core from source so the validator
       # module is available. Pattern mirrors receipt-gate.yml install block.
       - name: Check out omnibase_compat (transitive dep)
-        if: "! hashFiles('./src/omnibase_compat/__init__.py') && ! hashFiles('./omnibase_compat/pyproject.toml')"
+        if: "steps.bot_exempt.outputs.exempt != 'true' && ! hashFiles('./src/omnibase_compat/__init__.py') && ! hashFiles('./omnibase_compat/pyproject.toml')"
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_compat
@@ -283,7 +342,7 @@ jobs:
           fetch-depth: 1
 
       - name: Check out omnibase_core (for eligibility validator)
-        if: "! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
+        if: "steps.bot_exempt.outputs.exempt != 'true' && ! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_core
@@ -292,6 +351,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install omnibase_core
+        if: steps.bot_exempt.outputs.exempt != 'true'
         # OMN-12565: install into a uv-managed virtual environment under
         # $GITHUB_WORKSPACE instead of the system interpreter. `uv pip install
         # --system` wrote /usr/local/lib/python3.12/dist-packages, which a
@@ -362,6 +422,7 @@ jobs:
           echo "OCC_PREFLIGHT_PY=$venv_py" >> "$GITHUB_ENV"
 
       - name: Verify eligibility validator importable
+        if: steps.bot_exempt.outputs.exempt != 'true'
         run: |
           "$OCC_PREFLIGHT_PY" -c "from omnibase_core.validation.validator_occ_merge_eligibility import validate_occ_merge_eligibility" || {
             echo "::error::validator_occ_merge_eligibility not importable after install"
@@ -373,6 +434,7 @@ jobs:
       # Auto-merge MUST NOT arm when this step exits non-zero.
       - name: Run OCC eligibility check
         id: occ_eligibility
+        if: steps.bot_exempt.outputs.exempt != 'true'
         run: |
           set -euo pipefail
 
