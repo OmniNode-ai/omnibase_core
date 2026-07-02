@@ -325,8 +325,17 @@ class MixinNodeDispatch:
                 and message_type not in entry.message_types
             ):
                 continue
-            if entry.payload_type_matcher is not None and not self._payload_matches(
-                entry, payload
+            # Engine-fidelity guard (OMN-12549): type-scope ONLY when a payload is
+            # available. The live engine's _find_matching_dispatchers gates this on
+            # ``payload is not None`` — with no payload it skips type-scoping and
+            # keeps the dispatcher. Dropping the guard would drive the matcher with
+            # payload=None (a spurious non-match) and diverge from the engine on the
+            # payload-less path (untested by the S0 harness, which always supplies a
+            # payload). Keep parity exact.
+            if (
+                payload is not None
+                and entry.payload_type_matcher is not None
+                and not self._payload_matches(entry, payload)
             ):
                 continue
             matching.append(_NodeDispatchMatch(route.route_id, entry))

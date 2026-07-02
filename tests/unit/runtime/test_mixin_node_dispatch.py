@@ -272,21 +272,20 @@ async def test_type_scoped_matcher_rejects_nonmatching_payload() -> None:
 
 
 @pytest.mark.asyncio
-async def test_type_scoped_matcher_rejects_none_payload() -> None:
+async def test_none_payload_skips_type_scoping_keeps_dispatcher() -> None:
+    """Engine-fidelity: with no payload, type-scoping is SKIPPED and the
+    type-scoped dispatcher is KEPT (selected), matching the live engine's
+    ``_find_matching_dispatchers`` guard ``payload is not None``.
+
+    The matcher is never invoked on a ``None`` payload — a matcher that would
+    reject ``None`` must NOT drop the dispatcher, because the engine does not run
+    it in the payload-less path. This pins parity on the edge the S0 harness does
+    not probe (it always supplies a payload).
+    """
     mixin = MixinNodeDispatch()
+    # A matcher that rejects everything except _AlphaPayload — it must NOT be
+    # consulted when payload is None, so the dispatcher stays selected.
     _register_single(mixin, payload_type_matcher=lambda p: isinstance(p, _AlphaPayload))
-    mixin.freeze()
-
-    result = await mixin.dispatch(
-        _EVENTS_TOPIC, _envelope(event_type=None, payload=None)
-    )
-    assert _selection_tuple(result)[0] == "no_dispatcher"
-
-
-@pytest.mark.asyncio
-async def test_type_scoped_matcher_can_accept_none_payload() -> None:
-    mixin = MixinNodeDispatch()
-    _register_single(mixin, payload_type_matcher=lambda p: p is None)
     mixin.freeze()
 
     result = await mixin.dispatch(
