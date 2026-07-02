@@ -42,7 +42,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -95,7 +95,9 @@ class _NodeDispatchEntry:
         self.dispatcher_id = dispatcher_id
         self.dispatcher = dispatcher
         self.category = category
-        self.message_types = message_types  # None means "all message types"
+        self.message_types = (
+            set(message_types) if message_types is not None else None
+        )  # None means "all message types"
         self.node_kind = node_kind
         # None means "not type-scoped" — legacy string-only matching applies.
         self.payload_type_matcher = payload_type_matcher
@@ -111,6 +113,11 @@ class _NodeDispatchState:
         self.dispatchers: dict[str, _NodeDispatchEntry] = {}
         self.frozen: bool = False
         self.dlq_topic_deriver: DlqTopicDeriver | None = None
+
+
+class _NodeDispatchMatch(NamedTuple):
+    route_id: str
+    entry: _NodeDispatchEntry
 
 
 class MixinNodeDispatch:
@@ -178,6 +185,9 @@ class MixinNodeDispatch:
                 message=f"Route with ID '{route.route_id}' is already registered.",
                 error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
             )
+        entry = state.dispatchers.get(route.handler_id)
+        if entry is not None:
+            self._validate_route_dispatcher_category(route, entry)
         state.routes[route.route_id] = route
 
     def register_dispatcher(
@@ -221,7 +231,7 @@ class MixinNodeDispatch:
                 message=f"Dispatcher with ID '{dispatcher_id}' is already registered.",
                 error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
             )
-        state.dispatchers[dispatcher_id] = _NodeDispatchEntry(
+        entry = _NodeDispatchEntry(
             dispatcher_id=dispatcher_id,
             dispatcher=dispatcher,
             category=category,
@@ -229,6 +239,10 @@ class MixinNodeDispatch:
             node_kind=node_kind,
             payload_type_matcher=payload_type_matcher,
         )
+        for route in state.routes.values():
+            if route.handler_id == dispatcher_id:
+                self._validate_route_dispatcher_category(route, entry)
+        state.dispatchers[dispatcher_id] = entry
 
     def freeze(self) -> None:
         """Freeze the table for dispatch. Validates every route references a
@@ -244,12 +258,27 @@ class MixinNodeDispatch:
                     f"'{rid}' which is not registered.",
                     error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
                 )
+            self._validate_route_dispatcher_category(route, state.dispatchers[rid])
         state.frozen = True
 
     @property
     def is_frozen(self) -> bool:
         """True once :meth:`freeze` has been called."""
         return self._state().frozen
+
+    @staticmethod
+    def _validate_route_dispatcher_category(
+        route: ModelDispatchRoute, entry: _NodeDispatchEntry
+    ) -> None:
+        """Reject routes whose declared category disagrees with their dispatcher."""
+        if route.message_category == entry.category:
+            return
+        raise ModelOnexError(
+            message=f"Route '{route.route_id}' category "
+            f"'{route.message_category.value}' does not match dispatcher "
+            f"'{entry.dispatcher_id}' category '{entry.category.value}'.",
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+        )
 
     # -- selection ------------------------------------------------------------
 
@@ -260,7 +289,7 @@ class MixinNodeDispatch:
         category: EnumMessageCategory,
         message_type: str,
         payload: object | None,
-    ) -> list[_NodeDispatchEntry]:
+    ) -> list[_NodeDispatchMatch]:
         """Port of the engine's ``_find_matching_dispatchers`` (selection only).
 
         Iterates routes in registration (insertion) order — the fan-out order the
@@ -269,7 +298,7 @@ class MixinNodeDispatch:
         the dispatcher's own message-type filter admits ``message_type``, and, for
         type-scoped dispatchers, the payload matches the declared event_model.
         """
-        matching: list[_NodeDispatchEntry] = []
+        matching: list[_NodeDispatchMatch] = []
         seen: set[str] = set()
         state = self._state()
         for route in state.routes.values():
@@ -288,23 +317,24 @@ class MixinNodeDispatch:
             if entry is None:
                 # Should be impossible after freeze() validation; skip defensively.
                 continue
+            if entry.category != route.message_category:
+                # Should be impossible after registration/freeze validation.
+                continue
             if (
                 entry.message_types is not None
                 and message_type not in entry.message_types
             ):
                 continue
-            if (
-                payload is not None
-                and entry.payload_type_matcher is not None
-                and not self._payload_matches(entry, payload)
+            if entry.payload_type_matcher is not None and not self._payload_matches(
+                entry, payload
             ):
                 continue
-            matching.append(entry)
+            matching.append(_NodeDispatchMatch(route.route_id, entry))
             seen.add(dispatcher_id)
         return matching
 
     @staticmethod
-    def _payload_matches(entry: _NodeDispatchEntry, payload: object) -> bool:
+    def _payload_matches(entry: _NodeDispatchEntry, payload: object | None) -> bool:
         """True when ``payload`` matches a type-scoped dispatcher's event_model.
 
         A raising matcher means "not my type" (never selected), mirroring the
@@ -417,10 +447,8 @@ class MixinNodeDispatch:
                 output_events=[],
             )
 
-        ordered_ids = [entry.dispatcher_id for entry in matching]
-        matched_route_id = self._first_matching_route_id(
-            topic, topic_category, message_type
-        )
+        ordered_ids = [match.entry.dispatcher_id for match in matching]
+        matched_route_id = matching[0].route_id
         return ModelDispatchResult(
             dispatch_id=dispatch_id,
             status=EnumDispatchStatus.SUCCESS,
@@ -447,19 +475,6 @@ class MixinNodeDispatch:
             return deriver(event_type, topic)
         except Exception:  # noqa: BLE001 — DLQ derivation must never crash selection
             return None
-
-    def _first_matching_route_id(
-        self,
-        topic: str,
-        category: EnumMessageCategory,
-        message_type: str,
-    ) -> str | None:
-        """First route (insertion order) fully matching topic/category/type, for
-        logging parity with the engine's ``matched_route_id``."""
-        for route in self._state().routes.values():
-            if route.matches(topic, category, message_type):
-                return route.route_id
-        return None
 
     @staticmethod
     def _extract_routing_inputs(envelope: object) -> tuple[object | None, object]:

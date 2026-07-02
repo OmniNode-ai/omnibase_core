@@ -16,6 +16,8 @@ and stay stable, using only core symbols.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
 from pydantic import BaseModel
 
@@ -81,6 +83,8 @@ def _register_single(
         dispatcher=_noop_dispatcher,
         category=EnumMessageCategory.EVENT,
         message_types=message_types,
+        # NOTE(OMN-12549): tests pass matcher callables with narrower payload
+        # assumptions to pin runtime behavior around rejected payloads.
         payload_type_matcher=payload_type_matcher,  # type: ignore[arg-type]
     )
     mixin.register_route(
@@ -268,6 +272,30 @@ async def test_type_scoped_matcher_rejects_nonmatching_payload() -> None:
 
 
 @pytest.mark.asyncio
+async def test_type_scoped_matcher_rejects_none_payload() -> None:
+    mixin = MixinNodeDispatch()
+    _register_single(mixin, payload_type_matcher=lambda p: isinstance(p, _AlphaPayload))
+    mixin.freeze()
+
+    result = await mixin.dispatch(
+        _EVENTS_TOPIC, _envelope(event_type=None, payload=None)
+    )
+    assert _selection_tuple(result)[0] == "no_dispatcher"
+
+
+@pytest.mark.asyncio
+async def test_type_scoped_matcher_can_accept_none_payload() -> None:
+    mixin = MixinNodeDispatch()
+    _register_single(mixin, payload_type_matcher=lambda p: p is None)
+    mixin.freeze()
+
+    result = await mixin.dispatch(
+        _EVENTS_TOPIC, _envelope(event_type=None, payload=None)
+    )
+    assert _selection_tuple(result)[0] == "success"
+
+
+@pytest.mark.asyncio
 async def test_raising_matcher_is_treated_as_non_match() -> None:
     def _raises(_payload: object) -> bool:
         raise ValueError("not my type")
@@ -309,6 +337,42 @@ async def test_route_message_type_filter_excludes_mismatch() -> None:
         _EVENTS_TOPIC, _envelope(event_type=None, payload=_AlphaPayload())
     )
     assert _selection_tuple(result)[0] == "no_dispatcher"
+
+
+@pytest.mark.asyncio
+async def test_dispatcher_message_types_are_snapshotted_on_registration() -> None:
+    message_types = {"_AlphaPayload"}
+    mixin = MixinNodeDispatch()
+    _register_single(mixin, message_types=message_types)
+    message_types.clear()
+    mixin.freeze()
+
+    result = await mixin.dispatch(
+        _EVENTS_TOPIC, _envelope(event_type=None, payload=_AlphaPayload())
+    )
+    assert _selection_tuple(result)[0] == "success"
+
+
+@pytest.mark.asyncio
+async def test_route_id_comes_from_selected_dispatcher_route() -> None:
+    mixin = MixinNodeDispatch()
+    _register_single(
+        mixin,
+        dispatcher_id="d_reject",
+        payload_type_matcher=lambda p: isinstance(p, _BetaPayload),
+    )
+    _register_single(
+        mixin,
+        dispatcher_id="d_accept",
+        payload_type_matcher=lambda p: isinstance(p, _AlphaPayload),
+    )
+    mixin.freeze()
+
+    result = await mixin.dispatch(
+        _EVENTS_TOPIC, _envelope(event_type=None, payload=_AlphaPayload())
+    )
+    assert result.route_id == "r-d_accept"
+    assert _selection_tuple(result)[1] == ("d_accept",)
 
 
 # ---------------------------------------------------------------------------
@@ -383,6 +447,64 @@ def test_freeze_validates_route_references_dispatcher() -> None:
     with pytest.raises(ModelOnexError) as exc:
         mixin.freeze()
     assert exc.value.error_code == EnumCoreErrorCode.ITEM_NOT_REGISTERED
+
+
+def test_register_route_rejects_existing_dispatcher_category_mismatch() -> None:
+    mixin = MixinNodeDispatch()
+    mixin.register_dispatcher(
+        dispatcher_id="d1",
+        dispatcher=_noop_dispatcher,
+        category=EnumMessageCategory.COMMAND,
+    )
+    with pytest.raises(ModelOnexError) as exc:
+        mixin.register_route(
+            ModelDispatchRoute(
+                route_id="r1",
+                topic_pattern="onex.evt.platform.*.v1",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="d1",
+            )
+        )
+    assert exc.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
+
+
+def test_register_dispatcher_rejects_existing_route_category_mismatch() -> None:
+    mixin = MixinNodeDispatch()
+    mixin.register_route(
+        ModelDispatchRoute(
+            route_id="r1",
+            topic_pattern="onex.evt.platform.*.v1",
+            message_category=EnumMessageCategory.EVENT,
+            handler_id="d1",
+        )
+    )
+    with pytest.raises(ModelOnexError) as exc:
+        mixin.register_dispatcher(
+            dispatcher_id="d1",
+            dispatcher=_noop_dispatcher,
+            category=EnumMessageCategory.COMMAND,
+        )
+    assert exc.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
+
+
+def test_freeze_rejects_route_dispatcher_category_mismatch() -> None:
+    mixin = MixinNodeDispatch()
+    mixin.register_route(
+        ModelDispatchRoute(
+            route_id="r1",
+            topic_pattern="onex.evt.platform.*.v1",
+            message_category=EnumMessageCategory.EVENT,
+            handler_id="d1",
+        )
+    )
+    state = mixin._state()
+    state.dispatchers["d1"] = SimpleNamespace(
+        category=EnumMessageCategory.COMMAND,
+        dispatcher_id="d1",
+    )  # type: ignore[assignment]
+    with pytest.raises(ModelOnexError) as exc:
+        mixin.freeze()
+    assert exc.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
 
 
 def test_empty_dispatcher_id_rejected() -> None:
