@@ -568,10 +568,10 @@ class NodeEffect(
                     "circuit_breaker": op_cb.model_dump(),
                     "transaction_config": op_tx.model_dump(),
                 }
-                # TODO(OMN-5746): [v2.0] Per-operation configs (response_handling, retry_policy,
+                # TODO(OMN-5746): [v2.0] Per-operation configs (response_handling, retry_policy,  # onex-allow-todo-marker
                 # circuit_breaker) are serialized into operation_data but NOT YET
                 # wired to the execution pipeline. Only subcontract-level defaults
-                # are honored. See process() docstring "v1.0 Limitation" note.  [NEEDS TICKET]
+                # are honored. See process() docstring "v1.0 Limitation" note.
                 operations.append(op_dict)
 
             # Create new input_data with operations populated
