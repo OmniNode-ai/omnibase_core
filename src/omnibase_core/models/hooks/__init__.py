@@ -20,6 +20,12 @@ from omnibase_core.models.hooks.claude_code.model_claude_code_session_outcome im
 from omnibase_core.models.hooks.claude_code.model_user_prompt_submit_payload import (
     ModelUserPromptSubmitPayload,
 )
+from omnibase_core.models.hooks.cursor.model_cursor_hook_event import (
+    ModelCursorHookEvent,
+)
+from omnibase_core.models.hooks.cursor.model_cursor_hook_event_payload import (
+    ModelCursorHookEventPayload,
+)
 from omnibase_core.utils.util_parse_hook_payload import (
     get_payload_type,
     parse_hook_payload,
@@ -29,6 +35,8 @@ __all__ = [
     "ModelClaudeCodeHookEvent",
     "ModelClaudeCodeHookEventPayload",
     "ModelClaudeCodeSessionOutcome",
+    "ModelCursorHookEvent",
+    "ModelCursorHookEventPayload",
     "ModelUserPromptSubmitPayload",
     "get_payload_type",
     "parse_hook_payload",
