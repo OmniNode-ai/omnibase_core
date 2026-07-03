@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.46.2"
+version = "0.46.3"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -356,6 +356,7 @@ ignore = [
 "scripts/validation/validate-check-names.py" = ["T201", "BLE001"]
 "scripts/validation/validate-stubbed-functionality.py" = ["T201", "BLE001"]
 "scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
+"scripts/check_dep_provenance.py" = ["T201"]  # CLI output for dep-provenance gate (OMN-13873/OMN-13877)
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_routing_authority.py" = ["T201"]  # CLI output for routing-authority gate (OMN-13306)
 "src/omnibase_core/validation/delegation/validator_delegation_profile.py" = ["T201"]  # CLI output for delegation-profile hook (OMN-13306)

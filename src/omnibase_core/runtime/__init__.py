@@ -15,8 +15,10 @@ Components:
 Related:
     - OMN-229: FileRegistry for contract file loading
     - OMN-13444: RuntimeLocal relocated from omnibase_infra (local-first re-convergence)
+    - OMN-12549: MixinNodeDispatch node-owned dispatch-selection seam (epic OMN-12525)
 """
 
+from omnibase_core.runtime.mixin_node_dispatch import MixinNodeDispatch
 from omnibase_core.runtime.runtime_file_registry import FileRegistry
 from omnibase_core.runtime.runtime_local import (
     ResolvedRoutingEntry,
@@ -29,6 +31,7 @@ from omnibase_core.runtime.runtime_local_adapter import LocalRuntimeBusAdapter
 __all__ = [
     "FileRegistry",
     "LocalRuntimeBusAdapter",
+    "MixinNodeDispatch",
     "ResolvedRoutingEntry",
     "RuntimeLocal",
     "load_workflow_contract",

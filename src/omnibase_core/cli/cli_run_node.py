@@ -43,6 +43,28 @@ def _emit_error(node_id: str, message: str, **extra: str | int) -> NoReturn:
     sys.exit(1)
 
 
+def _resolve_bootstrap_servers(node_id: str) -> str:
+    """Return the Kafka bootstrap servers for ``run-node``, or fail fast clearly.
+
+    ``onex run-node`` dispatches over Kafka, so it needs a reachable broker.
+    Before OMN-13857 an unset ``KAFKA_BOOTSTRAP_SERVERS`` raised a bare
+    ``KeyError`` traceback and an empty value produced an opaque
+    ``_TRANSPORT`` failure. Both now emit a single actionable SkillRoutingError:
+    point the variable at a reachable lane broker, or run the node locally
+    (bus-less) with ``onex run <node>``.
+    """
+    bootstrap = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "").strip()
+    if not bootstrap:
+        _emit_error(
+            node_id,
+            "KAFKA_BOOTSTRAP_SERVERS is not set. `onex run-node` dispatches over "
+            "Kafka and needs a reachable broker — export "
+            "KAFKA_BOOTSTRAP_SERVERS=<host:port> for your lane. To execute this "
+            f"node locally without a bus, use `onex run {node_id}` instead.",
+        )
+    return bootstrap
+
+
 def _coerce_contract_metadata(
     contract: ModelGenericYaml | dict[str, object],
 ) -> dict[str, object]:
@@ -196,7 +218,22 @@ def publish_and_poll(
     try:
         # Explicit assignment is more reliable than ephemeral group rebalances
         # for one-shot request/response flows.
-        metadata = consumer.list_topics(response_topic, timeout=10.0)
+        try:
+            metadata = consumer.list_topics(response_topic, timeout=10.0)
+        except Exception as exc:
+            # OMN-13857: the first broker touch fails with a raw
+            # confluent_kafka.KafkaException (_TRANSPORT) when the bootstrap
+            # address is unreachable. Convert it into an actionable error
+            # instead of surfacing an opaque traceback.
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.RUNTIME_ERROR,
+                message=(
+                    f"Kafka broker unreachable at {bootstrap_servers!r}: {exc}. "
+                    "Verify KAFKA_BOOTSTRAP_SERVERS points at a reachable lane "
+                    f"broker, or run the node locally (bus-less) with `onex run "
+                    f"{node_id}`."
+                ),
+            ) from exc
         topic_metadata = metadata.topics.get(response_topic)
         if topic_metadata is None or getattr(topic_metadata, "error", None) is not None:
             raise ModelOnexError(
@@ -287,7 +324,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
     except json.JSONDecodeError as exc:
         _emit_error(node_id, f"Invalid JSON input: {exc}")
 
-    bootstrap_servers = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
+    bootstrap_servers = _resolve_bootstrap_servers(node_id)
 
     try:
         (
