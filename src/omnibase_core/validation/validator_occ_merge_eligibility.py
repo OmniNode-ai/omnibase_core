@@ -31,6 +31,10 @@ from omnibase_core.validation.validator_receipt_gate import (
     _CONTRACT_SHA256_REQUIRED_AFTER,
     _extract_ticket_ids,
     _iter_dod_evidence,
+    check_receipt_contract_binding,
+)
+from omnibase_core.validation.validator_receipt_supersession import (
+    resolve_supersession,
 )
 
 EVIDENCE_TICKET_PATTERN = re.compile(
@@ -151,24 +155,51 @@ def validate_occ_merge_eligibility(
                 / f"{check_type}.yaml"
             )
             receipt_key = f"{ticket_id}:{evidence_item_id}:{check_type}"
-            if not receipt_path.exists():
-                missing_receipts.append(receipt_key)
-                continue
-            try:
-                receipt_raw = _load_yaml(receipt_path)
-                receipt = ModelDodReceipt.model_validate(receipt_raw)
-            except (OSError, yaml.YAMLError, ValidationError) as exc:
-                nonpass_receipts.append(receipt_key)
-                return ModelOccEligibilityResult(
-                    eligible=False,
-                    reason=EnumOccEligibilityReason.NONPASS_RECEIPT,
-                    ticket_ids=ticket_ids,
-                    occ_commit_sha=snapshot.occ_commit_sha,
-                    contract_hashes=contract_hashes,
-                    receipt_ids=tuple(sorted(receipt_ids)),
-                    missing_or_nonpass_receipts=tuple(sorted(nonpass_receipts)),
-                    detail=f"receipt {receipt_path} is invalid: {exc}",
-                )
+
+            # OMN-13888 (scope 3): resolve the supersession chain first. A
+            # tombstone invalidates the key (no active receipt); a replacement
+            # re-binds it to a net-new receipt without editing the base file.
+            supersession = resolve_supersession(
+                snapshot.receipts_dir, ticket_id, evidence_item_id, check_type
+            )
+            if supersession is not None:
+                if supersession.error is not None:
+                    nonpass_receipts.append(receipt_key)
+                    return ModelOccEligibilityResult(
+                        eligible=False,
+                        reason=EnumOccEligibilityReason.NONPASS_RECEIPT,
+                        ticket_ids=ticket_ids,
+                        occ_commit_sha=snapshot.occ_commit_sha,
+                        contract_hashes=contract_hashes,
+                        receipt_ids=tuple(sorted(receipt_ids)),
+                        missing_or_nonpass_receipts=tuple(sorted(nonpass_receipts)),
+                        detail=supersession.error,
+                    )
+                if supersession.tombstoned or supersession.receipt is None:
+                    missing_receipts.append(receipt_key)
+                    continue
+                receipt = supersession.receipt
+                receipt_source = supersession.source_path
+            else:
+                if not receipt_path.exists():
+                    missing_receipts.append(receipt_key)
+                    continue
+                try:
+                    receipt_raw = _load_yaml(receipt_path)
+                    receipt = ModelDodReceipt.model_validate(receipt_raw)
+                except (OSError, yaml.YAMLError, ValidationError) as exc:
+                    nonpass_receipts.append(receipt_key)
+                    return ModelOccEligibilityResult(
+                        eligible=False,
+                        reason=EnumOccEligibilityReason.NONPASS_RECEIPT,
+                        ticket_ids=ticket_ids,
+                        occ_commit_sha=snapshot.occ_commit_sha,
+                        contract_hashes=contract_hashes,
+                        receipt_ids=tuple(sorted(receipt_ids)),
+                        missing_or_nonpass_receipts=tuple(sorted(nonpass_receipts)),
+                        detail=f"receipt {receipt_path} is invalid: {exc}",
+                    )
+                receipt_source = receipt_path
             if receipt.ticket_id != ticket_id:
                 return ModelOccEligibilityResult(
                     eligible=False,
@@ -178,17 +209,39 @@ def validate_occ_merge_eligibility(
                     contract_hashes=contract_hashes,
                     receipt_ids=tuple(sorted(receipt_ids)),
                     detail=(
-                        f"receipt {receipt_path} declares ticket_id={receipt.ticket_id}, "
+                        f"receipt {receipt_source} declares ticket_id={receipt.ticket_id}, "
                         f"expected {ticket_id}"
                     ),
                 )
-            # OMN-13061: hard-fail when contract_sha256 is None — mirrors
-            # validator_receipt_gate post-cutoff enforcement (OMN-10421).
-            # The migration window closed on _CONTRACT_SHA256_REQUIRED_AFTER
-            # (2026-04-30); all receipts authored after that date must bind
-            # a contract hash. Historical corpus scanners are ADVISORY only
-            # (OMN-13060 follow-through unchanged).
-            if receipt.contract_sha256 is None:
+            is_bound = _receipt_bound_to_pr(receipt, snapshot)
+            # OMN-13888 (scope 1/5): dual-accept contract binding. A receipt
+            # with a per-entry hash is checked strictly; a legacy receipt is
+            # whole-file-checked only when bound to THIS PR (prior merged
+            # receipts grandfather so appending an entry does not invalidate
+            # them). The None hard-fail (OMN-10421 / OMN-13061) fires only when
+            # BOTH bindings are absent.
+            #
+            # Round-1 soft-spot (verifier PROBE6): `is_bound` keys on the
+            # receipt-controlled `pr_number`, so a NEW legacy-only receipt could
+            # in principle set a FOREIGN pr_number to reach the grandfather path
+            # and skip the whole-file check with a wrong hash. That path is NOT
+            # independently exploitable end-to-end: a receipt can only be
+            # introduced through an onex_change_control PR, and OCC's Receipt
+            # Honesty Gate (scripts/validation/check_receipt_hardening.py, a
+            # REQUIRED status check) validates every post-cutoff receipt's
+            # contract_sha256 == sha256(contracts/<ticket>.yaml) UNCONDITIONAL on
+            # pr_number — so a forged wrong-hash net-new receipt is rejected
+            # upstream before this grandfather is ever reached. The grandfather
+            # here is defense-in-depth behind that stricter gate; the terminal
+            # fix is the per-entry hash (scope 1), which makes every new receipt
+            # immune to appends without needing the whole-file grandfather at
+            # all. Full closure of the pure-function residual (an unforgeable
+            # "receipt file is net-new in this PR" git signal threaded from CI)
+            # is tracked as follow-up and is disproportionate to wire here.
+            if (
+                receipt.contract_sha256 is None
+                and receipt.contract_entry_sha256 is None
+            ):
                 return ModelOccEligibilityResult(
                     eligible=False,
                     reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
@@ -197,13 +250,21 @@ def validate_occ_merge_eligibility(
                     contract_hashes=contract_hashes,
                     receipt_ids=tuple(sorted(receipt_ids)),
                     detail=(
-                        f"receipt {receipt_path} missing required contract_sha256 field "
-                        f"(OMN-10421 / OMN-13061): receipts produced after "
-                        f"{_CONTRACT_SHA256_REQUIRED_AFTER.date()} must record the "
-                        "contract hash. Rerun probes to produce a new receipt."
+                        f"receipt {receipt_source} missing both contract_sha256 and "
+                        f"contract_entry_sha256 (OMN-10421 / OMN-13061 / OMN-13888): "
+                        f"receipts produced after "
+                        f"{_CONTRACT_SHA256_REQUIRED_AFTER.date()} must bind the "
+                        "contract. Rerun probes to produce a new receipt."
                     ),
                 )
-            if receipt.contract_sha256 != contract_hash:
+            binding_error = check_receipt_contract_binding(
+                receipt=receipt,
+                contract_data=contract_data,
+                evidence_item_id=evidence_item_id,
+                whole_file_hash=contract_hash,
+                is_bound_to_this_pr=is_bound,
+            )
+            if binding_error is not None:
                 return ModelOccEligibilityResult(
                     eligible=False,
                     reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
@@ -211,12 +272,9 @@ def validate_occ_merge_eligibility(
                     occ_commit_sha=snapshot.occ_commit_sha,
                     contract_hashes=contract_hashes,
                     receipt_ids=tuple(sorted(receipt_ids)),
-                    detail=(
-                        f"receipt {receipt_path} contract_sha256={receipt.contract_sha256} "
-                        f"does not match pinned contract hash {contract_hash}"
-                    ),
+                    detail=f"receipt {receipt_source}: {binding_error}",
                 )
-            if _receipt_bound_to_pr(receipt, snapshot):
+            if is_bound:
                 tickets_with_pr_bound_receipt.add(ticket_id)
             if receipt.status is not EnumReceiptStatus.PASS:
                 nonpass_receipts.append(receipt_key)
