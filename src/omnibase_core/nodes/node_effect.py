@@ -46,6 +46,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.resolution.resolver_handler import (
     HandlerCallable,
 )
+from omnibase_core.runtime.mixin_node_dispatch import MixinNodeDispatch
 
 # Error messages
 _ERR_EFFECT_SUBCONTRACT_NOT_LOADED = "Effect subcontract not loaded"
@@ -74,7 +75,9 @@ _per_op_circuit_breaker_warning_emitted: bool = False
 _per_op_response_handling_warning_emitted: bool = False
 
 
-class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
+class NodeEffect(
+    NodeCoreBase, MixinEffectExecution, MixinHandlerRouting, MixinNodeDispatch
+):
     """
     Contract-driven effect node for external I/O operations.
 
@@ -565,10 +568,10 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution, MixinHandlerRouting):
                     "circuit_breaker": op_cb.model_dump(),
                     "transaction_config": op_tx.model_dump(),
                 }
-                # TODO(OMN-5746): [v2.0] Per-operation configs (response_handling, retry_policy,
+                # TODO(OMN-5746): [v2.0] Per-operation configs (response_handling, retry_policy,  # onex-allow-todo-marker
                 # circuit_breaker) are serialized into operation_data but NOT YET
                 # wired to the execution pipeline. Only subcontract-level defaults
-                # are honored. See process() docstring "v1.0 Limitation" note.  [NEEDS TICKET]
+                # are honored. See process() docstring "v1.0 Limitation" note.
                 operations.append(op_dict)
 
             # Create new input_data with operations populated

@@ -38,6 +38,7 @@ from omnibase_core.models.workflow import (
     WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
     ModelWorkflowStateSnapshot,
 )
+from omnibase_core.runtime.mixin_node_dispatch import MixinNodeDispatch
 from omnibase_core.utils.util_workflow_executor import WorkflowExecutionResult
 
 # Clock skew tolerance for snapshot timestamp validation
@@ -75,7 +76,9 @@ _WARN_WORKFLOW_ALL_STEPS_FAILED = (
 )
 
 
-class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting):
+class NodeOrchestrator(
+    NodeCoreBase, MixinWorkflowExecution, MixinHandlerRouting, MixinNodeDispatch
+):
     """
     Workflow-driven orchestrator node for coordination.
 
