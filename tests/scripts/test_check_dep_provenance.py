@@ -65,9 +65,9 @@ def test_reject_core_spi_git_rev_override(mod, tmp_path: Path) -> None:
     block = (
         "[tool.uv.sources]\n"
         'omnibase-core = { git = "https://github.com/OmniNode-ai/omnibase_core.git", '
-        'rev = "2a07385dec0ff06903f62572c546ec201f964aaf" }\n'
+        'rev = "2a07385dec0ff06903f62572c546ec201f964aaf" }\n'  # pragma: allowlist secret
         'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", '
-        'rev = "cdfe1a470e96cbe8414ba6b08bbc99a452f09018" }\n'
+        'rev = "cdfe1a470e96cbe8414ba6b08bbc99a452f09018" }\n'  # pragma: allowlist secret
     )
     path = _write_pyproject(tmp_path, block)
 
@@ -120,7 +120,7 @@ def test_allow_occ_only_override(mod, tmp_path: Path) -> None:
     block = (
         "[tool.uv.sources]\n"
         'onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_control.git", '
-        'rev = "2dd26ade7caaa7131e532473ec9d8a207d0e77ab" }\n'
+        'rev = "2dd26ade7caaa7131e532473ec9d8a207d0e77ab" }\n'  # pragma: allowlist secret
     )
     path = _write_pyproject(tmp_path, block)
 
