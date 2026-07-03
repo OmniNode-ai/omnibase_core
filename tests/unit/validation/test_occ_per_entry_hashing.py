@@ -492,7 +492,6 @@ def test_supersession_requires_replacement_unless_tombstone() -> None:
 
 @pytest.mark.unit
 def test_supersession_replacement_must_carry_entry_hash() -> None:
-    contract = _contract(["a"])
     replacement = _receipt_dict(
         item_id="a",
         pr_number=303,
@@ -503,7 +502,6 @@ def test_supersession_replacement_must_carry_entry_hash() -> None:
         ModelReceiptSupersession.model_validate(
             _supersession_dict(item_id="a", tombstone=False, replacement=replacement)
         )
-    del contract  # silence unused
 
 
 @pytest.mark.unit
