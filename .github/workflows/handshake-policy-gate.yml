@@ -4,19 +4,26 @@
 name: Handshake Policy Gate
 # Checks that every active OmniNode repo has the architecture-handshake
 # CI workflow installed and passing on its default branch.
-# Runs weekly, on manual dispatch, and on PR/merge_group (OMN-13875) so the
-# check is a live, observable PR-time signal instead of only surfacing once a
-# week. NOT wired into required-status-checks here — the required-context
-# flip is a separate, staged decision (wedge-safety: this job depends on
-# POLICY_GATE_TOKEN, a cross-repo PAT not available to fork PRs).
+# Runs weekly, on manual dispatch, and on merge_group (OMN-13875) so the
+# check is a live, observable pre-merge signal instead of only surfacing
+# once a week. NOT wired into required-status-checks here — the
+# required-context flip is a separate, staged decision.
+#
+# Deliberately NOT triggered on `pull_request`: this job needs
+# POLICY_GATE_TOKEN (a cross-repo PAT), and this repo's OMNI_RUNNER_SELECTOR_V1
+# convention (see ci.yml) routes every `pull_request`-triggered job to the
+# public ubuntu-latest runner regardless of fork status, withholding trusted
+# secrets by design. Adding `pull_request` here would make this job
+# permanently red on every PR (confirmed live on PR #1381 — "ERROR: GitHub
+# CLI is not authenticated"), which is a worse, always-failing-but-ignorable
+# gate than the original silent one. `merge_group` is a distinct
+# `github.event_name` (not `pull_request`), so it correctly routes to the
+# trusted self-hosted runner where the token is available.
 
 on:
   schedule:
     # Weekly on Monday at 08:00 UTC
     - cron: '0 8 * * 1'
-  pull_request:
-    types: [opened, edited, synchronize, reopened]
-    branches: [main, dev]
   merge_group:
   workflow_dispatch:
 
