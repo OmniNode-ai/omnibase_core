@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-13873: dep-provenance gate — forbid first-party git-source overrides.
+#
+# Root cause this closes: omnibase_infra PR #2184 merged to dev carrying
+# [tool.uv.sources] git-rev overrides pinning omnibase-core / omnibase-spi to
+# UNRELEASED commits. All ~60 CI checks passed green because CI resolved
+# core/spi from those exact commits and tests ran against them — the breakage is
+# dependency *provenance*, not runtime behavior, so no test catches it.
+#
+# This gate is a pure static provenance check (no network calls). It FAILS if
+# any of omnibase-core / omnibase-spi / omnibase-compat (hyphen or underscore
+# spelling) has a git / rev / branch / tag source override in pyproject.toml's
+# [tool.uv.sources] block. onex-change-control is intentionally NOT checked (it
+# follows an immutable-main pin release model). A single line may be exempted
+# with an inline '# raw-override-ok: <ticket>' comment carrying a non-empty
+# token.
+#
+# Scoping: the whole-file gate runs only when a PR actually modifies
+# pyproject.toml (a forbidden override cannot be introduced without editing
+# pyproject.toml). This mirrors the precommit hook's `files: ^pyproject\.toml$`
+# scoping and the stale-todo-gate's changed-files approach, so a PR that does
+# not touch pyproject.toml is not re-flagged for pre-existing, separately-tracked
+# overrides.
+#
+# This job is intended to be a REQUIRED STATUS CHECK. The job name
+# "Dep Provenance Gate" must match branch protection rules (follow-up: add
+# `dep-provenance-gate` as a required context on dev + main — see OMN-13873).
+
+name: Dep Provenance Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, dev]
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  dep-provenance-gate:
+    name: Dep Provenance Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip on merge_group
+        if: ${{ github.event_name == 'merge_group' }}
+        run: |
+          echo "merge_group event — provenance already proven at PR time; skipping."
+
+      - name: Checkout
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: astral-sh/setup-uv@v7
+
+      - name: Forbid first-party git-source overrides on dev/main
+        if: ${{ github.event_name == 'pull_request' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BASE_REF="origin/${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "$BASE_REF"...HEAD -- pyproject.toml || true)
+
+          if [ -z "$CHANGED" ]; then
+            echo "pyproject.toml unchanged in this PR — no new provenance surface. Skipping."
+            exit 0
+          fi
+
+          echo "pyproject.toml modified in this PR — verifying dependency provenance."
+          python3 scripts/check_dep_provenance.py --pyproject pyproject.toml
