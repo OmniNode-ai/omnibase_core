@@ -85,6 +85,7 @@ and scope for audit traceability.
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -107,6 +108,9 @@ from omnibase_core.validation.completion_verify import verify as _completion_ver
 from omnibase_core.validation.runtime_sha_match import (
     CHECK_TYPE_RUNTIME_SHA_MATCH,
     classify_runtime_sha_match_receipt,
+)
+from omnibase_core.validation.validator_receipt_supersession import (
+    resolve_supersession,
 )
 
 # PRs opened after this UTC datetime must include contract_sha256 in receipts;
@@ -389,6 +393,114 @@ def _prefixed_contract_sha256(contract_path: Path) -> str:
     return f"sha256:{compute_contract_sha256(contract_path)}"
 
 
+# Immutable contract-identity fields folded into every per-entry hash
+# (OMN-13888). Deliberately excludes reworded fields such as ``title`` /
+# ``summary`` — including them would make the hash brittle without adding a real
+# integrity guarantee. ``ticket_id`` and ``schema_version`` are the invariant
+# contract identity.
+HEADER_FIELDS: tuple[str, ...] = ("ticket_id", "schema_version")
+
+
+class ContractEntryNotFoundError(LookupError):
+    """Raised when a dod_evidence item id is absent from the contract."""
+
+
+def compute_contract_entry_sha256(contract_data: object, evidence_item_id: str) -> str:
+    """Return the canonical per-entry contract hash for one dod_evidence item.
+
+    The hash binds a receipt to the parse-then-canonical-JSON of its own
+    dod_evidence item plus a pinned header subset (:data:`HEADER_FIELDS`), NOT
+    the whole contract file (OMN-13888). This is what makes appending a later
+    dod_evidence entry non-destructive: entry N+1 leaves the hashes of entries
+    1..N untouched.
+
+    The input is the **parsed** contract (``yaml.safe_load`` output), and the
+    output is canonical JSON (sorted keys, no whitespace). Folded scalars and
+    key ordering are normalised away, so a yamlfmt-style reflow/reindent/requote
+    of the contract file that preserves parsed semantics yields an identical
+    hash.
+
+    Raises:
+        ContractEntryNotFoundError: when no dod_evidence item has ``id ==
+            evidence_item_id``.
+    """
+    entry: dict[str, object] | None = None
+    if isinstance(contract_data, dict):
+        items = contract_data.get("dod_evidence", [])
+        if isinstance(items, list):
+            for item in items:
+                if isinstance(item, dict) and item.get("id") == evidence_item_id:
+                    entry = item
+                    break
+    if entry is None:
+        raise ContractEntryNotFoundError(
+            f"dod_evidence item {evidence_item_id!r} not found in contract"
+        )
+    header = {
+        key: (contract_data.get(key) if isinstance(contract_data, dict) else None)
+        for key in HEADER_FIELDS
+    }
+    canonical = {"header": header, "entry": entry}
+    blob = json.dumps(
+        canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    return f"sha256:{hashlib.sha256(blob.encode('utf-8')).hexdigest()}"
+
+
+def check_receipt_contract_binding(
+    receipt: ModelDodReceipt,
+    contract_data: object,
+    evidence_item_id: str,
+    whole_file_hash: str,
+    is_bound_to_this_pr: bool,
+) -> str | None:
+    """Dual-accept contract-binding check shared by both OCC gates (OMN-13888).
+
+    Precedence:
+
+    1. ``contract_entry_sha256`` present → NEW scheme, always strict: the
+       receipt's entry hash must equal the recomputed per-entry hash. A forged
+       new receipt fails here.
+    2. Legacy (only ``contract_sha256``):
+       - bound to THIS PR → whole-file transition check (must match the current
+         whole-file hash).
+       - a PRIOR merged receipt → grandfathered: NOT re-hashed against the
+         (since-grown) whole-file hash, so appending an entry does not
+         retroactively invalidate it.
+
+    Returns ``None`` when the binding is valid, else an operator-facing failure
+    reason. The "both hashes absent" hard-fail is left to the caller because
+    the eligibility gate and receipt gate apply distinct cutoff policy to it.
+    """
+    if receipt.contract_entry_sha256 is not None:
+        try:
+            expected = compute_contract_entry_sha256(contract_data, evidence_item_id)
+        except ContractEntryNotFoundError as exc:
+            return (
+                f"contract_entry_sha256 present but {exc}; the receipt binds a "
+                "dod_evidence item that no longer exists in the contract"
+            )
+        if receipt.contract_entry_sha256 != expected:
+            return (
+                "entry hash mismatch: receipt "
+                f"contract_entry_sha256={receipt.contract_entry_sha256!r} does "
+                f"not match recomputed per-entry hash {expected!r} for "
+                f"{evidence_item_id!r}. The dod_evidence item mutated since the "
+                "receipt was produced (or the receipt is forged); rerun probes."
+            )
+        return None
+
+    if receipt.contract_sha256 is not None and is_bound_to_this_pr:
+        if receipt.contract_sha256 != whole_file_hash:
+            return (
+                "whole-file hash mismatch: receipt "
+                f"contract_sha256={receipt.contract_sha256!r} does not match "
+                f"pinned contract hash {whole_file_hash!r}. Contract mutated "
+                "post-receipt; rerun probes or mint a per-entry hash."
+            )
+    return None
+
+
 def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
     """Return sorted unique ticket IDs cited by this PR.
 
@@ -574,6 +686,8 @@ def _check_one_receipt(
     receipts_dir: Path,
     contract_path: Path | None = None,
     pr_opened_at: datetime | None = None,
+    contract_data: object = None,
+    current_pr_number: int | None = None,
 ) -> ModelReceiptCheckResult:
     """Verify exactly one (ticket, evidence, check) has a PASS receipt on disk."""
     receipt_path = receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
@@ -587,15 +701,35 @@ def _check_one_receipt(
             reason=reason,
         )
 
-    receipt, receipt_failure = _load_bound_receipt(
-        receipt_path,
-        ticket_id,
-        evidence_item_id,
-        check_type,
+    # OMN-13888 (scope 3): resolve the supersession chain before loading the
+    # base file. A tombstone means the key has no active receipt (fail as
+    # missing); a replacement re-binds the key without editing the base file.
+    supersession = resolve_supersession(
+        receipts_dir, ticket_id, evidence_item_id, check_type
     )
-    if receipt_failure is not None:
-        return fail(receipt_failure)
-    assert receipt is not None
+    receipt: ModelDodReceipt
+    if supersession is not None:
+        if supersession.error is not None:
+            return fail(supersession.error)
+        active_receipt = supersession.receipt
+        if supersession.tombstoned or active_receipt is None:
+            return fail(
+                f"receipt for {ticket_id}/{evidence_item_id}/{check_type} is "
+                f"tombstoned at {supersession.source_path}; the key has no "
+                "active receipt (supersession invalidated it)"
+            )
+        receipt = active_receipt
+        receipt_path = supersession.source_path
+    else:
+        loaded, receipt_failure = _load_bound_receipt(
+            receipt_path,
+            ticket_id,
+            evidence_item_id,
+            check_type,
+        )
+        if receipt_failure is not None or loaded is None:
+            return fail(receipt_failure or f"no receipt at {receipt_path}")
+        receipt = loaded
 
     # Post-schema adversarial guard: surface ADVISORY / PENDING / self-
     # attestation with a message that names the rule (OMN-9788).
@@ -620,23 +754,26 @@ def _check_one_receipt(
                 f"{runtime_sha_result.reason}"
             )
 
-    # Hash-binding check (OMN-10421, invariant I4): verify the contract has
-    # not mutated since this receipt was produced. Only active when the caller
-    # supplies pr_opened_at — callers that omit it get no hash enforcement
-    # (backward-compatible with pre-OMN-10421 call sites).
+    # Hash-binding check (OMN-10421 invariant I4; OMN-13888 dual-accept):
+    # verify the contract has not mutated since this receipt was produced. Only
+    # active when the caller supplies pr_opened_at — callers that omit it get no
+    # hash enforcement (backward-compatible with pre-OMN-10421 call sites).
     if (
         contract_path is not None
         and contract_path.exists()
         and pr_opened_at is not None
     ):
-        actual_sha = _prefixed_contract_sha256(contract_path)
-        if receipt.contract_sha256 is None:
+        # Both bindings absent: legacy None-handling (post-cutoff hard FAIL /
+        # pre-cutoff ADVISORY). Only fires when neither hash is present.
+        if receipt.contract_sha256 is None and receipt.contract_entry_sha256 is None:
             is_post_cutoff = pr_opened_at >= _CONTRACT_SHA256_REQUIRED_AFTER
             if is_post_cutoff:
                 return fail(
-                    f"receipt at {receipt_path} missing required contract_sha256 field "
-                    f"(OMN-10421): receipts produced after {_CONTRACT_SHA256_REQUIRED_AFTER.date()} "
-                    "must record the contract hash. Rerun probes to produce a new receipt."
+                    f"receipt at {receipt_path} missing required contract binding "
+                    f"(OMN-10421 / OMN-13888): receipts produced after "
+                    f"{_CONTRACT_SHA256_REQUIRED_AFTER.date()} must record "
+                    "contract_sha256 or contract_entry_sha256. Rerun probes to "
+                    "produce a new receipt."
                 )
             # Pre-cutoff PR: ADVISORY downgrade — field expected soon but not yet required.
             return ModelReceiptCheckResult(
@@ -645,17 +782,29 @@ def _check_one_receipt(
                 check_type=check_type,
                 passed=False,
                 reason=(
-                    f"receipt at {receipt_path} missing contract_sha256 (ADVISORY — "
+                    f"receipt at {receipt_path} missing contract binding (ADVISORY — "
                     "legacy receipt within 7-day migration window; rerun probes to bind "
                     "the receipt to the current contract hash)"
                 ),
             )
-        if receipt.contract_sha256 != actual_sha:
-            return fail(
-                f"contract mutated post-receipt; rerun probes. "
-                f"receipt contract_sha256={receipt.contract_sha256!r} but "
-                f"sha256({contract_path})={actual_sha!r}"
-            )
+        whole_file_hash = _prefixed_contract_sha256(contract_path)
+        # A legacy whole-file receipt is grandfathered when it binds a
+        # DIFFERENT (prior) PR — appending an entry must not invalidate it.
+        # Absent PR context, or a same-PR / pr_number-less receipt, stays strict.
+        is_bound_to_this_pr = (
+            current_pr_number is None
+            or receipt.pr_number is None
+            or receipt.pr_number == current_pr_number
+        )
+        binding_error = check_receipt_contract_binding(
+            receipt=receipt,
+            contract_data=contract_data,
+            evidence_item_id=evidence_item_id,
+            whole_file_hash=whole_file_hash,
+            is_bound_to_this_pr=is_bound_to_this_pr,
+        )
+        if binding_error is not None:
+            return fail(binding_error)
 
     return ModelReceiptCheckResult(
         ticket_id=ticket_id,
@@ -1045,6 +1194,7 @@ def _check_ticket(
     contracts_dir: Path,
     receipts_dir: Path,
     pr_opened_at: datetime | None,
+    current_pr_number: int | None = None,
 ) -> list[ModelReceiptCheckResult]:
     """Load a ticket contract and verify all its dod_evidence receipts.
 
@@ -1086,6 +1236,8 @@ def _check_ticket(
             receipts_dir,
             contract_path=contract_path,
             pr_opened_at=pr_opened_at,
+            contract_data=contract_data,
+            current_pr_number=current_pr_number,
         )
         for item_id, check_type, _check_value in triples
     ]
@@ -1275,7 +1427,13 @@ def validate_pr_receipts(
     all_checks: list[ModelReceiptCheckResult] = []
     for ticket_id in ticket_ids:
         all_checks.extend(
-            _check_ticket(ticket_id, contracts_dir, receipts_dir, pr_opened_at)
+            _check_ticket(
+                ticket_id,
+                contracts_dir,
+                receipts_dir,
+                pr_opened_at,
+                current_pr_number=current_pr_number,
+            )
         )
 
     failures = [c for c in all_checks if not c.passed]
@@ -1321,11 +1479,15 @@ __all__ = [
     "EVIDENCE_SOURCE_PATTERN",
     "EVIDENCE_SOURCE_SHA_PATTERN",
     "EVIDENCE_TICKET_PATTERN",
+    "HEADER_FIELDS",
     "OVERRIDE_PATTERN",
     "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
+    "ContractEntryNotFoundError",
     "_CONTRACT_SHA256_REQUIRED_AFTER",
+    "check_receipt_contract_binding",
     "classify_evidence_class",
+    "compute_contract_entry_sha256",
     "compute_contract_sha256",
     "parse_evidence_source",
     "parse_pr_opened_at",

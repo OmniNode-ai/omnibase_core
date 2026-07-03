@@ -223,7 +223,23 @@ class ModelDodReceipt(BaseModel):
             "this receipt. The OCC-first eligibility gate requires this field "
             "and rejects receipts whose digest does not match the pinned OCC "
             "contract. Optional here only for staged migration of historical "
-            "Receipt Gate fixtures."
+            "Receipt Gate fixtures. Legacy WHOLE-FILE binding (OMN-13888): "
+            "grandfathered for receipts minted before per-entry hashing; new "
+            "mints bind ``contract_entry_sha256`` instead so appending a later "
+            "dod_evidence entry does not invalidate prior receipts."
+        ),
+    )
+    contract_entry_sha256: str | None = Field(
+        default=None,
+        description=(
+            "Per-entry SHA-256 digest (OMN-13888) binding this receipt to the "
+            "canonical JSON of its own dod_evidence item plus an immutable "
+            "contract header (ticket_id + schema_version), NOT the whole "
+            "contract file. Appending dod_evidence entry N+1 does not change "
+            "the hash of entries 1..N, so prior receipts remain valid. When "
+            "present it is the authoritative binding and takes precedence over "
+            "``contract_sha256`` (dual-accept transition). None on legacy "
+            "receipts that only bound the whole file."
         ),
     )
     branch: str | None = Field(
@@ -315,7 +331,7 @@ class ModelDodReceipt(BaseModel):
             raise ValueError(f"commit_sha must be 7-40 hex chars (git SHA), got: {v!r}")
         return v
 
-    @field_validator("contract_sha256")
+    @field_validator("contract_sha256", "contract_entry_sha256")
     @classmethod
     def _validate_contract_sha256(cls, v: str | None) -> str | None:
         if v is None:
@@ -323,7 +339,7 @@ class ModelDodReceipt(BaseModel):
         normalized = v.strip().lower()
         if not _SHA256_RE.match(normalized):
             raise ValueError(
-                "contract_sha256 must be a sha256:<64 lowercase hex> digest "
+                "contract hash must be a sha256:<64 lowercase hex> digest "
                 "or a bare 64-character lowercase hex digest"
             )
         if not normalized.startswith("sha256:"):
