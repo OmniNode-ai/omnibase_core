@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-13502 (WS-F): no-faked-boundary gate — BLOCKING MODE for omnibase_core.
+#
+# A hand-written class/object standing in for the platform's OWN inference /
+# routing / dispatch boundary (inference bridge, model router, routing-contract
+# resolution, registry, dispatch surface) that returns canned / prompt-echoed
+# output, or a patch("httpx.Client") / MagicMock substituting that egress inside a
+# real-dispatch test, is a FAKE of our architecture. This gate turns the
+# feedback_real_dispatch_path_tests failure ("handler-isolation tests pass while
+# live fails") into a BLOCKING gate.
+#
+# The detector is the pure COMPUTE HandlerNoFakedBoundaryCompute (OMN-13497)
+# executed over the in-memory event bus by runtime_no_faked_boundary. The
+# canonical recorded-replay seam (patch("httpx.Client", return_value=<Recorded
+# ReplayInferenceTransport>), OMN-13499) is exempt; the detector's own source and
+# the acceptance corpus carry the file-level onex-allow-file-faked-boundary marker
+# (OMN-13502 fix, PR #1377). omnibase_core is CLEAN under the fixed detector, so
+# this gate lands BLOCKING (no --report-only) — new fakes fail the job and block
+# merge. Suppress an approved fixture line with:  # onex-allow-faked-boundary
+#
+# Wedge-safety: merge_group trigger present, NO paths filter (never skips on
+# merge_group SHAs), fail-propagating (non-zero detector exit fails the job). This
+# job is a REQUIRED STATUS CHECK — the job name "No Faked Boundary Gate" must
+# match the branch-protection context.
+
+name: No Faked Boundary Gate
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main, dev]
+  merge_group:
+
+permissions:
+  contents: read
+
+jobs:
+  no-faked-boundary-gate:
+    name: No Faked Boundary Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run no-faked-boundary gate (full src + tests, BLOCKING)
+        run: |
+          uv run python -m omnibase_core.validation.no_faked_boundary.runtime_no_faked_boundary \
+            src tests

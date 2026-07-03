@@ -123,6 +123,79 @@ def test_suppression_marker_skips_line() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Canonical recorded-replay seam exemption + file-level marker (OMN-13500/13502)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_canonical_replay_patch_seam_is_not_flagged() -> None:
+    # The canonical golden-chain seam: patch httpx.Client with a recorded-replay
+    # transport (live routing/request construction still run; only bytes replayed).
+    # The binding lives on a prior line, so the scanner must be content-aware.
+    src = (
+        "    transport = RecordedReplayInferenceTransport([fixture])\n"
+        '    with patch("httpx.Client", return_value=transport):\n'
+        "        run_chain()\n"
+    )
+    assert scan_source(src).flagged is False
+
+
+@pytest.mark.unit
+def test_canonical_replay_patch_seam_inline_construction_is_not_flagged() -> None:
+    src = (
+        '    with patch("httpx.AsyncClient",'
+        " return_value=RecordedReplayInferenceTransport([f])):\n"
+        "        run_chain()\n"
+    )
+    assert scan_source(src).flagged is False
+
+
+@pytest.mark.unit
+def test_bare_patch_httpx_still_flags_even_with_replay_binding_present() -> None:
+    # A bare ``patch("httpx.Client") as mock`` captures the mock to hand-set canned
+    # bytes — a fake — even in a file that also builds a real replay transport.
+    src = (
+        "    transport = RecordedReplayInferenceTransport([fixture])\n"
+        '    with patch("httpx.Client") as mock_client:\n'
+        "        mock_client.return_value.post.return_value = _canned\n"
+    )
+    result = scan_source(src)
+    assert result.flagged is True
+    assert any(f.pattern == "patch_httpx_egress" for f in result.findings)
+
+
+@pytest.mark.unit
+def test_patch_httpx_injecting_magicmock_still_flags() -> None:
+    src = '    with patch("httpx.Client", return_value=MagicMock()):'
+    assert scan_source(src).flagged is True
+
+
+@pytest.mark.unit
+def test_file_level_marker_skips_whole_file() -> None:
+    src = (
+        "# onex-allow-file-faked-boundary OMN-13497 reason=corpus subject\n"
+        "class _FakeBridge(ModelInferenceAdapter):\n"
+        '    with patch("httpx.Client") as mock_client:\n'
+        "    inference_bridge = MagicMock()\n"
+    )
+    result = scan_source(src)
+    assert result.flagged is False
+    assert result.findings == ()
+
+
+@pytest.mark.unit
+def test_file_level_marker_is_distinct_from_line_marker() -> None:
+    # The per-line marker must NOT be a substring of the file-level marker, so a
+    # file-level marker does not accidentally suppress only the line it is on.
+    from omnibase_core.validation.no_faked_boundary.handler import (
+        _FILE_SUPPRESSION_MARKER,
+        _SUPPRESSION_MARKER,
+    )
+
+    assert _SUPPRESSION_MARKER not in _FILE_SUPPRESSION_MARKER
+
+
+# ---------------------------------------------------------------------------
 # Canonical COMPUTE handler shape + two-transport (in-memory bus) dispatch
 # ---------------------------------------------------------------------------
 
