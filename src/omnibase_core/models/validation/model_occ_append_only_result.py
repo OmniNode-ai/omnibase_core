@@ -6,17 +6,12 @@
 from __future__ import annotations
 
 import json
-from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
-class EnumAppendOnlyViolationKind(StrEnum):
-    """Category of an append-only violation."""
-
-    ENTRY_EDITED = "entry_edited"
-    ENTRY_REMOVED = "entry_removed"
-    RECEIPT_FILE_MUTATED = "receipt_file_mutated"
+from omnibase_core.enums.enum_append_only_violation_kind import (
+    EnumAppendOnlyViolationKind,
+)
 
 
 class ModelAppendOnlyViolation(BaseModel):
