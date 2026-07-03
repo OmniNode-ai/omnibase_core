@@ -4,12 +4,20 @@
 name: Handshake Policy Gate
 # Checks that every active OmniNode repo has the architecture-handshake
 # CI workflow installed and passing on its default branch.
-# Runs weekly and on manual dispatch.
+# Runs weekly, on manual dispatch, and on PR/merge_group (OMN-13875) so the
+# check is a live, observable PR-time signal instead of only surfacing once a
+# week. NOT wired into required-status-checks here — the required-context
+# flip is a separate, staged decision (wedge-safety: this job depends on
+# POLICY_GATE_TOKEN, a cross-repo PAT not available to fork PRs).
 
 on:
   schedule:
     # Weekly on Monday at 08:00 UTC
     - cron: '0 8 * * 1'
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main, dev]
+  merge_group:
   workflow_dispatch:
 
 permissions:
