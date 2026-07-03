@@ -17,12 +17,15 @@ infra-free and therefore must pass core-resident:
 
 from __future__ import annotations
 
+import json
+import uuid as _uuid_module
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
@@ -555,11 +558,7 @@ async def test_runtime_local_instantiates_event_bus_handler_end_to_end(
 # auto-fill path so ALL dispatch paths are consistent.
 # ---------------------------------------------------------------------------
 
-import json
 import re
-import uuid as _uuid_module
-
-from pydantic import BaseModel, ConfigDict, Field
 
 
 class _ModelRequiresRunIdentity(BaseModel):
@@ -598,6 +597,92 @@ class _ModelRequiresOnlyCorrelationId(BaseModel):
 
 
 _THIS_MODULE_FOR_IDENTITY = "tests.unit.runtime.test_runtime_local"
+
+_PROGRESS_TOPIC = "onex.evt.omn13865.progress.v1"
+_COMPLETED_TOPIC = "onex.evt.omn13865.completed.v1"
+
+
+class _ProgressBeforeCompletionHandler:
+    """Publishes a non-terminal progress event before returning the final result."""
+
+    def __init__(self, event_bus: ProtocolLocalRuntimeBus) -> None:
+        self._event_bus = event_bus
+
+    async def handle(self, payload: _ModelRequiresOnlyCorrelationId) -> dict[str, str]:
+        await self._event_bus.publish(
+            _PROGRESS_TOPIC,
+            None,
+            json.dumps(
+                {
+                    "status": "success",
+                    "kind": "progress",
+                    "correlation_id": str(payload.correlation_id),
+                }
+            ).encode("utf-8"),
+        )
+        return {
+            "status": "success",
+            "kind": "completed",
+            "correlation_id": str(payload.correlation_id),
+        }
+
+
+def _write_event_driven_progress_contract(target: Path) -> None:
+    contract: dict[str, Any] = {
+        "workflow_id": "omn-13865-progress-is-not-terminal",
+        "terminal_event": _COMPLETED_TOPIC,
+        "event_bus": {
+            "subscribe_topics": ["onex.cmd.omn13865.start.v1"],
+            "publish_topics": [_PROGRESS_TOPIC, _COMPLETED_TOPIC],
+        },
+        "handler_routing": {
+            "routing_strategy": "operation_match",
+            "handlers": [
+                {
+                    "operation": "start",
+                    "handler": {
+                        "module": _THIS_MODULE_FOR_IDENTITY,
+                        "name": "_ProgressBeforeCompletionHandler",
+                    },
+                    "event_model": {
+                        "module": _THIS_MODULE_FOR_IDENTITY,
+                        "name": "_ModelRequiresOnlyCorrelationId",
+                    },
+                }
+            ],
+        },
+    }
+    target.write_text(yaml.safe_dump(contract), encoding="utf-8")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_event_driven_runtime_waits_for_declared_terminal_event(
+    tmp_path: Path,
+) -> None:
+    """Progress publish_topics must not complete receipt-mode runs.
+
+    The merge_sweep/pr_lifecycle orchestrator publishes phase-transition events
+    before its final completed event. RuntimeLocal must subscribe the terminal
+    callback only to ``terminal_event``; otherwise the first progress event wins
+    and ``workflow_result.json`` loses the final handler result.
+    """
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_event_driven_progress_contract(contract_path)
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=5,
+    )
+
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.COMPLETED
+    workflow_data = json.loads((state_root / "workflow_result.json").read_text())
+    assert workflow_data["terminal_payload"]["kind"] == "completed"
+    assert workflow_data["handler_result"]["kind"] == "completed"
 
 
 def _write_contract_for_model(

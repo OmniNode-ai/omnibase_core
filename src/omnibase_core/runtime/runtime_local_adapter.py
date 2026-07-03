@@ -51,6 +51,7 @@ class LocalRuntimeBusAdapter:
         output_topic: str | None,
         bus: ProtocolLocalRuntimeBus,
         on_error: Callable[[], None] | None = None,
+        on_result: Callable[[object], None] | None = None,
     ) -> None:
         self.handler = handler
         self.handler_name = handler_name
@@ -61,6 +62,7 @@ class LocalRuntimeBusAdapter:
         self.output_topic = output_topic
         self.bus = bus
         self.on_error = on_error
+        self.on_result = on_result
 
     async def on_message(self, msg: ProtocolLocalRuntimeMessage) -> None:
         """Receive bus message, invoke handler, publish result."""
@@ -133,6 +135,8 @@ class LocalRuntimeBusAdapter:
         # 3. Publish output
         if result is None:
             return
+        if self.on_result:
+            self.on_result(result)
         if not self.output_topic:
             return
         try:
