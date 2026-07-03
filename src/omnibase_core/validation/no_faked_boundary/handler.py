@@ -28,8 +28,25 @@ routing-contract resolution, registry, or dispatch surface) that returns canned 
 prompt-echoed output, or a ``patch("httpx.Client")`` / ``MagicMock`` substituting
 that egress inside a real-dispatch test, is a FAKE of our architecture" — turns
 the ``feedback_real_dispatch_path_tests`` failure ("handler-isolation tests pass
-while live fails") into a BLOCKING gate. The ``onex-allow-faked-boundary``
-suppression marker is the per-line escape hatch.
+while live fails") into a BLOCKING gate.
+
+Suppression / exemption (OMN-13500/13502):
+
+* ``onex-allow-faked-boundary`` — per-LINE marker; the annotated line is skipped.
+* ``onex-allow-file-faked-boundary`` — FILE-level marker; a file carrying it
+  anywhere is skipped whole. Reserved for sources whose SUBJECT *is* the fake
+  pattern (this detector's own docstring, and the acceptance-corpus test), which
+  must quote the banned idioms verbatim. This module itself carries the marker
+  below for exactly that reason: onex-allow-file-faked-boundary OMN-13497
+  reason="detector source documents verbatim the patterns it bans".
+* Canonical recorded-replay seam — a ``patch("httpx.Client")`` /
+  ``patch("httpx.AsyncClient")`` that INJECTS a
+  ``RecordedReplayInferenceTransport`` (OMN-13499) as the replacement is the
+  canonical golden-chain seam, NOT a fake: live routing / model-selection /
+  request construction still run, only recorded bytes are replayed, and the
+  transport fails closed on route/hash drift. Such a patch is exempt from
+  ``patch_httpx_egress``; a bare ``patch("httpx.Client") as mock`` (which then
+  hand-sets canned bytes) or one injecting a ``MagicMock`` still flags.
 """
 
 from __future__ import annotations
@@ -54,6 +71,36 @@ __all__ = ["HandlerNoFakedBoundaryCompute", "scan_source"]
 # exists for the corpus / test-fixture sources whose SUBJECT is the fake pattern
 # the scanner must flag, and for genuinely-approved boundary doubles.
 _SUPPRESSION_MARKER: Final[str] = "onex-allow-faked-boundary"
+
+# A file carrying this marker ANYWHERE is skipped whole. Reserved for sources
+# whose subject IS the fake pattern (this detector's own docstring; the
+# acceptance-corpus test). Distinct substring from _SUPPRESSION_MARKER — the
+# per-line "onex-allow-faked-boundary" is NOT a substring of this token.
+_FILE_SUPPRESSION_MARKER: Final[str] = "onex-allow-file-faked-boundary"
+
+# The canonical recorded-from-real replay transport (OMN-13499). A ``patch`` of
+# the httpx egress that injects THIS as the replacement is the canonical
+# golden-chain seam (live routing/selection/request construction still run; only
+# recorded bytes are replayed and the transport fails closed on drift), so it is
+# NOT a boundary fake. See OMN-13500/13502.
+_CANONICAL_REPLAY_TRANSPORT: Final[str] = "RecordedReplayInferenceTransport"
+
+# Names bound to a RecordedReplayInferenceTransport(...) construction anywhere in
+# the file (e.g. ``transport = RecordedReplayInferenceTransport([fixture])``).
+_REPLAY_BINDING: Final[re.Pattern[str]] = re.compile(
+    r"(\w+)\s*=\s*" + _CANONICAL_REPLAY_TRANSPORT + r"\s*\(",
+)
+
+# A ``patch("httpx.Client"|"httpx.AsyncClient", <replacement>)`` that injects a
+# replacement object (positional ``new`` or ``new=``/``return_value=`` keyword),
+# capturing the injected NAME. A bare ``patch("httpx.Client") as mock`` (no
+# injected replacement — the mock is captured to hand-set canned bytes) does NOT
+# match here and therefore still flags.
+_PATCH_INJECTED: Final[re.Pattern[str]] = re.compile(
+    r"""patch\s*\(\s*["']httpx\.(?:Client|AsyncClient)["']\s*,\s*"""
+    r"""(?:(?:new|return_value)\s*=\s*)?([A-Za-z_]\w*)""",
+    re.IGNORECASE,
+)
 
 # === GENERATED SCANNING REGEXES (OMN-13497) — preserved verbatim from the
 # corpus-accepted artifact. Each pattern is one fake-boundary signature. ===
@@ -94,15 +141,38 @@ _PATTERN_COMPLETION_FSTRING: Final[re.Pattern[str]] = re.compile(
 )
 
 
+def _patch_injects_canonical_replay(line: str, replay_names: set[str]) -> bool:
+    """True iff ``line`` patches the httpx egress with the canonical replay transport.
+
+    The canonical golden-chain seam is ``patch("httpx.Client", return_value=x)``
+    (or positional ``new``) where ``x`` is a ``RecordedReplayInferenceTransport``.
+    A bare ``patch("httpx.Client") as mock`` or one injecting a ``MagicMock`` does
+    NOT match and is therefore still flagged as a boundary fake.
+    """
+    match = _PATCH_INJECTED.search(line)
+    return match is not None and match.group(1) in replay_names
+
+
 def scan_source(content: str, path: str = "<input>") -> ModelNoFakedBoundaryScanResult:
     """Scan ``content`` line by line for fakes of an inference/routing/dispatch boundary.
 
-    Pure and deterministic. A line carrying the ``onex-allow-faked-boundary``
-    suppression marker is skipped; otherwise each of the four generated
-    fake-boundary signatures is matched. Findings are emitted in source order
-    (line number) so the verdict is order-independent regardless of dispatch
-    backend.
+    Pure and deterministic. A file carrying the ``onex-allow-file-faked-boundary``
+    marker is skipped whole; a line carrying the ``onex-allow-faked-boundary``
+    marker is skipped; a ``patch`` that injects the canonical
+    ``RecordedReplayInferenceTransport`` is exempt from ``patch_httpx_egress``.
+    Otherwise each of the generated fake-boundary signatures is matched. Findings
+    are emitted in source order (line number) so the verdict is order-independent
+    regardless of dispatch backend.
     """
+    # File-level escape hatch: the whole file is exempt (subject IS the pattern).
+    if _FILE_SUPPRESSION_MARKER in content:
+        return ModelNoFakedBoundaryScanResult(path=path, flagged=False, findings=())
+
+    # Names bound to the canonical recorded-replay transport anywhere in the file,
+    # plus the class name itself (for inline ``return_value=Recorded...([f])``).
+    replay_names: set[str] = set(_REPLAY_BINDING.findall(content))
+    replay_names.add(_CANONICAL_REPLAY_TRANSPORT)
+
     findings: list[ModelNoFakedBoundaryFinding] = []
     for lineno, line in enumerate(content.splitlines(), start=1):
         if _SUPPRESSION_MARKER in line:
@@ -120,7 +190,9 @@ def scan_source(content: str, path: str = "<input>") -> ModelNoFakedBoundaryScan
                     matched_text=stripped,
                 )
             )
-        if _PATTERN_PATCH.search(line):
+        if _PATTERN_PATCH.search(line) and not _patch_injects_canonical_replay(
+            line, replay_names
+        ):
             findings.append(
                 ModelNoFakedBoundaryFinding(
                     path=path,
