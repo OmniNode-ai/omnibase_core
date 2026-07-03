@@ -471,6 +471,18 @@ def check_receipt_contract_binding(
     Returns ``None`` when the binding is valid, else an operator-facing failure
     reason. The "both hashes absent" hard-fail is left to the caller because
     the eligibility gate and receipt gate apply distinct cutoff policy to it.
+
+    Grandfather safety (OMN-13888 round-1 PROBE6). ``is_bound_to_this_pr`` is
+    derived by callers from the receipt-controlled ``pr_number``, so a NEW
+    legacy-only receipt could nominally set a foreign ``pr_number`` to reach the
+    grandfather branch and skip the whole-file check. This is defense-in-depth,
+    not the sole barrier: receipts are only introduced through onex_change_control
+    PRs, where the Receipt Honesty Gate (``check_receipt_hardening.py``) already
+    rejects any post-cutoff receipt whose ``contract_sha256`` != the CURRENT
+    ``sha256(contracts/<ticket>.yaml)`` — unconditional on ``pr_number`` — so a
+    forged wrong-hash net-new receipt never survives to this point. The per-entry
+    hash (branch 1) is the terminal fix that removes the grandfather's relevance
+    for all future receipts.
     """
     if receipt.contract_entry_sha256 is not None:
         try:

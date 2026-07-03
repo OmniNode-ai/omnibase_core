@@ -220,6 +220,24 @@ def validate_occ_merge_eligibility(
             # receipts grandfather so appending an entry does not invalidate
             # them). The None hard-fail (OMN-10421 / OMN-13061) fires only when
             # BOTH bindings are absent.
+            #
+            # Round-1 soft-spot (verifier PROBE6): `is_bound` keys on the
+            # receipt-controlled `pr_number`, so a NEW legacy-only receipt could
+            # in principle set a FOREIGN pr_number to reach the grandfather path
+            # and skip the whole-file check with a wrong hash. That path is NOT
+            # independently exploitable end-to-end: a receipt can only be
+            # introduced through an onex_change_control PR, and OCC's Receipt
+            # Honesty Gate (scripts/validation/check_receipt_hardening.py, a
+            # REQUIRED status check) validates every post-cutoff receipt's
+            # contract_sha256 == sha256(contracts/<ticket>.yaml) UNCONDITIONAL on
+            # pr_number — so a forged wrong-hash net-new receipt is rejected
+            # upstream before this grandfather is ever reached. The grandfather
+            # here is defense-in-depth behind that stricter gate; the terminal
+            # fix is the per-entry hash (scope 1), which makes every new receipt
+            # immune to appends without needing the whole-file grandfather at
+            # all. Full closure of the pure-function residual (an unforgeable
+            # "receipt file is net-new in this PR" git signal threaded from CI)
+            # is tracked as follow-up and is disproportionate to wire here.
             if (
                 receipt.contract_sha256 is None
                 and receipt.contract_entry_sha256 is None
