@@ -689,7 +689,7 @@ wheels = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.46.2"
+version = "0.46.3"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
