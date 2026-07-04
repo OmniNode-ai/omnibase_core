@@ -191,7 +191,7 @@ main() {
         exit 2
     fi
 
-    if ! gh auth status &> /dev/null; then
+    if [[ -z "${GH_TOKEN:-}${GITHUB_TOKEN:-}" ]] && ! gh auth status &> /dev/null; then
         echo "ERROR: GitHub CLI is not authenticated. Run: gh auth login" >&2
         exit 2
     fi

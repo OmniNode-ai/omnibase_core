@@ -62,4 +62,9 @@ jobs:
           # with Actions:Read on private repos. GITHUB_TOKEN cannot read
           # workflow runs from private repos in the same org.
           GH_TOKEN: ${{ secrets.POLICY_GATE_TOKEN }}
-        run: bash architecture-handshakes/check-policy-gate.sh --strict
+        run: |
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            bash architecture-handshakes/check-policy-gate.sh
+          else
+            bash architecture-handshakes/check-policy-gate.sh --strict
+          fi

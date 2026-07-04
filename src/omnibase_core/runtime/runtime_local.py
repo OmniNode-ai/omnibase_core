@@ -906,6 +906,11 @@ class RuntimeLocal:
             event_bus_spec.get("subscribe_topics", [])
         )
         publish_topics = self._as_string_list(event_bus_spec.get("publish_topics", []))
+        terminal_topic = self._contract.get("terminal_event")
+        if not isinstance(terminal_topic, str) or not terminal_topic:
+            logger.error("RuntimeLocal: event-driven workflow missing terminal_event")
+            self._result = EnumWorkflowResult.FAILED
+            return
         if not subscribe_topics:
             logger.error(
                 "RuntimeLocal: event-driven mode requires non-empty "
@@ -980,6 +985,15 @@ class RuntimeLocal:
 
                 return _cb
 
+            def _make_result_cb(output_topic: str) -> Callable[[object], None] | None:
+                if output_topic != terminal_topic:
+                    return None
+
+                def _cb(result: object) -> None:
+                    self._handler_result = result
+
+                return _cb
+
             adapter = LocalRuntimeBusAdapter(
                 handler=cast("ProtocolLocalRuntimeCallableTarget", handler_instance),
                 handler_name=entry.handler_name,
@@ -987,6 +1001,7 @@ class RuntimeLocal:
                 output_topic=entry.output_topic or None,
                 bus=bus,
                 on_error=_make_fail_cb(entry.handler_name),
+                on_result=_make_result_cb(entry.output_topic),
             )
 
             if not entry.input_topic:
@@ -1005,7 +1020,7 @@ class RuntimeLocal:
             )
             unsubscribe_handles.append(unsub)
 
-        # --- 5. Subscribe to terminal (publish) topics ---
+        # --- 5. Subscribe to the declared terminal event only ---
         async def _on_terminal_msg(msg: ProtocolLocalRuntimeMessage) -> None:
             decoded: object = (
                 json.loads(msg.value) if isinstance(msg.value, bytes) else {}
@@ -1013,13 +1028,12 @@ class RuntimeLocal:
             payload = decoded if isinstance(decoded, dict) else {}
             self._on_terminal_event(cast("RawWorkflowMap", payload))
 
-        for pub_topic in publish_topics:
-            unsub = await bus.subscribe(
-                pub_topic,
-                on_message=_on_terminal_msg,
-                group_id="runtime-local-terminal",
-            )
-            unsubscribe_handles.append(unsub)
+        unsub = await bus.subscribe(
+            terminal_topic,
+            on_message=_on_terminal_msg,
+            group_id="runtime-local-terminal",
+        )
+        unsubscribe_handles.append(unsub)
 
         # --- 6. Build and publish initial payload ---
         correlation_id = uuid.uuid4()
