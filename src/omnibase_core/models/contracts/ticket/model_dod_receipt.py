@@ -55,6 +55,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
+from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_proof_packet import ModelProofPacket
 
@@ -266,6 +267,20 @@ class ModelDodReceipt(BaseModel):
             "the per-class tier requirement is enforced at the gate, not on every "
             "receipt unconditionally. F1 autobind (OMN-13317) fills the packet's "
             "source fields (evidence_source_sha, evidence_ticket, verifier)."
+        ),
+    )
+    diff_attestations: list[EnumDiffAttestation] = Field(
+        default_factory=list,
+        description=(
+            "Diff-falsifiable claims this receipt asserts about its own PR "
+            "(OMN-13927). Each declared attestation is validated at merge time "
+            "against `git diff --name-status <base>...<head>` by "
+            "`validator_receipt_diff_consistency`; a contradicted attestation "
+            "hard-fails the OCC honesty gate. This is the authoritative, "
+            "forward-looking trigger — the gate also honors two high-precision "
+            "legacy regexes over `actual_output` for receipts that only carry a "
+            "free-text net-new-only claim. Empty (the default) means the receipt "
+            "makes no diff-falsifiable claim and the check does not fire."
         ),
     )
     evidence_class: EnumEvidenceClass | None = Field(
