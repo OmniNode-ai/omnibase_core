@@ -47,7 +47,7 @@ class ModelIntentQueryRequestedEvent(ModelRuntimeEventBase):
     """
 
     event_type: str = Field(
-        default="onex.omnimemory.intent.query.requested.v1",
+        default="onex.omnimemory.intent.query.requested.v1",  # onex-topic-allow: canonical event topic default (OMN-13944); onex-allow-topic-literal
         description="Event type identifier",
     )
     query_id: UUID = Field(

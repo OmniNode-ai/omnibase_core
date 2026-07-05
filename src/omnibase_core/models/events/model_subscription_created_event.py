@@ -20,7 +20,7 @@ from omnibase_core.models.events.model_runtime_event_base import (
 
 __all__ = ["ModelSubscriptionCreatedEvent", "SUBSCRIPTION_CREATED_EVENT"]
 
-SUBSCRIPTION_CREATED_EVENT = "onex.runtime.subscription.created"
+SUBSCRIPTION_CREATED_EVENT = "onex.runtime.subscription.created"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944); onex-allow-topic-literal
 
 
 class ModelSubscriptionCreatedEvent(ModelRuntimeEventBase):

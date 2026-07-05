@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-topic-literal: per-event topic SoT declaration (OMN-13944)
 
 """
 Contract validation failed event model.
@@ -58,7 +59,7 @@ __all__ = [
     "MAX_VIOLATION_ENTRIES",
 ]
 
-CONTRACT_VALIDATION_FAILED_EVENT = "onex.contract.validation.failed"
+CONTRACT_VALIDATION_FAILED_EVENT = "onex.contract.validation.failed"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944)
 
 
 class ModelContractValidationFailedEvent(ModelContractValidationEventBase):

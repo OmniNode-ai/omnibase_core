@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-topic-literal: per-event topic SoT declaration (OMN-13944)
+# onex-topic-sot: canonical ONEX topic taxonomy constant registry (OMN-13944)
 
 """
 ONEX Topic Taxonomy Constants.

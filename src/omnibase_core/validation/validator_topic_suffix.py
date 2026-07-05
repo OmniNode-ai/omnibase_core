@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-topic-literal: per-event topic SoT declaration (OMN-13944)
 
 """
 Topic suffix validator for ONEX naming convention.
@@ -131,7 +132,7 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
         8. Must not contain control characters (newlines, tabs, etc.)
 
     Args:
-        suffix: The topic suffix to validate (e.g., "onex.evt.omnimemory.intent-stored.v1")
+        suffix: The topic suffix to validate (e.g. ``onex.evt.omnimemory.intent-stored.v1``)
 
     Returns:
         ModelTopicValidationResult with is_valid=True and parsed parts if valid,
@@ -275,7 +276,7 @@ def parse_topic_suffix(suffix: str) -> ModelTopicSuffixParts:
     If the suffix is invalid, it raises ValueError with details.
 
     Args:
-        suffix: The topic suffix to parse (e.g., "onex.evt.omnimemory.intent-stored.v1")
+        suffix: The topic suffix to parse (e.g. ``onex.evt.omnimemory.intent-stored.v1``)
 
     Returns:
         ModelTopicSuffixParts with the extracted components
@@ -319,7 +320,7 @@ def compose_full_topic(env_prefix: str, suffix: str) -> str:
 
     Args:
         env_prefix: Environment prefix (dev, staging, prod, test, local)
-        suffix: Valid ONEX topic suffix (e.g., "onex.evt.omnimemory.intent-stored.v1")
+        suffix: Valid ONEX topic suffix (e.g. ``onex.evt.omnimemory.intent-stored.v1``)
 
     Returns:
         Full topic name (e.g., "dev.onex.evt.omnimemory.intent-stored.v1")
