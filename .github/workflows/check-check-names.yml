@@ -27,7 +27,6 @@ on:
 
 env:
   PYTHON_VERSION: "3.12"
-  UV_VERSION: "0.8.3"
 
 jobs:
   check-names:
@@ -50,20 +49,15 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
+      # OMN-13999 (WS-F Track 1, runner-load reduction): validate-check-names.py is
+      # stdlib-only (argparse/re/sys/pathlib/typing; line-based required-checks.yaml
+      # parse, no yaml module). No uv sync / package install is needed — run it on the
+      # bare interpreter so this gate does not pay the dep-sync tax (which, under
+      # runner-fleet saturation, blew the job timeout and surfaced as a false red).
       - name: Validate check_names in required-checks.yaml
         id: check-names
         run: |
-          uv run python scripts/validation/validate-check-names.py --verbose
+          python3 scripts/validation/validate-check-names.py --verbose
 
       - name: check_name validator summary
         if: always()
