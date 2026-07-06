@@ -1550,6 +1550,10 @@ jobs:
             base="${{ github.event.pull_request.base.sha }}"
             git fetch --no-tags --depth=1 origin "$base" || true
             git diff --name-only "$base"...HEAD > changed.txt
+            # Emit the base SHA so the selector can classify a pyproject.toml diff
+            # content-aware (base-vs-head TOML). Only meaningful on pull_request;
+            # push/merge_group escalate before the pyproject check regardless.
+            echo "base_sha=$base" >> "$GITHUB_OUTPUT"
           else
             git diff --name-only HEAD~1 HEAD > changed.txt || echo "" > changed.txt
           fi
@@ -1560,12 +1564,21 @@ jobs:
         id: detect
         env:
           FLAG: ${{ vars.ENABLE_SMART_TESTS == 'true' && 'on' || 'off' }}
+          BASE_SHA: ${{ steps.diff.outputs.base_sha }}
         run: |
+          # Pass --base-ref only when we have a base SHA (pull_request). When
+          # pyproject.toml is in the diff and no base ref is supplied, the selector
+          # fails closed and escalates — the safe default.
+          base_arg=()
+          if [ -n "$BASE_SHA" ]; then
+            base_arg=(--base-ref "$BASE_SHA")
+          fi
           uv run python -m scripts.ci.detect_test_paths \
             --changed-files-from changed.txt \
             --ref-name "${{ github.ref_name }}" \
             --event-name "${{ github.event_name }}" \
             --feature-flag "$FLAG" \
+            "${base_arg[@]}" \
             > selection.json
           cat selection.json
           is_full=$(jq -r '.is_full_suite' selection.json)
