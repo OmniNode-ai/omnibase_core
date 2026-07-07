@@ -360,7 +360,7 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_core
           path: .occ-preflight-deps/omnibase_core
-          ref: dev
+          ref: ${{ github.workflow_sha || 'dev' }}
           fetch-depth: 1
 
       - name: Install omnibase_core
