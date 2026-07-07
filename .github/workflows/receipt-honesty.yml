@@ -43,7 +43,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   receipt-honesty:
+    needs: occ-preflight
     name: receipt-honesty
     runs-on: >-
       ${{

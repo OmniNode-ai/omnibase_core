@@ -66,7 +66,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   pre-check:
+    needs: occ-preflight
     name: Resolve PR (fanout guard)
     runs-on: ubuntu-latest
     outputs:
@@ -134,8 +144,8 @@ jobs:
 
   auto-merge:
     name: Enable Auto-Merge
-    needs: pre-check
-    if: needs.pre-check.outputs.skip != 'true' && needs.pre-check.outputs.actor == 'jonahgabriel'
+    needs: [occ-preflight, pre-check]
+    if: needs.occ-preflight.result == 'success' && (needs.pre-check.outputs.skip != 'true' && needs.pre-check.outputs.actor == 'jonahgabriel')
     runs-on: >-
       ${{
         github.event_name != 'pull_request'

@@ -24,6 +24,16 @@ permissions:
   pull-requests: read
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   call-reject-skip-token:
+    needs: occ-preflight
     uses: OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@main
     secrets: inherit

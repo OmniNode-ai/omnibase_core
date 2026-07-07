@@ -51,9 +51,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   propagate:
+    needs: occ-preflight
     name: Propagate ${{ inputs.propagation_name || 'release-triggered' }}
-    if: github.event_name != 'pull_request'
+    if: needs.occ-preflight.result == 'success' && (github.event_name != 'pull_request')
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
@@ -100,11 +110,12 @@ jobs:
         run: bash scripts/propagate-config.sh
 
   dry-run-ci-check:
+    needs: occ-preflight
     # Runs on every push/PR to this repo so regressions in the script or
     # targets file are caught before a real release fires the bot. Uses
     # PROPAGATION_DRY_RUN=1 so no cross-repo side effects occur.
     name: Dry-run sanity check
-    if: github.event_name != 'release'
+    if: needs.occ-preflight.result == 'success' && (github.event_name != 'release')
     runs-on: >-
       ${{
         github.event_name != 'pull_request'

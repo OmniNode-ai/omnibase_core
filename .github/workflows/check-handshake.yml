@@ -13,7 +13,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   check-handshake:
+    needs: occ-preflight
     name: Check architecture handshake
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-

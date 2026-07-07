@@ -40,7 +40,17 @@ permissions:
   contents: read
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   dep-provenance-gate:
+    needs: occ-preflight
     name: Dep Provenance Gate
     runs-on: ubuntu-latest
     steps:

@@ -9,7 +9,17 @@ on:
     types: [opened, edited, synchronize, reopened]
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   pr-title:
+    needs: occ-preflight
     uses: OmniNode-ai/onex_change_control/.github/workflows/pr-title-check-reusable.yml@main
     permissions:
       pull-requests: read

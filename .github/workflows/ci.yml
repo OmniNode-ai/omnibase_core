@@ -44,6 +44,14 @@ env:
     }}
 
 jobs:
+  # OCC preflight is the first non-OCC CI dependency. If central OCC
+  # evidence is missing or red, no runner-heavy validation jobs fan out.
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   # =============================================================================
   # JOB ORDERING RATIONALE (Fail-Fast Optimization)
   # =============================================================================
@@ -88,6 +96,7 @@ jobs:
   # Phase 1 validation job - runs in parallel with pyright, exports-validation
   # Must complete before test-parallel starts (fail-fast optimization)
   lint:
+    needs: occ-preflight
     name: Code Quality
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -130,6 +139,7 @@ jobs:
   # Must complete before test-parallel starts (fail-fast optimization)
   # Pyright complements mypy (in lint job) - catches different type error categories
   pyright:
+    needs: occ-preflight
     name: Pyright Type Checking
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -166,6 +176,7 @@ jobs:
   # Must complete before test-parallel starts (fail-fast optimization)
   # Quick check (~5 min) ensures __all__ exports are valid before expensive test splits
   exports-validation:
+    needs: occ-preflight
     name: Exports Validation
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -206,6 +217,7 @@ jobs:
   # Separate job for validation scripts mypy (not blocking test-parallel)
   # Rationale: These scripts are CI tooling, not core library code
   mypy-validation-scripts:
+    needs: occ-preflight
     name: Mypy Validation Scripts
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -361,6 +373,7 @@ jobs:
   # Enforces that omnibase_core has no direct transport/I/O library imports
   # Complements the Python-based check in mypy-validation-scripts with a simple grep scan
   core-infra-boundary:
+    needs: occ-preflight
     name: Core-Infra Boundary
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -400,6 +413,7 @@ jobs:
   # deterministic skill in omniclaude routes through `onex run-node` / `onex
   # node` (or a Kafka publish) and surfaces `SkillRoutingError`. Blocking gate.
   check-deterministic-skills:
+    needs: occ-preflight
     name: Deterministic Skill Routing
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -451,6 +465,7 @@ jobs:
   # Quick documentation check (not blocking test-parallel)
   # Rationale: Doc link validation is independent of code correctness
   docs-validation:
+    needs: occ-preflight
     name: Documentation Validation
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -499,6 +514,7 @@ jobs:
   # Node Purity Validation (OMN-203)
   # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
   node-purity-check:
+    needs: occ-preflight
     name: Node Purity Check
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -552,6 +568,7 @@ jobs:
   # - Single responsibility per enum
   # - Use StrValueHelper for string serialization
   enum-governance:
+    needs: occ-preflight
     name: Enum Governance Check
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -597,6 +614,7 @@ jobs:
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Contract-config compliance validator (OMN-10688)
   contract-config-compliance:
+    needs: occ-preflight
     name: Contract-Config Compliance (OMN-10688)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -643,6 +661,7 @@ jobs:
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Breaking-schema-change validator (OMN-12621)
   breaking-schema-change:
+    needs: occ-preflight
     name: Breaking-Schema-Change (OMN-12621)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -687,6 +706,7 @@ jobs:
   # Localhost/env fallback prevention (OMN-10658 / OMN-7227)
   # Rejects os.getenv/os.environ.get with localhost fallback defaults in src/ and scripts/.
   no-env-fallbacks:
+    needs: occ-preflight
     name: Reject localhost/env fallbacks (OMN-7227)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -723,6 +743,7 @@ jobs:
   # Baseline security scan using detect-secrets (OMN-2226)
   # Uses detect-secrets-hook for proper baseline comparison (handles type+hash equality)
   detect-secrets:
+    needs: occ-preflight
     name: Detect Secrets
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -793,6 +814,7 @@ jobs:
   # Verifies that this repo's dependency pins are compliant with the shared
   # version matrix defined in onex_change_control/standards/version-matrix.yaml.
   version-pin-check:
+    needs: occ-preflight
     name: Version Pin Compliance
     runs-on: >-
       ${{
@@ -802,7 +824,7 @@ jobs:
       }}
     timeout-minutes: 5
     # Skip for Dependabot PRs — CROSS_REPO_PAT is not available [OMN-5332]
-    if: github.actor != 'dependabot[bot]'
+    if: needs.occ-preflight.result == 'success' && (github.actor != 'dependabot[bot]')
     # Advisory until range pin support (OMN-5132) and matrix alignment land
     continue-on-error: true
 
@@ -834,6 +856,7 @@ jobs:
   # Phase 1 validation job - ensures no internal OmniNode packages leak into
   # [project.dependencies] (they belong in [project.optional-dependencies]).
   sdk-boundary-check:
+    needs: occ-preflight
     name: SDK Boundary Guard
     runs-on: >-
       ${{
@@ -871,6 +894,7 @@ jobs:
   # Runs `onex compliance check` to validate contracts, handlers, and schemas.
   # Conditional: only runs if the `onex compliance` command is available.
   compliance:
+    needs: occ-preflight
     name: Contract Compliance
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -908,6 +932,7 @@ jobs:
   # Fails on: orphan producers/consumers, pub/sub byte-mismatch,
   # widget topics without producers, hand-authored topic literals.
   demo-path-topic-coherence:
+    needs: occ-preflight
     name: Demo-Path Topic Coherence (OMN-12777)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -959,6 +984,7 @@ jobs:
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Dispatch-surface real-dispatch-test gate (OMN-12960)
   dispatch-surface-test-required:
+    needs: occ-preflight
     name: Dispatch-Surface Test Required (OMN-12960)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -1022,6 +1048,7 @@ jobs:
   # so a failure turns the single required rollup red. Mirrors the
   # omni-standards-compliance `validate_class_naming.py` invocation.
   naming-conventions:
+    needs: occ-preflight
     name: Naming Conventions
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -1062,6 +1089,7 @@ jobs:
   # real pydantic-patterns validator job in CI. This job runs the actual
   # validator and feeds quality-gate so it gates the required rollup.
   pydantic-patterns:
+    needs: occ-preflight
     name: Pydantic Patterns
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -1113,6 +1141,7 @@ jobs:
   # rollup red. Full-tree scan (not changed-files) avoids the merge_group /
   # no-diff exit-0 hole on the required path.
   aislop-patterns:
+    needs: occ-preflight
     name: AI Slop Patterns
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -1167,6 +1196,7 @@ jobs:
   # OMN rule, SKILL.md `ticket:` frontmatter). Full-tree scan (not changed-files)
   # avoids the merge_group / no-diff exit-0 hole on the required path.
   doc-content-scan:
+    needs: occ-preflight
     name: Doc-Content Scan
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -1222,6 +1252,7 @@ jobs:
   # required CI Summary rollup red. Full-tree scan (not changed-files) avoids the
   # merge_group / no-diff exit-0 hole on the required path.
   spdx-headers:
+    needs: occ-preflight
     name: SPDX Headers
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -1275,6 +1306,7 @@ jobs:
   # red-test corpus (test_deliberate_violation_corpus) is the DoD proof that CI
   # would catch a real violation.
   no-new-os-environ:
+    needs: occ-preflight
     name: No New os.environ Reads (OMN-13566)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -1330,8 +1362,8 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
-    if: always()
+    needs: [occ-preflight, lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
+    if:  needs.occ-preflight.result == 'success' && (always())
 
     steps:
       - name: Evaluate quality checks
@@ -1436,8 +1468,8 @@ jobs:
   # GitHub cannot materialize jobs for a new local workflow_call target.
   zone-filter:
     name: Zone Filter (docs-only check)
-    needs: quality-gate
-    if: always() && needs.quality-gate.result == 'success'
+    needs: [occ-preflight, quality-gate]
+    if:  needs.occ-preflight.result == 'success' && (always() && needs.quality-gate.result == 'success')
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
@@ -1512,14 +1544,14 @@ jobs:
 
   detect-changes:
     name: Detect Changes
-    needs: [quality-gate, zone-filter]
+    needs: [occ-preflight, quality-gate, zone-filter]
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
+    if:  needs.occ-preflight.result == 'success' && (always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true')
     outputs:
       is_full_suite: ${{ steps.detect.outputs.is_full_suite }}
       full_suite_reason: ${{ steps.detect.outputs.full_suite_reason }}
@@ -1602,7 +1634,7 @@ jobs:
   #   - This ensures quality failures are caught BEFORE spawning N test runners
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
-    needs: [quality-gate, zone-filter, detect-changes]
+    needs: [occ-preflight, quality-gate, zone-filter, detect-changes]
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -1610,7 +1642,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
+    if:  needs.occ-preflight.result == 'success' && (always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true')
     # Self-hosted runners can slow sharply under memory pressure when the
     # duration cache is cold; keep the full-suite split timeout above the
     # observed 20-minute saturation boundary.
@@ -1719,7 +1751,7 @@ jobs:
   # ---------------------------------------------------------------------------
   tests-integration:
     name: Integration Tests (Split ${{ matrix.split }}/4)
-    needs: [quality-gate, zone-filter, detect-changes]
+    needs: [occ-preflight, quality-gate, zone-filter, detect-changes]
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -1728,7 +1760,7 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 30
-    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
+    if:  needs.occ-preflight.result == 'success' && (always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true')
     strategy:
       fail-fast: false
       matrix:
@@ -1787,8 +1819,8 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [test-parallel, tests-integration]
-    if: always()
+    needs: [occ-preflight, test-parallel, tests-integration]
+    if:  needs.occ-preflight.result == 'success' && (always())
 
     steps:
       - name: Evaluate test results
@@ -1824,6 +1856,7 @@ jobs:
   # Cross-repo boundary validation (OMN-6576, OMN-10978)
   # Blocking mode: boundary parity is an architectural CI gate.
   boundary-validation:
+    needs: occ-preflight
     name: Cross-repo boundary validation
     runs-on: >-
       ${{
@@ -1844,6 +1877,7 @@ jobs:
   # but added for uniformity across all OmniNode repos.
 
   contract-compliance:
+    needs: occ-preflight
     name: Contract Compliance Check
     runs-on: >-
       ${{
@@ -1851,7 +1885,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
+    if: needs.occ-preflight.result == 'success' && (github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push')
     steps:
       - uses: actions/checkout@v7
       - name: Clone onex_change_control
@@ -1880,8 +1914,8 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [quality-gate, tests-gate, contract-compliance, boundary-validation]
-    if: always()
+    needs: [occ-preflight, quality-gate, tests-gate, contract-compliance, boundary-validation]
+    if:  needs.occ-preflight.result == 'success' && (always())
 
     steps:
       - name: Evaluate all gates

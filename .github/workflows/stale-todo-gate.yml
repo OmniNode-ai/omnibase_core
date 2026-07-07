@@ -23,7 +23,17 @@ on:
     branches: [main, dev]
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   stale-todo-gate:
+    needs: occ-preflight
     name: Stale TODO Gate
     runs-on: >-
       ${{

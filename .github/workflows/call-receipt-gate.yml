@@ -29,7 +29,17 @@ permissions:
   pull-requests: read
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   verify:
+    needs: occ-preflight
     uses: ./.github/workflows/receipt-gate.yml
     with:
       branch-policy-mode: ${{ (github.event.pull_request.base.ref == 'main' || github.event.merge_group.base_ref == 'refs/heads/main') && 'main-release' || 'legacy' }}
