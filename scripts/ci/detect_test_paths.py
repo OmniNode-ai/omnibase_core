@@ -6,8 +6,11 @@ from __future__ import annotations
 
 import argparse
 import math
+import subprocess
 import sys
+import tomllib
 from pathlib import Path
+from typing import Any
 
 from scripts.ci.test_selection_loader import (
     ModelAdjacencyMap,
@@ -23,6 +26,37 @@ TEST_UNIT_PREFIX = "tests/unit/"
 TEST_INTEGRATION_PREFIX = "tests/integration/"
 
 FULL_SUITE_BRANCHES = {"main"}
+
+# pyproject.toml is handled content-aware (not as a bare path-prefix trigger).
+# See classify_pyproject_dependency_relevant / step 2 in compute_selection.
+PYPROJECT_PATH = "pyproject.toml"
+
+# Keys under [project] whose change is metadata-only — it cannot alter dependency
+# resolution, build inputs, or test behavior, so a diff confined to these must NOT
+# escalate to the full suite. Everything else in pyproject.toml (the `dependencies`
+# array, [project.optional-dependencies], [dependency-groups], [build-system],
+# [tool.*] including [tool.pytest.ini_options]/[tool.coverage], requires-python)
+# is treated as escalation-worthy. This is deliberately an allow-list of SAFE keys
+# (not a block-list of dependency tables): an unrecognized/new pyproject key
+# escalates by default, keeping the selector fail-closed.
+_PYPROJECT_SAFE_PROJECT_KEYS = frozenset(
+    {
+        "version",
+        "name",
+        "description",
+        "readme",
+        "authors",
+        "maintainers",
+        "keywords",
+        "classifiers",
+        "urls",
+        "license",
+        "license-files",
+        "entry-points",
+        "scripts",
+        "gui-scripts",
+    }
+)
 
 # Volume-aware split sizing (OMN-11026).
 # Main-branch full-suite uses 40 splits over the whole tree (~1,500 test files,
@@ -86,7 +120,17 @@ def compute_selection(
     ref_name: str,
     event_name: str = "pull_request",
     feature_flag_enabled: bool = True,
+    pyproject_dependency_relevant: bool | None = None,
 ) -> ModelTestSelection:
+    """Resolve the test selection for a change set.
+
+    ``pyproject_dependency_relevant`` carries the content-aware classification of a
+    ``pyproject.toml`` change (computed by the CLI via a base-vs-head TOML diff):
+    ``True`` = a dependency-bearing table changed (escalate), ``False`` = the change
+    is metadata-only (do not escalate on ``pyproject.toml`` alone), ``None`` = not
+    classified. When ``pyproject.toml`` is in the change set and this is not
+    ``False`` (i.e. ``True`` or ``None``), the selector fails closed and escalates.
+    """
     config = load_adjacency_map(adjacency_path)
 
     # 0. Feature flag short-circuit: off → legacy 40-split full suite.
@@ -103,6 +147,16 @@ def compute_selection(
 
     # 2. Test infrastructure escalation.
     for changed in changed_files:
+        if changed == PYPROJECT_PATH:
+            # Content-aware: pyproject.toml escalates only when a dependency-bearing
+            # table changed, OR when classification is unavailable (None) — fail
+            # closed. A bare `version` bump / entry-point registration / metadata
+            # edit must NOT force the full suite. `pyproject.toml` is intentionally
+            # NOT in `test_infrastructure_paths` (it would be a bare path-prefix
+            # trigger); it is handled here instead.
+            if pyproject_dependency_relevant is None or pyproject_dependency_relevant:
+                return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
+            continue
         if any(
             changed == infra or changed.startswith(infra.rstrip("/") + "/")
             for infra in config.test_infrastructure_paths
@@ -210,6 +264,93 @@ def _count_test_files(selected_paths: list[str], repo_root: Path) -> int:
     return total
 
 
+def _pyproject_without_safe_keys(data: dict[str, Any]) -> dict[str, Any]:
+    """Return the parsed pyproject with metadata-only ``[project]`` keys removed.
+
+    Two revisions compare equal iff their escalation-worthy content — the
+    ``dependencies`` array, ``[project.optional-dependencies]``,
+    ``[dependency-groups]``, ``[build-system]``, ``[tool.*]``, ``requires-python``,
+    and any other non-safe key — is identical. Only the metadata-only ``[project]``
+    keys in ``_PYPROJECT_SAFE_PROJECT_KEYS`` are stripped.
+    """
+    reduced = dict(data)
+    project = reduced.get("project")
+    if isinstance(project, dict):
+        reduced["project"] = {
+            key: value
+            for key, value in project.items()
+            if key not in _PYPROJECT_SAFE_PROJECT_KEYS
+        }
+    return reduced
+
+
+def classify_pyproject_dependency_relevant(
+    old_content: str | None,
+    new_content: str | None,
+) -> bool:
+    """Classify whether a ``pyproject.toml`` change should escalate to the full suite.
+
+    Returns ``True`` (escalate) when the change touches any escalation-worthy content
+    OR cannot be proven metadata-only. Returns ``False`` (safe to narrow) only when
+    both revisions parse as TOML and differ solely in metadata-only ``[project]``
+    keys (``version``, ``entry-points``, ``scripts``, ``urls``, ``description``, …).
+
+    Fail-closed by construction: missing base or head content, or a TOML parse
+    failure, all return ``True``. This is a governed safety selector — it never
+    narrows on ambiguity.
+    """
+    if old_content is None or new_content is None:
+        return True
+    try:
+        old_data = tomllib.loads(old_content)
+        new_data = tomllib.loads(new_content)
+    except tomllib.TOMLDecodeError:
+        return True
+    return _pyproject_without_safe_keys(old_data) != _pyproject_without_safe_keys(
+        new_data
+    )
+
+
+def _git_show(ref: str, rel_path: str, repo_root: Path) -> str | None:
+    """Return the content of ``rel_path`` at ``ref`` via ``git show``, or None.
+
+    None signals the caller to fail closed (the base revision could not be read —
+    e.g. the ref is unfetched, or the file did not exist at the base).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "show", f"{ref}:{rel_path}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
+def _resolve_pyproject_dependency_relevant(
+    base_ref: str | None,
+    repo_root: Path,
+) -> bool | None:
+    """Classify the working-tree ``pyproject.toml`` against its ``base_ref`` revision.
+
+    Returns ``None`` when classification is impossible (no base ref supplied, or the
+    head file can't be read) so the caller escalates (fail closed). Otherwise returns
+    the classifier's bool — which itself fails closed on parse/retrieval errors.
+    """
+    if not base_ref:
+        return None
+    try:
+        new_content = (repo_root / PYPROJECT_PATH).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    old_content = _git_show(base_ref, PYPROJECT_PATH, repo_root)
+    return classify_pyproject_dependency_relevant(old_content, new_content)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Resolve change-aware test paths")
     parser.add_argument(
@@ -231,6 +372,21 @@ def main(argv: list[str] | None = None) -> int:
         default="on",
         help="When 'off', emit a FEATURE_FLAG_OFF full-suite selection regardless of changed files.",
     )
+    parser.add_argument(
+        "--base-ref",
+        default=None,
+        help=(
+            "Base git ref/SHA for content-aware pyproject.toml classification. When "
+            "pyproject.toml is in the diff and this is omitted (or the base cannot be "
+            "read), the selector fails closed and escalates to the full suite."
+        ),
+    )
+    parser.add_argument(
+        "--repo-root",
+        type=Path,
+        default=REPO_ROOT,
+        help="Repository root used to read the working-tree pyproject.toml and run git show.",
+    )
     args = parser.parse_args(argv)
 
     changed = [
@@ -238,12 +394,20 @@ def main(argv: list[str] | None = None) -> int:
         for line in args.changed_files_from.read_text().splitlines()
         if line.strip()
     ]
+    # Content-aware pyproject.toml classification (only when it is in the diff, to
+    # avoid a spurious git call otherwise). None → compute_selection fails closed.
+    pyproject_dependency_relevant: bool | None = None
+    if PYPROJECT_PATH in changed:
+        pyproject_dependency_relevant = _resolve_pyproject_dependency_relevant(
+            args.base_ref, args.repo_root
+        )
     selection = compute_selection(
         changed_files=changed,
         adjacency_path=args.adjacency,
         ref_name=args.ref_name,
         event_name=args.event_name,
         feature_flag_enabled=(args.feature_flag == "on"),
+        pyproject_dependency_relevant=pyproject_dependency_relevant,
     )
     sys.stdout.write(selection.model_dump_json())
     sys.stdout.write("\n")
