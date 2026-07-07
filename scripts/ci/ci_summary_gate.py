@@ -90,6 +90,40 @@ SOFT_ALLOWLIST: frozenset[str] = frozenset(
     }
 )
 
+# Spec-required validator covering jobs (OMN-14127 load-bearing property).
+#
+# These are the ci.yml jobs the operator-locked rollup-coverage spec
+# (architecture-handshakes/validator-requirements.yaml →
+# model_b_rollup_enforcement.repos.omnibase_core.validator_jobs) maps every
+# spec-required validator onto, resolved from job KEY to job NAME. Each runs
+# UNCONDITIONALLY in ci.yml (no `if:`, no `needs:` — verified 2026-07-07), so on
+# any triggered event it always runs to a terminal success/failure and NEVER
+# legitimately skips.
+#
+# Therefore the completeness anchor requires each of these PRESENT + completed +
+# strictly SUCCESS. A SKIPPED (or absent) spec-required validator is a gate
+# FAILURE, not a pass: a silent path-filter/skip that drops a required validator
+# out of gating must NOT green the required context. This is a DIRECT,
+# defense-in-depth check — it does not delegate to the aggregate Quality Gate's
+# own strict `== success` aggregation to catch a dropped leaf.
+#
+# `tests/unit/scripts/ci/test_ci_summary_gate.py::test_spec_required_validator_jobs_match_spec`
+# pins this tuple to the spec (validator_jobs covering job NAMES), so a NEW
+# spec-required validator cannot silently escape this anchor: adding it to the
+# spec forces adding its covering job here, or CI fails.
+SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
+    "Code Quality",  # lint (ruff-format-check, mypy-type-check)
+    "Mypy Validation Scripts",  # mypy-validation-scripts (mypy-type-check, arch-002)
+    "Core-Infra Boundary",  # core-infra-boundary (arch-002-no-transport-imports)
+    "Enum Governance Check",  # enum-governance
+    "Naming Conventions",  # naming-conventions
+    "Pydantic Patterns",  # pydantic-patterns
+    "AI Slop Patterns",  # aislop-patterns
+    "Doc-Content Scan",  # doc-content-scan
+    "No New os.environ Reads (OMN-13566)",  # no-new-os-environ
+    "SPDX Headers",  # spdx-headers
+)
+
 # Conclusions that count as "provably passed".
 GOOD_CONCLUSIONS: frozenset[str] = frozenset({"success", "skipped"})
 
@@ -146,6 +180,7 @@ def evaluate(
     self_name: str = SELF_JOB_NAME,
     gate_jobs: tuple[str, ...] = GATE_JOBS,
     allowlist: frozenset[str] = SOFT_ALLOWLIST,
+    required_validator_jobs: tuple[str, ...] = SPEC_REQUIRED_VALIDATOR_JOBS,
 ) -> tuple[int, str]:
     """Return ``(exit_code, human_report)`` for the current job snapshot."""
 
@@ -161,33 +196,64 @@ def evaluate(
         and j.conclusion not in GOOD_CONCLUSIONS
     )
 
-    # (2) Completeness anchor over the aggregate gates.
+    # (2) Spec-required-validator anchor (OMN-14127 load-bearing): each covering
+    #     job runs unconditionally in ci.yml, so it must be present + completed +
+    #     strictly SUCCESS. A completed-but-not-success conclusion (SKIPPED /
+    #     neutral / failure / cancelled) is a coverage FAILURE — a silently
+    #     skipped spec-required validator must NOT green the gate. (failure /
+    #     cancelled are also caught by the sweep; the net-new enforcement here is
+    #     that SKIPPED does not pass for these jobs.)
+    validator_not_success = sorted(
+        job
+        for job in required_validator_jobs
+        if job in latest
+        and latest[job].status == "completed"
+        and latest[job].conclusion != "success"
+    )
+    validator_missing_or_pending = [
+        job
+        for job in required_validator_jobs
+        if job not in latest or latest[job].status != "completed"
+    ]
+
+    # (3) Completeness anchor over the aggregate gates (present + completed).
     gate_missing_or_pending = [
         g
         for g in gate_jobs
         if (latest.get(g) is None or latest[g].status != "completed")
     ]
 
-    if sweep_failures:
+    if sweep_failures or validator_not_success:
         return EXIT_FAILURE, _report(
             "FAILURE",
             latest,
             gate_jobs,
-            allowlist,
+            required_validator_jobs,
             sweep_failures,
+            validator_not_success,
             gate_missing_or_pending,
+            validator_missing_or_pending,
         )
-    if gate_missing_or_pending:
+    if gate_missing_or_pending or validator_missing_or_pending:
         return EXIT_PENDING, _report(
             "PENDING",
             latest,
             gate_jobs,
-            allowlist,
+            required_validator_jobs,
             sweep_failures,
+            validator_not_success,
             gate_missing_or_pending,
+            validator_missing_or_pending,
         )
     return EXIT_SUCCESS, _report(
-        "SUCCESS", latest, gate_jobs, allowlist, sweep_failures, gate_missing_or_pending
+        "SUCCESS",
+        latest,
+        gate_jobs,
+        required_validator_jobs,
+        sweep_failures,
+        validator_not_success,
+        gate_missing_or_pending,
+        validator_missing_or_pending,
     )
 
 
@@ -195,22 +261,43 @@ def _report(
     verdict: str,
     latest: dict[str, JobState],
     gate_jobs: tuple[str, ...],
-    allowlist: frozenset[str],
+    required_validator_jobs: tuple[str, ...],
     sweep_failures: list[str],
+    validator_not_success: list[str],
     gate_missing_or_pending: list[str],
+    validator_missing_or_pending: list[str],
 ) -> str:
     lines = [f"CI Summary verdict: {verdict}", f"  jobs observed: {len(latest)}"]
     lines.append("  aggregate gates:")
     for g in gate_jobs:
         st = latest.get(g)
-        if st is None:
-            lines.append(f"    - {g}: <absent>")
-        else:
-            lines.append(f"    - {g}: {st.status}/{st.conclusion}")
+        lines.append(
+            f"    - {g}: <absent>"
+            if st is None
+            else f"    - {g}: {st.status}/{st.conclusion}"
+        )
+    lines.append("  spec-required validators (must be completed + success):")
+    for v in required_validator_jobs:
+        st = latest.get(v)
+        lines.append(
+            f"    - {v}: <absent>"
+            if st is None
+            else f"    - {v}: {st.status}/{st.conclusion}"
+        )
     if sweep_failures:
         lines.append(f"  default-deny sweep failures: {', '.join(sweep_failures)}")
+    if validator_not_success:
+        lines.append(
+            "  spec-required validators not success (skip/fail is a coverage gap): "
+            + ", ".join(validator_not_success)
+        )
     if gate_missing_or_pending:
         lines.append(f"  gates missing/pending: {', '.join(gate_missing_or_pending)}")
+    if validator_missing_or_pending:
+        lines.append(
+            "  spec-required validators missing/pending: "
+            + ", ".join(validator_missing_or_pending)
+        )
     return "\n".join(lines)
 
 
