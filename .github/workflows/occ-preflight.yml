@@ -360,7 +360,7 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_core
           path: .occ-preflight-deps/omnibase_core
-          ref: main
+          ref: dev
           fetch-depth: 1
 
       - name: Install omnibase_core
@@ -437,7 +437,19 @@ jobs:
       - name: Verify eligibility validator importable
         if: steps.event_scope.outputs.required == 'true' && steps.bot_exempt.outputs.exempt != 'true'
         run: |
-          "$OCC_PREFLIGHT_PY" -c "from omnibase_core.validation.validator_occ_merge_eligibility import validate_occ_merge_eligibility" || {
+          "$OCC_PREFLIGHT_PY" - <<'PY' || {
+          import inspect
+          import omnibase_core
+          from omnibase_core.validation import validator_occ_merge_eligibility as validator
+
+          source = inspect.getsource(validator)
+          print("omnibase_core at:", omnibase_core.__file__)
+          print("validator at:", validator.__file__)
+          if "resolve_supersession" not in source:
+              raise RuntimeError(
+                  "validator_occ_merge_eligibility is missing resolve_supersession support"
+              )
+          PY
             echo "::error::validator_occ_merge_eligibility not importable after install"
             "$OCC_PREFLIGHT_PY" -c "import omnibase_core, os; print('omnibase_core at:', os.path.dirname(omnibase_core.__file__))" || true
             exit 1
