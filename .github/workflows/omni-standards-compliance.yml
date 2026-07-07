@@ -1,6 +1,19 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
+# OMN-14100 (child of OMN-13979): this workflow is NOT in required_status_checks
+# on `dev` or `main` — none of its job names ever gate merge. The 7 jobs that
+# duplicated (or were superseded by) REQUIRED `ci.yml` jobs feeding the
+# `quality-gate` -> `CI Summary` rollup were removed to stop burning runner
+# compute on a non-authoritative green:
+#   naming-conventions   -> ci.yml `naming-conventions` (same validate_class_naming.py)
+#   node-purity-check     -> ci.yml `node-purity-check` (same check_node_purity.py --verbose)
+#   transport-boundary    -> ci.yml `core-infra-boundary` (same validate-no-transport-imports.sh)
+#   type-safety (mypy)    -> ci.yml `lint` (mypy src/omnibase_core auto-discovers mypy.ini)
+#   type-union-check      -> ci.yml `lint` (ruff selects the full UP family incl. UP006/UP007)
+#   ai-slop-check         -> ci.yml `aislop-patterns` (same check_ai_slop.py --strict, full tree)
+#   no-new-env-vars       -> ci.yml `no-new-os-environ` (canonical AST validator supersedes the regex script)
+# The jobs below have no `ci.yml` equivalent and are kept.
 name: Omni* Ecosystem Standards Compliance
 
 on:
@@ -23,107 +36,6 @@ jobs:
     with:
       contracts-dir: contracts
       receipts-dir: drift/dod_receipts
-
-  naming-conventions:
-    needs: occ-preflight
-    name: Naming Convention Validation
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
-      - name: Validate class naming conventions
-        run: uv run python scripts/validate_class_naming.py
-
-  type-safety:
-    needs: occ-preflight
-    name: Type Safety Validation
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Load cached venv
-        id: cached-uv-dependencies
-        uses: actions/cache@v6
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/uv.lock') }}
-
-      - name: Install dependencies
-        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
-        run: uv sync --all-extras
-
-      - name: Install project (ensure editable install)
-        run: uv sync --all-extras
-
-      - name: Run MyPy type checking
-        run: uv run mypy src/ --config-file=mypy.ini
-
-  type-union-check:
-    needs: occ-preflight
-    name: PEP 604 Type Union Check (UP007)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
-      - name: Check for Optional/Union usage (PEP 604)
-        run: uv run ruff check src/ --select UP007,UP006
 
   onex-compliance:
     needs: occ-preflight
@@ -231,53 +143,6 @@ jobs:
 
           echo "Ecosystem integration validation completed"
 
-  node-purity-check:
-    needs: occ-preflight
-    name: Node Purity Check
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
-      - name: Run node purity check
-        run: uv run python scripts/check_node_purity.py
-
-  transport-boundary:
-    needs: occ-preflight
-    name: Transport/I/O Import Boundary
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Check transport imports (ADR-005)
-        run: bash scripts/validate-no-transport-imports.sh
-
   forbidden-pattern-scan:
     needs: occ-preflight
     name: Decommissioned Pattern Scanner (OMN-4801)
@@ -298,43 +163,6 @@ jobs:
           echo "Decommissioned Pattern Scanner (OMN-4801)"
           echo "================================================================"
           bash scripts/check_forbidden_patterns.sh
-
-  ai-slop-check:
-    needs: occ-preflight
-    name: AI-Slop Pattern Check (strict, PR diff)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Compute changed Python/Markdown files vs PR base
-        id: changed
-        run: |
-          if [ -n "${{ github.base_ref }}" ]; then
-            git fetch origin "${{ github.base_ref }}" --no-tags --depth=1
-            git diff --name-only "origin/${{ github.base_ref }}"...HEAD -- '*.py' '*.md' \
-              | grep -v '^CHANGELOG\.md$' \
-              > /tmp/changed_files.txt || true
-          else
-            git diff --name-only HEAD~1 -- '*.py' '*.md' 2>/dev/null \
-              | grep -v '^CHANGELOG\.md$' \
-              > /tmp/changed_files.txt || true
-          fi
-          echo "count=$(wc -l < /tmp/changed_files.txt)" >> "$GITHUB_OUTPUT"
-      - name: Check changed files for AI-slop patterns (strict)
-        run: |
-          if [ "$(cat /tmp/changed_files.txt | wc -l)" -eq 0 ]; then exit 0; fi
-          xargs -a /tmp/changed_files.txt python scripts/validation/check_ai_slop.py --strict
 
   ci-naming-convention:
     needs: occ-preflight
@@ -367,26 +195,3 @@ jobs:
             fi
           done
           echo "CI naming convention: PASS"
-
-  no-new-env-vars:
-    needs: occ-preflight
-    name: No New os.environ/os.getenv Additions (OMN-11186)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Check for new env var additions
-        run: |
-          find src/ -name "*.py" -print0 | xargs -0 python scripts/validation/validate_no_new_env_vars.py
