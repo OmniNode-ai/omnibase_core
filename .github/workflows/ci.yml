@@ -169,6 +169,23 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
+      - name: Install Pyright node runtime dependency
+        run: |
+          if ldconfig -p 2>/dev/null | grep -q 'libatomic.so.1'; then
+            exit 0
+          fi
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y libatomic1
+            exit 0
+          fi
+          if command -v apt-get >/dev/null 2>&1 && [ "$(id -u)" -eq 0 ]; then
+            apt-get update
+            apt-get install -y libatomic1
+            exit 0
+          fi
+          echo "::warning::libatomic1 is not visible and cannot be installed by this runner; continuing so Pyright reports the real failure if the runtime requires it"
+
       - name: Run pyright type checking
         run: uv run pyright src/omnibase_core
 
