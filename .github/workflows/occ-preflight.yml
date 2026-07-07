@@ -23,6 +23,7 @@
 # Inputs:
 #   contracts-dir:  path to ticket contract YAMLs relative to OCC checkout (default: contracts)
 #   receipts-dir:   path to ModelDodReceipt YAMLs relative to OCC checkout (default: drift/dod_receipts)
+#   core-ref:       omnibase_core ref to checkout for the validator source (default: dev)
 
 name: occ-preflight
 
@@ -39,6 +40,11 @@ on:
         type: string
         required: false
         default: drift/dod_receipts
+      core-ref:
+        description: omnibase_core ref to checkout for the eligibility validator source.
+        type: string
+        required: false
+        default: dev
 
 permissions:
   contents: read
@@ -360,7 +366,7 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_core
           path: .occ-preflight-deps/omnibase_core
-          ref: ${{ github.workflow_sha || 'dev' }}
+          ref: ${{ inputs.core-ref }}
           fetch-depth: 1
 
       - name: Install omnibase_core

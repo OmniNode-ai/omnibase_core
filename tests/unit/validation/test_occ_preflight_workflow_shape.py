@@ -28,6 +28,23 @@ def _install_step_script() -> str:
     raise AssertionError("Install omnibase_core step not found in occ-preflight.yml")
 
 
+def test_core_checkout_uses_explicit_workflow_input_ref() -> None:
+    """Cross-repo callers must not checkout caller workflow SHAs from core."""
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    on_config = data.get("on") or data[True]
+    inputs = on_config["workflow_call"]["inputs"]
+    assert inputs["core-ref"]["default"] == "dev"
+
+    steps = data["jobs"]["eligibility"]["steps"]
+    checkout_step = next(
+        step
+        for step in steps
+        if step.get("name") == "Check out omnibase_core (for eligibility validator)"
+    )
+    assert checkout_step["with"]["ref"] == "${{ inputs.core-ref }}"
+    assert "github.workflow_sha" not in WORKFLOW_PATH.read_text()
+
+
 def test_install_step_uses_per_run_wheel_directory() -> None:
     """The built wheel must not be selected from a stale shared /tmp directory."""
     script = _install_step_script()
