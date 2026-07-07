@@ -21,7 +21,7 @@ from omnibase_core.models.events.model_wiring_error_info import (
 
 __all__ = ["ModelWiringResultEvent", "WIRING_RESULT_EVENT"]
 
-WIRING_RESULT_EVENT = "onex.runtime.wiring.result"
+WIRING_RESULT_EVENT = "onex.runtime.wiring.result"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944); onex-allow-topic-literal
 
 
 class ModelWiringResultEvent(ModelRuntimeEventBase):
