@@ -52,6 +52,7 @@ jobs:
 
   receipt-honesty:
     needs: occ-preflight
+    if: always()
     name: receipt-honesty
     runs-on: >-
       ${{
@@ -62,6 +63,12 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run receipt-honesty."
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v7
 

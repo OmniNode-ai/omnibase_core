@@ -50,9 +50,16 @@ jobs:
 
   canonical-inference-gate:
     needs: occ-preflight
+    if: always()
     name: Canonical Inference Gate
     runs-on: ubuntu-latest
     steps:
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run Canonical Inference Gate."
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v7
         with:

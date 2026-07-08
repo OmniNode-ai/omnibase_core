@@ -71,6 +71,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Resolve OCC preflight event scope
         id: event_scope
@@ -263,6 +264,7 @@ jobs:
           path: .onex_change_control
           ref: ${{ steps.resolve_evidence_source.outputs.sha }}
           fetch-depth: 1
+          persist-credentials: false
 
       # Pin the OCC SHA used for eligibility evaluation. Once resolved here, all
       # subsequent steps use this exact SHA — never re-fetching. (I1, I2)
@@ -359,6 +361,7 @@ jobs:
           path: .occ-preflight-deps/omnibase_compat
           ref: dev
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Check out omnibase_core (for eligibility validator)
         if: "steps.event_scope.outputs.required == 'true' && steps.bot_exempt.outputs.exempt != 'true' && ! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
@@ -368,6 +371,7 @@ jobs:
           path: .occ-preflight-deps/omnibase_core
           ref: ${{ inputs.core-ref }}
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Install omnibase_core
         if: steps.event_scope.outputs.required == 'true' && steps.bot_exempt.outputs.exempt != 'true'
