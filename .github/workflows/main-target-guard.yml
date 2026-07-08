@@ -12,7 +12,17 @@ on:
     types: [opened, edited, synchronize]
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   main-target-guard:
+    needs: occ-preflight
     name: main-target-guard
     runs-on: >-
       ${{

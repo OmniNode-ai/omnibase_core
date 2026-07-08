@@ -1453,7 +1453,7 @@ jobs:
   # GitHub cannot materialize jobs for a new local workflow_call target.
   zone-filter:
     name: Zone Filter (docs-only check)
-    needs: quality-gate
+    needs: [quality-gate]
     if: always() && needs.quality-gate.result == 'success'
     runs-on: >-
       ${{

@@ -15,7 +15,17 @@ on:
     branches: [main, dev]
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   gate:
+    needs: occ-preflight
     if: >-
       github.event_name == 'merge_group' ||
       ((github.event_name != 'issue_comment' || github.event.issue.pull_request != null) &&

@@ -28,7 +28,17 @@ env:
   REPO_NAME: "omnibase_core"
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   onex-compliance:
+    needs: occ-preflight
     name: ONEX Architecture Compliance
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -65,6 +75,7 @@ jobs:
           find . -name "protocol_*.py" | sort
 
   legacy-compatibility-check:
+    needs: occ-preflight
     name: Legacy Compatibility Check
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -98,6 +109,7 @@ jobs:
           echo "Legacy compatibility check completed"
 
   ecosystem-validation:
+    needs: occ-preflight
     name: Ecosystem Integration Validation
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -106,7 +118,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    if: github.repository_owner == 'OmniNode-ai' || github.repository_owner == 'jonahgabriel'
+    if: needs.occ-preflight.result == 'success' && (github.repository_owner == 'OmniNode-ai' || github.repository_owner == 'jonahgabriel')
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -132,6 +144,7 @@ jobs:
           echo "Ecosystem integration validation completed"
 
   forbidden-pattern-scan:
+    needs: occ-preflight
     name: Decommissioned Pattern Scanner (OMN-4801)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -152,6 +165,7 @@ jobs:
           bash scripts/check_forbidden_patterns.sh
 
   ci-naming-convention:
+    needs: occ-preflight
     name: CI Naming Convention
     runs-on: >-
       ${{
