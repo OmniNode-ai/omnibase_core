@@ -54,6 +54,39 @@ def test_install_step_disables_caller_config_for_core_wheel() -> None:
     )
 
 
+def test_install_step_avoids_package_name_reinstall_for_core_wheel() -> None:
+    script = _install_step_script()
+    joined = re.sub(r"\\\n\s*", " ", script)
+    install_lines = [
+        line.strip()
+        for line in joined.splitlines()
+        if line.strip().startswith("uv pip install") and '"$core_wheel"' in line
+    ]
+    assert install_lines, "final omnibase_core wheel install command not found"
+    for line in install_lines:
+        assert "--reinstall-package omnibase-core" not in line, (
+            "occ-preflight must install only the exact wheel path; naming "
+            "omnibase-core as a reinstall target has pulled stale published "
+            "distributions on self-hosted runners"
+        )
+
+
+def test_install_step_bypasses_uv_cache_for_core_wheel() -> None:
+    script = _install_step_script()
+    joined = re.sub(r"\\\n\s*", " ", script)
+    pattern = re.compile(r"uv pip install\b[^\n]*--no-cache[^\n]*\"\$core_wheel\"")
+    assert pattern.search(joined), (
+        "the final occ-preflight core install must bypass uv cache so runner "
+        "state cannot substitute a stale published omnibase-core wheel"
+    )
+
+
+def test_install_step_proves_installed_distribution() -> None:
+    script = _install_step_script()
+    assert 'metadata.version("omnibase-core")' in script
+    assert "omnibase_core import path:" in script
+
+
 def test_install_step_has_no_bare_pypi_core_install() -> None:
     script = _install_step_script()
     joined = re.sub(r"\\\n\s*", " ", script)
