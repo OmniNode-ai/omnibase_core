@@ -1903,54 +1903,74 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    needs: [quality-gate, tests-gate, contract-compliance, boundary-validation]
+    # OMN-14127: REQUIRED branch-protection context, implemented as a NO-`needs`,
+    # GitHub-hosted, FAIL-CLOSED poller (ported from omniclaude #1870). A
+    # `needs`-gated job gets no check-run until its `needs` terminalize, so under
+    # self-hosted fleet saturation the old needs-based CI Summary
+    # (needs: [quality-gate, tests-gate, contract-compliance, boundary-validation],
+    # all self-hosted leaves) was ABSENT forever and the PR wedged BLOCKED with no
+    # auto-recovery. With NO `needs` this job's check-run instantiates immediately
+    # (the required context can never be absent); it polls the current run's job
+    # conclusions and posts a terminal success/failure within a bounded deadline.
+    # DEFAULT-DENY: green ONLY when every aggregate gate is present+good AND no
+    # non-allowlisted job failed — see scripts/ci/ci_summary_gate.py for the
+    # auditable gating set + soft-allowlist (unit-tested in
+    # tests/unit/scripts/ci/test_ci_summary_gate.py). Pure hosted GitHub-API
+    # polling: zero self-hosted/LAN dependency. DO NOT rename — the job name IS the
+    # required context; a rename re-wedges every PR.
+    runs-on: ubuntu-latest
     if: always()
-
+    permissions:
+      actions: read
+      contents: read
+    # Deadline (below) is comfortably under any run-cancellation window so the
+    # required context ALWAYS posts a terminal state first. On pull_request the
+    # concurrency group does NOT cancel-in-progress (only merge_group does), so
+    # there is effectively no shorter PR cancel window than GitHub's job default.
+    # This job timeout is only a hard backstop above the internal poll deadline.
+    timeout-minutes: 100
     steps:
-      - name: Evaluate all gates
+      - name: Checkout (gate script)
+        uses: actions/checkout@v7
+      - name: Poll run jobs and compute fail-closed CI Summary verdict
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          # Bounded poll window (minutes) — kept under the run-cancel window so
+          # the required context always reaches a terminal state first.
+          DEADLINE_MINUTES: "90"
+          POLL_INTERVAL_SECONDS: "45"
         run: |
-          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          quality="${{ needs.quality-gate.result }}"
-          tests="${{ needs.tests-gate.result }}"
-          compliance="${{ needs['contract-compliance'].result }}"
-          boundary="${{ needs['boundary-validation'].result }}"
-
-          echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Quality Gate | $quality |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests Gate | $tests |" >> $GITHUB_STEP_SUMMARY
-          echo "| Compliance | $compliance |" >> $GITHUB_STEP_SUMMARY
-          echo "| Cross-repo Boundary Validation | $boundary |" >> $GITHUB_STEP_SUMMARY
-
-          # Accept "success" or "skipped" for gates. Skipped is valid when
-          # upstream jobs are correctly skipped (e.g. dependabot PRs).
-          quality_ok=$([[ "$quality" == "success" || "$quality" == "skipped" ]] && echo true || echo false)
-          tests_ok=$([[ "$tests" == "success" || "$tests" == "skipped" ]] && echo true || echo false)
-          compliance_ok=$([[ "$compliance" == "success" || "$compliance" == "skipped" ]] && echo true || echo false)
-          boundary_ok=$([[ "$boundary" == "success" || "$boundary" == "skipped" ]] && echo true || echo false)
-
-          if [[ "$quality_ok" == "true" ]] && [[ "$tests_ok" == "true" ]] && [[ "$compliance_ok" == "true" ]] && [[ "$boundary_ok" == "true" ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**CI Summary: ALL GATES PASSED**" >> $GITHUB_STEP_SUMMARY
-            echo "All CI gates passed (quality=$quality, tests=$tests, compliance=$compliance, boundary=$boundary)."
-            exit 0
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**CI Summary: FAILED**" >> $GITHUB_STEP_SUMMARY
-            echo ""
-            echo "Gate results:"
-            echo "  Quality Gate: $quality"
-            echo "  Tests Gate: $tests"
-            echo "  Compliance: $compliance"
-            echo "  Cross-repo Boundary Validation: $boundary"
-            exit 1
-          fi
+          # GitHub invokes this step as `bash -e {0}`; disable errexit because the
+          # gate script's non-zero exit codes are handled explicitly below
+          # (2 = PENDING must NOT terminate the poll loop).
+          set +e
+          set -uo pipefail
+          deadline=$(( $(date +%s) + DEADLINE_MINUTES * 60 ))
+          attempt=0
+          while true; do
+            attempt=$((attempt + 1))
+            if ! gh api --paginate \
+                "repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs?filter=all&per_page=100" \
+                --jq '.jobs[]' | jq -s '.' > jobs.json; then
+              echo "gh api fetch failed (attempt ${attempt}); retrying after ${POLL_INTERVAL_SECONDS}s"
+              sleep "${POLL_INTERVAL_SECONDS}"
+              continue
+            fi
+            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json
+            rc=$?
+            case "${rc}" in
+              0) echo "::notice::CI Summary = SUCCESS (all gating jobs provably passed)"; exit 0 ;;
+              1) echo "::error::CI Summary = FAILURE (fail-closed: a gating job failed/cancelled)"; exit 1 ;;
+              2) : ;;  # PENDING — gating jobs still running; keep polling
+              *) echo "::error::ci_summary_gate.py returned unexpected code ${rc}; failing closed"; exit 1 ;;
+            esac
+            if [ "$(date +%s)" -ge "${deadline}" ]; then
+              echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached with gating jobs still pending — failing closed"
+              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --report-only || true
+              exit 1
+            fi
+            sleep "${POLL_INTERVAL_SECONDS}"
+          done

@@ -84,7 +84,14 @@ def test_cross_repo_boundary_validation_clones_all_boundary_repos() -> None:
     }
 
 
-def test_ci_summary_requires_cross_repo_boundary_validation() -> None:
+def test_ci_summary_is_hosted_no_needs_poller() -> None:
     job = _ci_job("ci-summary")
 
-    assert "boundary-validation" in job["needs"]
+    assert "needs" not in job
+    assert job["runs-on"] == "ubuntu-latest"
+    assert job["if"] == "always()"
+    assert any(
+        "scripts/ci/ci_summary_gate.py" in str(step.get("run", ""))
+        for step in job["steps"]
+        if isinstance(step, dict)
+    )

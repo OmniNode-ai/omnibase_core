@@ -728,6 +728,24 @@ model_b_rollup_enforcement:
       required_rollup_context: "CI Summary"
       rollup_workflow: "ci.yml"
       rollup_job: "ci-summary"
+      # OMN-14127: ci-summary is a no-`needs` fail-closed poller (ported from
+      # omniclaude #1870), not a needs-gated aggregator. A needs-gated required
+      # context is ABSENT until its self-hosted `needs` terminalize, so under
+      # runner-fleet saturation the required "CI Summary" check-run was never
+      # created and PRs wedged BLOCKED. The poller's check-run instantiates
+      # immediately and posts a terminal verdict from a run-wide default-deny
+      # sweep. In `poller` mode the rollup-coverage verifier proves coverage via
+      # that sweep (covering job defined + not soft-allowlisted + not
+      # continue-on-error) instead of needs-reachability. Absent this field the
+      # verifier defaults to `needs` mode, so every other repo is unchanged.
+      rollup_mode: "poller"
+      # Job display NAMES the poller sweeps out (non-gating). MUST mirror
+      # SOFT_ALLOWLIST in scripts/ci/ci_summary_gate.py — keep the two in sync.
+      # A required validator's covering job must NOT appear here (it would be
+      # swept out of the gate); the verifier flags that as a coverage gap.
+      poller_soft_allowlist:
+        - "Version Pin Compliance"  # version-pin-check: continue-on-error advisory
+        - "Contract Compliance"  # compliance: orphan job, not gated, not required
       validator_jobs:
         ruff-format-check: ["lint"]
         mypy-type-check: ["lint", "mypy-validation-scripts"]
