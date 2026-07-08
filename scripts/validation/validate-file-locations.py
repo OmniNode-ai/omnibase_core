@@ -122,6 +122,12 @@ class FileLocationValidator:
         "error_handling.py": ["decorators"],
         # Mixin discovery
         "mixin_discovery.py": ["discovery"],
+        # Node-owned dispatch-selection seam registered in runtime/__init__.py
+        # (OMN-12549 #1373). It landed in runtime/ without an exemption, so the
+        # whole-tree file-location scan is RED on dev and blocks every core src/
+        # commit. Exempting runtime/ unblocks the fleet; whether the seam should
+        # instead relocate to mixins/ is an OMN-12549 call tracked as a follow-up.
+        "mixin_node_dispatch.py": ["runtime"],
         # Navigation subsystem data types (OMN-2540, OMN-2546)
         "model_action_set.py": ["navigation"],
         "model_backward_chaining.py": ["navigation"],

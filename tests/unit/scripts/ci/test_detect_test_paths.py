@@ -111,19 +111,25 @@ def test_test_infrastructure_change_escalates_to_full_suite() -> None:
     assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
 
 
-def test_workflow_change_escalates_to_distributed_full_suite() -> None:
+def test_workflow_only_change_no_longer_escalates() -> None:
+    # OMN-14081: .github/workflows/ was removed from test_infrastructure_paths to
+    # align with omnibase_infra. A workflow-only change carries zero test-code delta,
+    # is exercised on the PR's own CI run, and is backstopped by the unconditional
+    # merge_group -> main full suite (root CLAUDE.md Rule #4). It now falls to the
+    # conservative tests/unit/ fallback instead of forcing the distributed full suite.
     selection = compute_selection(
         changed_files=[".github/workflows/receipt-gate.yml"],
         adjacency_path=ADJ,
         ref_name="pr-branch",
     )
-    assert selection.is_full_suite is True
-    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
-    assert selection.split_count == 40
-    assert selection.matrix == list(range(1, 41))
+    assert selection.is_full_suite is False
+    assert selection.full_suite_reason is None
+    assert selection.selected_paths == ["tests/unit/"]
 
 
 def test_selector_change_escalates_to_distributed_full_suite() -> None:
+    # scripts/ci/ is KEPT as a test-infrastructure trigger (conservative — it houses
+    # the selector itself), so a change here still escalates.
     selection = compute_selection(
         changed_files=["scripts/ci/detect_test_paths.py"],
         adjacency_path=ADJ,
@@ -133,6 +139,214 @@ def test_selector_change_escalates_to_distributed_full_suite() -> None:
     assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
     assert selection.split_count == 40
     assert selection.matrix == list(range(1, 41))
+
+
+# ---------------------------------------------------------------------------
+# OMN-14081: content-aware pyproject.toml classification
+# ---------------------------------------------------------------------------
+
+from scripts.ci.detect_test_paths import classify_pyproject_dependency_relevant
+
+_BASE_PYPROJECT = """\
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "omnibase-core"
+version = "0.46.5"
+description = "Core models"
+requires-python = ">=3.12"
+dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.entry-points."onex.nodes"]
+foo = "omnibase_core.nodes.foo"
+
+[project.urls]
+Homepage = "https://example.com"
+
+[dependency-groups]
+test = ["pytest-xdist"]
+
+[tool.uv.sources]
+omnibase-compat = { workspace = true }
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 88
+"""
+
+
+def _mutate(base: str, old: str, new: str) -> str:
+    assert old in base, f"fixture missing marker: {old!r}"
+    return base.replace(old, new, 1)
+
+
+def test_classify_version_bump_is_not_dependency_relevant() -> None:
+    # The dominant core case: a bare version bump must NOT escalate.
+    new = _mutate(_BASE_PYPROJECT, 'version = "0.46.5"', 'version = "0.46.6"')
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is False
+
+
+def test_classify_entry_point_registration_is_not_dependency_relevant() -> None:
+    new = _mutate(
+        _BASE_PYPROJECT,
+        'foo = "omnibase_core.nodes.foo"',
+        'foo = "omnibase_core.nodes.foo"\nbar = "omnibase_core.nodes.bar"',
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is False
+
+
+def test_classify_metadata_edit_is_not_dependency_relevant() -> None:
+    new = _mutate(
+        _BASE_PYPROJECT,
+        'description = "Core models"',
+        'description = "Core models and contracts"',
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is False
+
+
+def test_classify_dependency_add_is_dependency_relevant() -> None:
+    new = _mutate(
+        _BASE_PYPROJECT,
+        'dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]',
+        'dependencies = ["pydantic>=2.0", "pyyaml>=6.0", "httpx>=0.27"]',
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_optional_dependency_change_is_dependency_relevant() -> None:
+    new = _mutate(_BASE_PYPROJECT, 'dev = ["pytest>=8.0"]', 'dev = ["pytest>=8.1"]')
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_dependency_group_change_is_dependency_relevant() -> None:
+    new = _mutate(
+        _BASE_PYPROJECT,
+        'test = ["pytest-xdist"]',
+        'test = ["pytest-xdist", "pytest-cov"]',
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_build_system_change_is_dependency_relevant() -> None:
+    new = _mutate(
+        _BASE_PYPROJECT, 'requires = ["hatchling"]', 'requires = ["setuptools"]'
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_uv_sources_change_is_dependency_relevant() -> None:
+    new = _mutate(
+        _BASE_PYPROJECT,
+        "omnibase-compat = { workspace = true }",
+        'omnibase-compat = { git = "https://example.com/compat" }',
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_requires_python_change_is_dependency_relevant() -> None:
+    new = _mutate(
+        _BASE_PYPROJECT, 'requires-python = ">=3.12"', 'requires-python = ">=3.13"'
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_pytest_config_change_is_dependency_relevant() -> None:
+    # [tool.pytest.ini_options] is genuine test infrastructure — it MUST escalate.
+    new = _mutate(
+        _BASE_PYPROJECT, 'addopts = "-ra"', 'addopts = "-ra -p no:cacheprovider"'
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_malformed_new_toml_fails_closed() -> None:
+    assert (
+        classify_pyproject_dependency_relevant(_BASE_PYPROJECT, "this = = broken")
+        is True
+    )
+
+
+def test_classify_malformed_old_toml_fails_closed() -> None:
+    assert (
+        classify_pyproject_dependency_relevant("this = = broken", _BASE_PYPROJECT)
+        is True
+    )
+
+
+def test_classify_missing_base_content_fails_closed() -> None:
+    assert classify_pyproject_dependency_relevant(None, _BASE_PYPROJECT) is True
+
+
+def test_classify_missing_head_content_fails_closed() -> None:
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, None) is True
+
+
+def test_pyproject_version_bump_narrows_via_compute_selection() -> None:
+    # End-to-end at the compute_selection layer: pyproject.toml in the diff, classified
+    # metadata-only (relevant=False) → narrow, not full suite.
+    selection = compute_selection(
+        changed_files=["pyproject.toml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=False,
+    )
+    assert selection.is_full_suite is False
+    assert selection.full_suite_reason is None
+    assert selection.selected_paths == ["tests/unit/"]
+
+
+def test_pyproject_dependency_change_escalates_via_compute_selection() -> None:
+    selection = compute_selection(
+        changed_files=["pyproject.toml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=True,
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+
+
+def test_pyproject_unclassified_fails_closed_via_compute_selection() -> None:
+    # relevant=None (base ref unavailable / unsupplied) → escalate, fail closed.
+    selection = compute_selection(
+        changed_files=["pyproject.toml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=None,
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+
+
+def test_pyproject_metadata_only_does_not_suppress_shared_module_escalation() -> None:
+    # A metadata-only pyproject change bundled with a shared-module source change must
+    # still escalate — via SHARED_MODULE, not TEST_INFRASTRUCTURE.
+    selection = compute_selection(
+        changed_files=["pyproject.toml", "src/omnibase_core/models/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=False,
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.SHARED_MODULE
+
+
+def test_pyproject_relevance_ignored_when_pyproject_not_in_diff() -> None:
+    # The classification param only matters when pyproject.toml is in the change set.
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=None,
+    )
+    assert selection.is_full_suite is False
+    assert "tests/unit/cli/" in selection.selected_paths
 
 
 def test_threshold_module_count_escalates() -> None:

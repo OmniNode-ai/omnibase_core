@@ -70,15 +70,14 @@ class RollupCoverageVerifier:
     """Verify that a repo's required rollup transitively covers every opted-in
     spec-required validator, with no failure-swallowing on the covering jobs."""
 
-    def __init__(
+    def __init__(  # ONEX_EXCLUDE: dict_str_any — raw validator-requirements.yaml document
         self, spec: dict[str, Any]
-    ) -> None:  # ONEX_EXCLUDE: dict_str_any — raw validator-requirements.yaml document
+    ) -> None:
         self._spec = spec
         enforcement = spec.get("model_b_rollup_enforcement")
         repos = enforcement.get("repos", {}) if isinstance(enforcement, dict) else {}
-        self._repos: dict[str, Any] = (
-            repos if isinstance(repos, dict) else {}
-        )  # ONEX_EXCLUDE: dict_str_any — opt-in block keyed by repo name
+        # ONEX_EXCLUDE: dict_str_any — opt-in block keyed by repo name (raw YAML)
+        self._repos: dict[str, Any] = repos if isinstance(repos, dict) else {}
 
     @classmethod
     def from_spec_path(cls, spec_path: Path) -> RollupCoverageVerifier:
@@ -160,6 +159,26 @@ class RollupCoverageVerifier:
         rollup_job = cfg["rollup_job"]
         rollup_context = cfg["required_rollup_context"]
 
+        # OMN-14127: the rollup is either a classic needs-gated aggregator
+        # (``needs`` mode — the default for every repo) or a no-``needs``
+        # fail-closed poller (``poller`` mode). In needs mode coverage is proven
+        # by transitive-``needs`` reachability from the rollup job; in poller mode
+        # it is proven by the poller's run-wide default-deny sweep — a covering
+        # job is gated iff it is defined, not in the poller soft-allowlist, and
+        # does not swallow failure. The poller sweep covers EVERY completed job in
+        # the run (not only those in the needs graph), so poller-mode coverage is
+        # at least as strong as needs-mode coverage.
+        rollup_mode = cfg.get("rollup_mode", "needs")
+        if rollup_mode not in ("needs", "poller"):
+            raise ValueError(  # error-ok: opt-in shape validation
+                f"model_b_rollup_enforcement.repos[{repo_name!r}].rollup_mode "
+                f"must be 'needs' or 'poller', got {rollup_mode!r}"
+            )
+        poller_mode = rollup_mode == "poller"
+        # Job display NAMES the poller sweeps out; mirrors ``SOFT_ALLOWLIST`` in
+        # scripts/ci/ci_summary_gate.py — keep the two in sync. Empty in needs mode.
+        poller_soft_allowlist = set(_as_list(cfg.get("poller_soft_allowlist")))
+
         workflow_path = repo_root / ".github" / "workflows" / rollup_workflow
         if not workflow_path.exists():
             raise ValueError(  # error-ok: opt-in points at a real workflow file
@@ -188,6 +207,24 @@ class RollupCoverageVerifier:
                 )
             )
 
+        # A ``poller`` rollup MUST NOT declare ``needs``: a needs-gated job's
+        # check-run is absent until its needs terminalize, which is the exact
+        # self-hosted-saturation wedge the poller exists to remove (OMN-14127).
+        if poller_mode:
+            rollup_needs = _as_list(jobs[rollup_job].get("needs"))
+            if rollup_needs:
+                gaps.append(
+                    ModelRollupCoverageGap(
+                        repo=repo_name,
+                        validator="<rollup>",
+                        detail=(
+                            f"rollup_mode 'poller' but {rollup_job!r} declares "
+                            f"needs={rollup_needs}; a poller must have no needs or "
+                            f"it re-wedges the required context under fleet saturation"
+                        ),
+                    )
+                )
+
         reachable = self._transitive_needs(jobs, rollup_job)
         # The rollup job itself is trivially reachable (depends on its own needs);
         # include it so a validator mapped directly to the rollup job counts.
@@ -213,7 +250,18 @@ class RollupCoverageVerifier:
                 if key not in jobs:
                     reasons.append(f"{key!r} undefined in {rollup_workflow}")
                     continue
-                if key not in reachable:
+                if poller_mode:
+                    # Poller coverage: any defined, non-allowlisted, non-swallowing
+                    # job is swept by the fail-closed default-deny poller, so its
+                    # failure turns the required context red.
+                    covering_name = jobs[key].get("name")
+                    if covering_name in poller_soft_allowlist:
+                        reasons.append(
+                            f"{key!r} (name {covering_name!r}) is in the poller "
+                            f"soft-allowlist — swept out of the gate, not enforced"
+                        )
+                        continue
+                elif key not in reachable:
                     reasons.append(f"{key!r} not in transitive needs of {rollup_job!r}")
                     continue
                 if self._swallows_failure(jobs[key]):
@@ -236,9 +284,9 @@ class RollupCoverageVerifier:
         return gaps
 
     @staticmethod
-    def _swallows_failure(
+    def _swallows_failure(  # ONEX_EXCLUDE: dict_str_any — raw workflow job mapping from YAML
         job: dict[str, Any],
-    ) -> bool:  # ONEX_EXCLUDE: dict_str_any — raw workflow job mapping from YAML
+    ) -> bool:
         # continue-on-error: true makes the job result "success" even when its
         # steps fail, so an aggregator reading needs.<job>.result can never go
         # red on it. Treat literal true and the string "true".
@@ -246,9 +294,9 @@ class RollupCoverageVerifier:
         return value is True or (isinstance(value, str) and value.strip() == "true")
 
     @staticmethod
-    def _transitive_needs(
+    def _transitive_needs(  # ONEX_EXCLUDE: dict_str_any — raw workflow jobs mapping from YAML
         jobs: dict[str, Any], start: str
-    ) -> set[str]:  # ONEX_EXCLUDE: dict_str_any — raw workflow jobs mapping from YAML
+    ) -> set[str]:
         """All jobs transitively reachable through ``needs`` edges from ``start``."""
         seen: set[str] = set()
         queue: deque[str] = deque(_as_list(jobs.get(start, {}).get("needs")))

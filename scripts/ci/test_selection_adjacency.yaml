@@ -26,15 +26,28 @@ shared_modules:
 thresholds:
   modules_changed_for_full_suite: 8
 
-# Test infrastructure — any change forces the full suite.
+# Test infrastructure — any change to these paths forces the full suite via a
+# bare path-prefix match in detect_test_paths.py step 2.
+#
+# Two triggers are handled specially and are intentionally ABSENT from this list
+# (OMN-14081):
+#   * pyproject.toml — handled CONTENT-AWARE in detect_test_paths.py
+#     (classify_pyproject_dependency_relevant): it escalates only when a
+#     dependency-bearing table changed (dependencies / optional-dependencies /
+#     dependency-groups / build-system / tool.* / requires-python), not on a bare
+#     `version` bump, entry-point registration, or metadata edit. Fail-closed:
+#     unparseable/unavailable TOML still escalates.
+#   * .github/workflows/ — removed to align with omnibase_infra (which omits it).
+#     A workflow-only change carries zero test-code delta, is exercised by the PR's
+#     own CI run, and is backstopped by the unconditional merge_group -> main full
+#     suite (root CLAUDE.md Rule #4). scripts/ci/ is KEPT (conservative — it houses
+#     the selector itself).
 test_infrastructure_paths:
-  - .github/workflows/
   - scripts/ci/
   - tests/conftest.py
   - tests/fixtures/
   - tests/pytest.ini
   - pytest.ini
-  - pyproject.toml
 
 # Reverse dependency edges. Key = changed module; value = modules that import it.
 # When `models` changes, also run tests for everything in `models.reverse_deps`.
