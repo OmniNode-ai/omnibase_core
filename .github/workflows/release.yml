@@ -20,12 +20,10 @@ concurrency:
 
 jobs:
   release:
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    # Keep the release publisher off the saturated self-hosted fleet. The job is
+    # lightweight but network-sensitive; publishing from GitHub-hosted avoids
+    # self-hosted PyPI upload timeouts blocking downstream pin bumps.
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.tag.outputs.tag }}
     steps:
