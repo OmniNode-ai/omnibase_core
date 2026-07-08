@@ -409,13 +409,25 @@ jobs:
           wheel_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/occ-preflight-wheels.XXXXXX")"
           (cd "$core_path" && uv build --wheel --out-dir "$wheel_dir")
 
-          core_wheel="$(find "$wheel_dir" -maxdepth 1 -type f -name 'omnibase_core-*.whl' -print -quit)"
+          core_wheel="$(find "$wheel_dir" -maxdepth 1 -type f -name 'omnibase_core-*.whl' | sort | tail -n 1)"
           if [ -z "$core_wheel" ]; then
             echo "::error::omnibase_core wheel was not produced"
             exit 1
           fi
 
-          uv pip install --python "$venv_py" --no-deps --no-config --no-index --reinstall-package omnibase-core "$core_wheel"
+          uv pip uninstall --python "$venv_py" omnibase-core omnibase_core || true
+          uv pip install --python "$venv_py" --no-deps --no-config --no-index --no-cache --reinstall "$core_wheel"
+
+          "$venv_py" - <<'PY'
+          from importlib import metadata
+          import os
+          import omnibase_core
+
+          distribution_version = metadata.version("omnibase-core")
+          source_path = os.path.abspath(os.path.dirname(omnibase_core.__file__))
+          print(f"omnibase-core distribution version: {distribution_version}")
+          print(f"omnibase_core import path: {source_path}")
+          PY
 
           # Export the venv interpreter for the downstream gate steps so they run
           # against this install instead of bare `python` (the system interpreter).
