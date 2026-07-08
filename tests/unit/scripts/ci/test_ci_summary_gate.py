@@ -201,6 +201,24 @@ class TestCiSummaryGate:
         code, _ = evaluate(jobs)
         assert code == EXIT_FAILURE
 
+    def test_same_attempt_duplicate_failure_is_not_hidden_by_success(self) -> None:
+        jobs = _all_good()
+        jobs.extend(
+            [
+                _job("Duplicate Job", "failure", attempt=2),
+                _job("Duplicate Job", "success", attempt=2),
+            ]
+        )
+        code, report = evaluate(jobs, run_attempt=2)
+        assert code == EXIT_FAILURE
+        assert "Duplicate Job" in report
+
+    def test_older_attempt_duplicate_failure_is_ignored(self) -> None:
+        jobs = [_job(j["name"], "success", attempt=2) for j in _all_good()]
+        jobs.append(_job("Duplicate Job", "failure", attempt=1))
+        code, _ = evaluate(jobs, run_attempt=2)
+        assert code == EXIT_SUCCESS
+
     def test_run_attempt_filters_stale_failure_from_previous_attempt(self) -> None:
         jobs = [_job(j["name"], "failure", attempt=1) for j in _all_good()]
         jobs.extend(_job(j["name"], "success", attempt=2) for j in _all_good())

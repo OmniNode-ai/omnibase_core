@@ -142,19 +142,24 @@ class JobState:
     run_attempt: int
 
 
-def dedup_latest(
+def _job_states(
     jobs: list[dict[str, object]],
     *,
     run_attempt: int | None = None,
-) -> dict[str, JobState]:
-    """Collapse the raw ``/runs/{id}/jobs`` array to one entry per job name.
+) -> list[JobState]:
+    """Return authoritative job rows while preserving same-attempt duplicates.
 
     When ``run_attempt`` is provided, only rows from that workflow attempt are
     considered. This prevents stale failed/cancelled rows from an earlier
     attempt from becoming authoritative for a current rerun.
+
+    Without ``run_attempt``, only the latest observed attempt for each job name
+    is authoritative. Multiple rows for the same job name and same attempt are
+    preserved so the default-deny sweep cannot hide a failed duplicate behind a
+    later successful duplicate row.
     """
 
-    latest: dict[str, JobState] = {}
+    states: list[JobState] = []
     for raw in jobs:
         name = str(raw.get("name") or "")
         if not name:
@@ -166,16 +171,47 @@ def dedup_latest(
             attempt = 1
         if run_attempt is not None and attempt != run_attempt:
             continue
-        prev = latest.get(name)
-        if prev is not None and attempt < prev.run_attempt:
-            continue
         conclusion = raw.get("conclusion")
-        latest[name] = JobState(
-            name=name,
-            status=str(raw.get("status") or ""),
-            conclusion=None if conclusion is None else str(conclusion),
-            run_attempt=attempt,
+        states.append(
+            JobState(
+                name=name,
+                status=str(raw.get("status") or ""),
+                conclusion=None if conclusion is None else str(conclusion),
+                run_attempt=attempt,
+            )
         )
+
+    if run_attempt is not None:
+        return states
+
+    latest_attempt_by_name: dict[str, int] = {}
+    for state in states:
+        latest_attempt_by_name[state.name] = max(
+            latest_attempt_by_name.get(state.name, 0),
+            state.run_attempt,
+        )
+    return [
+        state
+        for state in states
+        if state.run_attempt == latest_attempt_by_name[state.name]
+    ]
+
+
+def dedup_latest(
+    jobs: list[dict[str, object]],
+    *,
+    run_attempt: int | None = None,
+) -> dict[str, JobState]:
+    """Collapse authoritative job rows to one entry per job name.
+
+    This is used for aggregate gate completeness reporting. The default-deny
+    failure sweep intentionally uses :func:`_job_states` directly so duplicate
+    same-attempt rows remain visible.
+    """
+
+    latest: dict[str, JobState] = {}
+    for state in _job_states(jobs, run_attempt=run_attempt):
+        latest[state.name] = state
     return latest
 
 
@@ -191,15 +227,18 @@ def evaluate(
     """Return ``(exit_code, human_report)`` for the current job snapshot."""
 
     latest = dedup_latest(jobs, run_attempt=run_attempt)
+    observed = _job_states(jobs, run_attempt=run_attempt)
 
     # (1) Default-deny failure sweep over every present+completed job.
     sweep_failures = sorted(
-        j.name
-        for name, j in latest.items()
-        if name != self_name
-        and name not in allowlist
-        and j.status == "completed"
-        and j.conclusion not in GOOD_CONCLUSIONS
+        {
+            state.name
+            for state in observed
+            if state.name != self_name
+            and state.name not in allowlist
+            and state.status == "completed"
+            and state.conclusion not in GOOD_CONCLUSIONS
+        }
     )
 
     # (2) Spec-required-validator anchor (OMN-14127 load-bearing): each covering
