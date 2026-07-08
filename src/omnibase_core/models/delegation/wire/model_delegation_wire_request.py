@@ -159,6 +159,17 @@ class ModelDelegationRequest(BaseModel):
         default=(),
         description="Request-level quality checks enforced by the quality gate.",
     )
+    # string-id-ok: tenant_id is a named tenant identifier, not a UUID
+    tenant_id: str | None = Field(
+        default=None,
+        description=(
+            "Multi-tenant isolation identifier. OPERATOR-ACCEPTED INTERIM "
+            "(OMN-14058): when unset, the orchestrator falls back to the "
+            "ONEX_TENANT_ID env var at request-acceptance so delegation "
+            "projections stop defaulting to the shared 'omninode' tenant. "
+            "The durable per-tenant identity design is OMN-14107."
+        ),
+    )
 
     @model_validator(mode="after")
     def _validate_compliance_loop_config(self) -> Self:
