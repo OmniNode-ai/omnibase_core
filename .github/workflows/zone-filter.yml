@@ -36,12 +36,16 @@ on:
 jobs:
   classify:
     name: Zone Filter (docs-only check)
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    # OMN-14127: run UNCONDITIONALLY on the GitHub-hosted ubuntu-latest runner.
+    # This reusable workflow is a lightweight, docs-only path classifier —
+    # checkout + setup-python + `git diff` + a pure-stdlib zone classifier, with
+    # ZERO self-hosted/LAN dependency (no Kafka/Postgres/Valkey, no .201). The
+    # previous selector sent non-`pull_request` events (push / merge_group) to the
+    # self-hosted fleet, so under fleet saturation this classifier could never
+    # post and every downstream job that consumes `docs_only` wedged. Every repo
+    # that calls this reusable workflow (e.g. omnimarket) inherited that latent
+    # wedge; pinning it to ubuntu-latest removes it for ALL callers at once.
+    runs-on: ubuntu-latest
     outputs:
       docs_only: ${{ steps.zone.outputs.docs_only }}
 
