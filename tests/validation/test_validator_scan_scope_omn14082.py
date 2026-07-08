@@ -117,6 +117,7 @@ class TestScanScopeOMN14082:
         bad_f.write_text(bad, encoding="utf-8")
         rc_bad = mod.main(["--report", str(bad_f)])
         out_bad = capsys.readouterr().out
+        assert rc_bad == 0, out_bad
         assert "FAIL" in out_bad, out_bad
 
         clean_f = tmp_path / "ok.py"
