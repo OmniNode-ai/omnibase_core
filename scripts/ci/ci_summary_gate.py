@@ -142,13 +142,16 @@ class JobState:
     run_attempt: int
 
 
-def dedup_latest(jobs: list[dict[str, object]]) -> dict[str, JobState]:
+def dedup_latest(
+    jobs: list[dict[str, object]],
+    *,
+    run_attempt: int | None = None,
+) -> dict[str, JobState]:
     """Collapse the raw ``/runs/{id}/jobs`` array to one entry per job name.
 
-    Uses the highest ``run_attempt`` so partial re-runs (``gh run rerun
-    --failed``, which re-runs a subset in a new attempt) evaluate the freshest
-    conclusion for each job while still seeing jobs that passed in an earlier
-    attempt (fetch the endpoint with ``?filter=all``).
+    When ``run_attempt`` is provided, only rows from that workflow attempt are
+    considered. This prevents stale failed/cancelled rows from an earlier
+    attempt from becoming authoritative for a current rerun.
     """
 
     latest: dict[str, JobState] = {}
@@ -161,6 +164,8 @@ def dedup_latest(jobs: list[dict[str, object]]) -> dict[str, JobState]:
             attempt = int(raw_attempt) if isinstance(raw_attempt, (int, str)) else 1
         except (TypeError, ValueError):
             attempt = 1
+        if run_attempt is not None and attempt != run_attempt:
+            continue
         prev = latest.get(name)
         if prev is not None and attempt < prev.run_attempt:
             continue
@@ -177,6 +182,7 @@ def dedup_latest(jobs: list[dict[str, object]]) -> dict[str, JobState]:
 def evaluate(
     jobs: list[dict[str, object]],
     *,
+    run_attempt: int | None = None,
     self_name: str = SELF_JOB_NAME,
     gate_jobs: tuple[str, ...] = GATE_JOBS,
     allowlist: frozenset[str] = SOFT_ALLOWLIST,
@@ -184,7 +190,7 @@ def evaluate(
 ) -> tuple[int, str]:
     """Return ``(exit_code, human_report)`` for the current job snapshot."""
 
-    latest = dedup_latest(jobs)
+    latest = dedup_latest(jobs, run_attempt=run_attempt)
 
     # (1) Default-deny failure sweep over every present+completed job.
     sweep_failures = sorted(
@@ -331,10 +337,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Print the verdict report and exit 0 regardless (diagnostics only).",
     )
+    parser.add_argument(
+        "--run-attempt",
+        type=int,
+        default=None,
+        help="Evaluate only rows for this GitHub Actions run_attempt.",
+    )
     args = parser.parse_args(argv)
 
     jobs = _load_jobs(args.jobs_file)
-    code, report = evaluate(jobs)
+    code, report = evaluate(jobs, run_attempt=args.run_attempt)
     print(report)  # noqa: T201 — CLI verdict report to stdout for the poll loop
     if args.report_only:
         return EXIT_SUCCESS
