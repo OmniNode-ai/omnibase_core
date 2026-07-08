@@ -406,16 +406,16 @@ jobs:
             'blake3>=1.0.8,<2.0.0' \
             'ruamel-yaml>=0.18.0'
 
-          mkdir -p /tmp/occ-preflight-wheels
-          (cd "$core_path" && uv build --wheel --out-dir /tmp/occ-preflight-wheels)
+          wheel_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/occ-preflight-wheels.XXXXXX")"
+          (cd "$core_path" && uv build --wheel --out-dir "$wheel_dir")
 
-          core_wheel="$(find /tmp/occ-preflight-wheels -maxdepth 1 -type f -name 'omnibase_core-*.whl' | head -1)"
+          core_wheel="$(find "$wheel_dir" -maxdepth 1 -type f -name 'omnibase_core-*.whl' -print -quit)"
           if [ -z "$core_wheel" ]; then
             echo "::error::omnibase_core wheel was not produced"
             exit 1
           fi
 
-          uv pip install --python "$venv_py" --no-deps --reinstall-package omnibase-core "$core_wheel"
+          uv pip install --python "$venv_py" --no-deps --no-config --no-index --reinstall-package omnibase-core "$core_wheel"
 
           # Export the venv interpreter for the downstream gate steps so they run
           # against this install instead of bare `python` (the system interpreter).
