@@ -19,9 +19,15 @@
 # `layers` contract cannot be expressed today without an unmaintainable bridge
 # allowlist. These contracts therefore enforce DIRECT imports
 # (allow_indirect_imports = True). Tightening to a transitive contract is a
-# follow-up gated on slimming those hub modules. `protocols` is intentionally
-# omitted from the strict stack: it forms a real cycle with `models`
-# (protocols -> models and models -> protocols) that is out of scope here.
+# follow-up gated on slimming those hub modules.
+#
+# `protocols` is the seam layer (protocol source of truth; spi depends on core).
+# It sits low — everything depends on protocol interfaces — so it must not import
+# the domain/behavioral layers. It forms a real cycle with `models`
+# (protocols -> models AND models -> protocols): the protocols -> models
+# direction (protocol I/O type references) is frozen debt below and burned down
+# under OMN-3210; the models -> protocols direction (domain referencing
+# interfaces) is left permitted.
 #
 # Each ignore_imports line is a frozen current back-edge (fix later, OMN-3210).
 # unmatched_ignore_imports_alerting defaults to ERROR, so when a back-edge class
@@ -86,3 +92,18 @@ forbidden_modules =
 ignore_imports =
     # OMN-3210 burn-down: validation -> nodes (~1 edge)
     omnibase_core.validation.** -> omnibase_core.nodes.**
+
+[importlinter:contract:core-protocols-no-upward]
+name = Protocols (seam) must not import domain/behavioral layers (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.protocols
+forbidden_modules =
+    omnibase_core.models
+    omnibase_core.services
+    omnibase_core.validation
+    omnibase_core.nodes
+ignore_imports =
+    # OMN-3210 burn-down: protocols -> models (protocol I/O type references, ~65 edges)
+    omnibase_core.protocols.** -> omnibase_core.models.**

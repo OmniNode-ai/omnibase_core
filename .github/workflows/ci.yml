@@ -460,6 +460,7 @@ jobs:
           echo "- Foundation primitives (constants/enums/errors/types) must not import higher layers" >> $GITHUB_STEP_SUMMARY
           echo "- Models must not import services/validation/nodes" >> $GITHUB_STEP_SUMMARY
           echo "- Services/validation must not import nodes" >> $GITHUB_STEP_SUMMARY
+          echo "- Protocols (seam) must not import domain/behavioral layers" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Contract: .importlinter | Known back-edges frozen + burned down under OMN-3210" >> $GITHUB_STEP_SUMMARY
 
