@@ -554,10 +554,9 @@ class TestGetCapabilitiesByNodeKind:
             get_capabilities_by_node_kind,
         )
 
-        # RUNTIME_HOST is infrastructure, not a core node type
-        from omnibase_core.errors import ModelOnexError
-
-        with pytest.raises(ModelOnexError):
+        # RUNTIME_HOST is infrastructure, not a core node type; the function
+        # raises the built-in ValueError per its docstring (boundary validation).
+        with pytest.raises(ValueError):
             get_capabilities_by_node_kind(EnumNodeKind.RUNTIME_HOST)
 
 

@@ -58,8 +58,9 @@ ignore_imports =
     # OMN-3210 burn-down: errors -> models (~11 edges)
     omnibase_core.errors -> omnibase_core.models.**
     omnibase_core.errors.** -> omnibase_core.models.**
-    # OMN-3210 burn-down: constants -> models (~1 edge)
-    omnibase_core.constants.** -> omnibase_core.models.**
+    # OMN-3210 burn-down: constants -> models — RETIRED (OMN-14221):
+    # constants_handler_capabilities no longer imports ModelOnexError; the
+    # get_capabilities_by_node_kind boundary now raises the built-in ValueError.
 
 [importlinter:contract:core-models-no-upward]
 name = Models must not import behavioral/orchestration layers (direct)
