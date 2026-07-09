@@ -76,7 +76,12 @@ _SEMVER_RE = re.compile(
 
 # check_types whose proof requires captured stdout. Listed here (not in the
 # validator body) so the policy is grep-able and easy to extend.
-EXECUTABLE_CHECK_TYPES = frozenset({"command", "test_passes", "endpoint", "grep"})
+# ``runtime_readback`` (OMN-14168) is the RUNTIME_OPS class's read-only live
+# probe — an empty readback is indistinguishable from "never ran", so it is
+# held to the same non-empty-stdout bar as the other executable proofs (G3).
+EXECUTABLE_CHECK_TYPES = frozenset(
+    {"command", "test_passes", "endpoint", "grep", "runtime_readback"}
+)
 
 # check_types whose proof is structurally weak (file presence only). The
 # transition policy demotes these to ADVISORY regardless of verifier identity.
@@ -290,7 +295,66 @@ class ModelDodReceipt(BaseModel):
             "UI_DASHBOARD the receipt-gate requires a Playwright proxy-origin "
             "network trace and rejects direct curl/wget/httpx probes. When set "
             "to BACKEND a direct HTTP probe is accepted (opt-out of the UI gate). "
-            "None lets the gate infer the class from the probe_command."
+            "When set to RUNTIME_OPS (OMN-14168) the receipt asserts a no-source-"
+            "change runtime-ops fix and MUST carry the runtime-ops mutation block "
+            "below with no ``pr_number``. None lets the gate infer the class from "
+            "the probe_command."
+        ),
+    )
+    mutation_command: str | None = Field(
+        default=None,
+        max_length=10000,
+        description=(
+            "RUNTIME_OPS only (OMN-14168): the exact live-ops command that was "
+            "applied (e.g. 'kubectl -n onex-dev patch deployment omnidash "
+            "--type strategic ...', a restart, or a config repair). Distinct from "
+            "``probe_command`` which is the read-only readback. Required when "
+            "``evidence_class == RUNTIME_OPS``."
+        ),
+    )
+    mutation_verb: str | None = Field(
+        default=None,
+        description=(
+            "RUNTIME_OPS only (OMN-14168): the parsed verb of ``mutation_command``. "
+            "Must be a member of the GOVERNED runtime-ops verb allowlist "
+            "(contracts/runtime_ops_verb_allowlist.yaml). ``git`` and image-digest "
+            "promotion are intentionally excluded — a source change produces a "
+            "diff and therefore a PR, which routes through the normal merged-PR "
+            "gate instead of this class. Required when "
+            "``evidence_class == RUNTIME_OPS``."
+        ),
+    )
+    target_identity: str | None = Field(
+        default=None,
+        max_length=2000,
+        description=(
+            "RUNTIME_OPS only (OMN-14168): the mutated runtime object "
+            "(lane / namespace / deployment / pod / node id) the readback was "
+            "taken against, e.g. 'onex-dev/Deployment/omnidash'. Re-read live at "
+            "gate time (Surface B) to reject a stale/replayed readback. Required "
+            "when ``evidence_class == RUNTIME_OPS``."
+        ),
+    )
+    no_source_change: bool = Field(
+        default=False,
+        description=(
+            "RUNTIME_OPS only (OMN-14168): asserts the fix produced NO repo diff "
+            "and NO PR. MUST be True when ``evidence_class == RUNTIME_OPS`` — a "
+            "runtime-ops close waives only the merged-PR requirement, and only for "
+            "genuine no-source-change ops. A source change has a diff and routes "
+            "through the normal PR gate."
+        ),
+    )
+    prevention_followup: str | None = Field(
+        default=None,
+        max_length=2000,
+        description=(
+            "RUNTIME_OPS only (OMN-14168, G5 recurrence ratchet): a linked "
+            "recurrence-prevention follow-up (a GitOps/declarative guardrail "
+            "ticket id or PR URL). Required when ``evidence_class == RUNTIME_OPS`` "
+            "so the no-PR-ops hatch cannot become a comfortable permanent bypass — "
+            "the hatch is for emergency runtime recovery, not steady-state no-PR "
+            "ops. Mirrors the DEFECT_PREVENTION_GATE repair-to-ratchet rule."
         ),
     )
 
@@ -379,6 +443,41 @@ class ModelDodReceipt(BaseModel):
             )
         return v
 
+    @field_validator("mutation_verb")
+    @classmethod
+    def _validate_mutation_verb(cls, v: str | None) -> str | None:
+        """Reject any ``mutation_verb`` outside the governed runtime-ops allowlist.
+
+        The allowlist is GOVERNED DATA
+        (``contracts/runtime_ops_verb_allowlist.yaml``), not hardcoded here, so
+        adding/removing a verb is a reviewable governance change (OMN-14168).
+        ``git`` and image-digest promotion are intentionally absent — a source
+        change produces a diff and therefore a PR, which must route through the
+        normal merged-PR gate. Imported lazily so this low-level model module
+        never triggers the heavy ``omnibase_core.validation`` package at import
+        time.
+        """
+        if v is None:
+            return None
+        normalized = v.strip()
+        if not normalized:
+            raise ValueError("mutation_verb must contain non-whitespace characters")
+        # Local import avoids an import-time cycle through the validation package.
+        from omnibase_core.validation.runtime_ops_verb_loader import (
+            load_runtime_ops_verb_allowlist,
+        )
+
+        allowlist = load_runtime_ops_verb_allowlist()
+        if normalized not in allowlist:
+            raise ValueError(
+                f"mutation_verb {normalized!r} is not in the governed runtime-ops "
+                f"verb allowlist {sorted(allowlist)} "
+                "(contracts/runtime_ops_verb_allowlist.yaml). A source change "
+                "(git / image-digest promotion) produces a PR and must route "
+                "through the normal merged-PR gate, not the RUNTIME_OPS class."
+            )
+        return normalized
+
     @model_validator(mode="after")
     def enforce_adversarial_invariants(self) -> ModelDodReceipt:
         """Apply the four-rule Centralized Transition Policy.
@@ -399,7 +498,52 @@ class ModelDodReceipt(BaseModel):
 
         Rule (4) — schema_version SemVer match — is enforced as a field
         validator above, before this method runs.
+
+        RUNTIME_OPS structural invariants (OMN-14168, G2a) are enforced first —
+        a receipt that declares ``evidence_class == RUNTIME_OPS`` must carry the
+        full runtime-ops mutation block, assert ``no_source_change``, and carry
+        NO ``pr_number`` (a PR routes through the normal merged-PR gate). These
+        raise ``ValueError`` because a mis-declared runtime-ops receipt is
+        structurally invalid, not merely weak.
         """
+        # RUNTIME_OPS structural invariants (G2a). A receipt of this class is a
+        # no-PR, no-source-change runtime-ops proof; it must be complete and must
+        # not smuggle a PR/source binding in.
+        if self.evidence_class is EnumEvidenceClass.RUNTIME_OPS:
+            if not self.no_source_change:
+                raise ValueError(
+                    "evidence_class=RUNTIME_OPS requires no_source_change=True — "
+                    "the runtime-ops class waives the merged-PR requirement only "
+                    "for genuine no-source-change ops (OMN-14168, G2a)."
+                )
+            if self.pr_number is not None:
+                raise ValueError(
+                    "evidence_class=RUNTIME_OPS must not carry a pr_number — work "
+                    "with a PR routes through the normal merged-PR gate, not the "
+                    "runtime-ops class (OMN-14168, G2a)."
+                )
+            if self.mutation_verb is None or not self.mutation_verb.strip():
+                raise ValueError(
+                    "evidence_class=RUNTIME_OPS requires a mutation_verb from the "
+                    "governed runtime-ops allowlist (OMN-14168)."
+                )
+            if self.mutation_command is None or not self.mutation_command.strip():
+                raise ValueError(
+                    "evidence_class=RUNTIME_OPS requires a mutation_command (the "
+                    "exact live-ops command applied) (OMN-14168)."
+                )
+            if self.target_identity is None or not self.target_identity.strip():
+                raise ValueError(
+                    "evidence_class=RUNTIME_OPS requires a target_identity (the "
+                    "mutated runtime object) (OMN-14168)."
+                )
+            if self.prevention_followup is None or not self.prevention_followup.strip():
+                raise ValueError(
+                    "evidence_class=RUNTIME_OPS requires a prevention_followup "
+                    "(a GitOps/declarative guardrail ticket or PR) so the no-PR-ops "
+                    "hatch cannot become a permanent bypass (OMN-14168, G5)."
+                )
+
         # Rule 3: executable check_types must have non-empty probe_stdout.
         # PENDING is exempt — an unexecuted probe has no stdout by definition.
         if (
