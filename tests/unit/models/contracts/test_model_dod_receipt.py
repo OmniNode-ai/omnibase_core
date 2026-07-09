@@ -11,6 +11,7 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 
@@ -473,3 +474,112 @@ class TestModelDodReceiptConsolidationFields:
         fields["branch"] = None
         receipt = ModelDodReceipt(**fields)
         assert receipt.branch is None
+
+
+def _runtime_ops_fields() -> dict[str, Any]:
+    """Baseline kwargs for a well-formed RUNTIME_OPS readback receipt (OMN-14168).
+
+    Independent runner/verifier, a non-empty readback stdout, an allowlisted
+    mutation verb, the full mutation block, ``no_source_change=True`` and no
+    ``pr_number`` — the canonical accept case.
+    """
+    fields = _base_fields()
+    fields.update(
+        evidence_class=EnumEvidenceClass.RUNTIME_OPS,
+        check_type="runtime_readback",
+        check_value="kubectl get pods -n onex-dev",
+        probe_command="kubectl -n onex-dev get pods",
+        probe_stdout="omnidash-76797d58ff-dmjgv 1/1 Running 0 117m\n",
+        commit_sha="0000000",
+        mutation_command=(
+            "kubectl -n onex-dev patch deployment omnidash --type strategic "
+            "--patch-file=/tmp/patch.yaml"
+        ),
+        mutation_verb="patch",
+        target_identity="onex-dev/Deployment/omnidash",
+        no_source_change=True,
+        prevention_followup="OMN-14161",
+    )
+    return fields
+
+
+@pytest.mark.unit
+class TestModelDodReceiptRuntimeOps:
+    """RUNTIME_OPS evidence-class invariants (OMN-14168, G2a)."""
+
+    def test_well_formed_runtime_ops_receipt_constructs_pass(self) -> None:
+        receipt = ModelDodReceipt(**_runtime_ops_fields())
+        assert receipt.evidence_class is EnumEvidenceClass.RUNTIME_OPS
+        assert receipt.status is EnumReceiptStatus.PASS
+        assert receipt.mutation_verb == "patch"
+        assert receipt.no_source_change is True
+        assert receipt.pr_number is None
+
+    def test_runtime_ops_self_attested_downgrades_to_advisory(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["verifier"] = fields["runner"]
+        receipt = ModelDodReceipt(**fields)
+        # Invariant #1 still applies to the runtime-ops class.
+        assert receipt.status is EnumReceiptStatus.ADVISORY
+
+    def test_runtime_ops_with_pr_number_rejected(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["pr_number"] = 1349
+        with pytest.raises(ValidationError, match="must not carry a pr_number"):
+            ModelDodReceipt(**fields)
+
+    def test_runtime_ops_without_no_source_change_rejected(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["no_source_change"] = False
+        with pytest.raises(ValidationError, match="requires no_source_change=True"):
+            ModelDodReceipt(**fields)
+
+    def test_runtime_ops_missing_prevention_followup_rejected(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["prevention_followup"] = None
+        with pytest.raises(ValidationError, match="requires a prevention_followup"):
+            ModelDodReceipt(**fields)
+
+    def test_runtime_ops_missing_mutation_command_rejected(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["mutation_command"] = None
+        with pytest.raises(ValidationError, match="requires a mutation_command"):
+            ModelDodReceipt(**fields)
+
+    def test_runtime_ops_missing_target_identity_rejected(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["target_identity"] = None
+        with pytest.raises(ValidationError, match="requires a target_identity"):
+            ModelDodReceipt(**fields)
+
+    def test_runtime_ops_missing_mutation_verb_rejected(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["mutation_verb"] = None
+        with pytest.raises(ValidationError, match="requires a mutation_verb"):
+            ModelDodReceipt(**fields)
+
+    def test_git_verb_rejected_by_allowlist(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["mutation_verb"] = "git"
+        with pytest.raises(ValidationError, match="not in the governed runtime-ops"):
+            ModelDodReceipt(**fields)
+
+    def test_empty_readback_stdout_rejected(self) -> None:
+        fields = _runtime_ops_fields()
+        fields["probe_stdout"] = ""
+        with pytest.raises(ValidationError, match="probe_stdout required"):
+            ModelDodReceipt(**fields)
+
+    def test_all_allowlisted_verbs_accepted(self) -> None:
+        for verb in (
+            "patch",
+            "rollout",
+            "scale",
+            "restart",
+            "recreate",
+            "config-repair",
+        ):
+            fields = _runtime_ops_fields()
+            fields["mutation_verb"] = verb
+            receipt = ModelDodReceipt(**fields)
+            assert receipt.mutation_verb == verb

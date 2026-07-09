@@ -34,11 +34,22 @@ class EnumEvidenceClass(StrEnum):
     UNCLASSIFIED
         No UI/backend distinction asserted or inferred. Treated as not
         UI-class — the proxy-origin requirement does not apply.
+    RUNTIME_OPS
+        Evidence for a no-source-change runtime-ops fix (OMN-14168) — a
+        ``kubectl patch``, live restart, or config repair with NO repo diff and
+        NO PR. A receipt of this class carries the runtime-ops mutation block
+        (``mutation_command`` / ``mutation_verb`` / ``target_identity`` /
+        ``no_source_change`` / ``prevention_followup``) and is proven by a
+        read-only live readback, not a merged PR. The DurableEvidenceGate keys
+        its RUNTIME_OPS_READBACK branch on this class; a receipt of this class
+        must NOT carry a ``pr_number`` (work with a PR routes through the normal
+        merged-PR gate instead).
     """
 
     UI_DASHBOARD = "ui_dashboard"
     BACKEND = "backend"
     UNCLASSIFIED = "unclassified"
+    RUNTIME_OPS = "runtime_ops"
 
 
 __all__ = ["EnumEvidenceClass"]
