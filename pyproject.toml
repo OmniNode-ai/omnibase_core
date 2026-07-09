@@ -172,6 +172,8 @@ dev = [
     "pytest-rerunfailures>=16.1",
     "pytest-testmon>=2.2.0",
     "interrogate>=1.7.0",
+    # OMN-14216: intra-core dependency-layering oracle (import-linter + grimp)
+    "import-linter>=2.13,<3.0.0",
     "hypothesis>=6.150",
     "psutil>=7.2.1",
     "confluent-kafka>=2.12.0,<3.0.0",

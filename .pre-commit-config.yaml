@@ -115,6 +115,20 @@ repos:
         pass_filenames: true  # Only check changed files, CI does full scan
         stages: [pre-push]  # ~1-5s for changed files only
 
+      # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
+      # Enforces the DIRECTION of imports between omnibase_core sub-packages via
+      # import-linter (.importlinter). Whole-graph check (grimp caches the graph
+      # in .import_linter_cache/, so re-runs are sub-second). Runs only when
+      # source python or the contract config changes. Mirrors the `lint-imports`
+      # CI job wired into quality-gate.
+      - id: lint-imports
+        name: import-linter (intra-core dependency layering)
+        entry: uv run lint-imports
+        language: system
+        pass_filenames: false
+        files: ^(src/omnibase_core/.*\.py|\.importlinter|pyproject\.toml)$
+        stages: [pre-commit]
+
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
       - id: clean-tmp-directory
