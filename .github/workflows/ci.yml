@@ -413,6 +413,57 @@ jobs:
           echo "See: docs/decisions/ADR-005-core-infra-dependency-boundary.md" >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
+  # Enforces the DIRECTION of imports between omnibase_core's architectural
+  # sub-packages via import-linter (`.importlinter`). Complements the transport
+  # (core-infra-boundary) and circular-import guards, which do not cover
+  # intra-core sub-package layering. Blocking gate (wired into quality-gate).
+  lint-imports:
+    name: Import Layering Oracle
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run import-linter (intra-core dependency layering)
+        run: uv run lint-imports
+
+      - name: Import layering summary
+        if: always()
+        run: |
+          echo "## Intra-Core Dependency-Layering Oracle (OMN-14216)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Enforces the direction of imports between omnibase_core sub-packages:" >> $GITHUB_STEP_SUMMARY
+          echo "- Foundation primitives (constants/enums/errors/types) must not import higher layers" >> $GITHUB_STEP_SUMMARY
+          echo "- Models must not import services/validation/nodes" >> $GITHUB_STEP_SUMMARY
+          echo "- Services/validation must not import nodes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Contract: .importlinter | Known back-edges frozen + burned down under OMN-3210" >> $GITHUB_STEP_SUMMARY
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Deterministic Skill Routing Gate (OMN-8765) — enforces that every Tier 1
   # deterministic skill in omniclaude routes through `onex run-node` / `onex
   # node` (or a Kafka publish) and surfaces `SkillRoutingError`. Blocking gate.
@@ -1347,7 +1398,7 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
     if: always()
 
     steps:
@@ -1361,6 +1412,7 @@ jobs:
           exports="${{ needs.exports-validation.result }}"
           mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
           core_infra="${{ needs.core-infra-boundary.result }}"
+          lint_imports="${{ needs.lint-imports.result }}"
           det_skills="${{ needs.check-deterministic-skills.result }}"
           docs="${{ needs.docs-validation.result }}"
           purity="${{ needs.node-purity-check.result }}"
@@ -1391,6 +1443,7 @@ jobs:
           echo "| Exports Validation | $exports |" >> $GITHUB_STEP_SUMMARY
           echo "| Mypy Validation Scripts | $mypy_scripts |" >> $GITHUB_STEP_SUMMARY
           echo "| Core-Infra Boundary | $core_infra |" >> $GITHUB_STEP_SUMMARY
+          echo "| Import Layering Oracle (OMN-14216) | $lint_imports |" >> $GITHUB_STEP_SUMMARY
           echo "| Deterministic Skill Routing | $det_skills |" >> $GITHUB_STEP_SUMMARY
           echo "| Documentation Validation | $docs |" >> $GITHUB_STEP_SUMMARY
           echo "| Node Purity Check | $purity |" >> $GITHUB_STEP_SUMMARY
@@ -1416,6 +1469,7 @@ jobs:
              [[ "$exports" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
              [[ "$core_infra" == "success" ]] && \
+             [[ "$lint_imports" == "success" ]] && \
              [[ "$det_skills" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
              [[ "$purity" == "success" ]] && \

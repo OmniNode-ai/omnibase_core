@@ -1,0 +1,88 @@
+# import-linter contract — intra-core dependency-layering oracle (OMN-14216)
+#
+# Encodes the DIRECTION of imports between omnibase_core's architectural
+# sub-packages, per ADR-001, ADR-005, and docs/architecture/DEPENDENCY_INVERSION.md.
+# This is the enforcement oracle every later decoupling change verifies against:
+# a new illegal back-edge fails `lint-imports`; the current known back-edges are
+# frozen below as an explicit, annotated allowlist to be burned down under the
+# Platform Tech Debt Reduction epic (OMN-3210).
+#
+# Doctrine layering (high -> low):
+#   nodes                            (top: coordination shells)
+#   services | validation            (behavioral layers)
+#   models                           (domain models)
+#   constants | enums | errors | types   (foundation primitives)
+#
+# WHY `forbidden` (direct) contracts and not a transitive `layers` contract:
+# core's import graph is densely interconnected through hub modules (utils,
+# mixins, protocols) that bridge nearly every sub-package, so a transitive
+# `layers` contract cannot be expressed today without an unmaintainable bridge
+# allowlist. These contracts therefore enforce DIRECT imports
+# (allow_indirect_imports = True). Tightening to a transitive contract is a
+# follow-up gated on slimming those hub modules. `protocols` is intentionally
+# omitted from the strict stack: it forms a real cycle with `models`
+# (protocols -> models and models -> protocols) that is out of scope here.
+#
+# Each ignore_imports line is a frozen current back-edge (fix later, OMN-3210).
+# unmatched_ignore_imports_alerting defaults to ERROR, so when a back-edge class
+# is fully removed its now-unmatched ignore line forces its own deletion (ratchet).
+
+[importlinter]
+root_packages =
+    omnibase_core
+
+[importlinter:contract:core-foundation-no-upward]
+name = Foundation primitives must not import higher layers (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.constants
+    omnibase_core.enums
+    omnibase_core.errors
+    omnibase_core.types
+forbidden_modules =
+    omnibase_core.models
+    omnibase_core.services
+    omnibase_core.validation
+    omnibase_core.nodes
+ignore_imports =
+    # OMN-3210 burn-down: types -> models (TypedDict shape references, ~23 edges)
+    omnibase_core.types -> omnibase_core.models.**
+    omnibase_core.types.** -> omnibase_core.models.**
+    # OMN-3210 burn-down: errors -> models (~11 edges)
+    omnibase_core.errors -> omnibase_core.models.**
+    omnibase_core.errors.** -> omnibase_core.models.**
+    # OMN-3210 burn-down: constants -> models (~1 edge)
+    omnibase_core.constants.** -> omnibase_core.models.**
+    # OMN-3210 burn-down: types -> validation (~1 edge)
+    omnibase_core.types.** -> omnibase_core.validation.**
+
+[importlinter:contract:core-models-no-upward]
+name = Models must not import behavioral/orchestration layers (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.models
+forbidden_modules =
+    omnibase_core.services
+    omnibase_core.validation
+    omnibase_core.nodes
+ignore_imports =
+    # OMN-3210 burn-down: models -> validation (~18 edges)
+    omnibase_core.models.** -> omnibase_core.validation
+    omnibase_core.models.** -> omnibase_core.validation.**
+    # OMN-3210 burn-down: models -> nodes (~4 edges)
+    omnibase_core.models.** -> omnibase_core.nodes.**
+
+[importlinter:contract:core-midtier-no-top]
+name = Services and validation must not import nodes (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.services
+    omnibase_core.validation
+forbidden_modules =
+    omnibase_core.nodes
+ignore_imports =
+    # OMN-3210 burn-down: validation -> nodes (~1 edge)
+    omnibase_core.validation.** -> omnibase_core.nodes.**
