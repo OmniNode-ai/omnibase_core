@@ -60,8 +60,6 @@ ignore_imports =
     omnibase_core.errors.** -> omnibase_core.models.**
     # OMN-3210 burn-down: constants -> models (~1 edge)
     omnibase_core.constants.** -> omnibase_core.models.**
-    # OMN-3210 burn-down: types -> validation (~1 edge)
-    omnibase_core.types.** -> omnibase_core.validation.**
 
 [importlinter:contract:core-models-no-upward]
 name = Models must not import behavioral/orchestration layers (direct)

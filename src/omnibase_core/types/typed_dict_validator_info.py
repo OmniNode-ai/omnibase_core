@@ -11,7 +11,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
-    from omnibase_core.validation.validator_utils import ModelValidationResult
+    from omnibase_core.models.common.model_validation_result import (
+        ModelValidationResult,
+    )
 
 
 class TypedDictValidatorInfo(TypedDict):
