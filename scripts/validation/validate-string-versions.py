@@ -295,6 +295,12 @@ class PythonASTValidator(ast.NodeVisitor):
             "run_id",  # Pipeline run correlation string (human-readable, not UUID)
             "ticket_id",  # Linear ticket identifier (e.g. "OMN-1234", not UUID)
             "epic_id",  # Linear epic identifier (e.g. "OMN-4392", not UUID)
+            # OCC_STAMP_IDENTIFIERS (OMN-14187 canonical OCC stamp-model)
+            #   allowlist_receipt_id: user-issued approval receipt handle captured
+            #   from the out-of-band "# skip-token-allowed: <id>" companion line
+            #   (validator_receipt_gate.ALLOWLIST_PATTERN captures a raw \S+ token,
+            #   not a UUID).
+            "allowlist_receipt_id",  # User-issued skip-token approval handle (not UUID)
         }
 
     def visit_Import(self, node: ast.Import):
