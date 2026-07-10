@@ -25,7 +25,7 @@ import inspect
 import json
 import logging
 import uuid
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -265,10 +265,7 @@ class RuntimeLocal:
         status = payload.get("status", "success")
         logger.info("RuntimeLocal: terminal event received (status=%s)", status)
         self._terminal_payload = payload
-        if status == "failure":
-            self._result = EnumWorkflowResult.FAILED
-        else:
-            self._result = EnumWorkflowResult.COMPLETED
+        self._result = self._classify_result(payload)
 
         self._terminal_received.set()
 
@@ -1822,6 +1819,13 @@ class RuntimeLocal:
                 return None
 
     @staticmethod
+    def _result_field(result_obj: object, field_name: str) -> object | None:
+        """Read a status/error field from dict-style or attribute-style envelopes."""
+        if isinstance(result_obj, Mapping):
+            return result_obj.get(field_name)
+        return getattr(result_obj, field_name, None)
+
+    @staticmethod
     def _classify_result(result_obj: object | None) -> EnumWorkflowResult:
         """Inspect a handler return value to determine success or failure.
 
@@ -1844,10 +1848,10 @@ class RuntimeLocal:
         if result_obj is None:
             return EnumWorkflowResult.COMPLETED
         # Check for common failure indicators on result objects
-        cycles_failed = getattr(result_obj, "cycles_failed", None)
+        cycles_failed = RuntimeLocal._result_field(result_obj, "cycles_failed")
         if isinstance(cycles_failed, int | float) and cycles_failed > 0:
             return EnumWorkflowResult.FAILED
-        status = getattr(result_obj, "status", None)
+        status = RuntimeLocal._result_field(result_obj, "status")
         if isinstance(status, str):
             normalized = status.strip().lower()
             if normalized in _FAILURE_STATUS_VALUES:
@@ -1857,7 +1861,7 @@ class RuntimeLocal:
         # No decisive status — a populated error message/attribute is an
         # unambiguous failure signal even when the handler omits a status field.
         for attr_name in ("error_message", "error"):
-            value = getattr(result_obj, attr_name, None)
+            value = RuntimeLocal._result_field(result_obj, attr_name)
             if isinstance(value, str) and value.strip():
                 return EnumWorkflowResult.FAILED
         return EnumWorkflowResult.COMPLETED

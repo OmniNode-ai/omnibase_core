@@ -1085,7 +1085,7 @@ async def test_ensure_handler_initialized_is_idempotent_and_guarded(
         # A successful query that matched nothing must NOT be classified FAILED.
         ("no_results", None, EnumWorkflowResult.COMPLETED),
         # Explicit success wins even if an error_message field lingers.
-        ("success", "", EnumWorkflowResult.COMPLETED),
+        ("success", "stale error from prior attempt", EnumWorkflowResult.COMPLETED),
     ],
 )
 def test_classify_result_status_values(
@@ -1100,6 +1100,41 @@ def test_classify_result_status_values(
 def test_classify_result_none_is_completed() -> None:
     """A ``None`` return (compute handler that returns nothing) is COMPLETED."""
     assert RuntimeLocal._classify_result(None) == EnumWorkflowResult.COMPLETED
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ({"status": "error"}, EnumWorkflowResult.FAILED),
+        ({"status": "failed"}, EnumWorkflowResult.FAILED),
+        ({"status": "success", "error": "stale error"}, EnumWorkflowResult.COMPLETED),
+        ({"error_message": "boom"}, EnumWorkflowResult.FAILED),
+        ({"cycles_failed": 1}, EnumWorkflowResult.FAILED),
+    ],
+)
+def test_classify_result_mapping_envelopes(
+    payload: dict[str, object], expected: EnumWorkflowResult
+) -> None:
+    """Dict-style response envelopes use the same status/error rules as objects."""
+    assert RuntimeLocal._classify_result(payload) == expected
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", ["failure", "failed", "error", "ERROR"])
+async def test_terminal_event_uses_result_classifier(
+    tmp_path: Path, status: str
+) -> None:
+    """Terminal events classify every failure-ish status as FAILED."""
+    runtime = RuntimeLocal(
+        workflow_path=tmp_path / "contract.yaml",
+        state_root=tmp_path / "state",
+    )
+
+    runtime._on_terminal_event({"status": status})
+
+    assert runtime._result == EnumWorkflowResult.FAILED
 
 
 @pytest.mark.unit
