@@ -129,6 +129,20 @@ repos:
         files: ^(src/omnibase_core/.*\.py|\.importlinter|pyproject\.toml)$
         stages: [pre-commit]
 
+      # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210)
+      # The import-linter wildcard ignores are permissive — they silently allow NEW
+      # edges of a frozen class. This ratchet freezes protocols->models (65) and the
+      # utils/mixins/protocols hub-inbound sets non-increasing and hard-fails any new
+      # edge/importer (grimp graph vs scripts/ci/import_ratchet_baseline.yaml). Mirrors
+      # the lint-imports hook; whole-graph, sub-second. Retirement = RSD canonical rewrite.
+      - id: import-ratchet
+        name: import-layering growth ratchet (protocols->models + hubs)
+        entry: uv run python scripts/ci/check_import_ratchet.py
+        language: system
+        pass_filenames: false
+        files: ^(src/omnibase_core/.*\.py|scripts/ci/check_import_ratchet\.py|scripts/ci/import_ratchet_baseline\.py|\.importlinter|pyproject\.toml)$
+        stages: [pre-commit]
+
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
       - id: clean-tmp-directory

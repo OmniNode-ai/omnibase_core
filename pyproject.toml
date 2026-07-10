@@ -360,6 +360,7 @@ ignore = [
 "scripts/validation/validate-stubbed-functionality.py" = ["T201", "BLE001"]
 "scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
 "scripts/check_dep_provenance.py" = ["T201"]  # CLI output for dep-provenance gate (OMN-13873/OMN-13877)
+"scripts/ci/check_import_ratchet.py" = ["T201"]  # CLI output for import-layering growth-ratchet gate (OMN-14340)
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_routing_authority.py" = ["T201"]  # CLI output for routing-authority gate (OMN-13306)
 "src/omnibase_core/validation/delegation/validator_delegation_profile.py" = ["T201"]  # CLI output for delegation-profile hook (OMN-13306)

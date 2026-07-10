@@ -104,5 +104,12 @@ forbidden_modules =
     omnibase_core.validation
     omnibase_core.nodes
 ignore_imports =
-    # OMN-3210 burn-down: protocols -> models (protocol I/O type references, ~65 edges)
+    # OMN-3210 burn-down: protocols -> models (protocol I/O type references, 65 edges).
+    # NOT a permanent exception (operator ruling 2026-07-10). This wildcard ignore is
+    # permissive, so a monotonic-non-increasing RATCHET freezes the edge set at 65 and
+    # hard-fails any NEW protocols -> models edge: scripts/ci/check_import_ratchet.py
+    # (baseline scripts/ci/import_ratchet_baseline.yaml; wired as CI gate + pre-commit,
+    # OMN-14340). Owner: RSD canonical rewrite epic. Retirement mechanism: the rewrite
+    # regenerates these modules canonically (dissolving the protocols<->models cycle),
+    # after which this line + the ratchet are deleted. The set only SHRINKS.
     omnibase_core.protocols.** -> omnibase_core.models.**
