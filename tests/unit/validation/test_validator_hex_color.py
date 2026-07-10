@@ -17,7 +17,7 @@ import re
 import pytest
 from pydantic import BaseModel, ValidationError, field_validator
 
-from omnibase_core.validation.validator_hex_color import (
+from omnibase_core.utils.util_hex_color import (
     HEX_COLOR_PATTERN,
     HexColorValidator,
     validate_hex_color,
@@ -431,7 +431,7 @@ class TestImports:
 
     def test_import_from_validator_module(self) -> None:
         """Test that all exports are importable from the module."""
-        from omnibase_core.validation.validator_hex_color import (
+        from omnibase_core.utils.util_hex_color import (
             HEX_COLOR_PATTERN,
             HexColorValidator,
             validate_hex_color,

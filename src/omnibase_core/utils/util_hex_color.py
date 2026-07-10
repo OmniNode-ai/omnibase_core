@@ -14,7 +14,7 @@ Example:
     Using the validator in a Pydantic model::
 
         from pydantic import BaseModel, field_validator
-        from omnibase_core.validation.validator_hex_color import validate_hex_color
+        from omnibase_core.utils.util_hex_color import validate_hex_color
 
         class ModelTheme(BaseModel):
             primary_color: str
@@ -26,7 +26,7 @@ Example:
 
     Using the pattern directly for custom validation::
 
-        from omnibase_core.validation.validator_hex_color import HEX_COLOR_PATTERN
+        from omnibase_core.utils.util_hex_color import HEX_COLOR_PATTERN
 
         if HEX_COLOR_PATTERN.match(color):
             print("Valid hex color")

@@ -73,9 +73,12 @@ forbidden_modules =
     omnibase_core.validation
     omnibase_core.nodes
 ignore_imports =
-    # OMN-3210 burn-down: models -> validation (~18 edges)
-    omnibase_core.models.** -> omnibase_core.validation
-    omnibase_core.models.** -> omnibase_core.validation.**
+    # OMN-3210 burn-down: models -> validation — RETIRED (OMN-14331): all 18
+    # edges severed. Pure name/hex/topic-suffix validators relocated to
+    # utils/ (util_name_validation, util_hex_color, util_topic_suffix), workflow
+    # constants to constants/constants_workflow, the runtime-ops verb loader to
+    # utils/util_runtime_ops_verb_loader; migration TypedDicts and re-exported
+    # models now import their canonical types/ and models/validation/ sources.
     # OMN-3210 burn-down: models -> nodes (~4 edges)
     omnibase_core.models.** -> omnibase_core.nodes.**
 

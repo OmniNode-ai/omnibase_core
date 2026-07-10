@@ -26,15 +26,15 @@ Thread Safety:
 
 from uuid import UUID
 
+from omnibase_core.constants.constants_workflow import (
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.validator_reserved_enum import validate_execution_mode
-from omnibase_core.validation.validator_workflow_constants import (
-    MIN_TIMEOUT_MS,
-    RESERVED_STEP_TYPES,
-)
 from omnibase_core.validation.validator_workflow_graph import WorkflowValidator
 
 # Reserved execution modes that are not yet implemented per ONEX v1.0 contract.
@@ -48,7 +48,7 @@ ACCEPTED_EXECUTION_MODES: tuple[str, ...] = ("sequential", "parallel", "batch")
 
 # Accepted step types that are currently supported in v1.0.
 # Using tuple for immutability and ordered iteration.
-# NOTE: RESERVED_STEP_TYPES and MIN_TIMEOUT_MS are imported from validator_workflow_constants.
+# NOTE: RESERVED_STEP_TYPES and MIN_TIMEOUT_MS are imported from constants_workflow.
 ACCEPTED_STEP_TYPES: tuple[str, ...] = (
     "compute",
     "effect",
