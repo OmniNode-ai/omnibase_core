@@ -15,8 +15,7 @@ from omnibase_core.models.configuration.model_performance_constraints import (
     ModelPerformanceConstraints,
 )
 from omnibase_core.models.infrastructure.model_duration import ModelDuration
-
-from .model_node_type import ModelNodeType
+from omnibase_core.models.node_metadata.model_node_type import ModelNodeType
 
 
 class ModelExecutionCapabilities(BaseModel):
