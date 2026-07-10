@@ -286,6 +286,41 @@ class ModelCliCommandRegistry(BaseModel):
         self.commands_by_category.clear()
 
 
+def _coerce_reloaded_command_registry(
+    registry_obj: object,
+    container: object,
+) -> ModelCliCommandRegistry | None:
+    """Normalize registry instances created before import-cache reloads."""
+    if isinstance(registry_obj, ModelCliCommandRegistry):
+        return registry_obj
+
+    obj_type = type(registry_obj)
+    if (
+        obj_type.__module__ != __name__
+        or obj_type.__name__ != ModelCliCommandRegistry.__name__
+    ):
+        return None
+
+    if hasattr(registry_obj, "model_dump"):
+        registry_data = registry_obj.model_dump()
+    else:
+        registry_data = {
+            "commands": getattr(registry_obj, "commands", {}),
+            "commands_by_node": getattr(registry_obj, "commands_by_node", {}),
+            "commands_by_category": getattr(
+                registry_obj,
+                "commands_by_category",
+                {},
+            ),
+            "discovery_paths": getattr(registry_obj, "discovery_paths", []),
+        }
+    registry = ModelCliCommandRegistry.model_validate(registry_data)
+    command_provider = getattr(container, "command_registry", None)
+    if hasattr(command_provider, "override"):
+        command_provider.override(registry)
+    return registry
+
+
 def get_global_command_registry() -> ModelCliCommandRegistry:
     """Get the CLI command registry from DI container.
 
@@ -298,7 +333,13 @@ def get_global_command_registry() -> ModelCliCommandRegistry:
 
     try:
         container = get_model_onex_container_sync()
-        registry: ModelCliCommandRegistry = container.command_registry()
+        registry_obj = container.command_registry()
+        registry = _coerce_reloaded_command_registry(registry_obj, container)
+        if registry is None:
+            raise TypeError(
+                f"command_registry() returned {type(registry_obj).__name__}, "
+                "expected ModelCliCommandRegistry"
+            )
         return registry
     except (AttributeError, KeyError, TypeError, ValueError) as e:
         raise ModelOnexError(

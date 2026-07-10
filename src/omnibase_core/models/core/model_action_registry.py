@@ -245,6 +245,36 @@ class ModelActionRegistry:
         }
 
 
+def _coerce_reloaded_action_registry(
+    registry_obj: object,
+    container: object,
+) -> ModelActionRegistry | None:
+    """Normalize registry instances created before import-cache reloads."""
+    if isinstance(registry_obj, ModelActionRegistry):
+        return registry_obj
+
+    obj_type = type(registry_obj)
+    if (
+        obj_type.__module__ != __name__
+        or obj_type.__name__ != ModelActionRegistry.__name__
+    ):
+        return None
+
+    registry = ModelActionRegistry()
+    registry._actions = dict(getattr(registry_obj, "_actions", {}))
+    registry._node_actions = {
+        str(node_name): set(actions)
+        for node_name, actions in getattr(registry_obj, "_node_actions", {}).items()
+    }
+    registry._qualified_actions = dict(getattr(registry_obj, "_qualified_actions", {}))
+
+    action_provider = getattr(container, "action_registry", None)
+    if hasattr(action_provider, "override"):
+        action_provider.override(registry)
+
+    return registry
+
+
 def get_action_registry() -> ModelActionRegistry:
     """Get the action registry from DI container.
 
@@ -260,16 +290,15 @@ def get_action_registry() -> ModelActionRegistry:
     try:
         container = get_model_onex_container_sync()
         registry_obj = container.action_registry()
+        registry = _coerce_reloaded_action_registry(registry_obj, container)
 
         # Runtime validation before cast - ensures type safety
-        if not isinstance(registry_obj, ModelActionRegistry):
+        if registry is None:
             raise ModelOnexError(
                 message=f"action_registry() returned {type(registry_obj).__name__}, "
                 "expected ModelActionRegistry",
                 error_code=EnumCoreErrorCode.TYPE_MISMATCH,
             )
-
-        registry = registry_obj
 
         # Auto-bootstrap if empty
         if len(registry.get_all_actions()) == 0:
@@ -297,10 +326,11 @@ def reset_action_registry() -> None:
     try:
         container = get_model_onex_container_sync()
         registry_obj = container.action_registry()
+        registry = _coerce_reloaded_action_registry(registry_obj, container)
 
         # Runtime validation before operation - ensures type safety
-        if isinstance(registry_obj, ModelActionRegistry):
-            registry_obj.clear()
+        if registry is not None:
+            registry.clear()
         # If not ModelActionRegistry, silently skip (container may be misconfigured)
     except (AttributeError, KeyError, TypeError, ValueError):
         # If container is not initialized, nothing to reset
