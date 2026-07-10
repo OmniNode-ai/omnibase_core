@@ -88,9 +88,6 @@ source_modules =
     omnibase_core.validation
 forbidden_modules =
     omnibase_core.nodes
-ignore_imports =
-    # OMN-3210 burn-down: validation -> nodes (~1 edge)
-    omnibase_core.validation.** -> omnibase_core.nodes.**
 
 [importlinter:contract:core-protocols-no-upward]
 name = Protocols (seam) must not import domain/behavioral layers (direct)
