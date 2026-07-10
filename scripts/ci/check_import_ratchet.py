@@ -9,19 +9,27 @@ allows *new* edges of that class to be added. This ratchet closes that gap for t
 two families the operator ruled "no permanent exception" on, without doing the
 deferred DTO relocation (which rides the RSD canonical rewrite):
 
-1. **protocols -> models** (65 direct edges): frozen. A NEW protocols->models edge
-   hard-fails. The set only SHRINKS; retirement = the RSD rewrite regenerating
-   those modules canonically (which dissolves the protocols<->models cycle).
+1. **protocols -> models** (65 direct edges): frozen, HARD-FAIL. A NEW
+   protocols->models edge hard-fails. The set only SHRINKS; retirement = the RSD
+   rewrite regenerating those modules canonically (dissolving the cycle).
 
 2. **Hub inbound** (`utils` / `mixins` / `protocols`): a NEW module importing into
-   a hub hard-fails. Existing importers are grandfathered. This stops the hub
-   tangle from compounding WITHOUT dissolving the hubs (dissolution also waits for
-   the rewrite).
+   a hub is tracked. Enforcement is tiered so a doomed, high-fan-in hub does not
+   generate friction that gets routed around (rule #5):
+
+   - ``mixins`` (17 importers) and ``protocols`` (63) are low-churn -> **HARD-FAIL**
+     on a new importer.
+   - ``utils`` (548 importers) is high-churn and scheduled for dissolution in the
+     RSD rewrite anyway -> **WARN** only (net-new importers are logged and show in
+     the baseline diff, but do NOT block; exit stays 0). Operator decision
+     2026-07-10: a hard freeze on utils fires on most new files -> friction ->
+     gets routed around -> not real enforcement.
 
 Mechanism: `grimp` (import-linter's own graph builder) enumerates the current
 direct edges; a committed baseline (`scripts/ci/import_ratchet_baseline.py`,
 generated) freezes the allowed sets as plain tuples; any edge/importer not in the
-baseline is a violation.
+baseline is a hard violation (protocols->models, mixins, protocols) or a
+non-blocking warning (utils).
 
 Regenerate the baseline (sanctioned DOWNWARD re-freeze only — e.g. after the RSD
 rewrite removes edges, or an operator-approved reduction)::
@@ -46,8 +54,14 @@ import grimp
 PACKAGE = "omnibase_core"
 
 # Hub modules that bridge nearly every sub-package (see `.importlinter` header).
-# New inbound edges into these are frozen to stop the tangle compounding.
+# All three are frozen in the baseline; enforcement is tiered below.
 HUBS: tuple[str, ...] = ("utils", "mixins", "protocols")
+
+# Low-churn hubs whose new importers HARD-FAIL.
+HARD_FAIL_HUBS: tuple[str, ...] = ("mixins", "protocols")
+
+# High-churn, RSD-doomed hubs whose new importers only WARN (non-blocking).
+WARN_HUBS: tuple[str, ...] = ("utils",)
 
 # Frozen ceiling for protocols -> models direct edges. This is the headline
 # "no permanent exception" number: it may only DECREASE (retirement = RSD
@@ -69,10 +83,11 @@ mechanism = the RSD canonical rewrite regenerating these modules (owner: RSD
 rewrite epic), at which point the sets drain to empty and this file + its ratchet
 are deleted.
 
-A NEW protocols->models edge, or a NEW module importing into the utils / mixins /
-protocols hubs, hard-fails CI + pre-commit. Do not add the dependency; if it is
-genuinely unavoidable it needs operator sign-off, after which this baseline is
-regenerated:  uv run python scripts/ci/check_import_ratchet.py --update
+A NEW protocols->models edge, or a NEW module importing into the mixins /
+protocols hubs, HARD-FAILS CI + pre-commit. New importers into the utils hub only
+WARN (high-churn, RSD-doomed hub — operator decision). Do not add the dependency;
+if it is genuinely unavoidable it needs operator sign-off, after which this
+baseline is regenerated:  uv run python scripts/ci/check_import_ratchet.py --update
 """
 '''
 
@@ -164,10 +179,20 @@ def write_baseline(current: EdgeSets, path: Path = BASELINE_PATH) -> None:
     path.write_text("\n".join(parts) + "\n", encoding="utf-8")
 
 
-def find_violations(current: EdgeSets, baseline: EdgeSets) -> dict[str, list[str]]:
-    """Return NEW edges/importers present in ``current`` but not the baseline.
+def _new_hub_importers(current: EdgeSets, baseline: EdgeSets, hub: str) -> list[str]:
+    return sorted(
+        set(current["hub_inbound"].get(hub, []))
+        - set(baseline["hub_inbound"].get(hub, []))
+    )
 
-    Keys: ``protocols_to_models`` and ``hub:<name>``. Empty dict == clean.
+
+def find_violations(current: EdgeSets, baseline: EdgeSets) -> dict[str, list[str]]:
+    """Return HARD-FAIL violations present in ``current`` but not the baseline.
+
+    Covers protocols->models and the HARD_FAIL_HUBS (mixins/protocols). New
+    importers into WARN_HUBS (utils) are NOT included here — see
+    :func:`find_warnings`. Keys: ``protocols_to_models`` and ``hub:<name>``.
+    Empty dict == clean.
     """
     violations: dict[str, list[str]] = {}
 
@@ -183,15 +208,22 @@ def find_violations(current: EdgeSets, baseline: EdgeSets) -> dict[str, list[str
             f"<count {len(cur_pm)} exceeds frozen max {FROZEN_PROTOCOLS_MODELS_MAX}>"
         )
 
-    for hub in HUBS:
-        new_importers = sorted(
-            set(current["hub_inbound"].get(hub, []))
-            - set(baseline["hub_inbound"].get(hub, []))
-        )
+    for hub in HARD_FAIL_HUBS:
+        new_importers = _new_hub_importers(current, baseline, hub)
         if new_importers:
             violations[f"hub:{hub}"] = new_importers
 
     return violations
+
+
+def find_warnings(current: EdgeSets, baseline: EdgeSets) -> dict[str, list[str]]:
+    """Return non-blocking WARN items: new importers into WARN_HUBS (utils)."""
+    warnings: dict[str, list[str]] = {}
+    for hub in WARN_HUBS:
+        new_importers = _new_hub_importers(current, baseline, hub)
+        if new_importers:
+            warnings[f"hub:{hub}"] = new_importers
+    return warnings
 
 
 def _format_report(violations: dict[str, list[str]]) -> str:
@@ -208,11 +240,27 @@ def _format_report(violations: dict[str, list[str]]) -> str:
     if "protocols_to_models" in violations:
         lines.append("  protocols -> models (frozen at 65):")
         lines += [f"    + {e}" for e in violations["protocols_to_models"]]
-    for hub in HUBS:
+    for hub in HARD_FAIL_HUBS:
         key = f"hub:{hub}"
         if key in violations:
             lines.append(f"  new module(s) importing into hub '{hub}':")
             lines += [f"    + {m}" for m in violations[key]]
+    return "\n".join(lines)
+
+
+def _format_warnings(warnings: dict[str, list[str]]) -> str:
+    lines = [
+        "Import-layering growth ratchet WARNING (OMN-14340) — non-blocking.",
+        "New module(s) importing into a WARN-only hub (high-churn, RSD-doomed):",
+    ]
+    for hub in WARN_HUBS:
+        key = f"hub:{hub}"
+        if key in warnings:
+            lines.append(f"  hub '{hub}':")
+            lines += [f"    + {m}" for m in warnings[key]]
+    lines.append(
+        "Prefer a properly-layered module over deepening the hub; this does not fail CI."
+    )
     return "\n".join(lines)
 
 
@@ -251,6 +299,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     baseline = load_baseline(args.baseline)
+
+    warnings = find_warnings(current, baseline)
+    if warnings:
+        print(_format_warnings(warnings), file=sys.stderr)
+
     violations = find_violations(current, baseline)
     if violations:
         print(_format_report(violations), file=sys.stderr)
@@ -258,8 +311,8 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         "Import-layering growth ratchet OK — "
-        f"protocols->models={pm} (frozen max {FROZEN_PROTOCOLS_MODELS_MAX}), "
-        f"hub_inbound={hub_counts}"
+        f"protocols->models={pm} (frozen max {FROZEN_PROTOCOLS_MODELS_MAX}, hard-fail), "
+        f"hub_inbound={hub_counts} (mixins/protocols hard-fail, utils warn-only)"
     )
     return 0
 

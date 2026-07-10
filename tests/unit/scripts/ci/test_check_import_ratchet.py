@@ -3,10 +3,11 @@
 
 """Tests for the import-layering growth ratchet (OMN-14340, epic OMN-3210).
 
-Verifies that the live omnibase_core import graph introduces no NEW frozen-family
-edge beyond the committed baseline, that the headline protocols->models number
-stays frozen at 65, and that the ratchet actually hard-fails on synthetic growth
-(so the enforcement can't silently rot into a no-op).
+Verifies that the live omnibase_core import graph introduces no NEW hard-fail
+frozen-family edge beyond the committed baseline, that the headline
+protocols->models number stays frozen at 65, that the tiered hub enforcement
+holds (mixins/protocols hard-fail, utils warn-only), and that the ratchet
+actually hard-fails on synthetic growth (so it can't rot into a no-op).
 """
 
 from __future__ import annotations
@@ -15,10 +16,13 @@ import pytest
 
 from scripts.ci.check_import_ratchet import (
     FROZEN_PROTOCOLS_MODELS_MAX,
+    HARD_FAIL_HUBS,
     HUBS,
+    WARN_HUBS,
     EdgeSets,
     compute_current_edges,
     find_violations,
+    find_warnings,
     load_baseline,
 )
 
@@ -34,18 +38,40 @@ def baseline() -> EdgeSets:
     return load_baseline()
 
 
-def test_no_new_forbidden_edges(current: EdgeSets, baseline: EdgeSets) -> None:
-    """The live graph adds no edge/importer outside the frozen baseline."""
+def _inject_hub_importer(current: EdgeSets, hub: str) -> EdgeSets:
+    hub_inbound = {h: list(current["hub_inbound"][h]) for h in HUBS}
+    hub_inbound[hub] = [*hub_inbound[hub], "omnibase_core.synthetic_probe.new_importer"]
+    return {
+        "protocols_to_models": current["protocols_to_models"],
+        "hub_inbound": hub_inbound,
+    }
+
+
+def test_no_new_hard_fail_edges(current: EdgeSets, baseline: EdgeSets) -> None:
+    """The live graph adds no hard-fail edge/importer outside the frozen baseline."""
     violations = find_violations(current, baseline)
     assert violations == {}, (
-        "Import-layering growth ratchet violated — new frozen-family edge(s):\n"
+        "Import-layering growth ratchet violated — new hard-fail edge(s):\n"
         + "\n".join(f"  {k}: {v}" for k, v in violations.items())
     )
+
+
+def test_no_new_utils_warnings_on_clean_tree(
+    current: EdgeSets, baseline: EdgeSets
+) -> None:
+    """A clean tree also produces no utils WARN (baseline == current at freeze)."""
+    assert find_warnings(current, baseline) == {}
 
 
 def test_headline_protocols_models_number_frozen() -> None:
     """The 'no permanent exception' number is locked; lowering it is a visible edit."""
     assert FROZEN_PROTOCOLS_MODELS_MAX == 65
+
+
+def test_hub_enforcement_tiers_are_disjoint_and_cover_all_hubs() -> None:
+    assert set(HARD_FAIL_HUBS).isdisjoint(WARN_HUBS)
+    assert set(HARD_FAIL_HUBS) | set(WARN_HUBS) == set(HUBS)
+    assert WARN_HUBS == ("utils",)
 
 
 def test_current_protocols_models_within_ceiling(current: EdgeSets) -> None:
@@ -78,15 +104,35 @@ def test_ratchet_flags_new_protocols_models_edge(
     assert "protocols_to_models" in find_violations(injected, baseline)
 
 
-@pytest.mark.parametrize("hub", HUBS)
-def test_ratchet_flags_new_hub_importer(
+@pytest.mark.parametrize("hub", HARD_FAIL_HUBS)
+def test_hard_fail_hub_flags_new_importer(
     hub: str, current: EdgeSets, baseline: EdgeSets
 ) -> None:
-    """Synthetic proof: a net-new importer into each hub is caught."""
-    hub_inbound = {h: list(current["hub_inbound"][h]) for h in HUBS}
-    hub_inbound[hub] = [*hub_inbound[hub], "omnibase_core.synthetic_probe.new_importer"]
-    injected: EdgeSets = {
-        "protocols_to_models": current["protocols_to_models"],
-        "hub_inbound": hub_inbound,
-    }
+    """Synthetic proof: a net-new importer into a HARD-FAIL hub is a violation."""
+    injected = _inject_hub_importer(current, hub)
     assert f"hub:{hub}" in find_violations(injected, baseline)
+    # And it is NOT downgraded to a warning.
+    assert f"hub:{hub}" not in find_warnings(injected, baseline)
+
+
+@pytest.mark.parametrize("hub", WARN_HUBS)
+def test_warn_hub_warns_but_does_not_fail(
+    hub: str, current: EdgeSets, baseline: EdgeSets
+) -> None:
+    """Synthetic proof: a net-new importer into a WARN hub (utils) warns, not fails."""
+    injected = _inject_hub_importer(current, hub)
+    # Non-blocking: not a hard violation ...
+    assert f"hub:{hub}" not in find_violations(injected, baseline)
+    # ... but still surfaced as a warning (visibility preserved).
+    assert f"hub:{hub}" in find_warnings(injected, baseline)
+
+
+def test_main_exit_zero_when_only_utils_grows(
+    monkeypatch: pytest.MonkeyPatch, current: EdgeSets
+) -> None:
+    """End-to-end: a utils-only new importer keeps `main()` at exit 0 (warn)."""
+    from scripts.ci import check_import_ratchet as mod
+
+    injected = _inject_hub_importer(current, "utils")
+    monkeypatch.setattr(mod, "compute_current_edges", lambda: injected)
+    assert mod.main([]) == 0

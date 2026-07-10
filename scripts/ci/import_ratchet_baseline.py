@@ -10,10 +10,11 @@ mechanism = the RSD canonical rewrite regenerating these modules (owner: RSD
 rewrite epic), at which point the sets drain to empty and this file + its ratchet
 are deleted.
 
-A NEW protocols->models edge, or a NEW module importing into the utils / mixins /
-protocols hubs, hard-fails CI + pre-commit. Do not add the dependency; if it is
-genuinely unavoidable it needs operator sign-off, after which this baseline is
-regenerated:  uv run python scripts/ci/check_import_ratchet.py --update
+A NEW protocols->models edge, or a NEW module importing into the mixins /
+protocols hubs, HARD-FAILS CI + pre-commit. New importers into the utils hub only
+WARN (high-churn, RSD-doomed hub — operator decision). Do not add the dependency;
+if it is genuinely unavoidable it needs operator sign-off, after which this
+baseline is regenerated:  uv run python scripts/ci/check_import_ratchet.py --update
 """
 
 PROTOCOLS_TO_MODELS: tuple[str, ...] = (
