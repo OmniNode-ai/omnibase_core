@@ -830,3 +830,300 @@ def test_build_initial_payload_input_file_injects_only_missing_required_fields(
     assert isinstance(payload.correlation_id, _uuid_module.UUID)
     # task_name has a default — not injected, just uses the model default.
     assert payload.task_name == "default-task"
+
+
+# ---------------------------------------------------------------------------
+# OMN-14298 regression: RuntimeLocal must (1) call ``initialize()`` before the
+# fallback ``execute()`` for ONEX init/execute handlers, and (2) NOT surface a
+# false-green COMPLETED / exit 0 when a handler returns an error-shaped envelope
+# (``status="error"`` / "Handler not initialized"). These two defects together
+# produced ``onex node <name>`` runs that reported exit_code 0 over a broken run.
+# ---------------------------------------------------------------------------
+
+
+class _LifecycleResponse(BaseModel):
+    """Minimal stand-in for the effect/reducer response envelopes.
+
+    Mirrors ModelArchitectureGraphQueryResponseEvent / ModelNavigationHistoryResponse:
+    a ``status`` string (``"success"`` | ``"error"`` | ``"no_results"``) plus an
+    optional ``error_message`` populated on the error path.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: str
+    error_message: str | None = None
+
+
+class _InitExecuteLifecycleHandler:
+    """Mirrors the ONEX init/execute lifecycle with a zero-arg ``initialize()``.
+
+    ``execute()`` returns a ``status="error"`` envelope until ``initialize()`` has
+    run — exactly like HandlerArchitectureGraphQuery and
+    HandlerNavigationHistoryReducer. ``initialize()`` takes no required args, so
+    RuntimeLocal can and must call it before ``execute()``.
+    """
+
+    def __init__(self) -> None:
+        self._initialized = False
+        self.initialize_calls = 0
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._initialized
+
+    async def initialize(self) -> None:
+        # Idempotent, matching the real handlers' guarded initialize().
+        self.initialize_calls += 1
+        self._initialized = True
+
+    async def execute(self, request: object) -> _LifecycleResponse:
+        if not self._initialized:
+            return _LifecycleResponse(
+                status="error", error_message="Handler not initialized"
+            )
+        return _LifecycleResponse(status="success")
+
+
+class _RequiresArgInitHandler:
+    """Lifecycle handler whose ``initialize()`` needs an arg the runtime can't give.
+
+    Mirrors HandlerIntentQuery.initialize(connection_uri: str). RuntimeLocal must
+    skip ``initialize()`` (it cannot bind the required parameter) WITHOUT crashing,
+    and the resulting not-initialized error envelope must surface FAILED — never a
+    false-green COMPLETED.
+    """
+
+    def __init__(self) -> None:
+        self._initialized = False
+
+    @property
+    def is_initialized(self) -> bool:
+        return self._initialized
+
+    async def initialize(self, connection_uri: str) -> None:
+        self._initialized = True
+
+    async def execute(self, request: object) -> _LifecycleResponse:
+        if not self._initialized:
+            return _LifecycleResponse(
+                status="error", error_message="Handler not initialized"
+            )
+        return _LifecycleResponse(status="success")
+
+
+class _AlwaysErrorExecuteHandler:
+    """Handler with no ``initialize()`` whose ``execute()`` always returns an error.
+
+    Stands in for a genuinely-failing handler (e.g. a downstream connection
+    failure returned in-band). Proves the false-green fix independently of the
+    initialize lifecycle: an error-shaped return must map to FAILED / exit 1.
+    """
+
+    async def execute(self, request: object) -> _LifecycleResponse:
+        return _LifecycleResponse(status="error", error_message="downstream boom")
+
+
+def _write_compute_handler_contract(target: Path, handler_class_name: str) -> None:
+    """Write a terminal-event-less compute contract → the ``_run_compute`` path.
+
+    This is the shape of the affected nodes (effect/reducer contracts declare a
+    top-level ``handler`` and no top-level ``terminal_event``), so RuntimeLocal
+    resolves the handler, falls back to ``execute()``, and classifies its return.
+    """
+    contract = {
+        "workflow_id": "omn-14298-init-lifecycle",
+        "handler": {
+            "module": _THIS_MODULE,
+            "class": handler_class_name,
+        },
+    }
+    target.write_text(yaml.safe_dump(contract), encoding="utf-8")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_runtime_local_initializes_handler_before_execute(
+    tmp_path: Path,
+) -> None:
+    """Proof (a): an init/execute handler now runs through initialize()→execute().
+
+    BEFORE OMN-14298: RuntimeLocal invoked the fallback ``execute()`` without
+    ``initialize()``, so ``execute()`` returned the "Handler not initialized"
+    envelope. AFTER: the runtime calls the zero-arg ``initialize()`` first, so
+    ``execute()`` runs its real body and returns ``status="success"`` → COMPLETED.
+    """
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_compute_handler_contract(contract_path, "_InitExecuteLifecycleHandler")
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=5,
+    )
+
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.COMPLETED
+    assert runtime.exit_code == 0
+    # initialize() ran before execute() — proven by the success status, since the
+    # handler returns "Handler not initialized" whenever the flag is unset.
+    handler_result = runtime.handler_result
+    assert isinstance(handler_result, _LifecycleResponse)
+    assert handler_result.status == "success"
+    assert handler_result.error_message is None
+
+    workflow_data = json.loads((state_root / "workflow_result.json").read_text())
+    assert workflow_data["result"] == "completed"
+    assert workflow_data["exit_code"] == 0
+    assert workflow_data["handler_result"]["status"] == "success"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_runtime_local_error_envelope_surfaces_failed_not_false_green(
+    tmp_path: Path,
+) -> None:
+    """Proof (b): an error-shaped handler return must NOT be a false-green COMPLETED.
+
+    A handler whose ``execute()`` returns ``status="error"`` (the exact shape of
+    the "Handler not initialized" / downstream-failure envelope) must terminate
+    the workflow FAILED with exit_code 1. Before OMN-14298 the classifier only
+    recognised ``status == "failure"``, so this run reported exit_code 0.
+    """
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_compute_handler_contract(contract_path, "_AlwaysErrorExecuteHandler")
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=5,
+    )
+
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.FAILED
+    assert runtime.exit_code == 1
+    workflow_data = json.loads((state_root / "workflow_result.json").read_text())
+    assert workflow_data["result"] == "failed"
+    assert workflow_data["exit_code"] == 1
+    assert workflow_data["handler_result"]["status"] == "error"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_runtime_local_skips_required_arg_initialize_and_fails_closed(
+    tmp_path: Path,
+) -> None:
+    """A handler whose initialize() needs an unsatisfiable arg fails closed, not green.
+
+    RuntimeLocal cannot supply ``connection_uri`` for the intent-query-shaped
+    handler, so it skips ``initialize()`` (without crashing). ``execute()`` then
+    returns the not-initialized error envelope, which must surface FAILED — never
+    a false COMPLETED.
+    """
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_compute_handler_contract(contract_path, "_RequiresArgInitHandler")
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=5,
+    )
+
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.FAILED
+    assert runtime.exit_code == 1
+    handler_result = runtime.handler_result
+    assert isinstance(handler_result, _LifecycleResponse)
+    assert handler_result.status == "error"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_ensure_handler_initialized_is_idempotent_and_guarded(
+    workflow_path: Path,
+) -> None:
+    """``_ensure_handler_initialized`` calls initialize() once and is a no-op after.
+
+    Also verifies the two safe no-op branches: an already-initialized handler is
+    not re-initialized, and a handler with no ``initialize()`` is left untouched.
+    """
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+
+    handler = _InitExecuteLifecycleHandler()
+    await runtime._ensure_handler_initialized(handler)
+    assert handler.is_initialized is True
+    assert handler.initialize_calls == 1
+
+    # Second call is a no-op — the handler already reports initialized.
+    await runtime._ensure_handler_initialized(handler)
+    assert handler.initialize_calls == 1
+
+    # A handler exposing no initialize() must not raise.
+    await runtime._ensure_handler_initialized(_AlwaysErrorExecuteHandler())
+
+    # A handler with a required-arg initialize() is skipped, not called/crashed.
+    requires_arg = _RequiresArgInitHandler()
+    await runtime._ensure_handler_initialized(requires_arg)
+    assert requires_arg.is_initialized is False
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("status", "error_message", "expected"),
+    [
+        ("error", "Handler not initialized", EnumWorkflowResult.FAILED),
+        ("failure", None, EnumWorkflowResult.FAILED),
+        ("failed", None, EnumWorkflowResult.FAILED),
+        ("ERROR", None, EnumWorkflowResult.FAILED),
+        ("success", None, EnumWorkflowResult.COMPLETED),
+        # A successful query that matched nothing must NOT be classified FAILED.
+        ("no_results", None, EnumWorkflowResult.COMPLETED),
+        # Explicit success wins even if an error_message field lingers.
+        ("success", "", EnumWorkflowResult.COMPLETED),
+    ],
+)
+def test_classify_result_status_values(
+    status: str, error_message: str | None, expected: EnumWorkflowResult
+) -> None:
+    """``_classify_result`` maps error-ish statuses to FAILED and success to COMPLETED."""
+    result = _LifecycleResponse(status=status, error_message=error_message)
+    assert RuntimeLocal._classify_result(result) == expected
+
+
+@pytest.mark.unit
+def test_classify_result_none_is_completed() -> None:
+    """A ``None`` return (compute handler that returns nothing) is COMPLETED."""
+    assert RuntimeLocal._classify_result(None) == EnumWorkflowResult.COMPLETED
+
+
+@pytest.mark.unit
+def test_classify_result_populated_error_message_without_status_is_failed() -> None:
+    """A populated ``error_message`` is a failure signal even with no status field."""
+
+    class _ErrOnly(BaseModel):
+        model_config = ConfigDict(frozen=True, extra="forbid")
+
+        error_message: str
+
+    assert (
+        RuntimeLocal._classify_result(_ErrOnly(error_message="boom"))
+        == EnumWorkflowResult.FAILED
+    )
+
+
+@pytest.mark.unit
+def test_classify_result_plain_object_without_failure_markers_is_completed() -> None:
+    """An object with neither failure status nor error markers stays COMPLETED."""
+
+    class _Ok(BaseModel):
+        model_config = ConfigDict(frozen=True, extra="forbid")
+
+        value: int = 1
+
+    assert RuntimeLocal._classify_result(_Ok()) == EnumWorkflowResult.COMPLETED

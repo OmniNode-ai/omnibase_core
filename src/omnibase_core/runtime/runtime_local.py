@@ -79,6 +79,32 @@ _KAFKA_EVENT_BUS_ENTRY_POINT: str = "event_bus_kafka"
 # the ``onex.backends`` entry-point group.
 SUPPORTED_EVENT_BUS_VALUES: frozenset[str] = frozenset({"inmemory", "kafka"})
 
+# Handler-result ``status`` values that unambiguously mean the run failed.
+# Effect/reducer handlers report failures in-band by returning an error-shaped
+# response envelope (``status="error"`` plus an ``error_message``) rather than
+# raising — e.g. the "Handler not initialized" envelope every init/execute
+# handler emits before ``initialize()`` has run. Before OMN-14298 the classifier
+# recognised only ``status == "failure"``, so such runs were misclassified
+# COMPLETED (exit 0) — a false green over a broken run.
+_FAILURE_STATUS_VALUES: frozenset[str] = frozenset({"failure", "failed", "error"})
+
+# Handler-result ``status`` values that unambiguously mean the run succeeded.
+# ``no_results`` in particular is a successful query that simply matched nothing
+# and must never be classified FAILED. An explicit success status short-circuits
+# the error-attribute heuristic below.
+_SUCCESS_STATUS_VALUES: frozenset[str] = frozenset(
+    {
+        "success",
+        "ok",
+        "completed",
+        "complete",
+        "no_results",
+        "healthy",
+        "passed",
+        "pass",
+    }
+)
+
 RawWorkflowMap = dict[str, object]
 RuntimeCallable = Callable[..., object]
 
@@ -377,6 +403,82 @@ class RuntimeLocal:
         )
         return None, ""
 
+    @staticmethod
+    def _handler_reports_initialized(handler_instance: object) -> bool:
+        """Return True if the handler already reports itself initialized.
+
+        Honors a public ``is_initialized`` property first, then the private
+        ``_initialized`` flag the ONEX init/execute handlers set. Anything else
+        (attribute absent, non-bool) is treated as "not initialized" so the
+        guard errs toward calling ``initialize()``.
+        """
+        is_init = getattr(handler_instance, "is_initialized", None)
+        if isinstance(is_init, bool):
+            return is_init
+        return getattr(handler_instance, "_initialized", None) is True
+
+    async def _ensure_handler_initialized(self, handler_instance: object) -> None:
+        """Call ``handler.initialize()`` before invoking its entry method (OMN-14298).
+
+        ONEX effect/reducer handlers use an ``initialize()`` / ``execute()``
+        lifecycle: ``execute()`` returns a "Handler not initialized" error
+        envelope until ``initialize()`` has run. RuntimeLocal previously invoked
+        the fallback ``execute()`` (or ``run()``) method WITHOUT ``initialize()``,
+        so every such node returned a not-initialized error that the runtime then
+        misclassified as COMPLETED — the systemic false-green this fix closes.
+
+        The call is guarded and idempotent:
+        - no-op when the handler declares no callable ``initialize``
+        - no-op when the handler already reports itself initialized
+          (``is_initialized`` / ``_initialized``); the handlers also guard
+          internally, so a redundant call is harmless
+        - no-op (with a warning) when ``initialize()`` declares required
+          parameters the runtime cannot supply (e.g. a graph ``connection_uri``);
+          ``execute()`` then surfaces the real not-initialized state, which
+          ``_classify_result`` maps to FAILED rather than a false COMPLETED.
+
+        Any exception raised *inside* a zero-argument ``initialize()`` propagates
+        so the run is recorded FAILED (via ``run_async``'s handler) rather than
+        silently green.
+        """
+        initialize = getattr(handler_instance, "initialize", None)
+        if not callable(initialize):
+            return
+        if self._handler_reports_initialized(handler_instance):
+            return
+
+        try:
+            sig = inspect.signature(initialize)
+        except (TypeError, ValueError):
+            sig = None
+        if sig is not None:
+            required = [
+                param.name
+                for param in sig.parameters.values()
+                if param.kind
+                in (
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    inspect.Parameter.KEYWORD_ONLY,
+                )
+                and param.default is inspect.Parameter.empty
+            ]
+            if required:
+                logger.warning(
+                    "RuntimeLocal: %s.initialize() requires parameter(s) %s the "
+                    "runtime cannot supply — skipping initialize(); execute() will "
+                    "report its real lifecycle state",
+                    type(handler_instance).__name__,
+                    required,
+                )
+                return
+
+        logger.info(
+            "RuntimeLocal: calling %s.initialize() before invocation",
+            type(handler_instance).__name__,
+        )
+        await self._maybe_await(initialize())
+
     async def _invoke_handler_method(
         self,
         method: RuntimeCallable,
@@ -389,7 +491,12 @@ class RuntimeLocal:
         ``handle()`` receives a single positional payload argument.
         ``run_full_cycle()`` receives a typed command model as its first arg.
         ``run()`` and ``execute()`` are tried with payload first, then without.
+
+        Handlers exposing an ``initialize()`` lifecycle are initialized first via
+        ``_ensure_handler_initialized`` (OMN-14298) so ``execute()`` does not
+        return a spurious "Handler not initialized" error.
         """
+        await self._ensure_handler_initialized(handler_instance)
         try:
             result = await self._maybe_await(method(initial_payload))
         except TypeError as original_exc:
@@ -1716,7 +1823,24 @@ class RuntimeLocal:
 
     @staticmethod
     def _classify_result(result_obj: object | None) -> EnumWorkflowResult:
-        """Inspect handler return value to determine success or failure."""
+        """Inspect a handler return value to determine success or failure.
+
+        A handler that *returns* an error-shaped envelope — rather than raising —
+        must still be classified FAILED. Effect/reducer handlers never raise from
+        ``execute()``; they return a response with ``status="error"`` and an
+        ``error_message`` (e.g. the "Handler not initialized" or a downstream
+        connection failure). Before OMN-14298 only ``status == "failure"`` was
+        detected, so those runs surfaced a false-green COMPLETED / exit 0.
+
+        Decision order:
+        1. ``None`` → COMPLETED (compute handlers that return nothing succeeded).
+        2. positive ``cycles_failed`` → FAILED.
+        3. ``status`` in :data:`_FAILURE_STATUS_VALUES` → FAILED.
+        4. ``status`` in :data:`_SUCCESS_STATUS_VALUES` → COMPLETED (an explicit
+           success — notably ``no_results`` — short-circuits the heuristic below).
+        5. a populated ``error_message`` / ``error`` string → FAILED.
+        6. otherwise → COMPLETED.
+        """
         if result_obj is None:
             return EnumWorkflowResult.COMPLETED
         # Check for common failure indicators on result objects
@@ -1724,8 +1848,18 @@ class RuntimeLocal:
         if isinstance(cycles_failed, int | float) and cycles_failed > 0:
             return EnumWorkflowResult.FAILED
         status = getattr(result_obj, "status", None)
-        if status == "failure":
-            return EnumWorkflowResult.FAILED
+        if isinstance(status, str):
+            normalized = status.strip().lower()
+            if normalized in _FAILURE_STATUS_VALUES:
+                return EnumWorkflowResult.FAILED
+            if normalized in _SUCCESS_STATUS_VALUES:
+                return EnumWorkflowResult.COMPLETED
+        # No decisive status — a populated error message/attribute is an
+        # unambiguous failure signal even when the handler omits a status field.
+        for attr_name in ("error_message", "error"):
+            value = getattr(result_obj, attr_name, None)
+            if isinstance(value, str) and value.strip():
+                return EnumWorkflowResult.FAILED
         return EnumWorkflowResult.COMPLETED
 
     def _write_state(self) -> None:
