@@ -52,9 +52,21 @@ forbidden_modules =
     omnibase_core.validation
     omnibase_core.nodes
 ignore_imports =
-    # OMN-3210 burn-down: types -> models (TypedDict shape references, ~23 edges)
-    omnibase_core.types -> omnibase_core.models.**
-    omnibase_core.types.** -> omnibase_core.models.**
+    # OMN-3210 burn-down: types -> models — RESIDUAL after OMN-14337. 20 of 24
+    # edges retired: ModelSemVer references repointed to types.type_semver
+    # (structural ProtocolSemVer); immovable domain-model annotations widened;
+    # the dead ModelBase lazy re-export removed from types/. Four residual edges
+    # remain (deferred to OMN-14339) — each is genuinely pinned to a concrete
+    # model and cannot be structurally severed without a model relocation or a
+    # richer foundation interface: two value-wrappers with rich consumer reads
+    # (SchemaDict/ModelSchemaValue — 138 importers; validator_info func return)
+    # and two model-constructor-kwargs shapes that are **-unpacked into Pydantic
+    # models (output_format_options_kwargs -> ModelValue; lifecycle_event_fields
+    # -> ModelSemVer):
+    omnibase_core.types.type_schema_aliases -> omnibase_core.models.common.model_schema_value
+    omnibase_core.types.typed_dict_validator_info -> omnibase_core.models.common.model_validation_result
+    omnibase_core.types.typed_dict_output_format_options_kwargs -> omnibase_core.models.infrastructure.model_value
+    omnibase_core.types.typed_dict_lifecycle_event_fields -> omnibase_core.models.primitives.model_semver
     # OMN-3210 burn-down: errors -> models (~11 edges)
     omnibase_core.errors -> omnibase_core.models.**
     omnibase_core.errors.** -> omnibase_core.models.**

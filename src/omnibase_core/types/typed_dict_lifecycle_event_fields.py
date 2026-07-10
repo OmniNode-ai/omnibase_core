@@ -13,6 +13,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
+# OMN-14337 residual: this TypedDict is the constructor-kwargs shape for
+# ModelOnexEventMetadata (its node_version field is ModelSemVer | None); it is
+# **-unpacked into that Pydantic model, so the structural ProtocolSemVer does not
+# satisfy the concrete field. Deferred to OMN-14339 (narrowed .importlinter line).
 if TYPE_CHECKING:
     from omnibase_core.models.primitives.model_semver import ModelSemVer
 

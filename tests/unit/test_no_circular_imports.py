@@ -261,33 +261,32 @@ def test_type_checking_imports_not_runtime() -> None:
                 pass
 
 
-def test_lazy_imports_work() -> None:
+def test_model_base_not_reexported_from_constraints() -> None:
     """
-    Test that lazy imports in types.constraints work correctly.
+    ModelBaseCollection/ModelBaseFactory are NOT re-exported from
+    types.type_constraints.
 
-    The __getattr__ pattern should load models.base only when accessed.
+    OMN-14337: the lazy ``__getattr__`` re-export was removed to sever the last
+    ``types -> models`` back-edge in this module (it had zero real importers).
+    These classes must now be imported from their canonical home,
+    ``omnibase_core.models.base``.
     """
-    # Import types.constraints
     import omnibase_core.types.type_constraints as constraints_module
 
-    # Check that we can access the lazy imports
-    lazy_imports = [
+    for name in (
         "ModelBaseCollection",
         "ModelBaseFactory",
         "BaseCollection",
         "BaseFactory",
-    ]
+    ):
+        with pytest.raises(AttributeError):
+            getattr(constraints_module, name)
 
-    for import_name in lazy_imports:
-        # This should trigger __getattr__ and import models.base
-        try:
-            attr = getattr(constraints_module, import_name)
-            assert attr is not None, (
-                f"{import_name} should be available via __getattr__"
-            )
-        except AttributeError as e:
-            msg = f"Lazy import {import_name} failed: {e}"
-            raise AssertionError(msg) from e
+    # Canonical import still works.
+    from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
+
+    assert ModelBaseCollection is not None
+    assert ModelBaseFactory is not None
 
 
 def test_validation_functions_lazy_import() -> None:
