@@ -1646,3 +1646,261 @@ class TestCorrelationIdPropagation:
         ]
         assert len(persist_intents) == 1
         assert persist_intents[0].payload.correlation_id == specific_uuid
+
+
+@pytest.mark.unit
+class TestFSMPriorityGuardFallthrough:
+    """Priority-ordered guard fallthrough (documented ModelFSMStateTransition.priority).
+
+    A single (from_state, trigger) pair may declare multiple transitions that
+    differ by guard and priority. The engine evaluates guards in priority order
+    and selects the first eligible one; an unconditional low-priority transition
+    acts as the fallthrough default edge; when nothing is eligible the FSM stays
+    in its current state (fail-closed) rather than silently taking the first
+    declaration.
+    """
+
+    @staticmethod
+    def _score_transition(
+        name: str, to_state: str, priority: int, minimum: int | None
+    ) -> ModelFSMStateTransition:
+        """A verifying -> ``to_state`` transition guarded by ``score >= minimum``.
+
+        ``minimum=None`` yields an unconditional (default-edge) transition.
+        """
+        conditions = (
+            []
+            if minimum is None
+            else [
+                ModelFSMTransitionCondition(
+                    condition_name=f"score_at_least_{minimum}",
+                    condition_type="field_check",
+                    expression=f"score >= {minimum}",
+                    required=True,
+                )
+            ]
+        )
+        return ModelFSMStateTransition(
+            transition_name=name,
+            from_state="verifying",
+            to_state=to_state,
+            trigger="verify_done",
+            priority=priority,
+            conditions=conditions,
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+
+    def _build_fsm(self, *, include_default: bool) -> ModelFSMSubcontract:
+        state_names = ["idle", "verifying", "accepted", "escalated"]
+        if include_default:
+            state_names.append("reviewed")
+        states = [
+            ModelFSMStateDefinition(
+                state_name=name,
+                state_type="operational",
+                description=f"{name} state",
+                is_terminal=False,
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            )
+            for name in state_names
+        ]
+        transitions = [
+            ModelFSMStateTransition(
+                transition_name="begin",
+                from_state="idle",
+                to_state="verifying",
+                trigger="begin",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+            # Higher-priority guard: strong pass -> accepted.
+            self._score_transition("accept_on_high_score", "accepted", 20, 80),
+            # Lower-priority guard: partial pass -> escalated.
+            self._score_transition("escalate_on_mid_score", "escalated", 10, 50),
+        ]
+        if include_default:
+            # Unconditional default edge at the lowest priority: the fallthrough.
+            transitions.append(
+                self._score_transition("review_by_default", "reviewed", 0, None)
+            )
+        return ModelFSMSubcontract(
+            state_machine_name="branching_fsm",
+            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="FSM whose verify_done trigger branches on a score guard",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            states=states,
+            initial_state="idle",
+            terminal_states=[],
+            error_states=[],
+            transitions=transitions,
+            operations=[],
+            persistence_enabled=False,
+            recovery_enabled=False,
+        )
+
+    @pytest.fixture
+    def branching_fsm(self) -> ModelFSMSubcontract:
+        """Two guarded verify_done branches, no default edge."""
+        return self._build_fsm(include_default=False)
+
+    @pytest.fixture
+    def branching_fsm_with_default(self) -> ModelFSMSubcontract:
+        """Two guarded verify_done branches plus an unconditional default edge."""
+        return self._build_fsm(include_default=True)
+
+    @pytest.mark.asyncio
+    async def test_highest_priority_matching_guard_wins(
+        self, branching_fsm: ModelFSMSubcontract
+    ) -> None:
+        """When several guards pass, the highest-priority transition is chosen."""
+        # score 90 satisfies BOTH `>= 80` (priority 20) and `>= 50` (priority 10).
+        result = await execute_transition(
+            branching_fsm, "verifying", "verify_done", {"score": 90}
+        )
+        assert result.success
+        assert result.new_state == "accepted"
+        assert result.transition_name == "accept_on_high_score"
+
+    @pytest.mark.asyncio
+    async def test_fallthrough_to_lower_priority_guard(
+        self, branching_fsm: ModelFSMSubcontract
+    ) -> None:
+        """When the top guard fails, evaluation falls through to the next guard."""
+        # score 60 fails `>= 80` but satisfies `>= 50`.
+        result = await execute_transition(
+            branching_fsm, "verifying", "verify_done", {"score": 60}
+        )
+        assert result.success
+        assert result.new_state == "escalated"
+        assert result.transition_name == "escalate_on_mid_score"
+
+    @pytest.mark.asyncio
+    async def test_no_guard_matches_is_fail_closed(
+        self, branching_fsm: ModelFSMSubcontract
+    ) -> None:
+        """No guard matches and no default edge -> stay in-state (fail-closed)."""
+        # score 30 fails every guard; there is no default edge.
+        result = await execute_transition(
+            branching_fsm, "verifying", "verify_done", {"score": 30}
+        )
+        assert not result.success
+        # Fail-closed: did NOT silently take the first-declared transition.
+        assert result.new_state == "verifying"
+        assert result.failure_type == "guard_rejection"
+        assert result.error == "Transition conditions not met"
+        # Reports the highest-priority rejected guard's failed condition.
+        assert result.failed_conditions == ("score_at_least_80",)
+
+    @pytest.mark.asyncio
+    async def test_default_edge_fires_when_guards_fail(
+        self, branching_fsm_with_default: ModelFSMSubcontract
+    ) -> None:
+        """An unconditional low-priority default edge is the fallthrough."""
+        # score 30 fails both guards; the priority-0 unconditional edge fires.
+        result = await execute_transition(
+            branching_fsm_with_default, "verifying", "verify_done", {"score": 30}
+        )
+        assert result.success
+        assert result.new_state == "reviewed"
+        assert result.transition_name == "review_by_default"
+
+    @pytest.mark.asyncio
+    async def test_passing_guard_preferred_over_default_edge(
+        self, branching_fsm_with_default: ModelFSMSubcontract
+    ) -> None:
+        """A passing guard is preferred over the lower-priority default edge."""
+        result = await execute_transition(
+            branching_fsm_with_default, "verifying", "verify_done", {"score": 90}
+        )
+        assert result.success
+        assert result.new_state == "accepted"
+
+    @pytest.mark.asyncio
+    async def test_branching_fsm_passes_contract_validation(
+        self, branching_fsm: ModelFSMSubcontract
+    ) -> None:
+        """Multi-branch (same trigger, distinct priority) is a valid contract."""
+        errors = await validate_fsm_contract(branching_fsm)
+        assert errors == []
+
+    @pytest.mark.asyncio
+    async def test_exact_match_preempts_wildcard_on_guard_failure(self) -> None:
+        """An exact (state, trigger) match preempts a wildcard on the same trigger.
+
+        A failing exact guard rejects (stays in-state) rather than falling
+        through to the wildcard transition — preserving the pre-existing
+        exact-over-wildcard precedence.
+        """
+        fsm = ModelFSMSubcontract(
+            state_machine_name="exact_vs_wildcard_fsm",
+            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+            description="Exact transition and wildcard sharing a trigger",
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            states=[
+                ModelFSMStateDefinition(
+                    state_name="idle",
+                    state_type="operational",
+                    description="Idle state",
+                    is_terminal=False,
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+                ModelFSMStateDefinition(
+                    state_name="running",
+                    state_type="operational",
+                    description="Running state",
+                    is_terminal=False,
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+                ModelFSMStateDefinition(
+                    state_name="fallback",
+                    state_type="operational",
+                    description="Wildcard fallback state",
+                    is_terminal=False,
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
+            initial_state="idle",
+            terminal_states=[],
+            error_states=[],
+            transitions=[
+                ModelFSMStateTransition(
+                    transition_name="exact_guarded",
+                    from_state="idle",
+                    to_state="running",
+                    trigger="verify",
+                    priority=5,
+                    conditions=[
+                        ModelFSMTransitionCondition(
+                            condition_name="score_at_least_80",
+                            condition_type="field_check",
+                            expression="score >= 80",
+                            required=True,
+                        )
+                    ],
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+                ModelFSMStateTransition(
+                    transition_name="wildcard_fallback",
+                    from_state="*",
+                    to_state="fallback",
+                    trigger="verify",
+                    priority=1,
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
+            operations=[],
+            persistence_enabled=False,
+            recovery_enabled=False,
+        )
+
+        # Exact guard fails: reject and stay in idle; the wildcard is NOT taken.
+        result = await execute_transition(fsm, "idle", "verify", {"score": 10})
+        assert not result.success
+        assert result.new_state == "idle"
+        assert result.failure_type == "guard_rejection"
+        assert result.transition_name == "exact_guarded"
+
+        # Exact guard passes: exact transition fires.
+        result = await execute_transition(fsm, "idle", "verify", {"score": 90})
+        assert result.success
+        assert result.new_state == "running"
+        assert result.transition_name == "exact_guarded"
