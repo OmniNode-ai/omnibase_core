@@ -467,6 +467,31 @@ class TestModelInferenceIntent:
                 correlation_id=uuid.uuid4(),
             )
 
+    def test_tenant_id_optional_and_settable(self) -> None:
+        # OMN-14280: tenant_id is an optional, top-level, str|None slug that
+        # defaults to None (backward-compatible wire) and round-trips verbatim.
+        default_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+        )
+        assert default_intent.tenant_id is None
+
+        tenant_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+            tenant_id="tenant-alpha",
+        )
+        assert tenant_intent.tenant_id == "tenant-alpha"
+        assert tenant_intent.model_dump()["tenant_id"] == "tenant-alpha"
+
 
 @pytest.mark.unit
 class TestModelRoutingTier:
@@ -945,6 +970,24 @@ class TestModelInferenceResponseData:
                 model_used="qwen3-14b",
                 prompt_tokens=-1,
             )
+
+    def test_tenant_id_optional_and_settable(self) -> None:
+        # OMN-14280: tenant_id round-trips the owning tenant back to the
+        # orchestrator; optional + defaults to None for backward compatibility.
+        default_resp = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="qwen3-14b",
+        )
+        assert default_resp.tenant_id is None
+
+        tenant_resp = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="qwen3-14b",
+            tenant_id="tenant-alpha",
+        )
+        assert tenant_resp.tenant_id == "tenant-alpha"
 
 
 @pytest.mark.unit
