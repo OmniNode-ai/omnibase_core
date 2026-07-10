@@ -4,19 +4,17 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from omnibase_core.enums.enum_onex_status import EnumOnexStatus
-    from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
+from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
+from omnibase_core.models.results.model_onex_message import ModelOnexMessage
+from omnibase_core.models.results.model_onex_result import ModelOnexResult
+from omnibase_core.models.results.model_unified_summary import ModelUnifiedSummary
+from omnibase_core.models.results.model_unified_version import ModelUnifiedVersion
 
-    from .model_onex_message import ModelOnexMessage
-    from .model_onex_result import ModelOnexResult
-    from .model_unified_run_metadata import ModelUnifiedRunMetadata
-    from .model_unified_summary import ModelUnifiedSummary
-    from .model_unified_version import ModelUnifiedVersion
+from .model_unified_run_metadata import ModelUnifiedRunMetadata
 
 
 class ModelOnexBatchResult(BaseModel):
