@@ -29,7 +29,7 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
-from omnibase_core.models.services.model_service_effect import ModelServiceEffect
+from omnibase_core.nodes.node_service_effect import ModelServiceEffect
 
 
 # Test Fixtures

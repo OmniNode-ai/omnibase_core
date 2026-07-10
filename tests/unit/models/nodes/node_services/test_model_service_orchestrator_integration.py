@@ -40,10 +40,10 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
-from omnibase_core.models.services.model_service_orchestrator import (
+from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
+from omnibase_core.nodes.node_service_orchestrator import (
     ModelServiceOrchestrator,
 )
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 
 
 @pytest.fixture
