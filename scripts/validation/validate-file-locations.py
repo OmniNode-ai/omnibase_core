@@ -105,8 +105,11 @@ class FileLocationValidator:
         "error_contract_violation.py": ["mixins"],
         "error_dependency_failed.py": ["mixins"],
         "error_fail_fast.py": ["mixins"],
-        # Error models
+        # Error models — canonical error types live in errors/ (foundation layer);
+        # models.* paths retain re-export shims (OMN-14335, OMN-3210 seam burn-down).
         "model_onex_error.py": ["errors"],
+        "model_fail_fast_details.py": ["errors"],
+        "model_onex_error_data.py": ["errors"],
         # ONCP package module (OMN-2758) — models and services belong to the package subsystem
         "model_oncp_manifest.py": ["package"],
         "model_oncp_overlay_entry.py": ["package"],
