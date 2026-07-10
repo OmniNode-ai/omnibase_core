@@ -269,7 +269,7 @@ def _coerce_reloaded_action_registry(
     registry._qualified_actions = dict(getattr(registry_obj, "_qualified_actions", {}))
 
     action_provider = getattr(container, "action_registry", None)
-    if hasattr(action_provider, "override"):
+    if action_provider is not None and hasattr(action_provider, "override"):
         action_provider.override(registry)
 
     return registry

@@ -255,7 +255,7 @@ class ModelCliCommandRegistry(BaseModel):
 
             # Parse arguments (simplified for now)
             # Note: Converting to empty lists of ModelArgumentDescription
-            # TODO(OMN-5746): Extract actual argument descriptions from command metadata  [NEEDS TICKET]
+            # TODO(OMN-5746): Extract actual argument descriptions from command metadata.  # onex-allow-todo-marker
             from omnibase_core.models.core.model_argument_description import (
                 ModelArgumentDescription,
             )
@@ -316,7 +316,7 @@ def _coerce_reloaded_command_registry(
         }
     registry = ModelCliCommandRegistry.model_validate(registry_data)
     command_provider = getattr(container, "command_registry", None)
-    if hasattr(command_provider, "override"):
+    if command_provider is not None and hasattr(command_provider, "override"):
         command_provider.override(registry)
     return registry
 
