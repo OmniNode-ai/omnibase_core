@@ -451,6 +451,14 @@ jobs:
       - name: Run import-linter (intra-core dependency layering)
         run: uv run lint-imports
 
+      # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210) — blocking.
+      # import-linter's wildcard ignores are permissive; this freezes protocols->models
+      # (65) and the utils/mixins/protocols hub-inbound sets non-increasing and hard-fails
+      # any NEW edge/importer. Retirement = the RSD canonical rewrite. Runs in this job so
+      # it inherits the quality-gate `needs: [... lint-imports ...]` blocking wiring.
+      - name: Run import-layering growth ratchet (protocols->models + hubs)
+        run: uv run python scripts/ci/check_import_ratchet.py
+
       - name: Import layering summary
         if: always()
         run: |
@@ -463,6 +471,8 @@ jobs:
           echo "- Protocols (seam) must not import domain/behavioral layers" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Contract: .importlinter | Known back-edges frozen + burned down under OMN-3210" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Growth ratchet (OMN-14340): protocols->models frozen at 65 (hard-fail) + mixins/protocols hub-inbound non-increasing (hard-fail); utils hub warn-only (high-churn, RSD-doomed). See scripts/ci/check_import_ratchet.py. Retirement = RSD canonical rewrite." >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Deterministic Skill Routing Gate (OMN-8765) — enforces that every Tier 1
