@@ -76,6 +76,24 @@ class ModelInferenceIntent(BaseModel):
             "provider-call boundary after core fields are constructed."
         ),
     )
+    # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
+    # OMN-14280 (OMN-14208 slice-2 A-now): the orchestrator stamps the workflow
+    # tenant onto the inference intent so the inference effect can independently
+    # attribute its own side effects (tenant-tagged logging/metrics, per-tenant
+    # credential/quota/cost) to the owning tenant instead of trusting a shared
+    # correlation_id -> tenant lookup. Optional now (backward-compatible wire);
+    # the fail-closed wire==topic-tenant guard + required-flip is A-enforce,
+    # gated behind the gateway topic-tenant stamp (deferred, not this slice).
+    tenant_id: str | None = Field(
+        default=None,
+        description=(
+            "Owning tenant for this inference call. Set by the delegation "
+            "orchestrator from the workflow tenant identity; the inference "
+            "effect reads it to tenant-tag its logs/metrics and round-trips it "
+            "onto ModelInferenceResponseData. Isolation-ready wire (not yet "
+            "isolation-enforced)."
+        ),
+    )
 
 
 class ModelQualityGateIntent(BaseModel):
@@ -135,6 +153,18 @@ class ModelInferenceResponseData(BaseModel):
     error_message: str = Field(
         default="",
         description="Failure reason when inference could not produce content.",
+    )
+    # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
+    # OMN-14280 (OMN-14208 slice-2 A-now): round-tripped from ModelInferenceIntent
+    # by the inference effect so the tenant that owned the call is auditable on
+    # the response and the orchestrator can observability-cross-check it against
+    # the workflow tenant. Optional now; required-flip is A-enforce (deferred).
+    tenant_id: str | None = Field(
+        default=None,
+        description=(
+            "Owning tenant echoed back from the inference intent by the "
+            "inference effect. Isolation-ready wire (not yet isolation-enforced)."
+        ),
     )
 
 
