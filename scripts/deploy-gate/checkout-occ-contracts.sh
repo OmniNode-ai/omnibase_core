@@ -67,7 +67,9 @@ TIMEOUT_KILL_AFTER="${OCC_TIMEOUT_KILL_AFTER_SECS:-10}"
 
 # Build the HTTPS extraheader. We use the `x-access-token` basic scheme (works
 # for both GITHUB_TOKEN and a CROSS_REPO_PAT) — matching the deploy-gate
-# workflow. The header is kept out of the diagnostic block (token redaction).
+# workflow. The header carries the base64 token, so it is redacted before it can
+# reach the diagnostic block: FETCH_CMD_DISPLAY is token-free by construction,
+# and run_git_bounded scrubs the extraheader out of LAST_GIT_CMD (OMN-14277).
 git_auth_header=""
 if [ -n "$GH_TOKEN" ]; then
   git_auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
@@ -145,7 +147,23 @@ FETCH_CMD_DISPLAY="git -C ${OCC_CHECKOUT_DIR} -c http.version=HTTP/1.1 fetch --d
 run_git_bounded() {
   local tmo="$1"
   shift
-  LAST_GIT_CMD="git $*"
+  # Build the diagnostic command string with the git auth extraheader REDACTED.
+  # The fetch args carry `-c http.https://github.com/.extraheader=AUTHORIZATION:
+  # basic <base64>` where <base64> decodes to `x-access-token:$GH_TOKEN`. If that
+  # reaches the job log (emit_diagnostics prints LAST_GIT_CMD on every
+  # timeout/exhaustion path) the credential leaks — base64 is trivially
+  # reversible and GitHub log-masking does NOT match the encoded form
+  # (CodeRabbit Major, OMN-14277). Redact per-argument BEFORE `$*` flattening so
+  # the space inside "AUTHORIZATION: basic <b64>" cannot split the secret; git
+  # itself still runs below with the REAL, unredacted args.
+  local _redacted_args=() _a
+  for _a in "$@"; do
+    case "$_a" in
+      *extraheader=*) _redacted_args+=("${_a%%=*}=***REDACTED***") ;;
+      *) _redacted_args+=("$_a") ;;
+    esac
+  done
+  LAST_GIT_CMD="git ${_redacted_args[*]}"
   # Launch under timeout; capture the child pid so we can dump its tree if it
   # hangs. `timeout` forwards signals to the child group.
   "$TIMEOUT_BIN" -k "$TIMEOUT_KILL_AFTER" "$tmo" git "$@" &
