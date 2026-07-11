@@ -3,7 +3,7 @@
 
 from datetime import UTC, datetime
 
-from omnibase_core.models.errors.model_fail_fast_details import ModelFailFastDetails
+from omnibase_core.errors.model_fail_fast_details import ModelFailFastDetails
 
 
 class ExceptionFailFastError(Exception):

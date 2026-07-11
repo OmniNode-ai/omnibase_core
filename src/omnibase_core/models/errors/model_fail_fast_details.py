@@ -1,40 +1,18 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Model for fail-fast error details."""
+"""Re-export shim for :class:`ModelFailFastDetails`.
 
-from pydantic import BaseModel, ConfigDict, Field
+The canonical definition was relocated DOWN into the foundation-layer
+``omnibase_core.errors`` package (OMN-14335, OMN-3210) alongside
+``ModelOnexError`` to sever the ``errors -> models`` import back-edge. This
+module preserves the historical
+``omnibase_core.models.errors.model_fail_fast_details`` import path. New code
+should import from ``omnibase_core.errors.model_fail_fast_details``.
+"""
 
+from omnibase_core.errors.model_fail_fast_details import (  # re-export
+    ModelFailFastDetails,
+)
 
-class ModelFailFastDetails(BaseModel):
-    """
-    Strongly-typed model for fail-fast error details.
-
-    This model represents the error details attached to ExceptionFailFastError
-    instances, providing structured context for debugging and error handling.
-
-    Attributes:
-        context: Additional context about where the error occurred
-        source: Source component or module that raised the error
-        recoverable: Whether the error might be recoverable
-        additional_info: Any additional structured information
-    """
-
-    context: str = Field(
-        default="",
-        description="Additional context about where the error occurred",
-    )
-    source: str = Field(
-        default="",
-        description="Source component or module that raised the error",
-    )
-    recoverable: bool = Field(
-        default=False,
-        description="Whether the error might be recoverable",
-    )
-    additional_info: str = Field(
-        default="",
-        description="Any additional structured information as string",
-    )
-
-    model_config = ConfigDict(extra="allow")
+__all__ = ["ModelFailFastDetails"]
