@@ -43,8 +43,6 @@ from .type_compute_pipeline import (
     TransformInputT,
 )
 from .type_constraints import (
-    BaseCollection,
-    BaseFactory,
     BasicValueType,
     CollectionItemType,
     ComplexContextValueType,
@@ -57,8 +55,6 @@ from .type_constraints import (
     Identifiable,
     IdentifiableType,
     MetadataType,
-    ModelBaseCollection,
-    ModelBaseFactory,
     ModelType,
     Nameable,
     NameableType,
@@ -438,10 +434,6 @@ __all__ = [
     "TypedDictAgentRoutingConfig",
     "TypedDictSerializedModel",
     # Type constraints and protocols
-    "ModelBaseCollection",
-    "ModelBaseFactory",
-    "BaseCollection",
-    "BaseFactory",
     "BasicValueType",
     "CollectionItemType",
     "ComplexContextValueType",
@@ -722,8 +714,6 @@ def __getattr__(name: str) -> object:
     """
     # List of all constraint exports that should be lazy-loaded
     constraint_exports = {
-        "BaseCollection",
-        "BaseFactory",
         "BasicValueType",
         "CollectionItemType",
         "ComplexContextValueType",
@@ -761,14 +751,6 @@ def __getattr__(name: str) -> object:
         "validate_context_value",
         "validate_primitive_value",
     }
-
-    # ModelBaseCollection and ModelBaseFactory come from models.base, not constraints
-    if name in ("ModelBaseCollection", "ModelBaseFactory"):
-        from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
-
-        globals()["ModelBaseCollection"] = ModelBaseCollection
-        globals()["ModelBaseFactory"] = ModelBaseFactory
-        return globals()[name]
 
     # All other constraint exports come from .constraints
     if name in constraint_exports:

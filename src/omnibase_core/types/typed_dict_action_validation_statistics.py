@@ -9,12 +9,8 @@ Provides typed statistics for action validation history and metrics.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NotRequired, TypedDict
-
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_action_validation_result import (
-        ModelActionValidationResult,
-    )
+from collections.abc import Sequence
+from typing import NotRequired, TypedDict
 
 
 class TypedDictActionValidationStatistics(TypedDict, total=False):
@@ -31,7 +27,9 @@ class TypedDictActionValidationStatistics(TypedDict, total=False):
     invalid_actions: NotRequired[int]
     success_rate: NotRequired[float]
     average_trust_score: NotRequired[float]
-    recent_validations: NotRequired[list[ModelActionValidationResult]]
+    # OMN-14337: element type was the action-validation-result domain model
+    # (immovable); widened to covariant Sequence[object] to sever types->models.
+    recent_validations: NotRequired[Sequence[object]]
 
 
 __all__ = ["TypedDictActionValidationStatistics"]
