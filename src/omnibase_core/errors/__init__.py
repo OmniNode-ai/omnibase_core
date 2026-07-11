@@ -31,10 +31,7 @@ if TYPE_CHECKING:
     from omnibase_core.errors.exception_compute_pipeline_error import (
         ComputePipelineError,
     )
-    from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
-    from omnibase_core.models.common.model_registry_error import ModelRegistryError
-    from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
-    from omnibase_core.models.errors.model_onex_error import ModelOnexError
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
 """Core error handling for ONEX framework."""
 
@@ -63,12 +60,9 @@ from omnibase_core.errors.exception_groups import (
     YAML_PARSING_ERRORS,
 )
 
-# ModelOnexError is imported via lazy import to avoid circular dependency
-# It's available as: from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-
-# ModelOnexWarning, ModelRegistryError, and ModelCLIAdapter are imported via lazy import
-# to avoid circular dependencies
+# ModelOnexError (and the OnexError alias) is imported via lazy import to avoid
+# circular dependency. Its canonical home is the foundation-layer errors package:
+# from omnibase_core.errors.model_onex_error import ModelOnexError
 
 __all__ = [
     # Exception Groups (centralized exception type tuples)
@@ -96,10 +90,7 @@ __all__ = [
     "HookTimeoutError",
     "HookTypeMismatchError",
     "InvalidOperationError",
-    "ModelCLIAdapter",
     "ModelOnexError",
-    "ModelOnexWarning",
-    "ModelRegistryError",
     "NodeExecutionError",
     "OnexError",
     "PipelineError",
@@ -123,9 +114,7 @@ __all__ = [
 # circular dependency chains if imported at module load time.
 #
 # Classes loaded lazily:
-# - ModelOnexError, OnexError (alias) - from models.errors
-# - ModelOnexWarning, ModelRegistryError - from models.common
-# - ModelCLIAdapter - from models.core
+# - ModelOnexError, OnexError (alias) - from errors.model_onex_error
 # - RuntimeHostError, HandlerExecutionError, etc. - from errors.error_runtime
 # - AdapterBindingError, PurityViolationError, etc. - from errors.error_declarative
 # - PipelineError, CallableNotFoundError, etc. - from errors.error_* modules
@@ -146,28 +135,11 @@ def __getattr__(name: str) -> Any:
     # duplicate import statements. Each group imports from one module.
     # -------------------------------------------------------------------------
 
-    # Model error classes from models.errors
+    # Canonical ONEX error class (foundation-layer errors package)
     if name in {"ModelOnexError", "OnexError"}:
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         return ModelOnexError
-
-    # Model classes from models.common
-    _common_model_classes = {"ModelOnexWarning", "ModelRegistryError"}
-    if name in _common_model_classes:
-        from omnibase_core.models.common import model_onex_warning, model_registry_error
-
-        _common_exports = {
-            "ModelOnexWarning": model_onex_warning.ModelOnexWarning,
-            "ModelRegistryError": model_registry_error.ModelRegistryError,
-        }
-        return _common_exports[name]
-
-    # CLI adapter from models.core
-    if name == "ModelCLIAdapter":
-        from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
-
-        return ModelCLIAdapter
 
     # -------------------------------------------------------------------------
     # Runtime host errors - consolidated import from runtime_errors module
