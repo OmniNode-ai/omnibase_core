@@ -128,6 +128,13 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("infra_bases.py", "BaseNode"),
     ("node_base.py", "BaseNode"),
     ("node_core_base.py", "BaseNode"),
+    # OMN-14291: service-wrapper framework bases relocated from models/services
+    # to nodes/ to remove the models -> nodes import back-edge. The ModelService*
+    # public names remain compatibility API exposed by infra_bases.
+    ("node_service_compute.py", "ModelServiceCompute"),
+    ("node_service_effect.py", "ModelServiceEffect"),
+    ("node_service_orchestrator.py", "ModelServiceOrchestrator"),
+    ("node_service_reducer.py", "ModelServiceReducer"),
     # Private holder classes in utils (start with underscore handled separately)
     #
     # --- LEGACY EXCEPTIONS (address in future refactoring) ---  # TODO_FORMAT_EXEMPT: section header for legacy naming exceptions

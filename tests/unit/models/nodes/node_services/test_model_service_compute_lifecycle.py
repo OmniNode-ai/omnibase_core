@@ -29,7 +29,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.services.model_service_compute import ModelServiceCompute
+from omnibase_core.nodes.node_service_compute import ModelServiceCompute
 
 
 class ComputeNodeForTesting(ModelServiceCompute):

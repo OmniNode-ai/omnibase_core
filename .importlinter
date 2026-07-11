@@ -93,8 +93,6 @@ ignore_imports =
     # constants to constants/constants_workflow, the runtime-ops verb loader to
     # utils/util_runtime_ops_verb_loader; migration TypedDicts and re-exported
     # models now import their canonical types/ and models/validation/ sources.
-    # OMN-3210 burn-down: models -> nodes (~4 edges)
-    omnibase_core.models.** -> omnibase_core.nodes.**
 
 [importlinter:contract:core-midtier-no-top]
 name = Services and validation must not import nodes (direct)

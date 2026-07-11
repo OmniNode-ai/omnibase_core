@@ -14,9 +14,14 @@ Pre-composed with essential mixins for production use:
 This service wrapper eliminates boilerplate by pre-wiring commonly used mixins
 for effect nodes that perform I/O operations, external API calls, or database operations.
 
+Relocated from ``omnibase_core.models.services.model_service_effect`` (OMN-3210
+layering burn-down / OMN-14291): this class subclasses ``NodeEffect`` and does
+not belong under ``models/`` (domain data models). It lives under ``nodes/``
+alongside the other ``Node*`` base classes it composes.
+
 Usage Example:
     ```python
-    from omnibase_core.models.services.model_service_effect import ModelServiceEffect
+    from omnibase_core.nodes.node_service_effect import ModelServiceEffect
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
 

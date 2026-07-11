@@ -28,7 +28,7 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.discovery.model_node_shutdown_event import (
     ModelNodeShutdownEvent,
 )
-from omnibase_core.models.services.model_service_effect import ModelServiceEffect
+from omnibase_core.nodes.node_service_effect import ModelServiceEffect
 
 # ============================================================================
 # Fixtures

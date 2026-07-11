@@ -1617,6 +1617,10 @@ class PurityAnalyzer(ast.NodeVisitor):
 BASE_NODE_FILES_SKIP = {
     "node_compute.py",  # Generic base: NodeCompute[T_Input, T_Output], Callable[..., Any]
     "node_reducer.py",  # Generic base: NodeReducer[T_Input, T_Output], FSM type handling
+    # OMN-14291: framework service-wrapper bases that compose NodeCompute/NodeReducer
+    # with production mixins. They are not user declarative nodes.
+    "node_service_compute.py",
+    "node_service_reducer.py",
 }
 
 

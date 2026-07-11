@@ -14,9 +14,14 @@ Pre-composed with essential mixins for production use:
 This service wrapper eliminates boilerplate by pre-wiring commonly used mixins
 for compute nodes that perform data transformations, calculations, or pure functions.
 
+Relocated from ``omnibase_core.models.services.model_service_compute`` (OMN-3210
+layering burn-down / OMN-14291): this class subclasses ``NodeCompute`` and does
+not belong under ``models/`` (domain data models). It lives under ``nodes/``
+alongside the other ``Node*`` base classes it composes.
+
 Usage Example:
     ```python
-    from omnibase_core.models.services.model_service_compute import ModelServiceCompute
+    from omnibase_core.nodes.node_service_compute import ModelServiceCompute
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
