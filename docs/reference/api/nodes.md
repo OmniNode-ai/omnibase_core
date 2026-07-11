@@ -184,7 +184,7 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
 
 **Purpose**: Pre-composed COMPUTE node with common mixins.
 
-```
+```python
 from omnibase_core.nodes.node_service_compute import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -198,7 +198,7 @@ service = ModelServiceCompute(container)
 
 **Purpose**: Pre-composed EFFECT node with common mixins.
 
-```
+```python
 from omnibase_core.nodes.node_service_effect import ModelServiceEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -212,7 +212,7 @@ service = ModelServiceEffect(container)
 
 **Purpose**: Pre-composed REDUCER node with common mixins.
 
-```
+```python
 from omnibase_core.nodes.node_service_reducer import ModelServiceReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
@@ -226,7 +226,7 @@ service = ModelServiceReducer(container)
 
 **Purpose**: Pre-composed ORCHESTRATOR node with common mixins.
 
-```
+```python
 from omnibase_core.nodes.node_service_orchestrator import ModelServiceOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
