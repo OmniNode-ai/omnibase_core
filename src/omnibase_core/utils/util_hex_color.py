@@ -38,7 +38,7 @@ from typing import ClassVar
 
 __all__ = (
     "HEX_COLOR_PATTERN",
-    "HexColorValidator",
+    "UtilHexColorValidator",
     "validate_hex_color",
     "validate_hex_color_optional",
     "validate_hex_color_mapping",
@@ -56,7 +56,7 @@ _HEX_COLOR_ERROR_MSG = (
 )
 
 
-class HexColorValidator:
+class UtilHexColorValidator:
     """Shared hex color validation for dashboard models.
 
     Class-level validation methods for hex color codes.
@@ -69,8 +69,8 @@ class HexColorValidator:
     Example:
         Direct validation::
 
-            HexColorValidator.validate("#FF0000")  # Returns "#FF0000"
-            HexColorValidator.validate("invalid")  # Raises ValueError
+            UtilHexColorValidator.validate("#FF0000")  # Returns "#FF0000"
+            UtilHexColorValidator.validate("invalid")  # Raises ValueError
     """
 
     PATTERN: ClassVar[re.Pattern[str]] = HEX_COLOR_PATTERN
@@ -89,11 +89,11 @@ class HexColorValidator:
             ValueError: If the value is not a valid hex color format.
 
         Example:
-            >>> HexColorValidator.validate("#FF0000")
+            >>> UtilHexColorValidator.validate("#FF0000")
             '#FF0000'
-            >>> HexColorValidator.validate("#F00")
+            >>> UtilHexColorValidator.validate("#F00")
             '#F00'
-            >>> HexColorValidator.validate("invalid")
+            >>> UtilHexColorValidator.validate("invalid")
             ValueError: Invalid hex color format: invalid. Expected #RGB, #RRGGBB, #RGBA, or #RRGGBBAA
         """
         if not cls.PATTERN.fullmatch(value):
@@ -115,9 +115,9 @@ class HexColorValidator:
             ValueError: If the value is not None and not a valid hex color format.
 
         Example:
-            >>> HexColorValidator.validate_optional("#FF0000")
+            >>> UtilHexColorValidator.validate_optional("#FF0000")
             '#FF0000'
-            >>> HexColorValidator.validate_optional(None)
+            >>> UtilHexColorValidator.validate_optional(None)
             None
         """
         if value is None:
@@ -144,7 +144,7 @@ class HexColorValidator:
 
         Example:
             >>> colors = {"ok": "#00FF00", "error": "#FF0000"}
-            >>> HexColorValidator.validate_mapping(colors, "status")
+            >>> UtilHexColorValidator.validate_mapping(colors, "status")
             {'ok': '#00FF00', 'error': '#FF0000'}
         """
         for key, color in mapping.items():
@@ -164,7 +164,7 @@ def validate_hex_color(value: str) -> str:
     """Validate hex color format (#RGB, #RRGGBB, #RGBA, or #RRGGBBAA).
 
     This is a convenience function for use in Pydantic field validators.
-    It wraps HexColorValidator.validate() for direct use.
+    It wraps UtilHexColorValidator.validate() for direct use.
 
     Args:
         value: The color value to validate.
@@ -183,7 +183,7 @@ def validate_hex_color(value: str) -> str:
             def check_color(cls, v: str) -> str:
                 return validate_hex_color(v)
     """
-    return HexColorValidator.validate(value)
+    return UtilHexColorValidator.validate(value)
 
 
 def validate_hex_color_optional(value: str | None) -> str | None:
@@ -209,7 +209,7 @@ def validate_hex_color_optional(value: str | None) -> str | None:
             def check_color(cls, v: str | None) -> str | None:
                 return validate_hex_color_optional(v)
     """
-    return HexColorValidator.validate_optional(value)
+    return UtilHexColorValidator.validate_optional(value)
 
 
 def validate_hex_color_mapping(
@@ -239,4 +239,4 @@ def validate_hex_color_mapping(
             def check_colors(cls, v: Mapping[str, str]) -> Mapping[str, str]:
                 return validate_hex_color_mapping(v, "status")
     """
-    return HexColorValidator.validate_mapping(mapping, key_context)
+    return UtilHexColorValidator.validate_mapping(mapping, key_context)

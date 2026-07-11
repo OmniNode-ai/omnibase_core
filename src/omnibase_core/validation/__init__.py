@@ -293,7 +293,7 @@ from omnibase_core.constants.constants_workflow import (
 # Import hex color validators (OMN-1284; relocated to utils/ under OMN-14331)
 from omnibase_core.utils.util_hex_color import (
     HEX_COLOR_PATTERN,
-    HexColorValidator,
+    UtilHexColorValidator,
     validate_hex_color,
     validate_hex_color_mapping,
     validate_hex_color_optional,
@@ -560,7 +560,7 @@ __all__ = [
     "ErrorCode",
     # Hex color validators (OMN-1284)
     "HEX_COLOR_PATTERN",
-    "HexColorValidator",
+    "UtilHexColorValidator",
     "validate_hex_color",
     "validate_hex_color_optional",
     "validate_hex_color_mapping",

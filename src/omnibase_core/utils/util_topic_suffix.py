@@ -12,7 +12,7 @@ import-linter oracle forbids (OMN-14331, epic OMN-3210).
 ``omnibase_core.validation.validator_topic_suffix`` builds the public
 ``ModelTopicValidationResult`` / ``ModelTopicSuffixParts`` return types on top of
 :func:`check_topic_suffix` here; model-side callers use the model-free
-:class:`TopicSuffixCheck` result directly.
+:class:`UtilTopicSuffixCheck` result directly.
 
 Canonical topic-suffix format::
 
@@ -75,7 +75,7 @@ VERSION_PATTERN: Final[re.Pattern[str]] = re.compile(r"^v(\d+)$")
 EXPECTED_SEGMENT_COUNT: Final[int] = 5
 
 
-class TopicSuffixCheck(NamedTuple):
+class UtilTopicSuffixCheck(NamedTuple):
     """Model-free result of :func:`check_topic_suffix`.
 
     ``is_valid`` is True only when every rule passes, in which case the parsed
@@ -93,7 +93,7 @@ class TopicSuffixCheck(NamedTuple):
     normalized_suffix: str | None = None
 
 
-def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
+def check_topic_suffix(suffix: str) -> UtilTopicSuffixCheck:
     """Validate a topic suffix against the ONEX naming convention.
 
     Pure, model-free counterpart of
@@ -114,12 +114,12 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
         suffix: The topic suffix to validate.
 
     Returns:
-        A :class:`TopicSuffixCheck`. On success ``is_valid`` is True and the
+        A :class:`UtilTopicSuffixCheck`. On success ``is_valid`` is True and the
         parsed component fields are populated; on failure ``error`` explains why.
     """
     # Check for control characters (newlines, tabs, null, etc.) before processing.
     if any(c in suffix for c in _CONTROL_CHARS):
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error="Suffix contains invalid control characters (newline, tab, etc.)",
         )
@@ -129,11 +129,11 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
 
     # Check for empty input
     if not stripped:
-        return TopicSuffixCheck(is_valid=False, error="Suffix cannot be empty")
+        return UtilTopicSuffixCheck(is_valid=False, error="Suffix cannot be empty")
 
     # Strict lowercase validation — no normalization.
     if stripped != stripped.lower():
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=(
                 "Suffix must be lowercase. Use lowercase topic suffixes "
@@ -147,7 +147,7 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
 
     # Check for environment prefix FIRST (must NOT be present in suffix).
     if first_segment in ENV_PREFIXES:
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=(
                 f"Suffix must not start with environment prefix '{first_segment}.'. "
@@ -157,7 +157,7 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
 
     # Check segment count
     if len(segments) != EXPECTED_SEGMENT_COUNT:
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=(
                 f"Suffix must have exactly {EXPECTED_SEGMENT_COUNT} segments "
@@ -167,7 +167,7 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
 
     # Check that suffix starts with 'onex.'
     if first_segment != TOPIC_PREFIX:
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=(
                 f"Suffix must start with '{TOPIC_PREFIX}.' prefix. "
@@ -184,14 +184,14 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
     # Validate kind token
     if kind not in VALID_TOPIC_KINDS:
         valid_kinds = ", ".join(sorted(VALID_TOPIC_KINDS))
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=f"Kind must be one of: {valid_kinds}. Got: '{kind}'",
         )
 
     # Validate producer (kebab-case)
     if not KEBAB_CASE_PATTERN.match(producer):
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=(
                 f"Producer must be kebab-case (lowercase letters, digits, hyphens, "
@@ -201,7 +201,7 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
 
     # Validate event-name (kebab-case)
     if not KEBAB_CASE_PATTERN.match(event_name):
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=(
                 f"Event name must be kebab-case (lowercase letters, digits, hyphens, "
@@ -212,7 +212,7 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
     # Validate version format
     version_match = VERSION_PATTERN.match(version_str)
     if not version_match:
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=(
                 f"Version must match 'v{{int}}' pattern (e.g., v1, v2). "
@@ -222,13 +222,13 @@ def check_topic_suffix(suffix: str) -> TopicSuffixCheck:
 
     version = int(version_match.group(1))
     if version < 1:
-        return TopicSuffixCheck(
+        return UtilTopicSuffixCheck(
             is_valid=False,
             error=f"Version number must be >= 1. Got: v{version}",
         )
 
     # All validations passed
-    return TopicSuffixCheck(
+    return UtilTopicSuffixCheck(
         is_valid=True,
         kind=kind,
         producer=producer,
@@ -255,7 +255,7 @@ __all__ = [
     "TOPIC_SUFFIX_PATTERN",
     "VALID_TOPIC_KINDS",
     "VERSION_PATTERN",
-    "TopicSuffixCheck",
+    "UtilTopicSuffixCheck",
     "check_topic_suffix",
     "is_valid_topic_suffix",
 ]
