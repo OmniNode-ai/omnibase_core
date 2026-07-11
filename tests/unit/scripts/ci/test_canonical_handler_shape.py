@@ -12,6 +12,8 @@ flip is not proof of equivalence; the OMN-14208-at-scale trap).
 from __future__ import annotations
 
 import ast
+import subprocess
+import sys
 
 import pytest
 
@@ -21,6 +23,7 @@ from scripts.ci.canonical_handler_shape import (
     _contract_bindings,
     _escalation_reason,
     _handle_is_adaptable,
+    _resolve_scope,
     _touched_node_ids,
     classify_all,
     current_non_canonical,
@@ -245,6 +248,73 @@ def test_escalation_on_gate_and_resolution_and_shared_modules() -> None:
 def test_no_escalation_for_plain_node_change() -> None:
     assert _escalation_reason(["src/omnibase_core/nodes/node_x/handler.py"]) is None
     assert _escalation_reason(["docs/foo.md"]) is None
+
+
+# --------------------------------------------------------------------------- #
+# Package scoping (OMN-14368 mechanical-wave fan-out)
+# --------------------------------------------------------------------------- #
+#
+# _resolve_scope is pure (no global mutation) so these tests never touch
+# mod.SRC_ROOT/BASELINE_PATH/RECEIPTS_DIR/PACKAGE — the live regression guards
+# above (test_live_classification_matches_committed_baseline et al.) keep
+# reading the untouched omnibase_core defaults for the whole test session.
+
+
+def test_resolve_scope_default_package_reproduces_current_constants() -> None:
+    src_root, nodes_glob, baseline, receipts_dir = _resolve_scope(
+        "omnibase_core", None, None, None, None
+    )
+    assert src_root == mod.SRC_ROOT
+    assert nodes_glob == "omnibase_core/**/nodes/**/contract.yaml" == mod.NODES_GLOB
+    assert baseline == mod.BASELINE_PATH
+    assert receipts_dir == mod.RECEIPTS_DIR
+
+
+def test_resolve_scope_foreign_package_scopes_independently(tmp_path) -> None:
+    foreign_src = tmp_path / "omnimarket" / "src"
+    src_root, nodes_glob, baseline, receipts_dir = _resolve_scope(
+        "omnimarket", foreign_src, None, None, None
+    )
+    assert src_root == foreign_src
+    assert nodes_glob == "omnimarket/**/nodes/**/contract.yaml"
+    # Never falls back to omnibase_core's own committed baseline/receipts —
+    # a forgotten --baseline on a foreign package must not silently clobber it.
+    assert baseline.name == "canonical_handler_shape_baseline_omnimarket.py"
+    assert baseline != mod.BASELINE_PATH
+    assert receipts_dir.name == "adequacy_receipts_omnimarket"
+    assert receipts_dir != mod.RECEIPTS_DIR
+
+
+def test_resolve_scope_explicit_overrides_win(tmp_path) -> None:
+    explicit_baseline = tmp_path / "custom_baseline.py"
+    explicit_receipts = tmp_path / "custom_receipts"
+    src_root, nodes_glob, baseline, receipts_dir = _resolve_scope(
+        "omnimarket",
+        tmp_path,
+        "custom/**/glob.yaml",
+        explicit_baseline,
+        explicit_receipts,
+    )
+    assert src_root == tmp_path
+    assert nodes_glob == "custom/**/glob.yaml"
+    assert baseline == explicit_baseline
+    assert receipts_dir == explicit_receipts
+
+
+def test_cli_full_scan_default_package_unchanged() -> None:
+    """``--full`` with no --package still checks omnibase_core's own committed
+    baseline end to end. Runs in a subprocess (not in-process main()) so the
+    scope mutation main() applies to module globals can never leak into other
+    tests in this session."""
+    proc = subprocess.run(
+        [sys.executable, "-m", "scripts.ci.canonical_handler_shape", "--full"],
+        cwd=mod.REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "ratchet OK" in proc.stdout
 
 
 # --------------------------------------------------------------------------- #

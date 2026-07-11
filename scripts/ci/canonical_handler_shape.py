@@ -64,6 +64,15 @@ Run the check (CI + pre-commit)::
 
     uv run python scripts/ci/canonical_handler_shape.py            # diff-scoped
     uv run python scripts/ci/canonical_handler_shape.py --full     # whole repo
+
+Fan-out to another package (OMN-14368): ``--package``/``--src-root`` (or the
+``ONEX_CANON_SHAPE_PACKAGE`` env var) repoint the scan at a sibling repo's node
+tree without touching omnibase_core's own committed baseline. Both default to
+omnibase_core, so core behavior is byte-for-byte unchanged when unset::
+
+    uv run python scripts/ci/canonical_handler_shape.py --update \\
+        --package omnimarket --src-root ../omnimarket/src \\
+        --baseline ../omnimarket/scripts/ci/canonical_handler_shape_baseline.py
 """
 
 from __future__ import annotations
@@ -71,6 +80,7 @@ from __future__ import annotations
 import argparse
 import ast
 import importlib.util
+import os
 import sys
 from pathlib import Path
 from typing import Literal
@@ -500,6 +510,54 @@ def write_baseline(non_canonical: list[str], path: Path = BASELINE_PATH) -> None
 
 
 # --------------------------------------------------------------------------- #
+# Package scoping (OMN-14368 mechanical-wave fan-out)
+# --------------------------------------------------------------------------- #
+#
+# The classifier and its baseline were hardcoded to omnibase_core (OMN-14355's
+# canary scope was intentionally core-only). The mechanical-wave rewrite needs
+# to observe a canonical-shape flip in omnimarket/omnibase_infra too, so the
+# scan target is parameterized. ``_resolve_scope`` is a pure function (no
+# global mutation) so it is directly unit-testable; only ``main()`` applies
+# the result to the module globals that ``classify_node`` et al. read.
+
+
+def _resolve_scope(
+    package: str,
+    src_root: Path | None,
+    nodes_glob: str | None,
+    baseline: Path | None,
+    receipts_dir: Path | None,
+) -> tuple[Path, str, Path, Path]:
+    """Compute ``(src_root, nodes_glob, baseline_path, receipts_dir)`` for a scope.
+
+    Every argument defaults to the omnibase_core value already in effect on the
+    module (``SRC_ROOT``/``BASELINE_PATH``/``RECEIPTS_DIR``), so calling this
+    with ``package="omnibase_core"`` and all other args ``None`` reproduces
+    today's constants exactly. A non-default ``package`` with no explicit
+    ``--baseline``/``--receipts-dir`` gets a package-suffixed path beside this
+    script rather than silently clobbering omnibase_core's own committed
+    baseline/receipts.
+    """
+    resolved_src_root = src_root if src_root is not None else SRC_ROOT
+    resolved_glob = nodes_glob or f"{package}/**/nodes/**/contract.yaml"
+    if baseline is not None:
+        resolved_baseline = baseline
+    elif package == "omnibase_core":
+        resolved_baseline = BASELINE_PATH
+    else:
+        resolved_baseline = Path(__file__).with_name(
+            f"canonical_handler_shape_baseline_{package}.py"
+        )
+    if receipts_dir is not None:
+        resolved_receipts = receipts_dir
+    elif package == "omnibase_core":
+        resolved_receipts = RECEIPTS_DIR
+    else:
+        resolved_receipts = Path(__file__).with_name(f"adequacy_receipts_{package}")
+    return resolved_src_root, resolved_glob, resolved_baseline, resolved_receipts
+
+
+# --------------------------------------------------------------------------- #
 # Adequacy + equivalence gated flip verification (RECOMPUTE, do not trust)
 # --------------------------------------------------------------------------- #
 #
@@ -797,12 +855,13 @@ def _touched_node_ids(changed_files: list[str]) -> set[str]:
 def _escalation_reason(changed_files: list[str]) -> str | None:
     """Return a full-scan escalation reason, or None to stay diff-scoped."""
     shared = _load_shared_modules()
+    prefix = f"src/{PACKAGE}/"
     for rel in changed_files:
         if rel in GATE_SELF_PATHS or rel.startswith("scripts/ci/adequacy_receipts/"):
             return f"gate/baseline/receipt changed ({rel})"
-        if not rel.startswith("src/omnibase_core/") or not rel.endswith(".py"):
+        if not rel.startswith(prefix) or not rel.endswith(".py"):
             continue
-        module_path = rel[len("src/omnibase_core/") : -len(".py")]
+        module_path = rel[len(prefix) : -len(".py")]
         if any(
             module_path == m or module_path.startswith(m)
             for m in GATE_RESOLUTION_MODULES
@@ -878,7 +937,43 @@ def main(argv: list[str] | None = None) -> int:
         help="Diff base for --scope changed when no files are passed (CI path).",
     )
     parser.add_argument(
-        "--baseline", type=Path, default=BASELINE_PATH, help="Baseline module path."
+        "--baseline",
+        type=Path,
+        default=None,
+        help="Baseline module path. Defaults to omnibase_core's committed "
+        "baseline, or canonical_handler_shape_baseline_<package>.py beside "
+        "this script when --package overrides the target (OMN-14368).",
+    )
+    parser.add_argument(
+        "--package",
+        default=os.environ.get("ONEX_CANON_SHAPE_PACKAGE", "omnibase_core"),
+        help="Target package to classify (OMN-14368 fan-out). Defaults to "
+        "omnibase_core so core CI/pre-commit behavior is unchanged; pass e.g. "
+        "'omnimarket' with --src-root to scan a sibling repo.",
+    )
+    parser.add_argument(
+        "--src-root",
+        type=Path,
+        default=(
+            Path(os.environ["ONEX_CANON_SHAPE_SRC_ROOT"])
+            if "ONEX_CANON_SHAPE_SRC_ROOT" in os.environ
+            else None
+        ),
+        help="Source root containing --package's node tree (defaults to this "
+        "repo's own src/). Pass a sibling repo's src/ dir, e.g. "
+        "../omnimarket/src, to scan a different package.",
+    )
+    parser.add_argument(
+        "--nodes-glob",
+        default=None,
+        help="Override the contract.yaml glob (default: "
+        "'<package>/**/nodes/**/contract.yaml', relative to --src-root).",
+    )
+    parser.add_argument(
+        "--receipts-dir",
+        type=Path,
+        default=None,
+        help="Override the adequacy-receipts directory for --package.",
     )
     parser.add_argument(
         "--json",
@@ -892,6 +987,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # Apply the resolved scope to the module globals every other function in
+    # this file reads (classify_node, _escalation_reason, verify_*, ...).
+    # Pure computation happens in _resolve_scope; only main() mutates state,
+    # once per process, so unit tests calling these functions directly never
+    # observe a scope left over from a prior test.
+    global PACKAGE, SRC_ROOT, NODES_GLOB, BASELINE_PATH, RECEIPTS_DIR
+    PACKAGE = args.package
+    SRC_ROOT, NODES_GLOB, BASELINE_PATH, RECEIPTS_DIR = _resolve_scope(
+        args.package, args.src_root, args.nodes_glob, args.baseline, args.receipts_dir
+    )
+
     if args.json:
         import json
 
@@ -901,15 +1007,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.update:
         findings = classify_all()
         non_canonical = current_non_canonical(findings)
-        write_baseline(non_canonical, args.baseline)
+        write_baseline(non_canonical, BASELINE_PATH)
         print(
-            f"Regenerated {args.baseline.name} (full scan) — {len(findings)} nodes, "
+            f"Regenerated {BASELINE_PATH.name} (full scan, package={PACKAGE}) — "
+            f"{len(findings)} nodes, "
             f"canonical={len(findings) - len(non_canonical)}, "
             f"non_canonical={len(non_canonical)}"
         )
         return 0
 
-    baseline = load_baseline(args.baseline)
+    baseline = load_baseline(BASELINE_PATH)
 
     full = args.full or args.scope == "full"
     scope_label = "full"
