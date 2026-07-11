@@ -63,8 +63,17 @@ if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_capability_provided import (
         ModelCapabilityProvided,
     )
+    from omnibase_core.models.contracts.model_consumed_event_entry import (
+        ModelConsumedEventEntry,
+    )
     from omnibase_core.models.contracts.model_descriptor_patch import (
         ModelDescriptorPatch,
+    )
+    from omnibase_core.models.contracts.model_published_event_entry import (
+        ModelPublishedEventEntry,
+    )
+    from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+        ModelHandlerRoutingSubcontract,
     )
     from omnibase_core.protocols.protocol_contract_profile_factory import (
         ProtocolContractProfileFactory,
@@ -377,6 +386,13 @@ class ContractMergeEngine:
             base_output_model=base.output_model,
             base_behavior=base.behavior,
             base_tags=list(base.tags) if base.tags else [],
+            base_handler_routing=base.handler_routing,
+            base_yaml_consumed_events=list(base.yaml_consumed_events)
+            if base.yaml_consumed_events
+            else [],
+            base_yaml_published_events=list(base.yaml_published_events)
+            if base.yaml_published_events
+            else [],
             patch=patch,
             changes_applied=changes_applied,
         )
@@ -436,6 +452,9 @@ class ContractMergeEngine:
         base_output_model: str,
         base_behavior: ModelHandlerBehavior | None,
         base_tags: list[str],
+        base_handler_routing: ModelHandlerRoutingSubcontract | None,
+        base_yaml_consumed_events: list[ModelConsumedEventEntry],
+        base_yaml_published_events: list[ModelPublishedEventEntry],
         patch: ModelContractPatch,
         changes_applied: list[str],
     ) -> tuple[ModelHandlerContract, list[str]]:
@@ -448,6 +467,12 @@ class ContractMergeEngine:
         caller is responsible for extracting the appropriate behavior field
         (``base.behavior`` for ModelContractBase, ``base.descriptor`` for
         ModelHandlerContract).
+
+        ``ModelContractPatch`` has no override fields for handler_routing or
+        the consumed/published event declarations (OMN-14245), so
+        ``base_handler_routing``/``base_yaml_consumed_events``/
+        ``base_yaml_published_events`` are carried through unchanged rather
+        than merged against a patch value.
 
         Returns the merged contract and an updated changes list.
         """
@@ -557,6 +582,9 @@ class ContractMergeEngine:
             input_model=merged_input_model,
             output_model=merged_output_model,
             tags=list(base_tags) if base_tags else [],
+            handler_routing=base_handler_routing,
+            yaml_consumed_events=list(base_yaml_consumed_events),
+            yaml_published_events=list(base_yaml_published_events),
         )
         return result, changes
 
@@ -595,6 +623,9 @@ class ContractMergeEngine:
             base_output_model=current.output_model,
             base_behavior=current.descriptor,
             base_tags=list(current.tags) if current.tags else [],
+            base_handler_routing=current.handler_routing,
+            base_yaml_consumed_events=list(current.yaml_consumed_events),
+            base_yaml_published_events=list(current.yaml_published_events),
             patch=entry.overlay_patch,
             changes_applied=changes,
         )

@@ -67,9 +67,11 @@ ignore_imports =
     omnibase_core.types.typed_dict_validator_info -> omnibase_core.models.common.model_validation_result
     omnibase_core.types.typed_dict_output_format_options_kwargs -> omnibase_core.models.infrastructure.model_value
     omnibase_core.types.typed_dict_lifecycle_event_fields -> omnibase_core.models.primitives.model_semver
-    # OMN-3210 burn-down: errors -> models (~11 edges)
-    omnibase_core.errors -> omnibase_core.models.**
-    omnibase_core.errors.** -> omnibase_core.models.**
+    # OMN-3210 burn-down: errors -> models — RETIRED (OMN-14335): ModelOnexError,
+    # ModelFailFastDetails, and _ModelOnexErrorData were relocated DOWN into the
+    # errors package (models.* paths keep re-export shims); the ModelOnexWarning/
+    # ModelRegistryError/ModelCLIAdapter convenience re-exports were pruned from
+    # errors/__init__.py.
     # OMN-3210 burn-down: constants -> models — RETIRED (OMN-14221):
     # constants_handler_capabilities no longer imports ModelOnexError; the
     # get_capabilities_by_node_kind boundary now raises the built-in ValueError.
@@ -100,9 +102,6 @@ source_modules =
     omnibase_core.validation
 forbidden_modules =
     omnibase_core.nodes
-ignore_imports =
-    # OMN-3210 burn-down: validation -> nodes (~1 edge)
-    omnibase_core.validation.** -> omnibase_core.nodes.**
 
 [importlinter:contract:core-protocols-no-upward]
 name = Protocols (seam) must not import domain/behavioral layers (direct)
@@ -116,5 +115,12 @@ forbidden_modules =
     omnibase_core.validation
     omnibase_core.nodes
 ignore_imports =
-    # OMN-3210 burn-down: protocols -> models (protocol I/O type references, ~65 edges)
+    # OMN-3210 burn-down: protocols -> models (protocol I/O type references, 65 edges).
+    # NOT a permanent exception (operator ruling 2026-07-10). This wildcard ignore is
+    # permissive, so a monotonic-non-increasing RATCHET freezes the edge set at 65 and
+    # hard-fails any NEW protocols -> models edge: scripts/ci/check_import_ratchet.py
+    # (baseline scripts/ci/import_ratchet_baseline.yaml; wired as CI gate + pre-commit,
+    # OMN-14340). Owner: RSD canonical rewrite epic. Retirement mechanism: the rewrite
+    # regenerates these modules canonically (dissolving the protocols<->models cycle),
+    # after which this line + the ratchet are deleted. The set only SHRINKS.
     omnibase_core.protocols.** -> omnibase_core.models.**

@@ -4,7 +4,7 @@
 """ContainerWiringError — base class for DI-container-wiring failures.
 
 Hierarchy:
-    ModelOnexError                          (omnibase_core.models.errors)
+    ModelOnexError                          (omnibase_core.errors)
         └── ContainerWiringError            (this module)
                 └── ServiceResolutionError  (error_service_resolution.py)
 
@@ -21,7 +21,7 @@ container-internal bugs. See
 
 from __future__ import annotations
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 class ContainerWiringError(ModelOnexError):
