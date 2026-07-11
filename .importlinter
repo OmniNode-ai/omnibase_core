@@ -55,9 +55,11 @@ ignore_imports =
     # OMN-3210 burn-down: types -> models (TypedDict shape references, ~23 edges)
     omnibase_core.types -> omnibase_core.models.**
     omnibase_core.types.** -> omnibase_core.models.**
-    # OMN-3210 burn-down: errors -> models (~11 edges)
-    omnibase_core.errors -> omnibase_core.models.**
-    omnibase_core.errors.** -> omnibase_core.models.**
+    # OMN-3210 burn-down: errors -> models — RETIRED (OMN-14335): ModelOnexError,
+    # ModelFailFastDetails, and _ModelOnexErrorData were relocated DOWN into the
+    # errors package (models.* paths keep re-export shims); the ModelOnexWarning/
+    # ModelRegistryError/ModelCLIAdapter convenience re-exports were pruned from
+    # errors/__init__.py.
     # OMN-3210 burn-down: constants -> models — RETIRED (OMN-14221):
     # constants_handler_capabilities no longer imports ModelOnexError; the
     # get_capabilities_by_node_kind boundary now raises the built-in ValueError.
@@ -73,9 +75,12 @@ forbidden_modules =
     omnibase_core.validation
     omnibase_core.nodes
 ignore_imports =
-    # OMN-3210 burn-down: models -> validation (~18 edges)
-    omnibase_core.models.** -> omnibase_core.validation
-    omnibase_core.models.** -> omnibase_core.validation.**
+    # OMN-3210 burn-down: models -> validation — RETIRED (OMN-14331): all 18
+    # edges severed. Pure name/hex/topic-suffix validators relocated to
+    # utils/ (util_name_validation, util_hex_color, util_topic_suffix), workflow
+    # constants to constants/constants_workflow, the runtime-ops verb loader to
+    # utils/util_runtime_ops_verb_loader; migration TypedDicts and re-exported
+    # models now import their canonical types/ and models/validation/ sources.
     # OMN-3210 burn-down: models -> nodes (~4 edges)
     omnibase_core.models.** -> omnibase_core.nodes.**
 

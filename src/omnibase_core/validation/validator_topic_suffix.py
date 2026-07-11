@@ -17,6 +17,14 @@ Validation Rules:
     6. Segment 5 must match v{int} pattern (e.g., v1, v2)
     7. Must NOT start with environment prefix (dev., staging., prod.)
 
+The pure, model-free parsing/validation logic lives in
+:mod:`omnibase_core.utils.util_topic_suffix` (OMN-14331); this module wraps it to
+produce the public ``ModelTopicValidationResult`` / ``ModelTopicSuffixParts``
+return types. The topic-format constants (``TOPIC_PREFIX``, ``ENV_PREFIXES``,
+``TOPIC_SUFFIX_PATTERN``, ``KEBAB_CASE_PATTERN``, ``VERSION_PATTERN``,
+``EXPECTED_SEGMENT_COUNT``) are re-exported from the util for backwards
+compatibility of this module's public surface.
+
 Example:
     >>> from omnibase_core.validation.validator_topic_suffix import (
     ...     validate_topic_suffix,
@@ -46,68 +54,32 @@ Thread Safety:
 See Also:
     - ModelTopicSuffixParts: Parsed suffix parts model
     - ModelTopicValidationResult: Validation result model
+    - util_topic_suffix: pure, model-free topic-suffix checker
     - constants_topic_taxonomy: Topic taxonomy constants
 """
 
 from __future__ import annotations
 
-import re
 import warnings
-from typing import Final
 
 from omnibase_core.models.validation.model_topic_suffix_parts import (
-    VALID_TOPIC_KINDS,
     ModelTopicSuffixParts,
 )
 from omnibase_core.models.validation.model_topic_validation_result import (
     ModelTopicValidationResult,
 )
 
-# ==============================================================================
-# Constants
-# ==============================================================================
-
-# Required prefix for all ONEX topic suffixes
-TOPIC_PREFIX: Final[str] = "onex"
-
-# Environment prefixes that must NOT appear in suffixes
-# Suffixes should not include these - they are added separately when composing full topics
-ENV_PREFIXES: Final[frozenset[str]] = frozenset(
-    {"dev", "staging", "prod", "test", "local"}
+# Re-export the topic-format constants from the pure checker so this module's
+# historical public surface (and omnibase_core.validation.__init__) is unchanged.
+from omnibase_core.utils.util_topic_suffix import (
+    ENV_PREFIXES,
+    EXPECTED_SEGMENT_COUNT,
+    KEBAB_CASE_PATTERN,
+    TOPIC_PREFIX,
+    TOPIC_SUFFIX_PATTERN,
+    VERSION_PATTERN,
+    check_topic_suffix,
 )
-
-# Pattern for validating topic suffix format
-# Format: onex.{kind}.{producer}.{event-name}.v{n}
-# - onex: literal prefix
-# - kind: cmd|evt|dlq|intent|snapshot
-# - producer: kebab-case (lowercase letters, numbers, hyphens, starts with letter)
-# - event-name: kebab-case (lowercase letters, numbers, hyphens, starts with letter)
-# - version: v followed by one or more digits
-TOPIC_SUFFIX_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^onex\.(cmd|evt|dlq|intent|snapshot)\.[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\.v(\d+)$"
-)
-
-# Pattern for validating strict kebab-case identifiers
-# Rules:
-#   - Must start with lowercase letter
-#   - Must end with lowercase letter or digit (no trailing hyphen)
-#   - No consecutive hyphens allowed
-#   - Hyphens must be followed by letter/digit
-# Used for both external/API validation and internal producer/event-name validation
-KEBAB_CASE_PATTERN: Final[re.Pattern[str]] = re.compile(
-    r"^[a-z]([a-z0-9]*(-[a-z0-9]+)*)?$"
-)
-
-# Control characters that are invalid in topic suffixes
-# Includes: newline, carriage return, tab, null, vertical tab, form feed
-_CONTROL_CHARS: Final[str] = "\n\r\t\x00\x0b\x0c"
-
-# Pattern for validating version segment
-VERSION_PATTERN: Final[re.Pattern[str]] = re.compile(r"^v(\d+)$")
-
-# Expected number of segments in a valid suffix
-EXPECTED_SEGMENT_COUNT: Final[int] = 5
-
 
 # ==============================================================================
 # Validation Functions
@@ -157,115 +129,30 @@ def validate_topic_suffix(suffix: str) -> ModelTopicValidationResult:
         >>> "lowercase" in result.error.lower()
         True
     """
-    # Check for control characters (newlines, tabs, null, etc.) before any processing
-    # These should never be in a valid topic suffix
-    if any(c in suffix for c in _CONTROL_CHARS):
+    check = check_topic_suffix(suffix)
+    if (
+        not check.is_valid
+        or check.kind is None
+        or check.producer is None
+        or check.event_name is None
+        or check.version is None
+        or check.normalized_suffix is None
+    ):
+        # check.error is always populated when is_valid is False.
         return ModelTopicValidationResult.failure(
-            suffix,
-            "Suffix contains invalid control characters (newline, tab, etc.)",
+            suffix, check.error or "Invalid topic suffix"
         )
 
-    # Strip leading/trailing whitespace (spaces only at edges)
-    stripped = suffix.strip()
-
-    # Check for empty input
-    if not stripped:
-        return ModelTopicValidationResult.failure(suffix, "Suffix cannot be empty")
-
-    # Strict lowercase validation - no normalization
-    # Input must already be lowercase; uppercase or mixed case is rejected
-    if stripped != stripped.lower():
-        return ModelTopicValidationResult.failure(
-            suffix,
-            "Suffix must be lowercase. Use lowercase topic suffixes "
-            "(e.g., 'onex.evt.service.event.v1')",
-        )
-
-    # Split into segments for validation (input is already lowercase)
-    segments = stripped.split(".")
-    first_segment = segments[0]
-
-    # Check for environment prefix FIRST (must NOT be present in suffix)
-    # This check comes before segment count to give a more specific error message
-    # when an env prefix is detected (e.g., "dev.onex.evt.xxx.xxx.v1")
-    if first_segment in ENV_PREFIXES:
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Suffix must not start with environment prefix '{first_segment}.'. "
-            "Environment prefix should be added separately when composing full topic.",
-        )
-
-    # Check segment count
-    if len(segments) != EXPECTED_SEGMENT_COUNT:
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Suffix must have exactly {EXPECTED_SEGMENT_COUNT} segments "
-            f"(onex.kind.producer.event-name.version). Got {len(segments)} segments.",
-        )
-
-    # Check that suffix starts with 'onex.'
-    if first_segment != TOPIC_PREFIX:
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Suffix must start with '{TOPIC_PREFIX}.' prefix. Got: '{first_segment}.'",
-        )
-
-    # Extract segments
-    # segments[0] = "onex" (already validated)
-    kind = segments[1]
-    producer = segments[2]
-    event_name = segments[3]
-    version_str = segments[4]
-
-    # Validate kind token
-    if kind not in VALID_TOPIC_KINDS:
-        valid_kinds = ", ".join(sorted(VALID_TOPIC_KINDS))
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Kind must be one of: {valid_kinds}. Got: '{kind}'",
-        )
-
-    # Validate producer (kebab-case)
-    if not KEBAB_CASE_PATTERN.match(producer):
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Producer must be kebab-case (lowercase letters, digits, hyphens, "
-            f"starting with letter). Got: '{producer}'",
-        )
-
-    # Validate event-name (kebab-case)
-    if not KEBAB_CASE_PATTERN.match(event_name):
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Event name must be kebab-case (lowercase letters, digits, hyphens, "
-            f"starting with letter). Got: '{event_name}'",
-        )
-
-    # Validate version format
-    version_match = VERSION_PATTERN.match(version_str)
-    if not version_match:
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Version must match 'v{{int}}' pattern (e.g., v1, v2). Got: '{version_str}'",
-        )
-
-    version = int(version_match.group(1))
-    if version < 1:
-        return ModelTopicValidationResult.failure(
-            suffix,
-            f"Version number must be >= 1. Got: v{version}",
-        )
-
-    # All validations passed - create parsed parts
     parsed = ModelTopicSuffixParts(
-        kind=kind,
-        producer=producer,
-        event_name=event_name,
-        version=version,
-        raw_suffix=stripped,
+        kind=check.kind,
+        producer=check.producer,
+        event_name=check.event_name,
+        version=check.version,
+        raw_suffix=check.normalized_suffix,
     )
-
-    return ModelTopicValidationResult.success(suffix=stripped, parsed=parsed)
+    return ModelTopicValidationResult.success(
+        suffix=check.normalized_suffix, parsed=parsed
+    )
 
 
 def parse_topic_suffix(suffix: str) -> ModelTopicSuffixParts:
@@ -385,7 +272,7 @@ def is_valid_topic_suffix(suffix: str) -> bool:
         >>> is_valid_topic_suffix("onex.events.omnimemory.intent-stored.v1")
         False
     """
-    return validate_topic_suffix(suffix).is_valid
+    return check_topic_suffix(suffix).is_valid
 
 
 __all__ = [
