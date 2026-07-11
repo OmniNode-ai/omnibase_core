@@ -917,12 +917,11 @@ def main(argv: list[str] | None = None) -> int:
         # Derive the changed-file set: explicit args (pre-commit) else git diff (CI).
         changed = args.files if args.files else _git_changed_files(args.base_ref)
         if changed is None:
-            full = True  # fail-closed: cannot compute the diff -> full scan
+            # fail-closed: cannot compute the diff -> full scan (fallthrough below)
             scope_label = "full (diff unavailable — fail-closed)"
         else:
             reason = _escalation_reason(changed)
             if reason is not None:
-                full = True
                 scope_label = f"full (escalated: {reason})"
             else:
                 node_ids = _touched_node_ids(changed)
