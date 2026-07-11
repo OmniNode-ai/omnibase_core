@@ -1,0 +1,158 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable workflow: deploy-gate validator.
+# Canonical, org-wide source — all repos call this via uses: instead of
+# running their own copy of validate_pr_deploy_required.py.
+#
+# Relocated omniclaude -> omnibase_core (OMN-14277). Previously hosted in
+# omniclaude (the top plugin layer), which inverted the compat -> core ->
+# spi -> infra layering: omnibase_core / omnibase_infra / omnimarket must
+# not depend up-layer on omniclaude. The OMN-14260 incident (2026-07-10)
+# amplified its blast radius through exactly that inversion — a bad change
+# to the omniclaude@main reusable broke Deploy Gate on every core/infra
+# caller at once. omnibase_core is a low layer those repos may legitimately
+# depend on for CI gating.
+#
+# Lineage: canonical validator OMN-9685 (omnibase_core PR #902); centralised
+# OMN-9734 (DGM-Phase6); OCC contract resolution OMN-11423 (contracts read
+# from onex_change_control, not the caller repo).
+#
+# Usage in caller repos:
+#   jobs:
+#     deploy-gate:
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/deploy-gate-reusable.yml@main
+#       secrets: inherit
+#
+# The caller job key and this reusable's job name are BOTH `deploy-gate`, so
+# the surfaced required-status-check context is `deploy-gate / deploy-gate`
+# (caller-job / reusable-job) — identical to the prior omniclaude-hosted
+# reusable. Do NOT rename either without a coordinated branch-protection
+# required-context update.
+
+name: Deploy Gate (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      pr-number:
+        description: PR number to validate (defaults to github.event.pull_request.number)
+        type: number
+        required: false
+        default: 0
+      contracts-dir:
+        description: >
+          Deprecated (OMN-11423). Contracts are now read from onex_change_control;
+          this input is ignored. Remove it from your caller workflow.
+        type: string
+        required: false
+        default: contracts
+
+jobs:
+  deploy-gate:
+    name: deploy-gate
+    # OMNI_RUNNER_SELECTOR_V1 - trusted CI defaults to self-hosted omnibase-ci; public forks default to ubuntu-latest
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout caller repo
+        uses: actions/checkout@v7
+
+      # OMN-12564 / OMN-14277: the OCC checkout logic lives in omnibase_core
+      # (this repo), but the job's GITHUB_WORKSPACE holds the *caller* repo's
+      # tree. Pull just the hardened checkout script + validator from
+      # omnibase_core@main into a side path so the steps below can invoke them
+      # without polluting the caller checkout.
+      - name: Fetch deploy-gate support scripts (omnibase_core)
+        if: github.event_name != 'merge_group'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: main
+          path: .deploy-gate-support
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/deploy-gate/checkout-occ-contracts.sh
+            .github/actions/deploy-gate/validate_pr_deploy_required.py
+          sparse-checkout-cone-mode: false
+
+      - name: Resolve deploy-gate OCC evidence source
+        if: github.event_name != 'merge_group'
+        id: resolve_occ_evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr-number != 0 && inputs.pr-number || github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::OCC evidence-source resolution requires GITHUB_TOKEN"
+            exit 1
+          fi
+
+          if ! changed_files="$(gh pr diff "$PR_NUMBER" --name-only 2>/tmp/deploy-gate-gh-diff.err | tr '\n' ' ')"; then
+            base_ref="${GITHUB_BASE_REF:-main}"
+            echo "::notice::gh pr diff failed; falling back to local git diff against origin/${base_ref}"
+            cat /tmp/deploy-gate-gh-diff.err || true
+            git fetch origin "$base_ref" --no-tags
+            changed_files="$(git diff --name-only "origin/${base_ref}" HEAD | tr '\n' ' ')"
+          fi
+          pr_body="$(gh pr view "$PR_NUMBER" --json body -q '.body')"
+
+          python "${GITHUB_WORKSPACE}/.deploy-gate-support/.github/actions/deploy-gate/validate_pr_deploy_required.py" \
+            --changed-files "$changed_files" \
+            --pr-body "$pr_body" \
+            --resolve-occ-ref \
+            --default-occ-ref dev \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Checkout onex_change_control contracts (canonical contract source)
+        if: github.event_name != 'merge_group' && steps.resolve_occ_evidence.outputs.deploy_gate_required == 'true'
+        shell: bash
+        # OMN-12564: the OCC checkout is delegated to a standalone, unit-tested
+        # script that bounds BOTH the fetch AND the checkout with a hard
+        # `timeout`. The old inline step only bounded the fetch, so a wedged
+        # blobless-partial-clone checkout (`git -C _occ checkout --force
+        # FETCH_HEAD`) spun until the 25-min job timeout on #1786/#1788. The
+        # script drops `--filter=blob:none` for a deterministic full-ref
+        # checkout and, on stall, emits a diagnostic block (ref, fetch command,
+        # elapsed, last git subprocess, process tree) so future hangs are
+        # diagnosable from the log alone. The step-level `timeout-minutes` below
+        # is the outer bound; the script is the inner, self-diagnosing
+        # git-level bound.
+        timeout-minutes: 12
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OCC_REF: ${{ steps.resolve_occ_evidence.outputs.occ_ref }}
+          OCC_REPO_URL: https://github.com/OmniNode-ai/onex_change_control.git
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::OCC contracts checkout requires GITHUB_TOKEN"
+            exit 1
+          fi
+
+          bash "${GITHUB_WORKSPACE}/.deploy-gate-support/scripts/deploy-gate/checkout-occ-contracts.sh"
+
+      - name: Skip on merge_group
+        if: github.event_name == 'merge_group'
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "::notice::deploy-gate: merge_group event — skipped (validated on PR branch)."
+
+      - name: Run deploy gate (canonical composite action)
+        if: github.event_name != 'merge_group'
+        uses: OmniNode-ai/omnibase_core/.github/actions/deploy-gate@main
+        with:
+          pr-number: ${{ inputs.pr-number != 0 && inputs.pr-number || github.event.pull_request.number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          contracts-dir: _occ/contracts
