@@ -8,7 +8,7 @@ the ONEX dashboard models. Covers:
 - validate_hex_color (required color)
 - validate_hex_color_optional (optional color)
 - validate_hex_color_mapping (mapping of colors)
-- HexColorValidator class
+- UtilHexColorValidator class
 - HEX_COLOR_PATTERN regex
 """
 
@@ -17,9 +17,9 @@ import re
 import pytest
 from pydantic import BaseModel, ValidationError, field_validator
 
-from omnibase_core.validation.validator_hex_color import (
+from omnibase_core.utils.util_hex_color import (
     HEX_COLOR_PATTERN,
-    HexColorValidator,
+    UtilHexColorValidator,
     validate_hex_color,
     validate_hex_color_mapping,
     validate_hex_color_optional,
@@ -274,55 +274,55 @@ class TestValidateHexColorMapping:
 
 
 # =============================================================================
-# HexColorValidator Class Tests
+# UtilHexColorValidator Class Tests
 # =============================================================================
 
 
 @pytest.mark.unit
-class TestHexColorValidator:
-    """Tests for HexColorValidator class."""
+class TestUtilHexColorValidator:
+    """Tests for UtilHexColorValidator class."""
 
     def test_validate_valid_color(self) -> None:
-        """Test HexColorValidator.validate with valid color."""
-        result = HexColorValidator.validate("#FF0000")
+        """Test UtilHexColorValidator.validate with valid color."""
+        result = UtilHexColorValidator.validate("#FF0000")
         assert result == "#FF0000"
 
     def test_validate_invalid_color(self) -> None:
-        """Test HexColorValidator.validate with invalid color."""
+        """Test UtilHexColorValidator.validate with invalid color."""
         with pytest.raises(ValueError):
-            HexColorValidator.validate("invalid")
+            UtilHexColorValidator.validate("invalid")
 
     def test_validate_optional_none(self) -> None:
-        """Test HexColorValidator.validate_optional with None."""
-        result = HexColorValidator.validate_optional(None)
+        """Test UtilHexColorValidator.validate_optional with None."""
+        result = UtilHexColorValidator.validate_optional(None)
         assert result is None
 
     def test_validate_optional_valid(self) -> None:
-        """Test HexColorValidator.validate_optional with valid color."""
-        result = HexColorValidator.validate_optional("#FF0000")
+        """Test UtilHexColorValidator.validate_optional with valid color."""
+        result = UtilHexColorValidator.validate_optional("#FF0000")
         assert result == "#FF0000"
 
     def test_validate_optional_invalid(self) -> None:
-        """Test HexColorValidator.validate_optional with invalid color."""
+        """Test UtilHexColorValidator.validate_optional with invalid color."""
         with pytest.raises(ValueError):
-            HexColorValidator.validate_optional("invalid")
+            UtilHexColorValidator.validate_optional("invalid")
 
     def test_validate_mapping_valid(self) -> None:
-        """Test HexColorValidator.validate_mapping with valid mapping."""
+        """Test UtilHexColorValidator.validate_mapping with valid mapping."""
         colors = {"red": "#FF0000", "green": "#00FF00"}
-        result = HexColorValidator.validate_mapping(colors)
+        result = UtilHexColorValidator.validate_mapping(colors)
         assert result == colors
 
     def test_validate_mapping_invalid(self) -> None:
-        """Test HexColorValidator.validate_mapping with invalid color."""
+        """Test UtilHexColorValidator.validate_mapping with invalid color."""
         with pytest.raises(ValueError):
-            HexColorValidator.validate_mapping({"bad": "invalid"})
+            UtilHexColorValidator.validate_mapping({"bad": "invalid"})
 
     def test_pattern_class_variable(self) -> None:
         """Test that PATTERN class variable is accessible."""
-        assert HexColorValidator.PATTERN is not None
-        assert isinstance(HexColorValidator.PATTERN, re.Pattern)
-        assert HexColorValidator.PATTERN is HEX_COLOR_PATTERN
+        assert UtilHexColorValidator.PATTERN is not None
+        assert isinstance(UtilHexColorValidator.PATTERN, re.Pattern)
+        assert UtilHexColorValidator.PATTERN is HEX_COLOR_PATTERN
 
 
 # =============================================================================
@@ -431,9 +431,9 @@ class TestImports:
 
     def test_import_from_validator_module(self) -> None:
         """Test that all exports are importable from the module."""
-        from omnibase_core.validation.validator_hex_color import (
+        from omnibase_core.utils.util_hex_color import (
             HEX_COLOR_PATTERN,
-            HexColorValidator,
+            UtilHexColorValidator,
             validate_hex_color,
             validate_hex_color_mapping,
             validate_hex_color_optional,
@@ -442,14 +442,14 @@ class TestImports:
         assert callable(validate_hex_color)
         assert callable(validate_hex_color_optional)
         assert callable(validate_hex_color_mapping)
-        assert HexColorValidator is not None
+        assert UtilHexColorValidator is not None
         assert HEX_COLOR_PATTERN is not None
 
     def test_import_from_validation_package(self) -> None:
         """Test that exports are available from validation package."""
         from omnibase_core.validation import (
             HEX_COLOR_PATTERN,
-            HexColorValidator,
+            UtilHexColorValidator,
             validate_hex_color,
             validate_hex_color_mapping,
             validate_hex_color_optional,
@@ -458,7 +458,7 @@ class TestImports:
         assert callable(validate_hex_color)
         assert callable(validate_hex_color_optional)
         assert callable(validate_hex_color_mapping)
-        assert HexColorValidator is not None
+        assert UtilHexColorValidator is not None
         assert HEX_COLOR_PATTERN is not None
 
 
@@ -506,7 +506,7 @@ class TestEdgeCases:
         """Test that pattern is thread-safe (immutable)."""
         # Compiled regex patterns are immutable and thread-safe
         pattern1 = HEX_COLOR_PATTERN
-        pattern2 = HexColorValidator.PATTERN
+        pattern2 = UtilHexColorValidator.PATTERN
         assert pattern1 is pattern2
         # Pattern should not change
         assert pattern1.pattern == pattern2.pattern

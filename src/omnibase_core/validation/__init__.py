@@ -282,6 +282,23 @@ def __getattr__(name: str) -> type:
 
 # Import FSM analysis
 # Import workflow linter
+# Import workflow constants (OMN-PR255; relocated to constants/ under OMN-14331)
+from omnibase_core.constants.constants_workflow import (
+    MAX_TIMEOUT_MS,
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+    VALID_STEP_TYPES,
+)
+
+# Import hex color validators (OMN-1284; relocated to utils/ under OMN-14331)
+from omnibase_core.utils.util_hex_color import (
+    HEX_COLOR_PATTERN,
+    UtilHexColorValidator,
+    validate_hex_color,
+    validate_hex_color_mapping,
+    validate_hex_color_optional,
+)
+
 from .checker_workflow_linter import WorkflowLinter
 from .validator_contracts import (
     validate_contracts_directory,
@@ -289,15 +306,6 @@ from .validator_contracts import (
     validate_yaml_file,
 )
 from .validator_fsm_analysis import analyze_fsm
-
-# Import hex color validators (OMN-1284)
-from .validator_hex_color import (
-    HEX_COLOR_PATTERN,
-    HexColorValidator,
-    validate_hex_color,
-    validate_hex_color_mapping,
-    validate_hex_color_optional,
-)
 from .validator_patterns import (
     RULE_UNKNOWN,
     ValidatorPatterns,
@@ -336,14 +344,6 @@ from .validator_workflow import (
     validate_execution_mode_string,
     validate_unique_step_ids,
     validate_workflow_definition,
-)
-
-# Import workflow constants (OMN-PR255)
-from .validator_workflow_constants import (
-    MAX_TIMEOUT_MS,
-    MIN_TIMEOUT_MS,
-    RESERVED_STEP_TYPES,
-    VALID_STEP_TYPES,
 )
 
 # Import common validators (OMN-1054)
@@ -560,7 +560,7 @@ __all__ = [
     "ErrorCode",
     # Hex color validators (OMN-1284)
     "HEX_COLOR_PATTERN",
-    "HexColorValidator",
+    "UtilHexColorValidator",
     "validate_hex_color",
     "validate_hex_color_optional",
     "validate_hex_color_mapping",
