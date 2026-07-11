@@ -233,11 +233,10 @@ class ModelEventBusSubcontract(BaseModel):
     @classmethod
     def validate_topic_suffixes(cls, topics: list[str]) -> list[str]:
         """Validate each topic suffix against ONEX naming convention."""
-        # Import here to avoid circular import at module load time
-        from omnibase_core.validation import validate_topic_suffix
+        from omnibase_core.utils.util_topic_suffix import check_topic_suffix
 
         for topic in topics:
-            result = validate_topic_suffix(topic)
+            result = check_topic_suffix(topic)
             if not result.is_valid:
                 raise ValueError(f"Invalid topic suffix '{topic}': {result.error}")
         return topics

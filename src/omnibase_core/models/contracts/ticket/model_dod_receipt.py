@@ -463,7 +463,7 @@ class ModelDodReceipt(BaseModel):
         if not normalized:
             raise ValueError("mutation_verb must contain non-whitespace characters")
         # Local import avoids an import-time cycle through the validation package.
-        from omnibase_core.validation.runtime_ops_verb_loader import (
+        from omnibase_core.utils.util_runtime_ops_verb_loader import (
             load_runtime_ops_verb_allowlist,
         )
 
