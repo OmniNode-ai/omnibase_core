@@ -107,6 +107,14 @@ class ModelAdequacyReceipt(BaseModel):
                 "meets_target=False requires an explicit uncovered_waiver "
                 "(a node below target cannot be marked canonical silently)"
             )
+        if self.meets_target and self.selected_count == 0:
+            # Degenerate pass: coverage cannot be certified met over zero inputs
+            # (e.g. target=0 with an empty pool). Flagged by canon-inventory's
+            # seam review — the gate must not accept an input-less "pass".
+            raise ValueError(
+                "meets_target=True requires selected_count >= 1 "
+                "(coverage cannot be certified over zero inputs)"
+            )
         return self
 
 

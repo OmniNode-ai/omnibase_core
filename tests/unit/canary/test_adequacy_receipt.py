@@ -165,6 +165,26 @@ def test_receipt_rejects_waiver_when_target_met() -> None:
         )
 
 
+def test_receipt_rejects_degenerate_zero_input_pass() -> None:
+    # meets_target=True with zero inputs is a degenerate pass (coverage measured
+    # over nothing) — canon-inventory's seam-review catch.
+    with pytest.raises(ValueError, match="selected_count >= 1"):
+        ModelAdequacyReceipt(
+            node_id="n",
+            handler_module="m",
+            handler_module_sha256="sha256:x",
+            recorded_at="2026-07-11T00:00:00+00:00",
+            candidate_count=0,
+            selected_count=0,
+            selected_input_hashes=[],
+            branch_coverage_pct=0.0,
+            coverage_target=0.0,
+            meets_target=True,
+            uncovered_waiver=None,
+            volatile_mask=[],
+        )
+
+
 # --- coverage-driven (skipped under --cov) ---
 
 
