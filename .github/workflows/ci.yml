@@ -1400,6 +1400,44 @@ jobs:
         run: |
           uv run python -m omnibase_core.validators.no_new_os_environ --all --src src/
 
+  # Non-canonical lifecycle-class ratchet (OMN-14350, omnibase_core canary)
+  # Blocks any NEW Service/Engine/Adapter/Router/Daemon/Manager/Runner/Registry/
+  # Controller/Server/Client class outside the frozen allowlist; --check-stale also
+  # fails when an allowlisted FQN no longer exists (count-only-down discipline).
+  no-noncanonical-lifecycle-classes:
+    name: Non-Canonical Lifecycle-Class Ratchet (OMN-14350)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Ratchet non-canonical lifecycle-word classes against frozen allowlist (OMN-14350)
+        run: |
+          uv run python -m omnibase_core.validators.no_noncanonical_lifecycle_classes --check-stale src/omnibase_core
+
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
@@ -1422,7 +1460,7 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, spdx-headers]
     if: always()
 
     steps:
@@ -1457,6 +1495,7 @@ jobs:
           aislop="${{ needs.aislop-patterns.result }}"
           doc_content="${{ needs.doc-content-scan.result }}"
           no_new_os_environ="${{ needs.no-new-os-environ.result }}"
+          noncanonical_classes="${{ needs.no-noncanonical-lifecycle-classes.result }}"
           spdx_headers="${{ needs.spdx-headers.result }}"
 
           # Report each check
@@ -1485,6 +1524,7 @@ jobs:
           echo "| AI Slop Patterns (OMN-13574) | $aislop |" >> $GITHUB_STEP_SUMMARY
           echo "| Doc-Content Scan (OMN-13572) | $doc_content |" >> $GITHUB_STEP_SUMMARY
           echo "| No New os.environ Reads (OMN-13566) | $no_new_os_environ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Non-Canonical Lifecycle-Class Ratchet (OMN-14350) | $noncanonical_classes |" >> $GITHUB_STEP_SUMMARY
           echo "| SPDX Headers (OMN-13576) | $spdx_headers |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
@@ -1511,6 +1551,7 @@ jobs:
              [[ "$aislop" == "success" ]] && \
              [[ "$doc_content" == "success" ]] && \
              [[ "$no_new_os_environ" == "success" ]] && \
+             [[ "$noncanonical_classes" == "success" ]] && \
              [[ "$spdx_headers" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
