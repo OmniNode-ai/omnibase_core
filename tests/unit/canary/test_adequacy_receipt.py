@@ -185,6 +185,47 @@ def test_receipt_rejects_degenerate_zero_input_pass() -> None:
         )
 
 
+def test_receipt_forge_below_target_claiming_met_is_rejected() -> None:
+    # THE bypass verify-1705 found: a hand-built receipt claiming meets_target=True
+    # at 10% coverage against an 80% target, with no waiver. Must be REJECTED — the
+    # gate cannot trust meets_target unless it is derived from the numbers.
+    with pytest.raises(ValueError, match="meets_target must equal"):
+        ModelAdequacyReceipt(
+            node_id="n",
+            handler_module="m",
+            handler_module_sha256="sha256:x",
+            recorded_at="2026-07-11T00:00:00+00:00",
+            candidate_count=1,
+            selected_count=1,
+            selected_input_hashes=["sha256:a"],
+            branch_coverage_pct=10.0,
+            coverage_target=80.0,
+            meets_target=True,
+            uncovered_waiver=None,
+            volatile_mask=[],
+        )
+
+
+def test_receipt_forge_above_target_claiming_not_met_is_rejected() -> None:
+    # Mirror forge: above target but claiming meets_target=False (would spuriously
+    # demand/allow a waiver on a node that actually passed). Also REJECTED.
+    with pytest.raises(ValueError, match="meets_target must equal"):
+        ModelAdequacyReceipt(
+            node_id="n",
+            handler_module="m",
+            handler_module_sha256="sha256:x",
+            recorded_at="2026-07-11T00:00:00+00:00",
+            candidate_count=1,
+            selected_count=1,
+            selected_input_hashes=["sha256:a"],
+            branch_coverage_pct=90.0,
+            coverage_target=80.0,
+            meets_target=False,
+            uncovered_waiver=ModelUncoveredWaiver(reason="x", uncovered_branch_count=0),
+            volatile_mask=[],
+        )
+
+
 # --- coverage-driven (skipped under --cov) ---
 
 

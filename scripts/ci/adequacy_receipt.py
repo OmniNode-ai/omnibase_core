@@ -100,6 +100,13 @@ class ModelAdequacyReceipt(BaseModel):
             raise ValueError("selected_count exceeds candidate_count")
         if self.selected_count != len(self.selected_input_hashes):
             raise ValueError("selected_count != len(selected_input_hashes)")
+        # meets_target must be DERIVED from the numbers, not asserted. Without this,
+        # a persisted/hand-edited receipt could claim meets_target=True at 10%
+        # coverage with no waiver and slip through the gate (verify-1705 MEDIUM).
+        if self.meets_target != (self.branch_coverage_pct >= self.coverage_target):
+            raise ValueError(
+                "meets_target must equal branch_coverage_pct >= coverage_target"
+            )
         if self.meets_target and self.uncovered_waiver is not None:
             raise ValueError("uncovered_waiver forbidden when meets_target=True")
         if not self.meets_target and self.uncovered_waiver is None:
