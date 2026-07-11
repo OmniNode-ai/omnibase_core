@@ -17,6 +17,7 @@ import pytest
 from scripts.ci.check_import_ratchet import (
     FROZEN_PROTOCOLS_MODELS_MAX,
     HARD_FAIL_HUBS,
+    HUB_IMPORTER_RELOCATIONS,
     HUBS,
     WARN_HUBS,
     EdgeSets,
@@ -113,6 +114,21 @@ def test_hard_fail_hub_flags_new_importer(
     assert f"hub:{hub}" in find_violations(injected, baseline)
     # And it is NOT downgraded to a warning.
     assert f"hub:{hub}" not in find_warnings(injected, baseline)
+
+
+def test_models_to_nodes_service_wrapper_relocation_is_not_new_mixins_growth(
+    current: EdgeSets, baseline: EdgeSets
+) -> None:
+    """OMN-14291 moved existing service wrappers; unrelated mixins growth still fails."""
+    for new_importer, old_importer in HUB_IMPORTER_RELOCATIONS["mixins"].items():
+        assert new_importer in current["hub_inbound"]["mixins"]
+        assert old_importer in baseline["hub_inbound"]["mixins"]
+
+    violations = find_violations(current, baseline)
+    assert "hub:mixins" not in violations
+
+    injected = _inject_hub_importer(current, "mixins")
+    assert "hub:mixins" in find_violations(injected, baseline)
 
 
 @pytest.mark.parametrize("hub", WARN_HUBS)

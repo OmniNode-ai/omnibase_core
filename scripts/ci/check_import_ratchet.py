@@ -63,6 +63,28 @@ HARD_FAIL_HUBS: tuple[str, ...] = ("mixins", "protocols")
 # High-churn, RSD-doomed hubs whose new importers only WARN (non-blocking).
 WARN_HUBS: tuple[str, ...] = ("utils",)
 
+# OMN-14291 relocates four service-wrapper framework bases from
+# ``models.services`` to ``nodes`` to retire the models -> nodes back-edge. They
+# are not new mixins-hub consumers; they are the same wrappers at their correct
+# architectural address. Keep the alias narrow so unrelated new mixins importers
+# still hard-fail.
+HUB_IMPORTER_RELOCATIONS: dict[str, dict[str, str]] = {
+    "mixins": {
+        "omnibase_core.nodes.node_service_compute": (
+            "omnibase_core.models.services.model_service_compute"
+        ),
+        "omnibase_core.nodes.node_service_effect": (
+            "omnibase_core.models.services.model_service_effect"
+        ),
+        "omnibase_core.nodes.node_service_orchestrator": (
+            "omnibase_core.models.services.model_service_orchestrator"
+        ),
+        "omnibase_core.nodes.node_service_reducer": (
+            "omnibase_core.models.services.model_service_reducer"
+        ),
+    },
+}
+
 # Frozen ceiling for protocols -> models direct edges. This is the headline
 # "no permanent exception" number: it may only DECREASE (retirement = RSD
 # canonical rewrite). Growth past this hard-fails; lowering it is sanctioned.
@@ -180,9 +202,13 @@ def write_baseline(current: EdgeSets, path: Path = BASELINE_PATH) -> None:
 
 
 def _new_hub_importers(current: EdgeSets, baseline: EdgeSets, hub: str) -> list[str]:
+    baseline_importers = set(baseline["hub_inbound"].get(hub, []))
+    relocations = HUB_IMPORTER_RELOCATIONS.get(hub, {})
     return sorted(
-        set(current["hub_inbound"].get(hub, []))
-        - set(baseline["hub_inbound"].get(hub, []))
+        importer
+        for importer in current["hub_inbound"].get(hub, [])
+        if importer not in baseline_importers
+        and relocations.get(importer) not in baseline_importers
     )
 
 
