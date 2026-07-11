@@ -459,6 +459,19 @@ jobs:
       - name: Run import-layering growth ratchet (protocols->models + hubs)
         run: uv run python scripts/ci/check_import_ratchet.py
 
+      # Canonical handler-shape GROWTH RATCHET (OMN-14355) — WARN-only-on-baseline.
+      # compliance_sweep checks handler hygiene but is blind to handler SHAPE, so a
+      # non-canonical handler passes green CI. This classifies each node's
+      # contract-declared handler (definition B: typed-payload handle(request)->
+      # response, adapted by the shared runtime, no envelope in the core), WARNs the
+      # baselined debt, and HARD-FAILS a NEW non-canonical node or baseline growth. A
+      # baselined node flips canonical only with an adequacy receipt (OMN-14353) —
+      # a shape flip alone is not proof of equivalence. Canary scope = omnibase_core;
+      # fan-out to omnimarket/omnibase_infra is a follow-on. Runs in this job so it
+      # inherits the quality-gate blocking wiring.
+      - name: Run canonical handler-shape growth ratchet
+        run: uv run python scripts/ci/canonical_handler_shape.py
+
       - name: Import layering summary
         if: always()
         run: |
