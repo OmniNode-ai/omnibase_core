@@ -442,6 +442,22 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: no-noncanonical-lifecycle-classes
+  name: Non-canonical lifecycle-class ratchet (OMN-14350)
+  description: >
+    Ratchet gate (OMN-14350) flagging CamelCase classes whose name carries a non-canonical lifecycle type-word
+    (Service, Engine, Adapter, Router, Daemon, Manager, Runner, Registry, Controller, Server, Client).
+    Blocks any NEW hard-fail class outside the consuming repo's frozen allowlist; the allowlist is a ratchet
+    that may only shrink. Consumers reference this hook by id and pass their own baseline + scan root
+    via args — e.g. args: [--allowlist, .onex_ratchets/noncanonical_class_allowlist.yaml, src/<pkg>] —
+    plus files: to scope the trigger. Enforces the canonical 3-primitives architecture (CONTRACT/NODE/HANDLER,
+    OMN-12525).
+  language: python
+  entry: python -m omnibase_core.validators.no_noncanonical_lifecycle_classes
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: validate-no-transport-imports
   name: Transport Import Guard (ARCH-002, OMN-13283)
   description: >
