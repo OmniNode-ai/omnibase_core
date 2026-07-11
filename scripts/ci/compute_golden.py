@@ -21,7 +21,10 @@ from typing import Any, Protocol
 
 
 class _JsonDumpable(Protocol):
-    def model_dump(self, *, mode: str = ...) -> dict[str, Any]: ...
+    def model_dump(self, *, mode: str = ...) -> dict[str, Any]:
+        # Protocol stub body: never executed (structural typing only).
+        # `pass` (not `...`) avoids CodeQL py/ineffectual-statement (alert #2591).
+        pass
 
 
 def _canonical(payload: Any) -> str:
