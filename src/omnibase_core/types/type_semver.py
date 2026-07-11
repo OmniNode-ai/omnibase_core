@@ -30,23 +30,30 @@ class ProtocolSemVer(Protocol):
     """Structural read surface of a semantic-version value (see ``ModelSemVer``)."""
 
     @property
-    def major(self) -> int: ...
+    def major(self) -> int:
+        raise NotImplementedError
 
     @property
-    def minor(self) -> int: ...
+    def minor(self) -> int:
+        raise NotImplementedError
 
     @property
-    def patch(self) -> int: ...
+    def patch(self) -> int:
+        raise NotImplementedError
 
     @property
-    def prerelease(self) -> tuple[str | int, ...] | None: ...
+    def prerelease(self) -> tuple[str | int, ...] | None:
+        raise NotImplementedError
 
     @property
-    def build(self) -> tuple[str, ...] | None: ...
+    def build(self) -> tuple[str, ...] | None:
+        raise NotImplementedError
 
-    def to_string(self) -> str: ...
+    def to_string(self) -> str:
+        raise NotImplementedError
 
-    def is_prerelease(self) -> bool: ...
+    def is_prerelease(self) -> bool:
+        raise NotImplementedError
 
 
 __all__ = ["ProtocolSemVer"]
