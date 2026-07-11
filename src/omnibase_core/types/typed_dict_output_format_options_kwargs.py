@@ -15,7 +15,10 @@ from typing import TYPE_CHECKING, NotRequired, TypedDict
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
 
-# Use TYPE_CHECKING to avoid circular import
+# OMN-14337 residual: this TypedDict is the constructor-kwargs shape for
+# ModelOutputFormatOptions (custom_options: dict[str, ModelValue]); it is
+# **-unpacked into that Pydantic model, so custom_options must stay
+# dict[str, ModelValue]. Deferred to OMN-14339 (narrowed .importlinter line).
 if TYPE_CHECKING:
     from omnibase_core.models.infrastructure.model_value import ModelValue
 

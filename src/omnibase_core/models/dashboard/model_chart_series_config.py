@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.validation.validator_hex_color import validate_hex_color_optional
+from omnibase_core.utils.util_hex_color import validate_hex_color_optional
 
 __all__ = ("ModelChartSeriesConfig",)
 

@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Shadow test-selection metrics harvester (OMN-14342).
+#
+# Stage 2 of the two-stage durable store (Option A). CI's shadow-compare job
+# uploads an ephemeral `shadow-record-<run_id>` artifact on every dev PR. This
+# workflow runs in the trusted base-repo context after CI completes, downloads
+# that record, and appends it (dedup by repo+head_sha+pr_number) to an
+# append-only NDJSON on the dedicated `ci-shadow-metrics` orphan branch — a
+# durable, replayable log per the deterministic-truth doctrine, with no CI->LAN
+# coupling and no external infra/secrets. Promote to a Postgres projection later
+# if query volume justifies.
+name: Shadow Metrics Harvest
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: shadow-metrics-harvest
+  cancel-in-progress: false
+
+jobs:
+  harvest:
+    name: Harvest shadow records
+    runs-on: ubuntu-latest
+    # Harvest only from PR-triggered CI runs (the shadow record only exists there);
+    # workflow_dispatch is allowed for manual backfill.
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || github.event.workflow_run.event == 'pull_request'
+    steps:
+      - name: Checkout product branch (for the append script)
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Download shadow record(s) from the triggering run
+        if: github.event_name == 'workflow_run'
+        continue-on-error: true # a run with no shadow record (docs-only PR) is normal
+        uses: actions/download-artifact@v7
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          pattern: shadow-record-*
+          path: records
+
+      - name: Append records to ci-shadow-metrics NDJSON
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NDJSON_PATH: shadow_metrics.ndjson
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+          records=(records/**/*.json)
+          if [ ${#records[@]} -eq 0 ]; then
+            echo "No shadow records to harvest (nothing uploaded by the triggering run)."
+            exit 0
+          fi
+
+          # Keep an absolute path to the append script before we clone the
+          # orphan branch into a subdirectory.
+          APPEND_SCRIPT="$PWD/scripts/ci/shadow_metrics_append.py"
+          RECORDS_DIR="$PWD/records"
+
+          AUTH="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$AUTH" ci-shadow-metrics >/dev/null 2>&1; then
+            git clone --branch ci-shadow-metrics --single-branch "$AUTH" _metrics
+          else
+            git clone --depth 1 "$AUTH" _metrics
+            (
+              cd _metrics
+              git checkout --orphan ci-shadow-metrics
+              git rm -rf . >/dev/null 2>&1 || true
+              printf '# CI shadow test-selection metrics (OMN-14342)\n\nAppend-only NDJSON log. One ModelShadowRecord per dev-PR CI run.\nSchema: scripts/ci/test_selection_shadow_models.py on the product branch.\n' > README.md
+            )
+          fi
+
+          python3 "$APPEND_SCRIPT" \
+            --records-dir "$RECORDS_DIR" \
+            --ndjson "$PWD/_metrics/${NDJSON_PATH}"
+
+          cd _metrics
+          git config user.name "onex-shadow-harvester[bot]"
+          git config user.email "shadow-harvester@omninode.ai"
+          git add "${NDJSON_PATH}" README.md
+          if git diff --cached --quiet; then
+            echo "No new records to commit."
+            exit 0
+          fi
+          git commit -m "chore(OMN-14342): harvest shadow test-selection record(s)"
+          git push "$AUTH" ci-shadow-metrics

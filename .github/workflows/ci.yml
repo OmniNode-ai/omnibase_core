@@ -451,6 +451,27 @@ jobs:
       - name: Run import-linter (intra-core dependency layering)
         run: uv run lint-imports
 
+      # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210) — blocking.
+      # import-linter's wildcard ignores are permissive; this freezes protocols->models
+      # (65) and the utils/mixins/protocols hub-inbound sets non-increasing and hard-fails
+      # any NEW edge/importer. Retirement = the RSD canonical rewrite. Runs in this job so
+      # it inherits the quality-gate `needs: [... lint-imports ...]` blocking wiring.
+      - name: Run import-layering growth ratchet (protocols->models + hubs)
+        run: uv run python scripts/ci/check_import_ratchet.py
+
+      # Canonical handler-shape GROWTH RATCHET (OMN-14355) — WARN-only-on-baseline.
+      # compliance_sweep checks handler hygiene but is blind to handler SHAPE, so a
+      # non-canonical handler passes green CI. This classifies each node's
+      # contract-declared handler (definition B: typed-payload handle(request)->
+      # response, adapted by the shared runtime, no envelope in the core), WARNs the
+      # baselined debt, and HARD-FAILS a NEW non-canonical node or baseline growth. A
+      # baselined node flips canonical only with an adequacy receipt (OMN-14353) —
+      # a shape flip alone is not proof of equivalence. Canary scope = omnibase_core;
+      # fan-out to omnimarket/omnibase_infra is a follow-on. Runs in this job so it
+      # inherits the quality-gate blocking wiring.
+      - name: Run canonical handler-shape growth ratchet
+        run: uv run python scripts/ci/canonical_handler_shape.py
+
       - name: Import layering summary
         if: always()
         run: |
@@ -463,6 +484,8 @@ jobs:
           echo "- Protocols (seam) must not import domain/behavioral layers" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Contract: .importlinter | Known back-edges frozen + burned down under OMN-3210" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Growth ratchet (OMN-14340): protocols->models frozen at 65 (hard-fail) + mixins/protocols hub-inbound non-increasing (hard-fail); utils hub warn-only (high-churn, RSD-doomed). See scripts/ci/check_import_ratchet.py. Retirement = RSD canonical rewrite." >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Deterministic Skill Routing Gate (OMN-8765) — enforces that every Tier 1
@@ -1377,6 +1400,44 @@ jobs:
         run: |
           uv run python -m omnibase_core.validators.no_new_os_environ --all --src src/
 
+  # Non-canonical lifecycle-class ratchet (OMN-14350, omnibase_core canary)
+  # Blocks any NEW Service/Engine/Adapter/Router/Daemon/Manager/Runner/Registry/
+  # Controller/Server/Client class outside the frozen allowlist; --check-stale also
+  # fails when an allowlisted FQN no longer exists (count-only-down discipline).
+  no-noncanonical-lifecycle-classes:
+    name: Non-Canonical Lifecycle-Class Ratchet (OMN-14350)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Ratchet non-canonical lifecycle-word classes against frozen allowlist (OMN-14350)
+        run: |
+          uv run python -m omnibase_core.validators.no_noncanonical_lifecycle_classes --check-stale src/omnibase_core
+
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
@@ -1399,7 +1460,7 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, spdx-headers]
     if: always()
 
     steps:
@@ -1434,6 +1495,7 @@ jobs:
           aislop="${{ needs.aislop-patterns.result }}"
           doc_content="${{ needs.doc-content-scan.result }}"
           no_new_os_environ="${{ needs.no-new-os-environ.result }}"
+          noncanonical_classes="${{ needs.no-noncanonical-lifecycle-classes.result }}"
           spdx_headers="${{ needs.spdx-headers.result }}"
 
           # Report each check
@@ -1462,6 +1524,7 @@ jobs:
           echo "| AI Slop Patterns (OMN-13574) | $aislop |" >> $GITHUB_STEP_SUMMARY
           echo "| Doc-Content Scan (OMN-13572) | $doc_content |" >> $GITHUB_STEP_SUMMARY
           echo "| No New os.environ Reads (OMN-13566) | $no_new_os_environ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Non-Canonical Lifecycle-Class Ratchet (OMN-14350) | $noncanonical_classes |" >> $GITHUB_STEP_SUMMARY
           echo "| SPDX Headers (OMN-13576) | $spdx_headers |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
@@ -1488,6 +1551,7 @@ jobs:
              [[ "$aislop" == "success" ]] && \
              [[ "$doc_content" == "success" ]] && \
              [[ "$no_new_os_environ" == "success" ]] && \
+             [[ "$noncanonical_classes" == "success" ]] && \
              [[ "$spdx_headers" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
@@ -1671,6 +1735,37 @@ jobs:
           path: selection.json
           retention-days: 7
 
+      # OMN-14342: compute the COUNTERFACTUAL selection with the selector forced
+      # ON, independent of ENABLE_SMART_TESTS. Observational only — the full suite
+      # still runs on the boundary; this only records what the selector WOULD have
+      # skipped so shadow-compare can measure its real-world miss-rate.
+      - name: Shadow selection (forced on)
+        id: shadow
+        env:
+          BASE_SHA: ${{ steps.diff.outputs.base_sha }}
+        run: |
+          base_arg=()
+          if [ -n "$BASE_SHA" ]; then
+            base_arg=(--base-ref "$BASE_SHA")
+          fi
+          uv run python -m scripts.ci.detect_test_paths \
+            --changed-files-from changed.txt \
+            --ref-name "${{ github.ref_name }}" \
+            --event-name "${{ github.event_name }}" \
+            --feature-flag on \
+            "${base_arg[@]}" \
+            > shadow_selection.json
+          cat shadow_selection.json
+
+      - name: Upload shadow inputs
+        uses: actions/upload-artifact@v7
+        with:
+          name: shadow-inputs
+          path: |
+            shadow_selection.json
+            changed.txt
+          retention-days: 7
+
   # ---------------------------------------------------------------------------
   # Phase 2 - Full Test Suite
   # ---------------------------------------------------------------------------
@@ -1798,6 +1893,84 @@ jobs:
           name: test-results-${{ matrix.split }}
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Shadow-mode test-selection compare (OMN-14342) — OBSERVATIONAL, non-blocking
+  # ---------------------------------------------------------------------------
+  # Compares the forced-on counterfactual selection against the full-suite junit
+  # to measure what the selector WOULD have skipped (escaped failures / selected
+  # fraction / wall-clock saved). Only meaningful when the ACTUAL run was a full
+  # suite (flag off, or is_full_suite escalation) — otherwise there is no full
+  # baseline to compare against, so it is gated on that condition. It never fails
+  # the build (continue-on-error) and never changes what runs. The record artifact
+  # is harvested to the durable ci-shadow-metrics branch by a separate workflow.
+  shadow-compare:
+    name: Shadow Selection Compare
+    needs: [detect-changes, test-parallel]
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    # Run whenever the actual test-parallel run was a full suite (the only case
+    # with a complete baseline). During rollout ENABLE_SMART_TESTS is off, so this
+    # is every non-docs dev PR.
+    if: >-
+      always()
+      && needs.detect-changes.result == 'success'
+      && (vars.ENABLE_SMART_TESTS != 'true' || needs.detect-changes.outputs.is_full_suite == 'true')
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Download shadow inputs
+        uses: actions/download-artifact@v7
+        with:
+          name: shadow-inputs
+          path: shadow-inputs
+
+      - name: Download full-suite junit
+        uses: actions/download-artifact@v7
+        with:
+          pattern: test-results-*
+          path: junit-artifacts
+
+      - name: Build shadow record
+        env:
+          SHADOW_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SHADOW_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SHADOW_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          uv run python -m scripts.ci.test_selection_shadow \
+            --selection shadow-inputs/shadow_selection.json \
+            --changed-files-from shadow-inputs/changed.txt \
+            --junit-dir junit-artifacts \
+            --out shadow_record.json
+          echo "## Shadow test-selection record" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat shadow_record.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload shadow record
+        uses: actions/upload-artifact@v7
+        with:
+          name: shadow-record-${{ github.run_id }}
+          path: shadow_record.json
+          retention-days: 14
 
   # ---------------------------------------------------------------------------
   # Integration Tests — always-run 4-split matrix (OMN-9851)

@@ -25,7 +25,7 @@ __all__ = ["TypedDictHandlerMetadata"]
 from typing import TYPE_CHECKING, NotRequired, Required, TypedDict
 
 if TYPE_CHECKING:
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
+    from omnibase_core.types.type_semver import ProtocolSemVer
 
 
 class TypedDictHandlerMetadata(TypedDict, total=False):
@@ -36,7 +36,8 @@ class TypedDictHandlerMetadata(TypedDict, total=False):
 
     Required Fields:
         name: Human-readable handler name (e.g., "http_handler").
-        version: Handler version as ModelSemVer.
+        version: Handler version (a ModelSemVer instance, typed structurally
+            as ProtocolSemVer to keep types/ free of a models import).
 
     Optional Fields:
         description: Brief description of the handler's purpose.
@@ -51,6 +52,6 @@ class TypedDictHandlerMetadata(TypedDict, total=False):
     """
 
     name: Required[str]
-    version: Required[ModelSemVer]
+    version: Required[ProtocolSemVer]
     description: NotRequired[str]
     capabilities: NotRequired[list[str]]

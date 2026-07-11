@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
+    from omnibase_core.types.type_semver import ProtocolSemVer
 
 
 class TypedDictGenericMetadataDict(TypedDict, total=False):
@@ -23,7 +23,7 @@ class TypedDictGenericMetadataDict(TypedDict, total=False):
     metadata_id: UUID | None
     metadata_display_name: str | None
     description: str | None
-    version: ModelSemVer | None
+    version: ProtocolSemVer | None
     tags: list[str]
     custom_fields: dict[str, object]
 

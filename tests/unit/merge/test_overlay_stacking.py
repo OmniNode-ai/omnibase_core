@@ -63,6 +63,9 @@ def mock_base_contract() -> Mock:
     mock.output_model = "BaseOutput"
     mock.behavior = None
     mock.tags = []
+    mock.handler_routing = None
+    mock.yaml_consumed_events = []
+    mock.yaml_published_events = []
     return mock
 
 
