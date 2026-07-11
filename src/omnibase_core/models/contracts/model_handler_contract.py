@@ -64,8 +64,17 @@ from omnibase_core.models.runtime.model_handler_behavior import (
 )
 
 if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_consumed_event_entry import (
+        ModelConsumedEventEntry,
+    )
+    from omnibase_core.models.contracts.model_published_event_entry import (
+        ModelPublishedEventEntry,
+    )
     from omnibase_core.models.contracts.subcontracts.model_context_integrity_subcontract import (
         ModelContextIntegritySubcontract,
+    )
+    from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+        ModelHandlerRoutingSubcontract,
     )
     from omnibase_core.models.routing.model_trust_domain_config import (
         ModelTrustDomainConfig,
@@ -346,6 +355,32 @@ class ModelHandlerContract(BaseModel):
         ),
     )
 
+    # ==========================================================================
+    # Handler Routing and Event Declarations (OMN-14245)
+    # ==========================================================================
+    # Carried over unchanged from the base ModelContractBase profile by
+    # ContractMergeEngine._apply_patch_to_base. ModelContractPatch has no
+    # override for these fields, so a merge only preserves what the base
+    # profile declared — it never invents or mutates routing/event data.
+
+    handler_routing: ModelHandlerRoutingSubcontract | None = Field(
+        default=None,
+        description="Handler routing configuration carried over from the base "
+        "contract profile. See ModelContractBase.handler_routing.",
+    )
+
+    yaml_consumed_events: list[ModelConsumedEventEntry] = Field(
+        default_factory=list,
+        description="Events consumed by this node, carried over from the base "
+        "contract profile. See ModelContractBase.yaml_consumed_events.",
+    )
+
+    yaml_published_events: list[ModelPublishedEventEntry] = Field(
+        default_factory=list,
+        description="Events published by this node, carried over from the base "
+        "contract profile. See ModelContractBase.yaml_published_events.",
+    )
+
     model_config = ConfigDict(
         frozen=True,
         extra="ignore",
@@ -562,8 +597,17 @@ __all__ = [
 
 def _rebuild_model_handler_contract() -> None:
     """Rebuild ModelHandlerContract to resolve forward references."""
+    from omnibase_core.models.contracts.model_consumed_event_entry import (
+        ModelConsumedEventEntry,
+    )
+    from omnibase_core.models.contracts.model_published_event_entry import (
+        ModelPublishedEventEntry,
+    )
     from omnibase_core.models.contracts.subcontracts.model_context_integrity_subcontract import (
         ModelContextIntegritySubcontract,
+    )
+    from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+        ModelHandlerRoutingSubcontract,
     )
     from omnibase_core.models.routing.model_trust_domain_config import (
         ModelTrustDomainConfig,
@@ -571,7 +615,10 @@ def _rebuild_model_handler_contract() -> None:
 
     ModelHandlerContract.model_rebuild(
         _types_namespace={
+            "ModelConsumedEventEntry": ModelConsumedEventEntry,
             "ModelContextIntegritySubcontract": ModelContextIntegritySubcontract,
+            "ModelHandlerRoutingSubcontract": ModelHandlerRoutingSubcontract,
+            "ModelPublishedEventEntry": ModelPublishedEventEntry,
             "ModelTrustDomainConfig": ModelTrustDomainConfig,
         }
     )

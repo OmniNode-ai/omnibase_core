@@ -51,13 +51,14 @@ class ModelHandlerContractExtended(ModelHandlerContract):
         str_strip_whitespace=True,
     )
 
-    handler_routing: (
-        dict[str, object] | None
-    ) = (  # ONEX_EXCLUDE: dict_str_any - infra routing config has variable schema
-        Field(
-            default=None,
-            description="Infra-specific handler routing configuration",
-        )
+    # ONEX_EXCLUDE: dict_str_any - infra routing config has variable schema.
+    # OMN-14245: the parent ModelHandlerContract.handler_routing became a typed
+    # ModelHandlerRoutingSubcontract | None field (so ContractMergeEngine can
+    # carry it through a merge); this subclass keeps the widened dict-form for
+    # infra handler_contract.yaml variable-schema compatibility.
+    handler_routing: dict[str, object] | None = Field(  # type: ignore[assignment]  # OMN-14245: widened in subclass for infra YAML dict-form compatibility
+        default=None,
+        description="Infra-specific handler routing configuration",
     )
 
     operation_bindings: (

@@ -82,11 +82,22 @@ def test_extended_contract_accepts_dict_output_model() -> None:
 
 @pytest.mark.unit
 def test_base_contract_ignores_extra_fields() -> None:
-    """Base contract silently ignores extra fields (extra='ignore')."""
-    data = {**_base_data(), "handler_routing": {"strategy": "round-robin"}}
+    """Base contract silently ignores extra fields (extra='ignore').
+
+    Uses a field name that is genuinely unknown to ModelHandlerContract.
+    ``handler_routing`` itself became a declared field on the base model
+    (OMN-14245, typed ``ModelHandlerRoutingSubcontract | None`` so it
+    survives ContractMergeEngine merges) and is exercised by
+    ``test_extended_contract_accepts_handler_routing`` above via the
+    infra-widened dict-form override on ModelHandlerContractExtended.
+    """
+    data = {
+        **_base_data(),
+        "some_infra_specific_extra_field": {"strategy": "round-robin"},
+    }
     contract = ModelHandlerContract(**data)
     # extra="ignore" means the field is accepted but not stored
-    assert not hasattr(contract, "handler_routing")
+    assert not hasattr(contract, "some_infra_specific_extra_field")
 
 
 @pytest.mark.unit
