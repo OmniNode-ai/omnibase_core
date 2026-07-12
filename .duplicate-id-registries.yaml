@@ -21,8 +21,3 @@ registries:
   - path: src/omnibase_core/contracts/antipattern_registry.yaml
     list_path: entries
     id_field: name
-  # TEMPORARY — planted violation for live-CI proof (OMN-14401 remediation
-  # round 1). Reverted in the immediately following commit.
-  - path: .tmp_omn14401_planted_violation.yaml
-    list_path: entries
-    id_field: grant_id
