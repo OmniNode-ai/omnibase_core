@@ -651,6 +651,129 @@ class TestEvidenceSourceMalformedHardFailsOMN14410Round2:
 
 
 # ---------------------------------------------------------------------------
+# OMN-14410 round 3 — independent verification caught that round 2's
+# reference-shape detector was anchored to the START of the value
+# (``^(?:OCC#\d*|[0-9a-f]{6,})``). A reference EMBEDDED in prose ("see
+# OCC#588"), written with internal whitespace ("OCC #588"), or a bare hash
+# with no "OCC" prefix ("#588") never appears at position 0, so all three
+# fell through to the "free-text prose" branch and silently SKIPPED
+# identity binding — the same fail-open class as round 2, but for reference
+# POSITION instead of reference SHAPE. A natural sentence like "see
+# OCC#588" bypassed OMN-10420 pinning. Fixed by searching the value for the
+# reference shape ANYWHERE, not just as a prefix.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceEmbeddedReferenceHardFailsOMN14410Round3:
+    """A value that CONTAINS an attempted OCC#/hash/SHA reference anywhere —
+    not just as a prefix — must hard-FAIL as malformed, never silently skip.
+    """
+
+    def _pr_body_with(self, evidence_source_line: str) -> str:
+        return (
+            "Closes OMN-14391\n\n"
+            f"{evidence_source_line}\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+
+    def _setup(self, tmp_path: Path) -> tuple[Path, Path]:
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+        return contracts_dir, receipts_dir
+
+    def test_space_inside_reference_hard_fails(self, tmp_path: Path) -> None:
+        """A reference with whitespace between 'OCC' and '#' must hard-fail
+        as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: OCC #588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_bare_hash_hard_fails(self, tmp_path: Path) -> None:
+        """A bare '#<number>' with no 'OCC' prefix must hard-fail as
+        malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: #588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_reference_prefixed_by_see_hard_fails(self, tmp_path: Path) -> None:
+        """A reference embedded after leading prose ('see OCC#588') must
+        hard-fail as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: see OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_reference_prefixed_by_ref_colon_hard_fails(self, tmp_path: Path) -> None:
+        """A reference embedded after a 'ref:' label must hard-fail as
+        malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: ref: OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_prose_disclaimer_with_no_reference_still_skips(
+        self, tmp_path: Path
+    ) -> None:
+        """Guard: a genuine disclaimer that contains NO reference token
+        anywhere must still SKIP identity binding, not be swept into
+        'malformed' by the widened search.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: does not apply — this PR IS the evidence source"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+
+# ---------------------------------------------------------------------------
 # Workflow shape tests — new OMN-10419 steps exist in receipt-gate.yml
 # ---------------------------------------------------------------------------
 

@@ -236,15 +236,26 @@ EVIDENCE_SOURCE_VALUE_PATTERN = re.compile(
 # Short disclaimer tokens that explicitly opt out of Evidence-Source pinning
 # (OMN-14410). Exact match, case-insensitive.
 EVIDENCE_SOURCE_DISCLAIMER_TOKENS: frozenset[str] = frozenset({"n/a", "none", "-"})
-# A value's FIRST TOKEN "looks like" an attempted OCC#/SHA reference — starts
-# with "OCC#" (with or without digits) or a run of 6+ hex chars. Used to
-# distinguish a MALFORMED reference attempt (hard-fail) from genuine prose
-# (skip) once the strict grammar match has already failed (OMN-14410 round
-# 2). The 6-char floor is deliberately one below the 7-char SHA minimum, so
-# an under-length SHA placeholder ("abc123") reads as "attempted but
-# malformed" rather than being waved through as a disclaimer.
+# A value CONTAINS an attempted OCC#/SHA reference ANYWHERE — not just as a
+# prefix. Used to distinguish a MALFORMED reference attempt (hard-fail) from
+# genuine prose (skip) once the strict grammar match has already failed
+# (OMN-14410 round 2, widened round 3). Round 2 anchored this check to the
+# start of the value (``^...``), which caught a reference with the wrong
+# spacing or trailing garbage but missed a reference embedded IN prose
+# ("see OCC#588", "ref: OCC#588") or written with internal whitespace
+# ("OCC #588") — those fell through to the prose-disclaimer branch and
+# silently skipped binding, the same fail-open class as round 2 but for
+# prefix position instead of value shape. Searched (not matched) anywhere
+# in the value:
+#   - "OCC" + optional whitespace + "#" + optional digits — catches
+#     "OCC#588", "OCC #588", "OCC# 588", and embedded forms.
+#   - a bare "#<digits>" with no "OCC" prefix — catches "#588" standalone.
+#   - a run of 6+ hex chars — catches an embedded/malformed SHA. The 6-char
+#     floor is deliberately one below the 7-char SHA minimum, so an
+#     under-length SHA placeholder ("abc123") reads as "attempted but
+#     malformed" rather than being waved through as a disclaimer.
 EVIDENCE_SOURCE_REFERENCE_SHAPE_PATTERN = re.compile(
-    r"^(?:OCC#\d*|[0-9a-f]{6,})",
+    r"OCC\s*#\s*\d*|#\d+|[0-9a-f]{6,}",
     re.IGNORECASE,
 )
 PROMOTION_RECEIPT_PATTERN = re.compile(
@@ -408,7 +419,7 @@ def parse_evidence_source(pr_body: str) -> tuple[str | None, str | None]:
 
 
 def classify_evidence_source_stamp(pr_body: str) -> tuple[bool, bool, str | None]:
-    """Classify the (first) Evidence-Source line's value (OMN-14410 round 2).
+    """Classify the (first) Evidence-Source line's value (OMN-14410 round 2-3).
 
     Callers MUST check the strict reference-grammar patterns
     (:data:`EVIDENCE_SOURCE_OCC_PR_PATTERN` / :data:`EVIDENCE_SOURCE_SHA_PATTERN`)
@@ -416,9 +427,9 @@ def classify_evidence_source_stamp(pr_body: str) -> tuple[bool, bool, str | None
     a genuine disclaimer (skip identity binding) from a malformed reference
     attempt (hard FAIL) instead of letting both fall through as "no stamp
     present" — round-1's fix matched the strict grammar exactly, so anything
-    unrecognized (wrong spacing, trailing garbage, an under-length SHA)
-    silently skipped enforcement instead of erroring. Unrecognized must never
-    mean unenforced.
+    unrecognized (wrong spacing, trailing garbage, an under-length SHA, or a
+    reference embedded IN prose — "see OCC#588") silently skipped enforcement
+    instead of erroring. Unrecognized must never mean unenforced.
 
     Returns:
         ``(attempted, is_disclaimer, value)``:
@@ -427,7 +438,9 @@ def classify_evidence_source_stamp(pr_body: str) -> tuple[bool, bool, str | None
           value is present at all, whether or not it turns out to be valid.
         - ``is_disclaimer``: True when the value is a recognized disclaimer —
           an exact-match short token (:data:`EVIDENCE_SOURCE_DISCLAIMER_TOKENS`)
-          or free-text prose that does not attempt reference syntax.
+          or free-text prose that does not contain a reference attempt
+          ANYWHERE (:data:`EVIDENCE_SOURCE_REFERENCE_SHAPE_PATTERN`), not just
+          as a prefix.
         - ``value``: the trimmed value text, or ``None`` when no
           Evidence-Source line with a value is present.
     """
@@ -437,9 +450,10 @@ def classify_evidence_source_stamp(pr_body: str) -> tuple[bool, bool, str | None
     value = m.group(1).strip()
     if value.casefold() in EVIDENCE_SOURCE_DISCLAIMER_TOKENS:
         return (True, True, value)
-    if EVIDENCE_SOURCE_REFERENCE_SHAPE_PATTERN.match(value):
-        # Looks like it's attempting OCC#<n> / a hex SHA but didn't satisfy
-        # the strict grammar (wrong spacing, trailing text, too short/long) —
+    if EVIDENCE_SOURCE_REFERENCE_SHAPE_PATTERN.search(value):
+        # Contains an attempted OCC#<n> / #<n> / hex SHA reference somewhere
+        # in the value but didn't satisfy the strict grammar (wrong spacing,
+        # trailing text, embedded in prose, too short/long) —
         # a malformed reference attempt, not a disclaimer.
         return (True, False, value)
     return (True, True, value)
