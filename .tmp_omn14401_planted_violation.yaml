@@ -1,0 +1,7 @@
+# TEMPORARY — planted violation for live-CI proof (OMN-14401 remediation round 1).
+# Will be reverted in the immediately following commit. Do not merge with this present.
+entries:
+  - grant_id: "grant-11111111-1111-1111-1111-111111111111"
+    note: "planted duplicate A"
+  - grant_id: "grant-11111111-1111-1111-1111-111111111111"
+    note: "planted duplicate B"
