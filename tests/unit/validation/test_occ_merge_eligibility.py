@@ -19,6 +19,7 @@ from omnibase_core.validation.validator_occ_merge_eligibility import (
 
 TICKET = "OMN-10484"
 PR_SHA = "1" * 40
+STALE_HASH = f"sha256:{'0' * 64}"
 
 
 def _contract_text(ticket_id: str = TICKET) -> str:
@@ -88,6 +89,35 @@ def _write_receipt(
         yaml.safe_dump(receipt, sort_keys=True),
         encoding="utf-8",
     )
+
+
+def _write_multi_entry_contract(
+    root: Path,
+    evidence_item_ids: tuple[str, ...],
+    *,
+    ticket_id: str = TICKET,
+) -> str:
+    """Write a contract carrying one dod_evidence entry per id, return its hash."""
+    text = yaml.safe_dump(
+        {
+            "ticket_id": ticket_id,
+            "title": "multi-entry OCC eligibility",
+            "dod_evidence": [
+                {
+                    "id": item_id,
+                    "description": f"probe {item_id}",
+                    "checks": [
+                        {"check_type": "command", "check_value": f"probe {item_id}"}
+                    ],
+                }
+                for item_id in evidence_item_ids
+            ],
+        },
+        sort_keys=True,
+    )
+    (root / "contracts").mkdir(parents=True, exist_ok=True)
+    (root / "contracts" / f"{ticket_id}.yaml").write_text(text, encoding="utf-8")
+    return _contract_hash(text)
 
 
 def _snapshot(
@@ -325,3 +355,150 @@ def test_eligible_output_is_replay_stable(tmp_path: Path) -> None:
     assert first.occ_commit_sha == "b" * 40
     assert first.contract_hashes == {TICKET: contract_hash}
     assert first.receipt_ids == (f"{TICKET}:dod-001:command",)
+
+
+# --- OMN-14404: batch-report every stale receipt binding -----------------------
+#
+# The validator used to return on the FIRST stale binding, discarding the other
+# N-1 receipts it had already resolved. Operators therefore learned about exactly
+# one stale receipt per CI round: repair it, re-run, get the next. That is what
+# manufactured the #3965 -> #3966 -> #3968 -> #3969 serial OCC repair chain on
+# 2026-07-11 (#3965 fixed one receipt; #3966 fixed "the remaining").
+
+
+@pytest.mark.unit
+def test_all_stale_receipt_bindings_are_reported_not_just_the_first(
+    tmp_path: Path,
+) -> None:
+    """N>1 stale bindings must ALL be named in a single result.
+
+    This is the regression that proves the first-fail-only bug is dead: against
+    the pre-fix validator it sees only dod-001.
+    """
+    item_ids = ("dod-001", "dod-002", "dod-003")
+    _write_multi_entry_contract(tmp_path, item_ids)
+    for item_id in item_ids:
+        _write_receipt(tmp_path, evidence_item_id=item_id, contract_sha256=STALE_HASH)
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+    assert result.stale_receipt_bindings == tuple(
+        f"{TICKET}:{item_id}:command" for item_id in item_ids
+    )
+    # the operator-facing detail names every stale receipt, not only the first
+    for item_id in item_ids:
+        assert item_id in result.detail
+    assert "3 receipts have stale contract bindings" in result.detail
+
+
+@pytest.mark.unit
+def test_stale_receipt_bindings_batch_across_multiple_tickets(tmp_path: Path) -> None:
+    """Accumulation spans tickets: the loop no longer aborts on the first one."""
+    second_ticket = "OMN-10485"
+    _write_contract(tmp_path)
+    _write_contract(tmp_path, ticket_id=second_ticket)
+    _write_receipt(tmp_path, contract_sha256=STALE_HASH)
+    _write_receipt(tmp_path, ticket_id=second_ticket, contract_sha256=STALE_HASH)
+    snapshot = ModelOccEligibilityInput(
+        repo="omnibase_core",
+        pr_number=123,
+        pr_title=f"feat({TICKET}): harden OCC eligibility",
+        pr_body=f"Closes: {TICKET}\nCloses: {second_ticket}",
+        pr_branch=f"jonah/{TICKET.lower()}-occ-eligibility",
+        pr_commit_shas=(PR_SHA,),
+        pr_commit_texts=(
+            f"feat({TICKET}): add eligibility",
+            f"feat({second_ticket}): add eligibility",
+        ),
+        occ_commit_sha="b" * 40,
+        contracts_dir=tmp_path / "contracts",
+        receipts_dir=tmp_path / "receipts",
+    )
+
+    result = validate_occ_merge_eligibility(snapshot)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+    assert result.stale_receipt_bindings == (
+        f"{TICKET}:dod-001:command",
+        f"{second_ticket}:dod-001:command",
+    )
+
+
+@pytest.mark.unit
+def test_single_stale_receipt_binding_reporting_is_unchanged(tmp_path: Path) -> None:
+    """The N=1 case keeps its pre-batching reason and detail wording."""
+    _write_contract(tmp_path)
+    _write_receipt(tmp_path, contract_sha256=STALE_HASH)
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+    assert result.stale_receipt_bindings == (f"{TICKET}:dod-001:command",)
+    assert result.detail.startswith("receipt ")
+    assert "receipts have stale contract bindings" not in result.detail
+
+
+@pytest.mark.unit
+def test_stale_bindings_take_precedence_over_missing_and_nonpass_receipts(
+    tmp_path: Path,
+) -> None:
+    """Precedence is unchanged: a stale binding dominates missing/non-PASS.
+
+    Pre-fix, the stale binding returned from inside the loop, so it preempted the
+    post-loop MISSING_RECEIPT / NONPASS_RECEIPT report in every iteration order.
+    Batch-reporting preserves that: the stale set is checked first.
+    """
+    contract_hash = _write_multi_entry_contract(
+        tmp_path, ("dod-001", "dod-002", "dod-003")
+    )
+    _write_receipt(tmp_path, evidence_item_id="dod-001", contract_sha256=STALE_HASH)
+    # dod-002 gets no receipt at all -> MISSING_RECEIPT class
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="dod-003",
+        status=EnumReceiptStatus.FAIL,
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+    assert result.stale_receipt_bindings == (f"{TICKET}:dod-001:command",)
+    # the missing/non-PASS set is not surfaced while a stale binding outranks it,
+    # matching the pre-fix early-return payload
+    assert result.missing_or_nonpass_receipts == ()
+
+
+@pytest.mark.unit
+def test_zero_stale_bindings_stays_eligible_with_empty_stale_set(
+    tmp_path: Path,
+) -> None:
+    contract_hash = _write_multi_entry_contract(tmp_path, ("dod-001", "dod-002"))
+    _write_receipt(tmp_path, evidence_item_id="dod-001", contract_sha256=contract_hash)
+    _write_receipt(tmp_path, evidence_item_id="dod-002", contract_sha256=contract_hash)
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is True
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+    assert result.stale_receipt_bindings == ()
+
+
+@pytest.mark.unit
+def test_batched_stale_binding_output_is_replay_stable(tmp_path: Path) -> None:
+    item_ids = ("dod-001", "dod-002", "dod-003")
+    _write_multi_entry_contract(tmp_path, item_ids)
+    for item_id in item_ids:
+        _write_receipt(tmp_path, evidence_item_id=item_id, contract_sha256=STALE_HASH)
+    snapshot = _snapshot(tmp_path)
+
+    first = validate_occ_merge_eligibility(snapshot)
+    second = validate_occ_merge_eligibility(snapshot)
+
+    assert first.to_json() == second.to_json()
+    assert "stale_receipt_bindings" in first.to_json()
