@@ -93,7 +93,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n\n"
+                "Evidence-Source: abc1234\n\n"
                 "This PR implements the feature."
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
@@ -118,7 +118,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-1234): some other ticket entirely",
@@ -144,7 +144,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-104201): wrong ticket prefix",
@@ -166,7 +166,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
@@ -192,7 +192,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
@@ -215,7 +215,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
@@ -241,7 +241,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
@@ -266,7 +266,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
@@ -292,7 +292,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420"
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
@@ -313,7 +313,7 @@ class TestTicketIdentityBinding:
         result = validate_pr_receipts(
             pr_body=(
                 "Closes OMN-10420\n\n"
-                "Evidence-Source: abc123\n"
+                "Evidence-Source: abc1234\n"
                 "Evidence-Ticket: OMN-10420\n\n"
                 "Some body text."
             ),
@@ -335,7 +335,7 @@ class TestTicketIdentityBinding:
 
         result = validate_pr_receipts(
             pr_body=(
-                "Closes OMN-10420\n\nEvidence-Source: abc123\nEvidence-Ticket: OMN-9999"
+                "Closes OMN-10420\n\nEvidence-Source: abc1234\nEvidence-Ticket: OMN-9999"
             ),
             pr_title="feat(OMN-10420): ticket identity binding",
             contracts_dir=contracts,
@@ -354,7 +354,7 @@ class TestTicketIdentityBinding:
         _write_receipt(receipts, "OMN-10420")
 
         result = validate_pr_receipts(
-            pr_body="Closes OMN-10420\n\nEvidence-Source: abc123",
+            pr_body="Closes OMN-10420\n\nEvidence-Source: abc1234",
             pr_title="feat(OMN-10420): ticket identity binding",
             contracts_dir=contracts,
             receipts_dir=receipts,
@@ -400,7 +400,7 @@ class TestDualTicketBranchBinding:
     """
 
     def _pr_body(self, ticket: str) -> str:
-        return f"Closes {ticket}\n\nEvidence-Source: abc123\nEvidence-Ticket: {ticket}"
+        return f"Closes {ticket}\n\nEvidence-Source: abc1234\nEvidence-Ticket: {ticket}"
 
     def test_dual_ticket_branch_omn_a_b_passes(self, tmp_path: Path) -> None:
         """omn-A-B branch with Evidence-Ticket=OMN-B passes the branch axis."""

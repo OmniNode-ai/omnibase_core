@@ -182,27 +182,77 @@ EVIDENCE_TICKET_PATTERN = re.compile(
     r"^Evidence-Ticket:\s*(OMN-\d+)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
-# Matches "Evidence-Source: ..." line — presence triggers identity binding (OMN-10420).
-EVIDENCE_SOURCE_PATTERN = re.compile(
-    r"^Evidence-Source:\s*\S",
-    re.IGNORECASE | re.MULTILINE,
-)
-
 # Matches "Evidence-Source: OCC#1234" or "Evidence-Source: <40-char-sha>" lines.
 # OCC#NNN form references an open PR by number; SHA form references a merged commit.
-# Requires at least one space after the colon, consistent with the workflow grep.
+# Requires exactly one ASCII space after the colon, consistent with the documented
+# stamp format.
+#
+# OMN-14410: these two patterns are ALSO the definition of a GENUINE source
+# stamp used by the identity-binding trigger below. A real source reference
+# looks like one of exactly these two shapes; anything else — a prose
+# disclaimer ("does not apply — this PR IS the evidence source"), or a short
+# non-reference placeholder ("N/A", "none", "n/a") — is not a stamp and must
+# not demand a paired Evidence-Ticket line. Round-1 independent verification
+# rejected an earlier single-whitespace-free-token heuristic: it fixed the
+# prose-disclaimer case but still false-failed "N/A"/"none" (each is one
+# token, so it read as "genuine"). Matching the REAL REFERENCE GRAMMAR
+# (OCC#<digits> or a 7-40 char hex SHA) instead of "any single token" closes
+# that hole structurally — a short non-reference placeholder can never match
+# either shape, however it's worded.
 EVIDENCE_SOURCE_OCC_PR_PATTERN = re.compile(
-    r"^Evidence-Source:\s+OCC#(\d+)\s*$",
+    r"^Evidence-Source: OCC#(\d+)$",
     re.IGNORECASE | re.MULTILINE,
 )
 EVIDENCE_SOURCE_SHA_PATTERN = re.compile(
-    r"^Evidence-Source:\s+([0-9a-f]{7,40})\s*$",
+    r"^Evidence-Source: ([0-9a-f]{7,40})$",
     re.IGNORECASE | re.MULTILINE,
 )
 # Detects any Evidence-Source line (used to distinguish "present but invalid" from "absent").
 EVIDENCE_SOURCE_ANY_PATTERN = re.compile(
-    r"^Evidence-Source:\s+\S",
+    r"^Evidence-Source: \S",
     re.IGNORECASE | re.MULTILINE,
+)
+EVIDENCE_SOURCE_LINE_PATTERN = re.compile(
+    r"^Evidence-Source:(?P<value>[^\r\n]*)$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+# OMN-14410 round 2: captures the trimmed VALUE of the (first) Evidence-Source
+# line with the documented single-space separator. Used ONLY to classify a value
+# that already failed the strict grammar match, so a malformed reference attempt
+# (trailing garbage, too-short hex) can be distinguished from a genuine disclaimer
+# instead of both silently falling through as "no stamp present" (round-2
+# independent verification: the round-1 fix made unrecognized == unenforced, a
+# fail-OPEN hole). Wrong spacing is rejected before value classification.
+EVIDENCE_SOURCE_VALUE_PATTERN = re.compile(
+    r"^Evidence-Source: ([^\r\n]+)$",
+    re.IGNORECASE | re.MULTILINE,
+)
+# Short disclaimer tokens that explicitly opt out of Evidence-Source pinning
+# (OMN-14410). Exact match, case-insensitive.
+EVIDENCE_SOURCE_DISCLAIMER_TOKENS: frozenset[str] = frozenset({"n/a", "none", "-"})
+# "OCC#" (with optional internal whitespace) ANYWHERE in the value means a
+# reference attempt (OMN-14410 round 3). This token is distinctive — it
+# never occurs in ordinary English prose — so searching for it anywhere is
+# safe and catches a reference embedded in a sentence ("see OCC#588",
+# "ref: OCC#588") or written with internal whitespace ("OCC #588").
+EVIDENCE_SOURCE_OCC_TOKEN_PATTERN = re.compile(r"OCC\s*#", re.IGNORECASE)
+# A bare "#<digits>" or a run of 6+ hex chars, matched ONLY against the
+# value's LEADING token (round 4). Round 3's fix searched the reference
+# shape ANYWHERE in the value, which reintroduced the OMN-14410 false-PASS
+# class in a new form: several ordinary English words ("decade", "facade",
+# "accede", "beaded", "bedded", "deface", "efface") are entirely
+# hexadecimal, and any incidental "#<number>" mid-sentence (e.g. "tracked
+# in #42") tripped the same false hard-fail. "Does this value CONTAIN
+# something hex-shaped" is unanswerable inside free prose; "does the value
+# LEAD with a reference token" is answerable — a genuine stamp attempt
+# starts with the reference, a disclaimer starts with "N/A" / "none" /
+# "does not apply". This pattern is therefore matched with ``fullmatch``
+# against ONLY the first whitespace-split token of the value (punctuation
+# stripped), never searched across the whole string.
+EVIDENCE_SOURCE_BARE_REF_PATTERN = re.compile(
+    r"^(?:#\d+|[0-9a-f]{6,})$",
+    re.IGNORECASE,
 )
 PROMOTION_RECEIPT_PATTERN = re.compile(
     r"^Promotion-Receipt:\s+\S",
@@ -362,6 +412,72 @@ def parse_evidence_source(pr_body: str) -> tuple[str | None, str | None]:
             return (None, m_sha.group(1))
         break
     return (None, None)
+
+
+def classify_evidence_source_stamp(pr_body: str) -> tuple[bool, bool, str | None]:
+    """Classify the (first) Evidence-Source line's value (OMN-14410 round 2-4).
+
+    Callers MUST check the strict reference-grammar patterns
+    (:data:`EVIDENCE_SOURCE_OCC_PR_PATTERN` / :data:`EVIDENCE_SOURCE_SHA_PATTERN`)
+    FIRST. This function only runs when those already failed, to distinguish
+    a genuine disclaimer (skip identity binding) from a malformed reference
+    attempt (hard FAIL) instead of letting both fall through as "no stamp
+    present" — round-1's fix matched the strict grammar exactly, so anything
+    unrecognized (wrong spacing, trailing garbage, an under-length SHA, or a
+    reference embedded IN prose — "see OCC#588") silently skipped enforcement
+    instead of erroring. Unrecognized must never mean unenforced.
+
+    Round 4: "does this value CONTAIN something hex-shaped" is unanswerable
+    inside free prose — "decade", "facade", "accede", "beaded", "bedded",
+    "deface", and "efface" are entirely hexadecimal English words, and any
+    incidental "#<number>" (e.g. "tracked in #42") also collided. "Does the
+    value LEAD with a reference token" is answerable: a genuine stamp
+    attempt starts with the reference; a disclaimer starts with "N/A" /
+    "none" / "does not apply". The distinctive "OCC#" token is still
+    searched anywhere (it never occurs in ordinary prose), but the bare
+    hex/hash form is only checked against the value's leading token.
+
+    Returns:
+        ``(attempted, is_disclaimer, value)``:
+
+        - ``attempted``: True when an Evidence-Source line with a non-empty
+          value is present at all, whether or not it turns out to be valid.
+        - ``is_disclaimer``: True when the value is a recognized disclaimer —
+          an exact-match short token (:data:`EVIDENCE_SOURCE_DISCLAIMER_TOKENS`)
+          or free-text prose that neither contains "OCC#" anywhere nor LEADS
+          with a bare hex/hash reference token.
+        - ``value``: the trimmed value text, or ``None`` when no
+          Evidence-Source line with a value is present.
+    """
+    line_match = EVIDENCE_SOURCE_LINE_PATTERN.search(pr_body)
+    if line_match is None:
+        return (False, False, None)
+    raw_value = line_match.group("value")
+    if not raw_value.startswith(" "):
+        return (True, False, raw_value.strip())
+    if raw_value.startswith(("  ", "\t")):
+        return (True, False, raw_value.strip())
+    m = EVIDENCE_SOURCE_VALUE_PATTERN.search(pr_body)
+    if m is None:
+        return (True, False, raw_value.strip())
+    value = m.group(1).strip()
+    if value.casefold() in EVIDENCE_SOURCE_DISCLAIMER_TOKENS:
+        return (True, True, value)
+    if EVIDENCE_SOURCE_OCC_TOKEN_PATTERN.search(value):
+        # "OCC#" is distinctive and never occurs in English prose, so a
+        # match anywhere in the value is a safe signal of a reference
+        # attempt that didn't satisfy the strict grammar.
+        return (True, False, value)
+    tokens = value.split()
+    leading_token = tokens[0].strip("(),.;:") if tokens else ""
+    if EVIDENCE_SOURCE_BARE_REF_PATTERN.fullmatch(leading_token):
+        # The value LEADS with a bare "#<n>" or hex-shaped token — a
+        # malformed reference attempt, not a disclaimer. Checking only the
+        # leading token (not a search across the whole value) is what keeps
+        # ordinary prose words ("decade", "facade") and incidental mid-
+        # sentence hash references ("tracked in #42") from being swept in.
+        return (True, False, value)
+    return (True, True, value)
 
 
 def parse_pr_opened_at(value: str | None) -> datetime | None:
@@ -1378,11 +1494,58 @@ def validate_pr_receipts(
             message=message,
         )
 
-    # Identity binding (OMN-10420 / I3): enforced when Evidence-Source is present in the
-    # PR body (T6a pairing) OR when evidence_ticket is explicitly passed to the gate.
-    # Without Evidence-Source the caller has not opted into OCC pinning yet, so identity
-    # binding is skipped (backward-compatible with pre-T6a PRs).
-    has_evidence_source = bool(EVIDENCE_SOURCE_PATTERN.search(pr_body))
+    evidence_source_lines = list(EVIDENCE_SOURCE_LINE_PATTERN.finditer(pr_body))
+    if len(evidence_source_lines) > 1:
+        return ModelReceiptGateResult(
+            passed=False,
+            message=(
+                "RECEIPT GATE FAILED: PR body contains multiple Evidence-Source "
+                "lines. Declare exactly one canonical Evidence-Source line so "
+                "malformed and valid stamps cannot disagree (OMN-14410)."
+            ),
+        )
+
+    # Identity binding (OMN-10420 / I3): enforced when a GENUINE Evidence-Source
+    # stamp is present in the PR body (T6a pairing) OR when evidence_ticket is
+    # explicitly passed to the gate. "Genuine" means the value matches the real
+    # reference grammar (EVIDENCE_SOURCE_OCC_PR_PATTERN / EVIDENCE_SOURCE_SHA_PATTERN)
+    # — a multi-word prose disclaimer ("does not apply — this PR IS the
+    # evidence source") or a short non-reference placeholder ("N/A", "none")
+    # is not a stamp and must not trigger the Evidence-Ticket pairing
+    # requirement (OMN-14410). Without a genuine stamp the caller has not
+    # opted into OCC pinning yet, so identity binding is skipped
+    # (backward-compatible with pre-T6a PRs).
+    has_evidence_source = False
+    if evidence_source_lines:
+        line = evidence_source_lines[0].group(0)
+        has_evidence_source = bool(
+            EVIDENCE_SOURCE_OCC_PR_PATTERN.fullmatch(line)
+            or EVIDENCE_SOURCE_SHA_PATTERN.fullmatch(line)
+        )
+    # OMN-14410 round 2: the strict grammar above makes "unrecognized" mean
+    # "unenforced" by construction — a genuine reference with the wrong
+    # spacing, trailing garbage, or an under-length SHA fails the strict
+    # match and silently skips identity binding, the same class of hole as
+    # round 1 but for a different value shape. Classify anything the strict
+    # match missed: a recognized disclaimer still skips (the round-1 fix,
+    # preserved); anything that LOOKS like a reference attempt but isn't a
+    # disclaimer is malformed and must hard-fail rather than skip.
+    if not has_evidence_source:
+        attempted, is_disclaimer, stamp_value = classify_evidence_source_stamp(pr_body)
+        if attempted and not is_disclaimer:
+            return ModelReceiptGateResult(
+                passed=False,
+                message=(
+                    "RECEIPT GATE FAILED: PR body's Evidence-Source line is "
+                    f"malformed: {stamp_value!r} is neither a recognized "
+                    "disclaimer (N/A, none, -, or free-text prose explaining "
+                    "why the field does not apply) nor a valid reference "
+                    "(Evidence-Source: OCC#<number> or Evidence-Source: "
+                    "<7-40 char hex SHA>, exactly one space after the colon "
+                    "and nothing else on the line). Fix the Evidence-Source "
+                    "line to one of these forms (OMN-14410)."
+                ),
+            )
     if has_evidence_source or evidence_ticket is not None:
         resolved_evidence_ticket = (
             evidence_ticket.strip().upper()
@@ -1486,10 +1649,14 @@ __all__ = [
     "CLOSING_KEYWORD_PATTERN",
     "EVIDENCE_HANDLERS",
     "EVIDENCE_SOURCE_ANY_PATTERN",
+    "EVIDENCE_SOURCE_BARE_REF_PATTERN",
     "EVIDENCE_SOURCE_CUTOFF_SHA",
+    "EVIDENCE_SOURCE_DISCLAIMER_TOKENS",
+    "EVIDENCE_SOURCE_LINE_PATTERN",
     "EVIDENCE_SOURCE_OCC_PR_PATTERN",
-    "EVIDENCE_SOURCE_PATTERN",
+    "EVIDENCE_SOURCE_OCC_TOKEN_PATTERN",
     "EVIDENCE_SOURCE_SHA_PATTERN",
+    "EVIDENCE_SOURCE_VALUE_PATTERN",
     "EVIDENCE_TICKET_PATTERN",
     "HEADER_FIELDS",
     "OVERRIDE_PATTERN",
@@ -1499,6 +1666,7 @@ __all__ = [
     "_CONTRACT_SHA256_REQUIRED_AFTER",
     "check_receipt_contract_binding",
     "classify_evidence_class",
+    "classify_evidence_source_stamp",
     "compute_contract_entry_sha256",
     "compute_contract_sha256",
     "parse_evidence_source",

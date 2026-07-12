@@ -315,6 +315,663 @@ class TestReceiptGateEvidenceSourceIntegration:
 
 
 # ---------------------------------------------------------------------------
+# OMN-14410 — Evidence-Source prose-disclaimer false-positive
+# ---------------------------------------------------------------------------
+#
+# Live instance: onex_change_control#3976 (OCC companion for OMN-14391) was
+# false-failed because its honest disclaimer "Evidence-Source: does not
+# apply — this PR IS the OCC evidence source ..." was read as a genuine
+# colon-stamp requiring a paired Evidence-Ticket line. An OCC companion PR is
+# by definition the evidence source — it has no upstream Evidence-Source to
+# cite. These two cases prove the fix is precise: the prose disclaimer now
+# PASSES, while a genuine reference-grammar stamp without a paired
+# Evidence-Ticket line still hard-FAILS exactly as before (the adversarial
+# invariant this gate exists to enforce). See
+# TestEvidenceSourceShortPlaceholderOMN14410Round1 below for the round-1
+# follow-up (short non-reference placeholders like "N/A" were still
+# false-failing under the original single-token heuristic).
+
+
+@pytest.mark.unit
+class TestEvidenceSourceProseDisclaimer:
+    """OMN-14410: prose disclaimers must not be read as genuine stamps."""
+
+    def test_pass_with_prose_disclaimer_no_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """PASS: an honest prose disclaimer is not a stamp, so no Evidence-Ticket
+        pairing is required. Reproduces the OCC#3976 false-fail verbatim.
+        """
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = (
+            "Closes OMN-14391\n\n"
+            "Evidence-Source: does not apply — this PR IS the OCC evidence "
+            "source for OMN-14391 (companion PR, not a product PR).\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+    def test_fail_genuine_stamp_still_requires_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """FAIL: a genuine reference-grammar Evidence-Source stamp with NO
+        paired Evidence-Ticket line must still hard-fail — the fix narrows
+        the false-positive, it does not disable the pairing requirement.
+        """
+        ticket_id = "OMN-10419"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = (
+            "Closes OMN-10419\n\n"
+            "Evidence-Source: OCC#588\n\n"
+            "Implements the feature; no Evidence-Ticket line on purpose."
+        )
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="feat(OMN-10419): add feature",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"message must mention 'Evidence-Ticket'; got: {result.message!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# OMN-14410 round 1 — independent verification caught that the first fix
+# (any single whitespace-free token = "genuine") still false-failed short
+# non-reference placeholders: "N/A", "none", "n/a" are each one token, so
+# they read as a genuine stamp and demanded a paired Evidence-Ticket line —
+# the identical false-fail class in shorter form. The fix now requires the
+# value to match the REAL REFERENCE GRAMMAR (EVIDENCE_SOURCE_OCC_PR_PATTERN
+# / EVIDENCE_SOURCE_SHA_PATTERN) instead of "any single token", which
+# structurally excludes any short placeholder that isn't actually a
+# reference, however it's worded.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceShortPlaceholderOMN14410Round1:
+    """Short non-reference placeholders ("N/A", "none") must not be read as
+    genuine stamps — only the real OCC#<n> / hex-SHA reference grammar is.
+    """
+
+    @pytest.mark.parametrize("placeholder", ["N/A", "none", "n/a", "-"])
+    def test_pass_with_short_placeholder_no_evidence_ticket(
+        self, tmp_path: Path, placeholder: str
+    ) -> None:
+        """PASS: a short non-reference placeholder is not a stamp, so no
+        Evidence-Ticket pairing is required.
+        """
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = f"Closes OMN-14391\n\nEvidence-Source: {placeholder}\n\nCompanion PR."
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, (
+            f"placeholder {placeholder!r} must not be read as a genuine "
+            f"stamp; got: {result.message}"
+        )
+
+    def test_fail_genuine_sha_stamp_still_requires_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """FAIL: a genuine hex-SHA Evidence-Source stamp with NO paired
+        Evidence-Ticket line must still hard-fail — confirms the real-
+        reference-grammar fix did not weaken the pairing requirement.
+        """
+        ticket_id = "OMN-10419"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = (
+            "Closes OMN-10419\n\n"
+            "Evidence-Source: abc1234\n\n"
+            "Implements the feature; no Evidence-Ticket line on purpose."
+        )
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="feat(OMN-10419): add feature",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"message must mention 'Evidence-Ticket'; got: {result.message!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# OMN-14410 round 2 — independent verification caught that round 1's fix
+# ("genuine" = matches the STRICT reference grammar exactly) made
+# "unrecognized" mean "unenforced": a GENUINE reference with the wrong
+# spacing, trailing garbage, or an under-length SHA fails the strict match
+# and silently SKIPS identity binding instead of erroring — reachable by
+# accident (a typo silently degrades OMN-10420 pinning). The fix adds a
+# third branch: a value that looks like a reference ATTEMPT but isn't a
+# recognized disclaimer must hard-FAIL as malformed, never silently skip.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceMalformedHardFailsOMN14410Round2:
+    """A value that attempts OCC#/SHA reference syntax but doesn't satisfy
+    the strict grammar must hard-FAIL as malformed — never silently skip
+    identity binding the way an absent Evidence-Source line does.
+    """
+
+    def _pr_body_with(self, evidence_source_line: str) -> str:
+        return (
+            "Closes OMN-14391\n\n"
+            f"{evidence_source_line}\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+
+    def _setup(self, tmp_path: Path) -> tuple[Path, Path]:
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+        return contracts_dir, receipts_dir
+
+    def test_no_space_after_colon_hard_fails(self, tmp_path: Path) -> None:
+        """A genuine OCC# reference with NO space after the colon must
+        hard-fail as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source:OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_trailing_parenthetical_hard_fails(self, tmp_path: Path) -> None:
+        """A genuine OCC# reference with trailing commentary must hard-fail
+        as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: OCC#588 (see thread)"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_trailing_comment_hard_fails(self, tmp_path: Path) -> None:
+        """A genuine SHA reference with a trailing comment must hard-fail
+        as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: abc1234 (superseded by def5678)"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_short_6_hex_hard_fails(self, tmp_path: Path) -> None:
+        """An under-length (6-char) hex placeholder must hard-fail as
+        malformed, not be waved through as a disclaimer — it's a reference
+        attempt one character short of the 7-char SHA minimum, not free-text
+        prose explaining the field doesn't apply.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: abc123"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_disclaimer_still_skips_binding(self, tmp_path: Path) -> None:
+        """Confirm the round-1 fix is unaffected: a recognized disclaimer
+        still skips identity binding (does not hard-fail as malformed).
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: does not apply — this PR IS the OCC "
+                "evidence source for OMN-14391 (companion PR, not a "
+                "product PR)."
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+    def test_genuine_reference_still_binds(self, tmp_path: Path) -> None:
+        """Confirm the round-1 fix is unaffected: a genuine, correctly-
+        formatted OCC# reference still triggers identity binding (fails
+        without a paired Evidence-Ticket line).
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"expected the Evidence-Ticket pairing failure, not malformed; "
+            f"got: {result.message!r}"
+        )
+
+    def test_occ_self_legacy_convention_now_hard_fails(self, tmp_path: Path) -> None:
+        """The ad-hoc 'OCC#self' self-reference convention (#3977) is not
+        digits after 'OCC#', so it now hard-fails as malformed rather than
+        silently skipping — consistent with OMN-14410's own guidance that
+        this convention should be retired, not blessed, once a structural
+        fix lands.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: OCC#self\nEvidence-Ticket: OMN-14391"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    @pytest.mark.parametrize(
+        "evidence_source_line",
+        [
+            "Evidence-Source:  OCC#588",
+            "Evidence-Source:\tOCC#588",
+            "Evidence-Source: \tOCC#588",
+            "Evidence-Source:\nOCC#588",
+        ],
+    )
+    def test_invalid_separator_spacing_hard_fails(
+        self, tmp_path: Path, evidence_source_line: str
+    ) -> None:
+        """Only the documented single-space separator is accepted."""
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(evidence_source_line),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_malformed_first_line_cannot_hide_behind_valid_second_line(
+        self, tmp_path: Path
+    ) -> None:
+        """Duplicate Evidence-Source lines are rejected before identity binding."""
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: OCC#588 (see thread)\nEvidence-Source: OCC#589"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "multiple evidence-source" in result.message.lower(), (
+            f"message must mention duplicate Evidence-Source lines; got: {result.message!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# OMN-14410 round 3 — independent verification caught that round 2's
+# reference-shape detector was anchored to the START of the value
+# (``^(?:OCC#\d*|[0-9a-f]{6,})``). A reference EMBEDDED in prose ("see
+# OCC#588"), written with internal whitespace ("OCC #588"), or a bare hash
+# with no "OCC" prefix ("#588") never appears at position 0, so all three
+# fell through to the "free-text prose" branch and silently SKIPPED
+# identity binding — the same fail-open class as round 2, but for reference
+# POSITION instead of reference SHAPE. A natural sentence like "see
+# OCC#588" bypassed OMN-10420 pinning. Fixed by searching the value for the
+# reference shape ANYWHERE, not just as a prefix.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceEmbeddedReferenceHardFailsOMN14410Round3:
+    """A value that CONTAINS an attempted OCC#/hash/SHA reference anywhere —
+    not just as a prefix — must hard-FAIL as malformed, never silently skip.
+    """
+
+    def _pr_body_with(self, evidence_source_line: str) -> str:
+        return (
+            "Closes OMN-14391\n\n"
+            f"{evidence_source_line}\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+
+    def _setup(self, tmp_path: Path) -> tuple[Path, Path]:
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+        return contracts_dir, receipts_dir
+
+    def test_space_inside_reference_hard_fails(self, tmp_path: Path) -> None:
+        """A reference with whitespace between 'OCC' and '#' must hard-fail
+        as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: OCC #588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_bare_hash_hard_fails(self, tmp_path: Path) -> None:
+        """A bare '#<number>' with no 'OCC' prefix must hard-fail as
+        malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: #588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_reference_prefixed_by_see_hard_fails(self, tmp_path: Path) -> None:
+        """A reference embedded after leading prose ('see OCC#588') must
+        hard-fail as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: see OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_reference_prefixed_by_ref_colon_hard_fails(self, tmp_path: Path) -> None:
+        """A reference embedded after a 'ref:' label must hard-fail as
+        malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: ref: OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_prose_disclaimer_with_no_reference_still_skips(
+        self, tmp_path: Path
+    ) -> None:
+        """Guard: a genuine disclaimer that contains NO reference token
+        anywhere must still SKIP identity binding, not be swept into
+        'malformed' by the widened search.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: does not apply — this PR IS the evidence source"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+    @pytest.mark.parametrize("word", ["facade", "decade", "feedback"])
+    def test_hex_like_prose_word_still_skips(self, tmp_path: Path, word: str) -> None:
+        """Hex-like prose words are not standalone SHA references."""
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                f"Evidence-Source: does not apply — {word} note only"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+
+# ---------------------------------------------------------------------------
+# OMN-14410 round 4 — independent verification caught that round 3's
+# "search the value for a reference shape anywhere" fix reintroduced the
+# ORIGINAL OMN-14410 false-PASS bug in a new form: several ordinary English
+# words are entirely hexadecimal ("decade", "facade", "accede", "beaded",
+# "bedded", "deface", "efface"), and the bare "#\d+" arm fired on any
+# incidental issue-number mention in prose ("tracked in #42"). Six honest
+# disclaimers hard-failed as malformed. The suite grew every round and
+# stayed blind in exactly this spot every round — no test covered a
+# disclaimer containing an incidental hex word. Fixed by replacing "contains
+# a reference shape anywhere" with a leading-token discriminator: "OCC#" is
+# searched anywhere (distinctive, never occurs in prose), but a bare
+# hex/hash token only counts as a reference attempt when it LEADS the
+# value — a genuine stamp attempt starts with the reference; a disclaimer
+# starts with "N/A" / "none" / "does not apply".
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceLeadingTokenDiscriminatorOMN14410Round4:
+    """A hex-shaped word or incidental '#<n>' embedded MID-SENTENCE in a
+    genuine disclaimer must not be misread as a reference attempt — only a
+    LEADING bare hex/hash token (or 'OCC#' anywhere) is a reference attempt.
+    """
+
+    def _pr_body_with(self, evidence_source_line: str) -> str:
+        return (
+            "Closes OMN-14391\n\n"
+            f"{evidence_source_line}\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+
+    def _setup(self, tmp_path: Path) -> tuple[Path, Path]:
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+        return contracts_dir, receipts_dir
+
+    def _assert_skips(self, tmp_path: Path, evidence_source_line: str) -> None:
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(evidence_source_line),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, (
+            f"expected {evidence_source_line!r} to SKIP as an honest "
+            f"disclaimer, got malformed hard-fail: {result.message}"
+        )
+
+    def test_decade_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'decade' is entirely hexadecimal (d,e,c,a,d,e) but is ordinary
+        English prose, not a SHA reference.
+        """
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: N/A — predates the decade-old convention",
+        )
+
+    def test_facade_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'facade' is entirely hexadecimal but is ordinary English prose."""
+        self._assert_skips(tmp_path, "Evidence-Source: none — see the facade module")
+
+    def test_incidental_issue_number_mid_sentence_still_skips(
+        self, tmp_path: Path
+    ) -> None:
+        """A bare '#<n>' mid-sentence (not leading the value) is an
+        incidental issue reference, not an attempted OCC stamp.
+        """
+        self._assert_skips(tmp_path, "Evidence-Source: N/A — tracked in #42")
+
+    def test_accede_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'accede' is entirely hexadecimal but is ordinary English prose."""
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: does not apply — the accede path was removed",
+        )
+
+    def test_beaded_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'beaded' is entirely hexadecimal but is ordinary English prose."""
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: does not apply — beaded together from three commits",
+        )
+
+    def test_embedded_hex_path_segment_still_skips(self, tmp_path: Path) -> None:
+        """A hex-shaped path segment embedded mid-sentence (not leading the
+        value) is not a reference attempt.
+        """
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: N/A — see docs/abcdef123/notes.md",
+        )
+
+    def test_dash_disclaimer_still_skips(self, tmp_path: Path) -> None:
+        """The bare '-' disclaimer token still skips (explicit regression
+        guard for the shortest recognized disclaimer).
+        """
+        self._assert_skips(tmp_path, "Evidence-Source: -")
+
+    def test_prose_disclaimer_with_trailing_thread_note_still_skips(
+        self, tmp_path: Path
+    ) -> None:
+        """A disclaimer that mentions 'see thread' at the end (no reference
+        token anywhere) still skips.
+        """
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: N/A — this PR IS the evidence source, see thread",
+        )
+
+    def test_bare_40_hex_sha_still_binds_and_requires_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """A genuine 40-char hex SHA (the full-length form) with no paired
+        Evidence-Ticket line must still hard-fail on the pairing
+        requirement, not on 'malformed' — confirms the leading-token
+        rewrite didn't disturb the strict-grammar bind path.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(f"Evidence-Source: {'a' * 40}"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"expected the Evidence-Ticket pairing failure, not malformed; "
+            f"got: {result.message!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Workflow shape tests — new OMN-10419 steps exist in receipt-gate.yml
 # ---------------------------------------------------------------------------
 
