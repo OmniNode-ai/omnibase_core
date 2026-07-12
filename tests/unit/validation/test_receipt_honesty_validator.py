@@ -361,6 +361,95 @@ class TestRuleBStructuralContextOMN14410:
 
 
 # ---------------------------------------------------------------------------
+# OMN-14410 round 1 — independent verification caught a false-PASS: the
+# first fix made the closing quote in the lookahead OPTIONAL (``"?``), which
+# exempted bare colon-glued prose (``TODO: verify manually``) along with the
+# intended quoted-JSON-key shape. A receipt whose entire evidence was colon-
+# glued authored hedging reported zero violations and shipped as honest —
+# the OMN-12780/12779 gamed-receipt class this rule exists to catch, now
+# evadable with one keystroke. The quote is now mandatory (``"\s*:``).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestRuleBColonGluedHedgeStillFailsOMN14410Round1:
+    """Bare (unquoted) KEYWORD: prose must still trip PENDING_IN_PASS — only
+    the true quoted-JSON-key shape (``"pending":``) is exempt.
+    """
+
+    @pytest.mark.parametrize(
+        "deferral_text",
+        [
+            "TODO: verify manually",
+            "PENDING: operator confirmation",
+            "pending: manual check",
+            "TBD: needs a real integration test",
+            "deferred: to wave 3",
+        ],
+    )
+    def test_bare_colon_glued_hedge_still_fails_rule_b(
+        self, deferral_text: str
+    ) -> None:
+        receipt = _make_receipt(probe_stdout=deferral_text)
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected PENDING_IN_PASS for bare colon-glued hedge {deferral_text!r} "
+            f"(unquoted — not a JSON key), got: {violations}"
+        )
+
+    def test_full_gamed_receipt_colon_glued_hedge_still_fails_rule_b(self) -> None:
+        """The exact shape independent verification flagged: a receipt whose
+        ENTIRE evidence is colon-glued authored hedging must not report zero
+        violations.
+        """
+        receipt = _make_receipt(
+            probe_stdout="ok",
+            actual_output=(
+                "PENDING: live deploy is gated on operator approval; "
+                "TODO: run the real probe in wave 3"
+            ),
+        )
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected PENDING_IN_PASS for the full gamed-receipt colon-glued "
+            f"hedge, got: {violations}"
+        )
+
+    def test_quoted_json_pending_key_still_passes_rule_b(self) -> None:
+        """Confirm the mandatory-quote fix does not re-break the OCC#3983
+        case: a quoted JSON key (``"pending":0``) is still exempt.
+        """
+        receipt = _make_receipt(
+            probe_stdout='{"total_count":5,"pending":0,"failing":0}'
+        )
+        violations = check_receipt_honesty(receipt)
+        assert not any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            "Expected no PENDING_IN_PASS for verbatim quoted JSON pending-count "
+            f"field, got: {violations}"
+        )
+
+    def test_em_dash_hedge_still_fails_rule_b(self) -> None:
+        """Confirm the em-dash form (no colon at all) still fails — this was
+        already correct before round 1; guard against regressing it.
+        """
+        receipt = _make_receipt(probe_stdout="TODO — verify manually")
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected PENDING_IN_PASS for em-dash TODO hedge, got: {violations}"
+        )
+
+    def test_no_colon_hedge_still_fails_rule_b(self) -> None:
+        """Confirm plain no-colon prose still fails — guard against
+        regressing the already-correct case.
+        """
+        receipt = _make_receipt(probe_stdout="still PENDING operator sign-off")
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected PENDING_IN_PASS for no-colon PENDING hedge, got: {violations}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Rule C — verifier == runner
 # ---------------------------------------------------------------------------
 

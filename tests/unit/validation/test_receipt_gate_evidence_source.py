@@ -324,9 +324,12 @@ class TestReceiptGateEvidenceSourceIntegration:
 # colon-stamp requiring a paired Evidence-Ticket line. An OCC companion PR is
 # by definition the evidence source — it has no upstream Evidence-Source to
 # cite. These two cases prove the fix is precise: the prose disclaimer now
-# PASSES, while a genuine single-token stamp without a paired Evidence-Ticket
-# line still hard-FAILS exactly as before (the adversarial invariant this
-# gate exists to enforce).
+# PASSES, while a genuine reference-grammar stamp without a paired
+# Evidence-Ticket line still hard-FAILS exactly as before (the adversarial
+# invariant this gate exists to enforce). See
+# TestEvidenceSourceShortPlaceholderOMN14410Round1 below for the round-1
+# follow-up (short non-reference placeholders like "N/A" were still
+# false-failing under the original single-token heuristic).
 
 
 @pytest.mark.unit
@@ -367,9 +370,9 @@ class TestEvidenceSourceProseDisclaimer:
     def test_fail_genuine_stamp_still_requires_evidence_ticket(
         self, tmp_path: Path
     ) -> None:
-        """FAIL: a genuine single-token Evidence-Source stamp with NO paired
-        Evidence-Ticket line must still hard-fail — the fix narrows the
-        false-positive, it does not disable the pairing requirement.
+        """FAIL: a genuine reference-grammar Evidence-Source stamp with NO
+        paired Evidence-Ticket line must still hard-fail — the fix narrows
+        the false-positive, it does not disable the pairing requirement.
         """
         ticket_id = "OMN-10419"
         evidence_item_id = "ev-001"
@@ -385,6 +388,90 @@ class TestEvidenceSourceProseDisclaimer:
         pr_body = (
             "Closes OMN-10419\n\n"
             "Evidence-Source: OCC#588\n\n"
+            "Implements the feature; no Evidence-Ticket line on purpose."
+        )
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="feat(OMN-10419): add feature",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"message must mention 'Evidence-Ticket'; got: {result.message!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# OMN-14410 round 1 — independent verification caught that the first fix
+# (any single whitespace-free token = "genuine") still false-failed short
+# non-reference placeholders: "N/A", "none", "n/a" are each one token, so
+# they read as a genuine stamp and demanded a paired Evidence-Ticket line —
+# the identical false-fail class in shorter form. The fix now requires the
+# value to match the REAL REFERENCE GRAMMAR (EVIDENCE_SOURCE_OCC_PR_PATTERN
+# / EVIDENCE_SOURCE_SHA_PATTERN) instead of "any single token", which
+# structurally excludes any short placeholder that isn't actually a
+# reference, however it's worded.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceShortPlaceholderOMN14410Round1:
+    """Short non-reference placeholders ("N/A", "none") must not be read as
+    genuine stamps — only the real OCC#<n> / hex-SHA reference grammar is.
+    """
+
+    @pytest.mark.parametrize("placeholder", ["N/A", "none", "n/a"])
+    def test_pass_with_short_placeholder_no_evidence_ticket(
+        self, tmp_path: Path, placeholder: str
+    ) -> None:
+        """PASS: a short non-reference placeholder is not a stamp, so no
+        Evidence-Ticket pairing is required.
+        """
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = f"Closes OMN-14391\n\nEvidence-Source: {placeholder}\n\nCompanion PR."
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, (
+            f"placeholder {placeholder!r} must not be read as a genuine "
+            f"stamp; got: {result.message}"
+        )
+
+    def test_fail_genuine_sha_stamp_still_requires_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """FAIL: a genuine hex-SHA Evidence-Source stamp with NO paired
+        Evidence-Ticket line must still hard-fail — confirms the real-
+        reference-grammar fix did not weaken the pairing requirement.
+        """
+        ticket_id = "OMN-10419"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = (
+            "Closes OMN-10419\n\n"
+            "Evidence-Source: abc1234\n\n"
             "Implements the feature; no Evidence-Ticket line on purpose."
         )
         result = validate_pr_receipts(

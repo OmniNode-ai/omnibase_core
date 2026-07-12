@@ -184,30 +184,29 @@ EVIDENCE_TICKET_PATTERN = re.compile(
 )
 # Matches "Evidence-Source: ..." line — presence triggers identity binding (OMN-10420).
 # Kept for backward compatibility (still exported); no longer wired into the
-# identity-binding trigger below — see EVIDENCE_SOURCE_STAMP_PATTERN (OMN-14410).
+# identity-binding trigger below — see EVIDENCE_SOURCE_OCC_PR_PATTERN /
+# EVIDENCE_SOURCE_SHA_PATTERN (OMN-14410).
 EVIDENCE_SOURCE_PATTERN = re.compile(
     r"^Evidence-Source:\s*\S",
-    re.IGNORECASE | re.MULTILINE,
-)
-# Matches "Evidence-Source: <single-token-value>" — a GENUINE source stamp
-# (OMN-14410). A real source reference — "OCC#588", a commit SHA, or any
-# other bare identifier — is always one unbroken token with no embedded
-# whitespace. An honest disclaimer explaining the field does not apply
-# (e.g. "Evidence-Source: does not apply — this PR IS the evidence source")
-# is multi-word PROSE, not a reference, and must not be read as a stamp that
-# demands a paired Evidence-Ticket line. Unlike EVIDENCE_SOURCE_PATTERN
-# (bare non-empty-value presence), this requires the ENTIRE line value —
-# from the first non-whitespace char to end of line — to be a single
-# whitespace-free token, so a prose sentence (which always contains spaces)
-# never matches while abbreviated/short reference forms (e.g. "abc123") do.
-EVIDENCE_SOURCE_STAMP_PATTERN = re.compile(
-    r"^Evidence-Source:\s*(\S+)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
 
 # Matches "Evidence-Source: OCC#1234" or "Evidence-Source: <40-char-sha>" lines.
 # OCC#NNN form references an open PR by number; SHA form references a merged commit.
 # Requires at least one space after the colon, consistent with the workflow grep.
+#
+# OMN-14410: these two patterns are ALSO the definition of a GENUINE source
+# stamp used by the identity-binding trigger below. A real source reference
+# looks like one of exactly these two shapes; anything else — a prose
+# disclaimer ("does not apply — this PR IS the evidence source"), or a short
+# non-reference placeholder ("N/A", "none", "n/a") — is not a stamp and must
+# not demand a paired Evidence-Ticket line. Round-1 independent verification
+# rejected an earlier single-whitespace-free-token heuristic: it fixed the
+# prose-disclaimer case but still false-failed "N/A"/"none" (each is one
+# token, so it read as "genuine"). Matching the REAL REFERENCE GRAMMAR
+# (OCC#<digits> or a 7-40 char hex SHA) instead of "any single token" closes
+# that hole structurally — a short non-reference placeholder can never match
+# either shape, however it's worded.
 EVIDENCE_SOURCE_OCC_PR_PATTERN = re.compile(
     r"^Evidence-Source:\s+OCC#(\d+)\s*$",
     re.IGNORECASE | re.MULTILINE,
@@ -1397,13 +1396,18 @@ def validate_pr_receipts(
 
     # Identity binding (OMN-10420 / I3): enforced when a GENUINE Evidence-Source
     # stamp is present in the PR body (T6a pairing) OR when evidence_ticket is
-    # explicitly passed to the gate. "Genuine" means a single-token value
-    # (EVIDENCE_SOURCE_STAMP_PATTERN) — a multi-word prose disclaimer (e.g. "does
-    # not apply — this PR IS the evidence source") is not a stamp and must not
-    # trigger the Evidence-Ticket pairing requirement (OMN-14410). Without a
-    # genuine stamp the caller has not opted into OCC pinning yet, so identity
-    # binding is skipped (backward-compatible with pre-T6a PRs).
-    has_evidence_source = bool(EVIDENCE_SOURCE_STAMP_PATTERN.search(pr_body))
+    # explicitly passed to the gate. "Genuine" means the value matches the real
+    # reference grammar (EVIDENCE_SOURCE_OCC_PR_PATTERN / EVIDENCE_SOURCE_SHA_PATTERN)
+    # — a multi-word prose disclaimer ("does not apply — this PR IS the
+    # evidence source") or a short non-reference placeholder ("N/A", "none")
+    # is not a stamp and must not trigger the Evidence-Ticket pairing
+    # requirement (OMN-14410). Without a genuine stamp the caller has not
+    # opted into OCC pinning yet, so identity binding is skipped
+    # (backward-compatible with pre-T6a PRs).
+    has_evidence_source = bool(
+        EVIDENCE_SOURCE_OCC_PR_PATTERN.search(pr_body)
+        or EVIDENCE_SOURCE_SHA_PATTERN.search(pr_body)
+    )
     if has_evidence_source or evidence_ticket is not None:
         resolved_evidence_ticket = (
             evidence_ticket.strip().upper()
@@ -1511,7 +1515,6 @@ __all__ = [
     "EVIDENCE_SOURCE_OCC_PR_PATTERN",
     "EVIDENCE_SOURCE_PATTERN",
     "EVIDENCE_SOURCE_SHA_PATTERN",
-    "EVIDENCE_SOURCE_STAMP_PATTERN",
     "EVIDENCE_TICKET_PATTERN",
     "HEADER_FIELDS",
     "OVERRIDE_PATTERN",
