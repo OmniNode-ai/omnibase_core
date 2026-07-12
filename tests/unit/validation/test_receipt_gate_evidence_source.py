@@ -315,6 +315,91 @@ class TestReceiptGateEvidenceSourceIntegration:
 
 
 # ---------------------------------------------------------------------------
+# OMN-14410 — Evidence-Source prose-disclaimer false-positive
+# ---------------------------------------------------------------------------
+#
+# Live instance: onex_change_control#3976 (OCC companion for OMN-14391) was
+# false-failed because its honest disclaimer "Evidence-Source: does not
+# apply — this PR IS the OCC evidence source ..." was read as a genuine
+# colon-stamp requiring a paired Evidence-Ticket line. An OCC companion PR is
+# by definition the evidence source — it has no upstream Evidence-Source to
+# cite. These two cases prove the fix is precise: the prose disclaimer now
+# PASSES, while a genuine single-token stamp without a paired Evidence-Ticket
+# line still hard-FAILS exactly as before (the adversarial invariant this
+# gate exists to enforce).
+
+
+@pytest.mark.unit
+class TestEvidenceSourceProseDisclaimer:
+    """OMN-14410: prose disclaimers must not be read as genuine stamps."""
+
+    def test_pass_with_prose_disclaimer_no_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """PASS: an honest prose disclaimer is not a stamp, so no Evidence-Ticket
+        pairing is required. Reproduces the OCC#3976 false-fail verbatim.
+        """
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = (
+            "Closes OMN-14391\n\n"
+            "Evidence-Source: does not apply — this PR IS the OCC evidence "
+            "source for OMN-14391 (companion PR, not a product PR).\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+    def test_fail_genuine_stamp_still_requires_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """FAIL: a genuine single-token Evidence-Source stamp with NO paired
+        Evidence-Ticket line must still hard-fail — the fix narrows the
+        false-positive, it does not disable the pairing requirement.
+        """
+        ticket_id = "OMN-10419"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+
+        pr_body = (
+            "Closes OMN-10419\n\n"
+            "Evidence-Source: OCC#588\n\n"
+            "Implements the feature; no Evidence-Ticket line on purpose."
+        )
+        result = validate_pr_receipts(
+            pr_body=pr_body,
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="feat(OMN-10419): add feature",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"message must mention 'Evidence-Ticket'; got: {result.message!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Workflow shape tests — new OMN-10419 steps exist in receipt-gate.yml
 # ---------------------------------------------------------------------------
 

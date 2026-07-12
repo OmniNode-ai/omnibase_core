@@ -300,6 +300,67 @@ class TestRuleBPendingInPass:
 
 
 # ---------------------------------------------------------------------------
+# OMN-14410 — deferral check must not fire on verbatim tool output; must
+# still fire on authored hedging with no JSON/YAML key-colon shape.
+# ---------------------------------------------------------------------------
+#
+# Live instance: sc-reconcile authoring OCC#3983 for OMN-14374 quoted real
+# `gh` JSON output in probe_stdout containing the field "pending":0. The
+# bare \bPENDING\b match flagged it as deferral language, rejecting a
+# receipt for accurately quoting the tool it ran — the exact inversion of
+# what an honesty gate should reward.
+
+
+@pytest.mark.unit
+class TestRuleBStructuralContextOMN14410:
+    """probe_stdout/actual_output are verbatim capture fields; a deferral
+    keyword appearing as JSON/YAML structured DATA must not be misread as
+    authored hedging prose.
+    """
+
+    def test_verbatim_json_pending_count_in_probe_stdout_passes_rule_b(
+        self,
+    ) -> None:
+        """PASS: probe_stdout quoting real JSON with a "pending" KEY (a
+        zero-count field — the opposite of hedging) must not trip
+        PENDING_IN_PASS. Reproduces the OCC#3983 false-fail verbatim.
+        """
+        receipt = _make_receipt(
+            probe_stdout='{"total_count":5,"pending":0,"failing":0}'
+        )
+        violations = check_receipt_honesty(receipt)
+        assert not any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            "Expected no PENDING_IN_PASS for verbatim JSON pending-count "
+            f"field, got: {violations}"
+        )
+
+    def test_authored_hedge_without_json_shape_still_fails_rule_b(self) -> None:
+        """FAIL: genuine authored hedging prose (no JSON key-colon glue) in
+        probe_stdout must still trip PENDING_IN_PASS — the fix narrows the
+        false-positive, it does not disable the rule.
+        """
+        receipt = _make_receipt(probe_stdout="pending manual check before merge")
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            "Expected PENDING_IN_PASS for authored 'pending manual check' "
+            f"prose, got: {violations}"
+        )
+
+    def test_authored_todo_in_actual_output_still_fails_rule_b(self) -> None:
+        """FAIL: a bare authored TODO in actual_output must still trip
+        PENDING_IN_PASS.
+        """
+        receipt = _make_receipt(
+            probe_stdout="some real output",
+            actual_output="TODO — verify this manually",
+        )
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected PENDING_IN_PASS for authored TODO prose, got: {violations}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Rule C — verifier == runner
 # ---------------------------------------------------------------------------
 

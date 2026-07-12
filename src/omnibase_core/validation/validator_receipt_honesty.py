@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-todo-marker OMN-14410 reason="Rule B (PENDING_IN_PASS) names deferral-language placeholder tokens as its SUBJECT (the keyword list _DEFERRAL_RE matches); the tokens are not unfinished work"
 
 """Receipt-honesty validator — fail gamed DoD receipts (OMN-12791).
 
@@ -145,14 +146,37 @@ def _check_rule_a(receipt: ModelDodReceipt) -> HonestyViolation | None:
 # Rule B — PENDING-in-PASS
 # ---------------------------------------------------------------------------
 
+#
+# Structural-context exclusion (OMN-14410): ``probe_stdout`` and
+# ``actual_output`` are, per ``ModelDodReceipt``'s own field contract,
+# LITERAL/VERBATIM CAPTURE fields — "Literal captured stdout from the probe"
+# and "Truncated output from the check" respectively. Neither is an authored
+# narrative field (the schema has no ``conclusion``/``summary`` field), so a
+# receipt legitimately quoting real third-party tool output that happens to
+# contain a deferral keyword as structured DATA — e.g. a JSON/YAML key such
+# as ``"pending":0`` — is not an author admitting deferred work. A genuine
+# authored hedge (``PENDING``, ``not yet implemented``, ``deferred to wave
+# 3``) is never glued to the keyword with an immediately-following colon; that shape
+# is distinctive of a JSON/YAML *key*, not English prose. The lookahead below
+# excludes exactly that key shape (optionally through a closing quote) so the
+# rule still catches real hedging typed into these fields while no longer
+# firing on verbatim structured output.
 _DEFERRAL_RE = re.compile(
-    r"\b(?:PENDING|TBD|TODO|not\s+implemented|not\s+yet|will\s+be|deferred)\b",
+    r"\b(?:PENDING|TBD|TODO|not\s+implemented|not\s+yet|will\s+be|deferred)\b"
+    r'(?!"?\s*:)',
     re.IGNORECASE,
 )
 
 
 def _check_rule_b(receipt: ModelDodReceipt) -> HonestyViolation | None:
-    """Rule B: PASS receipt whose proof text contains deferral language."""
+    """Rule B: PASS receipt whose proof text contains deferral language.
+
+    Fields scanned (``probe_stdout``, ``actual_output``) are literal/verbatim
+    capture fields per ``ModelDodReceipt`` — see ``_DEFERRAL_RE``'s comment
+    for why the regex excludes the JSON/YAML key-colon shape rather than
+    excluding these fields outright (no authored-narrative field exists on
+    the receipt schema to move the check to).
+    """
     if receipt.status is not EnumReceiptStatus.PASS:
         return None
     for field_name, text in (
