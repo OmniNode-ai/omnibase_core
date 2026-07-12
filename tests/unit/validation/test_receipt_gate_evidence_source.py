@@ -487,6 +487,170 @@ class TestEvidenceSourceShortPlaceholderOMN14410Round1:
 
 
 # ---------------------------------------------------------------------------
+# OMN-14410 round 2 — independent verification caught that round 1's fix
+# ("genuine" = matches the STRICT reference grammar exactly) made
+# "unrecognized" mean "unenforced": a GENUINE reference with the wrong
+# spacing, trailing garbage, or an under-length SHA fails the strict match
+# and silently SKIPS identity binding instead of erroring — reachable by
+# accident (a typo silently degrades OMN-10420 pinning). The fix adds a
+# third branch: a value that looks like a reference ATTEMPT but isn't a
+# recognized disclaimer must hard-FAIL as malformed, never silently skip.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceMalformedHardFailsOMN14410Round2:
+    """A value that attempts OCC#/SHA reference syntax but doesn't satisfy
+    the strict grammar must hard-FAIL as malformed — never silently skip
+    identity binding the way an absent Evidence-Source line does.
+    """
+
+    def _pr_body_with(self, evidence_source_line: str) -> str:
+        return (
+            "Closes OMN-14391\n\n"
+            f"{evidence_source_line}\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+
+    def _setup(self, tmp_path: Path) -> tuple[Path, Path]:
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+        return contracts_dir, receipts_dir
+
+    def test_no_space_after_colon_hard_fails(self, tmp_path: Path) -> None:
+        """A genuine OCC# reference with NO space after the colon must
+        hard-fail as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source:OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_trailing_parenthetical_hard_fails(self, tmp_path: Path) -> None:
+        """A genuine OCC# reference with trailing commentary must hard-fail
+        as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: OCC#588 (see thread)"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_trailing_comment_hard_fails(self, tmp_path: Path) -> None:
+        """A genuine SHA reference with a trailing comment must hard-fail
+        as malformed, not silently skip identity binding.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: abc1234 (superseded by def5678)"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_short_6_hex_hard_fails(self, tmp_path: Path) -> None:
+        """An under-length (6-char) hex placeholder must hard-fail as
+        malformed, not be waved through as a disclaimer — it's a reference
+        attempt one character short of the 7-char SHA minimum, not free-text
+        prose explaining the field doesn't apply.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: abc123"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_disclaimer_still_skips_binding(self, tmp_path: Path) -> None:
+        """Confirm the round-1 fix is unaffected: a recognized disclaimer
+        still skips identity binding (does not hard-fail as malformed).
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: does not apply — this PR IS the OCC "
+                "evidence source for OMN-14391 (companion PR, not a "
+                "product PR)."
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+    def test_genuine_reference_still_binds(self, tmp_path: Path) -> None:
+        """Confirm the round-1 fix is unaffected: a genuine, correctly-
+        formatted OCC# reference still triggers identity binding (fails
+        without a paired Evidence-Ticket line).
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with("Evidence-Source: OCC#588"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"expected the Evidence-Ticket pairing failure, not malformed; "
+            f"got: {result.message!r}"
+        )
+
+    def test_occ_self_legacy_convention_now_hard_fails(self, tmp_path: Path) -> None:
+        """The ad-hoc 'OCC#self' self-reference convention (#3977) is not
+        digits after 'OCC#', so it now hard-fails as malformed rather than
+        silently skipping — consistent with OMN-14410's own guidance that
+        this convention should be retired, not blessed, once a structural
+        fix lands.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: OCC#self\nEvidence-Ticket: OMN-14391"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Workflow shape tests — new OMN-10419 steps exist in receipt-gate.yml
 # ---------------------------------------------------------------------------
 
