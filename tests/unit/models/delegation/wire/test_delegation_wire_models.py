@@ -405,6 +405,34 @@ class TestModelRoutingIntent:
         intent = ModelRoutingIntent(payload=req, min_tier_name="cheap_cloud")
         assert intent.min_tier_name == "cheap_cloud"
 
+    def test_excluded_backend_refs_defaults_empty(self) -> None:
+        corr_id = uuid.uuid4()
+        req = ModelDelegationRequest(
+            prompt="test",
+            task_type="test",
+            correlation_id=corr_id,
+            emitted_at=datetime.now(tz=UTC),
+        )
+        intent = ModelRoutingIntent(payload=req)
+        assert intent.excluded_backend_refs == ()
+
+    def test_excluded_backend_refs_round_trips(self) -> None:
+        """OMN-14402: same-tier backend fallback threads already-failed backend
+        refs so the routing reducer can skip them and select a sibling."""
+        corr_id = uuid.uuid4()
+        req = ModelDelegationRequest(
+            prompt="test",
+            task_type="test",
+            correlation_id=corr_id,
+            emitted_at=datetime.now(tz=UTC),
+        )
+        intent = ModelRoutingIntent(
+            payload=req,
+            min_tier_name="local",
+            excluded_backend_refs=("local-heavy-reasoning",),
+        )
+        assert intent.excluded_backend_refs == ("local-heavy-reasoning",)
+
     def test_rejects_invalid_intent_literal(self) -> None:
         corr_id = uuid.uuid4()
         req = ModelDelegationRequest(

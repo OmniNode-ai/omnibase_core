@@ -35,6 +35,24 @@ class ModelRoutingIntent(BaseModel):
             "None means normal tier selection from the lowest eligible tier."
         ),
     )
+    # OMN-14402: same-tier backend fallback. A local-backend transport/inference
+    # failure used to escalate the WHOLE tier straight to the next (possibly
+    # cloud) tier, even when a sibling backend in the SAME tier also declares the
+    # task type (e.g. routing_tiers.yaml's local tier carries both
+    # local-heavy-reasoning and local-reasoner for "research"). Backend refs
+    # already attempted and failed within the target tier are listed here so the
+    # routing reducer's selection can skip them and land on an untried sibling
+    # instead of deterministically re-resolving the one that just failed.
+    excluded_backend_refs: tuple[str, ...] = Field(
+        default_factory=tuple,
+        description=(
+            "Backend refs (routing_tiers.yaml backend_id) already attempted and "
+            "failed within the tier this intent routes to. The routing reducer "
+            "skips these when selecting a model, so a same-tier retry after a "
+            "transport/inference failure lands on a different backend instead "
+            "of deterministically re-selecting the one that just failed."
+        ),
+    )
 
 
 class ModelInferenceIntent(BaseModel):
