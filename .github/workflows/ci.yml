@@ -2174,7 +2174,23 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.8.3"
-      - name: Validate all ticket contracts (OMN-8808 — replaces dead run_contract_compliance_check.py ref)
+      # OMN-14436: this step does NOT execute DoD check_values, and the comment that
+      # used to sit here claimed otherwise ("OMN-8808 — replaces dead
+      # run_contract_compliance_check.py ref"). NOTHING REPLACED IT.
+      #
+      # validate-yaml only parses the contract YAML. A green result here means exactly
+      # "the contract files are well-formed" — it says nothing about whether the PR's
+      # evidence is true. The real executor (run_contract_compliance_check.py) was
+      # deleted platform-wide in 2026-04 on a misdiagnosis: it was reported "missing"
+      # only because onex_change_control's DEFAULT branch lagged the branch that had
+      # it. The DoD gate has been dead here ever since, behind this green check.
+      #
+      # The executor is revived and proven in onex_change_control (OMN-14436) and wired
+      # into omnibase_infra as the canary (OMN-14454), where it executes check_values
+      # against the PRODUCT tree and is demonstrated to BLOCK. Fan-out to this repo is a
+      # deliberate, watched decision — NOT a default — because a gate nobody watched
+      # come up is a gate nobody has. Until then this step keeps its real, narrow name.
+      - name: Parse ticket contract YAML (does NOT execute DoD checks — see OMN-14436)
         run: cd "$OCC_DIR" && uv run validate-yaml "$GITHUB_WORKSPACE"/contracts/OMN-*.yaml
 
   ci-summary:
