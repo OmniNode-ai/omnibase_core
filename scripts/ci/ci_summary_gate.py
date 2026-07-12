@@ -122,6 +122,7 @@ SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
     "Doc-Content Scan",  # doc-content-scan
     "No New os.environ Reads (OMN-13566)",  # no-new-os-environ
     "SPDX Headers",  # spdx-headers
+    "Duplicate Registry Ids",  # duplicate-registry-ids (OMN-14401)
 )
 
 # Conclusions that count as "provably passed".

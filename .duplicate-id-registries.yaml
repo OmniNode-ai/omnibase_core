@@ -5,7 +5,7 @@
 #
 # Config-as-data: declares which config/registry YAML files in THIS repo are
 # checked for duplicate ids over a non-unique key. See
-# src/omnibase_core/validation/validator_duplicate_registry_ids.py for the
+# src/omnibase_core/validation/validator_duplicate_config_ids.py for the
 # check semantics (list_path syntax, disambiguator_field rules, fail-closed
 # behavior).
 #
