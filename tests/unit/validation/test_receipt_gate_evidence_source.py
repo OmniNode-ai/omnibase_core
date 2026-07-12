@@ -421,7 +421,7 @@ class TestEvidenceSourceShortPlaceholderOMN14410Round1:
     genuine stamps — only the real OCC#<n> / hex-SHA reference grammar is.
     """
 
-    @pytest.mark.parametrize("placeholder", ["N/A", "none", "n/a"])
+    @pytest.mark.parametrize("placeholder", ["N/A", "none", "n/a", "-"])
     def test_pass_with_short_placeholder_no_evidence_ticket(
         self, tmp_path: Path, placeholder: str
     ) -> None:
@@ -649,6 +649,49 @@ class TestEvidenceSourceMalformedHardFailsOMN14410Round2:
             f"message must mention 'malformed'; got: {result.message!r}"
         )
 
+    @pytest.mark.parametrize(
+        "evidence_source_line",
+        [
+            "Evidence-Source:  OCC#588",
+            "Evidence-Source:\tOCC#588",
+            "Evidence-Source: \tOCC#588",
+            "Evidence-Source:\nOCC#588",
+        ],
+    )
+    def test_invalid_separator_spacing_hard_fails(
+        self, tmp_path: Path, evidence_source_line: str
+    ) -> None:
+        """Only the documented single-space separator is accepted."""
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(evidence_source_line),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "malformed" in result.message.lower(), (
+            f"message must mention 'malformed'; got: {result.message!r}"
+        )
+
+    def test_malformed_first_line_cannot_hide_behind_valid_second_line(
+        self, tmp_path: Path
+    ) -> None:
+        """Duplicate Evidence-Source lines are rejected before identity binding."""
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                "Evidence-Source: OCC#588 (see thread)\nEvidence-Source: OCC#589"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "multiple evidence-source" in result.message.lower(), (
+            f"message must mention duplicate Evidence-Source lines; got: {result.message!r}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # OMN-14410 round 3 — independent verification caught that round 2's
@@ -771,6 +814,161 @@ class TestEvidenceSourceEmbeddedReferenceHardFailsOMN14410Round3:
             pr_title="evidence(OMN-14391): author OCC companion",
         )
         assert result.passed, result.message
+
+    @pytest.mark.parametrize("word", ["facade", "decade", "feedback"])
+    def test_hex_like_prose_word_still_skips(self, tmp_path: Path, word: str) -> None:
+        """Hex-like prose words are not standalone SHA references."""
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(
+                f"Evidence-Source: does not apply — {word} note only"
+            ),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, result.message
+
+
+# ---------------------------------------------------------------------------
+# OMN-14410 round 4 — independent verification caught that round 3's
+# "search the value for a reference shape anywhere" fix reintroduced the
+# ORIGINAL OMN-14410 false-PASS bug in a new form: several ordinary English
+# words are entirely hexadecimal ("decade", "facade", "accede", "beaded",
+# "bedded", "deface", "efface"), and the bare "#\d+" arm fired on any
+# incidental issue-number mention in prose ("tracked in #42"). Six honest
+# disclaimers hard-failed as malformed. The suite grew every round and
+# stayed blind in exactly this spot every round — no test covered a
+# disclaimer containing an incidental hex word. Fixed by replacing "contains
+# a reference shape anywhere" with a leading-token discriminator: "OCC#" is
+# searched anywhere (distinctive, never occurs in prose), but a bare
+# hex/hash token only counts as a reference attempt when it LEADS the
+# value — a genuine stamp attempt starts with the reference; a disclaimer
+# starts with "N/A" / "none" / "does not apply".
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEvidenceSourceLeadingTokenDiscriminatorOMN14410Round4:
+    """A hex-shaped word or incidental '#<n>' embedded MID-SENTENCE in a
+    genuine disclaimer must not be misread as a reference attempt — only a
+    LEADING bare hex/hash token (or 'OCC#' anywhere) is a reference attempt.
+    """
+
+    def _pr_body_with(self, evidence_source_line: str) -> str:
+        return (
+            "Closes OMN-14391\n\n"
+            f"{evidence_source_line}\n\n"
+            "This PR authors the OCC companion evidence."
+        )
+
+    def _setup(self, tmp_path: Path) -> tuple[Path, Path]:
+        ticket_id = "OMN-14391"
+        evidence_item_id = "ev-001"
+        check_type = "unit_test"
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _make_contract(contracts_dir, ticket_id, evidence_item_id, check_type)
+        receipt_path = (
+            receipts_dir / ticket_id / evidence_item_id / f"{check_type}.yaml"
+        )
+        _make_pass_receipt(receipt_path, ticket_id, evidence_item_id, check_type)
+        return contracts_dir, receipts_dir
+
+    def _assert_skips(self, tmp_path: Path, evidence_source_line: str) -> None:
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(evidence_source_line),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert result.passed, (
+            f"expected {evidence_source_line!r} to SKIP as an honest "
+            f"disclaimer, got malformed hard-fail: {result.message}"
+        )
+
+    def test_decade_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'decade' is entirely hexadecimal (d,e,c,a,d,e) but is ordinary
+        English prose, not a SHA reference.
+        """
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: N/A — predates the decade-old convention",
+        )
+
+    def test_facade_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'facade' is entirely hexadecimal but is ordinary English prose."""
+        self._assert_skips(tmp_path, "Evidence-Source: none — see the facade module")
+
+    def test_incidental_issue_number_mid_sentence_still_skips(
+        self, tmp_path: Path
+    ) -> None:
+        """A bare '#<n>' mid-sentence (not leading the value) is an
+        incidental issue reference, not an attempted OCC stamp.
+        """
+        self._assert_skips(tmp_path, "Evidence-Source: N/A — tracked in #42")
+
+    def test_accede_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'accede' is entirely hexadecimal but is ordinary English prose."""
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: does not apply — the accede path was removed",
+        )
+
+    def test_beaded_hex_word_still_skips(self, tmp_path: Path) -> None:
+        """'beaded' is entirely hexadecimal but is ordinary English prose."""
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: does not apply — beaded together from three commits",
+        )
+
+    def test_embedded_hex_path_segment_still_skips(self, tmp_path: Path) -> None:
+        """A hex-shaped path segment embedded mid-sentence (not leading the
+        value) is not a reference attempt.
+        """
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: N/A — see docs/abcdef123/notes.md",
+        )
+
+    def test_dash_disclaimer_still_skips(self, tmp_path: Path) -> None:
+        """The bare '-' disclaimer token still skips (explicit regression
+        guard for the shortest recognized disclaimer).
+        """
+        self._assert_skips(tmp_path, "Evidence-Source: -")
+
+    def test_prose_disclaimer_with_trailing_thread_note_still_skips(
+        self, tmp_path: Path
+    ) -> None:
+        """A disclaimer that mentions 'see thread' at the end (no reference
+        token anywhere) still skips.
+        """
+        self._assert_skips(
+            tmp_path,
+            "Evidence-Source: N/A — this PR IS the evidence source, see thread",
+        )
+
+    def test_bare_40_hex_sha_still_binds_and_requires_evidence_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """A genuine 40-char hex SHA (the full-length form) with no paired
+        Evidence-Ticket line must still hard-fail on the pairing
+        requirement, not on 'malformed' — confirms the leading-token
+        rewrite didn't disturb the strict-grammar bind path.
+        """
+        contracts_dir, receipts_dir = self._setup(tmp_path)
+        result = validate_pr_receipts(
+            pr_body=self._pr_body_with(f"Evidence-Source: {'a' * 40}"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+            pr_title="evidence(OMN-14391): author OCC companion",
+        )
+        assert not result.passed
+        assert "evidence-ticket" in result.message.lower(), (
+            f"expected the Evidence-Ticket pairing failure, not malformed; "
+            f"got: {result.message!r}"
+        )
 
 
 # ---------------------------------------------------------------------------
