@@ -593,6 +593,36 @@ required_validators:
       - omnibase_infra
       - omninode_infra
 
+  duplicate-registry-ids:
+    description: |
+      Rejects config/registry YAML files declaring duplicate ids over a key that
+      is not guaranteed unique. Closes the shape behind two independent
+      production bugs found in one wave (OMN-14401): OMN-14395
+      (prod_promotion_grants.yaml grant resolution, first-match-wins over a
+      digest that stopped being unique) and OMN-14396 (routing_tiers.yaml model
+      routing, two backends sharing a model id). Checked registries are
+      config-as-data via a manifest file (.duplicate-id-registries.yaml);
+      tolerates a legitimate duplicate id disambiguated by a configured second
+      field (e.g. routing_tiers.yaml's use_for) rather than banning duplicates
+      outright. Consumption in omnimarket (routing_tiers.yaml) and
+      onex_change_control (prod_promotion_grants.yaml) is tracked as fast-follow
+      — landed here first in omnibase_core, the only repo currently wired.
+    central_source: "omnibase_core.validation.validator_duplicate_config_ids"
+    pre_commit: required
+    ci_workflow: required
+    required_check_on_main: "Duplicate Registry Ids / validate"
+    silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-duplicate-registry-ids"
+    ci_workflow_keywords:
+      - "validator_duplicate_config_ids"
+      - "check-duplicate-registry-ids"
+    excludes:
+      allowed: []
+      forbidden: []
+    applies_to_repos:
+      - omnibase_core
+
   doc-content-scan:
     description: |
       Blocks local-environment traces (RFC1918 LAN IPs, .201/.200 host shorthand,
@@ -778,6 +808,13 @@ model_b_rollup_enforcement:
         - no-hardcoded-topics
         - no-untracked-todos
         - hardcoded-local-paths
+        # OMN-14401: duplicate-registry-ids runs as its own standalone workflow
+        # (validator-duplicate-registry-ids.yml, "validate" job), the same
+        # pattern as no-hardcoded-topics / hardcoded-local-paths above — not a
+        # ci.yml `needs:`-graph job, so it is not eligible for validator_jobs.
+        # Enforcement is via the ci-summary poller's run-wide default-deny sweep
+        # (it is not in poller_soft_allowlist), not rollup-graph reachability.
+        - duplicate-registry-ids
         - hardcoded-private-ip
         - hardcoded-localhost-url
         - detect-secrets

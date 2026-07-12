@@ -64,6 +64,9 @@ omni-agent = "omnibase_core.cli.cli_commands:cli"
 omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
 check-local-paths = "omnibase_core.validation.validator_local_paths:main"
 check-github-token-env-reads = "omnibase_core.validation.validator_github_token_env_reads:main"
+# OMN-14401: reject config/registry YAML files declaring duplicate ids over a
+# non-unique key (checked registries are config-as-data via a manifest file).
+check-duplicate-registry-ids = "omnibase_core.validation.validator_duplicate_config_ids:main"
 # OMN-13293 (G1): the same local-paths check executed as a COMPUTE node over the
 # in-memory event bus (two-transport seam; Kafka backend in CI). Proven
 # equivalent to check-local-paths on the G1 corpus + 6999-file shadow-bake.
@@ -349,6 +352,7 @@ ignore = [
 "src/omnibase_core/validation/validator_receipt_gate_cli.py" = ["T201"]
 "src/omnibase_core/validation/validator_receipt_reprobe.py" = ["T201"]  # CLI output for re-probe verification (OMN-9789)
 "src/omnibase_core/validation/validator_receipt_diff_consistency.py" = ["T201"]  # CLI output for the attestation diff-consistency gate (OMN-13927)
+"src/omnibase_core/validation/validator_duplicate_config_ids.py" = ["T201"]  # CLI output for the duplicate-registry-id guard (OMN-14401)
 "scripts/analysis/co_change_dark_matter.py" = ["T201"]
 "scripts/validation/validate_pr_receipts.py" = ["T201"]
 "scripts/validation/validate_pr_deploy_required.py" = ["T201"]

@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Manifest for check-duplicate-registry-ids (OMN-14401).
+#
+# Config-as-data: declares which config/registry YAML files in THIS repo are
+# checked for duplicate ids over a non-unique key. See
+# src/omnibase_core/validation/validator_duplicate_registry_ids.py for the
+# check semantics (list_path syntax, disambiguator_field rules, fail-closed
+# behavior).
+#
+# omnibase_core has no routing_tiers.yaml / prod_promotion_grants.yaml of its
+# own (those live in omnimarket and onex_change_control — consumption there is
+# tracked as fast-follow, see OMN-14401). This entry makes omnibase_core the
+# first live, wired consumer of its own check: antipattern_registry.yaml is a
+# real, production config/registry YAML with an `entries[].name` id field and
+# no legitimate disambiguator — the exact "no disambiguator, so any duplicate
+# is a hard failure" shape that prod_promotion_grants.yaml also has.
+
+registries:
+  - path: src/omnibase_core/contracts/antipattern_registry.yaml
+    list_path: entries
+    id_field: name
