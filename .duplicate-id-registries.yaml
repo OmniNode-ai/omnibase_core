@@ -10,12 +10,15 @@
 # behavior).
 #
 # omnibase_core has no routing_tiers.yaml / prod_promotion_grants.yaml of its
-# own (those live in omnimarket and onex_change_control — consumption there is
-# tracked as fast-follow, see OMN-14401). This entry makes omnibase_core the
-# first live, wired consumer of its own check: antipattern_registry.yaml is a
-# real, production config/registry YAML with an `entries[].name` id field and
-# no legitimate disambiguator — the exact "no disambiguator, so any duplicate
-# is a hard failure" shape that prod_promotion_grants.yaml also has.
+# own (those live in omnimarket and onex_change_control). Consumption there is
+# tracked in OMN-14435 (omnimarket routing_tiers.yaml) and OMN-14434
+# (onex_change_control prod_promotion_grants.yaml) — the actual registries that
+# motivated OMN-14401 (OMN-14396 and OMN-14395 respectively). This entry makes
+# omnibase_core the first live, wired consumer of its own check:
+# antipattern_registry.yaml is a real, production config/registry YAML with an
+# `entries[].name` id field and no legitimate disambiguator — the exact "no
+# disambiguator, so any duplicate is a hard failure" shape that
+# prod_promotion_grants.yaml also has.
 
 registries:
   - path: src/omnibase_core/contracts/antipattern_registry.yaml
