@@ -53,6 +53,15 @@ from omnibase_core.models.validation.model_contract_validation_event import (
 from omnibase_core.models.validation.model_contract_validation_result import (
     ModelContractValidationResult,
 )
+from omnibase_core.models.validation.model_duplicate_id_check_spec import (
+    ModelDuplicateIdCheckSpec,
+)
+from omnibase_core.models.validation.model_duplicate_id_manifest import (
+    ModelDuplicateIdManifest,
+)
+from omnibase_core.models.validation.model_duplicate_id_violation import (
+    ModelDuplicateIdViolation,
+)
 from omnibase_core.models.validation.model_fsm_analysis_result import (
     ModelFSMAnalysisResult,
 )
@@ -138,6 +147,7 @@ from .validator_contract_pipeline import (
     ContractValidationPipeline,
     ModelExpandedContractResult,
 )
+from .validator_duplicate_config_ids import ValidatorDuplicateConfigIds
 from .validator_hardcoded_topics import ValidatorHardcodedTopics
 from .validator_local_paths import (
     ModelLocalPathViolation,
@@ -505,6 +515,12 @@ __all__ = [
     # Local path validator — detect machine-specific absolute paths
     "ValidatorLocalPaths",
     "ModelLocalPathViolation",
+    # Duplicate registry id validator — reject config/registry files declaring
+    # duplicate ids over a non-unique key (OMN-14401)
+    "ValidatorDuplicateConfigIds",
+    "ModelDuplicateIdCheckSpec",
+    "ModelDuplicateIdManifest",
+    "ModelDuplicateIdViolation",
     "ValidatorNodePurity",
     "ModelNodePurityViolation",
     "EnumNodePurityRule",

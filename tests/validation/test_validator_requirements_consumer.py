@@ -343,6 +343,7 @@ def test_report_exit_code_zero_on_clean_repo(tmp_path: Path, spec_data: dict) ->
         "validate-no-transport-imports",
         "check-doc-content-scan",  # OMN-13572: doc-content scan (applies_to_repos: [omnibase_core])
         "no-new-os-environ",  # OMN-13566: canonical AST env-read gate (applies_to_repos: [omnibase_core])
+        "check-duplicate-registry-ids",  # OMN-14401: duplicate registry id guard (applies_to_repos: [omnibase_core])
     ]
     _write_precommit(tmp_path, pre_commit_ids)
 

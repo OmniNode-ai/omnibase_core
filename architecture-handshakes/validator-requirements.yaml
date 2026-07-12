@@ -593,6 +593,36 @@ required_validators:
       - omnibase_infra
       - omninode_infra
 
+  duplicate-registry-ids:
+    description: |
+      Rejects config/registry YAML files declaring duplicate ids over a key that
+      is not guaranteed unique. Closes the shape behind two independent
+      production bugs found in one wave (OMN-14401): OMN-14395
+      (prod_promotion_grants.yaml grant resolution, first-match-wins over a
+      digest that stopped being unique) and OMN-14396 (routing_tiers.yaml model
+      routing, two backends sharing a model id). Checked registries are
+      config-as-data via a manifest file (.duplicate-id-registries.yaml);
+      tolerates a legitimate duplicate id disambiguated by a configured second
+      field (e.g. routing_tiers.yaml's use_for) rather than banning duplicates
+      outright. Consumption in omnimarket (routing_tiers.yaml) and
+      onex_change_control (prod_promotion_grants.yaml) is tracked as fast-follow
+      — landed here first in omnibase_core, the only repo currently wired.
+    central_source: "omnibase_core.validation.validator_duplicate_config_ids"
+    pre_commit: required
+    ci_workflow: required
+    required_check_on_main: "CI Summary"
+    silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-duplicate-registry-ids"
+    ci_workflow_keywords:
+      - "validator_duplicate_config_ids"
+      - "check-duplicate-registry-ids"
+    excludes:
+      allowed: []
+      forbidden: []
+    applies_to_repos:
+      - omnibase_core
+
   doc-content-scan:
     description: |
       Blocks local-environment traces (RFC1918 LAN IPs, .201/.200 host shorthand,
@@ -757,6 +787,13 @@ model_b_rollup_enforcement:
         doc-content-scan: ["doc-content-scan"]
         no-new-os-environ: ["no-new-os-environ"]
         spdx-headers: ["spdx-headers"]
+        # OMN-14401: duplicate-registry-ids runs as a job IN THIS workflow
+        # (ci.yml), unconditional (no `if:`, no `needs:`) — the ci-summary
+        # poller only sees jobs from its own run_id, so a check defined in a
+        # separate workflow file (as this originally shipped) is structurally
+        # invisible to it regardless of required_status_checks wiring. Moved
+        # from grandfathered_validators after that gap was found.
+        duplicate-registry-ids: ["duplicate-registry-ids"]
       # Machine-checkable intentional omissions. These validators are
       # ci_workflow: required and apply to omnibase_core, but are currently
       # grandfathered in validator-requirements-baseline.yaml as
