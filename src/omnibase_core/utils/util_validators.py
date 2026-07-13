@@ -58,11 +58,13 @@ Deterministic Ordering
 
 from datetime import datetime
 from typing import TypeVar
+from urllib.parse import urlparse
 
 __all__ = [
     "convert_list_to_tuple",
     "convert_dict_to_frozen_pairs",
     "ensure_timezone_aware",
+    "validate_endpoint_urls_dict",
 ]
 
 # Generic type variable for list/tuple element types
@@ -217,3 +219,44 @@ def ensure_timezone_aware(v: datetime, field_name: str = "timestamp") -> datetim
             f"Got naive or effectively naive datetime: {v}"
         )
     return v
+
+
+def validate_endpoint_urls_dict(endpoints: dict[str, str]) -> dict[str, str]:
+    """Validate that every endpoint value is a well-formed URL.
+
+    Single source of truth for endpoint-URL validation in Pydantic field
+    validators (e.g. ``ModelNodeIntrospectionEvent.endpoints``). A URL is
+    considered valid only when it parses to both a scheme and a netloc.
+
+    Args:
+        endpoints: Mapping of endpoint name to URL string.
+
+    Returns:
+        The validated endpoints mapping (unchanged if valid).
+
+    Raises:
+        ValueError: If any endpoint URL is missing a scheme or netloc. The
+            error message strips any userinfo from the URL to avoid leaking
+            embedded credentials.
+
+    Example:
+        >>> validate_endpoint_urls_dict({"api": "http://localhost:8080"})
+        {'api': 'http://localhost:8080'}
+        >>> validate_endpoint_urls_dict({"api": "localhost:8080"})
+        Traceback (most recent call last):
+        ...
+        ValueError: Invalid URL for endpoint 'api': localhost:8080
+    """
+    for name, url in endpoints.items():
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            # Render a credential-safe form: drop any user:pass@ userinfo.
+            safe_netloc = parsed.netloc.rsplit("@", 1)[-1] if parsed.netloc else ""
+            safe_url = (
+                f"{parsed.scheme}://{safe_netloc}{parsed.path}"
+                if (parsed.scheme or safe_netloc)
+                else url.rsplit("@", 1)[-1]
+            )
+            # error-ok: ValueError appropriate for Pydantic field_validator boundary validation
+            raise ValueError(f"Invalid URL for endpoint '{name}': {safe_url}")
+    return endpoints

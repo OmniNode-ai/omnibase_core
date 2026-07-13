@@ -81,14 +81,47 @@ See Also:
     omnibase_core.nodes.NodeOrchestrator: Aggregates outcomes
 """
 
+from omnibase_core.models.registration.model_discovered_capabilities import (
+    ModelDiscoveredCapabilities,
+)
 from omnibase_core.models.registration.model_dual_registration_outcome import (
     ModelDualRegistrationOutcome,
 )
+from omnibase_core.models.registration.model_event_bus_topic_entry import (
+    ModelEventBusTopicEntry,
+)
+from omnibase_core.models.registration.model_introspection_performance_metrics import (
+    ModelIntrospectionPerformanceMetrics,
+)
+from omnibase_core.models.registration.model_mcp_contract_config import (
+    ModelMCPContractConfig,
+)
+from omnibase_core.models.registration.model_node_capabilities import (
+    ModelNodeCapabilities,
+)
+from omnibase_core.models.registration.model_node_event_bus_config import (
+    ModelNodeEventBusConfig,
+)
+from omnibase_core.models.registration.model_node_introspection_event import (
+    ModelNodeIntrospectionEvent,
+)
+from omnibase_core.models.registration.model_node_metadata import ModelNodeMetadata
 from omnibase_core.models.registration.model_registration_payload import (
     ModelRegistrationPayload,
 )
 
 __all__ = [
+    # Registration workflow payloads
     "ModelRegistrationPayload",
     "ModelDualRegistrationOutcome",
+    # Node introspection wire event + nested DTOs
+    # (OMN-14490 — graduated from omnibase_infra as the single canonical home)
+    "ModelNodeIntrospectionEvent",
+    "ModelDiscoveredCapabilities",
+    "ModelEventBusTopicEntry",
+    "ModelIntrospectionPerformanceMetrics",
+    "ModelMCPContractConfig",
+    "ModelNodeCapabilities",
+    "ModelNodeEventBusConfig",
+    "ModelNodeMetadata",
 ]

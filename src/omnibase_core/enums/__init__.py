@@ -253,6 +253,9 @@ from .enum_import_status import EnumImportStatus
 # Injection scope enum (DI container scoping)
 from .enum_injection_scope import EnumInjectionScope
 
+# Node introspection enums (OMN-14490 — graduated from omnibase_infra)
+from .enum_introspection_reason import EnumIntrospectionReason
+
 # Invariant-related enums (OMN-1192, OMN-1206)
 from .enum_invariant_report_status import EnumInvariantReportStatus
 from .enum_invariant_type import EnumInvariantType
@@ -652,6 +655,7 @@ __all__ = [
     # Validator mode (OMN-9767 — corpus classification Phase 3, parent OMN-9757)
     "EnumValidatorMode",
     # Node domain
+    "EnumIntrospectionReason",
     "EnumNodeArchetype",
     "EnumNodeArchitectureType",
     "EnumNodeKind",
