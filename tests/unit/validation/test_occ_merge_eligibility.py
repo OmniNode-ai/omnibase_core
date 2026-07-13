@@ -254,6 +254,55 @@ def test_receipt_without_pr_or_commit_binding_is_ineligible(tmp_path: Path) -> N
 
 
 @pytest.mark.unit
+def test_receipt_bound_by_commit_sha_only_is_eligible(tmp_path: Path) -> None:
+    """OMN-14456: commit_sha binding alone must be honored.
+
+    Regression contract for the chicken-and-egg mint path: a receipt produced
+    before the PR existed carries no pr_number, but its commit_sha matches one
+    of the PR's current commits. `_receipt_bound_to_pr` must accept this even
+    though pr_number is a foreign value — this is the *first-run* binding.
+    Tightening the predicate to require both bindings would flip this red.
+    """
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,  # foreign PR number: this binding must not matter here
+        commit_sha=PR_SHA,  # matches snapshot.pr_commit_shas
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is True
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+
+
+@pytest.mark.unit
+def test_receipt_bound_by_pr_number_only_is_eligible(tmp_path: Path) -> None:
+    """OMN-14456: pr_number binding alone must be honored.
+
+    Regression contract for rebase survival: a rebase rewrites every commit
+    SHA on the branch, so a receipt's original commit_sha binding is
+    destroyed, but pr_number is untouched by a rebase. `_receipt_bound_to_pr`
+    must accept a receipt whose pr_number matches the PR even though none of
+    its commit_sha matches the PR's (rebased) commit set. Tightening the
+    predicate to require both bindings would flip this red.
+    """
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=123,  # matches snapshot.pr_number
+        commit_sha="c" * 40,  # foreign SHA: simulates a post-rebase mismatch
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is True
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+
+
+@pytest.mark.unit
 def test_at_least_one_ticket_receipt_must_bind_to_pr(tmp_path: Path) -> None:
     contract = {
         "ticket_id": TICKET,
