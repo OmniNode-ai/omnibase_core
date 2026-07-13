@@ -295,7 +295,17 @@ failure would be worse than a documented failure event.
 |------------|---------------------|
 | **Immutable value** | `ConfigDict(frozen=True, extra="forbid", from_attributes=True)` |
 | **Mutable internal** | `ConfigDict(extra="forbid", from_attributes=True)` |
-| **Contract/external** | `ConfigDict(extra="ignore", ...)` |
+| **Contract/external** | `ConfigDict(extra="forbid", ...)` |
+
+**`extra="forbid"` is mandatory on EVERY model (OMN-14515)** — `extra="ignore"` and
+`extra="allow"` are default-deny. Declaring nothing is not neutral: Pydantic's default for
+an undeclared `extra` is `"ignore"`, so a model with no `model_config` is *already*
+silently dropping unknown fields. Four live silent-data-loss bugs came from exactly that
+(OMN-14490/14506/14513/14514). Inheriting `forbid` from a base counts — do not redundantly
+redeclare it. If a model must tolerate unknown input, add an explicit typed passthrough
+field; do not loosen `extra`. Enforced by `omnibase_core.validators.pydantic_extra_forbid`
+as a CI gate (inside the required Quality Gate) and a pre-commit hook; the only suppression
+is an expiring, ticket+PR-keyed waiver in `extra_forbid_waivers.yaml`.
 
 **`from_attributes=True`**: Required on frozen models for pytest-xdist compatibility.
 
