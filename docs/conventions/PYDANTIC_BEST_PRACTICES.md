@@ -9,7 +9,7 @@ This document covers Pydantic configuration patterns, safety considerations, and
 ## Table of Contents
 
 1. [Model Configuration](#model-configuration)
-2. [ConfigDict Policy Decision Matrix](#configdict-policy-decision-matrix)
+2. [`extra` Policy: always `forbid`](#extra-policy-always-forbid)
 3. [from_attributes Safety](#from_attributes-safety)
 4. [Frozen Models](#frozen-models)
 5. [Field Definition Best Practices](#field-definition-best-practices)
@@ -39,17 +39,17 @@ class ModelExample(BaseModel):
 |--------|-------|----------|
 | `frozen=True` | Immutable model | Fingerprints, envelopes, security models |
 | `frozen=False` | Mutable model | Configuration, builders, state objects |
-| `extra="forbid"` | **Mandatory on every model** (OMN-14515) | Everything — `ignore`/`allow` are default-deny |
+| `extra="forbid"` | **Mandatory on every model** | Everything — `ignore`/`allow` are default-deny |
 | `validate_assignment=True` | Re-validate on set | Mutable models with constraints |
 
 ---
 
-## `extra` Policy: always `forbid` (OMN-14515)
+## `extra` Policy: always `forbid`
 
 **There is no `extra` decision to make. Every Pydantic model declares `extra="forbid"`.**
-`extra="ignore"` and `extra="allow"` are default-deny platform-wide (operator ruling,
-2026-07-12). The earlier decision matrix in this document — which routed "contracts /
-external data" to `extra="ignore"` for forward-compatibility — is **superseded**.
+`extra="ignore"` and `extra="allow"` are default-deny platform-wide. The earlier decision
+matrix in this document — which routed "contracts / external data" to `extra="ignore"` for
+forward-compatibility — is **superseded**.
 
 ### Why the forward-compatibility argument lost
 
@@ -60,8 +60,8 @@ keeps being wrong.
 
 Four confirmed live silent-data-loss bugs came from exactly this shape — a consumer
 hand-rolled a slim copy of a producer's event model with a permissive `extra`, silently
-dropping fields on every event: **OMN-14490, OMN-14506, OMN-14513, OMN-14514**.
-`extra="ignore"` is what converts a *loud* schema mismatch into a *silent* one.
+dropping fields on every event. `extra="ignore"` is what converts a *loud* schema mismatch
+into a *silent* one.
 
 If a model genuinely must tolerate unknown input, that is a **typed passthrough**, not a
 permissive config: declare an explicit field for it.
@@ -105,7 +105,7 @@ class ModelThing(ModelStrictBase):
 
 ### Enforcement
 
-`omnibase_core.validators.pydantic_extra_forbid` (OMN-14515) is wired as a **CI gate**
+`omnibase_core.validators.pydantic_extra_forbid` is wired as a **CI gate**
 (inside the required Quality Gate rollup) and a **pre-commit hook**. It resolves the
 effective `extra` through the MRO by reading the real `cls.model_config`, so inheriting
 `forbid` from a base counts as compliant. It fails a NEW model outright, and fails a
@@ -259,7 +259,7 @@ class ModelSemVer(BaseModel):
     patch: int
 ```
 
-> The live `ModelSemVer` still carries `extra="ignore"` and is in the OMN-14515 baseline
+> The live `ModelSemVer` still carries `extra="ignore"` and is in the ratchet baseline
 > (708 consumers — the highest-blast-radius entry in the census; it needs a canary, not a
 > drive-by edit). The example above shows the target shape, not the current source.
 

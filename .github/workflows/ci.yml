@@ -850,6 +850,10 @@ jobs:
           # url_authority_baseline.json / canonical_inference_baseline.json
           # (sha256 fingerprints of known violations,
           #   not secrets — Hex High Entropy false-positive)
+          # extra_forbid_baseline.yaml (generated ratchet baseline of Python
+          #   FQNs; a "module.path:ClassName" entry is key:value-shaped, so the
+          #   Secret Keyword detector fires on names like model_network_restrictions
+          #   — same false-positive class as the two baselines above)
           set +e
           git ls-files -z | xargs -0 detect-secrets-hook \
             --baseline .secrets.baseline \
@@ -860,7 +864,8 @@ jobs:
             --exclude-files '\.secrets\.baseline' \
             --exclude-files '\.github/workflows/.*\.yml' \
             --exclude-files 'url_authority_baseline\.json' \
-            --exclude-files 'canonical_inference_baseline\.json'
+            --exclude-files 'canonical_inference_baseline\.json' \
+            --exclude-files 'extra_forbid_baseline\.yaml'
           HOOK_EXIT=$?
           set -e
 
