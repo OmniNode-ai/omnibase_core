@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Expiring waivers for the extra="forbid" ratchet (OMN-14515).
+#
+# THIS IS NOT AN ALLOWLIST. Every entry expires. An expired waiver is a HARD FAILURE,
+# not a silent pass — that is precisely what stops this file from rotting into the
+# permanent allowlist that every other enforcement surface eventually decays into.
+#
+# A waiver exists for exactly one reason: sanctioned, ticketed, time-boxed in-flight
+# work that the gate would otherwise block (e.g. a model being graduated between repos
+# across two PRs). It is NOT an escape hatch for "I did not feel like adding
+# extra=forbid".
+#
+# Every field is REQUIRED. A missing/malformed field is a hard failure:
+#
+#   waivers:
+#     - fqn: omnibase_core.models.registration.model_node_capabilities:ModelNodeCapabilities
+#       ticket: OMN-14208            # must be a real, OPEN OMN-NNNN
+#       pr: https://github.com/OmniNode-ai/omnibase_core/pull/1436   # the in-flight PR
+#       expires_at: 2026-08-01       # absolute ISO date, set by the approver
+#       reason: time-boxed cross-repo model graduation; consolidation lands in <PR>
+#
+# The fix is almost always cheaper than the waiver:
+#
+#   model_config = ConfigDict(extra="forbid")
+#
+waivers: []

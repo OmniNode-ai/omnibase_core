@@ -9,7 +9,7 @@ This document covers Pydantic configuration patterns, safety considerations, and
 ## Table of Contents
 
 1. [Model Configuration](#model-configuration)
-2. [ConfigDict Policy Decision Matrix](#configdict-policy-decision-matrix)
+2. [`extra` Policy: always `forbid`](#extra-policy-always-forbid)
 3. [from_attributes Safety](#from_attributes-safety)
 4. [Frozen Models](#frozen-models)
 5. [Field Definition Best Practices](#field-definition-best-practices)
@@ -39,139 +39,89 @@ class ModelExample(BaseModel):
 |--------|-------|----------|
 | `frozen=True` | Immutable model | Fingerprints, envelopes, security models |
 | `frozen=False` | Mutable model | Configuration, builders, state objects |
-| `extra="forbid"` | Strict validation | Contracts, security models |
-| `extra="ignore"` | Flexible input | YAML contracts, external data |
+| `extra="forbid"` | **Mandatory on every model** | Everything — `ignore`/`allow` are default-deny |
 | `validate_assignment=True` | Re-validate on set | Mutable models with constraints |
 
 ---
 
-## ConfigDict Policy Decision Matrix
+## `extra` Policy: always `forbid`
 
-### Quick Decision Guide
+**There is no `extra` decision to make. Every Pydantic model declares `extra="forbid"`.**
+`extra="ignore"` and `extra="allow"` are default-deny platform-wide. The earlier decision
+matrix in this document — which routed "contracts / external data" to `extra="ignore"` for
+forward-compatibility — is **superseded**.
 
-For a rapid ConfigDict selection, follow this simplified flowchart:
+### Why the forward-compatibility argument lost
 
-```text
-Is the model immutable after creation?
-│
-├─ YES ──► frozen=True, from_attributes=True (REQUIRED combo)
-│          │
-│          └─ Does it accept external data (YAML, APIs)?
-│             │
-│             ├─ NO (internal value object) ──► extra="forbid"
-│             │
-│             └─ YES (contracts, configs)
-│                │
-│                ├─ Extension point? ──► extra="allow"
-│                │
-│                └─ Forward-compat? ──► extra="ignore"
-│
-└─ NO ──► No frozen=True
-          │
-          └─ Is it internal or external?
-             │
-             ├─ Internal domain model ──► extra="forbid"
-             │
-             └─ External data / Contract ──► extra="ignore"
-                │
-                └─ Extension point? ──► extra="allow"
-```
+`extra="ignore"` does not give you forward-compatibility. It gives you *silence*. When a
+producer adds a field and a consumer's model does not know about it, `ignore` drops it on
+every single message, with no error, no log, and no metric. The consumer keeps working and
+keeps being wrong.
 
-### Detailed Decision Flowchart
+Four confirmed live silent-data-loss bugs came from exactly this shape — a consumer
+hand-rolled a slim copy of a producer's event model with a permissive `extra`, silently
+dropping fields on every event. `extra="ignore"` is what converts a *loud* schema mismatch
+into a *silent* one.
 
-Use this flowchart to determine the appropriate ConfigDict settings for your model:
-
-```text
-                          ┌─────────────────────────────────┐
-                          │      New Pydantic Model         │
-                          └───────────────┬─────────────────┘
-                                          │
-                          ┌───────────────▼─────────────────┐
-                          │  Should it be immutable after   │
-                          │  creation? (fingerprints,       │
-                          │  envelopes, value objects)      │
-                          └───────────────┬─────────────────┘
-                                     Yes / \ No
-                     ┌──────────────────┘   └──────────────────┐
-                     │                                          │
-         ┌───────────▼───────────┐              ┌───────────────▼───────────────┐
-         │ frozen=True           │              │ Does it accept external data   │
-         │ from_attributes=True  │              │ (YAML, JSON, APIs)?            │
-         │ (REQUIRED combo)      │              └───────────────┬───────────────┘
-         └───────────┬───────────┘                         Yes / \ No
-                     │                          ┌──────────────┘   └──────────────┐
-         ┌───────────▼───────────┐              │                                  │
-         │ Should unknown fields │  ┌───────────▼───────────┐      ┌───────────────▼───────────────┐
-         │ be rejected?          │  │ Is it an extension    │      │ Internal domain model         │
-         └───────────┬───────────┘  │ point for plugins?    │      │ extra="forbid"                │
-                Yes / \ No          └───────────┬───────────┘      │ (catches bugs)                │
-        ┌──────────┘   └──────────┐        Yes / \ No              └───────────────────────────────┘
-        │                          │    ┌──────┘   └──────┐
-┌───────▼─────────┐      ┌─────────▼───────┐     ┌────────▼────────┐
-│ Value Object    │      │ Forward-compat  │     │ Extension Point │
-│ extra="forbid"  │      │ extra="ignore"  │     │ extra="allow"   │
-│ (security,      │      │ (contracts,     │     │ (plugins,       │
-│ results)        │      │ configs)        │     │ metadata)       │
-└─────────────────┘      └─────────────────┘     └─────────────────┘
-
-RESULT CONFIGURATIONS:
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Immutable Value Object:  ConfigDict(frozen=True, extra="forbid",            │
-│                                     from_attributes=True)                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Forward-Compatible:      ConfigDict(extra="ignore")                         │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Extension Point:         ConfigDict(extra="allow")                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ Internal Domain Model:   ConfigDict(extra="forbid", from_attributes=True)   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### When to use `extra="forbid"` (strictest)
-
-Use for models where unknown fields indicate a bug:
-
-- Security-critical models (signatures, assessments)
-- Immutable value objects (results, metrics)
-- Internal domain models
-- Any model where extra fields should fail loudly
+If a model genuinely must tolerate unknown input, that is a **typed passthrough**, not a
+permissive config: declare an explicit field for it.
 
 ```python
-class ModelSecurityAssessment(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
-    risk_level: str
-    confidence: float
-```
-
-### When to use `extra="ignore"` (permissive)
-
-Use for forward-compatibility with external data:
-
-- YAML/JSON contract parsing from external sources
-- Forward-compatibility with newer schema versions
-- Infrastructure configuration models
-- External API response models
-
-```python
+# WRONG — unknown fields vanish silently
 class ModelExternalConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
     version: str
-    settings: dict[str, Any]
+
+# RIGHT — unknown input is explicit, typed, and survives the round trip
+class ModelExternalConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: str
+    vendor_extensions: dict[str, Any] = Field(default_factory=dict)
 ```
 
-### When to use `extra="allow"` (extensible)
+### Declaring nothing is NOT neutral
 
-Use ONLY when arbitrary additional fields are intentional:
-
-- Extension point models (ModelNodeExtensions)
-- Metadata passthrough containers
-- Plugin/vendor extensibility points
+**Pydantic's default for an undeclared `extra` is `"ignore"`.** A model with no
+`model_config` at all is already silently dropping fields — it just never said so. That is
+why the gate asserts the *positive*: an explicit, declared-or-inherited `extra="forbid"`.
+**Absence is a violation.** In the platform census, the implicit-default population (858)
+was *larger* than the explicit `ignore`/`allow` population (514) — a validator that greps
+for the string `extra="ignore"` would have missed the majority of the problem.
 
 ```python
-class ModelNodeExtensions(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    # Allows arbitrary vendor-specific fields
+# VIOLATION — declares nothing, so Pydantic silently applies extra="ignore"
+class ModelThing(BaseModel):
+    field: str
+
+# COMPLIANT — explicit
+class ModelThing(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    field: str
+
+# COMPLIANT — inherited from a compliant base (do not redundantly redeclare)
+class ModelThing(ModelStrictBase):
+    field: str
 ```
+
+### Enforcement
+
+`omnibase_core.validators.pydantic_extra_forbid` is wired as a **CI gate**
+(inside the required Quality Gate rollup) and a **pre-commit hook**. It resolves the
+effective `extra` through the MRO by reading the real `cls.model_config`, so inheriting
+`forbid` from a base counts as compliant. It fails a NEW model outright, and fails a
+BASELINED model whose body you just edited — touching a broken model is your chance to fix
+it. The frozen baseline may only shrink. The single sanctioned suppression is an
+**expiring waiver** keyed to an open ticket + PR (`extra_forbid_waivers.yaml`); an expired
+waiver is a hard failure, by design, so it cannot decay into an allowlist.
+
+The one exemption is `RootModel`, which Pydantic itself refuses to let you configure with
+`extra`.
+
+The pre-existing violations are not being burned down by hand — the RSD canonical rewrite
+regenerates the corpus with `extra="forbid"` emitted by construction. This gate exists so
+that the *next* hand-written model cannot be born broken.
+
+---
 
 ### When to use `frozen=True`
 
@@ -291,7 +241,7 @@ model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
 This tells Pydantic: "Accept any object with matching attributes, not just exact class matches."
 
-#### Reference Example (ModelSemVer)
+#### Reference Example (immutable value object)
 
 ```python
 class ModelSemVer(BaseModel):
@@ -302,12 +252,16 @@ class ModelSemVer(BaseModel):
         attributes even when class identity differs (e.g., in pytest-xdist
         parallel execution where model classes are imported in separate workers).
     """
-    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     major: int
     minor: int
     patch: int
 ```
+
+> The live `ModelSemVer` still carries `extra="ignore"` and is in the ratchet baseline
+> (708 consumers — the highest-blast-radius entry in the census; it needs a canary, not a
+> drive-by edit). The example above shows the target shape, not the current source.
 
 ### Recommended Pattern
 

@@ -455,6 +455,30 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: pydantic-extra-forbid
+  name: Pydantic extra="forbid" ratchet (OMN-14515)
+  description: >
+    Asserts the POSITIVE: every Pydantic model must resolve to an explicit extra="forbid" (inheriting
+    it from a compliant base counts). ABSENCE IS A VIOLATION — Pydantic's default for an undeclared extra
+    is "ignore", which SILENTLY DROPS unknown fields, so a model with no model_config at all is already
+    broken; a validator that only greps for the literal string extra="ignore" is vacuous. Four confirmed
+    live silent-data-loss bugs came from this exact shape (OMN-14490/14506/14513/14514). Resolution prefers
+    real runtime introspection of cls.model_config (Pydantic merges config down the MRO itself), falling
+    back to static AST for unimportable files. Ratchet, not allowlist: NEW models fail outright; --enforce-modified
+    <ref|:staged> also fails a BASELINED model whose body the diff touched; --check-stale forces the baseline
+    count down. The only suppression is an EXPIRING waiver keyed to an open ticket + PR — an expired waiver
+    is a hard failure. Consumers pass their own baseline + scan root via args, e.g. args: [--check-stale,
+    --baseline, .onex_ratchets/extra_forbid_baseline.yaml, --waivers, .onex_ratchets/extra_forbid_waivers.yaml,
+    src/<pkg>] plus a files: filter to scope the trigger. NOTE: prefer wiring this with language: system
+    + `uv run` in the consuming repo, so the validator runs in that repo's venv and can import its models
+    for runtime introspection; under this isolated `language: python` env the consuming repo is not importable
+    and the static AST fallback is used instead.
+  language: python
+  entry: python -m omnibase_core.validators.pydantic_extra_forbid
+  types: [python]
+  pass_filenames: false
+  stages: [pre-commit]
+
 - id: no-noncanonical-lifecycle-classes
   name: Non-canonical lifecycle-class ratchet (OMN-14350)
   description: >
