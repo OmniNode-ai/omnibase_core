@@ -469,7 +469,13 @@ class _RuntimeResolver:
             sys.path.insert(0, root)
         try:
             module = importlib.import_module(module_name)
-        except BaseException as exc:  # noqa: BLE001 - any import failure -> static fallback
+        except (KeyboardInterrupt, SystemExit):
+            # Cancellation signals must always propagate (repo decorator contract);
+            # never swallow them into the static-fallback path.
+            raise
+        except Exception as exc:  # noqa: BLE001  # fallback-ok: import failure -> static-engine fallback
+            # Intentional swallow: an unimportable module falls back to the static AST
+            # engine (recorded in import_failures), it does not fail the whole scan.
             self._failed.add(module_name)
             self.import_failures[module_name] = f"{type(exc).__name__}: {exc}"
             return None
