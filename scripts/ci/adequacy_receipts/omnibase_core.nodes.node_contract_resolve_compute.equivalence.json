@@ -1,0 +1,8 @@
+{
+  "node_id": "omnibase_core.nodes.node_contract_resolve_compute",
+  "selected_input_hashes": [
+    "sha256:1e672ea1a3d285adc9ac254cecb0bfb17288cfa39022130dd7df4c008e27e0db",
+    "sha256:8d415ea305e3049184f351749371759ae8c2a152d52c3116a1dee1ab64a46015"
+  ],
+  "status": "pass"
+}

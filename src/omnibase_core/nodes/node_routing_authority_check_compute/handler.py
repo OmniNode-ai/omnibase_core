@@ -69,9 +69,10 @@ class NodeRoutingAuthorityCheckCompute:
     DI container or invoke directly in tests.
 
     The ``check()`` method is the synchronous computation entry-point used by
-    the pre-commit CLI wrapper. The ``handle()`` method wraps it for dispatch-
-    engine consumption (async envelope in, async envelope out). Both delegate
-    to the pure validation-layer implementation in
+    the pre-commit CLI wrapper. ``handle()`` is the definition-B canonical
+    entry-point (OMN-14355): a typed request in, typed response out, adapted
+    by the shared runtime (``omnibase_core.runtime.runtime_local_adapter``).
+    Both delegate to the pure validation-layer implementation in
     ``omnibase_core.validation.checker_routing_authority``.
     """
 
@@ -110,21 +111,11 @@ class NodeRoutingAuthorityCheckCompute:
         """
         return run_routing_authority_check(inp)
 
-    async def handle(self, envelope: Any) -> Any:
-        """Dispatch-engine entry-point — wraps check() for async bus invocation."""
-
-        from omnibase_core.models.dispatch.model_handler_output import (
-            ModelHandlerOutput,
-        )
-
-        inp: ModelRoutingAuthorityCheckInput = envelope.payload
-        result = self.check(inp)
-        return ModelHandlerOutput.for_compute(
-            input_envelope_id=envelope.envelope_id,
-            correlation_id=envelope.correlation_id,
-            handler_id=self.handler_id,
-            result=result,
-        )
+    def handle(
+        self, request: ModelRoutingAuthorityCheckInput
+    ) -> ModelRoutingAuthorityCheckOutput:
+        """Definition-B canonical entry-point — wraps check() (OMN-14355)."""
+        return self.check(request)
 
     def _resolve_endpoint_for_ref(
         self,

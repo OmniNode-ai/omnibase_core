@@ -15,10 +15,7 @@ RSD canonical rewrite regenerating these handlers, each with an adequacy receipt
 """
 
 NON_CANONICAL: tuple[str, ...] = (
-    "omnibase_core.nodes.node_backend_secret_discipline_compute",
     "omnibase_core.nodes.node_compliance_evidence_effect",
     "omnibase_core.nodes.node_compliance_report_reducer",
     "omnibase_core.nodes.node_compliance_scan_compute",
-    "omnibase_core.nodes.node_contract_resolve_compute",
-    "omnibase_core.nodes.node_routing_authority_check_compute",
 )
