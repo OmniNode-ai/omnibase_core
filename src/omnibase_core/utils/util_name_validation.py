@@ -10,8 +10,8 @@ import back-edge the intra-core import-linter oracle forbids.
 
 Every function here is pure (standard library only: ``re``, ``keyword``,
 ``logging``); nothing in this module imports ``omnibase_core.models`` or any
-higher layer, so it sits cleanly below ``models``. ``validator_utils`` re-exports
-these names for backwards compatibility of its public API.
+higher layer, so it sits cleanly below ``models``. ``validator_utils`` imports
+and re-exports these names as part of the current validation API.
 
 Error Handling
 --------------

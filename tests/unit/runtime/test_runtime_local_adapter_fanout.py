@@ -113,11 +113,11 @@ def _adapter(
     on_error: Callable[[], None] | None = None,
 ) -> LocalRuntimeBusAdapter:
     return LocalRuntimeBusAdapter(
-        handler=cast("ProtocolLocalRuntimeCallableTarget", handler),
+        handler=cast(ProtocolLocalRuntimeCallableTarget, handler),
         handler_name="test-handler",
         input_model_cls=ModelInput,
         output_topic=output_topic,
-        bus=cast("ProtocolLocalRuntimeBus", bus),
+        bus=cast(ProtocolLocalRuntimeBus, bus),
         on_error=on_error,
         published_events=published_events,
         multi_event_seam_enabled=seam_enabled,

@@ -4,7 +4,7 @@
 """
 Structural protocol for semantic-version values.
 
-``ProtocolSemVer`` captures the read surface of
+``ProtocolSemVer`` exports the read surface of
 ``omnibase_core.models.primitives.model_semver.ModelSemVer`` so foundation-layer
 TypedDicts and type aliases can annotate version-typed fields WITHOUT importing
 the concrete model (a ``types -> models`` import-layering back-edge forbidden by
@@ -26,34 +26,29 @@ from __future__ import annotations
 from typing import Protocol
 
 
-class ProtocolSemVer(Protocol):
+class SemVerProtocol(Protocol):
     """Structural read surface of a semantic-version value (see ``ModelSemVer``)."""
 
     @property
-    def major(self) -> int:
-        raise NotImplementedError
+    def major(self) -> int: ...
 
     @property
-    def minor(self) -> int:
-        raise NotImplementedError
+    def minor(self) -> int: ...
 
     @property
-    def patch(self) -> int:
-        raise NotImplementedError
+    def patch(self) -> int: ...
 
     @property
-    def prerelease(self) -> tuple[str | int, ...] | None:
-        raise NotImplementedError
+    def prerelease(self) -> tuple[str | int, ...] | None: ...
 
     @property
-    def build(self) -> tuple[str, ...] | None:
-        raise NotImplementedError
+    def build(self) -> tuple[str, ...] | None: ...
 
-    def to_string(self) -> str:
-        raise NotImplementedError
+    def to_string(self) -> str: ...
 
-    def is_prerelease(self) -> bool:
-        raise NotImplementedError
+    def is_prerelease(self) -> bool: ...
 
+
+ProtocolSemVer = SemVerProtocol
 
 __all__ = ["ProtocolSemVer"]

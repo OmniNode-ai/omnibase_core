@@ -630,8 +630,8 @@ __all__ = [
     "ModelValidationResult",
     # Protocol compliance validation
     "validate_protocol_compliance",
-    # Name and identifier validation (relocated to utils.util_name_validation,
-    # re-exported here for backwards compatibility)
+    # Name and identifier validation (implemented in utils.util_name_validation
+    # and exported here as part of the validation API)
     "is_valid_python_identifier",
     "is_valid_onex_name",
     "validate_import_path_format",
