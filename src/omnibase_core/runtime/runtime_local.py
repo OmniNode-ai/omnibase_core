@@ -812,6 +812,44 @@ class RuntimeLocal:
 
         return errors
 
+    def _load_published_events_map(self) -> dict[str, str]:
+        """Parse the contract's top-level ``published_events`` class -> topic map.
+
+        Mirrors ``omnibase_infra`` ``load_published_events_map`` but reads the
+        already-loaded contract dict (no file re-read): each entry is
+        ``{event_type: <short class name>, topic: <topic>}``. Malformed entries are
+        skipped; the map is validated for injectivity by the caller at boot.
+        Returns ``{}`` when the contract declares no ``published_events``.
+        """
+        raw = self._contract.get("published_events")
+        if not isinstance(raw, list):
+            return {}
+        result: dict[str, str] = {}
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            event_type = entry.get("event_type")
+            topic = entry.get("topic")
+            if (
+                isinstance(event_type, str)
+                and event_type
+                and isinstance(topic, str)
+                and topic
+            ):
+                prior_topic = result.get(event_type)
+                if prior_topic is not None and prior_topic != topic:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                        message=(
+                            "published_events declares event_type "
+                            f"{event_type!r} twice with different topics "
+                            f"({prior_topic!r} and {topic!r}); reconcile the "
+                            "duplicate entry."
+                        ),
+                    )
+                result[event_type] = topic
+        return result
+
     def _resolve_routing_entries(
         self,
         routing: RawWorkflowMap,
@@ -1000,8 +1038,12 @@ class RuntimeLocal:
         from omnibase_core.protocols.runtime.protocol_local_runtime_callable_target import (
             ProtocolLocalRuntimeCallableTarget,
         )
+        from omnibase_core.runtime.runtime_fanout_resolver import (
+            assert_published_events_injective,
+        )
         from omnibase_core.runtime.runtime_local_adapter import (
             LocalRuntimeBusAdapter,
+            multi_event_publish_seam_enabled,
         )
 
         routing = self._as_workflow_map(self._contract.get("handler_routing", {}))
@@ -1051,6 +1093,19 @@ class RuntimeLocal:
         # --- 4. Wire adapters to bus ---
         unsubscribe_handles: list[UnsubscribeCallback] = []
         self._handlers_wired = [e.handler_name for e in resolved_entries]
+
+        # OMN-14403 §6ii: load the contract's published_events class -> topic map
+        # (when declared) so a def-B fan-out / multi-topic handler's emitted class
+        # resolves its own publish topic instead of the single per-entry
+        # output_topic, and assert the map is injective at boot. Default-OFF seam:
+        # when OFF this map is loaded but unused (single output_topic path).
+        published_events = self._load_published_events_map()
+        if published_events:
+            assert_published_events_injective(
+                published_events,
+                context=str(self._contract.get("name", "<workflow>")),
+            )
+        multi_event_seam_enabled = multi_event_publish_seam_enabled()
 
         def _fail_callback() -> None:
             self._result = EnumWorkflowResult.FAILED
@@ -1106,6 +1161,8 @@ class RuntimeLocal:
                 bus=bus,
                 on_error=_make_fail_cb(entry.handler_name),
                 on_result=_make_result_cb(entry.output_topic),
+                published_events=published_events,
+                multi_event_seam_enabled=multi_event_seam_enabled,
             )
 
             if not entry.input_topic:

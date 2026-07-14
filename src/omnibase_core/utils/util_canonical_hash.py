@@ -14,7 +14,12 @@ RFC 8785 compatible: keys are sorted, output is ASCII-encoded.
 
 import hashlib
 import json
+from datetime import date, datetime
+from decimal import Decimal
+from enum import Enum
+from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 __all__ = ["compute_canonical_hash"]
 
@@ -39,6 +44,21 @@ def _strip_none_values(obj: Any) -> Any:
     if isinstance(obj, list):
         return [_strip_none_values(item) for item in obj]
     return obj
+
+
+def _json_default(obj: object) -> object:
+    """Encode non-JSON-native values emitted by Pydantic ``model_dump()``."""
+    if isinstance(obj, Enum):
+        return obj.value
+    if isinstance(obj, UUID | Decimal | Path):
+        return str(obj)
+    if isinstance(obj, datetime | date):
+        return obj.isoformat()
+    if isinstance(obj, set | frozenset):
+        return sorted(obj)
+    raise TypeError(  # error-ok: json.dumps default callbacks must signal unsupported values with TypeError
+        f"Object of type {type(obj).__name__} is not JSON serializable"
+    )
 
 
 def compute_canonical_hash(obj: object) -> str:
@@ -70,7 +90,7 @@ def compute_canonical_hash(obj: object) -> str:
     """
     # Pydantic models expose model_dump(); fall back to __dict__ then identity.
     if hasattr(obj, "model_dump"):
-        raw: Any = obj.model_dump()
+        raw: Any = obj.model_dump()  # noqa: model-dump-bare
     elif isinstance(obj, dict):
         raw = obj
     else:
@@ -78,5 +98,7 @@ def compute_canonical_hash(obj: object) -> str:
         raw = obj
 
     stripped = _strip_none_values(raw)
-    canonical_json = json.dumps(stripped, sort_keys=True, ensure_ascii=True)
+    canonical_json = json.dumps(
+        stripped, sort_keys=True, ensure_ascii=True, default=_json_default
+    )
     return hashlib.sha256(canonical_json.encode("ascii")).hexdigest()
