@@ -836,6 +836,17 @@ class RuntimeLocal:
                 and isinstance(topic, str)
                 and topic
             ):
+                prior_topic = result.get(event_type)
+                if prior_topic is not None and prior_topic != topic:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                        message=(
+                            "published_events declares event_type "
+                            f"{event_type!r} twice with different topics "
+                            f"({prior_topic!r} and {topic!r}); reconcile the "
+                            "duplicate entry."
+                        ),
+                    )
                 result[event_type] = topic
         return result
 

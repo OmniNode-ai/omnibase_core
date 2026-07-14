@@ -109,6 +109,42 @@ def test_create_event_bus_explicit_inmemory(workflow_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_load_published_events_map_rejects_conflicting_duplicates(
+    workflow_path: Path,
+) -> None:
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    runtime._contract = {
+        "published_events": [
+            {"event_type": "ModelAlpha", "topic": "alpha.created.v1"},
+            {"event_type": "ModelAlpha", "topic": "alpha.changed.v1"},
+        ]
+    }
+
+    with pytest.raises(ModelOnexError) as exc_info:
+        runtime._load_published_events_map()
+
+    assert exc_info.value.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
+    assert "ModelAlpha" in str(exc_info.value)
+    assert "alpha.created.v1" in str(exc_info.value)
+    assert "alpha.changed.v1" in str(exc_info.value)
+
+
+@pytest.mark.unit
+def test_load_published_events_map_allows_identical_duplicates(
+    workflow_path: Path,
+) -> None:
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    runtime._contract = {
+        "published_events": [
+            {"event_type": "ModelAlpha", "topic": "alpha.created.v1"},
+            {"event_type": "ModelAlpha", "topic": "alpha.created.v1"},
+        ]
+    }
+
+    assert runtime._load_published_events_map() == {"ModelAlpha": "alpha.created.v1"}
+
+
+@pytest.mark.unit
 def test_core_inmemory_bus_satisfies_local_runtime_bus_protocol(
     workflow_path: Path,
 ) -> None:
