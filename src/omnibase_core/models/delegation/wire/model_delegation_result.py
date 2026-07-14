@@ -157,4 +157,31 @@ class ModelDelegationResult(BaseModel):
         return self
 
 
-__all__: list[str] = ["ModelDelegationResult"]
+class ModelDelegationCompleted(ModelDelegationResult):
+    """Delegation terminal, COMPLETED outcome (OMN-14600).
+
+    Thin subclass — adds NO new fields and no new validation. Class identity
+    alone is what class-name -> topic routing (``_outbox_topic_for`` /
+    ``DispatchResultApplier._resolve_mapped_output_topic``) uses to
+    disambiguate the completed-vs-failed terminal, replacing the earlier
+    bespoke ``ModelDelegationEventEnvelope{topic, payload}`` carrier (which
+    the routing layer could never resolve, since one wrapped class covered
+    both outcomes on one topic-per-class map). ``model_dump()`` is
+    byte-identical to a plain ``ModelDelegationResult`` — no wire consumer
+    that reads the flat payload shape needs to change.
+    """
+
+
+class ModelDelegationFailed(ModelDelegationResult):
+    """Delegation terminal, FAILED outcome (OMN-14600).
+
+    Thin subclass — see :class:`ModelDelegationCompleted` docstring; the same
+    rationale applies to the failed-outcome topic.
+    """
+
+
+__all__: list[str] = [
+    "ModelDelegationCompleted",
+    "ModelDelegationFailed",
+    "ModelDelegationResult",
+]
