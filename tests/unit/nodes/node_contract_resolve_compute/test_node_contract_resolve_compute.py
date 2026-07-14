@@ -19,7 +19,16 @@ Ticket: OMN-2754
 
 from __future__ import annotations
 
+import hashlib
+import json
+from datetime import datetime
+from decimal import Decimal
+from enum import Enum
+from pathlib import Path
+from uuid import UUID
+
 import pytest
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_overlay_scope import EnumOverlayScope
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
@@ -123,6 +132,42 @@ class TestComputeCanonicalHash:
         h2 = compute_canonical_hash(compute_profile_ref)
         assert h1 == h2
         assert len(h1) == 64
+
+    def test_json_serializable_digest_is_unchanged(self) -> None:
+        """The fallback encoder does not affect already-serializable inputs."""
+        obj = {"kind": "handler", "enabled": True, "count": 3}
+        canonical_json = json.dumps(obj, sort_keys=True, ensure_ascii=True)
+        expected = hashlib.sha256(canonical_json.encode("ascii")).hexdigest()
+
+        assert compute_canonical_hash(obj) == expected
+
+    def test_pydantic_model_dump_values_are_json_encoded(self) -> None:
+        """Pydantic-supported values from model_dump() remain hashable."""
+
+        class SampleEnum(Enum):
+            ALPHA = "alpha"
+
+        class SampleModel(BaseModel):
+            identifier: UUID
+            created_at: datetime
+            amount: Decimal
+            marker: SampleEnum
+            path: Path
+            tags: set[str]
+
+        model = SampleModel(
+            identifier=UUID("00000000-0000-0000-0000-000000000001"),
+            created_at=datetime(2026, 1, 1, 12, 30, 0),
+            amount=Decimal("12.50"),
+            marker=SampleEnum.ALPHA,
+            path=Path("contracts/OMN-14403.yaml"),
+            tags={"fanout", "runtime"},
+        )
+
+        result = compute_canonical_hash(model)
+
+        assert len(result) == 64
+        assert result == compute_canonical_hash(model)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
