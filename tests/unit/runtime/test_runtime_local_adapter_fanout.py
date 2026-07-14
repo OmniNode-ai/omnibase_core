@@ -58,6 +58,13 @@ class _FanoutHandler:
         return (ModelAlpha(value=request.value), ModelBeta(value=request.value))
 
 
+class _FanoutWithUnmappedHandler:
+    """def-B fan-out containing a class absent from published_events."""
+
+    def handle(self, request: ModelInput) -> tuple[BaseModel, ...]:
+        return (ModelAlpha(value=request.value), ModelGamma(value=request.value))
+
+
 class _SingleAlphaHandler:
     """def-B single-emit whose topic must come from published_events (Alpha)."""
 
@@ -188,7 +195,7 @@ async def test_single_emit_seam_on_no_published_events_uses_output_topic() -> No
 
 
 @pytest.mark.asyncio
-async def test_fanout_unmapped_class_fails_closed() -> None:
+async def test_single_emit_unmapped_class_fails_closed() -> None:
     bus = _FakeBus()
     errors: list[bool] = []
 
@@ -204,5 +211,24 @@ async def test_fanout_unmapped_class_fails_closed() -> None:
     )
     await adapter.on_message(_msg(1))
     # Fail-closed: unmapped class raises inside publish -> on_error, nothing sent.
+    assert bus.published == []
+    assert errors == [True]
+
+
+@pytest.mark.asyncio
+async def test_fanout_batch_unmapped_class_fails_closed() -> None:
+    bus = _FakeBus()
+    errors: list[bool] = []
+    adapter = _adapter(
+        _FanoutWithUnmappedHandler(),
+        bus,
+        seam_enabled=True,
+        published_events=_PUBLISHED,
+        on_error=lambda: errors.append(True),
+    )
+
+    await adapter.on_message(_msg(1))
+
+    # Fail-closed: unmapped element aborts the whole batch before publishing.
     assert bus.published == []
     assert errors == [True]

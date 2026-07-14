@@ -30,23 +30,30 @@ class SemVerProtocol(Protocol):
     """Structural read surface of a semantic-version value (see ``ModelSemVer``)."""
 
     @property
-    def major(self) -> int: ...
+    def major(self) -> int:
+        pass
 
     @property
-    def minor(self) -> int: ...
+    def minor(self) -> int:
+        pass
 
     @property
-    def patch(self) -> int: ...
+    def patch(self) -> int:
+        pass
 
     @property
-    def prerelease(self) -> tuple[str | int, ...] | None: ...
+    def prerelease(self) -> tuple[str | int, ...] | None:
+        pass
 
     @property
-    def build(self) -> tuple[str, ...] | None: ...
+    def build(self) -> tuple[str, ...] | None:
+        pass
 
-    def to_string(self) -> str: ...
+    def to_string(self) -> str:
+        pass
 
-    def is_prerelease(self) -> bool: ...
+    def is_prerelease(self) -> bool:
+        pass
 
 
 ProtocolSemVer = SemVerProtocol
