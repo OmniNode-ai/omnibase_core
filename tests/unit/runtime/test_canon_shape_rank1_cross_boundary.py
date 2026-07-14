@@ -148,7 +148,7 @@ async def test_backend_secret_discipline_leak_dispatches_and_fails_closed() -> N
     )
     payload = {
         "config_contents": {
-            "routing.yaml": 'api_key: "sk-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst"\n'
+            "routing.yaml": 'api_key: "sk-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst"\n'  # pragma: allowlist secret
         },
     }
     await adapter.on_message(_FakeMsg(json.dumps(payload).encode("utf-8")))
