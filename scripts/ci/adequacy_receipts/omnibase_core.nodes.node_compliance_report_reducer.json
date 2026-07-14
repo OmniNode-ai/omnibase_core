@@ -1,0 +1,22 @@
+{
+  "branch_coverage_pct": 70.27,
+  "candidate_count": 6,
+  "coverage_target": 80.0,
+  "handler_module": "omnibase_core.nodes.node_compliance_report_reducer.handler",
+  "handler_module_sha256": "sha256:a9bcf227551e8211d666bd321c05a930cdd09283c2b4208182fb854e3ba6f4dd",
+  "meets_target": false,
+  "node_id": "omnibase_core.nodes.node_compliance_report_reducer",
+  "receipt_schema": "adequacy_receipt.v1",
+  "recorded_at": "2026-07-14T21:01:01.007096+00:00",
+  "recorder_schema": "adequacy_receipt.v1",
+  "selected_count": 2,
+  "selected_input_hashes": [
+    "sha256:b518c7a996aaf9a1c0c1d33979cf856248d532703a57890335f6c598a77482ef",
+    "sha256:f7cca2e50fadc916227273999e0f93fc401afbd01b2c10bf739f2745d3bb41cc"
+  ],
+  "uncovered_waiver": {
+    "reason": "The flip is a pure additive wrapper: handle(request) unpacks the composite ModelComplianceReportReduceRequest(state, check_result) and delegates to reduce_compliance() (unmodified, independently covered by 7 pre-existing unit tests), then wraps the (new_state, intents) tuple in ModelComplianceReportReduceResponse. This pool exercises both the not-replaced (new node_id, append) and replaced (same node_id, both passed_delta directions) branches of reduce_compliance, plus run-identity preservation through a replace cycle; intents is always [] in this handler's current implementation so the emit-intents branch has no alternate path to exercise.",
+    "uncovered_branch_count": 0
+  },
+  "volatile_mask": []
+}

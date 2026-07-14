@@ -17,6 +17,9 @@ description: >
   Scan a directory tree for ONEX contract.yaml files and run 8 structural compliance checks per node:
   contract parse, handler resolution, schema conformance (2), naming policy (2), config readiness, and
   codepath consumption. Returns per-node PASS/FAIL results classified by verification type. #magic___^_^___line
+input_model: omnibase_core.models.nodes.compliance_scan.model_compliance_scan_request.ModelComplianceScanRequest
+output_model: omnibase_core.models.nodes.compliance_scan.model_compliance_scan_response.ModelComplianceScanResponse
+
 handler_routing:
   default_handler: handler:NodeComplianceScanCompute
 
