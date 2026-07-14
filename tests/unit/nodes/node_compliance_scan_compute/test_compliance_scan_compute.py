@@ -237,3 +237,135 @@ class TestSourceOnlyFlag:
         results = scanner.scan(str(tmp_path), source_only=True)
         assert len(results) == 1
         assert results[0].node_id == "node_real"
+
+
+class TestOrChainFallbackPrecedence:
+    """Behavioral proof for OMN-14634: the 3 or-chains that were rewritten as
+    explicit if/elif precedence must keep IDENTICAL cascade behavior — same
+    winner at every fallback depth, including when a higher-precedence field
+    is present alongside a lower-precedence one (a bug here would silently
+    pick the WRONG field, not crash — the RED case is "exists but wrong",
+    not "absent").
+    """
+
+    def test_node_id_falls_back_to_handler_id_when_node_id_absent(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_x"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text("handler_id: my_handler\n")
+
+        results = scanner.scan(str(tmp_path))
+        assert results[0].node_id == "my_handler"
+
+    def test_node_id_prefers_node_id_over_handler_id(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_y"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text(
+            "node_id: canonical_id\nhandler_id: my_handler\n"
+        )
+
+        results = scanner.scan(str(tmp_path))
+        assert results[0].node_id == "canonical_id"
+
+    def test_node_id_falls_back_to_name_when_node_id_and_handler_id_absent(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_z"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text("name: friendly_name\n")
+
+        results = scanner.scan(str(tmp_path))
+        assert results[0].node_id == "friendly_name"
+
+    def test_node_id_falls_back_to_directory_name_when_all_fields_absent(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_dirname_fallback"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text("description: no identifying fields\n")
+
+        results = scanner.scan(str(tmp_path))
+        assert results[0].node_id == "node_dirname_fallback"
+
+    def test_node_kind_check_falls_back_to_node_type(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_k"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text("node_id: node_k\nnode_type: EFFECT\n")
+
+        results = scanner.scan(str(tmp_path))
+        check4 = next(c for c in results[0].checks if c.check_id == 4)
+        assert check4.passed is True
+        assert "EFFECT" in check4.message
+
+    def test_node_kind_prefers_node_kind_over_node_type(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_k2"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text(
+            "node_id: node_k2\nnode_kind: COMPUTE\nnode_type: EFFECT\n"
+        )
+
+        results = scanner.scan(str(tmp_path))
+        check4 = next(c for c in results[0].checks if c.check_id == 4)
+        assert check4.passed is True
+        assert "COMPUTE" in check4.message
+        assert "EFFECT" not in check4.message
+
+    def test_config_readiness_missing_mapping_falls_back_to_name(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_cfg"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text(
+            "node_id: node_cfg\n"
+            "node_kind: COMPUTE\n"
+            "config_requirements:\n"
+            "  - name: MY_SETTING\n"
+        )
+
+        results = scanner.scan(str(tmp_path))
+        check7 = next(c for c in results[0].checks if c.check_id == 7)
+        assert check7.passed is False
+        assert "MY_SETTING" in check7.message
+
+    def test_config_readiness_prefers_key_over_name(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_cfg2"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text(
+            "node_id: node_cfg2\n"
+            "node_kind: COMPUTE\n"
+            "config_requirements:\n"
+            "  - key: MY_KEY\n"
+            "    name: MY_SETTING\n"
+        )
+
+        results = scanner.scan(str(tmp_path))
+        check7 = next(c for c in results[0].checks if c.check_id == 7)
+        assert check7.passed is False
+        assert "MY_KEY" in check7.message
+        assert "MY_SETTING" not in check7.message
+
+    def test_config_readiness_falls_back_to_str_item_when_no_key_or_name(
+        self, scanner: NodeComplianceScanCompute, tmp_path: Path
+    ) -> None:
+        node_dir = tmp_path / "nodes" / "node_cfg3"
+        node_dir.mkdir(parents=True)
+        (node_dir / "contract.yaml").write_text(
+            "node_id: node_cfg3\n"
+            "node_kind: COMPUTE\n"
+            "config_requirements:\n"
+            "  - description: unnamed requirement\n"
+        )
+
+        results = scanner.scan(str(tmp_path))
+        check7 = next(c for c in results[0].checks if c.check_id == 7)
+        assert check7.passed is False
+        assert "unnamed requirement" in check7.message
