@@ -321,7 +321,7 @@ class TestContractResolveEvents:
 
 
 class TestNodeContractResolveCompute:
-    """Integration tests for NodeContractResolveCompute.resolve()."""
+    """Integration tests for NodeContractResolveCompute.handle()."""
 
     def test_empty_patches_returns_output(
         self,
@@ -334,7 +334,7 @@ class TestNodeContractResolveCompute:
             patches=[],
             options=ModelContractResolveOptions(include_overlay_refs=False),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert isinstance(output, ModelContractResolveOutput)
         assert len(output.resolved_hash) == 64
@@ -353,7 +353,7 @@ class TestNodeContractResolveCompute:
             base_profile_ref=compute_profile_ref,
             patches=[single_patch],
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert len(output.resolved_hash) == 64
         assert len(output.patch_hashes) == 1
@@ -371,7 +371,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_overlay_refs=True),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert len(output.overlay_refs) == 1
         ref = output.overlay_refs[0]
@@ -403,7 +403,7 @@ class TestNodeContractResolveCompute:
             patches=[patch_a, patch_b],
             options=ModelContractResolveOptions(include_overlay_refs=True),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert len(output.patch_hashes) == 2
         assert len(output.overlay_refs) == 2
@@ -424,7 +424,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_diff=False),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         assert output.diff is None
 
     def test_include_diff_true_provides_diff_string(
@@ -439,7 +439,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_diff=True),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         # The diff may be empty if no fields changed, but it must be a string.
         assert isinstance(output.diff, str)
 
@@ -453,7 +453,7 @@ class TestNodeContractResolveCompute:
             base_profile_ref=compute_profile_ref,
             patches=[],
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         assert isinstance(output.resolver_build, ModelResolverBuild)
         assert output.resolver_build.node_version == "1.0.0"
         assert len(output.resolver_build.build_hash) == 64
@@ -470,8 +470,8 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_overlay_refs=False),
         )
-        out1 = node.resolve(inp)
-        out2 = node.resolve(inp)
+        out1 = node.handle(inp)
+        out2 = node.handle(inp)
         assert out1.resolved_hash == out2.resolved_hash
 
     def test_overlay_refs_empty_when_disabled(
@@ -486,7 +486,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_overlay_refs=False),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         assert output.overlay_refs == []
         # But patch_hashes are still computed.
         assert len(output.patch_hashes) == 1

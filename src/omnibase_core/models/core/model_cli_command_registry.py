@@ -302,7 +302,7 @@ def _coerce_reloaded_command_registry(
         return None
 
     if hasattr(registry_obj, "model_dump"):
-        registry_data = registry_obj.model_dump()
+        registry_data = registry_obj.model_dump(mode="json")
     else:
         registry_data = {
             "commands": getattr(registry_obj, "commands", {}),

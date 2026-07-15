@@ -14,8 +14,4 @@ node, or growth of this set, HARD-FAILS CI + pre-commit. Retirement mechanism = 
 RSD canonical rewrite regenerating these handlers, each with an adequacy receipt.
 """
 
-NON_CANONICAL: tuple[str, ...] = (
-    "omnibase_core.nodes.node_backend_secret_discipline_compute",
-    "omnibase_core.nodes.node_contract_resolve_compute",
-    "omnibase_core.nodes.node_routing_authority_check_compute",
-)
+NON_CANONICAL: tuple[str, ...] = ()
