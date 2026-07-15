@@ -179,18 +179,21 @@ class NodeComplianceScanCompute:
                     )
                 )
 
-        node_id = ""
+        node_id = contract_path.parent.name
         if contract_data is not None:
-            node_id = str(
-                contract_data.get(
-                    "node_id"
-                )  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
-                or contract_data.get("handler_id")
-                or contract_data.get("name")
-                or contract_path.parent.name
-            )
-        else:
-            node_id = contract_path.parent.name
+            # Explicit precedence: node_id > handler_id > name > directory
+            # name. Falls through on a falsy value (missing key or empty
+            # string) at each step, matching the prior 'or'-chain semantics
+            # but with each fallback step now traceable individually.
+            candidate_node_id = contract_data.get("node_id")
+            candidate_handler_id = contract_data.get("handler_id")
+            candidate_name = contract_data.get("name")
+            if candidate_node_id:
+                node_id = str(candidate_node_id)
+            elif candidate_handler_id:
+                node_id = str(candidate_handler_id)
+            elif candidate_name:
+                node_id = str(candidate_name)
 
         all_passed = all(c.passed for c in checks)
 
@@ -415,9 +418,17 @@ class NodeComplianceScanCompute:
         self, data: dict[str, Any], checks: list[ModelCheckResult]
     ) -> None:
         """Check 4: node_kind matches handler output constraints."""
-        node_kind = (
-            data.get("node_kind") or data.get("node_type") or ""
-        )  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
+        # Explicit precedence: node_kind > node_type > unset. Falls through
+        # on a falsy value (missing key or empty string) at each step,
+        # matching the prior 'or'-chain semantics but individually traceable.
+        candidate_node_kind = data.get("node_kind")
+        candidate_node_type = data.get("node_type")
+        if candidate_node_kind:
+            node_kind: Any = candidate_node_kind
+        elif candidate_node_type:
+            node_kind = candidate_node_type
+        else:
+            node_kind = ""
         node_kind_str = str(node_kind).upper()
 
         if not node_kind_str:
@@ -610,9 +621,17 @@ class NodeComplianceScanCompute:
                     item.get("infisical_path") or item.get("infisical")
                 )
                 if not has_env and not has_infisical:
-                    key = (
-                        item.get("key") or item.get("name") or str(item)
-                    )  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
+                    # Explicit precedence: key > name > str(item). Falls
+                    # through on a falsy value at each step, matching the
+                    # prior 'or'-chain semantics but individually traceable.
+                    candidate_key = item.get("key")
+                    candidate_name = item.get("name")
+                    if candidate_key:
+                        key = candidate_key
+                    elif candidate_name:
+                        key = candidate_name
+                    else:
+                        key = str(item)
                     missing.append(key)
             elif isinstance(item, str):
                 # String-only config requirement: presence check passes

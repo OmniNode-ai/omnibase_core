@@ -33,10 +33,15 @@ from omnibase_core.models.nodes.compliance_evidence.model_compliance_evidence_ou
 from omnibase_core.models.nodes.compliance_evidence.model_evidence_report_state import (
     ModelEvidenceReportState,
 )
+from omnibase_core.nodes.node_compliance_evidence_effect.event_bus_no_op import (
+    NoOpCompletionEventBus,
+)
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["NodeComplianceEvidenceEffect"]
+__all__ = ["NodeComplianceEvidenceEffect", "NoOpCompletionEventBus"]
+
+_NO_OP_EVENT_BUS = NoOpCompletionEventBus()
 
 
 class NodeComplianceEvidenceEffect:
@@ -44,15 +49,17 @@ class NodeComplianceEvidenceEffect:
 
     Args:
         state_root: Root directory for state artifacts (typically ``.onex_state``).
-        event_bus: Optional event bus for emitting completion events. When ``None``
-            the completion event is logged but not published (local-dev fallback).
+        event_bus: Event bus for emitting completion events. Defaults to a
+            no-op stub (:class:`NoOpCompletionEventBus`) when the caller has
+            no real bus to inject — the publish call always fires, it simply
+            has nowhere durable to land.
         completion_topic: Topic string from the contract's publish_topics.
     """
 
     def __init__(
         self,
         state_root: Path,
-        event_bus: Any = None,  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
+        event_bus: Any = _NO_OP_EVENT_BUS,
         completion_topic: str = "",
     ) -> None:
         self._state_root = Path(state_root)
@@ -157,13 +164,5 @@ class NodeComplianceEvidenceEffect:
             "passed": report_data["passed"],
             "failed": report_data["failed"],
         }
-        if (
-            self._event_bus is not None
-        ):  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
-            self._event_bus.publish(self._completion_topic, event_payload)
-            logger.info("Completion event emitted: %s", self._completion_topic)
-        else:
-            logger.info(
-                "No event bus configured — completion event logged only: %s",
-                self._completion_topic,
-            )
+        self._event_bus.publish(self._completion_topic, event_payload)
+        logger.info("Completion event emitted: %s", self._completion_topic)

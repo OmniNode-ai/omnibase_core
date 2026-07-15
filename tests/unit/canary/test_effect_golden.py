@@ -68,11 +68,13 @@ def test_readback_passes_when_all_declared_effects_happen(tmp_path: Path) -> Non
 
 
 def test_readback_CATCHES_a_suppressed_effect(tmp_path: Path) -> None:
-    # THE proof: event_bus=None suppresses the publish (handler logs, never emits).
-    # execute() STILL returns a Path (no exception) — 'didn't throw' is blind — but
-    # the declared topic never reaches a real sink, so readback FAILS.
-    sink = RecordingEventSink()  # stays empty: the node was given no bus
-    node = NodeComplianceEvidenceEffect(tmp_path, None, TOPIC)
+    # THE proof: the default no-op event bus stub (OMN-14634 — no more bare
+    # event_bus=None DI bypass) suppresses the publish (handler logs, never
+    # emits) when no real bus is injected. execute() STILL returns a Path (no
+    # exception) — 'didn't throw' is blind — but the declared topic never
+    # reaches a real sink, so readback FAILS.
+    sink = RecordingEventSink()  # stays empty: the node was given no real bus
+    node = NodeComplianceEvidenceEffect(tmp_path, completion_topic=TOPIC)
     returned = node.execute(_report())  # does NOT throw
     assert isinstance(returned, Path)  # 'didn't throw' would PASS here
     rb = readback_effects(
