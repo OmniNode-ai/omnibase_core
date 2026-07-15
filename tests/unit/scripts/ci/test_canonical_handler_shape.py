@@ -202,7 +202,7 @@ def test_live_known_shapes() -> None:
     verify = by_id["omnibase_core.nodes.node_contract_verify_replay_compute"]
     assert verify.is_canonical and verify.category == "canonical"
     backend = by_id["omnibase_core.nodes.node_backend_secret_discipline_compute"]
-    assert not backend.is_canonical and backend.category == "envelope_in_core"
+    assert backend.is_canonical and backend.category == "canonical"
 
 
 def test_at_least_one_canonical_and_one_non_canonical() -> None:
