@@ -2043,13 +2043,13 @@ jobs:
         run: uv sync --frozen
 
       - name: Download shadow inputs
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: shadow-inputs
           path: shadow-inputs
 
       - name: Download full-suite junit
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: test-results-*
           path: junit-artifacts

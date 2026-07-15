@@ -45,7 +45,7 @@ jobs:
       - name: Download shadow record(s) from the triggering run
         if: github.event_name == 'workflow_run'
         continue-on-error: true # a run with no shadow record (docs-only PR) is normal
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
