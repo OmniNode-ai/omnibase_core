@@ -21,6 +21,7 @@ input_model: omnibase_core.models.nodes.compliance_evidence.model_evidence_repor
 output_model: omnibase_core.models.nodes.compliance_evidence.model_compliance_evidence_output.ModelComplianceEvidenceOutput
 
 handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
   default_handler: handler:NodeComplianceEvidenceEffect
 
 publish_topics:
