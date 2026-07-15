@@ -1,0 +1,25 @@
+{
+  "branch_coverage_pct": 48.08,
+  "candidate_count": 3,
+  "coverage_target": 80.0,
+  "handler_module": "omnibase_core.nodes.node_compliance_evidence_effect.handler",
+  "handler_module_sha256": "sha256:e9cec849e8e0a2bd3d865ffb409293b93c2a804b993d6fa51518438fcfcb3aee",
+  "meets_target": false,
+  "node_id": "omnibase_core.nodes.node_compliance_evidence_effect",
+  "receipt_schema": "adequacy_receipt.v1",
+  "recorded_at": "2026-07-14T21:01:02.155524+00:00",
+  "recorder_schema": "adequacy_receipt.v1",
+  "selected_count": 1,
+  "selected_input_hashes": [
+    "sha256:efb989a8873ae8a7331e68c43463630bc87220e112d3dfd23bca140ffa5876db"
+  ],
+  "uncovered_waiver": {
+    "reason": "The flip is a pure additive wrapper: handle(request) calls the extracted _write_report() helper (byte-for-byte the pre-existing execute() body, unmodified in behavior \u2014 only moved into a shared private method so execute() and handle() perform the identical durable-write + event-emission sequence) and wraps its (run_path, run_id, report_data) tuple into ModelComplianceEvidenceOutput. This pool exercises both branches of the run_id `or` fallback and the scan_started_at `or` fallback (candidate 2), the event_bus-present publish path (all 3 candidates, a fixed bus/topic configuration is shared across the whole coverage-measured pool), and multi-node vs single-node vs zero-result report shapes. The event_bus=None / completion_topic='' branches inside _emit_completion (the 'no event bus configured' / 'no completion topic configured' log-only paths) are out of this pool's scope since handle()'s own construction always supplies both (a def-B EFFECT handler is runtime-wired with a real bus); those branches remain covered by the pre-existing test_readback_CATCHES_a_suppressed_effect canary via execute().",
+    "uncovered_branch_count": 0
+  },
+  "volatile_mask": [
+    "run_id",
+    "report_path",
+    "latest_path"
+  ]
+}

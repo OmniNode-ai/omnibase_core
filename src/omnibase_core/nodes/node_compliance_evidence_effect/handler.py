@@ -27,6 +27,9 @@ from uuid import uuid4
 
 import yaml
 
+from omnibase_core.models.nodes.compliance_evidence.model_compliance_evidence_output import (
+    ModelComplianceEvidenceOutput,
+)
 from omnibase_core.models.nodes.compliance_evidence.model_evidence_report_state import (
     ModelEvidenceReportState,
 )
@@ -49,7 +52,7 @@ class NodeComplianceEvidenceEffect:
     def __init__(
         self,
         state_root: Path,
-        event_bus: Any = None,
+        event_bus: Any = None,  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
         completion_topic: str = "",
     ) -> None:
         self._state_root = Path(state_root)
@@ -61,6 +64,44 @@ class NodeComplianceEvidenceEffect:
 
         Returns:
             Path to the run-specific report file.
+        """
+        run_path, _run_id, _report_data = self._write_report(report)
+        return run_path
+
+    def handle(
+        self, request: ModelEvidenceReportState
+    ) -> ModelComplianceEvidenceOutput:
+        """Definition-B canonical entry-point (OMN-14355).
+
+        Typed request in, typed response out — shares the exact same durable
+        write path as :meth:`execute` (via ``_write_report``, extracted
+        unchanged from the pre-existing implementation) so both entry-points
+        stay behaviorally identical. ``execute`` is left in place returning
+        its original ``Path`` so its existing callers (including the
+        effect-golden readback canary) are unaffected.
+        """
+        run_path, run_id, report_data = self._write_report(request)
+        latest_path = self._state_root / "compliance" / "report.yaml"
+        return ModelComplianceEvidenceOutput(
+            run_id=run_id,
+            report_path=str(run_path),
+            latest_path=str(latest_path),
+            total=report_data["total"],
+            passed=report_data["passed"],
+            failed=report_data["failed"],
+        )
+
+    # ONEX_EXCLUDE: dict_str_any — report_data is model_dump output, typed at origin
+    def _write_report(
+        self, report: ModelEvidenceReportState
+    ) -> tuple[Path, str, dict[str, Any]]:
+        """Write the compliance report to disk and emit the completion event.
+
+        Shared by :meth:`execute` and :meth:`handle` so both entry-points
+        perform the identical durable write + event-emission sequence.
+
+        Returns:
+            Tuple of (run-specific report path, run_id, report_data dict).
         """
         run_id = report.run_id or str(uuid4())
         timestamp = report.scan_started_at or datetime.now(tz=UTC).isoformat()
@@ -96,7 +137,7 @@ class NodeComplianceEvidenceEffect:
         # 3. Emit completion event AFTER durable write
         self._emit_completion(run_id=run_id, report_data=report_data)
 
-        return run_path
+        return run_path, run_id, report_data
 
     # ONEX_EXCLUDE: dict_str_any — report_data is model_dump output, typed at origin
     def _emit_completion(
@@ -116,7 +157,9 @@ class NodeComplianceEvidenceEffect:
             "passed": report_data["passed"],
             "failed": report_data["failed"],
         }
-        if self._event_bus is not None:
+        if (
+            self._event_bus is not None
+        ):  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
             self._event_bus.publish(self._completion_topic, event_payload)
             logger.info("Completion event emitted: %s", self._completion_topic)
         else:

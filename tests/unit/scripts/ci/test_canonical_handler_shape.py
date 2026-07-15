@@ -205,10 +205,10 @@ def test_live_known_shapes() -> None:
     assert backend.is_canonical and backend.category == "canonical"
 
 
-def test_at_least_one_canonical_and_one_non_canonical() -> None:
+def test_live_shape_debt_is_fully_drained() -> None:
     findings = classify_all()
     assert any(f.is_canonical for f in findings)
-    assert current_non_canonical(findings)
+    assert current_non_canonical(findings) == []
 
 
 # --------------------------------------------------------------------------- #

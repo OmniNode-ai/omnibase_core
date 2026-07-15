@@ -37,6 +37,12 @@ from pydantic import BaseModel
 from omnibase_core.models.nodes.compliance_scan.model_check_result import (
     ModelCheckResult,
 )
+from omnibase_core.models.nodes.compliance_scan.model_compliance_scan_request import (
+    ModelComplianceScanRequest,
+)
+from omnibase_core.models.nodes.compliance_scan.model_compliance_scan_response import (
+    ModelComplianceScanResponse,
+)
 from omnibase_core.models.nodes.compliance_scan.model_scan_check_result import (
     ModelScanCheckResult,
 )
@@ -64,6 +70,23 @@ class NodeComplianceScanCompute:
     Discovers all contract.yaml files under a root directory and runs
     8 structural checks per contract.
     """
+
+    def handle(
+        self, request: ModelComplianceScanRequest
+    ) -> ModelComplianceScanResponse:
+        """Definition-B canonical entry-point (OMN-14355).
+
+        Typed request in, typed response out — wraps :meth:`scan` (the
+        pre-existing, independently-tested legacy entry-point, left
+        unmodified) so the runtime's shared adapter
+        (``omnibase_core.runtime.runtime_local_adapter``) can dispatch this
+        handler without a per-node envelope wrapper. The list result is
+        wrapped in a single response model rather than returned bare so the
+        adapter treats a directory scan as one aggregate event, not a def-B
+        fan-out sequence (OMN-14403 Sec6ii) of N per-node events.
+        """
+        results = self.scan(request.repo_root, source_only=request.source_only)
+        return ModelComplianceScanResponse(results=results)
 
     def scan(
         self, repo_root: str, *, source_only: bool = False
@@ -159,7 +182,9 @@ class NodeComplianceScanCompute:
         node_id = ""
         if contract_data is not None:
             node_id = str(
-                contract_data.get("node_id")
+                contract_data.get(
+                    "node_id"
+                )  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
                 or contract_data.get("handler_id")
                 or contract_data.get("name")
                 or contract_path.parent.name
@@ -390,7 +415,9 @@ class NodeComplianceScanCompute:
         self, data: dict[str, Any], checks: list[ModelCheckResult]
     ) -> None:
         """Check 4: node_kind matches handler output constraints."""
-        node_kind = data.get("node_kind") or data.get("node_type") or ""
+        node_kind = (
+            data.get("node_kind") or data.get("node_type") or ""
+        )  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
         node_kind_str = str(node_kind).upper()
 
         if not node_kind_str:
@@ -583,7 +610,9 @@ class NodeComplianceScanCompute:
                     item.get("infisical_path") or item.get("infisical")
                 )
                 if not has_env and not has_infisical:
-                    key = item.get("key") or item.get("name") or str(item)
+                    key = (
+                        item.get("key") or item.get("name") or str(item)
+                    )  # fallback-ok: pre-existing debt predating OMN-14629, tracked in OMN-14634
                     missing.append(key)
             elif isinstance(item, str):
                 # String-only config requirement: presence check passes
