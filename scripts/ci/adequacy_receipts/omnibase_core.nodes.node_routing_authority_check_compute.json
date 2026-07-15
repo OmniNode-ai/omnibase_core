@@ -1,0 +1,21 @@
+{
+  "branch_coverage_pct": 27.59,
+  "candidate_count": 14,
+  "coverage_target": 80.0,
+  "handler_module": "omnibase_core.nodes.node_routing_authority_check_compute.handler",
+  "handler_module_sha256": "sha256:309cfc6028aab0fd8dd96fdb4d25e8c339c712566ea7b4981678f9f80db65e0a",
+  "meets_target": false,
+  "node_id": "omnibase_core.nodes.node_routing_authority_check_compute",
+  "receipt_schema": "adequacy_receipt.v1",
+  "recorded_at": "2026-07-14T18:54:14.748177+00:00",
+  "recorder_schema": "adequacy_receipt.v1",
+  "selected_count": 1,
+  "selected_input_hashes": [
+    "sha256:dc3f24b915ecfe7042f88a8dbd3433550af760a8f83a82edf4df120a7458b244"
+  ],
+  "uncovered_waiver": {
+    "reason": "handler.py is an explicitly-documented THIN coordination shell ('this node is a thin coordination shell over that validation-layer logic, per the nodes-are-thin/handlers-own-logic repo invariant') \u2014 nearly all branch complexity lives in omnibase_core.validation.checker_routing_authority (run_routing_authority_check), which this receipt does not score (out of source_match scope by design: scoring the real check logic separately from the thin dispatch wrapper). Within handler.py's own scope, this pool exercises: check() delegation, handle() delegation (both call paths), positive-proof pass/missing-model_routing/missing-key/unknown-endpoint-ref, negative-audit clean/env-read/provider-literal/skip-token/missing-source-content, residue ratchet clean/within-baseline/exceeds-baseline, and all 3 provider-endpoint-shape violation classes.",
+    "uncovered_branch_count": 0
+  },
+  "volatile_mask": []
+}
