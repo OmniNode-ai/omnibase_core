@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the test_selector COMPUTE node.
+# RSD-regenerates the governed impacted-test selector (scripts/ci/detect_test_paths.py,
+# OMN-13973) into a canonical def-B NodeCompute. Deterministic change-aware test
+# selection over the changed-file list + parsed adjacency map, reproducing
+# detect_test_paths.py's compute_selection byte-for-byte.
+#
+# See: OMN-14700 (parent epic OMN-2362 — Generic Validator Node Architecture / WS8)
+
+name: node_test_selector_compute
+node_id: node_test_selector_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Resolves a change-aware test selection: given the changed-file list, the parsed module adjacency map,
+  the pyproject.toml dependency-relevance classification, and per-path test-file counts, it returns the
+  existing ModelTestSelection (selected_paths, split_count, is_full_suite, full_suite_reason, matrix).
+  Reproduces scripts/ci/detect_test_paths.py's compute_selection byte-for-byte — same escalation precedence
+  (feature-flag / main-branch / merge_group / schedule / test-infrastructure / shared-module / module-threshold)
+  and the same volume-aware split-count arithmetic. Pure — no filesystem access, no git, no clock, no
+  global state; all I/O is done at the caller/EFFECT boundary and passed in on the request. #magic___^_^___line
+input_model: omnibase_core.models.nodes.test_selector.model_test_selection_request.ModelTestSelectionRequest
+output_model: omnibase_core.models.nodes.test_selector.model_test_selection.ModelTestSelection
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeTestSelectorCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
