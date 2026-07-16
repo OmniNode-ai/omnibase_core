@@ -1294,6 +1294,24 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # No localhost/hardcoded-endpoint fallback defaults (OMN-14659). Scoped to
+      # src/ only, matching the check-no-utcnow precedent above — this repo's src/
+      # tree is currently clean against this check (verified 2026-07-16). The
+      # sibling no-hardcoded-ip / no-direct-kafka-producer / no-raw-sqlite3 nodes
+      # generated in the same ticket are intentionally NOT self-wired here: a
+      # full-tree run against src/ turns up pre-existing findings (docstring IP
+      # examples, ProtocolKafkaProducer* symbol names, a legitimate sqlite3
+      # harness) that would need triage/suppression before this repo's own gate
+      # could go green. They remain available as remote hooks
+      # (.pre-commit-hooks.yaml) and standalone CI entrypoints for other repos.
+      - id: check-no-env-fallbacks
+        name: No Localhost/Hardcoded-Endpoint Fallbacks (OMN-14659)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check
+        language: system
+        files: ^src/.*\.(py|sh|bash)$
+        pass_filenames: true
+        stages: [pre-commit]
+
       # Canonical Inference Gate (OMN-13219).
       # Fails on non-canonical model-inference surfaces: shelled model CLIs
       # (codex/claude/gemini/opencode via subprocess/exec/shutil.which) and
