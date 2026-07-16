@@ -65,6 +65,32 @@ def test_main_filenames_mode_skips_non_python_and_missing(
     assert "OK: No datetime.utcnow() usage found" in capsys.readouterr().out
 
 
+def test_main_filenames_mode_unreadable_python_exits_nonzero(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    unreadable = tmp_path / "unreadable.py"
+    unreadable.write_text("from datetime import datetime\n")
+    original_read_text = Path.read_text
+
+    def fake_read_text(
+        self: Path, encoding: str | None = None, errors: str | None = None
+    ) -> str:
+        if self == unreadable:
+            raise OSError("permission denied")
+        return original_read_text(self, encoding=encoding, errors=errors)
+
+    monkeypatch.setattr(Path, "read_text", fake_read_text)
+
+    exit_code = main([str(unreadable)])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "ERROR: Failed to read 1 Python file(s)" in out
+    assert "unreadable.py: read error: permission denied" in out
+
+
 def test_main_full_tree_mode_walks_root(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

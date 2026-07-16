@@ -18,7 +18,8 @@ class ModelSkippedSourceFile(BaseModel):
     (``omnibase_archived/src/omnibase/utils/directory_traverser.py:317-348``):
     "not a file", "not in directory (FLAT mode)", "not in immediate
     subdirectory (SHALLOW mode)", "ignored by pattern", "schema file",
-    "exceeds max file size", or "error checking file size: <exc>".
+    "exceeds max file size", "error checking file size: <exc>", or
+    "read error: <exc>".
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

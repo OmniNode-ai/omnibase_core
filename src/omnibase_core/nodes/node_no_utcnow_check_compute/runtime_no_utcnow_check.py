@@ -61,26 +61,30 @@ __all__ = ["main"]
 _DEFAULT_ROOT: Final[str] = "src"
 
 
-def _gather_from_filenames(paths: list[Path]) -> list[ModelSourceFile]:
+def _gather_from_filenames(
+    paths: list[Path],
+) -> tuple[list[ModelSourceFile], list[str]]:
     """CLI I/O boundary for pre-commit's explicit staged-file mode.
 
-    Non-``.py`` and unreadable paths are silently skipped — the AST scan is
-    only meaningful for Python source, and pre-commit's ``types: [python]``
-    filter already scopes the file set upstream of this call.
+    Non-``.py`` and missing paths are intentionally skipped. Read errors on
+    existing Python files are returned as fatal diagnostics so the runtime does
+    not report PASS with unscanned source.
     """
     files: list[ModelSourceFile] = []
+    read_errors: list[str] = []
     for path in paths:
         if path.suffix != ".py" or not path.is_file():
             continue
         try:
             source = path.read_text(encoding="utf-8")
-        except OSError:
+        except OSError as exc:
+            read_errors.append(f"{path}: read error: {exc}")
             continue
         files.append(ModelSourceFile(path=str(path), source=source))
-    return files
+    return files, read_errors
 
 
-def _gather_from_root(root: str) -> list[ModelSourceFile]:
+def _gather_from_root(root: str) -> tuple[list[ModelSourceFile], list[str]]:
     """Full-tree walk mode (CI / manual), reusing ``node_source_file_gather_effect``.
 
     This is the EFFECT boundary — the only filesystem walk in this module —
@@ -89,7 +93,14 @@ def _gather_from_root(root: str) -> list[ModelSourceFile]:
     output = NodeSourceFileGatherEffect().handle(
         ModelSourceFileGatherInput(root=root, include_patterns=["**/*.py"])
     )
-    return [ModelSourceFile(path=f.path, source=f.source) for f in output.files]
+    read_errors = [
+        f"{skipped.path}: {skipped.reason}"
+        for skipped in output.skipped
+        if skipped.reason.startswith(("read error:", "error checking file size:"))
+    ]
+    return [
+        ModelSourceFile(path=f.path, source=f.source) for f in output.files
+    ], read_errors
 
 
 def _run(files: list[ModelSourceFile]) -> ModelValidationReport:
@@ -129,9 +140,17 @@ def main(argv: list[str] | None = None) -> int:
     parsed = parser.parse_args(argv)
 
     if parsed.filenames:
-        files = _gather_from_filenames([Path(f) for f in parsed.filenames])
+        files, read_errors = _gather_from_filenames([Path(f) for f in parsed.filenames])
     else:
-        files = _gather_from_root(parsed.root)
+        files, read_errors = _gather_from_root(parsed.root)
+
+    if read_errors:
+        print(
+            f"ERROR: Failed to read {len(read_errors)} Python file(s):"
+        )  # print-ok: CLI output
+        for read_error in read_errors:
+            print(f"  {read_error}")  # print-ok: CLI output
+        return 1
 
     report = _run(files)
 
