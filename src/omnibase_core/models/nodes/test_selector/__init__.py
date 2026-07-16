@@ -14,13 +14,13 @@ modules re-export these names until the CI/pre-push swap follow-up
 Parent epic: OMN-2362 (Generic Validator Node Architecture / WS8).
 """
 
+from omnibase_core.enums.enum_full_suite_reason import EnumFullSuiteReason
 from omnibase_core.models.nodes.test_selector.model_adjacency_map import (
     ModelAdjacencyEntry,
     ModelAdjacencyMap,
     ModelThresholds,
 )
 from omnibase_core.models.nodes.test_selector.model_test_selection import (
-    EnumFullSuiteReason,
     ModelTestSelection,
     ModuleName,
     TestPath,

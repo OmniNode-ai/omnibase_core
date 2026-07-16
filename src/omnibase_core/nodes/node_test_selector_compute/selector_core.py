@@ -20,11 +20,11 @@ from __future__ import annotations
 import math
 import tomllib
 
+from omnibase_core.enums.enum_full_suite_reason import EnumFullSuiteReason
 from omnibase_core.models.nodes.test_selector.model_adjacency_map import (
     ModelAdjacencyMap,
 )
 from omnibase_core.models.nodes.test_selector.model_test_selection import (
-    EnumFullSuiteReason,
     ModelTestSelection,
 )
 

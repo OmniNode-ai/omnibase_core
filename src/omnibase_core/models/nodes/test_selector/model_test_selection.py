@@ -10,27 +10,17 @@ the ``detect_test_paths.py`` oracle emit the identical model.
 
 from __future__ import annotations
 
-from enum import StrEnum
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
+from omnibase_core.enums.enum_full_suite_reason import EnumFullSuiteReason
+
 __all__ = [
-    "EnumFullSuiteReason",
     "ModelTestSelection",
     "ModuleName",
     "TestPath",
 ]
-
-
-class EnumFullSuiteReason(StrEnum):
-    SHARED_MODULE = "shared_module"
-    THRESHOLD_MODULES = "threshold_modules"
-    TEST_INFRASTRUCTURE = "test_infrastructure"
-    MAIN_BRANCH = "main_branch"
-    MERGE_GROUP = "merge_group"
-    SCHEDULED = "scheduled"
-    FEATURE_FLAG_OFF = "feature_flag_off"
 
 
 TestPath = Annotated[
