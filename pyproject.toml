@@ -156,6 +156,7 @@ node_no_direct_kafka_producer_check_compute = "omnibase_core.nodes.node_no_direc
 node_no_env_fallbacks_check_compute = "omnibase_core.nodes.node_no_env_fallbacks_check_compute"
 node_no_raw_sqlite3_check_compute = "omnibase_core.nodes.node_no_raw_sqlite3_check_compute"
 node_no_io_outside_effects_check_compute = "omnibase_core.nodes.node_no_io_outside_effects_check_compute"
+node_test_selector_compute = "omnibase_core.nodes.node_test_selector_compute"
 
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
@@ -404,6 +405,8 @@ ignore = [
 "src/omnibase_core/nodes/node_no_direct_kafka_producer_check_compute/runtime_no_direct_kafka_producer_check.py" = ["T201"]
 "src/omnibase_core/nodes/node_no_env_fallbacks_check_compute/runtime_no_env_fallbacks_check.py" = ["T201"]
 "src/omnibase_core/nodes/node_no_raw_sqlite3_check_compute/runtime_no_raw_sqlite3_check.py" = ["T201"]
+# OMN-14700: CLI runner for the test_selector COMPUTE node writes the selection JSON to stdout.
+"src/omnibase_core/nodes/node_test_selector_compute/runtime_test_selector.py" = ["T201"]
 # OMN-14694/OMN-14662: CLI runner for the no-io-outside-effects COMPUTE node prints findings.
 "src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/runtime_no_io_outside_effects_check.py" = ["T201"]
 "src/omnibase_core/validation/validator_transport_import.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-13283)
