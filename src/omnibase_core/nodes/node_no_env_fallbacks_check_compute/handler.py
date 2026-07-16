@@ -69,7 +69,8 @@ class NodeNoEnvFallbacksCheckCompute:
             findings.extend(self._check_file(file.path, file.source))
 
         embedded_findings = tuple(
-            ModelValidationFindingEmbed(**finding.model_dump()) for finding in findings
+            ModelValidationFindingEmbed(**finding.model_dump(mode="json"))
+            for finding in findings
         )
 
         return ModelValidationReport.from_findings(

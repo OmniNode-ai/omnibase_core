@@ -388,6 +388,18 @@ allowed_files:
     added: "2026-06-23"
     review: "2026-12-23"
 
+  - file: "src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/archetype_resolver.py"
+    reason: >-
+      no-io-outside-effects COMPUTE archetype resolver (OMN-14694 seed / OMN-14662). Reads two optional archetype
+      fields (node_type, descriptor.node_archetype) from arbitrary node contract.yaml *strings* — the
+      bytes are read at the paired EFFECT / CLI boundary, so the COMPUTE stays pure over in-memory strings
+      (yaml.safe_load on a str is a pure parse, no I/O). contract.yaml schemas vary by node type (ModelContractCompute/Effect/Reducer/Orchestrator)
+      and no single Pydantic model round-trips every shape while reading a flat archetype fact — the same
+      pattern as operation_match_requires_operation.py and node_compliance_scan_compute/handler.py. Malformed
+      YAML raises yaml.YAMLError, which the handler surfaces as an ERROR finding (fail loud, never silent-green).
+    added: "2026-07-16"
+    review: "2026-12-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

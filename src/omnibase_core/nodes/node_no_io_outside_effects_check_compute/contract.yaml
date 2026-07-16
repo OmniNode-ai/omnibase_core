@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the no_io_outside_effects_check COMPUTE node.
+# Archetype-purity invariant: flags forbidden I/O surfaces inside .py modules
+# that sit in a NON-EFFECT node package. Keys off the archetype declared in each
+# node's contract.yaml (node_type / descriptor.node_archetype) — EFFECT is the
+# only I/O-permitted archetype, so only non-EFFECT packages are scanned. It does
+# NOT scan every file blindly, unlike the universal OMN-14659 lints.
+#
+# See: OMN-14694 (WS8 seed) → OMN-14662 (collapse 6 archetype-layering rules into
+# ONE archetype-purity invariant), epic OMN-2362.
+
+name: node_no_io_outside_effects_check_compute
+node_id: node_no_io_outside_effects_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Keys off each node's declared archetype (top-level node_type and descriptor.node_archetype in its contract.yaml)
+  and AST-scans the .py modules co-located with a NON-EFFECT contract for forbidden I/O surfaces: database-driver
+  imports (sqlite3/aiosqlite/psycopg/psycopg2/asyncpg/sqlalchemy), network/HTTP clients (httpx/requests/aiohttp/
+  urllib3/socket/urllib.request), subprocess execution, git invocation, Linear API access, filesystem writes
+  (open write-mode, os/shutil mutators, pathlib.Path write methods), and direct event-bus / infra-adapter
+  instantiation. Returns an OMN-2362 ValidationReport with a per-violation FAIL finding — only EFFECT nodes may
+  perform I/O; everything else must be pure. Call sites carrying a # io-ok annotation are suppressed; unparseable
+  contract YAML or Python yields an ERROR finding. Pure — no filesystem access, no clock, no global state. #magic___^_^___line
+input_model: omnibase_core.models.nodes.no_io_outside_effects_check.model_no_io_outside_effects_check_input.ModelNoIoOutsideEffectsCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNoIoOutsideEffectsCheckCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

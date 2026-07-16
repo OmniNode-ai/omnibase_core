@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# No-I/O-outside-EFFECT archetype-purity gate [OMN-14694 seed / OMN-14662]
+#
+# Required status check context: "No IO Outside Effects Validator / validate"
+#
+# The single WS8 archetype-purity invariant (epic OMN-2362): I/O and direct
+# adapter/bus instantiation are permitted only in EFFECT nodes. Every .py module
+# co-located with a non-EFFECT contract (COMPUTE / REDUCER / ORCHESTRATOR) must
+# be pure. Blocks forbidden I/O surfaces — database-driver imports, network/HTTP
+# clients, subprocess execution, git invocation, Linear API access, filesystem
+# writes, and direct event-bus / infra-adapter instantiation — inside non-EFFECT
+# node packages. The COMPUTE handler is pure; the runner loads source files at
+# the EFFECT boundary (node_source_file_gather_effect) and keys off each node's
+# declared archetype (contract.yaml node_type / descriptor.node_archetype) — the
+# SAME handler that runs under the check-no-io-outside-effects pre-commit hook,
+# so local and CI verdicts cannot drift (enforcement, not detection — CLAUDE.md
+# Rule #5).
+#
+# STANDALONE workflow with NO `needs:` (OMN-14666 / OMN-14668 lesson): a
+# cross-job dependency (e.g. needs: occ-preflight) can SKIP the gate on an
+# unrelated failure, opening a skip-then-vacuous-green window. This gate fires
+# on every PR to main/dev on its own evidence, never conditioned on another
+# job's result.
+
+name: No IO Outside Effects Validator
+
+on:
+  push:
+    branches: [main, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+  UV_HTTP_TIMEOUT: "600"
+
+concurrency:
+  group: validator-no-io-outside-effects-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    # OMNI_RUNNER_SELECTOR_V1 — trusted events default to self-hosted omnibase-ci;
+    # pull_request defaults to ubuntu-latest (hosted, so fleet saturation can
+    # never cancel this gate and falsely skip it).
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests (COMPUTE + CLI runtime)
+        run: |
+          uv run pytest tests/unit/nodes/node_no_io_outside_effects_check_compute/ -v
+
+      # Blocking self-scan: this repo's src/ is clean against the rule (verified
+      # 2026-07-16: full-tree self-scan is green — every non-EFFECT node package
+      # is pure). The same COMPUTE node backs the check-no-io-outside-effects
+      # pre-commit hook, so verdicts cannot drift.
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check \
+            --root src
