@@ -411,6 +411,79 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-no-hardcoded-ip
+  name: No Hardcoded Internal IP Addresses (OMN-14659)
+  description: >
+    Reject hardcoded internal IP address literals (192.168.x.x, 10.x.x.x, 172.16-31.x.x,
+    optionally http(s)-prefixed and port-suffixed) in Python and YAML source. Ported from the
+    CI gate at omniclaude/scripts/validation/validate_no_hardcoded_ip.py into the
+    node_no_utcnow_check_compute two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the
+    line scan itself runs as a pure COMPUTE node (node_no_hardcoded_ip_check_compute) over
+    explicit (path, source) pairs, and the paired EFFECT node (node_source_file_gather_effect)
+    owns the filesystem walk for full-tree (no-filenames) invocation. Same node backs the
+    pre-commit hook and any CI entrypoint. All endpoints must be configured via environment
+    variables. Suppress a justified exception with: # onex-allow-internal-ip
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check
+  types_or: [python, yaml]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-direct-kafka-producer
+  name: No Direct Kafka Producer Usage (OMN-14659)
+  description: >
+    Reject direct Kafka producer client usage (AIOKafkaProducer, KafkaProducer,
+    confluent_kafka, aiokafka via import, bare-name usage, or attribute access) outside the
+    shared publisher layer. Ported from the CI gate at
+    omniclaude/scripts/validation/validate_no_direct_kafka_producer.py into the
+    node_no_utcnow_check_compute two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the
+    AST scan itself runs as a pure COMPUTE node (node_no_direct_kafka_producer_check_compute)
+    over explicit (path, source) pairs, and the paired EFFECT node
+    (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames)
+    invocation. Same node backs the pre-commit hook and any CI entrypoint. Route through the
+    shared publisher abstraction (e.g. emit_via_daemon()) instead.
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.runtime_no_direct_kafka_producer_check
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-env-fallbacks
+  name: No Localhost/Hardcoded-Endpoint Fallbacks (OMN-14659)
+  description: >
+    Reject localhost/hardcoded-endpoint fallback defaults (os.environ.get / os.getenv
+    defaults, Pydantic Field defaults, bootstrap_servers literals, shell ${VAR:-...}
+    expansions) in Python and shell source. Ported from the canonical unified CI gate at
+    omniclaude/scripts/validate_no_env_fallbacks.py into the node_no_utcnow_check_compute
+    two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the line scan itself runs as a pure
+    COMPUTE node (node_no_env_fallbacks_check_compute) over explicit (path, source) pairs, and
+    the paired EFFECT node (node_source_file_gather_effect) owns the filesystem walk for
+    full-tree (no-filenames) invocation. Same node backs the pre-commit hook and any CI
+    entrypoint. Replace with os.environ["VAR"] (fail-fast, no default) or raise explicitly.
+    Suppress a justified exception with: # fallback-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check
+  types_or: [python, shell]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-raw-sqlite3
+  name: No Raw sqlite3.connect() Outside Adapters (OMN-14659)
+  description: >
+    Reject raw sqlite3.connect() calls outside *_adapter.py definitions. Ported from the CI
+    gate at omniclaude/scripts/validation/validate_no_raw_sqlite3.py into the
+    node_no_utcnow_check_compute two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the
+    AST scan itself runs as a pure COMPUTE node (node_no_raw_sqlite3_check_compute) over
+    explicit (path, source) pairs, and the paired EFFECT node (node_source_file_gather_effect)
+    owns the filesystem walk for full-tree (no-filenames) invocation. Same node backs the
+    pre-commit hook and any CI entrypoint. Database access must go through an injected
+    adapter. Suppress a legitimate adapter-bootstrap call site with: # di-ok
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-enum-governance
   name: ONEX Enum Governance Validation (OMN-13287)
   description: >
