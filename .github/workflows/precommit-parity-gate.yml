@@ -26,12 +26,13 @@
 #   * has NO `needs:` of any kind and NO `paths:` filter, so it fires on EVERY
 #     PR to main/dev and passes/fails on its own byte-match evidence, never
 #     conditioned on another job's result.
-#   * runs on GitHub-hosted PR runners (short, dependency-free
-#     `uv run --no-project --with pyyaml`), so self-hosted fleet saturation can
-#     never cancel it and falsely skip the gate. omnibase_core's `ci-summary`
-#     poller only inspects jobs within the ci.yml run, so this standalone job is
-#     its own independent check context and cannot be false-greened by the
-#     summary aggregator.
+#   * runs UNCONDITIONALLY on a GitHub-hosted runner (ubuntu-latest) for EVERY
+#     event — not just fork PRs (OMN-14668). The job is short and dependency-free
+#     (`uv run --no-project --with pyyaml`), so self-hosted fleet saturation or an
+#     absent self-hosted runner can never leave it queued/cancelled and falsely
+#     skip the gate. omnibase_core's `ci-summary` poller only inspects jobs within
+#     the ci.yml run, so this standalone job is its own independent check context
+#     and cannot be false-greened by the summary aggregator.
 #
 # Enforcement, not detection (CLAUDE.md Rule #5): wired as the CI counterpart of
 # the precommit-fail-loud-meta-gate + precommit-pin-parity pre-commit hooks
@@ -53,15 +54,16 @@ permissions:
 jobs:
   precommit-parity-gate:
     name: Precommit Parity Gate
-    # OMNI_RUNNER_SELECTOR_V1 — trusted events default to self-hosted omnibase-ci;
-    # pull_request defaults to ubuntu-latest (hosted, so fleet saturation can
-    # never cancel this gate and falsely skip it).
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    # OMN-14668: canonical OMNI_RUNNER_SELECTOR_V1 form for the byte-match parity
+    # gate is HOSTED-PINNED — `runs-on: ubuntu-latest`, unconditionally, for every
+    # event. It deliberately opts OUT of the trusted-self-hosted vs public-fork
+    # branch that heavier build jobs use, because this gate is short and
+    # dependency-free and must never depend on self-hosted fleet availability
+    # (a saturated/absent fleet = queued-or-cancelled = false-green window). This
+    # matches the already-hosted omnibase_spi / omnibase_compat parity gates; the
+    # prior form routed only fork PRs to hosted and left trusted push/merge_group
+    # on self-hosted.
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
