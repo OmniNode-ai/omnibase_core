@@ -1609,8 +1609,32 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+  # WS7 CI<->pre-commit parity meta-gates (OMN-14671 / OMN-14655).
+  # Local counterpart of .github/workflows/precommit-parity-gate.yml — the
+  # entry: strings are byte-identical to that workflow's steps so a skipped or
+  # weakened gate cannot pass here and fail on CI (or vice-versa). Both run
+  # `uv run --no-project` so they share an identical ephemeral env with CI and
+  # never depend on worktree uv.sources resolution.
+  - repo: local
+    hooks:
+      - id: precommit-fail-loud-meta-gate
+        name: Pre-commit fail-loud meta-gate (exit-0-on-missing / stages coverage)
+        entry: uv run --no-project --with pyyaml python3 scripts/validation/validate_precommit_fail_loud.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: precommit-pin-parity
+        name: Pre-commit pin-parity (pre-commit rev vs CI-pinned SHA)
+        entry: uv run --no-project --with pyyaml python3 scripts/validation/validate_precommit_pin_parity.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
 # Configuration
-default_install_hook_types: [pre-commit, pre-push]
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
 default_stages: [pre-commit]
 fail_fast: false
 # Note: minimum_pre_commit_version removed to avoid string version anti-pattern
