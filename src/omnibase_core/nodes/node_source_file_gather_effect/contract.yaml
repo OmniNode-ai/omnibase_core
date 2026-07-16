@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the source_file_gather EFFECT node.
+# Walks a directory, applies .onexignore + default-ignore-dir + schema-exclusion +
+# max-file-size filtering, and returns eligible files WITH their content inline so
+# a paired COMPUTE node can consume them without further filesystem I/O.
+#
+# See: OMN-14656 — RSD canary (Characterize -> Generate two-node split)
+
+name: node_source_file_gather_effect
+node_id: node_source_file_gather_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Gathers eligible source files under a root directory, applying the same include-pattern glob, .onexignore/default-ignore-directory,
+  schema-exclusion, and max-file-size filtering as the archived DirectoryTraverser.find_files, and returns
+  each eligible file with its content inline so downstream COMPUTE nodes stay pure (no filesystem access).
+  Invoked directly (CLI/direct call), not via an event-bus subscription. #magic___^_^___line
+input_model: omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input.ModelSourceFileGatherInput
+output_model: omnibase_core.models.nodes.source_file_gather.model_source_file_gather_output.ModelSourceFileGatherOutput
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeSourceFileGatherEffect
+
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
