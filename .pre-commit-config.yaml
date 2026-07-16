@@ -922,7 +922,7 @@ repos:
       # serialization boundaries. Baseline: 314 violations (2026-03-13).
       # Ratchet rule: any PR reducing violations must lower --max-violations.
       # OMN-14694: the 5 WS8 validator-node handlers (OMN-14656/OMN-14659) plus
-      # the new no-db-in-orchestrator handler all serialise JSON-safe findings
+      # the no-io-outside-effects handler all serialise JSON-safe findings
       # via model_dump(mode="json"), removing 5 pre-existing bare calls and
       # taking the tree from 314 to 309; ceiling lowered 310 -> 309 to match.
       - id: validate-model-dump-json-mode
@@ -1316,17 +1316,19 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
-      # No database I/O in ORCHESTRATOR node packages (OMN-14694). WS8 canary —
-      # the first archetype-specific layering rule. Self-wired here (scoped to
-      # src/) because this repo's src/ tree is clean against it (verified
-      # 2026-07-16: the sole orchestrator, node_compliance_orchestrator, imports
-      # no DB driver). Matches both .py and contract.yaml so a handler edit OR an
-      # archetype flip in a contract triggers the check; the runtime resolves each
-      # staged file's node-package directory and reads the sibling contract to key
-      # off archetype. Suppress a proven-legitimate exception with: # db-io-ok
-      - id: check-no-db-in-orchestrator
-        name: No Database I/O in ORCHESTRATOR Node Packages (OMN-14694)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.runtime_no_db_in_orchestrator_check
+      # No I/O outside EFFECT node packages (OMN-14694 seed → OMN-14662 collapse).
+      # The single WS8 archetype-purity invariant: I/O and direct adapter/bus
+      # instantiation are permitted only in EFFECT nodes; every module in a
+      # non-EFFECT package must be pure. Self-wired here (scoped to src/) because
+      # this repo's src/ tree is clean against it (verified 2026-07-16: full-tree
+      # self-scan is green). Matches both .py and contract.yaml so a handler edit
+      # OR an archetype flip in a contract triggers the check; the runtime
+      # resolves each staged file's node-package directory and reads the sibling
+      # contract to key off archetype. Suppress a proven-legitimate exception
+      # with: # io-ok: <reason>
+      - id: check-no-io-outside-effects
+        name: No I/O Outside EFFECT Node Packages (OMN-14694/OMN-14662)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check
         language: system
         files: ^src/.*(\.py|/contract\.yaml)$
         pass_filenames: true

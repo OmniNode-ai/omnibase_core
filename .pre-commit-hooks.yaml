@@ -478,19 +478,22 @@
   pass_filenames: true
   stages: [pre-commit]
 
-- id: check-no-db-in-orchestrator
-  name: No Database I/O in ORCHESTRATOR Node Packages (OMN-14694)
+- id: check-no-io-outside-effects
+  name: No I/O Outside EFFECT Node Packages (OMN-14694/OMN-14662)
   description: >
-    Reject database-driver imports (sqlite3, aiosqlite, psycopg, psycopg2, asyncpg, sqlalchemy) inside
-    .py modules that sit in an ORCHESTRATOR node package. Unlike the universal OMN-14659 arch lints, this
-    rule is archetype-specific: the pure COMPUTE node (node_no_db_in_orchestrator_check_compute) keys
-    off each node's declared archetype (contract.yaml node_type / descriptor.node_archetype) and only
-    scans the modules co-located with an ORCHESTRATOR contract. The paired EFFECT node (node_source_file_gather_effect)
-    owns the filesystem walk for full-tree (no-filenames) invocation; the same COMPUTE node backs this
-    pre-commit hook and the CI gate. Orchestrators coordinate and emit — database I/O belongs in a dedicated
-    EFFECT node. Suppress a proven-legitimate exception with: # db-io-ok
+    Reject forbidden I/O surfaces inside .py modules that sit in a NON-EFFECT node package: database-driver
+    imports (sqlite3, aiosqlite, psycopg, psycopg2, asyncpg, sqlalchemy), network/HTTP clients (httpx,
+    requests, aiohttp, urllib3, socket, urllib.request), subprocess execution, git invocation, Linear API
+    access, filesystem writes (open write-mode, os/shutil mutators, pathlib.Path write methods), and direct
+    event-bus / infra-adapter instantiation. Unlike the universal OMN-14659 arch lints, this rule is
+    archetype-keyed: the pure COMPUTE node (node_no_io_outside_effects_check_compute) keys off each node's
+    declared archetype (contract.yaml node_type / descriptor.node_archetype) and only scans the modules
+    co-located with a non-EFFECT contract — EFFECT is the only I/O-permitted archetype. The paired EFFECT
+    node (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames) invocation;
+    the same COMPUTE node backs this pre-commit hook and the CI gate. Only EFFECT nodes may perform I/O.
+    Suppress a proven-legitimate exception with: # io-ok: <reason>
   language: python
-  entry: python -m omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.runtime_no_db_in_orchestrator_check
+  entry: python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check
   types_or: [python, yaml]
   pass_filenames: true
   stages: [pre-commit]

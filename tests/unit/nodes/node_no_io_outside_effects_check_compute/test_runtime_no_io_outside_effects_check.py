@@ -1,15 +1,15 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for the no-db-in-orchestrator CLI runtime (OMN-14694, OMN-13305 pattern).
+"""Tests for the no-io-outside-effects CLI runtime (OMN-14694 / OMN-14662).
 
 Covers both invocation modes: pre-commit's explicit-filenames mode (node-dir
 context resolved at the CLI boundary) and the full-tree walk mode (delegated to
 ``node_source_file_gather_effect``) — both dispatch to the SAME canonical
-``NodeNoDbInOrchestratorCheckCompute`` handler. The full-tree RED case is the
-end-to-end mirror of the handler-level RED proof: a real on-disk orchestrator
-package whose handler imports a DB driver exits non-zero, while a COMPUTE
-package with the same import exits zero.
+``NodeNoIoOutsideEffectsCheckCompute`` handler. The full-tree RED case is the
+end-to-end mirror of the handler-level RED proof: a real on-disk non-EFFECT
+package whose module does I/O exits non-zero, while an EFFECT package with the
+same I/O exits zero.
 """
 
 from __future__ import annotations
@@ -18,22 +18,28 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.runtime_no_db_in_orchestrator_check import (
+from omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check import (
     main,
 )
 
 pytestmark = pytest.mark.unit
 
-_ORCHESTRATOR_CONTRACT = (
-    "name: node_x\n"
-    "node_type: orchestrator\n"
-    "descriptor:\n"
-    "  node_archetype: orchestrator\n"
+
+def _contract(archetype: str) -> str:
+    return (
+        f"name: node_x\nnode_type: {archetype}\n"
+        f"descriptor:\n  node_archetype: {archetype}\n"
+    )
+
+
+_ORCHESTRATOR_CONTRACT = _contract("orchestrator")
+_COMPUTE_CONTRACT = _contract("compute")
+_EFFECT_CONTRACT = _contract("effect")
+# A GitPython invocation — one of the genuinely-new surfaces the DB-only seed
+# never detected. Single forbidden surface, so exactly one finding.
+_GIT_HANDLER = (
+    "import git\n\n\ndef clone(url):\n    return git.Repo.clone_from(url, '.')\n"
 )
-_COMPUTE_CONTRACT = (
-    "name: node_x\nnode_type: compute\ndescriptor:\n  node_archetype: compute\n"
-)
-_DB_HANDLER = "import sqlite3\n\n\ndef run(path):\n    return sqlite3.connect(path)\n"
 _CLEAN_HANDLER = "def run(intents):\n    return intents\n"
 
 
@@ -50,11 +56,11 @@ def _make_node(base: Path, name: str, contract: str, handler: str) -> Path:
 # =============================================================================
 
 
-def test_filenames_mode_orchestrator_db_io_fails(
+def test_filenames_mode_non_effect_io_fails(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     node_dir = _make_node(
-        tmp_path, "node_x_orchestrator", _ORCHESTRATOR_CONTRACT, _DB_HANDLER
+        tmp_path, "node_x_orchestrator", _ORCHESTRATOR_CONTRACT, _GIT_HANDLER
     )
 
     # pre-commit stages only the handler; the CLI resolves the sibling contract.
@@ -62,28 +68,26 @@ def test_filenames_mode_orchestrator_db_io_fails(
 
     assert exit_code == 1
     out = capsys.readouterr().out
-    assert "FAIL: Found 1 database-access violation(s)" in out
-    assert "DB access in ORCHESTRATOR node" in out
+    assert "FAIL: Found 1 I/O-outside-EFFECT violation(s)" in out
+    assert "git invocation" in out
 
 
-def test_filenames_mode_compute_db_io_passes(
+def test_filenames_mode_effect_io_passes(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    node_dir = _make_node(tmp_path, "node_x_compute", _COMPUTE_CONTRACT, _DB_HANDLER)
+    node_dir = _make_node(tmp_path, "node_x_effect", _EFFECT_CONTRACT, _GIT_HANDLER)
 
     exit_code = main([str(node_dir / "handler.py")])
 
     assert exit_code == 0
     out = capsys.readouterr().out
-    assert "OK: No database I/O found in ORCHESTRATOR node packages" in out
+    assert "OK: No forbidden I/O found in non-EFFECT node packages" in out
 
 
-def test_filenames_mode_clean_orchestrator_passes(
+def test_filenames_mode_clean_non_effect_passes(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    node_dir = _make_node(
-        tmp_path, "node_x_orchestrator", _ORCHESTRATOR_CONTRACT, _CLEAN_HANDLER
-    )
+    node_dir = _make_node(tmp_path, "node_x_compute", _COMPUTE_CONTRACT, _CLEAN_HANDLER)
 
     exit_code = main([str(node_dir / "handler.py")])
 
@@ -95,27 +99,27 @@ def test_filenames_mode_file_outside_node_package_passes(
 ) -> None:
     """A staged .py whose directory has no contract.yaml is not a node package."""
     loose = tmp_path / "adhoc.py"
-    loose.write_text(_DB_HANDLER)
+    loose.write_text(_GIT_HANDLER)
 
     exit_code = main([str(loose)])
 
     assert exit_code == 0
     out = capsys.readouterr().out
-    assert "OK: No database I/O found in ORCHESTRATOR node packages" in out
+    assert "OK: No forbidden I/O found in non-EFFECT node packages" in out
 
 
-def test_filenames_mode_contract_flip_to_orchestrator_detected(
+def test_filenames_mode_contract_flip_to_non_effect_detected(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Staging only the contract.yaml (e.g. a compute node flipped to
-    orchestrator) still pulls in the sibling handler and flags it."""
-    node_dir = _make_node(tmp_path, "node_x", _ORCHESTRATOR_CONTRACT, _DB_HANDLER)
+    """Staging only the contract.yaml (e.g. an effect node flipped to compute)
+    still pulls in the sibling handler and flags it."""
+    node_dir = _make_node(tmp_path, "node_x", _COMPUTE_CONTRACT, _GIT_HANDLER)
 
     exit_code = main([str(node_dir / "contract.yaml")])
 
     assert exit_code == 1
     out = capsys.readouterr().out
-    assert "FAIL: Found 1 database-access violation(s)" in out
+    assert "FAIL: Found 1 I/O-outside-EFFECT violation(s)" in out
 
 
 # =============================================================================
@@ -123,38 +127,36 @@ def test_filenames_mode_contract_flip_to_orchestrator_detected(
 # =============================================================================
 
 
-def test_full_tree_mode_flags_orchestrator_db_io(
+def test_full_tree_mode_flags_non_effect_io(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     src = tmp_path / "src"
     _make_node(
-        src / "nodes", "node_bad_orchestrator", _ORCHESTRATOR_CONTRACT, _DB_HANDLER
+        src / "nodes", "node_bad_orchestrator", _ORCHESTRATOR_CONTRACT, _GIT_HANDLER
     )
-    _make_node(src / "nodes", "node_ok_compute", _COMPUTE_CONTRACT, _DB_HANDLER)
+    _make_node(src / "nodes", "node_ok_effect", _EFFECT_CONTRACT, _GIT_HANDLER)
 
     exit_code = main(["--root", str(src)])
 
     assert exit_code == 1
     out = capsys.readouterr().out
-    assert "FAIL: Found 1 database-access violation(s)" in out
+    assert "FAIL: Found 1 I/O-outside-EFFECT violation(s)" in out
     assert "node_bad_orchestrator/handler.py" in out
-    # The compute package with the identical DB import is NOT reported.
-    assert "node_ok_compute" not in out
+    # The EFFECT package with the identical git invocation is NOT reported.
+    assert "node_ok_effect" not in out
 
 
 def test_full_tree_mode_clean_tree_passes(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     src = tmp_path / "src"
-    _make_node(
-        src / "nodes", "node_x_orchestrator", _ORCHESTRATOR_CONTRACT, _CLEAN_HANDLER
-    )
+    _make_node(src / "nodes", "node_x_compute", _COMPUTE_CONTRACT, _CLEAN_HANDLER)
 
     exit_code = main(["--root", str(src)])
 
     assert exit_code == 0
     out = capsys.readouterr().out
-    assert "OK: No database I/O found in ORCHESTRATOR node packages" in out
+    assert "OK: No forbidden I/O found in non-EFFECT node packages" in out
 
 
 def test_full_tree_mode_empty_root_passes(

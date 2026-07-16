@@ -388,9 +388,9 @@ allowed_files:
     added: "2026-06-23"
     review: "2026-12-23"
 
-  - file: "src/omnibase_core/nodes/node_no_db_in_orchestrator_check_compute/archetype_resolver.py"
+  - file: "src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/archetype_resolver.py"
     reason: >-
-      no-db-in-orchestrator COMPUTE archetype resolver (OMN-14694, WS8 canary). Reads two optional archetype
+      no-io-outside-effects COMPUTE archetype resolver (OMN-14694 seed / OMN-14662). Reads two optional archetype
       fields (node_type, descriptor.node_archetype) from arbitrary node contract.yaml *strings* — the
       bytes are read at the paired EFFECT / CLI boundary, so the COMPUTE stays pure over in-memory strings
       (yaml.safe_load on a str is a pure parse, no I/O). contract.yaml schemas vary by node type (ModelContractCompute/Effect/Reducer/Orchestrator)

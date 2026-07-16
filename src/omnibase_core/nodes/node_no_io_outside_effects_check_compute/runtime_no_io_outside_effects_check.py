@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI runtime for the no-db-in-orchestrator check — pre-commit hook + CI gate.
+"""CLI runtime for the no-io-outside-effects check — pre-commit hook + CI gate.
 
 Both invocation surfaces are backed by the SAME canonical COMPUTE node
-(``NodeNoDbInOrchestratorCheckCompute``) — DRY per the OMN-13305 pattern,
+(``NodeNoIoOutsideEffectsCheckCompute``) — DRY per the OMN-13305 pattern,
 following the ``node_no_raw_sqlite3_check_compute`` template (OMN-14659): a
 single module owns the pure handler dispatch plus a synchronous CLI ``main()``
 that performs all filesystem I/O at the CLI boundary, never inside the handler.
@@ -21,17 +21,17 @@ Two modes:
 * **full-tree** (no filenames — CI / manual ``python -m ...``): walks ``--root``
   (default ``src``) via the paired ``node_source_file_gather_effect`` EFFECT
   node, gathering both ``**/*.py`` and ``**/contract.yaml`` so the COMPUTE can
-  group by directory and DB-scan only the orchestrator packages.
+  group by directory and scan only the non-EFFECT packages.
 
 Usage::
 
-    python -m omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.runtime_no_db_in_orchestrator_check file1.py contract.yaml
-    python -m omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.runtime_no_db_in_orchestrator_check
-    python -m omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.runtime_no_db_in_orchestrator_check --root src
+    python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check file1.py contract.yaml
+    python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check
+    python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check --root src
 
 Exit codes: 0 — ``overall_status == "PASS"``; 1 — FAIL/ERROR findings present.
 
-Ticket: OMN-14694 (WS8 canary — no-db-in-orchestrator).
+Ticket: OMN-14694 (WS8 seed) → OMN-14662 (archetype-purity collapse).
 """
 
 from __future__ import annotations
@@ -41,8 +41,8 @@ import sys
 from pathlib import Path
 from typing import Final
 
-from omnibase_core.models.nodes.no_db_in_orchestrator_check.model_no_db_in_orchestrator_check_input import (
-    ModelNoDbInOrchestratorCheckInput,
+from omnibase_core.models.nodes.no_io_outside_effects_check.model_no_io_outside_effects_check_input import (
+    ModelNoIoOutsideEffectsCheckInput,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
@@ -53,11 +53,11 @@ from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_inpu
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
 )
-from omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.archetype_resolver import (
+from omnibase_core.nodes.node_no_io_outside_effects_check_compute.archetype_resolver import (
     CONTRACT_FILENAME,
 )
-from omnibase_core.nodes.node_no_db_in_orchestrator_check_compute.handler import (
-    NodeNoDbInOrchestratorCheckCompute,
+from omnibase_core.nodes.node_no_io_outside_effects_check_compute.handler import (
+    NodeNoIoOutsideEffectsCheckCompute,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
@@ -136,8 +136,8 @@ def _gather_from_root(root: str) -> tuple[list[ModelSourceFile], list[str]]:
 
 def _run(files: list[ModelSourceFile]) -> ModelValidationReport:
     """Dispatch gathered (path, source) pairs to the canonical COMPUTE node."""
-    return NodeNoDbInOrchestratorCheckCompute().handle(
-        ModelNoDbInOrchestratorCheckInput(files=files)
+    return NodeNoIoOutsideEffectsCheckCompute().handle(
+        ModelNoIoOutsideEffectsCheckInput(files=files)
     )
 
 
@@ -148,10 +148,10 @@ def main(argv: list[str] | None = None) -> int:
         0 on PASS, 1 on FAIL/ERROR.
     """
     parser = argparse.ArgumentParser(
-        prog="check-no-db-in-orchestrator",
+        prog="check-no-io-outside-effects",
         description=(
-            "Detect database-driver imports inside ORCHESTRATOR node packages "
-            "via the no-db-in-orchestrator COMPUTE node (OMN-14694)."
+            "Detect forbidden I/O surfaces inside non-EFFECT node packages "
+            "via the no-io-outside-effects COMPUTE node (OMN-14694/OMN-14662)."
         ),
     )
     parser.add_argument(
@@ -189,21 +189,21 @@ def main(argv: list[str] | None = None) -> int:
 
     if report.overall_status == "PASS":
         print(  # print-ok: CLI output
-            "OK: No database I/O found in ORCHESTRATOR node packages"
+            "OK: No forbidden I/O found in non-EFFECT node packages"
         )
         return 0
 
     print(  # print-ok: CLI output
-        f"FAIL: Found {report.metrics.total} database-access violation(s) "
-        "in ORCHESTRATOR node packages:"
+        f"FAIL: Found {report.metrics.total} I/O-outside-EFFECT violation(s) "
+        "in non-EFFECT node packages:"
     )
     for finding in report.findings:
         print(f"  {finding.message}")  # print-ok: CLI output
     print(  # print-ok: CLI output
-        "\nORCHESTRATOR nodes coordinate and emit — they must not perform "
-        "database I/O."
-        "\nDelegate DB access to a dedicated EFFECT node."
-        "\nAdd '# db-io-ok' to suppress a proven-legitimate exception."
+        "\nOnly EFFECT nodes may perform I/O — COMPUTE / REDUCER / ORCHESTRATOR "
+        "packages must be pure."
+        "\nMove the I/O into a dedicated EFFECT node (inject adapters/buses via DI)."
+        "\nAdd '# io-ok: <reason>' to suppress a proven-legitimate exception."
     )
     return 1
 
