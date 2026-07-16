@@ -10,32 +10,25 @@ the COMPUTE handler module contains exactly one class
 **The invariant:** I/O and direct adapter/bus instantiation are permitted ONLY
 in EFFECT nodes. Every ``.py`` module co-located with a non-EFFECT contract
 (COMPUTE, REDUCER, ORCHESTRATOR) must be pure/deterministic. Database is only
-one forbidden surface; this visitor covers the full set:
+one forbidden surface; this visitor covers the full set (surface -> AST signal):
 
-===================  ====================================================
-Surface              AST detection
-===================  ====================================================
-Database             import root sqlite3/aiosqlite/psycopg/psycopg2/
-                     asyncpg/sqlalchemy
-Network / HTTP       import root httpx/requests/aiohttp/urllib3/socket, or
-                     urllib.request / urllib.error
-Subprocess           import ``subprocess``; ``subprocess.<verb>(...)``;
-                     ``os.system``/``os.popen``/``os.exec*``/``os.spawn*``
-Git                  git-lib import (git / pygit2), OR a subprocess/os call
-                     whose argv[0] resolves to ``git`` (ALL verbs — purity
-                     forbids all git, not only network verbs)
-Linear               Linear SDK import (linear / linear_sdk / linear_api /
-                     linear_client), OR any call carrying a ``linear.app``
-                     URL string literal
-Filesystem (write)   ``open(..., "w"|"a"|"x"|"+")``; ``os`` mutators
-                     (remove/mkdir/unlink/...); ``shutil`` mutators
-                     (copy/move/rmtree/...); ``pathlib.Path`` write methods
-                     (write_text/write_bytes/mkdir/unlink/touch/rmtree/...)
-Direct bus           construction of an event-bus class: KafkaProducer /
-                     AIOKafka* / confluent_kafka.* / ``*EventBus(...)``
-Direct adapter       construction of an infra adapter class: ``*Adapter(...)``
-                     (inject via ``container.get_service(...)`` instead)
-===================  ====================================================
+- Database: import root sqlite3/aiosqlite/psycopg/psycopg2/asyncpg/sqlalchemy.
+- Network / HTTP: import root httpx/requests/aiohttp/urllib3/socket, or
+  urllib.request / urllib.error.
+- Subprocess: import ``subprocess``; ``subprocess.<verb>(...)``; ``os.system``
+  / ``os.popen`` / ``os.exec*`` / ``os.spawn*``.
+- Git: git-lib import (git / pygit2), OR a subprocess/os call whose argv[0]
+  resolves to ``git`` (ALL verbs — purity forbids all git, not only network
+  verbs).
+- Linear: Linear SDK import (linear / linear_sdk / linear_api / linear_client),
+  OR any call carrying a ``linear.app`` URL string literal.
+- Filesystem writes: ``open(..., "w"/"a"/"x"/"+")``; ``os`` mutators
+  (remove/mkdir/unlink/...); ``shutil`` mutators (copy/move/rmtree/...);
+  ``pathlib.Path`` write methods (write_text/write_bytes/mkdir/unlink/touch/...).
+- Direct bus: construction of an event-bus class — KafkaProducer / AIOKafka* /
+  confluent_kafka.* / ``*EventBus(...)``.
+- Direct adapter: construction of an infra adapter class ``*Adapter(...)``
+  (inject via ``container.get_service(...)`` instead).
 
 Import-root detection catches a surface at its root — a module cannot call
 ``psycopg.connect`` without importing ``psycopg`` first — so it has zero
