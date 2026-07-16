@@ -1655,6 +1655,29 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+  # Governed impacted-test selector at PRE-PUSH (OMN-13973 / WS7 OMN-14655, D6a).
+  # Runs the fast local IMPACTED SUBSET of the unit suite once per `git push`,
+  # via the SAME selector CI uses (scripts/ci/detect_test_paths.py +
+  # test_selection_adjacency.yaml, ENABLE_SMART_TESTS) -- never a hand-typed -k.
+  # Fail-closed: escalates to the full unit suite when it cannot prove narrowing
+  # is safe (shared module / pyproject deps / scripts/ci/ / >=8 modules / main).
+  # NET-NEGATIVE-SURFACE: retires the "run the whole suite by hand before every
+  # push" default (root CLAUDE.md Rule #4). This is a fast local mirror ADVISORY
+  # of the full CI suite -- NOT byte-parity with an enforced CI context (on CI
+  # the selector is behind ENABLE_SMART_TESTS off-by-default; the enforced gate
+  # is the full suite). FAIL-LOUD: hard-errors if base/selector/adjacency cannot
+  # resolve (plan section 3d.4); never a green skip.
+  - repo: local
+    hooks:
+      - id: prepush-smart-tests
+        name: Governed impacted-test selector (pre-push, OMN-13973)
+        entry: bash scripts/hooks/prepush_smart_tests.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        verbose: true
+        stages: [pre-push]
+
 # Configuration
 default_install_hook_types: [pre-commit, pre-push, commit-msg]
 default_stages: [pre-commit]
