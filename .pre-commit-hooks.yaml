@@ -393,6 +393,24 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-no-utcnow
+  name: No datetime.utcnow() Usage (OMN-14656)
+  description: >
+    Reject datetime.utcnow() / datetime.datetime.utcnow() (any ast.Attribute with attr == "utcnow") —
+    timezone-naive timestamps cause clock-skew bugs when compared against timezone-aware datetimes from
+    Kafka or PostgreSQL. Ported from the CI gate at omniclaude/scripts/validation/validate_no_utcnow.py
+    (OMN-2592 Task 11) into a canonical two-node split (OMN-14656, revives OMN-2362): the AST scan itself
+    runs as a pure COMPUTE node (node_no_utcnow_check_compute) over explicit (path, source) pairs, and
+    the paired EFFECT node (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames)
+    invocation. Same node backs the pre-commit hook and any CI entrypoint — no separate implementation
+    to drift. Replace flagged usage with datetime.now(tz=timezone.utc) or datetime.now(UTC). No suppression
+    marker; timezone-naive timestamps are never acceptable.
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_utcnow_check_compute.runtime_no_utcnow_check
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-enum-governance
   name: ONEX Enum Governance Validation (OMN-13287)
   description: >

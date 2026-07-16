@@ -48,6 +48,7 @@ dependencies = [
     "ruamel-yaml>=0.18.0",
     "tree-sitter>=0.25.2,<0.27",
     "tree-sitter-python>=0.25.0,<0.26",
+    "pathspec>=0.12.1",
 ]
 
 [project.urls]
@@ -148,6 +149,8 @@ node_compliance_scan_compute = "omnibase_core.nodes.node_compliance_scan_compute
 node_backend_secret_discipline_compute = "omnibase_core.nodes.node_backend_secret_discipline_compute" # pragma: allowlist secret
 node_contract_resolve_compute = "omnibase_core.nodes.node_contract_resolve_compute"
 node_contract_verify_replay_compute = "omnibase_core.nodes.node_contract_verify_replay_compute"
+node_source_file_gather_effect = "omnibase_core.nodes.node_source_file_gather_effect"
+node_no_utcnow_check_compute = "omnibase_core.nodes.node_no_utcnow_check_compute"
 
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
@@ -387,6 +390,8 @@ ignore = [
 "src/omnibase_core/validation/hardcoded_topic/runtime_hardcoded_topic.py" = ["T201"]
 # OMN-13569: CLI runner for the doc-content COMPUTE validator prints findings.
 "src/omnibase_core/validation/doc_content_scan/runtime_doc_content_scan.py" = ["T201"]
+# OMN-14656: CLI runner for the no-utcnow-check COMPUTE node prints findings.
+"src/omnibase_core/nodes/node_no_utcnow_check_compute/runtime_no_utcnow_check.py" = ["T201"]
 "src/omnibase_core/validation/validator_transport_import.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-13283)
 "src/omnibase_core/validation/validator_node_purity.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-13283)
 "src/omnibase_core/validation/antipattern_checker.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-11923)

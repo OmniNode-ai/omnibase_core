@@ -1280,6 +1280,20 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # No datetime.utcnow() usage (OMN-14656, revives OMN-2362). Timezone-naive
+      # timestamps cause clock-skew bugs vs timezone-aware Kafka/PostgreSQL
+      # datetimes. Scoped to src/ only (matches the ported oracle's own
+      # src_root.rglob("*.py") scope) — tests/fixtures/validation/exports/
+      # contains an intentional syntax-error fixture that would otherwise
+      # ERROR this AST-based check.
+      - id: check-no-utcnow
+        name: No datetime.utcnow() Usage (OMN-14656)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_utcnow_check_compute.runtime_no_utcnow_check
+        language: system
+        files: ^src/.*\.py$
+        pass_filenames: true
+        stages: [pre-commit]
+
       # Canonical Inference Gate (OMN-13219).
       # Fails on non-canonical model-inference surfaces: shelled model CLIs
       # (codex/claude/gemini/opencode via subprocess/exec/shutil.which) and
