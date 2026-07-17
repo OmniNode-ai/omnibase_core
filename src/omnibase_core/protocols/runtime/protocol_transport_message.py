@@ -33,37 +33,37 @@ class ProtocolTransportMessage(Protocol):
     @property
     def topic(self) -> str:
         """Source topic the message was polled from."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol property body
 
     @property
     def partition(self) -> int:
         """Partition the message belongs to (per-partition identity)."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol property body
 
     @property
     def offset(self) -> int:
         """Monotonic per-partition offset coordinate of the message."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol property body
 
     @property
     def key(self) -> bytes | None:
         """Raw partition / routing key, or None when the message is unkeyed."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol property body
 
     @property
     def value(self) -> bytes:
         """Raw message payload bytes."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol property body
 
     @property
     def headers(self) -> Mapping[str, bytes]:
         """Raw transport headers (header name -> raw bytes)."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol property body
 
     @property
     def ack_token(self) -> object:
         """Opaque commit / redeliver cursor the runtime hands back unmodified."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol property body
 
 
 __all__ = ["ProtocolTransportMessage"]

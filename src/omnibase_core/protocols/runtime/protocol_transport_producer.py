@@ -31,7 +31,7 @@ class ProtocolTransportProducer(Protocol):
         headers: Mapping[str, bytes],
     ) -> None:
         """Publish one event to ``topic`` and await the broker acknowledgement."""
-        ...
+        raise NotImplementedError  # stub-ok: protocol method body
 
 
 __all__ = ["ProtocolTransportProducer"]
