@@ -36,6 +36,12 @@
 [importlinter]
 root_packages =
     omnibase_core
+# Required so the `core-no-kafka-transport` forbidden contract (invariant I2,
+# OMN-14719) can name external packages (aiokafka / confluent_kafka / omnibase_infra):
+# import-linter mandates this at the top level when any contract forbids external
+# modules. It adds external packages that core actually imports as leaf nodes; it does
+# not affect the intra-core forbidden/ratchet contracts (they name only omnibase_core.*).
+include_external_packages = True
 
 [importlinter:contract:core-foundation-no-upward]
 name = Foundation primitives must not import higher layers (direct)
@@ -125,3 +131,39 @@ ignore_imports =
     # regenerates these modules canonically (dissolving the protocols<->models cycle),
     # after which this line + the ratchet are deleted. The set only SHRINKS.
     omnibase_core.protocols.** -> omnibase_core.models.**
+
+[importlinter:contract:core-no-kafka-transport]
+name = Core must not import Kafka transport (aiokafka/confluent_kafka/omnibase_infra) — invariant I2
+# Invariant I2 of the single-runtime / transport-via-DI unification (epic OMN-14717,
+# ticket OMN-14719, plan 2026-07-17-single-runtime-transport-di-unification-plan.md).
+#
+# The target architecture puts the ONE runtime in omnibase_core and the concrete
+# Kafka transport in omnibase_infra, injected inward via the ProtocolTransport*
+# abstractions. Dependency inversion therefore REQUIRES that core never import Kafka
+# (aiokafka / confluent_kafka) nor reach "up" into omnibase_infra — that is what keeps
+# the compat <- core <- spi <- infra layering true. This contract is the mechanical
+# guard for that invariant.
+#
+# It is currently VACUOUS (grimp confirms core imports neither aiokafka,
+# confluent_kafka, nor omnibase_infra statically) — that is expected: it is the fence
+# that keeps the target true as the runtime moves into core, not a fix for a present
+# violation.
+#
+# `include_external_packages` is required so grimp records imports of the external
+# aiokafka / confluent_kafka / omnibase_infra packages. grimp attributes an external
+# import to its TOP-LEVEL package, so `omnibase_infra` (not the .event_bus.event_bus_kafka
+# submodule the plan names) is the checkable granularity — and forbidding all of
+# omnibase_infra is the stronger, layering-correct fence.
+#
+# Plan-declared deferred exception (I2): src/omnibase_core/cli/cli_run_node.py loads
+# confluent_kafka via importlib.import_module("confluent_kafka") (a DYNAMIC import).
+# grimp's static graph does not see dynamic importlib calls, so this contract stays
+# green without an ignore entry; cli_run_node.py is re-expressed over
+# ProtocolTransportProducer in a follow-up (plan step S11).
+type = forbidden
+source_modules =
+    omnibase_core
+forbidden_modules =
+    aiokafka
+    confluent_kafka
+    omnibase_infra

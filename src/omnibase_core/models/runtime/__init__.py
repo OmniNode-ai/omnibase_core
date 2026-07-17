@@ -42,6 +42,9 @@ from omnibase_core.models.runtime.model_runtime_skill_response import (
 from omnibase_core.models.runtime.model_runtime_target_selector import (
     ModelRuntimeTargetSelector,
 )
+from omnibase_core.models.runtime.model_transport_message import (
+    ModelTransportMessage,
+)
 from omnibase_core.models.runtime.payloads import (
     ModelCancelExecutionPayload,
     ModelDelayUntilPayload,
@@ -67,6 +70,7 @@ __all__ = [
     "ModelRuntimeAddress",
     "ModelRuntimeAddressRegistry",
     "ModelRuntimeTargetSelector",
+    "ModelTransportMessage",
     # Aliveness probe contract (Wave 3)
     "ModelRuntimeAlivenessProbeCommand",
     "ModelRuntimeAlivenessProbeReceipt",
