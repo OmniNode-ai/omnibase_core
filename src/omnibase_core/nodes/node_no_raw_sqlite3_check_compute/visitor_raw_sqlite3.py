@@ -88,6 +88,17 @@ class RawSqlite3Visitor(ast.NodeVisitor):
         for alias in node.names:
             if alias.name == _FORBIDDEN_MODULE:
                 self._sqlite3_aliases.add(alias.asname or alias.name)
+            elif alias.asname is None and alias.name.startswith(
+                f"{_FORBIDDEN_MODULE}."
+            ):
+                # ``import sqlite3.dbapi2`` (no asname) binds the root
+                # ``sqlite3`` name — importing a submodule also imports the
+                # parent package, so ``sqlite3.connect(...)`` is live. The
+                # alias.name is the dotted path, so an ``== sqlite3`` check
+                # alone would miss this. ``import sqlite3.dbapi2 as foo`` binds
+                # ``foo`` (the submodule, not the root), so the ``asname is
+                # None`` guard prevents a false positive there.
+                self._sqlite3_aliases.add(_FORBIDDEN_MODULE)
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
