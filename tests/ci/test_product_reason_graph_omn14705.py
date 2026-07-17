@@ -248,22 +248,121 @@ def test_synchronize_new_head_supersedes_receipt() -> None:
 
 
 # --------------------------------------------------------------------------
-# CLI surface — report-only, always exit 0.
+# CLI surface — default (no --enforce) stays fully report-only, always exit 0.
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.unit
-def test_cli_graph_is_report_only_exit_zero_on_red() -> None:
-    facts = {"head_sha": _HEAD, "subchecks": {"tests": "failure"}}
-    proc = subprocess.run(
-        [sys.executable, str(_SCRIPT), "graph", "--facts-json", json.dumps(facts)],
+def _run_graph(facts: dict, *extra: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [
+            sys.executable,
+            str(_SCRIPT),
+            "graph",
+            "--facts-json",
+            json.dumps(facts),
+            *extra,
+        ],
         capture_output=True,
         text=True,
         check=False,
     )
+
+
+@pytest.mark.unit
+def test_cli_graph_default_is_report_only_exit_zero_on_red() -> None:
+    # Without --enforce the surface is unchanged: a product-red head still exits 0.
+    facts = {"head_sha": _HEAD, "subchecks": {"tests": "failure"}}
+    proc = _run_graph(facts)
     assert proc.returncode == 0
     payload = json.loads(proc.stdout)
     assert payload["root"]["kind"] == PRODUCT_FAILED
+
+
+# --------------------------------------------------------------------------
+# ENFORCING (OMN-14709, WS4 step 1) — the load-bearing exit-code proof.
+#
+#   * a PRODUCT_FAILED root  -> exit NON-ZERO (genuine product defect; shadow RED)
+#   * a green head           -> exit 0
+#   * a non-product root      -> exit 0 (RUNNER_INFRA / EVIDENCE_MISSING / API /
+#                                        POLICY / DEPLOY are not product defects)
+# The JSON graph is still emitted on stdout in every case (enforcement rides on
+# the exit code, not on suppressing output).
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "failing_check", ["change_detection", "lint", "typecheck", "tests", "coverage"]
+)
+def test_cli_enforce_exits_nonzero_on_product_failed_root(failing_check: str) -> None:
+    subchecks = _green_subchecks()
+    subchecks[failing_check] = "failure"
+    facts = {"head_sha": _HEAD, "subchecks": subchecks}
+    proc = _run_graph(facts, "--enforce")
+    assert proc.returncode != 0, proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["root"]["kind"] == PRODUCT_FAILED
+
+
+@pytest.mark.unit
+def test_cli_enforce_exits_zero_on_green_head() -> None:
+    facts = {"head_sha": _HEAD, "subchecks": _green_subchecks()}
+    proc = _run_graph(facts, "--enforce")
+    assert proc.returncode == 0, proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["root"] is None
+    assert payload["ready"] is True
+
+
+@pytest.mark.unit
+def test_cli_enforce_stays_zero_on_runner_infra_root() -> None:
+    # An unconfirmable product subcheck (skipped, no OCC-red explanation) roots as
+    # RUNNER_INFRA — an infra fault, not a product defect. Enforcement must NOT
+    # fail the check on it (it would block merges on flaky infra).
+    subchecks = dict.fromkeys(
+        ("change_detection", "lint", "typecheck", "tests", "coverage"), "skipped"
+    )
+    facts = {"head_sha": _HEAD, "subchecks": subchecks}
+    proc = _run_graph(facts, "--enforce")
+    assert proc.returncode == 0, proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["root"]["kind"] == RUNNER_INFRA
+
+
+@pytest.mark.unit
+def test_cli_enforce_stays_zero_on_evidence_missing_root() -> None:
+    # OCC eligibility red while product checks are skipped -> EVIDENCE_MISSING, a
+    # non-product root. Enforcement stays exit 0: absent evidence is not a product
+    # defect and the shadow must not block a merge on it.
+    subchecks = dict.fromkeys(
+        ("change_detection", "lint", "typecheck", "tests", "coverage"), "skipped"
+    )
+    facts = {"head_sha": _HEAD, "subchecks": subchecks, "occ_eligibility": "failure"}
+    proc = _run_graph(facts, "--enforce")
+    assert proc.returncode == 0, proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["root"]["kind"] == EVIDENCE_MISSING
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("facts", "expected_root"),
+    [
+        ({"gh_api": "5xx"}, GITHUB_API_OUTAGE),
+        ({"policy": "prod-hold"}, POLICY_HELD),
+        ({"deploy_trigger": "failure"}, DEPLOY_TRIGGER_FAILED),
+    ],
+)
+def test_cli_enforce_stays_zero_on_other_non_product_roots(
+    facts: dict, expected_root: str
+) -> None:
+    # API outage / policy hold / deploy-trigger failure are all non-product roots;
+    # enforcement leaves them exit 0 (green product dimension underneath).
+    merged = {"head_sha": _HEAD, "subchecks": _green_subchecks(), **facts}
+    proc = _run_graph(merged, "--enforce")
+    assert proc.returncode == 0, proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["root"]["kind"] == expected_root
 
 
 # --------------------------------------------------------------------------

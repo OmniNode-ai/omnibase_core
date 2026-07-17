@@ -22,13 +22,20 @@
 #   2. This workflow NEVER references or triggers `call-occ-preflight.yml` and so
 #      mints NO OCC request. The authoritative OCC path is untouched and still
 #      runs from its own workflow exactly as before.
-#   3. REPORT-ONLY / NON-REQUIRED. The dev branch-protection required contexts
-#      (CI Summary, verify / verify, contract-validation, deploy-gate, etc.) are
-#      untouched — this workflow adds `product-readiness / evaluate` and
-#      `product-readiness-shadow / reason-graph` as NON-required shadow contexts
-#      and cannot wedge a merge. Making any of these required (or removing
-#      `occ-preflight` from any authoritative product jobs) is a separate
-#      operator-gated WS4 step; do NOT do it here.
+#   3. NON-REQUIRED (unchanged by WS4 step 1). The dev branch-protection required
+#      contexts (CI Summary, verify / verify, contract-validation, deploy-gate,
+#      etc.) are untouched — this workflow's `product-readiness / evaluate` and
+#      `product-readiness-shadow / reason-graph` contexts stay NON-required and
+#      cannot wedge a merge. As of OMN-14709 (WS4 step 1) the reason-graph job is
+#      ENFORCING: it exits NON-ZERO (RED conclusion) when the elected ROOT is a
+#      genuine PRODUCT defect (PRODUCT_FAILED — lint/typecheck/tests/coverage
+#      red), while non-product roots (RUNNER_INFRA / EVIDENCE_MISSING /
+#      GITHUB_API_OUTAGE / POLICY_HELD / DEPLOY_TRIGGER_FAILED) and a green head
+#      stay exit 0. Because the context remains NON-required, a red shadow REPORTS
+#      product-red parity but still cannot block merges. `product-readiness /
+#      evaluate` remains report_only (always green). Adding EITHER context to
+#      required_status_checks (or removing `occ-preflight` from any authoritative
+#      product jobs) is a separate operator-gated step; do NOT do it here.
 #
 # During the shadow window, the `product-readiness / evaluate` verdict is
 # compared against the OLD authoritative `CI Summary` outcome across live PR
@@ -169,12 +176,25 @@ jobs:
           }))
           PY
           )"
-          graph="$(python scripts/ci/product_reason_graph.py graph --facts-json "$facts" --summary 2> summary.md)"
+          # ENFORCING (OMN-14709, WS4 step 1): the reason-graph now exits non-zero
+          # when the elected ROOT is a genuine PRODUCT defect (PRODUCT_FAILED).
+          # Capture that exit code without aborting the step so the graph JSON and
+          # the job-summary annotation are always emitted, then propagate it as the
+          # job conclusion at the end. Non-product roots and a green head keep the
+          # script at exit 0. This workflow stays NON-required in branch protection,
+          # so a red conclusion REPORTS but cannot block a merge (red-side parity).
+          set +e
+          graph="$(python scripts/ci/product_reason_graph.py graph --facts-json "$facts" --summary --enforce 2> summary.md)"
+          graph_rc=$?
+          set -e
           echo "$graph"
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
           root_kind="$(printf '%s' "$graph" | python -c 'import json,sys; r=json.load(sys.stdin)["root"]; print(r["kind"] if r else "READY")')"
           if [ "$root_kind" = "READY" ]; then
-            echo "::notice title=CI Reason Graph::READY — product dimension is green (report-only)"
+            echo "::notice title=CI Reason Graph::READY — product dimension is green"
+          elif [ "$graph_rc" -ne 0 ]; then
+            echo "::error title=CI Reason Graph::ROOT ${root_kind} — genuine product defect (enforcing; NON-required shadow, reports but does not block)"
           else
-            echo "::warning title=CI Reason Graph::ROOT ${root_kind} (report-only shadow; not merge-blocking)"
+            echo "::warning title=CI Reason Graph::ROOT ${root_kind} (non-product root; non-fatal)"
           fi
+          exit "$graph_rc"
