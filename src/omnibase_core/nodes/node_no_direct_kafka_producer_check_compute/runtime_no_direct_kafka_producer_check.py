@@ -37,7 +37,7 @@ import sys
 from pathlib import Path
 from typing import Final
 
-from omnibase_core.models.nodes.no_direct_kafka_producer_check.model_no_direct_kafka_producer_check_input import (
+from omnibase_core.models.nodes.no_direct_kafka_producer_check.model_no_direct_kafka_producer_check_input import (  # onex-allow-kafka-producer: this check's own input-model name contains the "KafkaProducer" substring; not a producer client
     ModelNoDirectKafkaProducerCheckInput,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
@@ -49,7 +49,7 @@ from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_inpu
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
 )
-from omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.handler import (
+from omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.handler import (  # onex-allow-kafka-producer: this check's own node-class name contains the "KafkaProducer" substring; not a producer client
     NodeNoDirectKafkaProducerCheckCompute,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
@@ -147,9 +147,9 @@ def main(argv: list[str] | None = None) -> int:
         files, read_errors = _gather_from_root(parsed.root)
 
     if read_errors:
-        print(
+        print(  # print-ok: CLI output
             f"ERROR: Failed to read {len(read_errors)} Python file(s):"
-        )  # print-ok: CLI output
+        )
         for read_error in read_errors:
             print(f"  {read_error}")  # print-ok: CLI output
         return 1

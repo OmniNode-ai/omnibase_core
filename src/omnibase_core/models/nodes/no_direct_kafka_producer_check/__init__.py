@@ -12,7 +12,7 @@ per-node fork. Import ``ModelValidationReport`` /
 is the shared (path, source) DTO — also not forked here.
 """
 
-from omnibase_core.models.nodes.no_direct_kafka_producer_check.model_no_direct_kafka_producer_check_input import (
+from omnibase_core.models.nodes.no_direct_kafka_producer_check.model_no_direct_kafka_producer_check_input import (  # onex-allow-kafka-producer: this check's own input-model name contains the "KafkaProducer" substring; not a producer client
     ModelNoDirectKafkaProducerCheckInput,
 )
 

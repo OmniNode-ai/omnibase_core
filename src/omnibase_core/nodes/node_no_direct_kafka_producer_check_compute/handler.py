@@ -35,7 +35,7 @@ from __future__ import annotations
 import ast
 from typing import Final, Literal
 
-from omnibase_core.models.nodes.no_direct_kafka_producer_check.model_no_direct_kafka_producer_check_input import (
+from omnibase_core.models.nodes.no_direct_kafka_producer_check.model_no_direct_kafka_producer_check_input import (  # onex-allow-kafka-producer: this check's own input-model name contains the "KafkaProducer" substring; not a producer client
     ModelNoDirectKafkaProducerCheckInput,
 )
 from omnibase_core.models.validation.model_validation_finding import (
@@ -46,7 +46,7 @@ from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
     ModelValidationRequestRef,
 )
-from omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.visitor_kafka_producer import (
+from omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.visitor_kafka_producer import (  # onex-allow-kafka-producer: this check's own visitor-class name contains the "KafkaProducer" substring; not a producer client
     VALIDATOR_ID,
     DirectKafkaProducerVisitor,
     is_allowed_publisher_path,
@@ -104,6 +104,6 @@ class NodeNoDirectKafkaProducerCheckCompute:
                 )
             ]
 
-        visitor = DirectKafkaProducerVisitor(path)
+        visitor = DirectKafkaProducerVisitor(path, source.splitlines())
         visitor.visit(tree)
         return visitor.findings

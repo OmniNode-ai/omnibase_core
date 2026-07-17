@@ -14,6 +14,20 @@ Detects ``AIOKafkaProducer`` / ``KafkaProducer`` / ``confluent_kafka`` /
 attribute access (``kafka.KafkaProducer``) — except on files that are part of
 the shared publisher layer (matched by filename or parent-directory
 substring, exactly like the oracle).
+
+Line-level suppression (OMN-14665): a finding is dropped when its reported
+line carries the ``# onex-allow-kafka-producer`` marker. Findings are always
+reported at the AST node's ``lineno`` — for a multi-line ``from ... import (``
+that is the ``from`` line, which is exactly where the marker sits. This is the
+additive, opt-in
+per-line exemption the other WS8 arch gates already ship (``# di-ok`` for
+raw-sqlite3, ``# onex-allow-internal-ip`` for hardcoded-ip, ``# fallback-ok``
+for env-fallbacks). It is needed because the oracle's import check is a
+*substring* match on the symbol name, so a legitimate symbol that merely
+*contains* a forbidden token — e.g. the ``ProtocolKafkaProducerAio`` health-check
+protocol type, or this very node's own ``NodeNoDirectKafkaProducerCheckCompute``
+class — is a false positive that has no other escape hatch. A corpus line
+without the marker is unaffected, so oracle message/flag parity is preserved.
 """
 
 from __future__ import annotations
@@ -44,6 +58,9 @@ _FORBIDDEN_SYMBOLS: Final[tuple[str, ...]] = (
     "confluent_kafka",
     "aiokafka",
 )
+
+# Per-line suppression marker (OMN-14665) — see module docstring.
+_SUPPRESS_MARKER: Final[str] = "# onex-allow-kafka-producer"
 
 # Modules that are allowed to use these symbols — the shared publisher layer
 # (oracle ALLOWED_PATHS).
@@ -76,8 +93,9 @@ def is_allowed_publisher_path(path: str) -> bool:
 class DirectKafkaProducerVisitor(ast.NodeVisitor):
     """Walk an AST looking for direct Kafka producer client usage."""
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, source_lines: list[str] | None = None) -> None:
         self._path = path
+        self._source_lines = source_lines or []
         self.findings: list[ModelValidationFinding] = []
 
     def _check_name(self, name: str, lineno: int, context: str) -> None:
@@ -89,7 +107,24 @@ class DirectKafkaProducerVisitor(ast.NodeVisitor):
                 )
                 return
 
+    def _is_suppressed(self, lineno: int) -> bool:
+        """True if the finding's reported line carries the
+        ``# onex-allow-kafka-producer`` marker.
+
+        Every finding is reported at its AST node's ``lineno``; for a multi-line
+        ``from ... import (`` that is the ``from`` line, which is exactly where
+        the marker is placed. Only that line is consulted — deliberately NOT the
+        line above — so a marker can never leak onto an unrelated violation on
+        the following line.
+        """
+        return (
+            0 < lineno <= len(self._source_lines)
+            and _SUPPRESS_MARKER in self._source_lines[lineno - 1]
+        )
+
     def _add_finding(self, lineno: int, message: str) -> None:
+        if self._is_suppressed(lineno):
+            return
         self.findings.append(
             ModelValidationFinding(
                 validator_id=VALIDATOR_ID,
