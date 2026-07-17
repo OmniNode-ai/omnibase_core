@@ -30,40 +30,26 @@ class ProtocolTransportMessage(Protocol):
     commit a contiguous per-partition prefix; it treats ``ack_token`` as opaque.
     """
 
-    @property
-    def topic(self) -> str:
-        """Source topic the message was polled from."""
-        raise NotImplementedError  # stub-ok: protocol property body
+    topic: str
+    """Source topic the message was polled from."""
 
-    @property
-    def partition(self) -> int:
-        """Partition the message belongs to (per-partition identity)."""
-        raise NotImplementedError  # stub-ok: protocol property body
+    partition: int
+    """Partition the message belongs to (per-partition identity)."""
 
-    @property
-    def offset(self) -> int:
-        """Monotonic per-partition offset coordinate of the message."""
-        raise NotImplementedError  # stub-ok: protocol property body
+    offset: int
+    """Monotonic per-partition offset coordinate of the message."""
 
-    @property
-    def key(self) -> bytes | None:
-        """Raw partition / routing key, or None when the message is unkeyed."""
-        raise NotImplementedError  # stub-ok: protocol property body
+    key: bytes | None
+    """Raw partition / routing key, or None when the message is unkeyed."""
 
-    @property
-    def value(self) -> bytes:
-        """Raw message payload bytes."""
-        raise NotImplementedError  # stub-ok: protocol property body
+    value: bytes
+    """Raw message payload bytes."""
 
-    @property
-    def headers(self) -> Mapping[str, bytes]:
-        """Raw transport headers (header name -> raw bytes)."""
-        raise NotImplementedError  # stub-ok: protocol property body
+    headers: Mapping[str, bytes]
+    """Raw transport headers (header name -> raw bytes)."""
 
-    @property
-    def ack_token(self) -> object:
-        """Opaque commit / redeliver cursor the runtime hands back unmodified."""
-        raise NotImplementedError  # stub-ok: protocol property body
+    ack_token: object
+    """Opaque commit / redeliver cursor the runtime hands back unmodified."""
 
 
 __all__ = ["ProtocolTransportMessage"]

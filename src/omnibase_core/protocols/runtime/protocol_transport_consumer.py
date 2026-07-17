@@ -41,11 +41,9 @@ class ProtocolTransportConsumer(Protocol):
 
     async def start(self) -> None:
         """Establish the underlying consumer / connection."""
-        raise NotImplementedError  # stub-ok: protocol method body
 
     async def close(self) -> None:
         """Tear down the underlying consumer / connection."""
-        raise NotImplementedError  # stub-ok: protocol method body
 
     async def poll(
         self, *, max_messages: int, timeout_ms: int
@@ -55,15 +53,12 @@ class ProtocolTransportConsumer(Protocol):
         ``max_messages`` bounds the in-flight batch (backpressure). Messages from a
         single partition are returned in ascending ``offset`` order.
         """
-        raise NotImplementedError  # stub-ok: protocol method body
 
     async def commit(self, message: ProtocolTransportMessage) -> None:
         """Advance the partition high-water mark to ``message`` (commits all <= it)."""
-        raise NotImplementedError  # stub-ok: protocol method body
 
     async def nack(self, message: ProtocolTransportMessage) -> None:
         """Hold: make ``message`` and later same-partition offsets redeliverable."""
-        raise NotImplementedError  # stub-ok: protocol method body
 
 
 __all__ = ["ProtocolTransportConsumer"]
