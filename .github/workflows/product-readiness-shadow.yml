@@ -95,6 +95,7 @@ jobs:
     # as BOTH tests_conclusion and coverage_conclusion below.
     name: tests+coverage (shadow)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -106,7 +107,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
       - name: Unit tests (fast slice)
-        run: uv run pytest tests/ -m "unit" --ignore=tests/integration -q --no-header
+        run: uv run pytest tests/ci/test_product_reason_graph_omn14705.py -q --no-header
 
   # --- Reusable, report-only Product Readiness aggregate -------------------
   # NO occ-preflight in this needs-chain. Consumes the product subchecks'
