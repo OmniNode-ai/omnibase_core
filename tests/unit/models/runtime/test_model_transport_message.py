@@ -18,6 +18,8 @@ from omnibase_core.models.runtime.model_transport_message import (
     ModelTransportMessage as ModelTransportMessageDirect,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def _message(**overrides: object) -> ModelTransportMessage:
     kwargs: dict[str, object] = {
@@ -30,7 +32,7 @@ def _message(**overrides: object) -> ModelTransportMessage:
         "ack_token": object(),
     }
     kwargs.update(overrides)
-    return ModelTransportMessage(**kwargs)  # type: ignore[arg-type]
+    return ModelTransportMessage(**kwargs)  # type: ignore[arg-type]  # NOTE(OMN-14719)
 
 
 def test_reexport_is_same_class() -> None:
@@ -68,7 +70,7 @@ def test_partition_is_required() -> None:
             value=b"",
             headers={},
             ack_token=object(),
-        )  # type: ignore[call-arg]
+        )  # type: ignore[call-arg]  # NOTE(OMN-14719)
 
 
 def test_offset_is_required() -> None:
@@ -80,7 +82,7 @@ def test_offset_is_required() -> None:
             value=b"",
             headers={},
             ack_token=object(),
-        )  # type: ignore[call-arg]
+        )  # type: ignore[call-arg]  # NOTE(OMN-14719)
 
 
 def test_key_none_is_accepted() -> None:
@@ -94,7 +96,7 @@ def test_key_bytes_is_accepted() -> None:
 def test_model_is_frozen() -> None:
     msg = _message()
     with pytest.raises(ValidationError):
-        msg.offset = 99  # type: ignore[misc]
+        msg.offset = 99  # type: ignore[misc]  # NOTE(OMN-14719)
 
 
 def test_extra_fields_are_forbidden() -> None:

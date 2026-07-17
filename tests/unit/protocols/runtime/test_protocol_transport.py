@@ -23,6 +23,8 @@ from omnibase_core.protocols.runtime import (
     ProtocolTransportProducer,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def _message(partition: int = 0, offset: int = 0) -> ModelTransportMessage:
     return ModelTransportMessage(
