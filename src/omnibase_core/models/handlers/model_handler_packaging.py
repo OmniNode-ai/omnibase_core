@@ -32,8 +32,8 @@ File Scheme Notes:
 
 IP Address Literals:
     IP addresses are ALLOWED in the netloc (host) portion of URLs:
-    - https://192.168.1.100:8080/path    - IPv4 address with port
-    - oci://10.0.0.5:5000/org/handler    - IPv4 in OCI reference
+    - https://192.168.1.100:8080/path    - IPv4 address with port  # onex-allow-internal-ip
+    - oci://10.0.0.5:5000/org/handler    - IPv4 in OCI reference  # onex-allow-internal-ip
     - registry://[2001:db8::1]:8443/path - IPv6 address (bracketed)
 
     Validation only checks URL structure, not IP format or reachability.
@@ -119,7 +119,7 @@ def _validate_artifact_reference(reference: str) -> tuple[bool, str]:
     - path is present when required by scheme
 
     IP Address Literal Handling:
-        IP address literals (e.g., 192.168.1.1, [::1]) are ALLOWED in the netloc
+        IP address literals (e.g., 192.168.1.1, [::1]) are ALLOWED in the netloc  # onex-allow-internal-ip
         (host) portion of URLs. This validation only checks that a netloc exists
         when required by the scheme; it does not validate the format or
         reachability of the host. IP addresses are valid hosts for artifact
@@ -129,8 +129,8 @@ def _validate_artifact_reference(reference: str) -> tuple[bool, str]:
         - Internal infrastructure with IP-based addressing
 
         Examples of valid URLs with IP addresses:
-        - https://192.168.1.100:8080/artifacts/handler.whl
-        - oci://10.0.0.5:5000/myorg/handler:v1.0.0
+        - https://192.168.1.100:8080/artifacts/handler.whl  # onex-allow-internal-ip
+        - oci://10.0.0.5:5000/myorg/handler:v1.0.0  # onex-allow-internal-ip
         - registry://[2001:db8::1]:8443/handlers/validator
 
         Domain name validation (format, TLD, etc.) is intentionally NOT performed

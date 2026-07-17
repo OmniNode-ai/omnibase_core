@@ -1300,19 +1300,58 @@ repos:
 
       # No localhost/hardcoded-endpoint fallback defaults (OMN-14659). Scoped to
       # src/ only, matching the check-no-utcnow precedent above — this repo's src/
-      # tree is currently clean against this check (verified 2026-07-16). The
-      # sibling no-hardcoded-ip / no-direct-kafka-producer / no-raw-sqlite3 nodes
-      # generated in the same ticket are intentionally NOT self-wired here: a
-      # full-tree run against src/ turns up pre-existing findings (docstring IP
-      # examples, ProtocolKafkaProducer* symbol names, a legitimate sqlite3
-      # harness) that would need triage/suppression before this repo's own gate
-      # could go green. They remain available as remote hooks
-      # (.pre-commit-hooks.yaml) and standalone CI entrypoints for other repos.
+      # tree is currently clean against this check (verified 2026-07-16).
       - id: check-no-env-fallbacks
         name: No Localhost/Hardcoded-Endpoint Fallbacks (OMN-14659)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check
         language: system
         files: ^src/.*\.(py|sh|bash)$
+        pass_filenames: true
+        stages: [pre-commit]
+
+      # No hardcoded internal IP literals (OMN-14659, self-wired OMN-14665).
+      # The 5 pre-existing findings — illustrative RFC1918/RFC5737 example IPs in
+      # the model_handler_packaging.py docstrings (which DOCUMENT that IP-literal
+      # hosts are valid in artifact-reference URLs) — were triaged to per-line
+      # `# onex-allow-internal-ip` markers (not a blanket allowlist). src/ is now
+      # green (verified 2026-07-17). Scoped to src/ .py/.yaml, matching the
+      # remote hook's types_or. Suppress a justified line with:
+      # # onex-allow-internal-ip
+      - id: check-no-hardcoded-ip
+        name: No Hardcoded Internal IP Addresses (OMN-14659)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check
+        language: system
+        files: ^src/.*\.(py|ya?ml)$
+        pass_filenames: true
+        stages: [pre-commit]
+
+      # No direct Kafka producer usage outside the shared publisher layer
+      # (OMN-14659, self-wired OMN-14665). The 8 pre-existing findings were all
+      # false positives from the oracle's SUBSTRING match on symbol names
+      # (ProtocolKafkaProducer* health-check types, and this check's own
+      # Node/Model/Visitor class names) — triaged with the additive per-line
+      # `# onex-allow-kafka-producer` marker shipped in the same PR. src/ is now
+      # green (verified 2026-07-17).
+      - id: check-no-direct-kafka-producer
+        name: No Direct Kafka Producer Usage (OMN-14659)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.runtime_no_direct_kafka_producer_check
+        language: system
+        files: ^src/.*\.py$
+        pass_filenames: true
+        stages: [pre-commit]
+
+      # No raw sqlite3.connect() outside *_adapter.py (OMN-14659, self-wired
+      # OMN-14665). The 1 pre-existing finding — the local-harness projection
+      # store (harness_projection_store_sqlite.py), which IS a zero-infra
+      # in-process adapter bootstrap that owns its own connection by design
+      # (OMN-13420) — was triaged with the sanctioned `# di-ok` marker. src/ is
+      # now green (verified 2026-07-17). Suppress a legitimate adapter-bootstrap
+      # call site with: # di-ok
+      - id: check-no-raw-sqlite3
+        name: No Raw sqlite3.connect() Outside Adapters (OMN-14659)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check
+        language: system
+        files: ^src/.*\.py$
         pass_filenames: true
         stages: [pre-commit]
 

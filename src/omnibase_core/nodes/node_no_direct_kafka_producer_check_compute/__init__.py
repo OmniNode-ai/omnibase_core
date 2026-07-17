@@ -9,7 +9,7 @@ Exposes :class:`NodeNoDirectKafkaProducerCheckCompute` — AST-scans explicit
 outside the shared publisher layer, and returns a ``ModelValidationReport``.
 """
 
-from omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.handler import (
+from omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.handler import (  # onex-allow-kafka-producer: this check's own node-class name contains the "KafkaProducer" substring; not a producer client
     NodeNoDirectKafkaProducerCheckCompute,
 )
 

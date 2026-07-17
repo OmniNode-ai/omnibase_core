@@ -153,6 +153,54 @@ def test_non_publisher_layer_path_is_not_excluded() -> None:
 
 
 # =============================================================================
+# Per-line suppression marker (OMN-14665) — additive, opt-in exemption for a
+# symbol that merely *contains* a forbidden substring (e.g. the check's own
+# node/model class names, or a ProtocolKafkaProducer* health-check type).
+# =============================================================================
+
+
+def test_suppression_marker_on_finding_line_exempts_it() -> None:
+    report = _report(
+        "a.py",
+        "from x import ProtocolKafkaProducerAio  # onex-allow-kafka-producer: type name only\n",
+    )
+
+    assert report.overall_status == "PASS"
+    assert report.findings == ()
+
+
+def test_suppression_marker_on_from_line_covers_multiline_import() -> None:
+    # A multi-line ``from ... import (`` reports the finding at the ``from``
+    # line (node.lineno), so the marker on that line must suppress it.
+    report = _report(
+        "a.py",
+        "from x import (  # onex-allow-kafka-producer: type name only\n"
+        "    ProtocolKafkaProducerAio,\n"
+        ")\n",
+    )
+
+    assert report.overall_status == "PASS"
+    assert report.findings == ()
+
+
+def test_suppression_marker_does_not_exempt_a_real_violation_elsewhere() -> None:
+    # The marker only exempts its own line — a genuine producer import on an
+    # unmarked line still flags.
+    report = _report(
+        "a.py",
+        "from x import ProtocolKafkaProducerAio  # onex-allow-kafka-producer: type name only\n"
+        "from aiokafka import AIOKafkaProducer\n",
+    )
+
+    assert report.overall_status == "FAIL"
+    assert len(report.findings) >= 1
+    assert all(
+        "aiokafka" in f.message or "AIOKafkaProducer" in f.message
+        for f in report.findings
+    )
+
+
+# =============================================================================
 # SyntaxError handling
 # =============================================================================
 
