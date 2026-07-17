@@ -99,3 +99,63 @@ def test_main_full_tree_mode_empty_root_passes(
 
     assert exit_code == 0
     assert "OK: No hardcoded internal IPs found" in capsys.readouterr().out
+
+
+def test_main_multi_root_detects_violation_outside_src(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """RED-proof for OMN-14712: a hardcoded IP under a non-``src`` root (e.g.
+    ``tests``) must be caught when that root is passed. Scanning ``src`` only
+    was the scan-scope false-negative this fix closes."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "clean.py").write_text('BROKER = os.environ["KAFKA_BOOTSTRAP_SERVERS"]\n')
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "test_bad.py").write_text('BROKER = "192.168.86.201"\n')
+
+    # src-only: the tests/ violation is invisible (proves the prior blind spot).
+    assert main(["--root", str(src)]) == 0
+    assert "OK: No hardcoded internal IPs found" in capsys.readouterr().out
+
+    # src + tests: the same violation is now caught.
+    exit_code = main(["--root", str(src), str(tests)])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "ERROR: 1 hardcoded internal IP(s) found:" in out
+    assert "test_bad.py" in out
+    assert "192.168.86.201" in out
+
+
+def test_main_multi_root_all_clean_passes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "a.py").write_text('BROKER = os.environ["KAFKA_BOOTSTRAP_SERVERS"]\n')
+    tests = tmp_path / "tests"
+    tests.mkdir()
+    (tests / "test_a.py").write_text('public_dns = "8.8.8.8"\n')
+
+    exit_code = main(["--root", str(src), str(tests)])
+
+    assert exit_code == 0
+    assert "OK: No hardcoded internal IPs found" in capsys.readouterr().out
+
+
+def test_main_multi_root_tolerates_missing_root(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A non-existent root (e.g. ``scripts`` in a repo without one) gathers zero
+    files rather than erroring, so the same ``--root src tests scripts`` command
+    line ports across repos."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "a.py").write_text('BROKER = os.environ["KAFKA_BOOTSTRAP_SERVERS"]\n')
+    missing = tmp_path / "scripts"  # never created
+
+    exit_code = main(["--root", str(src), str(missing)])
+
+    assert exit_code == 0
+    assert "OK: No hardcoded internal IPs found" in capsys.readouterr().out

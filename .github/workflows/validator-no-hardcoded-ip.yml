@@ -77,13 +77,26 @@ jobs:
         run: |
           uv run pytest tests/unit/nodes/node_no_hardcoded_ip_check_compute/ -v
 
-      # Blocking self-scan: this repo's src/ is clean against the rule (the 5
-      # docstring-IP findings in model_handler_packaging.py were triaged to
-      # per-line # onex-allow-internal-ip markers under OMN-14665). The same
-      # COMPUTE node backs the check-no-hardcoded-ip pre-commit hook, so verdicts
-      # cannot drift.
-      - name: Self-scan omnibase_core src/ (blocking)
+      # Blocking self-scan: this repo's src/ and scripts/ are clean against the
+      # rule (the 5 docstring-IP findings in model_handler_packaging.py were
+      # triaged to per-line # onex-allow-internal-ip markers under OMN-14665).
+      #
+      # Scope (OMN-14712): the ported oracle
+      # (omniclaude/scripts/validation/validate_no_hardcoded_ip.py) scans three
+      # top-level roots — src/, tests/, scripts/. The OMN-14659 port narrowed to
+      # src/ only, which was a scan-scope false-negative: a non-allowlisted
+      # hardcoded IP under tests/ or scripts/ passed CI. The runtime now accepts
+      # multiple --root values, so we close the scripts/ hole here. tests/ is
+      # deliberately NOT scanned yet: it carries ~155 legitimate IP *fixtures*
+      # (the detector's own acceptance corpus + rate-limit / session-context /
+      # service-discovery model tests) that need per-line # onex-allow-internal-ip
+      # triage first — tracked as a follow-up so this required gate stays green.
+      # Add `tests` to --root below once that triage lands.
+      #
+      # The same COMPUTE node backs the check-no-hardcoded-ip pre-commit hook, so
+      # verdicts cannot drift.
+      - name: Self-scan omnibase_core src/ + scripts/ (blocking)
         run: |
           env -u PYTHONPATH uv run python -m \
             omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check \
-            --root src
+            --root src scripts
