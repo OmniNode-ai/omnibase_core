@@ -115,6 +115,70 @@ def test_must_pass_loopback() -> None:
 
 
 # =============================================================================
+# OMN-14713 false-positive corpus — invalid octets and embedded literals
+# must NOT flag (the matcher only narrows; the fail-closed gate is preserved).
+# =============================================================================
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param('bad = "10.256.999.1"\n', id="octet-256-and-999"),
+        pytest.param('bad = "10.999.0.0"\n', id="octet-999"),
+        pytest.param('bad = "192.168.256.1"\n', id="192-168-third-octet-256"),
+        pytest.param('bad = "172.16.300.1"\n', id="172-16-octet-300"),
+    ],
+)
+def test_must_pass_invalid_octet_over_255(source: str) -> None:
+    """Octets > 255 are not valid IPs and must not be flagged (OMN-14713)."""
+    report = _report("a.py", source)
+
+    assert report.overall_status == "PASS"
+    assert report.findings == ()
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param('x = "210.0.0.55"\n', id="digit-prefixed-inner-10.0.0.55"),
+        pytest.param('x = "x10.0.0.1"\n', id="word-prefixed-inner-10.0.0.1"),
+        pytest.param('x = "10.0.0.55.5"\n', id="dot-suffixed-trailing-octet"),
+        pytest.param('x = "192.168.1.1234"\n', id="digit-suffixed-last-octet"),
+    ],
+)
+def test_must_pass_rfc1918_literal_embedded_in_longer_token(source: str) -> None:
+    """RFC1918 literals embedded in a longer token must not flag (OMN-14713)."""
+    report = _report("a.py", source)
+
+    assert report.overall_status == "PASS"
+    assert report.findings == ()
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_message"),
+    [
+        pytest.param(
+            'host = "10.255.255.255"\n',
+            'a.py:1: host = "10.255.255.255"',
+            id="max-valid-octet-255",
+        ),
+        pytest.param(
+            'host = "172.16.0.255"\n',
+            'a.py:1: host = "172.16.0.255"',
+            id="172-16-boundary-octet-255",
+        ),
+    ],
+)
+def test_must_flag_valid_boundary_octet_255(source: str, expected_message: str) -> None:
+    """The 0-255 tightening must still flag genuine 255-octet IPs (OMN-14713)."""
+    report = _report("a.py", source)
+
+    assert report.overall_status == "FAIL"
+    assert len(report.findings) == 1
+    assert report.findings[0].message == expected_message
+
+
+# =============================================================================
 # Aggregation across multiple files
 # =============================================================================
 
