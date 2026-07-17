@@ -358,6 +358,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Also print a Markdown summary block to stderr.",
     )
+    p.add_argument(
+        "--enforce",
+        action="store_true",
+        help=(
+            "Exit non-zero when the elected ROOT is a genuine PRODUCT defect "
+            "(PRODUCT_FAILED: lint/typecheck/tests/coverage/change-detection red). "
+            "Non-product roots (GITHUB_API_OUTAGE, RUNNER_INFRA, POLICY_HELD, "
+            "EVIDENCE_MISSING, DEPLOY_TRIGGER_FAILED) and a READY/green head stay "
+            "exit 0 — they are not product defects and must not block a merge. "
+            "Without this flag the surface stays fully report-only (always exit 0)."
+        ),
+    )
 
     args = parser.parse_args(argv)
 
@@ -374,7 +386,17 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(graph, sort_keys=True))
         if args.summary:
             print(_render_summary(graph), file=sys.stderr)
-        # Report-only: this surface never fails the check.
+        # Enforcement (OMN-14709, WS4 step 1): a genuine PRODUCT defect — the
+        # elected ROOT is PRODUCT_FAILED (lint/typecheck/tests/coverage/change-
+        # detection red) — exits non-zero so the (still NON-required) shadow check
+        # reports RED. Non-product roots stay non-fatal: infra/API/policy/evidence
+        # faults invalidate the *observability* of the product dimension rather
+        # than proving a product defect, so they must not gate a merge. A READY /
+        # green head has no root and exits 0. Without --enforce the surface stays
+        # fully report-only (always exit 0), preserving the WS1 classifier CLI.
+        root = graph["root"]
+        if args.enforce and root is not None and root["kind"] == PRODUCT_FAILED:
+            return 1
         return 0
 
     parser.error(f"unknown command: {args.command}")  # NoReturn — exits
