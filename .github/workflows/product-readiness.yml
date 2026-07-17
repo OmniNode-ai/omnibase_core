@@ -1,0 +1,163 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Product Readiness aggregate — reusable workflow (OMN-14644 WS1 / OMN-14705 Phase 3).
+#
+# The OCC-INDEPENDENT product gate. It aggregates the already-computed
+# conclusions of the product subchecks (change-detection, lint, typecheck,
+# tests, coverage) into exactly one typed outcome via the deterministic,
+# unit-tested classifier `scripts/ci/product_readiness.py`, and reports whether
+# the head is freeze-eligible.
+#
+# WS1 property (load-bearing): this workflow has NO occ-preflight dependency in
+# its needs-chain. It is callable on both `pull_request` and `merge_group` after
+# the product jobs and BEFORE any OCC evidence exists, so a product defect is
+# found before head-bound evidence is created (design §1 / epic OMN-14643).
+#
+# REPORT-ONLY. This is a shadow/observation surface. It is NOT wired into
+# branch-protection required_status_checks and, in report-only mode, always
+# concludes success — it only publishes the outcome to the job summary and as an
+# annotation. Making its context required (and removing occ-preflight from any
+# product jobs' needs-chain) is a separate operator-gated WS4 step; do not do it
+# here.
+#
+# Fail-closed semantics live in the classifier: a skipped/cancelled/absent
+# product subcheck maps to `product_infra` and is never freeze-eligible.
+
+name: product-readiness
+
+on:
+  workflow_call:
+    inputs:
+      change_detection_conclusion:
+        description: change-detection job conclusion (success|failure|cancelled|skipped|...).
+        type: string
+        required: false
+        default: ""
+      lint_conclusion:
+        description: lint job conclusion.
+        type: string
+        required: false
+        default: ""
+      typecheck_conclusion:
+        description: typecheck job conclusion.
+        type: string
+        required: false
+        default: ""
+      tests_conclusion:
+        description: unit/integration tests job conclusion.
+        type: string
+        required: false
+        default: ""
+      coverage_conclusion:
+        description: coverage job conclusion.
+        type: string
+        required: false
+        default: ""
+      report_only:
+        description: >-
+          When true (default), the evaluate job always concludes success and only
+          reports the outcome. When false (future enforcement, post-observation +
+          maintainer approval), a non-freeze-eligible head fails the job.
+        type: boolean
+        required: false
+        default: true
+    outputs:
+      outcome:
+        description: The typed Product Readiness outcome.
+        value: ${{ jobs.evaluate.outputs.outcome }}
+      freeze_eligible:
+        description: "true when the head is PRODUCT_GREEN and freeze-eligible."
+        value: ${{ jobs.evaluate.outputs.freeze_eligible }}
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    name: evaluate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      outcome: ${{ steps.classify.outputs.outcome }}
+      freeze_eligible: ${{ steps.classify.outputs.freeze_eligible }}
+    steps:
+      - name: Check out repo (for the classifier script)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Classify product readiness
+        id: classify
+        env:
+          CHANGE_DETECTION_CONCLUSION: ${{ inputs.change_detection_conclusion }}
+          LINT_CONCLUSION: ${{ inputs.lint_conclusion }}
+          TYPECHECK_CONCLUSION: ${{ inputs.typecheck_conclusion }}
+          TESTS_CONCLUSION: ${{ inputs.tests_conclusion }}
+          COVERAGE_CONCLUSION: ${{ inputs.coverage_conclusion }}
+          REPORT_ONLY: ${{ inputs.report_only }}
+        run: |
+          set -euo pipefail
+
+          facts="$(python - <<'PY'
+          import json, os
+          print(json.dumps({
+              "change_detection": os.environ.get("CHANGE_DETECTION_CONCLUSION", ""),
+              "lint": os.environ.get("LINT_CONCLUSION", ""),
+              "typecheck": os.environ.get("TYPECHECK_CONCLUSION", ""),
+              "tests": os.environ.get("TESTS_CONCLUSION", ""),
+              "coverage": os.environ.get("COVERAGE_CONCLUSION", ""),
+          }))
+          PY
+          )"
+
+          # The classifier's own exit code carries enforcement semantics; capture
+          # it without aborting the step so we can always emit the annotation.
+          set +e
+          out="$(python scripts/ci/product_readiness.py classify \
+            --facts-json "$facts" \
+            --report-only "${REPORT_ONLY}")"
+          classify_rc=$?
+          set -e
+
+          echo "$out"
+          outcome="$(printf '%s' "$out" | python -c 'import json,sys; print(json.load(sys.stdin)["outcome"])')"
+          freeze_eligible="$(printf '%s' "$out" | python -c 'import json,sys; print(str(json.load(sys.stdin)["freeze_eligible"]).lower())')"
+          message="$(printf '%s' "$out" | python -c 'import json,sys; print(json.load(sys.stdin)["message"])')"
+
+          echo "outcome=${outcome}" >> "$GITHUB_OUTPUT"
+          echo "freeze_eligible=${freeze_eligible}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Product Readiness (report-only)"
+            echo ""
+            echo "| field | value |"
+            echo "| --- | --- |"
+            echo "| outcome | \`${outcome}\` |"
+            echo "| freeze_eligible | \`${freeze_eligible}\` |"
+            echo "| change-detection | \`${CHANGE_DETECTION_CONCLUSION:-<none>}\` |"
+            echo "| lint | \`${LINT_CONCLUSION:-<none>}\` |"
+            echo "| typecheck | \`${TYPECHECK_CONCLUSION:-<none>}\` |"
+            echo "| tests | \`${TESTS_CONCLUSION:-<none>}\` |"
+            echo "| coverage | \`${COVERAGE_CONCLUSION:-<none>}\` |"
+            echo ""
+            echo "> ${message}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${freeze_eligible}" = "true" ]; then
+            echo "::notice title=Product Readiness::${outcome} — ${message}"
+          else
+            echo "::warning title=Product Readiness::${outcome} — ${message}"
+          fi
+
+          # Report-only: never fail the check. In enforcement mode the classifier
+          # returns non-zero on a non-freeze-eligible head and we propagate it.
+          if [ "${REPORT_ONLY}" = "true" ]; then
+            exit 0
+          fi
+          exit $classify_rc
