@@ -74,6 +74,47 @@ def test_must_flag_from_sqlite3_import_connect_as_alias() -> None:
 
 
 # =============================================================================
+# submodule import (OMN-14711) — ``import sqlite3.dbapi2`` (no asname) binds the
+# root ``sqlite3`` name, so ``sqlite3.connect(...)`` is live and MUST be flagged.
+# RED-proves the false-negative fix: without it, alias.name == "sqlite3.dbapi2"
+# never matched ``== "sqlite3"`` and the call evaded the gate.
+# =============================================================================
+
+
+def test_must_flag_sqlite3_connect_via_submodule_import() -> None:
+    report = _report(
+        "a.py", 'import sqlite3.dbapi2\nconn = sqlite3.connect("db.sqlite")\n'
+    )
+
+    assert report.overall_status == "FAIL"
+    assert len(report.findings) == 1
+    finding = report.findings[0]
+    assert finding.severity == "FAIL"
+    assert finding.validator_id == "arch-no-raw-sqlite3"
+    assert finding.location == "a.py:2"
+
+
+def test_must_pass_submodule_import_with_asname_binds_submodule_not_root() -> None:
+    """``import sqlite3.dbapi2 as foo`` binds ``foo`` to the submodule, not the
+    root ``sqlite3`` name, so a bare ``foo.connect()`` is not a
+    ``sqlite3.connect`` call — no false positive (the ``asname is None`` guard)."""
+    report = _report("a.py", "import sqlite3.dbapi2 as foo\nconn = foo.connect()\n")
+
+    assert report.overall_status == "PASS"
+    assert report.findings == ()
+
+
+def test_di_ok_suppresses_submodule_import_violation() -> None:
+    """``# di-ok`` suppression is unchanged for the submodule-import path."""
+    report = _report(
+        "a.py", "import sqlite3.dbapi2\nconn = sqlite3.connect(path)  # di-ok\n"
+    )
+
+    assert report.overall_status == "PASS"
+    assert report.findings == ()
+
+
+# =============================================================================
 # must_pass corpus — every case MUST produce zero findings
 # =============================================================================
 
