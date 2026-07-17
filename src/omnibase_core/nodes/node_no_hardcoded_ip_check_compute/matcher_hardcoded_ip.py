@@ -12,6 +12,16 @@ Port of the module-level regex + scan loop in
 internal IP literals (``192.168.x.x``, ``10.x.x.x``, ``172.16-31.x.x``),
 optionally prefixed with ``http(s)://`` and suffixed with ``:port``, on any
 line that does not carry the ``# onex-allow-internal-ip`` suppression marker.
+
+OMN-14713 hardened the octet grammar against two false-positive classes the
+ported ``\\d{1,3}`` regex admitted: invalid octets (e.g. ``10.256.999.1`` and
+``10.999.0.0`` matched despite octets exceeding 255) and RFC1918 literals
+embedded in longer tokens (a digit- or letter-prefixed token such as
+``210.0.0.x`` or ``x10.0.0.x`` matched its inner ``10.*`` substring). Each
+octet is now bounded to ``0-255`` and the literal is anchored on
+non-word/non-dot boundaries. This strictly *narrows* matches, so the
+fail-closed gate keeps every real violation (all ``must_flag`` corpus cases
+still fire).
 """
 
 from __future__ import annotations
@@ -34,12 +44,25 @@ _REMEDIATION: Final[str] = (
 # Suppression marker: lines containing this comment are exempt.
 _SUPPRESS_MARKER: Final[str] = "onex-allow-internal-ip"
 
+# A single octet constrained to 0-255 (rejects invalid octets like 256/999 that
+# a bare ``\d{1,3}`` would otherwise admit).
+_OCTET: Final[str] = r"(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])"
+
 _IP_PATTERN: Final[re.Pattern[str]] = re.compile(
+    # Left boundary: the RFC1918 literal must not be preceded by a word char or
+    # dot, so an embedded substring (a digit- or letter-prefixed token whose
+    # tail happens to be a valid 10.* literal) is not flagged. The optional
+    # scheme sits inside the boundary so an http(s):// prefixed literal still
+    # matches.
+    r"""(?<![\w.])"""
     r"""(?:https?://)?"""
-    r"""(?:192\.168\.\d{1,3}\.\d{1,3}"""
-    r"""|10\.\d{1,3}\.\d{1,3}\.\d{1,3}"""
-    r"""|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})"""
-    r"""(?::\d+)?""",
+    rf"""(?:192\.168\.{_OCTET}\.{_OCTET}"""
+    rf"""|10\.{_OCTET}\.{_OCTET}\.{_OCTET}"""
+    rf"""|172\.(?:1[6-9]|2[0-9]|3[01])\.{_OCTET}\.{_OCTET})"""
+    r"""(?::\d+)?"""
+    # Right boundary: reject trailing word chars/dots so a valid IP prefix of a
+    # longer numeric token is not flagged.
+    r"""(?![\w.])""",
 )
 
 
