@@ -394,7 +394,7 @@ class RuntimeDispatch:
                 raise ModelOnexError(
                     message=(
                         "RuntimeDispatch: expected inbound envelope payload to be a "
-                        f"dict for route {route.node_id!r}, got "
+                        f"dict for route {route.node_kind!r}, got "
                         f"{type(payload).__name__}; refusing to coerce from an empty "
                         "default payload."
                     ),
