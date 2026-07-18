@@ -69,6 +69,11 @@ class ModelDoubleAudited(BaseModel):
     original: int
 
 
+class ModelDefaultedCommand(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    n: int = 7
+
+
 # --- def-B handlers (handle(request) -> response; never touch the envelope) --
 class DoublerHandler:
     async def handle(self, request: ModelDoubleCommand) -> ModelDoubled:
@@ -108,6 +113,11 @@ class FlakyHandler:
         self.calls += 1
         if self.calls == 1:
             raise RuntimeError("transient failure")
+        return ModelDoubled(doubled=request.n * 2)
+
+
+class DefaultedDoublerHandler:
+    async def handle(self, request: ModelDefaultedCommand) -> ModelDoubled:
         return ModelDoubled(doubled=request.n * 2)
 
 
@@ -480,6 +490,45 @@ class TestRedeliverAndDlq:
         assert list(broker.records(DONE_TOPIC, 0)) == []  # never terminalized
         assert len(broker.records(f"{IN_TOPIC}.dlq", 0)) == 1  # durable evidence
         assert broker.committed_offset(IN_TOPIC, "node", 0) == 0  # progress past it
+        assert rd._attempts == {}
+
+    async def test_non_dict_payload_is_dlqd_not_coerced_to_defaults(
+        self, broker: InMemoryBroker, producer: InMemoryTransport
+    ) -> None:
+        """A non-dict payload must not be masked as ``{}``.
+
+        The model has a default ``n`` value, so the old ``payload if dict else {}``
+        behavior would silently emit ``doubled=14``. RuntimeDispatch must fail closed
+        and DLQ the input instead.
+        """
+        envelope: ModelEventEnvelope[object] = ModelEventEnvelope(
+            payload="not-a-dict", correlation_id=uuid4()
+        )
+        await producer.send(
+            IN_TOPIC,
+            key=None,
+            value=envelope.model_dump_json().encode("utf-8"),
+            headers={},
+        )
+        consumer = _consumer(broker, group="node", topics=[IN_TOPIC])
+        route = _route(
+            "node_defaulted",
+            DefaultedDoublerHandler(),
+            {"ModelDoubled": DONE_TOPIC},
+            input_model_cls=ModelDefaultedCommand,
+        )
+        rd = RuntimeDispatch(
+            consumer=consumer,
+            producer=producer,
+            routing_map={IN_TOPIC: route},
+            max_retries=0,
+        )
+
+        await rd.drain()
+
+        assert list(broker.records(DONE_TOPIC, 0)) == []
+        assert len(broker.records(f"{IN_TOPIC}.dlq", 0)) == 1
+        assert rd._attempts == {}
 
 
 # --- routing: no silent drop / boot checks ----------------------------------

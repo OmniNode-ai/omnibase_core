@@ -27,11 +27,9 @@ unrelated concern.
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
-
 
 @unique
-class EnumDeliveryDisposition(UtilStrValueHelper, str, Enum):
+class EnumDeliveryDisposition(str, Enum):
     """The runtime's per-message delivery decision (commit / redeliver / DLQ)."""
 
     COMMIT = "commit"

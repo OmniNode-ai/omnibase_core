@@ -371,6 +371,7 @@ class RuntimeDispatch:
                 exc,
             )
             if attempts > self._max_retries:
+                self._attempts.pop(key, None)
                 return EnumDeliveryDisposition.DLQ
             return EnumDeliveryDisposition.REDELIVER
 
@@ -389,7 +390,17 @@ class RuntimeDispatch:
         """
         payload = envelope.payload
         if route.input_model_cls is not None:
-            payload_dict = payload if isinstance(payload, dict) else {}
+            if not isinstance(payload, dict):
+                raise ModelOnexError(
+                    message=(
+                        "RuntimeDispatch: expected inbound envelope payload to be a "
+                        f"dict for route {route.node_id!r}, got "
+                        f"{type(payload).__name__}; refusing to coerce from an empty "
+                        "default payload."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                )
+            payload_dict = payload
             return route.input_model_cls(**payload_dict)
         return payload
 
