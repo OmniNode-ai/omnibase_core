@@ -14,10 +14,14 @@ Covers the additive ``topic`` field that RuntimeDispatch route resolution
 
 from __future__ import annotations
 
+import pytest
+
 from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
     ModelHandlerRoutingEntry,
 )
 from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
+
+pytestmark = pytest.mark.unit
 
 
 def _handler_ref() -> ModelHandlerRef:

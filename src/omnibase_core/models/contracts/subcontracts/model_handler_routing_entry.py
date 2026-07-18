@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Handler Routing Entry Model — canonical 5-field live shape (OMN-12547 S-1c).
+Handler Routing Entry Model — canonical live routing shape (OMN-12547 S-1c).
 
 Replaces the dead routing_key/handler_key shape with the live infra shape
 (OMN-7654). Each entry identifies a handler class reference plus optional
@@ -27,7 +27,7 @@ from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
 
 
 class ModelHandlerRoutingEntry(BaseModel):
-    """Single handler routing entry in the canonical 5-field live shape (OMN-12547)."""
+    """Single handler routing entry in the canonical live routing shape (OMN-12547)."""
 
     model_config = ConfigDict(
         frozen=True,
