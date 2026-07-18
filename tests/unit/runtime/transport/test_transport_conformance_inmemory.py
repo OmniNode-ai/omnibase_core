@@ -36,7 +36,11 @@ class TestInMemoryTransportConformance(TransportConformanceSuite):
 
     @pytest.fixture
     def _broker(self) -> InMemoryBroker:
-        return InMemoryBroker()
+        # >=2 partitions so the shared suite's multi-partition nack test
+        # (test_nack_on_one_partition_does_not_strand_sibling_partitions, OMN-14757)
+        # has real siblings to strand. Same-key tests still land on one partition, so
+        # the existing single-partition assertions are unaffected.
+        return InMemoryBroker(num_partitions=2)
 
     @pytest.fixture
     def transport_producer(self, _broker: InMemoryBroker) -> InMemoryTransport:

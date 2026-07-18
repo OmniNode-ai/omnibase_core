@@ -172,6 +172,96 @@ class TransportConformanceSuite:
         # nack re-exposes the message AND every later same-partition offset.
         assert offsets == [base + 1, base + 2]
 
+    async def test_nack_on_one_partition_does_not_strand_sibling_partitions(
+        self, transport_producer: Any, transport_consumer_factory: Any
+    ) -> None:
+        """A nack on ONE partition must not strand already-fetched siblings.
+
+        OMN-14757 substitutability regression (the single-partition-suite gap, S2).
+        A transport that eagerly prefetches a whole batch across EVERY assigned
+        partition (advancing every partition's fetch position) and then, on
+        ``nack``, rewinds ONLY the nacked partition while discarding the prefetched
+        buffer, drops the not-yet-returned messages on the OTHER partitions — their
+        fetch position is never rewound, so they are invisible until the consumer
+        restarts. That is an at-least-once liveness bug AND a substitutability break:
+        the in-memory transport reads lazily per partition (its ``nack`` touches only
+        the nacked partition), so it delivers the siblings in the same session. Any
+        transport claiming substitutability must do the same — retain the
+        other-partition residue and rewind only the nacked partition.
+
+        Single-partition nack tests cannot catch this (there is no sibling to
+        strand), which is exactly why this multi-partition case exists.
+
+        Determinism / transport-agnosticism: distinct keys fan the messages across
+        >=2 partitions on any reasonable partitioner (sha256 in-memory, murmur2
+        Kafka) given a >=2-partition environment (the subclass provides one). A
+        throwaway-group probe establishes the true partition layout INDEPENDENTLY of
+        the consumer under test, so the strand assertion is unambiguous: a value the
+        probe saw but the consumer-under-test never redelivered was stranded, not
+        never-produced.
+        """
+        # Enough distinct keys that the produced messages span >=2 partitions on any
+        # reasonable hash partitioner (P[all on one of 2 partitions] = 2 * 2**-20).
+        keys = [f"mp-{i}".encode() for i in range(20)]
+        produced: set[bytes] = set()
+        for i, key in enumerate(keys):
+            value = f"v{i}".encode()
+            produced.add(value)
+            await transport_producer.send(
+                CONFORMANCE_TOPIC, key=key, value=value, headers={}
+            )
+
+        # Probe on an INDEPENDENT group: learn the true layout without touching the
+        # consumer-under-test's committed offsets (offsets are per-group).
+        probe = transport_consumer_factory(
+            group="g-multipart-probe", topics=[CONFORMANCE_TOPIC]
+        )
+        await probe.start()
+        probed = await _drain(probe)
+        await probe.close()
+
+        assert {m.value for m in probed} == produced, (
+            "probe must observe every produced message before the strand check"
+        )
+        probe_partitions = {m.partition for m in probed}
+        assert len(probe_partitions) >= 2, (
+            "multi-partition oracle needs the produced keys to span >=2 partitions; "
+            f"got partitions {sorted(probe_partitions)}. The subclass fixture must "
+            "provision a >=2-partition environment and enough distinct keys."
+        )
+
+        # Consumer-under-test: poll a strict SUBSET (one message) so a whole-batch
+        # prefetch leaves not-yet-returned sibling-partition records buffered, then
+        # nack the returned message and drain. The nack must NOT drop the siblings.
+        consumer = transport_consumer_factory(
+            group="g-multipart", topics=[CONFORMANCE_TOPIC]
+        )
+        await consumer.start()
+        first_batch = await consumer.poll(max_messages=1, timeout_ms=200)
+        assert len(first_batch) == 1, (
+            f"expected a 1-message subset, got {len(first_batch)}"
+        )
+        nacked = first_batch[0]
+        await consumer.nack(nacked)
+        remainder = await _drain(consumer)
+        await consumer.close()
+
+        delivered = {m.value for m in first_batch} | {m.value for m in remainder}
+        missing = produced - delivered
+        assert not missing, (
+            f"nack on partition {nacked.partition} stranded sibling-partition "
+            f"messages until restart: {len(missing)} of {len(produced)} were never "
+            f"redelivered in-session (missing {sorted(missing)}). The other-partition "
+            "prefetch residue was dropped instead of retained (OMN-14757)."
+        )
+        delivered_partitions = {m.partition for m in first_batch} | {
+            m.partition for m in remainder
+        }
+        assert len(delivered_partitions) >= 2, (
+            "expected the in-session delivery to span >=2 partitions; got "
+            f"{sorted(delivered_partitions)} (sibling partition was stranded)."
+        )
+
     async def test_uncommitted_offsets_redeliver_on_restart(
         self, transport_producer: Any, transport_consumer_factory: Any
     ) -> None:
