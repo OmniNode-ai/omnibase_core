@@ -50,8 +50,10 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 __all__ = [
     "CARRIER_CLASS_NAMES",
     "assert_published_events_injective",
+    "derive_event_type_from_topic",
     "is_fanout_sequence",
     "normalize_fanout_elements",
+    "resolve_fanout_emissions",
     "resolve_fanout_topics",
     "resolve_published_topic",
 ]
@@ -188,6 +190,76 @@ def resolve_fanout_topics(
         )
         for element in validated
     ]
+
+
+def derive_event_type_from_topic(topic: str) -> str | None:
+    """Derive the ``ModelEventEnvelope.event_type`` routing key from an ONEX topic.
+
+    ONEX topics follow ``onex.{kind}.{producer}.{event-name}.v{n}``; the
+    dispatch-engine registers type-scoped handlers under the
+    ``{producer}.{event-name}`` alias. An emitted envelope MUST carry this
+    ``event_type`` or a type-scoped dispatcher (``event_model``-scoped, OMN-12294)
+    silently drops it (``reference_no_dispatcher_can_be_typescoping_drop``).
+
+    This is byte-for-byte the applier's
+    ``service_dispatch_result_applier._derive_event_type_from_topic`` so the
+    RuntimeLocal fan-out emit and the Kafka applier produce the SAME event_type
+    for the same topic — the OMN-14743 regression was the RuntimeLocal fan-out
+    path publishing a raw payload with NO envelope/event_type while the Kafka
+    applier stamped one, so the reducer's type-scoped Kafka dispatcher matched the
+    07-11/13 (applier-stamped) intents and dropped the 07-17 (fan-out, null)
+    intents.
+
+    Returns ``None`` when the topic does not follow the ONEX convention.
+    """
+    parts = topic.split(".")
+    if len(parts) >= 5 and parts[0] == "onex":
+        producer = parts[2]
+        event_name = parts[3]
+        return f"{producer}.{event_name}"
+    return None
+
+
+def resolve_fanout_emissions(
+    published_events: Mapping[str, str],
+    elements: Sequence[object],
+    *,
+    message_type: str | None = None,
+) -> list[tuple[str, str, BaseModel]]:
+    """Resolve a fan-out sequence into ordered ``(topic, event_type, payload)`` triples.
+
+    Extends ``resolve_fanout_topics`` with the emit-boundary ``event_type``
+    derivation and a FAIL-CLOSED guard: a resolved publish topic that yields no
+    derivable ``event_type`` RAISES rather than emitting an envelope the
+    downstream type-scoped dispatcher will silently drop (OMN-14743). This
+    converts the silent type-scoped-drop class into a loud emit-time failure —
+    the same discipline as the OMN-14721 completeness guard, applied at the emit
+    side so a mis-shaped topic can never again produce a null-``event_type``
+    envelope that stalls the chain.
+
+    Order is the handler's return order (the routing-equivalence invariant).
+    """
+    emissions: list[tuple[str, str, BaseModel]] = []
+    for topic, payload in resolve_fanout_topics(
+        published_events, elements, message_type=message_type
+    ):
+        event_type = derive_event_type_from_topic(topic)
+        if event_type is None:
+            raise ModelOnexError(
+                message=(
+                    f"Fan-out element {type(payload).__name__!r} resolved to publish "
+                    f"topic {topic!r}, which does not follow the ONEX "
+                    "onex.{kind}.{producer}.{event-name}.v{n} convention, so no "
+                    "event_type routing key can be derived. An emitted fan-out "
+                    "envelope MUST carry a non-null event_type or the consuming "
+                    "type-scoped dispatcher silently drops it (OMN-14743). Fix the "
+                    "contract's published_events topic to the canonical ONEX shape. "
+                    f"(handler message_type={message_type!r})"
+                ),
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            )
+        emissions.append((topic, event_type, payload))
+    return emissions
 
 
 def assert_published_events_injective(

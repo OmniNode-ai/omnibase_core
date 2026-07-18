@@ -16,8 +16,10 @@ from pydantic import BaseModel, ConfigDict
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.runtime.runtime_fanout_resolver import (
     assert_published_events_injective,
+    derive_event_type_from_topic,
     is_fanout_sequence,
     normalize_fanout_elements,
+    resolve_fanout_emissions,
     resolve_fanout_topics,
     resolve_published_topic,
 )
@@ -142,3 +144,52 @@ class TestAssertPublishedEventsInjective:
         published = {"Alpha": "onex.evt.shared.v1", "Beta": "onex.evt.shared.v1"}
         with pytest.raises(ModelOnexError, match="injective"):
             assert_published_events_injective(published, context="test")
+
+
+# Canonical 5-segment ONEX topics so an event_type is derivable (OMN-14743).
+_PUBLISHED_CANONICAL = {
+    "Alpha": "onex.evt.omni.alpha.v1",
+    "Beta": "onex.cmd.omni.beta.v1",
+}
+
+
+class TestDeriveEventTypeFromTopic:
+    def test_canonical_topic_derives_producer_event_name(self) -> None:
+        assert (
+            derive_event_type_from_topic(
+                "onex.cmd.omnibase-infra.delegation-routing-request.v1"
+            )
+            == "omnibase-infra.delegation-routing-request"
+        )
+
+    def test_evt_topic_derives(self) -> None:
+        assert derive_event_type_from_topic("onex.evt.omni.alpha.v1") == "omni.alpha"
+
+    def test_four_segment_topic_yields_none(self) -> None:
+        # Missing the {event-name} segment -> not derivable.
+        assert derive_event_type_from_topic("onex.evt.alpha.v1") is None
+
+    def test_non_onex_prefix_yields_none(self) -> None:
+        assert derive_event_type_from_topic("kafka.raw.a.b.c") is None
+
+
+class TestResolveFanoutEmissions:
+    def test_returns_topic_event_type_payload_triples_in_order(self) -> None:
+        elements = [ModelAlpha(value=1), ModelBeta(value=2)]
+        emissions = resolve_fanout_emissions(_PUBLISHED_CANONICAL, elements)
+        assert [(t, et, type(p).__name__) for t, et, p in emissions] == [
+            ("onex.evt.omni.alpha.v1", "omni.alpha", "ModelAlpha"),
+            ("onex.cmd.omni.beta.v1", "omni.beta", "ModelBeta"),
+        ]
+
+    def test_fails_closed_when_topic_yields_no_event_type(self) -> None:
+        # A 4-segment topic resolves fine as a topic but yields no event_type ->
+        # emitting it would produce a null-event_type envelope the type-scoped
+        # dispatcher drops, so the emit boundary must raise instead.
+        published = {"Alpha": "onex.evt.alpha.v1"}
+        with pytest.raises(ModelOnexError, match="event_type"):
+            resolve_fanout_emissions(published, [ModelAlpha(value=1)])
+
+    def test_unmapped_class_still_fails_closed(self) -> None:
+        with pytest.raises(ModelOnexError):
+            resolve_fanout_emissions(_PUBLISHED_CANONICAL, [ModelGamma(value=1)])

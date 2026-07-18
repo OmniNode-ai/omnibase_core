@@ -48,7 +48,10 @@ class ModelGamma(BaseModel):
     value: int = 0
 
 
-_PUBLISHED = {"Alpha": "onex.evt.alpha.v1", "Beta": "onex.evt.beta.v1"}
+# Canonical 5-segment ONEX topics (onex.{kind}.{producer}.{event-name}.v{n}) so
+# the emit boundary can derive a non-null event_type (OMN-14743). A 4-segment
+# topic yields no event_type and is fail-closed (see the dedicated event_type test).
+_PUBLISHED = {"Alpha": "onex.evt.omni.alpha.v1", "Beta": "onex.evt.omni.beta.v1"}
 
 
 class _FanoutHandler:
@@ -140,14 +143,17 @@ async def test_fanout_seam_on_publishes_two_topics_in_order() -> None:
     await adapter.on_message(_msg(7))
 
     assert [topic for topic, _ in bus.published] == [
-        "onex.evt.alpha.v1",
-        "onex.evt.beta.v1",
+        "onex.evt.omni.alpha.v1",
+        "onex.evt.omni.beta.v1",
     ]
-    # Payloads are the concrete models, in return order.
+    # OMN-14743: each emit is a ModelEventEnvelope carrying the topic-derived
+    # event_type; the concrete model is the envelope payload, in return order.
     alpha = json.loads(bus.published[0][1])
     beta = json.loads(bus.published[1][1])
-    assert alpha == {"value": 7}
-    assert beta == {"value": 7}
+    assert alpha["payload"] == {"value": 7}
+    assert alpha["event_type"] == "omni.alpha"
+    assert beta["payload"] == {"value": 7}
+    assert beta["event_type"] == "omni.beta"
 
 
 @pytest.mark.asyncio
@@ -169,7 +175,7 @@ async def test_single_emit_seam_on_routes_via_published_events() -> None:
     )
     await adapter.on_message(_msg(3))
     # Topic comes from the model's class, NOT the single output_topic.
-    assert [topic for topic, _ in bus.published] == ["onex.evt.alpha.v1"]
+    assert [topic for topic, _ in bus.published] == ["onex.evt.omni.alpha.v1"]
 
 
 @pytest.mark.asyncio
