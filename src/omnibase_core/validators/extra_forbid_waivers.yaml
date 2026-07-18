@@ -25,4 +25,17 @@
 #
 #   model_config = ConfigDict(extra="forbid")
 #
-waivers: []
+waivers:
+  - fqn: omnibase_core.models.contracts.subcontracts.model_handler_routing_entry:ModelHandlerRoutingEntry
+    ticket: OMN-14771
+    pr: https://github.com/OmniNode-ai/omnibase_core/pull/1468
+    expires_at: 2026-09-30
+    reason: >-
+      S8 PR2 adds an additive optional `topic` field to this routing entry (the
+      PR2<->PR3 RuntimeDispatch seam). The model deliberately keeps extra="ignore"
+      to tolerate legacy handler_routing YAML fields (routing_key, handler_key,
+      priority, output_events, callable, lazy_import) still carried by live
+      contracts; the model docstring defers the extra="forbid" flip to a
+      dedicated migration PR once all consumers carry the live shape. Flipping
+      forbid here would break legacy contract loading and is out of scope for this
+      additive change. Time-boxed to the coordinated migration.
