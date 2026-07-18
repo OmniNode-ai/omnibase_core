@@ -65,3 +65,17 @@ class ModelHandlerRoutingEntry(BaseModel):
             "subscribed topic."
         ),
     )
+    # dispatch-surface-test-ok: additive optional field; inert in omnibase_core (no entry.topic consumer here — routing_map_builder that reads it lives in a sibling repo and is covered by that repo's real-dispatch tests when RuntimeDispatch lands). Model round-trip is unit-tested. (OMN-14771)
+    topic: str | None = Field(
+        default=None,
+        description=(
+            "Optional per-entry subscribe topic that owns this route (OMN-14771). "
+            "When present, RuntimeDispatch route resolution "
+            "(routing_map_builder._resolve_owning_entry) uses this to map a single "
+            "entry to its owning topic instead of failing closed on topic-agnostic "
+            "multiplexed orchestrator entries. Additive and backward-compatible: "
+            "existing entries omit it and default to None, leaving the legacy "
+            "payload_type_match path (which resolves the topic from the contract's "
+            "subscribe_topics list) unaffected."
+        ),
+    )
