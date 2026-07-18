@@ -13,11 +13,13 @@ import os
 import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import cast
+from uuid import UUID, uuid4, uuid5
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
     ProtocolLocalRuntimeBus,
 )
@@ -29,7 +31,7 @@ from omnibase_core.protocols.runtime.protocol_local_runtime_message import (
 )
 from omnibase_core.runtime.runtime_fanout_resolver import (
     is_fanout_sequence,
-    resolve_fanout_topics,
+    resolve_fanout_emissions,
     resolve_published_topic,
 )
 
@@ -121,8 +123,18 @@ class LocalRuntimeBusAdapter:
             decoded: object = (
                 json.loads(msg.value) if isinstance(msg.value, bytes) else {}
             )
-            payload_dict = decoded if isinstance(decoded, dict) else {}
-            correlation_value = payload_dict.get("correlation_id")
+            decoded_dict = decoded if isinstance(decoded, dict) else {}
+            # A fan-out emit is published as a ``ModelEventEnvelope`` carrying the
+            # topic-derived ``event_type`` (OMN-14743) so a cross-process
+            # type-scoped dispatcher matches it. Unwrap to the inner domain
+            # ``payload`` before validating into ``input_model_cls`` — a raw
+            # (non-enveloped) message passes through unchanged. ``envelope_id`` is
+            # the discriminator: a domain payload (e.g. ModelRoutingIntent, which
+            # itself has a ``payload`` field) never carries ``envelope_id``.
+            payload_dict, envelope_correlation = _unwrap_envelope_dict(decoded_dict)
+            correlation_value = envelope_correlation or payload_dict.get(
+                "correlation_id"
+            )
             correlation_id = (
                 correlation_value if isinstance(correlation_value, str) else None
             )
@@ -275,16 +287,27 @@ class LocalRuntimeBusAdapter:
                 )
             return
         try:
-            resolved = resolve_fanout_topics(
+            # Resolve (topic, event_type, payload) triples. ``resolve_fanout_emissions``
+            # is FAIL-CLOSED on a topic that yields no derivable event_type — an
+            # emitted fan-out envelope with a null event_type is silently dropped by
+            # the consuming type-scoped dispatcher (the OMN-14743 stall). Order is
+            # the handler's return order.
+            emissions = resolve_fanout_emissions(
                 self.published_events, elements, message_type=self.handler_name
             )
-            for topic, payload in resolved:
-                output_bytes = payload.model_dump_json().encode("utf-8")
+            correlation_uuid = _coerce_correlation_uuid(correlation_id)
+            for idx, (topic, event_type, payload) in enumerate(emissions):
+                envelope = self._build_output_envelope(
+                    payload, event_type, correlation_uuid, idx
+                )
+                output_bytes = envelope.model_dump_json().encode("utf-8")
                 await self.bus.publish(topic, None, output_bytes)
                 logger.info(
-                    "LocalRuntimeBusAdapter: fan-out published %s to %s (correlation_id=%s)",
+                    "LocalRuntimeBusAdapter: fan-out published %s to %s "
+                    "(event_type=%s correlation_id=%s)",
                     type(payload).__name__,
                     topic,
+                    event_type,
                     correlation_id,
                 )
         except Exception:  # fallback-ok: fan-out resolution/publish failure is recorded via on_error and the run is marked FAILED; reraising would abort bus shutdown
@@ -295,6 +318,69 @@ class LocalRuntimeBusAdapter:
             )
             if self.on_error:
                 self.on_error()
+
+    def _build_output_envelope(
+        self,
+        payload: BaseModel,
+        event_type: str,
+        correlation_uuid: UUID | None,
+        idx: int,
+    ) -> ModelEventEnvelope[BaseModel]:
+        """Wrap a fan-out payload in an event envelope carrying ``event_type``.
+
+        Mirrors the Kafka applier's envelope shape
+        (``service_dispatch_result_applier.apply``): a deterministic
+        ``uuid5(correlation_id, "type:index")`` envelope_id so a redelivery
+        dedupes, and the topic-derived ``event_type`` routing key so a
+        type-scoped dispatcher matches (OMN-14743). When no correlation_id is
+        available the envelope_id falls back to ``uuid4`` (dedup is best-effort,
+        matching the applier).
+        """
+        envelope_id = (
+            uuid5(correlation_uuid, f"{type(payload).__name__}:{idx}")
+            if correlation_uuid is not None
+            else uuid4()
+        )
+        # Construct WITHOUT the ``[BaseModel]`` runtime subscript: subscripting the
+        # generic at runtime coerces the payload to the bare ``BaseModel`` schema and
+        # drops the concrete model's fields on ``model_dump_json`` (payload -> {}).
+        # The applier constructs the same way (annotate the var, not the call).
+        envelope: ModelEventEnvelope[BaseModel] = ModelEventEnvelope(
+            envelope_id=envelope_id,
+            payload=payload,
+            correlation_id=correlation_uuid,
+            event_type=event_type,
+        )
+        return envelope
+
+
+def _coerce_correlation_uuid(correlation_id: str | None) -> UUID | None:
+    """Coerce a wire correlation_id string into a UUID, or None when unparseable."""
+    if not correlation_id:
+        return None
+    try:
+        return UUID(correlation_id)
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def _unwrap_envelope_dict(
+    decoded: Mapping[str, object],
+) -> tuple[dict[str, object], str | None]:
+    """Unwrap a ``ModelEventEnvelope`` wire dict to its inner payload dict.
+
+    Returns ``(payload_dict, correlation_id)``. A fan-out emit publishes a
+    ``ModelEventEnvelope`` (OMN-14743); the inner domain ``payload`` is what the
+    subscribed handler's ``input_model_cls`` validates against. ``envelope_id`` is
+    the discriminator — a raw (non-enveloped) message, or a domain payload that
+    happens to carry its own ``payload`` field (e.g. ModelRoutingIntent), lacks
+    ``envelope_id`` and is returned unchanged.
+    """
+    if "envelope_id" in decoded and isinstance(decoded.get("payload"), dict):
+        inner = cast("dict[str, object]", decoded["payload"])
+        correlation = decoded.get("correlation_id")
+        return inner, correlation if isinstance(correlation, str) else None
+    return dict(decoded), None
 
 
 def _invoke_handle_method(
