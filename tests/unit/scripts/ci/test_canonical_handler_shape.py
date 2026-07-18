@@ -22,7 +22,9 @@ from scripts.ci.canonical_handler_shape import (
     ModelHandlerShapeFinding,
     _contract_bindings,
     _escalation_reason,
+    _extract_symbol_sources,
     _handle_is_adaptable,
+    _parse_non_canonical,
     _resolve_scope,
     _touched_node_ids,
     classify_all,
@@ -31,6 +33,7 @@ from scripts.ci.canonical_handler_shape import (
     load_baseline,
     verify_adequacy_receipt,
     verify_flip_receipt,
+    verify_handflip_proof,
     write_baseline,
 )
 
@@ -430,3 +433,282 @@ def test_flip_passes_with_bound_adequacy_and_equivalence(monkeypatch) -> None:
     ok, reason = verify_flip_receipt("n.good", handler_module=None)
     assert ok is True
     assert "cov" in reason and "equiv" in reason
+
+
+# --------------------------------------------------------------------------- #
+# OMN-14781: git-BASE baseline comparison closes the in-PR-edit hole
+# --------------------------------------------------------------------------- #
+
+
+def test_in_pr_baseline_removal_negative_fixture() -> None:
+    """THE regression fixture: a node flipped to canonical shape AND removed from
+    NON_CANONICAL in the same commit, with NO flip proof.
+
+    This is the exact shape of omnimarket#1815 (node_delegation_orchestrator). The
+    OLD gate (no git-BASE comparison) PASSES it — the false-green hole. The NEW gate
+    (git-BASE baseline supplied) FAILS it as an unproven flip.
+    """
+    findings = [_canon("n.flipped")]
+
+    # OLD gate behavior == base_baseline unavailable (None): compares live scan only
+    # against the post-edit committed baseline (which no longer lists the node).
+    old = evaluate(findings, baseline=[], base_baseline=None)
+    assert not old.failed, "OLD gate must PASS the hole (documents the false-green)"
+    assert old.unproven_flips == ()
+
+    # NEW gate: the node was present at the git BASE but removed in-PR -> claimed
+    # flip -> proof required -> none on disk -> hard-fail.
+    new = evaluate(findings, baseline=[], base_baseline=["n.flipped"])
+    assert new.failed, "NEW gate must FAIL the previously-evaded flip"
+    assert new.unproven_flips == ("n.flipped",)
+    assert new.new_non_canonical == ()  # it's a removal-flip, not a NEW non-canonical
+
+
+def test_in_pr_removal_with_valid_proof_passes(monkeypatch) -> None:
+    monkeypatch.setattr(
+        mod, "verify_flip_receipt", lambda node_id, handler_module: (True, "proven")
+    )
+    result = evaluate([_canon("n.flipped")], baseline=[], base_baseline=["n.flipped"])
+    assert not result.failed
+    assert result.proven_flips == ("n.flipped",)
+    assert result.unproven_flips == ()
+
+
+def test_in_pr_removal_still_noncanonical_is_new_nc_only() -> None:
+    # Removed from baseline but the code did NOT flip -> a NEW non-canonical node
+    # (new_nc), reported once, not also as an unproven flip.
+    result = evaluate([_nc("n.x")], baseline=[], base_baseline=["n.x"])
+    assert result.failed
+    assert result.new_non_canonical == ("n.x",)
+    assert result.unproven_flips == ()
+
+
+def test_in_pr_removal_of_deleted_node_is_ok() -> None:
+    # Removed from the baseline AND the node no longer exists (not in findings):
+    # the removal is self-justifying — deletion cannot be non-canonical.
+    result = evaluate([_canon("n.other")], baseline=[], base_baseline=["n.gone"])
+    assert not result.failed
+    assert result.unproven_flips == ()
+
+
+def test_baseline_growth_hard_fails() -> None:
+    # The baseline is monotonically non-increasing: hand-ADDING a node to silence a
+    # new non-canonical node (base has fewer than working) is illegal growth.
+    result = evaluate(
+        [_nc("n.a"), _nc("n.added")],
+        baseline=["n.a", "n.added"],
+        base_baseline=["n.a"],
+    )
+    assert result.failed
+    assert result.baseline_growth == ("n.added",)
+
+
+def test_base_baseline_none_reproduces_old_behavior() -> None:
+    # With base_baseline=None the removal/growth checks are inert -> identical to the
+    # pre-OMN-14781 gate (no regression for the diff-unavailable path).
+    findings = [_nc("n.a"), _canon("n.b")]
+    result = evaluate(findings, baseline=["n.a"], base_baseline=None)
+    assert not result.failed
+    assert result.baseline_growth == ()
+
+
+def test_parse_non_canonical_extracts_tuple() -> None:
+    source = (
+        '"""doc"""\n'
+        "NON_CANONICAL: tuple[str, ...] = (\n"
+        '    "z.node",\n'
+        '    "a.node",\n'
+        ")\n"
+    )
+    assert _parse_non_canonical(source) == ["z.node", "a.node"]
+    assert _parse_non_canonical("NON_CANONICAL: tuple[str, ...] = ()\n") == []
+
+
+# --------------------------------------------------------------------------- #
+# OMN-14781: sanctioned HAND-FLIP proof path (verbatim-preservation, no fabricated
+# equivalence-replay)
+# --------------------------------------------------------------------------- #
+
+
+_LEGACY_HANDLER = """
+class HandlerX:
+    def handle(self, envelope):  # non-canonical shape (envelope in core)
+        return self._compute(envelope.payload)
+
+    def _compute(self, data):
+        total = 0
+        for row in data:
+            total += row * 2
+        return total
+"""
+
+_CANONICAL_HANDLER_SAME_LOGIC = """
+class HandlerX:
+    def handle(self, request: ModelReq) -> ModelResp:  # def-B shape
+        return self._compute(request.rows)
+
+    def _compute(self, data):
+        total = 0
+        for row in data:
+            total += row * 2
+        return total
+"""
+
+_CANONICAL_HANDLER_CHANGED_LOGIC = """
+class HandlerX:
+    def handle(self, request: ModelReq) -> ModelResp:
+        return self._compute(request.rows)
+
+    def _compute(self, data):
+        return sum(r * 3 for r in data)  # LOGIC CHANGED
+"""
+
+
+def _write_handflip(dir_path, node_id: str, **overrides) -> None:
+    import json
+
+    body = {
+        "receipt_schema": "handflip_proof.v1",
+        "node_id": node_id,
+        "canonical_handler_module": "pkg.handler",
+        "legacy_handler_module": "pkg.handler",
+        "base_ref": "origin/dev",
+        "preserved_symbols": ["_compute"],
+        "parity": {
+            "test_ids": ["tests/test_parity.py::test_x"],
+            "status": "pass",
+            "selected_input_hashes": ["h1"],
+        },
+    }
+    body.update(overrides)
+    (dir_path / f"{node_id}.handflip.json").write_text(
+        json.dumps(body), encoding="utf-8"
+    )
+
+
+def _handflip_env(tmp_path, monkeypatch, head_src: str, base_src: str) -> None:
+    monkeypatch.setattr(mod, "RECEIPTS_DIR", tmp_path)
+    head_file = tmp_path / "head_handler.py"
+    head_file.write_text(head_src, encoding="utf-8")
+    monkeypatch.setattr(mod, "_resolve_module_file", lambda module: head_file)
+    monkeypatch.setattr(
+        mod, "_module_repo_rel", lambda module: (tmp_path, "src/legacy.py")
+    )
+    monkeypatch.setattr(mod, "_git_ref_exists", lambda repo_root, ref: True)
+    monkeypatch.setattr(mod, "_git_show", lambda repo_root, ref, rel_path: base_src)
+
+
+def test_handflip_proof_verbatim_preserved_passes(tmp_path, monkeypatch) -> None:
+    _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
+    _write_handflip(tmp_path, "n.hand")
+    ok, reason, selected = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    assert ok is True, reason
+    assert "verbatim" in reason
+    assert selected == ["h1"]
+
+
+def test_handflip_proof_diverged_logic_fails(tmp_path, monkeypatch) -> None:
+    # The preserved symbol's body differs between BASE and HEAD -> not verbatim.
+    _handflip_env(
+        tmp_path, monkeypatch, _CANONICAL_HANDLER_CHANGED_LOGIC, _LEGACY_HANDLER
+    )
+    _write_handflip(tmp_path, "n.hand")
+    ok, reason, _ = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    assert ok is False
+    assert "verbatim-preservation FAILED" in reason
+
+
+def test_handflip_proof_missing_symbol_in_head_fails(tmp_path, monkeypatch) -> None:
+    _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
+    _write_handflip(tmp_path, "n.hand", preserved_symbols=["_does_not_exist"])
+    ok, reason, _ = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    assert ok is False
+    assert "not all found in HEAD" in reason
+
+
+def test_handflip_proof_parity_not_pass_fails(tmp_path, monkeypatch) -> None:
+    _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
+    _write_handflip(
+        tmp_path,
+        "n.hand",
+        parity={"test_ids": ["t::x"], "status": "fail", "selected_input_hashes": []},
+    )
+    ok, reason, _ = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    assert ok is False
+    assert "parity" in reason
+
+
+def test_handflip_proof_missing_artifact_fails() -> None:
+    ok, reason, _ = verify_handflip_proof("n.absent", handler_module="pkg.handler")
+    assert ok is False
+    assert "no hand-flip proof artifact" in reason
+
+
+def test_flip_accepts_handflip_path(tmp_path, monkeypatch) -> None:
+    # verify_flip_receipt takes the hand-flip branch when equivalence is absent but a
+    # valid hand-flip proof exists, and binds input sets receipt<->parity.
+    monkeypatch.setattr(
+        mod,
+        "verify_adequacy_receipt",
+        lambda node_id, handler_module: (True, "cov", ["h1"]),
+    )
+    monkeypatch.setattr(
+        mod, "verify_equivalence_replay", lambda node_id: (False, "absent", [])
+    )
+    monkeypatch.setattr(
+        mod,
+        "verify_handflip_proof",
+        lambda node_id, handler_module: (True, "handflip-verbatim-preserved", ["h1"]),
+    )
+    ok, reason = verify_flip_receipt("n.hand", handler_module="pkg.handler")
+    assert ok is True
+    assert "handflip" in reason
+
+
+def test_flip_handflip_pair_incompatible_when_input_sets_differ(monkeypatch) -> None:
+    monkeypatch.setattr(
+        mod,
+        "verify_adequacy_receipt",
+        lambda node_id, handler_module: (True, "cov", ["h1"]),
+    )
+    monkeypatch.setattr(
+        mod, "verify_equivalence_replay", lambda node_id: (False, "absent", [])
+    )
+    monkeypatch.setattr(
+        mod,
+        "verify_handflip_proof",
+        lambda node_id, handler_module: (True, "handflip", ["hX"]),
+    )
+    ok, reason = verify_flip_receipt("n.hand", handler_module="pkg.handler")
+    assert ok is False
+    assert "PAIR_INCOMPATIBLE" in reason
+
+
+def test_extract_symbol_sources_qualified_and_bare() -> None:
+    src = "class A:\n    def m(self):\n        return 1\ndef top():\n    return 2\n"
+    bare = _extract_symbol_sources(src, ["m", "top"])
+    assert bare is not None and set(bare) == {"m", "top"}
+    qual = _extract_symbol_sources(src, ["A.m"])
+    assert qual is not None and set(qual) == {"A.m"}
+    assert _extract_symbol_sources(src, ["nope"]) is None
+
+
+# --------------------------------------------------------------------------- #
+# OMN-14781: core receipt-path classifier crash under fan-out
+# --------------------------------------------------------------------------- #
+
+
+def test_receipt_path_display_no_crash_outside_repo_root(tmp_path, monkeypatch) -> None:
+    """Under fan-out, RECEIPTS_DIR is a SIBLING repo outside this classifier's
+    REPO_ROOT. The old ``receipt_path.relative_to(REPO_ROOT)`` raised ValueError and
+    crashed the gate. It must now degrade to a plain path in the message."""
+    foreign = tmp_path / "omnimarket" / "scripts" / "ci" / "adequacy_receipts"
+    foreign.mkdir(parents=True)
+    monkeypatch.setattr(mod, "RECEIPTS_DIR", foreign)
+    # No receipt on disk -> the missing-receipt message path (the one that crashed).
+    ok, reason, _ = verify_adequacy_receipt(
+        "omnimarket.nodes.node_x", handler_module=None
+    )
+    assert ok is False
+    assert "no adequacy receipt at" in reason
+    assert "node_x" in reason  # rendered the path instead of raising
