@@ -575,6 +575,14 @@ def _resolve_scope(
 
 EXPECTED_RECEIPT_SCHEMA = "adequacy_receipt.v1"
 EQUIVALENCE_SUFFIX = ".equivalence.json"
+# Sanctioned HAND-FLIP proof (OMN-14781): the legitimate proof for a def-B
+# conversion done BY HAND (not RSD-regenerated), where a regen-vs-legacy
+# equivalence-replay artifact cannot honestly exist. Proof = adequacy receipt +
+# gate-RE-DERIVED verbatim-preservation (the named business-logic symbols are
+# byte-identical between git-BASE and HEAD, so the flip only moved the envelope/
+# adapter boundary) + green parity tests bound to the SAME selected input set.
+HANDFLIP_SUFFIX = ".handflip.json"
+EXPECTED_HANDFLIP_SCHEMA = "handflip_proof.v1"
 
 
 def _resolve_module_file(module: str) -> Path | None:
@@ -598,6 +606,145 @@ def _load_json(path: Path) -> dict[str, object] | None:
     return data if isinstance(data, dict) else None
 
 
+def _display_path(path: Path) -> str:
+    """Best-effort repo-relative display for a receipt/artifact path.
+
+    OMN-14781: under fan-out (``--package``/``--receipts-dir`` pointing at a
+    SIBLING repo, e.g. omnimarket), ``RECEIPTS_DIR`` lives outside this
+    classifier's own ``REPO_ROOT`` (which always resolves to omnibase_core). A
+    naive ``path.relative_to(REPO_ROOT)`` then raises ``ValueError`` and crashes
+    the whole gate mid-classification. Fall back to the absolute/original path
+    rather than raising — the message is cosmetic, the verdict is not.
+    """
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+# --------------------------------------------------------------------------- #
+# git-BASE baseline resolution (OMN-14781: close the stateless in-PR-edit hole)
+# --------------------------------------------------------------------------- #
+#
+# ``evaluate`` used to compare the live scan ONLY against the *post-edit committed*
+# baseline. That is stateless: a PR that removes a node from ``NON_CANONICAL`` in
+# the SAME commit that flips its shape evades the flip-proof entirely (the node is
+# absent from both the working baseline and the current non-canonical set, so it is
+# neither a NEW non-canonical node nor a detected flip). Comparing the working-tree
+# baseline against the git-BASE (origin/dev) baseline surfaces every in-PR removal
+# as a CLAIMED FLIP that must carry the 3-part proof.
+
+
+def _git_repo_root(path: Path) -> Path | None:
+    """Toplevel of the git repo that owns ``path`` (works cross-repo for fan-out)."""
+    import subprocess
+
+    start = path if path.is_dir() else path.parent
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(start), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    root = proc.stdout.strip()
+    return Path(root) if root else None
+
+
+def _git_show(repo_root: Path, ref: str, rel_path: str) -> str | None:
+    """``git show <ref>:<rel_path>`` in ``repo_root``; None if absent/unresolvable."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(repo_root), "show", f"{ref}:{rel_path}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    return proc.stdout
+
+
+def _git_ref_exists(repo_root: Path, ref: str) -> bool:
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo_root),
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                f"{ref}^{{commit}}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    return proc.returncode == 0
+
+
+def _parse_non_canonical(source: str) -> list[str]:
+    """Extract the ``NON_CANONICAL`` string tuple from baseline source, no exec()."""
+    tree = ast.parse(source)
+    for node in tree.body:
+        target_names: list[str] = []
+        value: ast.expr | None = None
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            target_names = [node.target.id]
+            value = node.value
+        elif isinstance(node, ast.Assign):
+            target_names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            value = node.value
+        if "NON_CANONICAL" in target_names and value is not None:
+            evaluated = ast.literal_eval(value)
+            return [str(n) for n in evaluated]
+    return []
+
+
+def load_base_baseline(baseline_path: Path, base_ref: str) -> list[str] | None:
+    """Load ``NON_CANONICAL`` as it existed at ``base_ref`` (the git BASE).
+
+    Returns:
+      * the base entries when resolvable;
+      * ``[]`` when the baseline file did NOT exist at ``base_ref`` (a brand-new
+        baseline file legitimately has no prior entries — nothing to protect);
+      * ``None`` when the base cannot be determined at all (no git, unknown ref).
+        A ``None`` disables the removal/growth check for that run WITHOUT
+        hard-failing — mirrors the existing diff-unavailable tolerance. In CI the
+        PR base (origin/dev) is always present, so the check is live there.
+    """
+    repo_root = _git_repo_root(baseline_path)
+    if repo_root is None:
+        return None
+    if not _git_ref_exists(repo_root, base_ref):
+        return None
+    try:
+        rel = baseline_path.resolve().relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    source = _git_show(repo_root, base_ref, str(rel).replace(os.sep, "/"))
+    if source is None:
+        # ref exists but file absent at base -> new baseline file, no prior entries.
+        return []
+    try:
+        return _parse_non_canonical(source)
+    except (SyntaxError, ValueError):
+        return None
+
+
 def verify_adequacy_receipt(
     node_id: str, handler_module: str | None
 ) -> tuple[bool, str, list[str]]:
@@ -611,7 +758,7 @@ def verify_adequacy_receipt(
     if not receipt_path.exists():
         return (
             False,
-            f"no adequacy receipt at {receipt_path.relative_to(REPO_ROOT)}",
+            f"no adequacy receipt at {_display_path(receipt_path)}",
             [],
         )
     raw = _load_json(receipt_path)
@@ -666,26 +813,173 @@ def verify_equivalence_replay(node_id: str) -> tuple[bool, str, list[str]]:
     )
 
 
+def _extract_symbol_sources(
+    source_text: str, symbols: list[str]
+) -> dict[str, str] | None:
+    """Normalized (``ast.unparse``) source for each named symbol, or None if any missing.
+
+    A bare ``name`` matches a function/method with that name anywhere in the module
+    (module-level def or a method on any class). A qualified ``Class.method`` matches
+    only that method on that class. Normalization via ``ast.unparse`` strips comments
+    and whitespace but preserves structure and identifiers, so two verbatim-identical
+    bodies hash equal while any real logic change diverges (fail-closed).
+    """
+    try:
+        tree = ast.parse(source_text)
+    except SyntaxError:
+        return None
+    wanted = set(symbols)
+    found: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            for m in node.body:
+                if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    qual = f"{node.name}.{m.name}"
+                    if qual in wanted and qual not in found:
+                        found[qual] = ast.unparse(m)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name in wanted and node.name not in found:
+                found[node.name] = ast.unparse(node)
+    if wanted - set(found):
+        return None
+    return found
+
+
+def _module_repo_rel(module: str) -> tuple[Path, str] | None:
+    """(repo_root, path-relative-to-repo-root) for a dotted module under SRC_ROOT."""
+    file_path = SRC_ROOT / (module.replace(".", "/") + ".py")
+    repo_root = _git_repo_root(SRC_ROOT if SRC_ROOT.exists() else file_path)
+    if repo_root is None:
+        return None
+    try:
+        rel = file_path.resolve().relative_to(repo_root.resolve())
+    except ValueError:
+        return None
+    return repo_root, str(rel).replace(os.sep, "/")
+
+
+def verify_handflip_proof(
+    node_id: str, handler_module: str | None
+) -> tuple[bool, str, list[str]]:
+    """Sanctioned proof for a HAND-authored def-B flip (no fabricated replay).
+
+    Re-derives verbatim-preservation from git itself — the gate reads the named
+    business-logic symbols from the git-BASE legacy module AND the HEAD canonical
+    module and requires them byte-identical (post AST-normalization). This cannot
+    be faked by writing a JSON file: the symbols must genuinely be unchanged across
+    the flip. Parity tests (green, bound to the selected input set) attest behavior;
+    the input-set binding is enforced by ``verify_flip_receipt``.
+
+    Returns ``(ok, reason, selected_input_hashes)``.
+    """
+    art_path = RECEIPTS_DIR / f"{node_id}{HANDFLIP_SUFFIX}"
+    if not art_path.exists():
+        return False, "no hand-flip proof artifact", []
+    raw = _load_json(art_path)
+    if raw is None:
+        return False, "hand-flip artifact unparseable", []
+    if raw.get("node_id") != node_id:
+        return False, "hand-flip artifact node_id mismatch", []
+    schema = raw.get("receipt_schema")
+    if schema != EXPECTED_HANDFLIP_SCHEMA:
+        return False, f"unexpected hand-flip receipt_schema {schema!r}", []
+
+    symbols_raw = raw.get("preserved_symbols")
+    symbols = [str(s) for s in symbols_raw] if isinstance(symbols_raw, list) else []
+    if not symbols:
+        return False, "hand-flip proof declares no preserved_symbols", []
+
+    canonical_module = raw.get("canonical_handler_module") or handler_module
+    legacy_module = raw.get("legacy_handler_module")
+    base_ref = raw.get("base_ref")
+    if not isinstance(canonical_module, str) or not canonical_module:
+        return False, "hand-flip proof missing canonical_handler_module", []
+    if not isinstance(legacy_module, str) or not legacy_module:
+        return False, "hand-flip proof missing legacy_handler_module", []
+    if not isinstance(base_ref, str) or not base_ref:
+        return False, "hand-flip proof missing base_ref", []
+
+    # HEAD side: live working-tree canonical module.
+    head_file = _resolve_module_file(canonical_module)
+    if head_file is None:
+        return False, f"canonical_handler_module {canonical_module} not resolvable", []
+    head_bodies = _extract_symbol_sources(
+        head_file.read_text(encoding="utf-8"), symbols
+    )
+    if head_bodies is None:
+        return False, "preserved_symbols not all found in HEAD module", []
+
+    # BASE side: legacy module as of base_ref, read from git (never fabricated).
+    rel = _module_repo_rel(legacy_module)
+    if rel is None:
+        return False, f"legacy_handler_module {legacy_module} path unresolvable", []
+    repo_root, rel_path = rel
+    if not _git_ref_exists(repo_root, base_ref):
+        return False, f"base_ref {base_ref!r} unresolvable for verbatim check", []
+    base_source = _git_show(repo_root, base_ref, rel_path)
+    if base_source is None:
+        return False, f"legacy module absent at {base_ref}:{rel_path}", []
+    base_bodies = _extract_symbol_sources(base_source, symbols)
+    if base_bodies is None:
+        return False, "preserved_symbols not all found in git-BASE legacy module", []
+
+    diverged = sorted(s for s in symbols if head_bodies[s] != base_bodies[s])
+    if diverged:
+        return (
+            False,
+            f"verbatim-preservation FAILED — logic changed for {diverged}",
+            [],
+        )
+
+    parity = raw.get("parity")
+    if not isinstance(parity, dict):
+        return False, "hand-flip proof missing parity block", []
+    if parity.get("status") != "pass":
+        return False, f"parity tests status={parity.get('status')!r}", []
+    test_ids = parity.get("test_ids")
+    if not isinstance(test_ids, list) or not test_ids:
+        return False, "hand-flip parity block names no test_ids", []
+    hashes = parity.get("selected_input_hashes")
+    selected = [str(h) for h in hashes] if isinstance(hashes, list) else []
+    return (
+        True,
+        f"handflip-verbatim-preserved({len(symbols)} symbol(s))",
+        selected,
+    )
+
+
 def verify_flip_receipt(node_id: str, handler_module: str | None) -> tuple[bool, str]:
     """Return (ok, reason) for a non-canonical -> canonical baseline flip.
 
-    Requires BOTH an adequacy receipt (re-derived verdict) AND a green
-    equivalence replay bound to the SAME selected input set. Fail-closed.
+    Requires an adequacy receipt (re-derived verdict) AND one of two sanctioned
+    behavior proofs, each bound to the SAME selected input set as the receipt:
+      * RSD regen path: a GREEN regen-vs-legacy equivalence-replay artifact; OR
+      * HAND-flip path (OMN-14781): a hand-flip proof whose verbatim-preservation
+        the gate re-derives from git and whose parity tests are green.
+    Fail-closed: no adequacy, or neither proof, or a mismatched input set -> RED.
     """
     ok_a, reason_a, sel_receipt = verify_adequacy_receipt(node_id, handler_module)
     if not ok_a:
         return False, f"adequacy: {reason_a}"
+
     ok_e, reason_e, sel_equiv = verify_equivalence_replay(node_id)
-    if not ok_e:
-        return False, f"equivalence: {reason_e}"
-    # Bind coverage to equivalence: both must reference the same input set, else a
-    # coverage-adequate golden could be replayed against a different (easier) set.
-    if set(sel_receipt) != set(sel_equiv):
+    ok_h, reason_h, sel_hand = verify_handflip_proof(node_id, handler_module)
+    if not ok_e and not ok_h:
         return (
             False,
-            "PAIR_INCOMPATIBLE: receipt/equivalence selected_input_hashes differ",
+            f"proof: no equivalence-replay ({reason_e}) and no hand-flip proof "
+            f"({reason_h})",
         )
-    return True, f"{reason_a}+{reason_e}"
+    proof_reason, sel_proof = (reason_e, sel_equiv) if ok_e else (reason_h, sel_hand)
+
+    # Bind coverage to the behavior proof: both must reference the same input set,
+    # else a coverage-adequate golden could be replayed against an easier set.
+    if set(sel_receipt) != set(sel_proof):
+        return (
+            False,
+            "PAIR_INCOMPATIBLE: receipt/proof selected_input_hashes differ",
+        )
+    return True, f"{reason_a}+{proof_reason}"
 
 
 # --------------------------------------------------------------------------- #
@@ -702,15 +996,30 @@ class RatchetResult(BaseModel):
     unproven_flips: tuple[str, ...]
     warn_baselined: tuple[str, ...]
     proven_flips: tuple[str, ...]
+    baseline_growth: tuple[str, ...] = ()
 
     @property
     def failed(self) -> bool:
-        return bool(self.new_non_canonical or self.unproven_flips)
+        return bool(
+            self.new_non_canonical or self.unproven_flips or self.baseline_growth
+        )
 
 
 def evaluate(
-    findings: list[ModelHandlerShapeFinding], baseline: list[str]
+    findings: list[ModelHandlerShapeFinding],
+    baseline: list[str],
+    base_baseline: list[str] | None = None,
 ) -> RatchetResult:
+    """Ratchet verdict.
+
+    ``baseline`` is the working-tree (post-edit) committed baseline. ``base_baseline``
+    is the baseline as it existed at the git BASE (origin/dev). When provided, an
+    in-PR REMOVAL from the baseline is adjudicated as a claimed flip (OMN-14781):
+    the stateless hole was comparing only the live scan against the post-edit
+    baseline, which let an unproven flip land by shrinking the baseline in the same
+    commit. When ``base_baseline`` is None (git/base unavailable) the removal/growth
+    check is skipped and behavior is identical to the pre-OMN-14781 gate.
+    """
     baseline_set = set(baseline)
     by_id = {f.node_id: f for f in findings}
     current_nc = set(current_non_canonical(findings))
@@ -721,7 +1030,7 @@ def evaluate(
     # Baselined nodes still non-canonical -> WARN (known debt).
     warn = sorted(current_nc & baseline_set)
 
-    # Baselined nodes that are now canonical -> a flip; require an adequacy receipt.
+    # Baselined nodes that are now canonical -> a flip; require the full proof.
     proven: list[str] = []
     unproven: list[str] = []
     for node_id in sorted(baseline_set - current_nc):
@@ -731,11 +1040,35 @@ def evaluate(
         ok, _ = verify_flip_receipt(node_id, finding.handler_module)
         (proven if ok else unproven).append(node_id)
 
+    # OMN-14781: nodes REMOVED from the baseline in this PR (present at the git
+    # BASE, absent in the working baseline) are claimed flips and must carry the
+    # SAME proof. This closes the stateless hole. Also enforce the monotonic
+    # non-increasing invariant: the baseline may only shrink — hand-ADDING a node
+    # (growth) to silence a new non-canonical node is illegal.
+    baseline_growth: list[str] = []
+    if base_baseline is not None:
+        base_set = set(base_baseline)
+        for node_id in sorted(base_set - baseline_set):
+            finding = by_id.get(node_id)
+            if finding is None:
+                # Node no longer classified. A baseline edit forces a full scan, so
+                # None here means the node was DELETED from the repo -> the removal
+                # is self-justifying (nothing left to be non-canonical).
+                continue
+            if not finding.is_canonical:
+                # Removed from the baseline but STILL non-canonical: already a
+                # new_nc hard-fail above; don't double-report.
+                continue
+            ok, _ = verify_flip_receipt(node_id, finding.handler_module)
+            (proven if ok else unproven).append(node_id)
+        baseline_growth = sorted(baseline_set - base_set)
+
     return RatchetResult(
         new_non_canonical=tuple(new_nc),
-        unproven_flips=tuple(unproven),
+        unproven_flips=tuple(sorted(set(unproven))),
         warn_baselined=tuple(warn),
-        proven_flips=tuple(proven),
+        proven_flips=tuple(sorted(set(proven))),
+        baseline_growth=tuple(baseline_growth),
     )
 
 
@@ -760,18 +1093,39 @@ def _format_failure(
     if result.unproven_flips:
         lines.append("")
         lines.append(
-            "  Baselined node(s) flipped to canonical shape WITHOUT an adequacy receipt"
+            "  Baselined node(s) flipped to canonical shape WITHOUT valid flip proof"
         )
         lines.append(
-            "  — a shape flip is not proof of equivalence (OMN-14208 trap). Provide a"
+            "  (includes in-PR NON_CANONICAL removals — OMN-14781: removing a node"
         )
         lines.append(
-            "  ModelAdequacyReceipt under scripts/ci/adequacy_receipts/<node_id>.json:"
+            "  from the baseline in the same commit as the flip is still a flip)."
         )
+        lines.append(
+            "  A shape flip is not proof of equivalence (OMN-14208 trap). Provide an"
+        )
+        lines.append(
+            "  adequacy receipt (<node_id>.json) + EITHER a green equivalence-replay"
+        )
+        lines.append(
+            "  (<node_id>.equivalence.json, RSD regen) OR a hand-flip proof "
+            "(<node_id>.handflip.json)"
+        )
+        lines.append("  under scripts/ci/adequacy_receipts/, bound to one input set:")
         for node_id in result.unproven_flips:
             f = by_id.get(node_id)
             _, reason = verify_flip_receipt(node_id, f.handler_module if f else None)
             lines.append(f"    + {node_id}  ({reason})")
+    if result.baseline_growth:
+        lines.append("")
+        lines.append(
+            "  Baseline GROWTH — the frozen NON_CANONICAL set is monotonically"
+        )
+        lines.append(
+            "  non-increasing; new nodes must be born canonical, not hand-added here:"
+        )
+        for node_id in result.baseline_growth:
+            lines.append(f"    + {node_id}")
     lines.append("")
     lines.append(
         "Fix the node, or regenerate the baseline only for receipt-proven flips:"
@@ -1017,9 +1371,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     baseline = load_baseline(BASELINE_PATH)
+    # OMN-14781: the git-BASE baseline, to catch in-PR NON_CANONICAL removals/growth.
+    base_baseline = load_base_baseline(BASELINE_PATH, args.base_ref)
 
     full = args.full or args.scope == "full"
     scope_label = "full"
+
+    if base_baseline is None:
+        print(
+            "Canonical handler-shape ratchet NOTE — git BASE baseline unavailable; "
+            "in-PR baseline-removal/growth check skipped for this run (it is active "
+            "in CI where the PR base is present).",
+            file=sys.stderr,
+        )
+    elif not full and set(base_baseline) != set(baseline):
+        # The frozen baseline itself changed vs the base. Adjudicating a removal or
+        # growth needs the COMPLETE node set (a removed node may be canonical now and
+        # live anywhere), so escalate to a full scan (fail-closed).
+        full = True
+        scope_label = "full (escalated: baseline changed vs base)"
+
     if not full:
         # Derive the changed-file set: explicit args (pre-commit) else git diff (CI).
         changed = args.files if args.files else _git_changed_files(args.base_ref)
@@ -1039,10 +1410,14 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     return 0
                 findings = classify_node_ids(node_ids)
-                return _report(evaluate(findings, baseline), findings, "changed")
+                # base==working here (a baseline change would have escalated above),
+                # so passing base_baseline is a no-op removal/growth check.
+                return _report(
+                    evaluate(findings, baseline, base_baseline), findings, "changed"
+                )
 
     findings = classify_all()
-    return _report(evaluate(findings, baseline), findings, scope_label)
+    return _report(evaluate(findings, baseline, base_baseline), findings, scope_label)
 
 
 if __name__ == "__main__":
