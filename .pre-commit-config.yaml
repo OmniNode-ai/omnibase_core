@@ -115,6 +115,21 @@ repos:
         pass_filenames: true  # Only check changed files, CI does full scan
         stages: [pre-push]  # ~1-5s for changed files only
 
+      # Evidence-Source SHAPE check (OMN-14682)
+      # Local fail-fast companion to the CI receipt-gate: validates that the
+      # current branch's PR body carries a single canonical Evidence-Source
+      # stamp (not an example quoted inside a code fence / blockquote), a
+      # well-formed reference or disclaimer, and a paired Evidence-Ticket. The
+      # authoritative, receipt-verifying enforcement stays the CI receipt-gate;
+      # this hook only shortens the feedback loop. No-op when no PR exists yet.
+      - id: check-evidence-shape
+        name: Evidence-Source shape check (OMN-14682)
+        entry: .pre-commit-hooks/check-evidence-shape.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
       # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
       # Enforces the DIRECTION of imports between omnibase_core sub-packages via
       # import-linter (.importlinter). Whole-graph check (grimp caches the graph
