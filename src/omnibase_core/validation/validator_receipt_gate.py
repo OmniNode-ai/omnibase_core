@@ -216,6 +216,11 @@ EVIDENCE_SOURCE_LINE_PATTERN = re.compile(
     r"^Evidence-Source:(?P<value>[^\r\n]*)$",
     re.IGNORECASE | re.MULTILINE,
 )
+# Opening/closing delimiter of a Markdown fenced code block (``` or ~~~), with
+# optional leading indent and an optional info string. Used by
+# :func:`strip_noncanonical_regions` to blank out example/quote regions before
+# canonical Evidence-Source / Evidence-Ticket extraction (OMN-14682).
+_FENCE_LINE_PATTERN = re.compile(r"^\s*(`{3,}|~{3,})")
 
 # OMN-14410 round 2: captures the trimmed VALUE of the (first) Evidence-Source
 # line with the documented single-space separator. Used ONLY to classify a value
@@ -391,8 +396,65 @@ def _check_ui_evidence_class(
 EVIDENCE_SOURCE_CUTOFF_SHA = "PENDING_MERGE"
 
 
+def strip_noncanonical_regions(pr_body: str) -> str:
+    """Blank out PR-body regions that cannot carry a *canonical* stamp (OMN-14682).
+
+    A canonical ``Evidence-Source:`` / ``Evidence-Ticket:`` stamp is a
+    top-level, column-0 structured line. Markdown fenced code blocks
+    (```` ``` ```` / ``~~~``) and blockquotes (``> ...``) carry examples,
+    quotes from other PRs, and discussion prose — a stamp-shaped line inside
+    them is documentation, never a machine-read declaration. Before this,
+    the receipt gate's ``^Evidence-Source:`` MULTILINE extractor matched such
+    example lines, so a PR that merely *quoted* the canonical format (very
+    common in meta-PRs about the gate itself) was treated as if it declared
+    real evidence — a false-positive that satisfied the gate, or a
+    false-``multiple-Evidence-Source-lines`` block when a real stamp and an
+    example coexisted, forcing manual body normalization.
+
+    Excluded lines are replaced with an empty line (not deleted) so line
+    positions are preserved and the MULTILINE anchors behave identically for
+    every surviving canonical line. An unterminated opening fence blanks
+    everything to end-of-body — fail-closed, since a stamp after malformed
+    markup is not trustworthy as a canonical declaration.
+
+    Indented (≥4-space / tab) code blocks are already excluded structurally:
+    ``^Evidence-Source:`` anchors at column 0, so an indented stamp-shaped
+    line never matched to begin with; no extra handling is required for them.
+
+    Idempotent: re-stripping an already-stripped body is a no-op.
+    """
+    out: list[str] = []
+    in_fence = False
+    fence_char = ""
+    for line in pr_body.splitlines():
+        fence = _FENCE_LINE_PATTERN.match(line)
+        if fence is not None:
+            marker_char = fence.group(1)[0]
+            if not in_fence:
+                in_fence = True
+                fence_char = marker_char
+            elif marker_char == fence_char:
+                in_fence = False
+                fence_char = ""
+            # The fence delimiter line itself is never a canonical stamp.
+            out.append("")
+            continue
+        if in_fence:
+            out.append("")
+            continue
+        if line.lstrip().startswith(">"):
+            # Blockquote line — a quote of another PR/example, not a declaration.
+            out.append("")
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
 def parse_evidence_source(pr_body: str) -> tuple[str | None, str | None]:
-    """Parse the Evidence-Source line from a PR body.
+    """Parse the canonical Evidence-Source line from a PR body.
+
+    Non-canonical regions (fenced code blocks, blockquotes) are stripped first
+    (OMN-14682) so a stamp quoted as an example never parses as a real source.
 
     Returns:
         ``(occ_pr_number_str, sha)`` where exactly one is set, or ``(None, None)``
@@ -403,7 +465,7 @@ def parse_evidence_source(pr_body: str) -> tuple[str | None, str | None]:
         - Present but invalid form: returns ``(None, None)`` with the caller
           responsible for detecting the presence via EVIDENCE_SOURCE_ANY_PATTERN.
     """
-    for line in pr_body.splitlines():
+    for line in strip_noncanonical_regions(pr_body).splitlines():
         if not line.lower().startswith("evidence-source:"):
             continue
         if m_pr := EVIDENCE_SOURCE_OCC_PR_PATTERN.fullmatch(line):
@@ -448,8 +510,12 @@ def classify_evidence_source_stamp(pr_body: str) -> tuple[bool, bool, str | None
           with a bare hex/hash reference token.
         - ``value``: the trimmed value text, or ``None`` when no
           Evidence-Source line with a value is present.
+
+    Non-canonical regions (fenced code blocks, blockquotes) are stripped first
+    (OMN-14682) so an example/quoted stamp is never classified as an attempt.
     """
-    line_match = EVIDENCE_SOURCE_LINE_PATTERN.search(pr_body)
+    canonical_body = strip_noncanonical_regions(pr_body)
+    line_match = EVIDENCE_SOURCE_LINE_PATTERN.search(canonical_body)
     if line_match is None:
         return (False, False, None)
     raw_value = line_match.group("value")
@@ -457,7 +523,7 @@ def classify_evidence_source_stamp(pr_body: str) -> tuple[bool, bool, str | None
         return (True, False, raw_value.strip())
     if raw_value.startswith(("  ", "\t")):
         return (True, False, raw_value.strip())
-    m = EVIDENCE_SOURCE_VALUE_PATTERN.search(pr_body)
+    m = EVIDENCE_SOURCE_VALUE_PATTERN.search(canonical_body)
     if m is None:
         return (True, False, raw_value.strip())
     value = m.group(1).strip()
@@ -1494,14 +1560,23 @@ def validate_pr_receipts(
             message=message,
         )
 
-    evidence_source_lines = list(EVIDENCE_SOURCE_LINE_PATTERN.finditer(pr_body))
+    # OMN-14682: restrict every Evidence-Source / Evidence-Ticket extraction to
+    # the CANONICAL body — fenced code blocks, blockquotes, and other quoted /
+    # example regions are blanked out first, so a stamp quoted as documentation
+    # (common in meta-PRs about the gate itself) neither satisfies the gate as a
+    # false canonical stamp nor false-triggers the "multiple Evidence-Source
+    # lines" block when it coexists with one real stamp.
+    canonical_body = strip_noncanonical_regions(pr_body)
+    evidence_source_lines = list(EVIDENCE_SOURCE_LINE_PATTERN.finditer(canonical_body))
     if len(evidence_source_lines) > 1:
         return ModelReceiptGateResult(
             passed=False,
             message=(
                 "RECEIPT GATE FAILED: PR body contains multiple Evidence-Source "
                 "lines. Declare exactly one canonical Evidence-Source line so "
-                "malformed and valid stamps cannot disagree (OMN-14410)."
+                "malformed and valid stamps cannot disagree (OMN-14410 / "
+                "OMN-14682). Move any example or quoted stamp into a fenced code "
+                "block so it is not read as canonical."
             ),
         )
 
@@ -1553,7 +1628,10 @@ def validate_pr_receipts(
             else None
         )
         if resolved_evidence_ticket is None:
-            et_match = EVIDENCE_TICKET_PATTERN.search(pr_body)
+            # OMN-14682: resolve Evidence-Ticket from the canonical body too, so a
+            # quoted/example Evidence-Ticket line cannot satisfy the paired
+            # identity binding that a genuine Evidence-Source stamp triggers.
+            et_match = EVIDENCE_TICKET_PATTERN.search(canonical_body)
             if et_match:
                 resolved_evidence_ticket = et_match.group(1).upper()
 
@@ -1640,6 +1718,107 @@ def validate_pr_receipts(
     )
 
 
+def check_evidence_source_shape(pr_body: str) -> ModelReceiptGateResult:
+    """Fast, network-free pre-push check of the Evidence-Source block *shape* (OMN-14682).
+
+    This validates only the SHAPE of the Evidence-Source stamp so authors get
+    fail-fast feedback locally, before CI. It deliberately does NOT verify
+    receipts, contracts, or OCC ancestry — that requires the onex_change_control
+    checkout and remains the CI receipt-gate's job. It catches exactly the
+    author-side mistakes that otherwise surface as a confusing CI failure or
+    force manual PR-body normalization:
+
+    - an Evidence-Source stamp that lives ONLY inside a fenced code block /
+      blockquote (so it reads as an example, not a declaration);
+    - more than one canonical Evidence-Source line (ambiguous — fails closed);
+    - a malformed reference value (neither a valid ``OCC#<n>`` / hex SHA
+      reference nor a recognized disclaimer);
+    - a valid reference with no paired canonical ``Evidence-Ticket:`` line.
+
+    A body with no Evidence-Source stamp at all is shape-clean here (PASS): the
+    presence/receipt requirements are the CI gate's responsibility.
+
+    Returns a :class:`ModelReceiptGateResult` (``passed`` + operator-facing
+    ``message``); it never raises for ordinary malformed input.
+    """
+    canonical_body = strip_noncanonical_regions(pr_body)
+    canonical_lines = list(EVIDENCE_SOURCE_LINE_PATTERN.finditer(canonical_body))
+    raw_lines = list(EVIDENCE_SOURCE_LINE_PATTERN.finditer(pr_body))
+
+    if raw_lines and not canonical_lines:
+        return ModelReceiptGateResult(
+            passed=False,
+            message=(
+                "EVIDENCE-SHAPE FAILED: an 'Evidence-Source:' line appears only "
+                "inside a fenced code block or blockquote, so the gate reads it "
+                "as an example, not a declaration. Move the real stamp to a "
+                "top-level 'Evidence-Source: OCC#<number>' or "
+                "'Evidence-Source: <7-40 char hex SHA>' line at column 0 "
+                "(OMN-14682)."
+            ),
+        )
+
+    if len(canonical_lines) > 1:
+        return ModelReceiptGateResult(
+            passed=False,
+            message=(
+                "EVIDENCE-SHAPE FAILED: PR body has multiple canonical "
+                "Evidence-Source lines. Declare exactly one; move any example or "
+                "quoted stamp into a fenced code block (OMN-14410 / OMN-14682)."
+            ),
+        )
+
+    if not canonical_lines:
+        return ModelReceiptGateResult(
+            passed=True,
+            message=(
+                "EVIDENCE-SHAPE OK: no Evidence-Source stamp present; the CI "
+                "receipt-gate still enforces ticket/receipt presence."
+            ),
+        )
+
+    line = canonical_lines[0].group(0)
+    is_valid_reference = bool(
+        EVIDENCE_SOURCE_OCC_PR_PATTERN.fullmatch(line)
+        or EVIDENCE_SOURCE_SHA_PATTERN.fullmatch(line)
+    )
+    if is_valid_reference:
+        if EVIDENCE_TICKET_PATTERN.search(canonical_body) is None:
+            return ModelReceiptGateResult(
+                passed=False,
+                message=(
+                    "EVIDENCE-SHAPE FAILED: a valid Evidence-Source reference is "
+                    "present but no canonical 'Evidence-Ticket: OMN-XXXX' line "
+                    "was found. Every PR with Evidence-Source must also declare "
+                    "Evidence-Ticket so the gate can bind the evidence to the "
+                    "PR's ticket (OMN-10420 / OMN-14682)."
+                ),
+            )
+        return ModelReceiptGateResult(
+            passed=True,
+            message="EVIDENCE-SHAPE OK: canonical Evidence-Source reference with paired Evidence-Ticket.",
+        )
+
+    attempted, is_disclaimer, stamp_value = classify_evidence_source_stamp(pr_body)
+    if attempted and not is_disclaimer:
+        return ModelReceiptGateResult(
+            passed=False,
+            message=(
+                "EVIDENCE-SHAPE FAILED: the Evidence-Source line is malformed: "
+                f"{stamp_value!r} is neither a recognized disclaimer (N/A, none, "
+                "-, or free-text prose explaining why the field does not apply) "
+                "nor a valid reference (Evidence-Source: OCC#<number> or "
+                "Evidence-Source: <7-40 char hex SHA>, exactly one space after "
+                "the colon and nothing else on the line). Fix the line to one of "
+                "these forms (OMN-14410 / OMN-14682)."
+            ),
+        )
+    return ModelReceiptGateResult(
+        passed=True,
+        message="EVIDENCE-SHAPE OK: Evidence-Source is a recognized disclaimer.",
+    )
+
+
 EVIDENCE_HANDLERS: dict[str, Callable[..., Any]] = {}
 EVIDENCE_HANDLERS["completion-verify"] = _completion_verify
 
@@ -1664,6 +1843,7 @@ __all__ = [
     "TICKET_PATTERN",
     "ContractEntryNotFoundError",
     "_CONTRACT_SHA256_REQUIRED_AFTER",
+    "check_evidence_source_shape",
     "check_receipt_contract_binding",
     "classify_evidence_class",
     "classify_evidence_source_stamp",
@@ -1671,5 +1851,6 @@ __all__ = [
     "compute_contract_sha256",
     "parse_evidence_source",
     "parse_pr_opened_at",
+    "strip_noncanonical_regions",
     "validate_pr_receipts",
 ]
