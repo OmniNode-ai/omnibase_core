@@ -472,6 +472,23 @@ jobs:
       - name: Run canonical handler-shape growth ratchet
         run: uv run python scripts/ci/canonical_handler_shape.py
 
+      # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809). Re-invokes
+      # the canonical-shape gate above (verify_flip_receipt / classify_node — imported,
+      # not reimplemented) and adds six fail-closed assertions per NEWLY-flipped node
+      # that the ratchet is structurally blind to (full ModelAdequacyReceipt invariants,
+      # per-binding canonicality, twin shape+entrypoint baseline shrink, receipt minted
+      # post-format, and a git-anchored independent-author attestation for new
+      # equivalence goldens). Canary scope = omnibase_core; fan-out to
+      # omnibase_infra/omnimarket is wired per-repo. The inline fetch makes origin/dev's
+      # tip available for flip-discovery vs base (the checkout is shallow); if it is
+      # still unavailable the gate NOTEs and exits 0 (the ratchet already hard-guards new
+      # non-canonical nodes). Runs in this job so it inherits the quality-gate blocking
+      # wiring — it does NOT weaken the ratchet.
+      - name: Run canonical-shape flip-bundle seam gate
+        run: |
+          git fetch --no-tags --prune origin +refs/heads/dev:refs/remotes/origin/dev || true
+          uv run python scripts/ci/verify_flip_bundle.py
+
       - name: Import layering summary
         if: always()
         run: |
