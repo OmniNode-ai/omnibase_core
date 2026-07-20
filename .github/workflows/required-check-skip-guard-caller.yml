@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Required-Check Skip-Vector Guard — local caller for omnibase_core's own PRs.
+# OMN-14863 (fan-out from OMN-14854 omniclaude canary; no branch-protection
+# flip in this PR).
+#
+# Produces required status check: "required-check-skip-guard / check-skip-vectors"
+#
+# NOT YET added to required_status_checks on this branch (see
+# .github/required-checks.yaml, where this context's manifest row is
+# `mode: ADVISORY`). The branch-protection flip to REQUIRED happens in a
+# follow-up PR only after this workflow has posted green on `dev` at least
+# twice — never in the same PR that introduces the workflow, to avoid a
+# self-inflicted wedge (a PR blocked on a required check that has never
+# successfully run under real conditions).
+#
+# IMPORTANT: this trigger MUST NOT carry a `paths:`/`paths-ignore:` filter
+# (design spec section 4c). This is the one required-check workflow that is
+# exempt from "narrow the trigger for efficiency" — a path filter here would
+# be the exact self-referential skip-vector this guard exists to catch.
+
+name: Required-Check Skip-Vector Guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
+  required-check-skip-guard:
+    needs: occ-preflight
+    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@main
