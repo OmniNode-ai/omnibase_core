@@ -794,6 +794,11 @@ model_b_rollup_enforcement:
         # invisible to it regardless of required_status_checks wiring. Moved
         # from grandfathered_validators after that gap was found.
         duplicate-registry-ids: ["duplicate-registry-ids"]
+        # OMN-14430: no-hardcoded-topics migrated from the standalone
+        # validator-hardcoded-topic.yml workflow (own run_id, invisible to the
+        # poller) into a ci.yml job. Moved from grandfathered_validators —
+        # first instance of the OMN-14430 generalized fix pattern.
+        no-hardcoded-topics: ["hardcoded-topic-validator"]
       # Machine-checkable intentional omissions. These validators are
       # ci_workflow: required and apply to omnibase_core, but are currently
       # grandfathered in validator-requirements-baseline.yaml as
@@ -812,7 +817,6 @@ model_b_rollup_enforcement:
         - stub-implementations
         - single-class-per-file
         - bandit-security
-        - no-hardcoded-topics
         - no-untracked-todos
         - hardcoded-local-paths
         - hardcoded-private-ip

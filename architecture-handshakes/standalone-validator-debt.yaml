@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Standalone-workflow validator classification registry (OMN-14430).
+#
+# THE MECHANISM THIS CLOSES
+# --------------------------
+# Any `.github/workflows/validator-*.yml` file that independently triggers on
+# `pull_request` gets its OWN `github.run_id`, distinct from `ci.yml`'s. Two
+# consequences follow, both confirmed empirically in OMN-14430 / OMN-14401:
+#
+#   1. `ci.yml`'s `ci-summary` poller (`scripts/ci/ci_summary_gate.py`) queries
+#      only `repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs` for its OWN run_id.
+#      A job living in a separate workflow file is STRUCTURALLY INVISIBLE to
+#      it — no amount of branch-protection wiring on `ci.yml`'s side changes
+#      that.
+#   2. The ONLY mechanism that can still gate such a job is native GitHub
+#      branch protection (`required_status_checks.contexts`) matching the
+#      job's exact display-name context — independent of `ci.yml` entirely.
+#
+# A standalone validator that is in NEITHER bucket blocks nothing: pre-commit
+# (if installed, if not bypassed with --no-verify) is the only enforcement,
+# which is advisory in practice (CLAUDE.md rule 5).
+#
+# `tests/validation/test_standalone_validator_workflow_registry.py` fails
+# CLOSED if any `validator-*.yml` file that triggers on `pull_request` is not
+# classified in exactly one of the three buckets below, or if a classified
+# entry no longer matches the live file (stale-entry hygiene — you cannot
+# silently un-track a gap without also fixing it).
+#
+# Buckets, in preference order (OMN-14430 §2):
+#   1. migrated_into_ci_yml — PREFERRED. The validator's job runs unconditionally
+#      inside ci.yml, so it shares run_id with ci-summary's default-deny sweep.
+#      The standalone workflow file no longer triggers on pull_request (moved to
+#      workflow_dispatch-only, kept for manual invocation / historical continuity).
+#   2. natively_required_contexts — the job's own context name is a live
+#      branch-protection required_status_checks context on `dev` (verified via
+#      `gh api repos/OmniNode-ai/omnibase_core/branches/dev/protection/required_status_checks
+#      --jq '.contexts'`, dated below). Gated independently of ci-summary.
+#   3. decorative_debt — CONFIRMED decorative: gates nothing today. Tracked,
+#      counted, ticketed. Retire an entry by migrating it into ci.yml (bucket 1)
+#      or adding its context to required_status_checks (bucket 2, disfavored —
+#      wedges in-flight PRs per OMN-14430).
+
+schema_version: 1
+
+# verified: 2026-07-20 via
+#   gh api repos/OmniNode-ai/omnibase_core/branches/dev/protection/required_status_checks --jq '.contexts'
+natively_required_contexts:
+  - workflow_file: validator-fsm-handler-drift.yml
+    context: fsm-handler-drift
+  - workflow_file: validator-no-plugin-daemon-classes.yml
+    context: no-plugin-daemon-classes
+  - workflow_file: validator-runtime-profiles.yml
+    context: runtime-profiles
+
+# Migrated into ci.yml per the OMN-14430 preferred pattern (proven first on
+# duplicate-registry-ids under OMN-14401, prior to this ticket). The standalone
+# workflow file is retained workflow_dispatch-only (no pull_request/push
+# auto-trigger) so it is no longer a second, duplicate, structurally-invisible
+# run.
+migrated_into_ci_yml:
+  - workflow_file: validator-hardcoded-topic.yml
+    ci_job_key: hardcoded-topic-validator
+
+# TRACKED DEBT (OMN-14430 fast-follow, ticket OMN-14430): confirmed decorative
+# as of 2026-07-20 — no merge gate blocks on any of these today; pre-commit
+# (if installed, if not bypassed) is the only enforcement. Each was enumerated
+# by the OMN-14430 audit. Migrate one-by-one into `migrated_into_ci_yml`
+# (preferred) to retire from this list; the count below is the live decorative
+# gate count this ticket asked to be reported.
+decorative_debt:
+  - workflow_file: validator-backend-secret-discipline.yml
+    context: validate
+  - workflow_file: validator-banned-compose-vars.yml
+    context: validate
+  - workflow_file: validator-bypass-token-blocklist.yml
+    context: validate
+  - workflow_file: validator-command-category-event-model.yml
+    context: validate
+  - workflow_file: validator-dispatched-contract-operation.yml
+    context: validate
+  - workflow_file: validator-generated-node-model-class-exists.yml
+    context: validate
+  - workflow_file: validator-gitignore-baseline.yml
+    context: validate
+  - workflow_file: validator-no-direct-kafka-producer.yml
+    context: validate
+  - workflow_file: validator-no-except-swallow.yml
+    context: validate
+  - workflow_file: validator-no-hardcoded-ip.yml
+    context: validate
+  - workflow_file: validator-no-import-none-fallback.yml
+    context: validate
+  - workflow_file: validator-no-io-outside-effects.yml
+    context: validate
+  - workflow_file: validator-no-none-guard-publish.yml
+    context: validate
+  - workflow_file: validator-no-raw-sqlite3.yml
+    context: validate
+  - workflow_file: validator-operation-match.yml
+    context: validate
+  - workflow_file: validator-pin-hygiene.yml
+    context: validate
+  - workflow_file: validator-release-identity.yml
+    context: validate
+  - workflow_file: validator-todo-marker.yml
+    context: validate
+
+metadata:
+  generated_by: "OMN-14430 audit, 2026-07-20"
+  related_tickets:
+    - OMN-14430  # this ticket
+    - OMN-14401  # duplicate-registry-ids precedent (the fix pattern this generalizes)
+    - OMN-13574  # Model-B rollup-coverage epic (the governed-validator analog of this registry)
