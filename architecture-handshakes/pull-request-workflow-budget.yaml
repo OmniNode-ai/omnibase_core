@@ -1,0 +1,124 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Count-locked ratchet over pull_request-triggered workflow files (C7 / OMN-14907).
+#
+# WHY THIS EXISTS
+# ---------------
+# Every `.github/workflows/*.yml` file that triggers on `pull_request` /
+# `pull_request_target` fires a fresh check-run on every push to every PR. That
+# per-commit fan-out is INDEPENDENT of required-status-check count (required
+# status gates MERGING, not EXECUTION). omnibase_core's ~49-runs-per-PR standing
+# baseline is the C7 cost driver in
+# docs/plans/2026-07-21-ci-capacity-recovery-plan.md, and it grew by 7 files in
+# five days through ordinary feature PRs — because CLAUDE.md's
+# net-negative-surface rule was a RULE, not a MECHANISM.
+#
+# HOW THE RATCHET WORKS (enforced by
+# src/omnibase_core/validation/validator_pull_request_workflow_ratchet.py and
+# tests/validation/test_pull_request_workflow_ratchet.py):
+#
+#   * Every live PR-triggered workflow file MUST appear either in
+#     `allowlisted_workflows` or in `waivers`. A new un-enumerated file fails
+#     CLOSED (UNREGISTERED).
+#   * `budget` is a hard count lock: len(allowlisted_workflows) == budget.
+#     Registering a net-new file bumps the list to budget+1 and FAILS
+#     (BUDGET_MISMATCH). The budget is frozen a SECOND time in the test suite, so
+#     changing it is a deliberate two-file, reviewed edit — never a silent drift.
+#     The ratchet is intended to move DOWN only.
+#   * The ONLY sanctioned ways to add a PR-triggered workflow are:
+#       (a) RETIRE an existing one in the same PR (net-negative: the workflow
+#           file's `pull_request` trigger is removed, its allowlist line deleted,
+#           and the budget lowered — then the new one takes the freed slot), or
+#       (b) add the new file to `waivers` with a ticket + absolute `expires` date
+#           + justification + what surface it `retires`. Waivers are TRACKED and
+#           EXPIRING — a past-expiry waiver fails (WAIVER_EXPIRED).
+#   * Deleting a workflow without removing its registry line fails (STALE), which
+#     is how the count ratchets DOWN. An allowlisted file that stops triggering on
+#     pull_request fails (NOT_PR_TRIGGERED) — remove it and lower the budget.
+#
+# This gate runs as a JOB INSIDE ci.yml and as a pre-commit hook — NEVER as its
+# own new pull_request-triggered workflow file (that would be self-defeating, and
+# a separate workflow's job is structurally invisible to ci.yml's ci-summary
+# poller per OMN-14430).
+#
+# TO LOWER THE BUDGET (the goal — this is what C2/C3/C4 drain toward): remove the
+# retired workflow's line here, decrement `budget`, and update EXPECTED_BUDGET in
+# tests/validation/test_pull_request_workflow_ratchet.py in the same PR.
+
+schema_version: 1
+
+# Count lock. MUST equal len(allowlisted_workflows). Frozen a second time as
+# EXPECTED_BUDGET in the test suite. Intended to move DOWN only.
+# baseline captured 2026-07-21 at origin/dev@d09128fc.
+budget: 49
+
+# Every live `.github/workflows/*.yml` that triggers on pull_request /
+# pull_request_target as of the baseline. This is the frozen ratchet floor: a new
+# file may only enter by taking a slot freed by a retirement, or via `waivers`.
+allowlisted_workflows:
+  - auto-merge.yml
+  - auto-tag-on-merge.yml
+  - call-occ-preflight.yml
+  - call-receipt-gate.yml
+  - call-reject-skip.yml
+  - canonical-inference-gate.yml
+  - check-db-ownership.yml
+  - check-handshake.yml
+  - check-llm-refs-drift.yml
+  - ci.yml
+  - contract-validation.yml
+  - cr-thread-gate-caller.yml
+  - dep-provenance-gate.yml
+  - deploy-gate.yml
+  - main-target-guard.yml
+  - no-faked-boundary.yml
+  - omni-standards-compliance.yml
+  - pr-title-check.yml
+  - precommit-parity-gate.yml
+  - product-readiness-shadow.yml
+  - propagate-config.yml
+  - receipt-honesty.yml
+  - required-check-skip-guard-caller.yml
+  - security-scan.yml
+  - semantic-diff-labeler.yml
+  - stale-todo-gate.yml
+  - todo-audit-on-merge.yml
+  - url-authority-gate.yml
+  - validator-backend-secret-discipline.yml
+  - validator-banned-compose-vars.yml
+  - validator-bypass-token-blocklist.yml
+  - validator-command-category-event-model.yml
+  - validator-dispatched-contract-operation.yml
+  - validator-fsm-handler-drift.yml
+  - validator-generated-node-model-class-exists.yml
+  - validator-gitignore-baseline.yml
+  - validator-no-direct-kafka-producer.yml
+  - validator-no-except-swallow.yml
+  - validator-no-hardcoded-ip.yml
+  - validator-no-import-none-fallback.yml
+  - validator-no-io-outside-effects.yml
+  - validator-no-none-guard-publish.yml
+  - validator-no-plugin-daemon-classes.yml
+  - validator-no-raw-sqlite3.yml
+  - validator-operation-match.yml
+  - validator-pin-hygiene.yml
+  - validator-release-identity.yml
+  - validator-runtime-profiles.yml
+  - validator-todo-marker.yml
+
+# Tracked, EXPIRING exceptions. A workflow here does NOT count toward `budget`,
+# but each entry MUST carry workflow_file + ticket + absolute `expires` (ISO date)
+# + justification + `retires` (the surface/manual step it removes, per the
+# net-negative rule). A past-expiry waiver fails the gate. Empty at baseline —
+# the sanctioned default is retire-one, not waive.
+waivers: []
+
+metadata:
+  generated_by: "C7 / OMN-14907, 2026-07-21"
+  baseline_ref: "origin/dev@d09128fc"
+  related_tickets:
+    - OMN-14907  # this ticket (C7 count-locked workflow-file ratchet)
+    - OMN-14350  # non-canonical lifecycle-class ratchet (the count-only-down precedent)
+    - OMN-14430  # standalone-validator debt registry (validator-*.yml subset; C7 generalizes)
+    - OMN-14877  # fast-follow: migrate the 18 decorative validators (drains this budget)

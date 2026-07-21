@@ -424,6 +424,22 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # C7 / OMN-14907: count-locked ratchet over pull_request-triggered workflow
+      # files. Blocks a NEW .github/workflows/*.yml pull_request trigger unless it
+      # retires an existing one (net-negative) or carries an expiring waiver in
+      # architecture-handshakes/pull-request-workflow-budget.yaml. pass_filenames:
+      # false — the check is a whole-.github/workflows scan against the frozen
+      # budget; files: keeps the trigger scoped to workflow + registry edits so
+      # unrelated commits do not pay for it.
+      - id: pull-request-workflow-ratchet
+        name: Pull-request workflow-file ratchet (OMN-14907)
+        entry: uv run --frozen python -m omnibase_core.validation.validator_pull_request_workflow_ratchet
+          --repo-root .
+        language: system
+        files: ^(\.github/workflows/.*\.(yml|yaml)|architecture-handshakes/pull-request-workflow-budget\.yaml)$
+        pass_filenames: false
+        stages: [pre-commit]
+
       # OMN-14515: every Pydantic model must resolve to an explicit extra="forbid".
       # ABSENCE IS A VIOLATION — Pydantic's default is extra="ignore", which SILENTLY
       # DROPS unknown fields (four live data-loss bugs: OMN-14490/14506/14513/14514).
@@ -620,7 +636,7 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
         stages: [pre-commit]
         # validate_string_versions.py: validation script that must load YAML to validate it (OMN-4402)
         # required-check-skip-guard/*.py (OMN-14863): vendored from omniclaude
