@@ -3,7 +3,15 @@
 ---
 # Hardcoded-topic-string gate [OMN-13294]
 #
-# Required status check context: "Hardcoded Topic Validator / validate"
+# MIGRATED INTO ci.yml (OMN-14430): this workflow used to trigger independently
+# on push/pull_request, which meant it got its OWN github.run_id and was
+# STRUCTURALLY INVISIBLE to ci.yml's ci-summary default-deny poller
+# (scripts/ci/ci_summary_gate.py only queries jobs from its own run) regardless
+# of required_status_checks wiring — the exact systemic gap OMN-14430 audited.
+# The validate job now runs unconditionally inside ci.yml
+# (`hardcoded-topic-validator`), gated by the required "CI Summary" context.
+# This file is retained workflow_dispatch-only for manual/ad-hoc invocation; it
+# no longer auto-triggers and is NOT a duplicate gating run.
 #
 # Blocks any quoted onex.<a>.<b>.<c> event-topic string literal pasted into
 # handler source instead of being declared in contract.yaml and resolved through
@@ -19,10 +27,7 @@
 name: Hardcoded Topic Validator
 
 on:
-  push:
-    branches: [main, develop, dev, "hotfix/**"]
-  pull_request:
-    branches: [main, develop, dev]
+  workflow_dispatch: {}
 
 env:
   PYTHON_VERSION: "3.12"

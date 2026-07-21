@@ -1470,6 +1470,59 @@ jobs:
             --manifest .duplicate-id-registries.yaml \
             --repo-root .
 
+  # Hardcoded-topic-string gate (OMN-13294), migrated in (OMN-14430) from the
+  # standalone validator-hardcoded-topic.yml workflow. MUST run as a job in
+  # THIS workflow file — the ci-summary poller (scripts/ci/ci_summary_gate.py)
+  # only sees jobs from its own run_id; a check defined in a separate workflow
+  # file is structurally invisible to it regardless of required_status_checks
+  # wiring (the exact gap OMN-14430 audited and closed for this instance).
+  # Unconditional (no `if:`, no `needs:`) — always runs to a terminal
+  # success/failure, listed in SPEC_REQUIRED_VALIDATOR_JOBS.
+  hardcoded-topic-validator:
+    name: Hardcoded Topic Validator
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validation/hardcoded_topic/ -v
+
+      # Self-scan omnibase_core src/ for hardcoded onex.* topic literals. Lands
+      # REPORT-ONLY (--report-only) — ported unchanged from the retired
+      # standalone workflow; see validator-hardcoded-topic.yml history for the
+      # burn-down rationale (OMN-13294). The BLOCKING enforcement for all NEW
+      # pasted topic literals is the check-hardcoded-topic-compute pre-commit
+      # hook (same handler, so verdicts cannot drift).
+      - name: Self-scan omnibase_core src/ (report mode — baseline burn-down pending)
+        run: |
+          uv run python -m omnibase_core.validation.hardcoded_topic.runtime_hardcoded_topic \
+            --report-only src/omnibase_core/
+
   # Non-canonical lifecycle-class ratchet (OMN-14350, omnibase_core canary)
   # Blocks any NEW Service/Engine/Adapter/Router/Daemon/Manager/Runner/Registry/
   # Controller/Server/Client class outside the frozen allowlist; --check-stale also
