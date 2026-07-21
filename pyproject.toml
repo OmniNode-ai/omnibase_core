@@ -370,7 +370,6 @@ ignore = [
 "scripts/validation/validate_no_none_guard_publish.py" = ["T201"]
 "scripts/validation/validate_no_import_none_fallback.py" = ["T201"]
 "scripts/validation/check_ai_slop.py" = ["T201", "BLE001"]
-"scripts/validation/validate-check-names.py" = ["T201", "BLE001"]
 "scripts/validation/validate-stubbed-functionality.py" = ["T201", "BLE001"]
 "scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
 "scripts/check_dep_provenance.py" = ["T201"]  # CLI output for dep-provenance gate (OMN-13873/OMN-13877)
