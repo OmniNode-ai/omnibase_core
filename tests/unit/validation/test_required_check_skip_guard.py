@@ -7,9 +7,13 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+
 ACTION_DIR = (
     Path(__file__).parents[3] / ".github" / "actions" / "required-check-skip-guard"
 )
+
+pytestmark = pytest.mark.unit
 
 
 def _load_module(name: str, path: Path):

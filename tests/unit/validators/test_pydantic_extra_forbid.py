@@ -530,6 +530,9 @@ def test_malformed_waiver_is_an_error(
 # ===========================================================================
 def _git(repo: Path, *args: str) -> None:
     env = dict(os.environ)
+    for key in tuple(env):
+        if key.startswith("GIT_CONFIG"):
+            env.pop(key, None)
     for key in (
         "GIT_DIR",
         "GIT_WORK_TREE",

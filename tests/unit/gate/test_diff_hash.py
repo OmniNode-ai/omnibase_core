@@ -24,6 +24,9 @@ pytestmark = pytest.mark.unit
 
 def _run_git(repo: Path, *args: str) -> subprocess.CompletedProcess[bytes]:
     env = os.environ.copy()
+    for key in tuple(env):
+        if key.startswith("GIT_CONFIG"):
+            env.pop(key, None)
     for key in (
         "GIT_DIR",
         "GIT_WORK_TREE",

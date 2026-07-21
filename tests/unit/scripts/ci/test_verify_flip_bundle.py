@@ -126,6 +126,9 @@ def _git(repo: Path, *args: str, author: tuple[str, str] | None = None) -> str:
 def _base_env() -> dict[str, str]:
     # Keep git deterministic + isolated from the developer's global config.
     env = dict(os.environ)
+    for key in tuple(env):
+        if key.startswith("GIT_CONFIG"):
+            env.pop(key, None)
     for key in (
         "GIT_DIR",
         "GIT_WORK_TREE",
@@ -135,8 +138,8 @@ def _base_env() -> dict[str, str]:
         "GIT_ALTERNATE_OBJECT_DIRECTORIES",
     ):
         env.pop(key, None)
-    env.setdefault("GIT_CONFIG_GLOBAL", "/dev/null")
-    env.setdefault("GIT_CONFIG_SYSTEM", "/dev/null")
+    env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+    env["GIT_CONFIG_SYSTEM"] = "/dev/null"
     return env
 
 

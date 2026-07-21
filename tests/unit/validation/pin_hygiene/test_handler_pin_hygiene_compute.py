@@ -218,6 +218,9 @@ def test_runner_over_in_memory_bus_flags_and_passes() -> None:
 
 def _git(repo: Path, *args: str) -> str:
     env = os.environ.copy()
+    for key in tuple(env):
+        if key.startswith("GIT_CONFIG"):
+            env.pop(key, None)
     for key in (
         "GIT_DIR",
         "GIT_WORK_TREE",
