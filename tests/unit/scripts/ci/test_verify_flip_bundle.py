@@ -124,13 +124,28 @@ def _git(repo: Path, *args: str, author: tuple[str, str] | None = None) -> str:
 
 
 def _base_env() -> dict[str, str]:
-    import os
-
     # Keep git deterministic + isolated from the developer's global config.
     env = dict(os.environ)
+    for key in (
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_COMMON_DIR",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ):
+        env.pop(key, None)
     env.setdefault("GIT_CONFIG_GLOBAL", "/dev/null")
     env.setdefault("GIT_CONFIG_SYSTEM", "/dev/null")
     return env
+
+
+def test_base_env_does_not_inherit_parent_git_dir(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GIT_DIR", "/parent/worktree/.git")
+
+    assert "GIT_DIR" not in _base_env()
 
 
 def _sha256_file(path: Path) -> str:
