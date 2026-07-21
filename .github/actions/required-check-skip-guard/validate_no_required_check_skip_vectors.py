@@ -46,6 +46,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -62,6 +63,9 @@ from _workflow_model import (  # noqa: E402
     load_workflows,
     resolve_context_to_job,
 )
+
+
+_TICKET_RE = re.compile(r"\bOMN-\d+\b")
 
 
 @dataclass
@@ -136,7 +140,7 @@ def _check_job_if(
     # trigger), which are unconditional wedges/silence, not a documented,
     # reviewed exception. A rationale citing a tracking ticket is mandatory;
     # an unratified `neutral_ok` (no ticket cited) is treated as `never`.
-    if skip_semantics == "neutral_ok" and rationale.strip():
+    if skip_semantics == "neutral_ok" and _TICKET_RE.search(rationale):
         return []
 
     return [
@@ -168,7 +172,7 @@ def validate_gate(context: str, gate: dict, workflows: dict) -> list[Finding]:
     try:
         resolved: ResolvedJob = resolve_context_to_job(context, workflows)
     except UnresolvedContext:
-        if producer_kind == "local":
+        if producer_kind in {"local", "cross_repo"}:
             findings.append(
                 Finding(
                     context=context,

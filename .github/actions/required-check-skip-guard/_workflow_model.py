@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+import ast
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -245,6 +246,44 @@ _UNSAFE_REFERENCE_RE = re.compile(
 _EVENT_NAME_TOKEN_RE = re.compile(r"github\.event_name")
 
 
+def _safe_eval_event_name_expr(expr: str, event_name: str) -> bool:
+    tree = ast.parse(expr, mode="eval")
+
+    def evaluate(node: ast.AST) -> object:
+        if isinstance(node, ast.Expression):
+            return evaluate(node.body)
+        if isinstance(node, ast.BoolOp):
+            values = [bool(evaluate(value)) for value in node.values]
+            if isinstance(node.op, ast.And):
+                return all(values)
+            if isinstance(node.op, ast.Or):
+                return any(values)
+            raise UnclassifiableCondition(expr)
+        if isinstance(node, ast.Compare):
+            left = evaluate(node.left)
+            for op, comparator in zip(node.ops, node.comparators, strict=True):
+                right = evaluate(comparator)
+                if isinstance(op, ast.Eq):
+                    ok = left == right
+                elif isinstance(op, ast.NotEq):
+                    ok = left != right
+                else:
+                    raise UnclassifiableCondition(expr)
+                if not ok:
+                    return False
+                left = right
+            return True
+        if isinstance(node, ast.Name):
+            if node.id != "__EVENT_NAME__":
+                raise UnclassifiableCondition(expr)
+            return event_name
+        if isinstance(node, ast.Constant):
+            return node.value
+        raise UnclassifiableCondition(expr)
+
+    return bool(evaluate(tree))
+
+
 def classify(if_expr: str | None, declared_events: tuple[str, ...]) -> str:
     """Classify a job-level `if:` expression per spec §2.
 
@@ -292,10 +331,9 @@ def classify(if_expr: str | None, declared_events: tuple[str, ...]) -> str:
     py_expr = re.sub(r"(?<![=!<>])==(?!=)", "==", py_expr)
 
     for event in events_to_check:
-        candidate = py_expr.replace("__EVENT_NAME__", repr(event))
         try:
-            result = eval(candidate, {"__builtins__": {}}, {})  # noqa: S307
-        except Exception:
+            result = _safe_eval_event_name_expr(py_expr, event)
+        except (SyntaxError, UnclassifiableCondition, ValueError):
             return UNGUARDED_CONDITIONAL
         if not result:
             return UNGUARDED_CONDITIONAL
