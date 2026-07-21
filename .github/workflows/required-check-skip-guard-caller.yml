@@ -20,28 +20,10 @@
 # exempt from "narrow the trigger for efficiency" — a path filter here would
 # be the exact self-referential skip-vector this guard exists to catch.
 #
-# PIN NOTE (OMN-14874): the reusable workflow's own doc header says "uses:
-# OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@main"
-# for caller repos, but omniclaude has NOT YET promoted OMN-14854 from dev to
-# main (verified: the file 404s at omniclaude@main, resolves at
-# omniclaude@dev). A `uses:` ref pinned to `@main` fails at workflow-parse
-# time (GitHub cannot resolve a `uses:` ref whose file does not exist on the
-# given ref -- "workflow file issue", zero jobs created). Pinned instead to
-# the omniclaude dev HEAD commit that carries OMN-14854 (mirrors the
-# established "re-pin rev to the merged-dev SHA once <repo>#<pr> lands"
-# convention for cross-repo refs, and the identical fix already landed in
-# omnimarket#1846 / OMN-14874). Re-pin to `@main` once omniclaude promotes
-# dev->main.
-#
-# KNOWN RESIDUAL (OMN-14874): even with this outer pin fixed, the reusable
-# workflow's OWN internal "Fetch validator (omniclaude canonical source)"
-# step hardcodes `ref: main` for its sparse-checkout of the validator
-# scripts -- that ref is not parameterized as a workflow_call input, so it
-# is not fixable from this caller. Until omniclaude promotes OMN-14854 to
-# main, this guard's own ADVISORY check will report a real FAIL (validator
-# script missing on omniclaude@main), not a parse-time error. That FAIL is
-# expected and external to this repo; see OMN-14874 for the tracked
-# resolution (omniclaude dev->main promotion).
+# PIN NOTE (OMN-14874): omniclaude's default branch is `dev`, and the reusable
+# workflow plus validator path exist there. Pin to the verified dev commit so
+# caller repos use the current reusable workflow instead of the earlier dev
+# snapshot whose internal validator checkout was stale.
 
 name: Required-Check Skip-Vector Guard
 
@@ -66,6 +48,5 @@ jobs:
 
   required-check-skip-guard:
     needs: occ-preflight
-    # pinned to omniclaude dev HEAD carrying OMN-14854 (not yet promoted to
-    # main as of this PR) -- see PIN NOTE above. Re-pin to @main post-promotion.
-    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@4d60e9363728eed52a238cd5b47bb15808d51ca0
+    # pinned to omniclaude dev commit carrying the current reusable guard.
+    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@410086f25027b2e1fedaa27727a7c7c04cbc2bdf
