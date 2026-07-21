@@ -483,15 +483,15 @@
   description: >
     Reject forbidden I/O surfaces inside .py modules that sit in a NON-EFFECT node package: database-driver
     imports (sqlite3, aiosqlite, psycopg, psycopg2, asyncpg, sqlalchemy), network/HTTP clients (httpx,
-    requests, aiohttp, urllib3, socket, urllib.request), subprocess execution, git invocation, Linear API
-    access, filesystem writes (open write-mode, os/shutil mutators, pathlib.Path write methods), and direct
-    event-bus / infra-adapter instantiation. Unlike the universal OMN-14659 arch lints, this rule is
-    archetype-keyed: the pure COMPUTE node (node_no_io_outside_effects_check_compute) keys off each node's
-    declared archetype (contract.yaml node_type / descriptor.node_archetype) and only scans the modules
-    co-located with a non-EFFECT contract — EFFECT is the only I/O-permitted archetype. The paired EFFECT
-    node (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames) invocation;
-    the same COMPUTE node backs this pre-commit hook and the CI gate. Only EFFECT nodes may perform I/O.
-    Suppress a proven-legitimate exception with: # io-ok: <reason>
+    requests, aiohttp, urllib3, socket, urllib.request), subprocess execution, git invocation, Linear
+    API access, filesystem writes (open write-mode, os/shutil mutators, pathlib.Path write methods), and
+    direct event-bus / infra-adapter instantiation. Unlike the universal OMN-14659 arch lints, this rule
+    is archetype-keyed: the pure COMPUTE node (node_no_io_outside_effects_check_compute) keys off each
+    node's declared archetype (contract.yaml node_type / descriptor.node_archetype) and only scans the
+    modules co-located with a non-EFFECT contract — EFFECT is the only I/O-permitted archetype. The paired
+    EFFECT node (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames)
+    invocation; the same COMPUTE node backs this pre-commit hook and the CI gate. Only EFFECT nodes may
+    perform I/O. Suppress a proven-legitimate exception with: # io-ok: <reason>
   language: python
   entry: python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check
   types_or: [python, yaml]
@@ -707,5 +707,23 @@
   language: python
   entry: python -m omnibase_core.validators.projection_exposure_drift
   files: (^|/)(contract\.yaml|migrations/.*\.sql)$
+  pass_filenames: false
+  stages: [pre-commit]
+
+- id: no-unguarded-git-subprocess
+  name: Block unguarded git subprocess calls in tests (OMN-14891)
+  description: >
+    OMN-14891: reject a subprocess call in tests/ whose argv starts with "git" unless it passes an env=
+    that provably drops GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE, GIT_COMMON_DIR, GIT_OBJECT_DIRECTORY,
+    and GIT_ALTERNATE_OBJECT_DIRECTORIES. Git exports those into every hook environment and they OVERRIDE
+    both `cwd=` and `git -C`, so a tmp_path fixture running under a pre-push hook mutates the REAL invoking
+    worktree instead. `git config --global`/`--system` in tests/ is rejected outright. Consumers should
+    also install the session-level os.environ scrub in their top-level tests/conftest.py (see omnibase_core.validators.no_unguarded_git_subprocess.strip_git_location_env),
+    which is the primary remedy; this hook prevents reintroduction. Precedent: OMN-14744 (per-file fix
+    that did not hold).
+  language: system
+  entry: python -m omnibase_core.validators.no_unguarded_git_subprocess tests
+  types: [python]
+  files: ^tests/.*\.py$
   pass_filenames: false
   stages: [pre-commit]

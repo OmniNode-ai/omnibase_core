@@ -1,0 +1,124 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# No Unguarded Git Subprocess — test git-environment isolation gate [OMN-14891]
+#
+# Canonical CI gate for `omnibase_core.validators.no_unguarded_git_subprocess`.
+# Required status check context (once flipped): "no-unguarded-git-subprocess".
+#
+# The job id/name is deliberately unique ("no-unguarded-git-subprocess"), NOT the
+# shared "validate" used by some of core's other validator workflows. GitHub
+# surfaces the check-run context as the bare job name, so a shared name collides
+# across unrelated workflows and cannot be made a required status check without
+# forcing all of them. This mirrors validator-no-plugin-daemon-classes.yml
+# (OMN-13309 / OMN-13284).
+#
+# THE DEFECT THIS GATES
+# ---------------------
+# Git exports GIT_DIR / GIT_WORK_TREE / GIT_INDEX_FILE / GIT_COMMON_DIR into the
+# environment of every hook it runs, and those variables OVERRIDE both `cwd=` and
+# `git -C`. So when pytest runs as a subprocess of the repo's own pre-push hook, a
+# fixture doing `subprocess.run(["git", "init"], cwd=tmp_path)` re-initialises the
+# REAL invoking worktree instead of tmp_path.
+#
+# Observed twice, log-proven:
+#   * 2026-07-20 (OMN-14891) — the shared canonical clone's .git/config gained
+#     `core.bare = true` plus a bogus `[user] t / t@t.t` block; 6707 lines of
+#     phantom staged deletions entered the real index; an amend committed that
+#     index as a 6668-file / 1.4M-line deletion.
+#   * 2026-07-21 (OMN-14863) — recurred; fixture commits wrote f.txt / file.txt
+#     into the real index.
+# `$OMNI_HOME/<repo>/.git/config` is shared by every worktree of that repo, so one
+# session's test run corrupts every concurrent session in a sibling worktree.
+#
+# Rationale (Operating Rule #5, "enforcement not detection"): OMN-14744 fixed one
+# file in omnibase_infra by hand and the class recurred in a different repo across
+# five different files. The systemic remedy is the session-level os.environ scrub
+# in tests/conftest.py; this workflow is what stops the shape being reintroduced.
+# A pre-commit-only check is advisory — it does not block a PR that bypassed local
+# hooks.
+#
+# Related: OMN-14892 (index corruption under the same full-suite run),
+#          OMN-14744 (the per-file precedent that did not hold).
+#
+# This workflow runs:
+#   1. unit pytest for the validator (incl. its live self-scan of tests/)
+#   2. pytest for the git-environment isolation regression (the RED-proven pair)
+#   3. a standalone self-scan of the tests/ tree; must exit 0
+
+name: No Unguarded Git Subprocess
+
+on:
+  push:
+    branches: [main, develop, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, develop, dev]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+
+concurrency:
+  group: no-unguarded-git-subprocess-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
+  no-unguarded-git-subprocess:
+    needs: occ-preflight
+    name: no-unguarded-git-subprocess
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      # The regression test shells out to git, so CI needs an identity for the
+      # decoy repos it creates in tmp_path.
+      - name: Configure git identity for fixture repos
+        run: |
+          git config --global user.email "ci@omninode.ai"
+          git config --global user.name "OmniNode CI"
+
+      - name: Run no-unguarded-git-subprocess unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_no_unguarded_git_subprocess.py \
+            -v
+
+      - name: Run git-environment isolation regression
+        run: |
+          uv run pytest \
+            tests/unit/test_git_env_isolation.py \
+            -v
+
+      - name: Self-scan omnibase_core tests/
+        run: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess tests/

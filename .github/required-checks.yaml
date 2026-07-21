@@ -578,3 +578,16 @@ gates:
       flip happens only after 2 independent green runs on dev, tracked as a follow-up. mode stays ADVISORY
       until that flip lands (same PR as the flip, per schema-v3 rule: mode changes and branch-protection
       changes land together)."
+
+  - name: "no-unguarded-git-subprocess"
+    mode: ADVISORY
+    producer_kind: local
+    workflow: validator-no-unguarded-git-subprocess.yml
+    job_path: ["no-unguarded-git-subprocess"]
+    skip_semantics: never
+    rationale: "OMN-14891: blocks reintroduction of git shell-outs in tests/ that inherit GIT_DIR / GIT_WORK_TREE
+      / GIT_INDEX_FILE / GIT_COMMON_DIR from a git hook (those OVERRIDE cwd= and -C, so a tmp_path fixture
+      under the pre-push hook mutates the REAL invoking worktree -- observed twice, incl. 6707 phantom
+      staged deletions on the shared canonical clone). Runs unconditionally on every PR but is NOT YET
+      in required_status_checks; per the schema-v3 ordering rule the branch-protection flip and the mode
+      change to REQUIRED land together in a follow-up, after 2 independent green runs on dev."

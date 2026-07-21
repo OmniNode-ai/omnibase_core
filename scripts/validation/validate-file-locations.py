@@ -131,6 +131,15 @@ class FileLocationValidator:
         # commit. Exempting runtime/ unblocks the fleet; whether the seam should
         # instead relocate to mixins/ is an OMN-12549 call tracked as a follow-up.
         "mixin_node_dispatch.py": ["runtime"],
+        # Single canonical ProtocolSemVer, co-located with the SemVer type it
+        # describes (OMN-14624, #1471). Same situation as mixin_node_dispatch.py
+        # above: it landed in types/ without an exemption, so the whole-tree
+        # file-location scan is RED on dev and blocks EVERY core src/ commit
+        # (this exemption is not this PR's subject — see OMN-14891 PR body).
+        # Exempting types/ unblocks the fleet; whether ProtocolSemVer should
+        # instead relocate to protocol/ is an OMN-14624 call tracked as a
+        # follow-up.
+        "type_semver.py": ["types"],
         # Navigation subsystem data types (OMN-2540, OMN-2546)
         "model_action_set.py": ["navigation"],
         "model_backward_chaining.py": ["navigation"],

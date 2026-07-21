@@ -51,13 +51,96 @@ Mitigation:
 import asyncio
 import gc
 import logging
+import os
 from collections.abc import Generator
 from unittest.mock import MagicMock
 
 import pytest
 
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    GIT_DISCOVERY_ENV_VARS,
+    GIT_LOCATION_ENV_VARS,
+    strip_git_location_env,
+)
+
 # Configure logging to reduce memory overhead
 logging.basicConfig(level=logging.WARNING)
+
+
+# ===========================================================================
+# OMN-14891: git environment isolation (session-wide, autouse)
+# ===========================================================================
+#
+# Git exports GIT_DIR / GIT_WORK_TREE / GIT_INDEX_FILE / GIT_COMMON_DIR into the
+# environment of every hook it runs. Those variables OVERRIDE both `cwd=` and
+# `git -C`. So when pytest runs as a subprocess of this repo's own pre-push hook,
+# a fixture doing `subprocess.run(["git", "init"], cwd=tmp_path)` does not touch
+# tmp_path at all — it re-initialises the REAL invoking worktree.
+#
+# That is not hypothetical. It happened twice:
+#   * 2026-07-20 (OMN-14891): the shared canonical clone's .git/config gained
+#     `core.bare = true` plus a bogus `[user] t / t@t.t` block, 6707 lines of
+#     phantom staged deletions landed in the real index, and an amend committed
+#     that index as a 6668-file / 1.4M-line deletion.
+#   * 2026-07-21 (OMN-14863): recurred — fixture commits wrote f.txt / file.txt
+#     into the real index.
+#
+# `$OMNI_HOME/<repo>/.git/config` is shared by every worktree of that repo, so
+# one session's test run corrupts every concurrent session in a sibling worktree.
+#
+# OMN-14744 fixed one file in omnibase_infra; the class recurred in a different
+# repo across five different files. Per-file patching does not hold, so the scrub
+# is applied ONCE here for the whole session.
+#
+# WHY BOTH pytest_configure AND an autouse fixture:
+#   * `_scrub_git_environment()` is called from `pytest_configure` below, which
+#     runs BEFORE collection — so module-import-time and module-scoped-fixture
+#     git calls are covered too. A session fixture alone starts too late for
+#     those.
+#   * The autouse session fixture re-asserts the scrub so the guarantee is
+#     visible as a fixture (and holds under `-p no:cacheprovider`, plugin
+#     reordering, and any code that re-populates os.environ during startup).
+# Under xdist (`-n4`) both run in every worker process, so every worker is
+# covered independently.
+#
+# DECISION — GIT_CONFIG_GLOBAL / GIT_CONFIG_SYSTEM are scrubbed, NOT pinned:
+#   Inherited `GIT_CONFIG*` overrides are DELETED (a hook or wrapper could point
+#   them anywhere), but they are deliberately NOT pinned to /dev/null. Pinning
+#   would strip commit identity session-wide and break every fixture that commits
+#   without explicit `-c user.email` overrides — a blast radius that cannot be
+#   validated here, because this repo's full suite is itself pathological
+#   (OMN-14892 / OMN-14753). The residual risk pinning would have covered — a
+#   fixture writing the real user's ~/.gitconfig — is instead closed statically
+#   and with zero runtime blast radius by the companion gate, which rejects
+#   `git config --global` / `--system` anywhere under tests/. Once location is
+#   correct, a plain `git config user.email` cannot escape the tmp repo.
+_GIT_ENV_VARS_SCRUBBED: tuple[str, ...] = (
+    *GIT_LOCATION_ENV_VARS,
+    *GIT_DISCOVERY_ENV_VARS,
+)
+
+
+def _scrub_git_environment() -> tuple[str, ...]:
+    """Remove inherited git location/config overrides from os.environ."""
+    return strip_git_location_env(os.environ)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def git_environment_isolation() -> Generator[None, None, None]:
+    """Guarantee no inherited git override survives into any test (OMN-14891).
+
+    Intentionally does NOT restore the variables on teardown: restoring them
+    would re-arm the corruption for anything running after the last test in the
+    worker, and no test may legitimately depend on inheriting a git hook's
+    GIT_DIR.
+    """
+    _scrub_git_environment()
+    for name in _GIT_ENV_VARS_SCRUBBED:
+        assert name not in os.environ, (
+            f"{name} survived the OMN-14891 git-environment scrub; git subprocesses "
+            "in fixtures would target the real invoking worktree instead of tmp_path"
+        )
+    return
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -203,6 +286,11 @@ def pytest_configure(config: pytest.Config) -> None:
     Args:
         config: pytest configuration object
     """
+    # OMN-14891: scrub inherited git overrides BEFORE collection, so that
+    # import-time and module-scoped-fixture git calls are covered too. The
+    # autouse `git_environment_isolation` session fixture re-asserts this.
+    _scrub_git_environment()
+
     # Register custom markers
     config.addinivalue_line(
         "markers",

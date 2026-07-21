@@ -12,6 +12,7 @@ Tests the integration of all validation scripts including:
 - CI/CD integration scenarios
 """
 
+import os
 import shutil
 import subprocess
 import tempfile
@@ -19,8 +20,33 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
+
 # Get the path to validation scripts
 VALIDATION_SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts" / "validation"
+
+
+def _git(
+    repo: Path, *args: str, check: bool = True
+) -> subprocess.CompletedProcess[bytes]:
+    """Run git against ``repo`` with inherited hook overrides removed (OMN-14891).
+
+    Every git call in this module MUST go through here. Git exports GIT_DIR /
+    GIT_WORK_TREE / GIT_INDEX_FILE / GIT_COMMON_DIR into hook environments and
+    those OVERRIDE ``cwd=``, so a bare ``subprocess.run(["git", ...], cwd=repo)``
+    here mutates the real invoking worktree when pytest runs under the pre-push
+    hook. The session-level scrub in ``tests/conftest.py`` is the primary remedy;
+    this keeps the call correct even outside a pytest session.
+    """
+    return subprocess.run(
+        ["git", *args],
+        cwd=repo,
+        check=check,
+        capture_output=True,
+        env=scrub_git_location_env(os.environ),
+    )
 
 
 @pytest.fixture
@@ -54,21 +80,13 @@ testpaths = ["tests"]
 @pytest.fixture
 def git_repo(temp_repo):
     """Initialize the temp repository as a git repository."""
-    subprocess.run(["git", "init"], cwd=temp_repo, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@example.com"],
-        cwd=temp_repo,
-        check=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test User"],
-        cwd=temp_repo,
-        check=True,
-    )
+    _git(temp_repo, "init")
+    _git(temp_repo, "config", "user.email", "test@example.com")
+    _git(temp_repo, "config", "user.name", "Test User")
 
     # Add all files
-    subprocess.run(["git", "add", "."], cwd=temp_repo, check=True)
-    subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=temp_repo, check=True)
+    _git(temp_repo, "add", ".")
+    _git(temp_repo, "commit", "-m", "Initial commit")
 
     return temp_repo
 
@@ -376,7 +394,7 @@ class ModelLegacy(BaseModel):
         problematic_file.write_text(problematic_content)
 
         # Stage the file
-        subprocess.run(["git", "add", str(problematic_file)], cwd=git_repo, check=True)
+        _git(git_repo, "add", str(problematic_file))
 
         # Simulate pre-commit validation on staged file
         compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
@@ -432,7 +450,7 @@ class ModelProblem(BaseModel):
 
         # Stage files
         for file_path in files_to_validate:
-            subprocess.run(["git", "add", file_path], cwd=git_repo, check=True)
+            _git(git_repo, "add", file_path)
 
         # Test validation with file list (pre-commit style)
         compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
@@ -452,7 +470,7 @@ class ModelProblem(BaseModel):
         # Create and stage non-Python files
         readme_file = git_repo / "NEW_README.md"
         readme_file.write_text("# Updated README")
-        subprocess.run(["git", "add", str(readme_file)], cwd=git_repo, check=True)
+        _git(git_repo, "add", str(readme_file))
 
         # Test validation with non-Python files
         compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
@@ -786,11 +804,7 @@ outputs:
         )
 
         # 2. Stage files
-        subprocess.run(
-            ["git", "add", str(new_model), str(new_contract)],
-            cwd=git_repo,
-            check=True,
-        )
+        _git(git_repo, "add", str(new_model), str(new_contract))
 
         # 3. Run pre-commit validation
         validation_passed = True
@@ -835,11 +849,8 @@ outputs:
         assert validation_passed
 
         # 5. Commit should succeed
-        result = subprocess.run(
-            ["git", "commit", "-m", "Add new feature model and contract"],
-            cwd=git_repo,
-            capture_output=True,
-            check=False,
+        result = _git(
+            git_repo, "commit", "-m", "Add new feature model and contract", check=False
         )
         assert result.returncode == 0
 
@@ -864,12 +875,8 @@ class ModelUser(BaseModel):
         )
 
         # Commit initial version
-        subprocess.run(["git", "add", "."], cwd=git_repo, check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "Add initial user model"],
-            cwd=git_repo,
-            check=True,
-        )
+        _git(git_repo, "add", ".")
+        _git(git_repo, "commit", "-m", "Add initial user model")
 
         # Refactor model (add new field)
         refactored_model = '''
