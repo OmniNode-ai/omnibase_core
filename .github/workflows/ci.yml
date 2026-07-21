@@ -2008,6 +2008,15 @@ jobs:
             }}
         run: |
           paths=$(echo '${{ needs.detect-changes.outputs.selected_paths }}' | jq -r '.[]')
+          # OMN-14910 (CI-C1 #3): an empty selected_paths is the "provably zero
+          # test impact" selection (a docs-only diff). Passing no positional paths
+          # to pytest would fall back to `testpaths = ["tests"]` from pyproject —
+          # i.e. nearly the full suite — silently defeating the docs-only exemption.
+          # Guard it: run zero tests and exit clean.
+          if [ -z "$paths" ]; then
+            echo "selected_paths is empty (docs-only exemption) — no tests to run."
+            exit 0
+          fi
           uv run pytest $paths \
             --ignore=tests/integration \
             --splits ${{ needs.detect-changes.outputs.split_count }} \

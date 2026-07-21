@@ -36,7 +36,11 @@ ModuleName = Annotated[
 class ModelTestSelection(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    selected_paths: list[TestPath] = Field(..., min_length=1)
+    # An empty list is the "provably zero test impact" selection (a docs-only
+    # diff, OMN-14910 / OMN-14753): distinct from "at least one path selected."
+    # min_length=1 was removed so the selector can represent "run nothing" without
+    # falling back to the full tests/unit/ tree.
+    selected_paths: list[TestPath] = Field(...)
     split_count: int = Field(..., ge=1, le=40)
     is_full_suite: bool
     full_suite_reason: EnumFullSuiteReason | None = Field(default=None)

@@ -43,8 +43,6 @@ import argparse
 import sys
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.models.nodes.test_selector.model_adjacency_map import (
     ModelAdjacencyMap,
 )
@@ -69,9 +67,13 @@ _PYPROJECT_RELEVANT: dict[str, bool] = {"on": True, "off": False}
 
 
 def _load_adjacency(path: Path) -> ModelAdjacencyMap:
-    """YAML read boundary — parse the static adjacency map into its typed model."""
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return ModelAdjacencyMap.model_validate(raw)
+    """YAML read boundary — parse the static adjacency map into its typed model.
+
+    Delegates to ``ModelAdjacencyMap.from_yaml_text``, which FAILS on a duplicate
+    mapping key (OMN-14897) rather than silently last-wins — so the fail-closed
+    guard runs on the node entrypoint as well as the legacy oracle.
+    """
+    return ModelAdjacencyMap.from_yaml_text(path.read_text(encoding="utf-8"))
 
 
 def _count_test_files(rel_path: str, repo_root: Path) -> int:

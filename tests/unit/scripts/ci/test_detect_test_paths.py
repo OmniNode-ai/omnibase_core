@@ -128,8 +128,10 @@ def test_workflow_only_change_no_longer_escalates() -> None:
 
 
 def test_selector_change_escalates_to_distributed_full_suite() -> None:
-    # scripts/ci/ is KEPT as a test-infrastructure trigger (conservative — it houses
-    # the selector itself), so a change here still escalates.
+    # OMN-14910 (CI-C1 #1): scripts/ci/ was NARROWED from a blanket directory
+    # trigger to the selector's OWN files. detect_test_paths.py is the selector,
+    # so a change here still escalates — a selector that narrowed on a change to
+    # ITSELF would be self-referentially fail-open.
     selection = compute_selection(
         changed_files=["scripts/ci/detect_test_paths.py"],
         adjacency_path=ADJ,
@@ -547,3 +549,248 @@ def test_threshold_constant_is_consistent() -> None:
     # too high reintroduces the OMN-11026 timeout regression.
     assert VOLUME_THRESHOLD_FILES <= 100
     assert VOLUME_TARGET_FILES_PER_SPLIT <= 50
+
+
+# ---------------------------------------------------------------------------
+# OMN-14910 (CI-C1 #1): scripts/ci/ narrowed to the selector's own files.
+# The selector's own files stay unconditional full-suite triggers (self-
+# referential fail-open guard); unrelated scripts/ci/ files no longer escalate.
+# ---------------------------------------------------------------------------
+
+_SELECTOR_OWN_FILES = [
+    "scripts/ci/detect_test_paths.py",
+    "scripts/ci/test_selection_loader.py",
+    "scripts/ci/test_selection_models.py",
+    "scripts/ci/test_selection_adjacency.yaml",
+    "src/omnibase_core/nodes/node_test_selector_compute/selector_core.py",
+]
+
+
+@pytest.mark.parametrize("selector_file", _SELECTOR_OWN_FILES)
+def test_selector_own_files_still_escalate(selector_file: str) -> None:
+    # A diff touching the selection logic or its config MUST re-run everything —
+    # a selector that narrowed on a change to itself is self-referentially
+    # fail-open (the C1.1 gate-erosion caveat).
+    selection = compute_selection(
+        changed_files=[selector_file],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True, f"{selector_file} must escalate"
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+
+
+@pytest.mark.parametrize(
+    "unrelated_ci_file",
+    [
+        "scripts/ci/ci_summary_gate.py",
+        "scripts/ci/verify_flip_bundle.py",
+        "scripts/ci/canonical_handler_shape.py",
+        "scripts/ci/product_readiness.py",
+        "scripts/ci/product_reason_graph.py",
+    ],
+)
+def test_unrelated_scripts_ci_file_no_longer_escalates(unrelated_ci_file: str) -> None:
+    # These scripts/ci/ files have zero relationship to test selection; under the
+    # OMN-14081 blanket `scripts/ci/` trigger they forced a 40-way full suite. They
+    # now fall to the conservative fallback instead (no unit-test mapping).
+    selection = compute_selection(
+        changed_files=[unrelated_ci_file],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False, f"{unrelated_ci_file} should not escalate"
+    assert selection.full_suite_reason is None
+    assert selection.selected_paths == ["tests/unit/"]
+
+
+# ---------------------------------------------------------------------------
+# OMN-14910 (CI-C1 #2): lint-only [tool.ruff.*] is a safe pyproject table.
+# ---------------------------------------------------------------------------
+
+
+def test_classify_ruff_config_edit_is_not_dependency_relevant() -> None:
+    new = _mutate(_BASE_PYPROJECT, "line-length = 88", "line-length = 100")
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is False
+
+
+def test_classify_ruff_per_file_ignores_addition_is_not_relevant() -> None:
+    # The exact core case: adding a [tool.ruff.lint.per-file-ignores] entry — a
+    # lint-ignore line that currently pays for a 40-way full suite.
+    new = _mutate(
+        _BASE_PYPROJECT,
+        "[tool.ruff]\nline-length = 88\n",
+        (
+            "[tool.ruff]\nline-length = 88\n\n"
+            "[tool.ruff.lint.per-file-ignores]\n"
+            '"scripts/x.py" = ["T201"]\n'
+        ),
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is False
+
+
+def test_classify_pytest_ini_options_change_still_escalates() -> None:
+    # [tool.pytest.ini_options] changes what/how tests run — must NOT be exempt.
+    new = _mutate(_BASE_PYPROJECT, 'addopts = "-ra"', 'addopts = "-ra -x"')
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_classify_ruff_plus_dependency_change_still_escalates() -> None:
+    # A real dependency change bundled with a ruff edit must still escalate — the
+    # ruff exemption does not mask the dependency change (fail closed).
+    new = _mutate(_BASE_PYPROJECT, "line-length = 88", "line-length = 100")
+    new = _mutate(
+        new,
+        'dependencies = ["pydantic>=2.0", "pyyaml>=6.0"]',
+        'dependencies = ["pydantic>=2.0", "pyyaml>=6.0", "pathspec>=0.12"]',
+    )
+    assert classify_pyproject_dependency_relevant(_BASE_PYPROJECT, new) is True
+
+
+def test_ruff_only_pyproject_narrows_via_compute_selection() -> None:
+    # End-to-end: a ruff-only pyproject change (relevant=False) does not escalate
+    # on pyproject.toml alone.
+    selection = compute_selection(
+        changed_files=["pyproject.toml", "src/omnibase_core/cli/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=False,
+    )
+    assert selection.is_full_suite is False
+    assert "tests/unit/cli/" in selection.selected_paths
+
+
+# ---------------------------------------------------------------------------
+# OMN-14910 (CI-C1 #3): docs-only diffs select nothing instead of the ~94%
+# tests/unit/ fallback. Ports omnibase_infra#2372 / OMN-14753. `.github/`,
+# `.pre-commit-config.yaml`, and `scripts/hooks/` are deliberately NOT exempt.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "docs_files",
+    [
+        ["docs/runbooks/new-runbook.md"],
+        ["README.md"],
+        ["docs/architecture/overview.md", "docs/INDEX.md", "CHANGELOG.md"],
+    ],
+)
+def test_docs_only_diff_selects_nothing(docs_files: list[str]) -> None:
+    selection = compute_selection(
+        changed_files=docs_files,
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert selection.full_suite_reason is None
+    assert selection.selected_paths == []
+    assert selection.split_count == 1
+    assert selection.matrix == [1]
+
+
+def test_markdown_under_shared_module_dir_still_escalates() -> None:
+    # Ordering / fail-closed: a `.md` under a shared-module src dir is caught by
+    # the shared-module check (step 3) BEFORE the docs-only exemption (step 5),
+    # so it escalates. This matches the merged omnibase_infra ordering and errs
+    # safe (runs MORE tests, never fewer).
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/models/README.md"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.SHARED_MODULE
+
+
+def test_mixed_docs_and_code_does_not_take_the_exemption() -> None:
+    # A single non-doc file disqualifies the docs-only exemption — the code file
+    # still selects its unit tests.
+    selection = compute_selection(
+        changed_files=["docs/x.md", "src/omnibase_core/cli/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert selection.selected_paths == ["tests/unit/cli/"]
+
+
+@pytest.mark.parametrize(
+    "non_doc_only",
+    [
+        [".github/workflows/receipt-gate.yml"],
+        [".pre-commit-config.yaml"],
+        ["scripts/hooks/prepush_smart_tests.sh"],
+    ],
+)
+def test_github_precommit_hooks_are_not_docs_exempt(non_doc_only: list[str]) -> None:
+    # core has workflow-shape unit tests (test_occ_preflight_workflow_shape.py,
+    # test_receipt_gate_workflow_shape.py) whose outcome depends on these files, so
+    # they must run the conservative fallback, NOT the empty docs-only selection.
+    selection = compute_selection(
+        changed_files=non_doc_only,
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert selection.selected_paths == ["tests/unit/"]
+
+
+def test_docs_only_does_not_suppress_shared_module_escalation() -> None:
+    # A docs file bundled with a shared-module source change must still escalate.
+    selection = compute_selection(
+        changed_files=["docs/x.md", "src/omnibase_core/models/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.SHARED_MODULE
+
+
+# ---------------------------------------------------------------------------
+# Fail-closed proofs (C1 overall): ambiguous diff, unparseable pyproject,
+# missing base ref each still run tests (never an empty/narrowed false-green).
+# ---------------------------------------------------------------------------
+
+
+def test_ambiguous_unclassified_diff_runs_fallback_not_empty() -> None:
+    # A change the selector cannot map (not src, not tests/unit, not docs, not a
+    # trigger) is AMBIGUOUS — it must run the conservative fallback, never select
+    # nothing. Selecting [] here would be a false green.
+    selection = compute_selection(
+        changed_files=["some/unknown/config.json", "Makefile"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert selection.selected_paths == ["tests/unit/"]
+    assert selection.selected_paths != []
+
+
+def test_unparseable_pyproject_fails_closed() -> None:
+    # classify returns True (escalate) on a TOML parse error; compute_selection
+    # then escalates when pyproject.toml is in the diff.
+    assert (
+        classify_pyproject_dependency_relevant(_BASE_PYPROJECT, "x = = broken") is True
+    )
+    selection = compute_selection(
+        changed_files=["pyproject.toml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=True,
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+
+
+def test_missing_base_ref_fails_closed() -> None:
+    # No base ref → classification impossible (None) → escalate. This mirrors the
+    # CLI path where --base-ref is absent (_resolve_pyproject_dependency_relevant
+    # returns None), which compute_selection treats as fail-closed.
+    selection = compute_selection(
+        changed_files=["pyproject.toml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        pyproject_dependency_relevant=None,
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
