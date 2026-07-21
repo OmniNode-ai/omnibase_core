@@ -12,6 +12,7 @@ and is worthless.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from datetime import timedelta
 from pathlib import Path
@@ -528,12 +529,23 @@ def test_malformed_waiver_is_an_error(
 # Modified-model enforcement: touch a broken model -> you must fix it
 # ===========================================================================
 def _git(repo: Path, *args: str) -> None:
+    env = dict(os.environ)
+    for key in (
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_COMMON_DIR",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ):
+        env.pop(key, None)
     subprocess.run(
         ["git", *args],
         cwd=repo,
         check=True,
         capture_output=True,
         text=True,
+        env=env,
     )
 
 
@@ -547,6 +559,19 @@ def git_repo(tmp_path: Path) -> Path:
     _git(repo, "config", "user.name", "t")
     _git(repo, "config", "commit.gpgsign", "false")
     return repo
+
+
+def test_git_helper_does_not_inherit_parent_git_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = tmp_path / "repo"
+    monkeypatch.setenv("GIT_DIR", "/parent/worktree/.git")
+
+    _git(tmp_path, "init", "-q", str(repo))
+    (repo / "fixture.py").write_text("VALUE = 1\n", encoding="utf-8")
+    _git(repo, "add", "fixture.py")
+
+    assert (repo / ".git" / "index").exists()
 
 
 def test_modifying_a_baselined_model_fails(
