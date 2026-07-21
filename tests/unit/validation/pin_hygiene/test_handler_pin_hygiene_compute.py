@@ -26,6 +26,7 @@ These tests assert four things:
 from __future__ import annotations
 
 import asyncio
+import os
 import subprocess
 from pathlib import Path
 
@@ -216,11 +217,22 @@ def test_runner_over_in_memory_bus_flags_and_passes() -> None:
 
 
 def _git(repo: Path, *args: str) -> str:
+    env = os.environ.copy()
+    for key in (
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_COMMON_DIR",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ):
+        env.pop(key, None)
     return subprocess.run(
         ["git", "-C", str(repo), *args],
         capture_output=True,
         text=True,
         check=True,
+        env=env,
     ).stdout.strip()
 
 
@@ -234,6 +246,20 @@ def _make_sibling_repo(omni_home: Path) -> tuple[str, str]:
     """
     repo = omni_home / "omnibase_core"
     return _build_diverged_repo(repo)
+
+
+@pytest.mark.unit
+def test_temp_git_helper_does_not_inherit_parent_git_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    _git(parent, "init", "-q")
+    monkeypatch.setenv("GIT_DIR", str(parent / ".git"))
+
+    _build_diverged_repo(tmp_path / "sibling")
+
+    assert _git(parent, "ls-files") == ""
 
 
 @pytest.mark.unit
