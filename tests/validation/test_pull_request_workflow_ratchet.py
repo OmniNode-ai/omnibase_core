@@ -40,7 +40,7 @@ REGISTRY_PATH = (
 # To move it you must edit BOTH this constant AND the registry `budget` — a
 # deliberate, reviewed act. It is intended to move DOWN only (retiring a workflow
 # lowers it; C2/C3/C4 drain toward a smaller number).
-EXPECTED_BUDGET = 49
+EXPECTED_BUDGET = 31
 
 
 def _write_registry(path: Path, **overrides: object) -> None:
