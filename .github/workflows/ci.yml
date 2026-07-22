@@ -1514,6 +1514,856 @@ jobs:
           uv run python -m omnibase_core.validation.hardcoded_topic.runtime_hardcoded_topic \
             --report-only src/omnibase_core/
 
+  # ===========================================================================
+  # Phase 1 - Migrated decorative validators (OMN-14877, OMN-14430 fast-follow)
+  # ---------------------------------------------------------------------------
+  # 18 validator-*.yml standalone workflows migrated here as unconditional jobs
+  # (no `if:`, no `needs:`), sharing ci.yml's run_id so the required "CI Summary"
+  # default-deny poller (scripts/ci/ci_summary_gate.py) sees them. Each retires a
+  # standalone workflow (dropped to workflow_dispatch-only) plus its embedded
+  # occ-preflight caller. Registry: architecture-handshakes/standalone-validator-debt.yaml.
+  # ===========================================================================
+  # Migrated from validator-backend-secret-discipline.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  backend-secret-discipline-validator:
+    name: Backend Secret Discipline
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_backend_secret_discipline.py -v
+
+      - name: Self-scan omnibase_core config (literal credentials + backend refs)
+        run: |
+          uv run python -m omnibase_core.validators.backend_secret_discipline src/
+
+  # Migrated from validator-banned-compose-vars.yml (OMN-14877, OMN-14430
+  # fast-follow). NOTE: this validator had NO pre-commit hook in omnibase_core
+  # (audited 2026-07-21) — migrating it here as a required-gating ci.yml job is
+  # its FIRST non-bypassable enforcement, strictly stronger than the prior
+  # decorative standalone workflow. omnibase_core has no compose manifest that
+  # reads the banned vars, so the self-scan is green; the governed consumer
+  # requirement (banned-compose-env-vars) applies to omnibase_infra/omninode_infra,
+  # not this repo.
+  banned-compose-vars-validator:
+    name: Compose Drift
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ValidatorBannedComposeVars unit + integration tests
+        run: |
+          uv run pytest \
+            tests/unit/validation/test_validator_banned_compose_vars.py \
+            tests/integration/test_validator_banned_compose_vars_integration.py \
+            -v
+
+      - name: Self-scan omnibase_core repo for banned compose env vars
+        run: |
+          # Synthetic kernel mirrors the current `_DEPRECATED_TOPIC_ENV_VARS`
+          # tuple in omnibase_infra/src/omnibase_infra/runtime/service_kernel.py
+          # (OMN-8784). omnibase_core has no legitimate consumer of those vars,
+          # so the scan must exit 0. If omnibase_core ever adds a real compose
+          # manifest that uses them, this gate catches it before merge.
+          cat > /tmp/synthetic_kernel.py <<'EOF'
+          # Mirror of omnibase_infra service_kernel._DEPRECATED_TOPIC_ENV_VARS.
+          _DEPRECATED_TOPIC_ENV_VARS: tuple[str, ...] = (
+              "ONEX_INPUT_TOPIC",
+              "ONEX_OUTPUT_TOPIC",
+          )
+          EOF
+          uv run python -m omnibase_core.validation.validator_banned_compose_vars \
+            --kernel-source /tmp/synthetic_kernel.py \
+            .
+
+  # Migrated from validator-bypass-token-blocklist.yml (OMN-14877, OMN-14430
+  # fast-follow). NOTE: this validator's module had NO dedicated pre-commit hook
+  # in omnibase_core (audited 2026-07-21) — the reject-deploy-gate-skip-token
+  # hooks cover skip-gate tokens over staged files, but the OMN-13388 contracts/
+  # tree scan was decorative-only. Migrating it here is its first
+  # required-gating, non-bypassable enforcement.
+  bypass-token-blocklist-validator:
+    name: Bypass-Token Blocklist
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests (all 9 tokens, failing + passing cases)
+        run: |
+          uv run pytest tests/validators/test_bypass_token_blocklist.py -v
+
+      - name: Repo-wide bypass-token grep (contracts/)
+        # Scans contracts/ (YAML ticket contracts) for bypass tokens. src/ and
+        # docs/ are excluded: both trees contain documentation (.md) that
+        # legitimately discusses bypass tokens as rule descriptions.
+        run: |
+          if [ -d "contracts/" ]; then
+            uv run python -m omnibase_core.validators.bypass_token_blocklist \
+              --scan-tree contracts/
+          else
+            echo "No contracts/ directory found — scan skipped."
+          fi
+
+  # Migrated from validator-command-category-event-model.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  command-category-event-model-validator:
+    name: command-category Event Model Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_command_category_requires_event_model.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.command_category_requires_event_model src/omnibase_core
+
+  # Migrated from validator-dispatched-contract-operation.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  dispatched-contract-operation-validator:
+    name: dispatched contract handlers[0].operation Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_dispatched_contract_operation.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.dispatched_contract_operation src/omnibase_core
+
+  # Migrated from validator-generated-node-model-class-exists.yml (OMN-14877,
+  # OMN-14430 fast-follow).
+  generated-node-model-class-exists-validator:
+    name: generated-node model-class-existence Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_generated_node_model_class_exists.py \
+            tests/unit/validation/test_validator_contract_linter.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.generated_node_model_class_exists src/omnibase_core
+
+  # Migrated from validator-gitignore-baseline.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  gitignore-baseline-validator:
+    name: Gitignore Baseline Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_gitignore_baseline.py -v
+
+      - name: Self-scan omnibase_core root
+        run: |
+          uv run python -m omnibase_core.validators.gitignore_baseline .
+
+  # Migrated from validator-no-direct-kafka-producer.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-direct-kafka-producer-validator:
+    name: No Direct Kafka Producer Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_direct_kafka_producer_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.runtime_no_direct_kafka_producer_check \
+            --root src
+
+  # Migrated from validator-no-except-swallow.yml (OMN-14877, OMN-14430
+  # fast-follow). Self-scan is REPORT-ONLY (baseline cleanup pending) — ported
+  # unchanged; the gating enforcement is the validator unit-test suite, which
+  # runs unconditionally under the required CI Summary rollup.
+  no-except-swallow-validator:
+    name: No Except Swallow
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_validate_no_except_swallow.py -v
+
+      - name: Self-scan omnibase_core src/ (report mode — baseline cleanup pending)
+        run: |
+          uv run python scripts/validation/validate_no_except_swallow.py --report
+
+  # Migrated from validator-no-hardcoded-ip.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-hardcoded-ip-validator:
+    name: No Hardcoded IP Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_hardcoded_ip_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ + scripts/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check \
+            --root src scripts
+
+  # Migrated from validator-no-import-none-fallback.yml (OMN-14877, OMN-14430
+  # fast-follow). Self-scan is REPORT-ONLY (baseline cleanup pending) — ported
+  # unchanged; the gating enforcement is the validator unit-test suite.
+  no-import-none-fallback-validator:
+    name: No Import None Fallback
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_validate_no_import_none_fallback.py -v
+
+      - name: Self-scan omnibase_core src/ (report mode — baseline cleanup pending)
+        run: |
+          uv run python scripts/validation/validate_no_import_none_fallback.py --report
+
+  # Migrated from validator-no-io-outside-effects.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-io-outside-effects-validator:
+    name: No IO Outside Effects Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_io_outside_effects_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check \
+            --root src
+
+  # Migrated from validator-no-none-guard-publish.yml (OMN-14877, OMN-14430
+  # fast-follow). Self-scan is REPORT-ONLY (baseline cleanup pending) — ported
+  # unchanged; the gating enforcement is the validator unit-test suite.
+  no-none-guard-publish-validator:
+    name: No None Guard Publish
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_validate_no_none_guard_publish.py -v
+
+      - name: Self-scan omnibase_core src/ (report mode — baseline cleanup pending)
+        run: |
+          uv run python scripts/validation/validate_no_none_guard_publish.py --report
+
+  # Migrated from validator-no-raw-sqlite3.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-raw-sqlite3-validator:
+    name: No Raw Sqlite3 Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_raw_sqlite3_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check \
+            --root src
+
+  # Migrated from validator-operation-match.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  operation-match-validator:
+    name: operation_match Operation Field Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_operation_match_requires_operation.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.operation_match_requires_operation src/omnibase_core
+
+  # Migrated from validator-pin-hygiene.yml (OMN-14877, OMN-14430 fast-follow).
+  # Needs sibling clones (omnibase_compat / omnibase_spi) to resolve pin ancestry;
+  # each is checked out under $OMNI_HOME (= github.workspace).
+  pin-hygiene-validator:
+    name: Pin Hygiene Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v7
+        with:
+          path: omnibase_core
+
+      - name: Checkout omnibase_compat (sibling)
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_compat
+          path: omnibase_compat
+          ref: dev
+          fetch-depth: 0
+
+      - name: Checkout omnibase_spi (sibling)
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_spi
+          path: omnibase_spi
+          ref: dev
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "omnibase_core/uv.lock"
+
+      - name: Install dependencies
+        working-directory: omnibase_core
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        working-directory: omnibase_core
+        run: |
+          uv run pytest tests/unit/validation/pin_hygiene/ -v
+
+      - name: Self-scan omnibase_core pin manifests
+        working-directory: omnibase_core
+        env:
+          OMNI_HOME: ${{ github.workspace }}
+        run: |
+          uv run python -m omnibase_core.validation.pin_hygiene.runtime_pin_hygiene \
+            pyproject.toml uv.lock
+
+  # Migrated from validator-release-identity.yml (OMN-14877, OMN-14430
+  # fast-follow). Needs full history + tags to resolve the latest published tag.
+  release-identity-validator:
+    name: Release Identity Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run release-identity unit tests
+        run: |
+          uv run pytest tests/scripts/test_check_release_identity.py -v
+
+      - name: No code merged onto a published version without a bump
+        run: |
+          set -euo pipefail
+          BASE="${{ github.event.pull_request.base.ref || 'dev' }}"
+          git fetch --quiet origin "${BASE}" || true
+          uv run python scripts/check_release_identity.py --base "origin/${BASE}"
+
+  # Migrated from validator-todo-marker.yml (OMN-14877, OMN-14430 fast-follow).
+  # Scans only the files the PR/merge changed (mirrors the pre-commit hook's
+  # STAGED-only semantics); needs full history to diff against the base.
+  todo-marker-validator:
+    name: TODO Marker Validator  # onex-allow-todo-marker OMN-14877 reason="job display name IS the validator's subject, not agent-left work"
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validation/todo_marker/ -v
+
+      - name: Scan changed files for agent-left markers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Resolve the base ref to diff against.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          elif [ -n "${{ github.event.before }}" ] \
+               && git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            BASE_SHA="${{ github.event.before }}"
+          else
+            git fetch --no-tags --depth=200 origin dev || true
+            BASE_SHA="$(git merge-base HEAD origin/dev 2>/dev/null || git rev-parse HEAD~1)"
+          fi
+          echo "Diffing changed files against base: $BASE_SHA"
+
+          CHANGED="$(git diff --name-only --diff-filter=ACMR "$BASE_SHA"...HEAD \
+            | grep -E '\.(py|md|yaml|yml|json|sh|toml|txt|rst|cfg|ini)$' \
+            | grep -Ev '^(tests/|docs/|\.secrets\.baseline$|archived/|archive/)' \
+            || true)"
+
+          if [ -z "$CHANGED" ]; then
+            echo "No in-scope changed text files -- nothing to scan."
+            exit 0
+          fi
+
+          echo "Scanning changed files:"
+          echo "$CHANGED" | sed 's/^/  /'
+
+          EXISTING=""
+          while IFS= read -r f; do
+            [ -f "$f" ] && EXISTING="$EXISTING $f"
+          done <<< "$CHANGED"
+
+          if [ -z "${EXISTING// /}" ]; then
+            echo "No existing in-scope changed files -- nothing to scan."
+            exit 0
+          fi
+
+          uv run python -m omnibase_core.validation.todo_marker.runtime_todo_marker $EXISTING
+
+
   # Non-canonical lifecycle-class ratchet (OMN-14350, omnibase_core canary)
   # Blocks any NEW Service/Engine/Adapter/Router/Daemon/Manager/Runner/Registry/
   # Controller/Server/Client class outside the frozen allowlist; --check-stale also

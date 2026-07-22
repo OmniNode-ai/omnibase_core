@@ -62,56 +62,67 @@ natively_required_contexts:
 migrated_into_ci_yml:
   - workflow_file: validator-hardcoded-topic.yml
     ci_job_key: hardcoded-topic-validator
+  # OMN-14877 batch migration (2026-07-21): the remaining 18 decorative
+  # standalone validators, ported into ci.yml as unconditional jobs (no `if:`,
+  # no `needs:`) under the required "CI Summary" rollup. Each standalone file was
+  # retired to workflow_dispatch-only in the same PR, so it no longer produces a
+  # duplicate structurally-invisible run or fires its embedded occ-preflight
+  # caller on PRs.
+  - workflow_file: validator-backend-secret-discipline.yml
+    ci_job_key: backend-secret-discipline-validator
+  - workflow_file: validator-banned-compose-vars.yml
+    ci_job_key: banned-compose-vars-validator
+  - workflow_file: validator-bypass-token-blocklist.yml
+    ci_job_key: bypass-token-blocklist-validator
+  - workflow_file: validator-command-category-event-model.yml
+    ci_job_key: command-category-event-model-validator
+  - workflow_file: validator-dispatched-contract-operation.yml
+    ci_job_key: dispatched-contract-operation-validator
+  - workflow_file: validator-generated-node-model-class-exists.yml
+    ci_job_key: generated-node-model-class-exists-validator
+  - workflow_file: validator-gitignore-baseline.yml
+    ci_job_key: gitignore-baseline-validator
+  - workflow_file: validator-no-direct-kafka-producer.yml
+    ci_job_key: no-direct-kafka-producer-validator
+  - workflow_file: validator-no-except-swallow.yml
+    ci_job_key: no-except-swallow-validator
+  - workflow_file: validator-no-hardcoded-ip.yml
+    ci_job_key: no-hardcoded-ip-validator
+  - workflow_file: validator-no-import-none-fallback.yml
+    ci_job_key: no-import-none-fallback-validator
+  - workflow_file: validator-no-io-outside-effects.yml
+    ci_job_key: no-io-outside-effects-validator
+  - workflow_file: validator-no-none-guard-publish.yml
+    ci_job_key: no-none-guard-publish-validator
+  - workflow_file: validator-no-raw-sqlite3.yml
+    ci_job_key: no-raw-sqlite3-validator
+  - workflow_file: validator-operation-match.yml
+    ci_job_key: operation-match-validator
+  - workflow_file: validator-pin-hygiene.yml
+    ci_job_key: pin-hygiene-validator
+  - workflow_file: validator-release-identity.yml
+    ci_job_key: release-identity-validator
+  - workflow_file: validator-todo-marker.yml
+    ci_job_key: todo-marker-validator
 
 # TRACKED DEBT (OMN-14430 fast-follow, ticket OMN-14430): confirmed decorative
-# as of 2026-07-20 — no merge gate blocks on any of these today; pre-commit
-# (if installed, if not bypassed) is the only enforcement. Each was enumerated
-# by the OMN-14430 audit. Migrate one-by-one into `migrated_into_ci_yml`
+# — no merge gate blocks on any of these today; pre-commit (if installed, if not
+# bypassed) is the only enforcement. Migrate one-by-one into `migrated_into_ci_yml`
 # (preferred) to retire from this list; the count below is the live decorative
 # gate count this ticket asked to be reported.
+#
+# EMPTIED 2026-07-21 (OMN-14877): all 18 remaining decorative validators were
+# batch-migrated into ci.yml (see migrated_into_ci_yml above). The only
+# remaining advisory entry is the OMN-14891 git-env-isolation gate from current
+# dev, which has a unique context and is not yet a required_status_checks
+# context.
 decorative_debt:
-  - workflow_file: validator-backend-secret-discipline.yml
-    context: validate
-  - workflow_file: validator-banned-compose-vars.yml
-    context: validate
-  - workflow_file: validator-bypass-token-blocklist.yml
-    context: validate
-  - workflow_file: validator-command-category-event-model.yml
-    context: validate
-  - workflow_file: validator-dispatched-contract-operation.yml
-    context: validate
-  - workflow_file: validator-generated-node-model-class-exists.yml
-    context: validate
-  - workflow_file: validator-gitignore-baseline.yml
-    context: validate
-  - workflow_file: validator-no-direct-kafka-producer.yml
-    context: validate
-  - workflow_file: validator-no-except-swallow.yml
-    context: validate
-  - workflow_file: validator-no-hardcoded-ip.yml
-    context: validate
-  - workflow_file: validator-no-import-none-fallback.yml
-    context: validate
-  - workflow_file: validator-no-io-outside-effects.yml
-    context: validate
-  - workflow_file: validator-no-none-guard-publish.yml
-    context: validate
-  - workflow_file: validator-no-raw-sqlite3.yml
-    context: validate
   # OMN-14891 git-env-isolation gate: unique context, ADVISORY today (NOT in
   # required_status_checks — verified 2026-07-22 via the gh api command above).
   # Moves to natively_required_contexts when the required flip tracked in
   # .github/required-checks.yaml lands (after 2 independent green dev runs).
   - workflow_file: validator-no-unguarded-git-subprocess.yml
     context: no-unguarded-git-subprocess
-  - workflow_file: validator-operation-match.yml
-    context: validate
-  - workflow_file: validator-pin-hygiene.yml
-    context: validate
-  - workflow_file: validator-release-identity.yml
-    context: validate
-  - workflow_file: validator-todo-marker.yml
-    context: validate
 
 metadata:
   generated_by: "OMN-14430 audit, 2026-07-20"
