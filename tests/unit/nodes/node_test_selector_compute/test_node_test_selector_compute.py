@@ -157,6 +157,51 @@ def test_parity_empty_change_set(monkeypatch: pytest.MonkeyPatch) -> None:
     assert sel.selected_paths == ["tests/unit/"]
 
 
+def test_parity_docs_only_selects_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    # OMN-14910 (CI-C1 #3): oracle and node agree that a pure-docs diff selects []
+    sel = _assert_parity(monkeypatch, ["docs/x.md", "docs/runbooks/y.md"], "pr-branch")
+    assert sel.is_full_suite is False
+    assert sel.selected_paths == []
+    assert sel.split_count == 1
+
+
+def test_parity_unrelated_scripts_ci_no_escalate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # OMN-14910 (CI-C1 #1): a non-selector scripts/ci/ file no longer escalates,
+    # identically in oracle and node.
+    sel = _assert_parity(monkeypatch, ["scripts/ci/ci_summary_gate.py"], "pr-branch")
+    assert sel.is_full_suite is False
+    assert sel.selected_paths == ["tests/unit/"]
+
+
+def test_parity_selector_core_change_escalates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # OMN-14910 (CI-C1 #1): the canonical node's own algorithm file is an
+    # unconditional trigger in both surfaces (self-referential guard).
+    sel = _assert_parity(
+        monkeypatch,
+        ["src/omnibase_core/nodes/node_test_selector_compute/selector_core.py"],
+        "pr-branch",
+    )
+    assert sel.full_suite_reason == "test_infrastructure"
+
+
+def test_parity_ruff_only_pyproject_narrows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # OMN-14910 (CI-C1 #2): pyproject.toml + relevant=False narrows identically.
+    sel = _assert_parity(
+        monkeypatch,
+        ["pyproject.toml", "src/omnibase_core/cli/foo.py"],
+        "pr-branch",
+        pyproject_dependency_relevant=False,
+    )
+    assert sel.is_full_suite is False
+    assert "tests/unit/cli/" in sel.selected_paths
+
+
 def test_parity_main_branch(monkeypatch: pytest.MonkeyPatch) -> None:
     sel = _assert_parity(monkeypatch, ["src/omnibase_core/cli/x.py"], "main")
     assert sel.full_suite_reason == "main_branch"

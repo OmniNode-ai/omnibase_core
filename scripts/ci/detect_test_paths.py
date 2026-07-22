@@ -27,6 +27,26 @@ TEST_INTEGRATION_PREFIX = "tests/integration/"
 
 FULL_SUITE_BRANCHES = {"main"}
 
+# Positive-evidence documentation classification (OMN-14910, CI-C1 #3; ports the
+# merged omnibase_infra#2372 / OMN-14753 approach). A path matching either of
+# these can never contain executable code or fixture data, so it cannot influence
+# any test outcome. This is narrower and STRONGER than the conservative
+# "no unit-test mapping" tests/unit/ fallback in compute_selection: it only
+# exempts a diff when EVERY changed file is affirmatively provable as
+# prose/documentation, not merely unclassified. Deliberately does NOT include
+# `.github/`, `.pre-commit-config.yaml`, or `scripts/hooks/`: core has
+# workflow-shape unit tests (tests/unit/validation/test_occ_preflight_workflow_shape.py,
+# test_receipt_gate_workflow_shape.py) whose outcome depends on those files, so a
+# change there must still run the fallback rather than select nothing.
+DOCS_ONLY_SUFFIXES = (".md",)
+DOCS_ONLY_PREFIXES = ("docs/",)
+
+
+def _is_docs_only_path(path: str) -> bool:
+    """True when ``path`` is documentation that cannot affect any test outcome."""
+    return path.endswith(DOCS_ONLY_SUFFIXES) or path.startswith(DOCS_ONLY_PREFIXES)
+
+
 # pyproject.toml is handled content-aware (not as a bare path-prefix trigger).
 # See classify_pyproject_dependency_relevant / step 2 in compute_selection.
 PYPROJECT_PATH = "pyproject.toml"
@@ -35,7 +55,7 @@ PYPROJECT_PATH = "pyproject.toml"
 # resolution, build inputs, or test behavior, so a diff confined to these must NOT
 # escalate to the full suite. Everything else in pyproject.toml (the `dependencies`
 # array, [project.optional-dependencies], [dependency-groups], [build-system],
-# [tool.*] including [tool.pytest.ini_options]/[tool.coverage], requires-python)
+# [tool.*] EXCEPT [tool.ruff.*] — see _PYPROJECT_SAFE_TOOL_KEYS —, requires-python)
 # is treated as escalation-worthy. This is deliberately an allow-list of SAFE keys
 # (not a block-list of dependency tables): an unrecognized/new pyproject key
 # escalates by default, keeping the selector fail-closed.
@@ -57,6 +77,17 @@ _PYPROJECT_SAFE_PROJECT_KEYS = frozenset(
         "gui-scripts",
     }
 )
+
+# Keys under [tool] whose change is lint-only — it configures a static-analysis
+# gate that runs as its OWN CI job (ruff), never the pytest suite, so it cannot
+# change any test outcome (OMN-14910, CI-C1 #2). All 8 pyproject escalations in
+# the 30-PR sample were a single added [tool.ruff.lint.per-file-ignores] entry —
+# a lint-ignore line paying for a 40-way full suite. [tool.pytest.ini_options]
+# and [tool.coverage] DELIBERATELY stay escalation-worthy (they change what/how
+# tests run); only ruff is exempt. Fail-closed is preserved: a diff touching any
+# other [tool.*] table, dependencies, or [build-system] still escalates, and an
+# unparseable pyproject still escalates.
+_PYPROJECT_SAFE_TOOL_KEYS = frozenset({"ruff"})
 
 # Volume-aware split sizing (OMN-11026).
 # Main-branch full-suite uses 40 splits over the whole tree (~1,500 test files,
@@ -176,7 +207,23 @@ def compute_selection(
     if len(changed_modules) >= config.thresholds.modules_changed_for_full_suite:
         return _full_suite(EnumFullSuiteReason.THRESHOLD_MODULES)
 
-    # 5. Smart selection.
+    # 5. Docs-only exemption (OMN-14910, CI-C1 #3): a diff where EVERY changed
+    # file is documentation cannot affect any test outcome, so select NOTHING
+    # rather than falling through to the conservative tests/unit/ fallback below
+    # (which runs ~94% of the tree). A single non-doc file anywhere in the diff —
+    # including one this selector does not otherwise recognize — disqualifies the
+    # exemption and falls through to normal smart-selection/fallback, so mixed or
+    # ambiguous changes still run tests.
+    if changed_files and all(_is_docs_only_path(p) for p in changed_files):
+        return ModelTestSelection(
+            selected_paths=[],
+            split_count=1,
+            is_full_suite=False,
+            full_suite_reason=None,
+            matrix=[1],
+        )
+
+    # 6. Smart selection.
     selected = _resolve(changed_files, config)
     if not selected:
         # Conservative one-shard fallback over the full tests/unit/ tree. This
@@ -265,13 +312,17 @@ def _count_test_files(selected_paths: list[str], repo_root: Path) -> int:
 
 
 def _pyproject_without_safe_keys(data: dict[str, Any]) -> dict[str, Any]:
-    """Return the parsed pyproject with metadata-only ``[project]`` keys removed.
+    """Return the parsed pyproject with metadata-only / lint-only keys removed.
 
     Two revisions compare equal iff their escalation-worthy content — the
     ``dependencies`` array, ``[project.optional-dependencies]``,
-    ``[dependency-groups]``, ``[build-system]``, ``[tool.*]``, ``requires-python``,
-    and any other non-safe key — is identical. Only the metadata-only ``[project]``
-    keys in ``_PYPROJECT_SAFE_PROJECT_KEYS`` are stripped.
+    ``[dependency-groups]``, ``[build-system]``, every ``[tool.*]`` table EXCEPT
+    ``[tool.ruff.*]``, ``requires-python``, and any other non-safe key — is
+    identical. Only the metadata-only ``[project]`` keys in
+    ``_PYPROJECT_SAFE_PROJECT_KEYS`` and the lint-only ``[tool]`` keys in
+    ``_PYPROJECT_SAFE_TOOL_KEYS`` are stripped, so a diff confined to them does
+    not escalate. ``[tool.pytest.ini_options]`` and ``[tool.coverage]`` are NOT
+    stripped and still escalate.
     """
     reduced = dict(data)
     project = reduced.get("project")
@@ -280,6 +331,13 @@ def _pyproject_without_safe_keys(data: dict[str, Any]) -> dict[str, Any]:
             key: value
             for key, value in project.items()
             if key not in _PYPROJECT_SAFE_PROJECT_KEYS
+        }
+    tool = reduced.get("tool")
+    if isinstance(tool, dict):
+        reduced["tool"] = {
+            key: value
+            for key, value in tool.items()
+            if key not in _PYPROJECT_SAFE_TOOL_KEYS
         }
     return reduced
 

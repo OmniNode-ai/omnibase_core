@@ -15,8 +15,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.models.nodes.test_selector.model_adjacency_map import (
     ModelAdjacencyEntry,
     ModelAdjacencyMap,
@@ -32,5 +30,8 @@ __all__ = [
 
 
 def load_adjacency_map(path: Path) -> ModelAdjacencyMap:
-    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return ModelAdjacencyMap.model_validate(raw)
+    # ModelAdjacencyMap.from_yaml_text FAILS on a duplicate mapping key (OMN-14897)
+    # instead of silently keeping the last occurrence — a fail-open shape in the
+    # selector's own config. The YAML filesystem read stays here at the caller
+    # boundary; the parse+validate is the one canonical model method.
+    return ModelAdjacencyMap.from_yaml_text(path.read_text(encoding="utf-8"))
