@@ -1601,6 +1601,49 @@ jobs:
             --enforce-modified "origin/${{ github.base_ref || 'dev' }}" \
             src/omnibase_core
 
+  # Count-locked pull_request-workflow ratchet (C7 / OMN-14907)
+  # Blocks any NEW .github/workflows/*.yml file that triggers on pull_request unless
+  # it retires an existing one (net-negative) or carries an expiring waiver. The
+  # per-PR workflow-run fan-out (~49 runs/PR here) is the C7 cost driver in
+  # docs/plans/2026-07-21-ci-capacity-recovery-plan.md; this is CLAUDE.md's
+  # net-negative-surface rule expressed as a MECHANISM. It MUST run as a ci.yml JOB:
+  # a job living in a separate pull_request-triggered workflow file would be
+  # structurally invisible to ci-summary's default-deny poller (OMN-14430) — and it
+  # would itself add to the very surface this ratchet governs.
+  pull-request-workflow-ratchet:
+    name: Pull-Request Workflow Ratchet (OMN-14907)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Ratchet pull_request-triggered workflow files against the frozen budget (OMN-14907)
+        run: |
+          uv run python -m omnibase_core.validation.validator_pull_request_workflow_ratchet --repo-root .
+
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
@@ -1623,7 +1666,7 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, spdx-headers]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers]
     if: always()
 
     steps:
@@ -1660,6 +1703,7 @@ jobs:
           no_new_os_environ="${{ needs.no-new-os-environ.result }}"
           noncanonical_classes="${{ needs.no-noncanonical-lifecycle-classes.result }}"
           extra_forbid="${{ needs.pydantic-extra-forbid.result }}"
+          pr_workflow_ratchet="${{ needs.pull-request-workflow-ratchet.result }}"
           spdx_headers="${{ needs.spdx-headers.result }}"
 
           # Report each check
@@ -1690,6 +1734,7 @@ jobs:
           echo "| No New os.environ Reads (OMN-13566) | $no_new_os_environ |" >> $GITHUB_STEP_SUMMARY
           echo "| Non-Canonical Lifecycle-Class Ratchet (OMN-14350) | $noncanonical_classes |" >> $GITHUB_STEP_SUMMARY
           echo "| Pydantic extra=\"forbid\" Ratchet (OMN-14515) | $extra_forbid |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pull-Request Workflow Ratchet (OMN-14907) | $pr_workflow_ratchet |" >> $GITHUB_STEP_SUMMARY
           echo "| SPDX Headers (OMN-13576) | $spdx_headers |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
@@ -1718,6 +1763,7 @@ jobs:
              [[ "$no_new_os_environ" == "success" ]] && \
              [[ "$noncanonical_classes" == "success" ]] && \
              [[ "$extra_forbid" == "success" ]] && \
+             [[ "$pr_workflow_ratchet" == "success" ]] && \
              [[ "$spdx_headers" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
