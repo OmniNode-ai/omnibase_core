@@ -531,16 +531,24 @@ repos:
       # CLASS vs FILE Naming Conventions:
       # - validate-naming-conventions: CLASS naming (ModelUser, EnumStatus, ProtocolEventBus)
       # - validate-file-naming-conventions: FILE naming (model_user.py, enum_status.py)
+      #
+      # OMN-14925: invoke the SAME script + baseline semantics as the required CI
+      # "Naming Conventions" context (.github/workflows/ci.yml job `naming-conventions`,
+      # OMN-13574) — `scripts/validate_class_naming.py` with no args. That validator
+      # scopes to src/omnibase_core/ and applies its ALLOWED_EXCEPTIONS grandfather set,
+      # so the local pre-push hook and the required CI gate render the same verdict.
+      # The prior `scripts/validation/validate_naming.py src/` raw full-src scan had NO
+      # baseline and reported 29 pre-existing dev violations, failing every src-touching
+      # push while CI stayed green. Disposition of that orphaned script: OMN-14926.
       - id: validate-naming-conventions
         name: ONEX Naming Convention Validation
-        entry: uv run python scripts/validation/validate_naming.py
-        args: ['src/']
+        entry: uv run python scripts/validate_class_naming.py
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
         exclude: ^(tests/|archive/|archived/|scripts/validation/).*\.py$
-        stages: [pre-push]  # Moved to pre-push: ~14s full codebase scan
-        # Architectural exemptions documented in validate_naming.py ARCHITECTURAL_EXEMPTIONS
+        stages: [pre-push]  # Moved to pre-push: full src/omnibase_core class-naming scan
+        # Grandfathered exceptions live in scripts/validate_class_naming.py ALLOWED_EXCEPTIONS
 
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: validate-file-naming-conventions
