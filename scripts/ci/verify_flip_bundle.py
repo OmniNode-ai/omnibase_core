@@ -41,12 +41,16 @@ Blind spots this gate closes (each = one assertion; first failure exits non-zero
   stale the instant CI reformats. Assertion 5 asserts the live sha equals the recorded
   sha AND that a dry-run ``ruff format`` leaves the module unchanged (proving the receipt
   was minted post-format).
-* **E1 — trusted, self-authored equivalence golden.** ``verify_equivalence_replay``
-  TRUSTS ``status == "pass"`` and never re-runs it; the golden is typically authored by
-  the same session that wrote the def-B handler. Assertion 6 (EQUIVALENCE path only —
+* **E1 — trusted, unreproduced equivalence golden.** ``verify_equivalence_replay``
+  TRUSTS ``status == "pass"`` and never re-runs it. Assertion 6 (EQUIVALENCE path only —
   the hand-flip path is git-re-derived and exempt; and only for flips NEWLY added vs
-  origin/dev — the two pre-existing merged flips are grandfathered) requires a
-  git-anchored independent-author provenance seam (see ``_assert_independent_author``).
+  origin/dev — the two pre-existing merged flips are grandfathered) RERUNS the
+  deterministic producer over the artifact's declared replay inputs and byte-compares its
+  output against the committed artifact (see ``scripts/ci/equivalence_producer.py``).
+  This replaces the identity-based independent-author attestation that first closed E1
+  (omnibase_core#1472): identity is not evidence — any second git identity satisfies an
+  author check while proving nothing — whereas byte-equality with a deterministic rerun
+  proves the artifact is mechanically reproducible (OMN-14905).
 
 Usage (pre-commit / CI, mirrors canonical_handler_shape)::
 
@@ -79,17 +83,19 @@ from pydantic import BaseModel, ConfigDict
 # and as a standalone ``python scripts/ci/verify_flip_bundle.py`` (script dir on path).
 try:  # pragma: no cover - import shim
     from scripts.ci import canonical_handler_shape as chs
+    from scripts.ci import equivalence_producer as eqp
     from scripts.ci.adequacy_receipt import ModelAdequacyReceipt
 except ImportError:  # pragma: no cover - script-dir invocation
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import canonical_handler_shape as chs  # type: ignore[import-not-found, no-redef]
+    import equivalence_producer as eqp  # type: ignore[import-not-found, no-redef]
     from adequacy_receipt import (  # type: ignore[import-not-found, no-redef]
         ModelAdequacyReceipt,
     )
 
-# The two flips that merged BEFORE this gate existed. Assertion 6 (independent-author
-# attestation) is a forward-looking seam: it cannot be retroactively satisfied by an
-# already-merged golden, so these are grandfathered (skipped for assertion 6 only — all
+# The two flips that merged BEFORE this gate existed. Assertion 6 (deterministic
+# producer rerun + byte-compare) is a forward-looking seam: an already-merged v1 golden
+# carries no replay declaration and so cannot be reproduced, so these are grandfathered (skipped for assertion 6 only — all
 # other assertions still apply). The general newness rule (proof artifact absent at the
 # git base) also covers them; this constant is belt-and-suspenders per OMN-14809.
 GRANDFATHERED_FLIPS: frozenset[str] = frozenset(
@@ -173,69 +179,6 @@ def _apply_scope(
     return s_src, s_glob, s_base, s_recv
 
 
-def _git_commit_author_email(repo_root: Path, ref: str) -> str | None:
-    try:
-        proc = subprocess.run(
-            ["git", "-C", str(repo_root), "show", "-s", "--format=%ae", ref],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return None
-    if proc.returncode != 0:
-        return None
-    email = proc.stdout.strip()
-    return email or None
-
-
-def _git_commit_touched(repo_root: Path, ref: str, rel_path: str) -> bool:
-    """Did commit ``ref`` modify ``rel_path``? (pins def_b_commit to the real flip)."""
-    try:
-        proc = subprocess.run(
-            [
-                "git",
-                "-C",
-                str(repo_root),
-                "diff-tree",
-                "--no-commit-id",
-                "--name-only",
-                "-r",
-                ref,
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return False
-    if proc.returncode != 0:
-        return False
-    touched = {line.strip() for line in proc.stdout.splitlines() if line.strip()}
-    return rel_path in touched
-
-
-def _git_is_ancestor(repo_root: Path, ancestor: str, descendant: str) -> bool:
-    try:
-        proc = subprocess.run(
-            [
-                "git",
-                "-C",
-                str(repo_root),
-                "merge-base",
-                "--is-ancestor",
-                ancestor,
-                descendant,
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return False
-    return proc.returncode == 0
-
-
 def _git_added_files(repo_root: Path, base_ref: str) -> list[str] | None:
     try:
         proc = subprocess.run(
@@ -257,10 +200,6 @@ def _git_added_files(repo_root: Path, base_ref: str) -> list[str] | None:
     if proc.returncode != 0:
         return None
     return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
-
-
-def _norm(email: str) -> str:
-    return email.strip().lower()
 
 
 # --------------------------------------------------------------------------- #
@@ -509,106 +448,51 @@ def _assert_ordering_seam(
 
 
 # --------------------------------------------------------------------------- #
-# Assertion 6 — independent-author attestation for NEW equivalence flips (closes E1)
+# Assertion 6 — deterministic producer rerun + byte-compare (closes E1, OMN-14905)
 # --------------------------------------------------------------------------- #
 #
-# The provenance seam (defined here) that a NEW equivalence golden must carry:
+# The seam a NEW equivalence artifact must carry is a DECLARATION of the replay inputs
+# (see ``equivalence_producer.REQUIRED_DECLARATION_KEYS``) — never a verdict and never an
+# identity:
 #
-#   "provenance": {
-#       "authored_by":       "<email of whoever authored the golden>",
-#       "def_b_commit":      "<sha of the commit that produced the def-B handler>",
-#       "base_ref_exec_sha": "<sha the golden was re-executed at, an ancestor of the flip>"
+#   "receipt_schema": "equivalence_replay.v2",
+#   "declaration": {
+#       "base_ref":                  "<pre-flip commit; must be an ancestor of the gate base>",
+#       "legacy_handler_module":     "<dotted module read out of git at base_ref>",
+#       "legacy_handler_symbol":     "<class>",   "legacy_entrypoint":   "<def-A method>",
+#       "canonical_handler_module":  "<dotted module in the working tree>",
+#       "canonical_handler_symbol":  "<class>",   "canonical_entrypoint": "<def-B method>",
+#       "input_model":               "<dotted Module.Class of the request model>",
+#       "replay_inputs":             ["<repo-relative input .json>", ...],
+#       "volatile_mask":             ["<dotted path>", ...]
 #   }
 #
-# The gate reads the def-B author FROM GIT (via def_b_commit), never trusting the JSON,
-# and requires def_b_commit to have genuinely modified the handler module. It requires
-# base_ref_exec_sha to resolve, to be an ancestor of def_b_commit (the golden was
-# anchored to PRE-flip code), and to have been git-authored by `authored_by` (so the
-# independent author left a real git trace — `authored_by` is not a free-text claim).
-# THE core anti-self-authoring assertion: authored_by != git-author(def_b_commit).
-# This is an ATTESTATION seam, not a re-execution: it makes independent authorship a
-# first-class, git-anchored, gate-checked fact instead of implicit trust in status=pass.
+# The gate then RERUNS the producer over exactly those inputs — executing the HEAD
+# canonical handler against the legacy handler materialized from ``git show`` — derives
+# ``selected_input_hashes`` and ``status`` itself, and byte-compares the re-emitted
+# artifact against the one the PR carries.
+#
+# This REPLACES the prior independent-author attestation (omnibase_core#1472). That
+# assertion required ``provenance.authored_by != git-author(def_b_commit)``, which is an
+# identity property: a bot, a second machine, or a co-author trailer satisfies it while
+# proving nothing about the artifact, and it never re-executed the replay it gated.
+# Byte-equality with a deterministic rerun proves the artifact is mechanically
+# reproducible; who authored it is irrelevant, which is the point.
 
 
-def _assert_independent_author(
+def _assert_reproducible_equivalence(
     node_id: str,
     receipts_dir: Path,
-    handler_module: str | None,
     repo_root: Path,
+    src_root: Path,
+    base_ref: str,
 ) -> tuple[bool, str]:
-    art = receipts_dir / f"{node_id}{chs.EQUIVALENCE_SUFFIX}"
-    raw = chs._load_json(art)
-    if raw is None:
-        return False, "equivalence artifact unparseable for provenance check"
-    prov = raw.get("provenance")
-    if not isinstance(prov, dict):
-        return (
-            False,
-            "NEW equivalence flip missing provenance block "
-            "{authored_by, def_b_commit, base_ref_exec_sha} (E1 attestation absent)",
-        )
-    authored_by = prov.get("authored_by")
-    def_b_commit = prov.get("def_b_commit")
-    base_exec = prov.get("base_ref_exec_sha")
-    for key, val in (
-        ("authored_by", authored_by),
-        ("def_b_commit", def_b_commit),
-        ("base_ref_exec_sha", base_exec),
-    ):
-        if not isinstance(val, str) or not val.strip():
-            return False, f"provenance.{key} missing or empty"
-    assert isinstance(authored_by, str)
-    assert isinstance(def_b_commit, str)
-    assert isinstance(base_exec, str)
-
-    if not chs._git_ref_exists(repo_root, def_b_commit):
-        return False, f"provenance.def_b_commit {def_b_commit!r} unresolvable in git"
-    def_b_author = _git_commit_author_email(repo_root, def_b_commit)
-    if def_b_author is None:
-        return False, f"cannot read git author of def_b_commit {def_b_commit!r}"
-
-    # def_b_commit must genuinely be the commit that produced the def-B handler.
-    if not isinstance(handler_module, str) or not handler_module:
-        return False, "handler_module unknown; cannot verify def_b_commit touched it"
-    rel = chs._module_repo_rel(handler_module)
-    if rel is None:
-        return False, f"handler module {handler_module} path unresolvable in repo"
-    _, rel_path = rel
-    if not _git_commit_touched(repo_root, def_b_commit, rel_path):
-        return (
-            False,
-            f"provenance.def_b_commit {def_b_commit!r} did not modify the handler "
-            f"module {rel_path} (not the real def-B flip commit)",
-        )
-
-    if not chs._git_ref_exists(repo_root, base_exec):
-        return False, f"provenance.base_ref_exec_sha {base_exec!r} unresolvable in git"
-    if not _git_is_ancestor(repo_root, base_exec, def_b_commit):
-        return (
-            False,
-            f"base_ref_exec_sha {base_exec!r} is not an ancestor of def_b_commit "
-            f"(golden was not anchored to pre-flip code)",
-        )
-    base_author = _git_commit_author_email(repo_root, base_exec)
-    if base_author is None:
-        return False, f"cannot read git author of base_ref_exec_sha {base_exec!r}"
-    if _norm(base_author) != _norm(authored_by):
-        return (
-            False,
-            f"authored_by {authored_by!r} != git author of base_ref_exec_sha "
-            f"({base_author!r}); attestation is not git-anchored (forgeable claim)",
-        )
-
-    if _norm(authored_by) == _norm(def_b_author):
-        return (
-            False,
-            f"golden self-authored by the def-B author ({authored_by!r}) — "
-            f"independent-author attestation FAILS (E1)",
-        )
-    return (
-        True,
-        f"golden authored_by {authored_by!r} != def-B author {def_b_author!r}; "
-        f"git-anchored at base_ref_exec_sha {base_exec[:8]}",
+    return eqp.byte_compare(
+        node_id,
+        receipts_dir / f"{node_id}{chs.EQUIVALENCE_SUFFIX}",
+        repo_root,
+        src_root,
+        base_ref,
     )
 
 
@@ -760,17 +644,19 @@ def _verify_flip_bundle_impl(
         ModelAssertionOutcome(index=5, name="ordering-seam", ok=True, detail=detail)
     )
 
-    # Assertion 6 — independent-author attestation (E1), equivalence + new-flip only.
+    # Assertion 6 — deterministic producer rerun + byte-compare (E1), equivalence +
+    # new-flip only.
     ok_e = chs.verify_equivalence_replay(node_id)[0]
     if not ok_e:
         detail6 = "hand-flip proof path — verbatim-preservation git-re-derived; exempt"
     elif repo_root is None:
-        # Equivalence path but no git to establish newness/anchoring -> fail-closed.
+        # Equivalence path but no git to establish newness / rerun the legacy side.
         return _record(
             6,
-            "independent-author",
+            "reproducible-equivalence",
             False,
-            "cannot resolve git repo root to establish flip newness / anchor (E1)",
+            "cannot resolve git repo root to establish flip newness / rerun the "
+            "producer (E1)",
         )
     elif node_id in GRANDFATHERED_FLIPS or not _flip_proof_is_new(
         node_id, s_recv, repo_root, base_ref
@@ -778,14 +664,14 @@ def _verify_flip_bundle_impl(
         grandfathered = True
         detail6 = "grandfathered — equivalence proof pre-existing at base (not new vs origin/dev)"
     else:
-        ok6, detail6 = _assert_independent_author(
-            node_id, s_recv, handler_module, repo_root
+        ok6, detail6 = _assert_reproducible_equivalence(
+            node_id, s_recv, repo_root, s_src, base_ref
         )
         if not ok6:
-            return _record(6, "independent-author", False, detail6)
+            return _record(6, "reproducible-equivalence", False, detail6)
     outcomes.append(
         ModelAssertionOutcome(
-            index=6, name="independent-author", ok=True, detail=detail6
+            index=6, name="reproducible-equivalence", ok=True, detail=detail6
         )
     )
 

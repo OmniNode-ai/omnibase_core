@@ -185,16 +185,17 @@ repos:
       # the CI ratchet is structurally blind to: full ModelAdequacyReceipt invariants
       # (A1), per-binding canonicality so a multi-handler node cannot partial-flip (B5),
       # twin shape+entrypoint baseline shrink (B6), receipt-minted-post-format ordering
-      # (S1), and a git-anchored independent-author attestation for new equivalence
-      # goldens (E1). Runs at PRE-PUSH (flip-discovery diffs the whole branch vs
-      # origin/dev, which is present locally) — it does its OWN git discovery, so
-      # pass_filenames is false. No committed flip in the diff -> exit 0.
+      # (S1), and a deterministic producer rerun + byte-compare for new equivalence
+      # goldens (E1, OMN-14905 — replaces the earlier author-identity attestation).
+      # Runs at PRE-PUSH (flip-discovery diffs the whole branch vs origin/dev, which is
+      # present locally) — it does its OWN git discovery, so pass_filenames is false.
+      # No committed flip in the diff -> exit 0.
       - id: verify-flip-bundle
         name: canonical-shape flip-bundle seam gate (fail-closed, OMN-14809)
         entry: uv run python scripts/ci/verify_flip_bundle.py
         language: system
         pass_filenames: false
-        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/adequacy_receipts/.*)$
+        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-push]
 
       # Cleanup: Clear tmp/ directory before commits

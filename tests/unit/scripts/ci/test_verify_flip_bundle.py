@@ -15,8 +15,14 @@ Proves two things:
 Seeded cases (task-mandated):
   (a) forged adequacy (selected_count != len(selected_input_hashes)) -> assertion 1 (A1)
   (b) multi-handler node with only binding[0] flipped                -> assertion 3 (B5)
-  (c) equivalence provenance identity == the def-B author            -> assertion 6 (E1)
+  (c) forged status=pass over a genuinely diverging replay           -> assertion 6 (E1)
   (d) receipt sha mismatches after a dry-run ruff format             -> assertion 5 (S1)
+
+Assertion 6 (OMN-14905) no longer checks author identity. It RERUNS a deterministic
+producer over the artifact's declared replay inputs — executing the working-tree
+canonical handler against the legacy handler materialized from ``git show`` — and
+byte-compares the reproduced artifact against the committed one. So the seeds below
+exercise reproducibility, not who signed the file.
 """
 
 from __future__ import annotations
@@ -30,17 +36,41 @@ from pathlib import Path
 
 import pytest
 
+from scripts.ci import equivalence_producer as eqp
 from scripts.ci.verify_flip_bundle import ModelFlipBundleResult, verify_flip_bundle
 
 pytestmark = pytest.mark.unit
 
-# Two distinct git identities: X = def-B (handler) author, Y = independent golden author.
+# Two distinct git identities kept only so the synthetic history is realistic; assertion
+# 6 no longer reads author identity at all.
 AUTHOR_X = ("Def B Author", "defb@example.test")
 AUTHOR_Y = ("Independent Reviewer", "reviewer@example.test")
 
 NODE_ID = "testpkg.nodes.node_demo_compute"
 PACKAGE = "testpkg"
 _DUMMY_INPUT_HASH = "sha256:" + "a" * 64
+
+# Self-contained pydantic input model committed INTO the synthetic repo so the producer
+# imports everything from the tree under review (no omnibase_core dependency in the
+# replay, and the working-tree-vs-installed drift guard has a real src-root to check).
+DEMO_MODEL = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+from pydantic import BaseModel, ConfigDict
+
+
+class ModelDemoInput(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    value: int = 0
+    label: str = "x"
+"""
+
+INPUT_MODEL_DOTTED = "testpkg.nodes.node_demo_compute.model.ModelDemoInput"
+REPLAY_INPUT_REL = (
+    "scripts/ci/equivalence_inputs/testpkg.nodes.node_demo_compute/case.json"
+)
+REPLAY_INPUT_PAYLOAD = {"value": 3, "label": "demo"}
 
 CANONICAL_HANDLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
@@ -61,6 +91,8 @@ UNFORMATTED_HANDLER = (
     "        return request\n"
 )
 
+# Legacy def-A whose ``run`` returns the payload UNCHANGED -> equivalent to HEAD.handle,
+# so the honest replay is status=pass and byte-reproducible.
 LEGACY_HANDLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
@@ -68,6 +100,17 @@ LEGACY_HANDLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 class HandlerDemoCompute:
     def run(self, payload):
         return payload
+"""
+
+# Legacy def-A that GENUINELY diverges from HEAD (mutates a field). The honest replay is
+# status=fail; a golden that forges status=pass is the E1 attack assertion 6 must reject.
+DIVERGING_LEGACY_HANDLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+
+class HandlerDemoCompute:
+    def run(self, payload):
+        return payload.model_copy(update={"value": payload.value + 1})
 """
 
 NON_CANONICAL_BAD_HANDLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
@@ -173,13 +216,55 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def build_flip_repo(tmp_path: Path, *, formatted: bool = True) -> FlipRepo:
+def _adequacy_receipt(handler_sha: str, input_hashes: list[str]) -> dict[str, object]:
+    return {
+        "receipt_schema": "adequacy_receipt.v1",
+        "node_id": NODE_ID,
+        "handler_module": "testpkg.nodes.node_demo_compute.handler",
+        "handler_module_sha256": handler_sha,
+        "recorded_at": "2026-07-19T00:00:00+00:00",
+        "recorder_schema": "adequacy_receipt.v1",
+        "candidate_count": len(input_hashes),
+        "selected_count": len(input_hashes),
+        "selected_input_hashes": input_hashes,
+        "branch_coverage_pct": 100.0,
+        "coverage_target": 80.0,
+        "meets_target": True,
+        "uncovered_waiver": None,
+        "volatile_mask": [],
+    }
+
+
+def _v2_declaration(base_ref: str) -> dict[str, object]:
+    return {
+        "base_ref": base_ref,
+        "legacy_handler_module": "testpkg.nodes.node_demo_compute.handler",
+        "legacy_handler_symbol": "HandlerDemoCompute",
+        "legacy_entrypoint": "run",
+        "canonical_handler_module": "testpkg.nodes.node_demo_compute.handler",
+        "canonical_handler_symbol": "HandlerDemoCompute",
+        "canonical_entrypoint": "handle",
+        "input_model": INPUT_MODEL_DOTTED,
+        "replay_inputs": [REPLAY_INPUT_REL],
+        "volatile_mask": [],
+    }
+
+
+def build_flip_repo(
+    tmp_path: Path, *, formatted: bool = True, diverging_legacy: bool = False
+) -> FlipRepo:
     """A real 3-commit git repo carrying one coherent NEW canonical-shape flip.
 
-    Timeline (authors matter for the assertion-6 git-anchored attestation):
-      commit0 (X): scaffold + legacy handler + baseline listing the node non-canonical.
-      commit1 (Y): trivial anchor commit (origin/dev pre-flip == base_ref).
-      commit2 (X): the flip — canonical handler + baseline shrink + adequacy/equivalence.
+    Timeline:
+      commit0: scaffold + legacy handler + demo model + baseline (node non-canonical).
+      commit1: trivial anchor commit (origin/dev pre-flip == base_ref).
+      commit2: the flip — canonical handler + baseline shrink + adequacy + v2 equivalence.
+
+    The v2 equivalence artifact carries a ``declaration`` of the replay inputs only; its
+    ``selected_input_hashes`` and ``status`` are DERIVED by rerunning the producer, so a
+    faithful fixture is byte-reproducible by construction. ``diverging_legacy`` seeds a
+    legacy handler that genuinely diverges from HEAD (honest status=fail) for the E1
+    attack case.
     """
     root = tmp_path / "repo"
     src_root = root / "src"
@@ -188,74 +273,65 @@ def build_flip_repo(tmp_path: Path, *, formatted: bool = True) -> FlipRepo:
     baseline_path = root / "scripts" / "ci" / "canonical_handler_shape_baseline.py"
     handler_file = node_dir / "handler.py"
     contract_file = node_dir / "contract.yaml"
+    model_file = node_dir / "model.py"
+    input_file = root / REPLAY_INPUT_REL
 
     root.mkdir(parents=True)
     _git(root, "init", "-q")
 
-    # commit0 (X): base state, node non-canonical.
+    # commit0: base state, node non-canonical. Model + replay input land here so both
+    # exist at base_ref for the legacy-side replay.
     _write(contract_file, SINGLE_BINDING_CONTRACT)
-    _write(handler_file, LEGACY_HANDLER)
+    _write(model_file, DEMO_MODEL)
+    _write(
+        handler_file, DIVERGING_LEGACY_HANDLER if diverging_legacy else LEGACY_HANDLER
+    )
+    _write(
+        input_file, json.dumps(REPLAY_INPUT_PAYLOAD, indent=2, sort_keys=True) + "\n"
+    )
     _write(baseline_path, 'NON_CANONICAL = ("testpkg.nodes.node_demo_compute",)\n')
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", "base state (non-canonical)", author=AUTHOR_X)
     anchor_x = _git(root, "rev-parse", "HEAD")
 
-    # commit1 (Y): trivial anchor == the golden's pre-flip re-exec point / origin/dev.
+    # commit1: trivial anchor == origin/dev pre-flip == base_ref.
     _write(root / "docs" / "anchor.md", "pre-flip base\n")
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", "pre-flip anchor", author=AUTHOR_Y)
     base_ref = _git(root, "rev-parse", "HEAD")
 
-    # commit2 (X): the flip. Canonical handler first (optionally ruff-formatted), THEN
-    # hash it, THEN mint the receipt (S1 ordering), THEN shrink the baseline.
+    # commit2: the flip. Canonical handler first (optionally ruff-formatted), THEN hash
+    # it, THEN mint the receipt (S1 ordering), THEN shrink the baseline.
     _write(handler_file, CANONICAL_HANDLER if formatted else UNFORMATTED_HANDLER)
     if formatted:
         _ruff_format(handler_file)
     handler_sha = _sha256_file(handler_file)
 
-    receipt = {
-        "receipt_schema": "adequacy_receipt.v1",
-        "node_id": NODE_ID,
-        "handler_module": "testpkg.nodes.node_demo_compute.handler",
-        "handler_module_sha256": handler_sha,
-        "recorded_at": "2026-07-19T00:00:00+00:00",
-        "recorder_schema": "adequacy_receipt.v1",
-        "candidate_count": 1,
-        "selected_count": 1,
-        "selected_input_hashes": [_DUMMY_INPUT_HASH],
-        "branch_coverage_pct": 100.0,
-        "coverage_target": 80.0,
-        "meets_target": True,
-        "uncovered_waiver": None,
-        "volatile_mask": [],
-    }
-    _write(receipts_dir / f"{NODE_ID}.json", json.dumps(receipt, indent=2))
+    input_hash = "sha256:" + hashlib.sha256(input_file.read_bytes()).hexdigest()
+    _write(
+        receipts_dir / f"{NODE_ID}.json",
+        json.dumps(_adequacy_receipt(handler_sha, [input_hash]), indent=2),
+    )
 
-    # POSITIVE provenance: golden authored by Y (independent of def-B author X),
-    # git-anchored at the Y-authored base_ref, def_b_commit == the flip commit (X).
-    def_b_commit_placeholder = "PENDING"  # filled after this commit exists
-    equivalence = {
-        "node_id": NODE_ID,
-        "selected_input_hashes": [_DUMMY_INPUT_HASH],
-        "status": "pass",
-        "provenance": {
-            "authored_by": AUTHOR_Y[1],
-            "def_b_commit": def_b_commit_placeholder,
-            "base_ref_exec_sha": base_ref,
-        },
-    }
     equiv_path = receipts_dir / f"{NODE_ID}.equivalence.json"
-    _write(equiv_path, json.dumps(equivalence, indent=2))
+    # Seed a skeleton carrying only the declaration, then DERIVE the faithful artifact by
+    # rerunning the real producer (exactly what the gate will do), and commit its bytes.
+    skeleton = {
+        "node_id": NODE_ID,
+        "receipt_schema": eqp.EQUIVALENCE_SCHEMA_V2,
+        "declaration": _v2_declaration(base_ref),
+        "selected_input_hashes": [],
+        "status": "unknown",
+    }
+    _write(equiv_path, json.dumps(skeleton, indent=2))
+    produced, detail = eqp.produce(NODE_ID, equiv_path, root, src_root, base_ref)
+    assert produced is not None, f"fixture producer failed: {detail}"
+    equiv_path.write_bytes(produced)
 
     _write(baseline_path, "NON_CANONICAL = ()\n")
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", "flip to canonical def-B", author=AUTHOR_X)
     def_b_commit = _git(root, "rev-parse", "HEAD")
-
-    # Now that the flip commit exists, fill def_b_commit into the working-tree
-    # equivalence artifact (the gate reads working-tree receipts).
-    equivalence["provenance"]["def_b_commit"] = def_b_commit
-    _write(equiv_path, json.dumps(equivalence, indent=2))
 
     return FlipRepo(
         root=root,
@@ -305,10 +381,11 @@ def test_passes_on_coherent_new_flip(tmp_path: Path) -> None:
     result = _run(repo)
     assert result.ok, result.reason
     assert result.failed_assertion is None
-    # Assertion 6 genuinely RAN the independent-author attestation (not grandfathered):
+    # Assertion 6 genuinely RAN the byte-compare producer rerun (not grandfathered):
     assert result.grandfathered is False
     a6 = next(o for o in result.outcomes if o.index == 6)
-    assert "!=" in a6.detail and "git-anchored" in a6.detail
+    assert a6.name == "reproducible-equivalence"
+    assert "byte-identical" in a6.detail
     # All six assertions recorded ok.
     assert [o.index for o in result.outcomes] == [1, 2, 3, 4, 5, 6]
     assert all(o.ok for o in result.outcomes)
@@ -403,22 +480,28 @@ def test_seed_b_multi_handler_partial_flip_fails_assertion_3(tmp_path: Path) -> 
     assert "handler_bad" in result.reason and "partial flip" in result.reason
 
 
-def test_seed_c_self_authored_golden_fails_assertion_6(tmp_path: Path) -> None:
-    """authored_by == def-B author (git-anchored to an X-authored ancestor) -> E1 FAIL."""
-    repo = build_flip_repo(tmp_path)
+def test_seed_c_forged_pass_over_diverging_replay_fails_assertion_6(
+    tmp_path: Path,
+) -> None:
+    """The E1 attack: a golden that forges status=pass while the real replay diverges.
+
+    ``verify_equivalence_replay`` (assertion 2's transitive dependency) TRUSTS
+    status=pass, so a forged-pass golden clears assertions 1-5. Assertion 6 reruns the
+    producer, the honest replay is status=fail (legacy mutates a field), and the
+    byte-compare rejects. Author identity is irrelevant — this is the whole point.
+    """
+    repo = build_flip_repo(tmp_path, diverging_legacy=True)
     equiv_path = repo.receipts_dir / f"{NODE_ID}.equivalence.json"
     raw = json.loads(equiv_path.read_text())
-    # Golden claims to be authored by X (the def-B author), git-anchored at the
-    # X-authored ancestor (so the git-anchor check passes and the failure is the
-    # identity match, not an incidental unresolvable/anchor failure).
-    raw["provenance"]["authored_by"] = AUTHOR_X[1]
-    raw["provenance"]["base_ref_exec_sha"] = repo.anchor_x
+    assert raw["status"] == "fail", "diverging fixture must honestly be status=fail"
+    raw["status"] = "pass"  # the hand-authored lie
     equiv_path.write_text(json.dumps(raw, indent=2))
 
     result = _run(repo)
     assert result.ok is False
     assert result.failed_assertion == 6, result.reason
-    assert "self-authored by the def-B author" in result.reason
+    assert "byte-compare FAILED" in result.reason
+    assert "status" in result.reason
 
 
 def test_seed_d_receipt_minted_pre_format_fails_assertion_5(tmp_path: Path) -> None:
@@ -436,23 +519,54 @@ def test_seed_d_receipt_minted_pre_format_fails_assertion_5(tmp_path: Path) -> N
 
 
 # --------------------------------------------------------------------------- #
-# 4. Guardrail: assertion 6 fails CLOSED when the provenance block is entirely absent.
+# 4. Guardrail: assertion 6 fails CLOSED when the replay declaration is absent, or
+#    when the legacy side is collapsed onto HEAD.
 # --------------------------------------------------------------------------- #
 
 
-def test_new_equivalence_flip_without_provenance_fails_assertion_6(
+def test_new_equivalence_flip_without_declaration_fails_assertion_6(
     tmp_path: Path,
 ) -> None:
+    """A NEW flip carrying a bare v1 artifact (no declaration) cannot be reproduced."""
+    repo = build_flip_repo(tmp_path)
+    equiv_path = repo.receipts_dir / f"{NODE_ID}.equivalence.json"
+    faithful = json.loads(equiv_path.read_text())
+    # Downgrade to the legacy v1 shape: right node + status=pass + the SAME derived
+    # hashes (so the assertion-2 receipt/proof binding still passes), but NO declaration
+    # and no v2 schema — so assertion 6's producer rerun cannot reproduce it.
+    equiv_path.write_text(
+        json.dumps(
+            {
+                "node_id": NODE_ID,
+                "selected_input_hashes": faithful["selected_input_hashes"],
+                "status": "pass",
+            },
+            indent=2,
+        )
+    )
+
+    result = _run(repo)
+    assert result.ok is False
+    assert result.failed_assertion == 6, result.reason
+    assert "receipt_schema" in result.reason
+
+
+def test_legacy_base_ref_not_ancestor_of_gate_base_fails_assertion_6(
+    tmp_path: Path,
+) -> None:
+    """base_ref must be pre-flip: a descendant of the gate base collapses the legacy side."""
     repo = build_flip_repo(tmp_path)
     equiv_path = repo.receipts_dir / f"{NODE_ID}.equivalence.json"
     raw = json.loads(equiv_path.read_text())
-    raw.pop("provenance", None)
+    # Point base_ref at the flip commit itself — NOT an ancestor of the gate base
+    # (repo.base_ref == commit1); commit2 is a descendant, so the guard must fire.
+    raw["declaration"]["base_ref"] = repo.def_b_commit
     equiv_path.write_text(json.dumps(raw, indent=2))
 
     result = _run(repo)
     assert result.ok is False
     assert result.failed_assertion == 6, result.reason
-    assert "missing provenance block" in result.reason
+    assert "not an ancestor" in result.reason
 
 
 def test_missing_adequacy_receipt_fails_closed_assertion_1(tmp_path: Path) -> None:
