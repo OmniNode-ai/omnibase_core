@@ -393,7 +393,7 @@ jobs:
 
       - name: Set up Python 3.13
         if: steps.bot_exempt.outputs.exempt != 'true'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
