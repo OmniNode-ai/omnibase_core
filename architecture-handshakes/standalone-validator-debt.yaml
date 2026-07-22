@@ -98,6 +98,12 @@ decorative_debt:
     context: validate
   - workflow_file: validator-no-raw-sqlite3.yml
     context: validate
+  # OMN-14891 git-env-isolation gate: unique context, ADVISORY today (NOT in
+  # required_status_checks — verified 2026-07-22 via the gh api command above).
+  # Moves to natively_required_contexts when the required flip tracked in
+  # .github/required-checks.yaml lands (after 2 independent green dev runs).
+  - workflow_file: validator-no-unguarded-git-subprocess.yml
+    context: no-unguarded-git-subprocess
   - workflow_file: validator-operation-match.yml
     context: validate
   - workflow_file: validator-pin-hygiene.yml

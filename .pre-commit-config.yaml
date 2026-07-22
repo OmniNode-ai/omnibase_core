@@ -411,6 +411,23 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # OMN-14891: no test may shell out to git while able to inherit GIT_DIR /
+      # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_COMMON_DIR from a git hook. Those
+      # variables OVERRIDE `cwd=` and `git -C`, so a tmp_path fixture running under
+      # the pre-push hook mutates the REAL invoking worktree — twice observed
+      # (core.bare=true + a bogus [user] block + 6707 phantom staged deletions on
+      # the shared canonical clone). The session scrub in tests/conftest.py is the
+      # remedy; this blocks reintroduction. Whole-tree arg so a partially-staged
+      # commit cannot hide a violation elsewhere.
+      - id: no-unguarded-git-subprocess
+        name: Block unguarded git subprocess calls in tests (OMN-14891)
+        entry: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess tests
+        language: system
+        types: [python]
+        files: ^tests/.*\.py$
+        pass_filenames: false
+        stages: [pre-commit]
+
       # OMN-14350: non-canonical lifecycle-word class ratchet (omnibase_core canary).
       # Flags CamelCase classes carrying Service/Engine/Adapter/Router/Daemon/Manager/
       # Runner/Registry/Controller/Server/Client and blocks any NEW one outside the

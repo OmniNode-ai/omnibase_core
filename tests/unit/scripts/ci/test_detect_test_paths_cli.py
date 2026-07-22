@@ -5,9 +5,14 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
+
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 
@@ -108,6 +113,9 @@ def _init_repo_with_base_pyproject(repo: Path) -> str:
         check=True,
         capture_output=True,
         text=True,
+        # OMN-14891: without this, an inherited GIT_DIR from a git hook makes
+        # rev-parse report the REAL worktree's HEAD instead of this tmp repo's.
+        env=scrub_git_location_env(os.environ),
     ).stdout.strip()
 
 

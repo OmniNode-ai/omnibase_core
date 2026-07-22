@@ -52,7 +52,7 @@ def test_decorative_debt_is_the_reported_count(tmp_path: Path) -> None:
     fail loud. Migrating an entry to `migrated_into_ci_yml` legitimately lowers
     this number — update the constant in the same PR as the migration."""
     manifest = yaml.safe_load(DEBT_MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert len(manifest["decorative_debt"]) == 18
+    assert len(manifest["decorative_debt"]) == 19
 
 
 def test_planted_undeclared_standalone_validator_is_detected(tmp_path: Path) -> None:

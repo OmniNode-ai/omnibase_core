@@ -112,7 +112,22 @@ allowlisted_workflows:
 # + justification + `retires` (the surface/manual step it removes, per the
 # net-negative rule). A past-expiry waiver fails the gate. Empty at baseline —
 # the sanctioned default is retire-one, not waive.
-waivers: []
+waivers:
+  - workflow_file: validator-no-unguarded-git-subprocess.yml
+    ticket: OMN-14891
+    expires: "2026-08-19"
+    justification: >-
+      Load-bearing git-environment-isolation gate blocking a twice-observed (2026-07-20 OMN-14891, 2026-07-21
+      OMN-14863) repo-corruption class: git hook-exported GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE override
+      cwd=/-C in test subprocesses and mutate the REAL shared canonical clone. The gate needs its own
+      unique check context ("no-unguarded-git-subprocess") ahead of the branch-protection required flip
+      tracked in .github/required-checks.yaml (ADVISORY until 2 independent green dev runs). Waived rather
+      than budget-bumped so the count lock stays flat; the slot regularizes when the OMN-14877 decorative-validator
+      drain frees allowlist slots (this file then takes a freed slot or migrates into ci.yml and the waiver
+      is removed).
+    retires: >-
+      The recurring manual post-incident .git/config + index forensics-and-repair step for hook-context
+      test corruption, and the per-file hand-fix pattern of OMN-14744 that demonstrably did not hold.
 
 metadata:
   generated_by: "C7 / OMN-14907, 2026-07-21"
