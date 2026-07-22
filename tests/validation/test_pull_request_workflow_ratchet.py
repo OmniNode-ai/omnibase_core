@@ -13,7 +13,7 @@ not watch reject something is decorative).
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
@@ -23,6 +23,7 @@ from omnibase_core.models.validation.model_workflow_ratchet_gap import (
     WORKFLOW_RATCHET_GAP_CODES,
 )
 from omnibase_core.validation.validator_pull_request_workflow_ratchet import (
+    _validate_waivers,
     live_pull_request_workflows,
     triggers_on_pull_request,
     verify_pull_request_workflow_ratchet,
@@ -306,8 +307,21 @@ def test_gap_codes_are_closed_set() -> None:
 
 
 def test_live_pull_request_workflows_matches_registry() -> None:
-    """Sanity: the helper's live enumeration equals the registry allowlist on the
-    real repo (no waivers at baseline)."""
+    """Sanity: the helper's live enumeration equals the registry allowlist plus
+    the ACTIVE waived files on the real repo.
+
+    Waiver semantics are the validator's own ``_validate_waivers`` (one canonical
+    semantic — imported, not replicated): a waiver counts as ACTIVE only when it
+    is a mapping carrying all required fields (workflow_file/ticket/expires/
+    justification/retires), its ``expires`` parses as an ISO date, and
+    ``expires >= today`` (the validator flags ``expires < today`` as
+    WAIVER_EXPIRED). Any waiver that contributes a gap — expired, incomplete, or
+    malformed — drops out of the active set here, so this test goes RED the day a
+    waiver lapses instead of silently extending the exemption (fail-closed)."""
     live = set(live_pull_request_workflows(REPO_ROOT / ".github" / "workflows"))
     registry = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
-    assert live == set(registry["allowlisted_workflows"])
+    waived, waiver_gaps = _validate_waivers(
+        registry.get("waivers", []) or [], datetime.now(UTC).date()
+    )
+    active_waived = waived - {gap.workflow_file for gap in waiver_gaps}
+    assert live == set(registry["allowlisted_workflows"]) | active_waived
