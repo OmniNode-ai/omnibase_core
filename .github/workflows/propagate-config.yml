@@ -63,7 +63,7 @@ jobs:
   propagate:
     needs: occ-preflight
     name: Propagate ${{ inputs.propagation_name || 'release-triggered' }}
-    if: needs.occ-preflight.result == 'success' && (github.event_name != 'pull_request')
+    if: needs.occ-preflight.result == 'success' && (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
