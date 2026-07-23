@@ -495,7 +495,6 @@ violations:
   - "omnibase_core.models.core.model_numeric_filter:ModelNumericFilter"
   - "omnibase_core.models.core.model_object_data:ModelObjectData"
   - "omnibase_core.models.core.model_onex_base_state:ModelOnexInputState"
-  - "omnibase_core.models.core.model_onex_batch_result:ModelOnexBatchResult"
   - "omnibase_core.models.core.model_onex_event_metadata:ModelOnexEventMetadata"
   - "omnibase_core.models.core.model_onex_ignore:ModelOnexIgnore"
   - "omnibase_core.models.core.model_onex_ignore_section:ModelOnexIgnoreSection"
