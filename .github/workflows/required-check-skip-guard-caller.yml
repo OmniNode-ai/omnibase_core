@@ -49,4 +49,4 @@ jobs:
   required-check-skip-guard:
     needs: occ-preflight
     # pinned to omniclaude dev commit carrying the current reusable guard.
-    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@410086f25027b2e1fedaa27727a7c7c04cbc2bdf
+    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@6c909d21f58b031e7cf74bebd9776ae2654fa36f
