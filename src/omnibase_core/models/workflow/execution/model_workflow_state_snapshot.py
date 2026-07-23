@@ -400,7 +400,9 @@ class ModelWorkflowStateSnapshot(BaseModel):
             )
             if warnings:
                 from omnibase_core.enums.enum_log_level import EnumLogLevel
-                from omnibase_core.logging import emit_log_event_sync
+                from omnibase_core.utils.util_stdlib_log_emit import (
+                    emit_log_event_stdlib as emit_log_event_sync,
+                )
 
                 emit_log_event_sync(
                     EnumLogLevel.WARNING,
