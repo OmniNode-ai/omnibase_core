@@ -89,6 +89,13 @@ from uuid import UUID, uuid4
 # OMN-13763: run_coro_sync graduated from omnibase_compat into omnibase_core (OMN-9237).
 from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
+# OMN-14960: stdlib-only log emission -- severs the models -> omnibase_core.logging
+# edge required by the core-models-no-upward import-linter contract. See
+# util_stdlib_log_emit for the message-shape delta vs. emit_log_event_sync.
+from omnibase_core.utils.util_stdlib_log_emit import (
+    emit_log_event_stdlib as emit_log_event,
+)
+
 
 # Import context-based container management
 from omnibase_core.context.context_application import (
@@ -97,9 +104,6 @@ from omnibase_core.context.context_application import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.logging_structured import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
