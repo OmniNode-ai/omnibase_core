@@ -561,6 +561,8 @@ _SELECTOR_OWN_FILES = [
     "scripts/ci/detect_test_paths.py",
     "scripts/ci/test_selection_loader.py",
     "scripts/ci/test_selection_models.py",
+    # OMN-14921: shadow closure module is selector surface — must escalate too.
+    "scripts/ci/test_selection_closure.py",
     "scripts/ci/test_selection_adjacency.yaml",
     "src/omnibase_core/nodes/node_test_selector_compute/selector_core.py",
 ]
@@ -794,3 +796,208 @@ def test_missing_base_ref_fails_closed() -> None:
     )
     assert selection.is_full_suite is True
     assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+
+
+# ---------------------------------------------------------------------------
+# OMN-14921: SHADOW MODE invariance — with --shadow-closure on, the selection
+# on stdout is byte-identical to the shadow-off run, and EVERY escalation
+# trigger still fires. Each case below is a seeded violation of one trigger;
+# red-proof: temporarily breaking that trigger in detect_test_paths.py makes
+# the corresponding case FAIL (exercised during development, see PR body).
+# ---------------------------------------------------------------------------
+
+import json as _json
+
+from scripts.ci.detect_test_paths import main as _detect_main
+
+_THRESHOLD_FILES = [
+    f"src/omnibase_core/{m}/x.py"
+    for m in [
+        "cli",
+        "constants",
+        "decorators",
+        "logging",
+        "merge",
+        "navigation",
+        "package",
+        "rendering",
+    ]
+]
+
+# (case id, changed files, ref_name, event_name, feature_flag, expected reason)
+_SHADOW_INVARIANCE_CASES = [
+    (
+        "feature_flag_off",
+        ["src/omnibase_core/cli/foo.py"],
+        "pr",
+        "pull_request",
+        "off",
+        "feature_flag_off",
+    ),
+    (
+        "main_branch",
+        ["src/omnibase_core/cli/foo.py"],
+        "main",
+        "push",
+        "on",
+        "main_branch",
+    ),
+    (
+        "merge_group",
+        ["src/omnibase_core/cli/foo.py"],
+        "pr",
+        "merge_group",
+        "on",
+        "merge_group",
+    ),
+    ("schedule", ["src/omnibase_core/cli/foo.py"], "pr", "schedule", "on", "scheduled"),
+    (
+        "test_infrastructure",
+        ["tests/conftest.py"],
+        "pr",
+        "pull_request",
+        "on",
+        "test_infrastructure",
+    ),
+    (
+        "pyproject_fail_closed",
+        ["pyproject.toml"],
+        "pr",
+        "pull_request",
+        "on",
+        "test_infrastructure",
+    ),
+    (
+        "shared_module",
+        ["src/omnibase_core/models/foo.py"],
+        "pr",
+        "pull_request",
+        "on",
+        "shared_module",
+    ),
+    (
+        "threshold_modules",
+        _THRESHOLD_FILES,
+        "pr",
+        "pull_request",
+        "on",
+        "threshold_modules",
+    ),
+    ("smart_path", ["src/omnibase_core/cli/foo.py"], "pr", "pull_request", "on", None),
+    ("docs_only", ["docs/x.md"], "pr", "pull_request", "on", None),
+]
+
+
+def _run_detect_main(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    changed: list[str],
+    ref_name: str,
+    event_name: str,
+    feature_flag: str,
+    shadow: bool,
+    tag: str,
+) -> tuple[str, Path]:
+    diff_file = tmp_path / f"diff_{tag}.txt"
+    diff_file.write_text("\n".join(changed) + "\n")
+    shadow_out = tmp_path / f"shadow_{tag}.json"
+    argv = [
+        "--changed-files-from",
+        str(diff_file),
+        "--ref-name",
+        ref_name,
+        "--event-name",
+        event_name,
+        "--feature-flag",
+        feature_flag,
+    ]
+    if shadow:
+        argv += ["--shadow-closure", "on", "--shadow-closure-output", str(shadow_out)]
+    capsys.readouterr()  # drain
+    assert _detect_main(argv) == 0
+    captured = capsys.readouterr()
+    return captured.out, shadow_out
+
+
+@pytest.mark.parametrize(
+    ("case_id", "changed", "ref_name", "event_name", "flag", "expected_reason"),
+    _SHADOW_INVARIANCE_CASES,
+    ids=[c[0] for c in _SHADOW_INVARIANCE_CASES],
+)
+def test_shadow_mode_returns_identical_selection_and_triggers_still_fire(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    case_id: str,
+    changed: list[str],
+    ref_name: str,
+    event_name: str,
+    flag: str,
+    expected_reason: str | None,
+) -> None:
+    out_off, shadow_off_path = _run_detect_main(
+        tmp_path, capsys, changed, ref_name, event_name, flag, shadow=False, tag="off"
+    )
+    out_on, shadow_on_path = _run_detect_main(
+        tmp_path, capsys, changed, ref_name, event_name, flag, shadow=True, tag="on"
+    )
+
+    # 1. Shadow mode NEVER changes the returned selection (byte-identical).
+    assert out_on == out_off
+
+    # 2. The escalation trigger still fires (seeded violation per case).
+    payload = _json.loads(out_on)
+    if expected_reason is None:
+        assert payload["is_full_suite"] is False
+    else:
+        assert payload["is_full_suite"] is True, f"{case_id} must escalate"
+        assert payload["full_suite_reason"] == expected_reason
+
+    # 3. Default off: no shadow artifact. On: report exists and is observational.
+    assert not shadow_off_path.exists()
+    report = _json.loads(shadow_on_path.read_text())
+    assert report["shadow_only"] is True
+    assert report["ticket"] == "OMN-14921"
+
+
+def test_shadow_flag_defaults_off_no_artifact(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # No --shadow-closure argument at all → identical behavior, no report file.
+    out, shadow_path = _run_detect_main(
+        tmp_path,
+        capsys,
+        ["src/omnibase_core/cli/foo.py"],
+        "pr",
+        "pull_request",
+        "on",
+        shadow=False,
+        tag="default",
+    )
+    payload = _json.loads(out)
+    assert payload["is_full_suite"] is False
+    assert not shadow_path.exists()
+    assert not Path("shadow_closure.json").exists()
+
+
+def test_shadow_smart_path_fail_closed_on_unresolvable_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # cli/foo.py does not exist in the working tree → the shadow computation
+    # fails closed (no narrowing) while the returned selection is unchanged.
+    out, shadow_path = _run_detect_main(
+        tmp_path,
+        capsys,
+        ["src/omnibase_core/cli/foo.py"],
+        "pr",
+        "pull_request",
+        "on",
+        shadow=True,
+        tag="failclosed",
+    )
+    payload = _json.loads(out)
+    assert payload["is_full_suite"] is False
+    assert "tests/unit/cli/" in payload["selected_paths"]
+    report = _json.loads(shadow_path.read_text())
+    assert report["narrowed"] is False
+    assert report["fail_closed_reasons"]
+    assert report["file_grain_file_count"] == report["candidate_file_count"]
