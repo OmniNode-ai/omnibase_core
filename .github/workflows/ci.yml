@@ -2277,9 +2277,11 @@ jobs:
           uv run pytest tests/scripts/test_check_release_identity.py -v
 
       - name: No code merged onto a published version without a bump
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref || 'dev' }}
         run: |
           set -euo pipefail
-          BASE="${{ github.event.pull_request.base.ref || 'dev' }}"
+          BASE="${BASE_REF}"
           git fetch --quiet origin "${BASE}" || true
           uv run python scripts/check_release_identity.py --base "origin/${BASE}"
 
