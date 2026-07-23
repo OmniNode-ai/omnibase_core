@@ -1,31 +1,24 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""UtilStrValueHelper mixin providing standard __str__ for string enums.
+"""Deprecated re-export shim for UtilStrValueHelper (OMN-14959).
+
+The canonical definition moved to
+``omnibase_core.enums.enum_str_enum_base`` — the base class of every
+string enum belongs inside the ``enums`` foundation package so it is
+self-contained under the ``core-foundation-no-upward`` import-linter
+contract (OMN-3210). This module is a pure re-export shim retained for
+non-foundation and cross-repo importers; ``utils -> enums`` is
+downward-legal and uncontracted, so this shim is not itself a layering
+violation. Shim burn-down is tracked as follow-up scope, not this ticket.
 
 See Also:
-    - omnibase_compat.utils.util_str_enum_base: Equivalent definition for compat consumers
+    - omnibase_core.enums.enum_str_enum_base: canonical definition
+    - omnibase_compat.utils.util_str_enum_base: equivalent definition for compat consumers
 """
 
 from __future__ import annotations
 
+from omnibase_core.enums.enum_str_enum_base import UtilStrValueHelper
 
-class UtilStrValueHelper:
-    """Mixin providing __str__ that returns self.value for str-based enums.
-
-    Use with enums that inherit from (str, Enum) to provide consistent
-    string serialization. The __str__ returns the enum's value directly.
-
-    Example:
-        class EnumStatus(UtilStrValueHelper, str, Enum):
-            PENDING = "pending"
-            RUNNING = "running"
-
-        str(EnumStatus.PENDING)  # Returns: "pending"
-    """
-
-    value: str  # Type hint for enum value
-
-    def __str__(self) -> str:
-        """Return the string value for serialization."""
-        return self.value
+__all__ = ["UtilStrValueHelper"]

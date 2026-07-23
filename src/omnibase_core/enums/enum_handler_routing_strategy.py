@@ -10,7 +10,9 @@ Used by MixinHandlerRouting and ModelHandlerRoutingSubcontract.
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
+from omnibase_core.enums.enum_str_enum_base import UtilStrValueHelper
+
+# dispatch-surface-test-ok: OMN-14959 mechanical import-path repoint only (utils/util_str_enum_base -> enums/enum_str_enum_base); no dispatch/routing behavior changed. This file's path matches the handler_routing path heuristic but only its import line was touched, same shape as the other 436 enums files in this PR that don't match the heuristic.
 
 
 class EnumHandlerRoutingStrategy(UtilStrValueHelper, str, Enum):

@@ -11,7 +11,7 @@ that >=2 repos import it. Values match the OCC-owned wire schema enum and the li
 
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
+from omnibase_core.enums.enum_str_enum_base import UtilStrValueHelper
 
 
 @unique

@@ -25,7 +25,7 @@ Example:
 import re
 from enum import Enum, unique
 
-from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
+from omnibase_core.enums.enum_str_enum_base import UtilStrValueHelper
 
 # Compiled regex pattern for SHA256 validation (64 lowercase hex characters)
 # Using regex instead of string membership check for O(n) vs O(n*m) performance
