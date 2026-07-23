@@ -58,21 +58,17 @@ forbidden_modules =
     omnibase_core.validation
     omnibase_core.nodes
 ignore_imports =
-    # OMN-3210 burn-down: types -> models — RESIDUAL after OMN-14337. 20 of 24
-    # edges retired: ModelSemVer references repointed to types.type_semver
-    # (structural ProtocolSemVer); immovable domain-model annotations widened;
-    # the dead ModelBase lazy re-export removed from types/. Four residual edges
-    # remain (deferred to OMN-14339) — each is genuinely pinned to a concrete
-    # model and cannot be structurally severed without a model relocation or a
-    # richer foundation interface: two value-wrappers with rich consumer reads
-    # (SchemaDict/ModelSchemaValue — 138 importers; validator_info func return)
-    # and two model-constructor-kwargs shapes that are **-unpacked into Pydantic
-    # models (output_format_options_kwargs -> ModelValue; lifecycle_event_fields
-    # -> ModelSemVer):
-    omnibase_core.types.type_schema_aliases -> omnibase_core.models.common.model_schema_value
-    omnibase_core.types.typed_dict_validator_info -> omnibase_core.models.common.model_validation_result
-    omnibase_core.types.typed_dict_output_format_options_kwargs -> omnibase_core.models.infrastructure.model_value
-    omnibase_core.types.typed_dict_lifecycle_event_fields -> omnibase_core.models.primitives.model_semver
+    # OMN-3210 burn-down: types -> models — RETIRED (OMN-14337 + OMN-14339).
+    # OMN-14337 retired 20 of 24 edges (ModelSemVer references repointed to the
+    # structural ProtocolSemVer in types.type_semver; immovable domain-model
+    # annotations widened; the dead ModelBase lazy re-export removed from types/).
+    # OMN-14339 retired the final 4: the dead SchemaDict/StepOutputs alias module
+    # (type_schema_aliases) was deleted (zero real importers); validator_info's
+    # func return was widened to object with a consumer-side cast in
+    # ServiceValidationSuite; the two model-constructor-kwargs shapes
+    # (output_format_options_kwargs, lifecycle_event_fields) were widened to
+    # covariant Mapping[str, object] / ProtocolSemVer and their sole consumers
+    # switched from **-unpack to model_validate(dict(...)).
     # OMN-3210 burn-down: errors -> models — RETIRED (OMN-14335): ModelOnexError,
     # ModelFailFastDetails, and _ModelOnexErrorData were relocated DOWN into the
     # errors package (models.* paths keep re-export shims); the ModelOnexWarning/

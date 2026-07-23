@@ -58,7 +58,6 @@ violations:
   - "omnibase_core.models.cli.model_cli_performance_metrics:ModelPerformanceMetrics"
   - "omnibase_core.models.cli.model_cli_result:ModelCliResult"
   - "omnibase_core.models.cli.model_cli_result_metadata:ModelCliResultMetadata"
-  - "omnibase_core.models.cli.model_output_format_options:ModelOutputFormatOptions"
   - "omnibase_core.models.cli.model_result_summary:ModelResultSummary"
   - "omnibase_core.models.cli.model_trace_data:ModelTraceData"
   - "omnibase_core.models.common.model_config_schema_property:ModelConfigSchemaProperty"

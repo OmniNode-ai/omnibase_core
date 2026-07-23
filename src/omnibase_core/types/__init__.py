@@ -65,9 +65,6 @@ from .type_json import (
     ToolParameterValue,
 )
 
-# Schema type aliases (for type-safe schema patterns)
-from .type_schema_aliases import SchemaDict, StepOutputs
-
 # Serializable value types (for JSON-compatible data)
 from .type_serializable_value import SerializableValue, SerializedDict
 from .typed_dict_access_control_config import TypedDictAccessControlConfig
@@ -379,9 +376,6 @@ __all__ = [
     # Effect result type aliases
     "EffectResultType",
     "DbParamType",
-    # Schema type aliases
-    "SchemaDict",
-    "StepOutputs",
     # Compute pipeline type aliases
     "PathResolvedValue",
     "PipelineData",

@@ -10,17 +10,19 @@ This TypedDict defines the optional fields that can be passed to lifecycle event
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TypedDict
 from uuid import UUID
 
-# OMN-14337 residual: this TypedDict is the constructor-kwargs shape for
-# ModelOnexEventMetadata (its node_version field is ModelSemVer | None); it is
-# **-unpacked into that Pydantic model, so the structural ProtocolSemVer does not
-# satisfy the concrete field. Deferred to OMN-14339 (narrowed .importlinter line).
-if TYPE_CHECKING:
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
-
+# OMN-14339: node_version is annotated with the structural ProtocolSemVer
+# (types.type_semver) instead of the concrete ModelSemVer — importing the
+# model here created a types -> models import-layering back-edge forbidden by
+# the core-foundation-no-upward contract in .importlinter (OMN-3210). Callers
+# populate the field with real ModelSemVer instances (which satisfy the
+# protocol structurally), and the sole consumer (MixinNodeLifecycle)
+# constructs ModelOnexEventMetadata via model_validate(dict(...)), which
+# re-validates node_version against the concrete field at runtime.
 from omnibase_core.types.type_json import JsonType
+from omnibase_core.types.type_semver import ProtocolSemVer
 
 
 class TypedDictLifecycleEventFields(TypedDict, total=False):
@@ -36,7 +38,7 @@ class TypedDictLifecycleEventFields(TypedDict, total=False):
     error_type: str
     error_code: str
     recoverable: bool
-    node_version: ModelSemVer
+    node_version: ProtocolSemVer
     operation_type: str
     execution_time_ms: float
     result_summary: str
