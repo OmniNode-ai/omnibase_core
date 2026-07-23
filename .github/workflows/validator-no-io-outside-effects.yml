@@ -24,14 +24,18 @@
 # on every PR to main/dev on its own evidence, never conditioned on another
 # job's result.
 
+# MIGRATED INTO ci.yml (OMN-14877, OMN-14430 fast-follow): this workflow used to
+# trigger on push/pull_request, giving it its OWN github.run_id — structurally
+# invisible to ci.yml's ci-summary default-deny poller and gating nothing
+# (pre-commit, if installed and not --no-verify'd, was the only enforcement).
+# Its validate steps now run UNCONDITIONALLY inside ci.yml under the required
+# "CI Summary" rollup, and its embedded occ-preflight caller no longer fires on
+# PRs. This file is retained workflow_dispatch-only for manual/ad-hoc invocation.
+#
 name: No IO Outside Effects Validator
 
 on:
-  push:
-    branches: [main, dev, "hotfix/**"]
-  pull_request:
-    branches: [main, dev]
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 permissions:
   contents: read

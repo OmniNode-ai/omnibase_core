@@ -51,7 +51,7 @@ schema_version: 1
 # Count lock. MUST equal len(allowlisted_workflows). Frozen a second time as
 # EXPECTED_BUDGET in the test suite. Intended to move DOWN only.
 # baseline captured 2026-07-21 at origin/dev@d09128fc.
-budget: 49
+budget: 31
 
 # Every live `.github/workflows/*.yml` that triggers on pull_request /
 # pull_request_target as of the baseline. This is the frozen ratchet floor: a new
@@ -85,27 +85,9 @@ allowlisted_workflows:
   - stale-todo-gate.yml
   - todo-audit-on-merge.yml
   - url-authority-gate.yml
-  - validator-backend-secret-discipline.yml
-  - validator-banned-compose-vars.yml
-  - validator-bypass-token-blocklist.yml
-  - validator-command-category-event-model.yml
-  - validator-dispatched-contract-operation.yml
   - validator-fsm-handler-drift.yml
-  - validator-generated-node-model-class-exists.yml
-  - validator-gitignore-baseline.yml
-  - validator-no-direct-kafka-producer.yml
-  - validator-no-except-swallow.yml
-  - validator-no-hardcoded-ip.yml
-  - validator-no-import-none-fallback.yml
-  - validator-no-io-outside-effects.yml
-  - validator-no-none-guard-publish.yml
   - validator-no-plugin-daemon-classes.yml
-  - validator-no-raw-sqlite3.yml
-  - validator-operation-match.yml
-  - validator-pin-hygiene.yml
-  - validator-release-identity.yml
   - validator-runtime-profiles.yml
-  - validator-todo-marker.yml
 
 # Tracked, EXPIRING exceptions. A workflow here does NOT count toward `budget`,
 # but each entry MUST carry workflow_file + ticket + absolute `expires` (ISO date)
