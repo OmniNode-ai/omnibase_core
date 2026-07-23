@@ -155,6 +155,13 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     # ToolLoggerCodeBlock is a context manager for logging
     ("util_tool_logger_code_block.py", "ToolLoggerCodeBlock"),
     #
+    # OMN-14959: UtilStrValueHelper relocated utils/ -> enums/ to sever the
+    # 437-edge enums->utils import-linter back-edge (epic OMN-3210). The
+    # ticket required "name and API unchanged" (439 live importers reference
+    # this exact class name) so it keeps its Util* name despite now living in
+    # enums/ rather than being renamed to fit the Enum* convention.
+    ("enum_str_enum_base.py", "UtilStrValueHelper"),
+    #
     # --- Contract Validation Pipeline (OMN-1128) ---
     #
     # Validator classes in validation/ directory don't have a specific prefix
