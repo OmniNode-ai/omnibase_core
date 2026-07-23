@@ -1,16 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Stdlib-only log emission for callers that must not depend on ``omnibase_core.logging``.
+"""Stdlib-only log emission for models that must not import ``omnibase_core.logging``.
 
 OMN-14960: severs the ``omnibase_core.models -> omnibase_core.logging`` edges
 required by the ``core-models-no-upward`` import-linter contract
 (``.importlinter``). Models are data and must not import the behavioral
 structured-logging package (``omnibase_core.logging.logging_structured``);
 this helper reproduces ``emit_log_event_sync``'s level mapping using only
-Python's standard-library ``logging`` module, which every layer -- including
-``omnibase_core.models`` -- is free to depend on (``utils`` is not a
-forbidden module for ``models`` under ``core-models-no-upward``).
+Python's standard-library ``logging`` module from inside the models package.
 
 Message-shape change vs. ``emit_log_event_sync`` (recorded in the OMN-14960
 PR body, per the "no behavior contract changes; message-shape changes are
@@ -44,7 +42,7 @@ _LEVEL_TO_STDLIB: dict[str, int] = {
 
 
 def emit_log_event_stdlib(level: Any, message: str, context: Any = None) -> None:
-    """Emit a log record via stdlib ``logging`` only (no ``omnibase_core.logging`` import).
+    """Emit a log record via stdlib ``logging`` only.
 
     Args:
         level: An ``EnumLogLevel`` member (or any object exposing ``.value``

@@ -10,7 +10,7 @@ from uuid import UUID
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_transaction_state import EnumTransactionState
-from omnibase_core.utils.util_stdlib_log_emit import (
+from omnibase_core.models.logging.model_stdlib_log_emit import (
     emit_log_event_stdlib as emit_log_event,
 )
 

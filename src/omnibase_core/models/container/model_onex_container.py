@@ -91,8 +91,8 @@ from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
 # OMN-14960: stdlib-only log emission -- severs the models -> omnibase_core.logging
 # edge required by the core-models-no-upward import-linter contract. See
-# util_stdlib_log_emit for the message-shape delta vs. emit_log_event_sync.
-from omnibase_core.utils.util_stdlib_log_emit import (
+# model_stdlib_log_emit for the message-shape delta vs. emit_log_event_sync.
+from omnibase_core.models.logging.model_stdlib_log_emit import (
     emit_log_event_stdlib as emit_log_event,
 )
 

@@ -44,7 +44,7 @@ class ModelWorkflowCoordinator:
     ) -> object:
         """Execute workflow with logging and error handling."""
         # Import at function level to avoid circular imports and eliminate duplication
-        from omnibase_core.utils.util_stdlib_log_emit import (
+        from omnibase_core.models.logging.model_stdlib_log_emit import (
             emit_log_event_stdlib as emit_log_event,
         )
 
@@ -108,7 +108,7 @@ class ModelWorkflowCoordinator:
     ) -> object:
         """Execute a specific workflow type with input data."""
         # Import at function level to avoid circular imports
-        from omnibase_core.utils.util_stdlib_log_emit import (
+        from omnibase_core.models.logging.model_stdlib_log_emit import (
             emit_log_event_stdlib as emit_log_event,
         )
 
