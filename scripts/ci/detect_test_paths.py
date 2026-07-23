@@ -445,6 +445,24 @@ def main(argv: list[str] | None = None) -> int:
         default=REPO_ROOT,
         help="Repository root used to read the working-tree pyproject.toml and run git show.",
     )
+    parser.add_argument(
+        "--shadow-closure",
+        choices=("on", "off"),
+        default="off",
+        help=(
+            "SHADOW MODE (OMN-14921, default off): additionally compute the "
+            "file-grain import-graph-closure selection, emit both selections + "
+            "delta to --shadow-closure-output and stderr, and return the "
+            "module-grain selection UNCHANGED. Observational only — promotion "
+            "out of shadow is a separate burn-in-gated decision."
+        ),
+    )
+    parser.add_argument(
+        "--shadow-closure-output",
+        type=Path,
+        default=Path("shadow_closure.json"),
+        help="Where to write the shadow closure report JSON (only when --shadow-closure on).",
+    )
     args = parser.parse_args(argv)
 
     changed = [
@@ -467,9 +485,62 @@ def main(argv: list[str] | None = None) -> int:
         feature_flag_enabled=(args.feature_flag == "on"),
         pyproject_dependency_relevant=pyproject_dependency_relevant,
     )
+    if args.shadow_closure == "on":
+        # SHADOW MODE (OMN-14921): observational only. The report is written to
+        # the artifact path + summarized on stderr (stdout stays reserved for the
+        # selection JSON the CI job parses). ANY shadow failure is contained here
+        # — it must never change or break the returned selection.
+        _emit_shadow_closure(changed, selection, args)
     sys.stdout.write(selection.model_dump_json())
     sys.stdout.write("\n")
     return 0
+
+
+def _emit_shadow_closure(
+    changed: list[str],
+    selection: ModelTestSelection,
+    args: argparse.Namespace,
+) -> None:
+    from scripts.ci.test_selection_closure import (
+        ModelShadowClosureReport,
+        compute_shadow_closure,
+    )
+
+    try:
+        report = compute_shadow_closure(
+            changed_files=changed,
+            selection=selection,
+            repo_root=args.repo_root,
+        )
+    except Exception as exc:  # noqa: BLE001  # boundary-ok: shadow must never break the selector
+        report = ModelShadowClosureReport(
+            fail_closed_reasons=[f"shadow computation error: {exc!r}"],
+            module_grain_is_full_suite=selection.is_full_suite,
+            module_grain_reason=(
+                selection.full_suite_reason.value
+                if selection.full_suite_reason is not None
+                else None
+            ),
+            module_grain_paths=list(selection.selected_paths),
+            changed_file_count=len(changed),
+        )
+    try:
+        args.shadow_closure_output.write_text(
+            report.model_dump_json(indent=2) + "\n", encoding="utf-8"
+        )
+    except OSError as exc:  # boundary-ok: artifact write failure is non-fatal
+        sys.stderr.write(f"SHADOW_CLOSURE: report write failed: {exc}\n")
+    sys.stderr.write(
+        "SHADOW_CLOSURE: "
+        f"skipped={report.skipped_reason!r} narrowed={report.narrowed} "
+        f"module_grain={report.module_grain_paths} "
+        f"candidates={report.candidate_file_count} "
+        f"file_grain={report.file_grain_file_count} "
+        f"delta={report.delta_file_count} "
+        f"kept_fail_closed={report.kept_fail_closed_count} "
+        f"fail_closed_reasons={report.fail_closed_reasons} "
+        f"elapsed={report.elapsed_seconds}s\n"
+    )
 
 
 if __name__ == "__main__":

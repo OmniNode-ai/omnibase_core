@@ -1912,6 +1912,13 @@ jobs:
         id: detect
         env:
           FLAG: ${{ vars.ENABLE_SMART_TESTS == 'true' && 'on' || 'off' }}
+          # OMN-14921: file-grain import-graph-closure SHADOW mode. Default OFF;
+          # when the repo var is set the selector ADDITIONALLY computes the
+          # file-grain closure selection and emits both selections + delta to
+          # shadow_closure.json / the job log — the returned selection (stdout)
+          # is unchanged. Promotion out of shadow is a separate burn-in-gated
+          # decision, not this flag.
+          SHADOW_CLOSURE: ${{ vars.ENABLE_SMART_TESTS_FILE_GRAIN_SHADOW == 'true' && 'on' || 'off' }}
           BASE_SHA: ${{ steps.diff.outputs.base_sha }}
         run: |
           # Pass --base-ref only when we have a base SHA (pull_request). When
@@ -1926,6 +1933,8 @@ jobs:
             --ref-name "${{ github.ref_name }}" \
             --event-name "${{ github.event_name }}" \
             --feature-flag "$FLAG" \
+            --shadow-closure "$SHADOW_CLOSURE" \
+            --shadow-closure-output shadow_closure.json \
             "${base_arg[@]}" \
             > selection.json
           cat selection.json
@@ -1944,7 +1953,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-selection
-          path: selection.json
+          # shadow_closure.json exists only when ENABLE_SMART_TESTS_FILE_GRAIN_SHADOW
+          # is set (OMN-14921 shadow mode); a missing file is expected, not an error.
+          path: |
+            selection.json
+            shadow_closure.json
           retention-days: 7
 
       # OMN-14342: compute the COUNTERFACTUAL selection with the selector forced

@@ -63,6 +63,10 @@ test_infrastructure_paths:
   - scripts/ci/detect_test_paths.py
   - scripts/ci/test_selection_loader.py
   - scripts/ci/test_selection_models.py
+  # OMN-14921: the shadow file-grain closure module is selector surface — a
+  # selector that narrowed on a change to its own (even shadow-only) code would
+  # be self-referentially fail-open once promoted.
+  - scripts/ci/test_selection_closure.py
   - scripts/ci/test_selection_adjacency.yaml
   - src/omnibase_core/nodes/node_test_selector_compute/selector_core.py
   - tests/conftest.py

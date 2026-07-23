@@ -186,6 +186,9 @@ dev = [
     "interrogate>=1.7.0",
     # OMN-14216: intra-core dependency-layering oracle (import-linter + grimp)
     "import-linter>=2.13,<3.0.0",
+    # OMN-14921: file-grain import-graph-closure shadow selection imports grimp
+    # directly (previously only a transitive dep via import-linter) — declare it.
+    "grimp>=3.15,<4.0.0",
     "hypothesis>=6.150",
     "psutil>=7.2.1",
     "confluent-kafka>=2.12.0,<3.0.0",
