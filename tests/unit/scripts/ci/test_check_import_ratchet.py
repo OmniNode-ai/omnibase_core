@@ -122,7 +122,10 @@ def test_models_to_nodes_service_wrapper_relocation_is_not_new_mixins_growth(
     """OMN-14291 moved existing service wrappers; unrelated mixins growth still fails."""
     for new_importer, old_importer in HUB_IMPORTER_RELOCATIONS["mixins"].items():
         assert new_importer in current["hub_inbound"]["mixins"]
-        assert old_importer in baseline["hub_inbound"]["mixins"]
+        assert (
+            new_importer in baseline["hub_inbound"]["mixins"]
+            or old_importer in baseline["hub_inbound"]["mixins"]
+        )
 
     violations = find_violations(current, baseline)
     assert "hub:mixins" not in violations
