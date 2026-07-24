@@ -10,17 +10,20 @@ Follows ONEX one-model-per-file and TypedDict naming conventions.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NotRequired, TypedDict
+from collections.abc import Mapping
+from typing import NotRequired, TypedDict
 
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
 
-# OMN-14337 residual: this TypedDict is the constructor-kwargs shape for
-# ModelOutputFormatOptions (custom_options: dict[str, ModelValue]); it is
-# **-unpacked into that Pydantic model, so custom_options must stay
-# dict[str, ModelValue]. Deferred to OMN-14339 (narrowed .importlinter line).
-if TYPE_CHECKING:
-    from omnibase_core.models.infrastructure.model_value import ModelValue
+# OMN-14339: custom_options is intentionally the covariant
+# Mapping[str, object] rather than the concrete dict[str, ModelValue] the
+# target field declares — annotating the model here created a
+# types -> models import-layering back-edge forbidden by the
+# core-foundation-no-upward contract in .importlinter (OMN-3210). The sole
+# consumer (ModelOutputFormatOptions.create_from_string_data) populates it
+# with real ModelValue instances and constructs the model via
+# model_validate(dict(...)), which re-validates every field at runtime.
 
 
 class TypedDictOutputFormatOptionsKwargs(TypedDict):
@@ -71,8 +74,9 @@ class TypedDictOutputFormatOptionsKwargs(TypedDict):
     append_mode: NotRequired[bool]
     create_backup: NotRequired[bool]
 
-    # Custom format options
-    custom_options: NotRequired[dict[str, ModelValue]]
+    # Custom format options (values are ModelValue instances at runtime; see
+    # module docstring/comment for why the annotation is widened)
+    custom_options: NotRequired[Mapping[str, object]]
 
 
 # Export for use
