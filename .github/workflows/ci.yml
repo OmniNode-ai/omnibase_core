@@ -3274,7 +3274,7 @@ jobs:
           uv run python scripts/ci/run_contract_compliance_check.py \
             --pr "$PR_NUMBER" \
             --repo "${{ github.repository }}" \
-            --contracts-dir "$GITHUB_WORKSPACE/onex_change_control/contracts" \
+            --contracts-dir "$GITHUB_WORKSPACE/.github/canary-falsify" \
             --workspace "$GITHUB_WORKSPACE" \
             --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control/scripts/ci/dod_runner_legacy_allowlist.txt"
         env:
