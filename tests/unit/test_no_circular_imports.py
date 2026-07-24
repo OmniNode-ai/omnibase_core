@@ -22,6 +22,8 @@ from importlib import import_module
 
 import pytest
 
+from tests.unit.conftest import isolated_sys_modules
+
 
 def test_import_core_types():
     """Test that core types can be imported without issues."""
@@ -79,49 +81,46 @@ def test_no_circular_dependency_chain():
     This test verifies the chain can now be imported in any order.
     """
     # Clear any previously imported modules to test fresh imports
-    modules_to_test = [
+    modules_to_test = {
         "omnibase_core.errors.error_codes",
         "omnibase_core.models.common.model_schema_value",
         "omnibase_core.models.common.model_error_context",
         "omnibase_core.models.common.model_numeric_value",
         "omnibase_core.types.type_core",
-    ]
+    }
 
     # Remove from sys.modules if present (for clean test)
-    for mod_name in modules_to_test:
-        if mod_name in sys.modules:
-            del sys.modules[mod_name]
+    with isolated_sys_modules(lambda key: key in modules_to_test):
+        # Now try to import in the order that would trigger circular dependency
+        try:
+            # Step 1: Import error_codes (would try to import ModelSchemaValue)
+            error_codes_mod = import_module("omnibase_core.errors.error_codes")
+            assert error_codes_mod is not None
 
-    # Now try to import in the order that would trigger circular dependency
-    try:
-        # Step 1: Import error_codes (would try to import ModelSchemaValue)
-        error_codes_mod = import_module("omnibase_core.errors.error_codes")
-        assert error_codes_mod is not None
+            # Step 2: Import ModelSchemaValue (would try to import OnexError)
+            schema_value_mod = import_module(
+                "omnibase_core.models.common.model_schema_value"
+            )
+            assert schema_value_mod is not None
 
-        # Step 2: Import ModelSchemaValue (would try to import OnexError)
-        schema_value_mod = import_module(
-            "omnibase_core.models.common.model_schema_value"
-        )
-        assert schema_value_mod is not None
+            # Step 3: Import ModelErrorContext (would try to import OnexError)
+            error_context_mod = import_module(
+                "omnibase_core.models.common.model_error_context"
+            )
+            assert error_context_mod is not None
 
-        # Step 3: Import ModelErrorContext (would try to import OnexError)
-        error_context_mod = import_module(
-            "omnibase_core.models.common.model_error_context"
-        )
-        assert error_context_mod is not None
+            # Step 4: Import ModelNumericValue (would try to import OnexError)
+            numeric_value_mod = import_module(
+                "omnibase_core.models.common.model_numeric_value"
+            )
+            assert numeric_value_mod is not None
 
-        # Step 4: Import ModelNumericValue (would try to import OnexError)
-        numeric_value_mod = import_module(
-            "omnibase_core.models.common.model_numeric_value"
-        )
-        assert numeric_value_mod is not None
+            # If we got here, no circular imports!
+            print("✓ No circular dependencies detected")
 
-        # If we got here, no circular imports!
-        print("✓ No circular dependencies detected")
-
-    except ImportError as e:
-        # Circular import would raise ImportError
-        raise AssertionError(f"Circular import detected: {e}") from e
+        except ImportError as e:
+            # Circular import would raise ImportError
+            raise AssertionError(f"Circular import detected: {e}") from e
 
 
 def test_simple_error_context_functionality():
@@ -207,28 +206,25 @@ def test_import_chain_sequential() -> None:
     exist at module import time.
     """
     # Start with a clean slate - remove all omnibase_core modules
-    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
-    for module in modules_to_remove:
-        del sys.modules[module]
+    with isolated_sys_modules(lambda key: key.startswith("omnibase_core")):
+        # Import in the correct order - each step should succeed
+        steps = [
+            ("types.type_core", "omnibase_core.types.type_core"),
+            ("errors.error_codes", "omnibase_core.errors.error_codes"),
+            (
+                "models.common.model_schema_value",
+                "omnibase_core.models.common.model_schema_value",
+            ),
+            ("types.type_constraints", "omnibase_core.types.type_constraints"),
+            ("models", "omnibase_core.models"),
+        ]
 
-    # Import in the correct order - each step should succeed
-    steps = [
-        ("types.type_core", "omnibase_core.types.type_core"),
-        ("errors.error_codes", "omnibase_core.errors.error_codes"),
-        (
-            "models.common.model_schema_value",
-            "omnibase_core.models.common.model_schema_value",
-        ),
-        ("types.type_constraints", "omnibase_core.types.type_constraints"),
-        ("models", "omnibase_core.models"),
-    ]
-
-    for step_name, module_name in steps:
-        try:
-            importlib.import_module(module_name)
-        except ImportError as e:
-            msg = f"Failed to import {step_name} ({module_name}): {e}"
-            raise AssertionError(msg) from e
+        for step_name, module_name in steps:
+            try:
+                importlib.import_module(module_name)
+            except ImportError as e:
+                msg = f"Failed to import {step_name} ({module_name}): {e}"
+                raise AssertionError(msg) from e
 
 
 def test_type_checking_imports_not_runtime() -> None:
@@ -305,36 +301,33 @@ def test_validation_functions_lazy_import() -> None:
     error_codes_preloaded = "omnibase_core.errors.error_codes" in sys.modules
 
     # Clear module cache
-    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
-    for module in modules_to_remove:
-        del sys.modules[module]
-
-    # Import types.constraints
-    from omnibase_core.types.type_constraints import (
-        validate_context_value,
-        validate_primitive_value,
-    )
-
-    # Test successful validation (should not trigger import)
-    assert validate_primitive_value("test")
-    assert validate_context_value("test")
-
-    # Test failed validation (should raise TypeError, not ModelOnexError)
-    try:
-        validate_primitive_value(object())  # Invalid type
-    except TypeError as e:
-        # Expected - validation should fail with TypeError
-        assert "Expected primitive value" in str(e)
-    else:
-        pytest.fail("validate_primitive_value should have raised TypeError")
-
-    # Verify error_codes is NOT imported (lazy import maintained)
-    # Skip this assertion if error_codes was already in sys.modules from
-    # another test in the same pytest-xdist worker process.
-    if not error_codes_preloaded:
-        assert "omnibase_core.errors.error_codes" not in sys.modules, (
-            "error_codes should NOT be imported (lazy import pattern maintained)"
+    with isolated_sys_modules(lambda key: key.startswith("omnibase_core")):
+        # Import types.constraints
+        from omnibase_core.types.type_constraints import (
+            validate_context_value,
+            validate_primitive_value,
         )
+
+        # Test successful validation (should not trigger import)
+        assert validate_primitive_value("test")
+        assert validate_context_value("test")
+
+        # Test failed validation (should raise TypeError, not ModelOnexError)
+        try:
+            validate_primitive_value(object())  # Invalid type
+        except TypeError as e:
+            # Expected - validation should fail with TypeError
+            assert "Expected primitive value" in str(e)
+        else:
+            pytest.fail("validate_primitive_value should have raised TypeError")
+
+        # Verify error_codes is NOT imported (lazy import maintained)
+        # Skip this assertion if error_codes was already in sys.modules from
+        # another test in the same pytest-xdist worker process.
+        if not error_codes_preloaded:
+            assert "omnibase_core.errors.error_codes" not in sys.modules, (
+                "error_codes should NOT be imported (lazy import pattern maintained)"
+            )
 
 
 def test_import_order_documentation() -> None:
@@ -372,32 +365,31 @@ def test_error_codes_safe_imports() -> None:
     by importing from models or types.constraints at runtime.
     """
     # Clear module cache
-    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
-    for module in modules_to_remove:
-        del sys.modules[module]
+    with isolated_sys_modules(lambda key: key.startswith("omnibase_core")):
+        # Import error_codes
 
-    # Import error_codes
+        # Check what omnibase_core modules were imported
+        imported_modules = [
+            key for key in sys.modules if key.startswith("omnibase_core")
+        ]
 
-    # Check what omnibase_core modules were imported
-    imported_modules = [key for key in sys.modules if key.startswith("omnibase_core")]
+        # error_codes should only import from safe modules
+        # It should NOT import from models.* or types.constraints
+        forbidden_imports = [
+            "omnibase_core.models.common.model_schema_value",
+            "omnibase_core.models.common.model_error_context",
+            "omnibase_core.types.type_constraints",
+            "omnibase_core.models.base",
+        ]
 
-    # error_codes should only import from safe modules
-    # It should NOT import from models.* or types.constraints
-    forbidden_imports = [
-        "omnibase_core.models.common.model_schema_value",
-        "omnibase_core.models.common.model_error_context",
-        "omnibase_core.types.type_constraints",
-        "omnibase_core.models.base",
-    ]
+        for forbidden in forbidden_imports:
+            if forbidden in imported_modules:
+                msg = f"error_codes has runtime import of {forbidden} - this will cause circular import!"
+                raise AssertionError(msg)
 
-    for forbidden in forbidden_imports:
-        if forbidden in imported_modules:
-            msg = f"error_codes has runtime import of {forbidden} - this will cause circular import!"
-            raise AssertionError(msg)
-
-    # Note: Previously checked for required imports like enum_onex_status,
-    # but these were removed as unused during tech debt cleanup.
-    # The important check is that forbidden imports are not present.
+        # Note: Previously checked for required imports like enum_onex_status,
+        # but these were removed as unused during tech debt cleanup.
+        # The important check is that forbidden imports are not present.
 
 
 def test_contracts_no_circular_imports() -> None:
@@ -415,29 +407,26 @@ def test_contracts_no_circular_imports() -> None:
     of module-level imports.
     """
     # Clear module cache
-    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
-    for module in modules_to_remove:
-        del sys.modules[module]
+    with isolated_sys_modules(lambda key: key.startswith("omnibase_core")):
+        # Try to import the contract models in the order that would trigger circular import
+        try:
+            # Import model_contract_compute first
+            # Import contracts __init__ (aggregates all contract models)
+            import omnibase_core.models.contracts
+            import omnibase_core.models.contracts.model_contract_compute
 
-    # Try to import the contract models in the order that would trigger circular import
-    try:
-        # Import model_contract_compute first
-        # Import contracts __init__ (aggregates all contract models)
-        import omnibase_core.models.contracts
-        import omnibase_core.models.contracts.model_contract_compute
+            # Import model_validation_rules
+            import omnibase_core.models.contracts.model_validation_rules
 
-        # Import model_validation_rules
-        import omnibase_core.models.contracts.model_validation_rules
+            # Import model_validation_rules_converter
+            import omnibase_core.models.utils.model_validation_rules_converter  # noqa: F401
 
-        # Import model_validation_rules_converter
-        import omnibase_core.models.utils.model_validation_rules_converter  # noqa: F401
+            # If we got here, no circular imports!
+            print("✓ No circular dependencies in contracts modules")
 
-        # If we got here, no circular imports!
-        print("✓ No circular dependencies in contracts modules")
-
-    except ImportError as e:
-        # Circular import would raise ImportError
-        raise AssertionError(f"Circular import detected in contracts: {e}") from e
+        except ImportError as e:
+            # Circular import would raise ImportError
+            raise AssertionError(f"Circular import detected in contracts: {e}") from e
 
 
 def test_contract_compute_uses_lazy_import() -> None:
@@ -448,26 +437,25 @@ def test_contract_compute_uses_lazy_import() -> None:
     field validator function, not at module level.
     """
     # Clear module cache
-    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
-    for module in modules_to_remove:
-        del sys.modules[module]
+    with isolated_sys_modules(lambda key: key.startswith("omnibase_core")):
+        # Import model_contract_compute
 
-    # Import model_contract_compute
+        # Check what modules were imported
+        imported_modules = [
+            key for key in sys.modules if key.startswith("omnibase_core")
+        ]
 
-    # Check what modules were imported
-    imported_modules = [key for key in sys.modules if key.startswith("omnibase_core")]
-
-    # model_validation_rules_converter should NOT be imported at module load time
-    # (it should only be imported when the field validator is actually called)
-    if (
-        "omnibase_core.models.utils.model_validation_rules_converter"
-        in imported_modules
-    ):
-        msg = (
-            "model_contract_compute has runtime import of model_validation_rules_converter "
-            "at module level - this creates circular import! Use lazy import in field validator instead."
-        )
-        raise AssertionError(msg)
+        # model_validation_rules_converter should NOT be imported at module load time
+        # (it should only be imported when the field validator is actually called)
+        if (
+            "omnibase_core.models.utils.model_validation_rules_converter"
+            in imported_modules
+        ):
+            msg = (
+                "model_contract_compute has runtime import of model_validation_rules_converter "
+                "at module level - this creates circular import! Use lazy import in field validator instead."
+            )
+            raise AssertionError(msg)
 
 
 @pytest.mark.unit
@@ -498,39 +486,36 @@ def test_fsm_package_no_circular_imports() -> None:
     its module directly rather than through fsm/__init__.py.
     """
     # Clear module cache to test fresh imports
-    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
-    for module in modules_to_remove:
-        del sys.modules[module]
+    with isolated_sys_modules(lambda key: key.startswith("omnibase_core")):
+        try:
+            # Import through the fsm package init - this was the failing entry point
+            # Verify mixin can be imported
+            from omnibase_core.mixins.mixin_fsm_execution import (  # noqa: F401
+                MixinFSMExecution,
+            )
+            from omnibase_core.models.fsm import (  # noqa: F401
+                ModelFsmState,
+                ModelFSMStateSnapshot,
+                ModelFSMTransitionResult,
+            )
 
-    try:
-        # Import through the fsm package init - this was the failing entry point
-        # Verify mixin can be imported
-        from omnibase_core.mixins.mixin_fsm_execution import (  # noqa: F401
-            MixinFSMExecution,
-        )
-        from omnibase_core.models.fsm import (  # noqa: F401
-            ModelFsmState,
-            ModelFSMStateSnapshot,
-            ModelFSMTransitionResult,
-        )
+            # Also verify the direct module import works
+            from omnibase_core.models.fsm.model_fsm_state import (  # noqa: F401
+                ModelFsmState as DirectState,
+            )
 
-        # Also verify the direct module import works
-        from omnibase_core.models.fsm.model_fsm_state import (  # noqa: F401
-            ModelFsmState as DirectState,
-        )
+            # Verify util_fsm_executor can be imported and used
+            from omnibase_core.utils.util_fsm_executor import (  # noqa: F401
+                FSMState,
+                execute_transition,
+                get_initial_state,
+                validate_fsm_contract,
+            )
 
-        # Verify util_fsm_executor can be imported and used
-        from omnibase_core.utils.util_fsm_executor import (  # noqa: F401
-            FSMState,
-            execute_transition,
-            get_initial_state,
-            validate_fsm_contract,
-        )
-
-    except ImportError as e:
-        raise AssertionError(
-            f"Circular import detected in FSM package (OMN-2048 regression): {e}"
-        ) from e
+        except ImportError as e:
+            raise AssertionError(
+                f"Circular import detected in FSM package (OMN-2048 regression): {e}"
+            ) from e
 
 
 @pytest.mark.unit
@@ -549,32 +534,29 @@ def test_invariant_package_no_circular_imports() -> None:
     package init no longer eagerly imports util_invariant_yaml_parser.
     """
     # Clear module cache to test fresh imports
-    modules_to_remove = [key for key in sys.modules if key.startswith("omnibase_core")]
-    for module in modules_to_remove:
-        del sys.modules[module]
+    with isolated_sys_modules(lambda key: key.startswith("omnibase_core")):
+        try:
+            # Import the module that was the cycle entry point
+            # Import the package init (would have triggered the cycle)
+            import omnibase_core.models.invariant as invariant_pkg
+            from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+                load_invariant_set_from_file as _load_file,
+            )
+            from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+                load_invariant_sets_from_directory as _load_dir,
+            )
+            from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
+                parse_invariant_set_from_yaml as _parse,
+            )
 
-    try:
-        # Import the module that was the cycle entry point
-        # Import the package init (would have triggered the cycle)
-        import omnibase_core.models.invariant as invariant_pkg
-        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
-            load_invariant_set_from_file as _load_file,
-        )
-        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
-            load_invariant_sets_from_directory as _load_dir,
-        )
-        from omnibase_core.utils.util_invariant_yaml_parser import (  # noqa: F401
-            parse_invariant_set_from_yaml as _parse,
-        )
+            # Verify the lazy-loaded functions are accessible via the package
+            assert hasattr(invariant_pkg, "load_invariant_set_from_file")
+            assert callable(invariant_pkg.load_invariant_set_from_file)
 
-        # Verify the lazy-loaded functions are accessible via the package
-        assert hasattr(invariant_pkg, "load_invariant_set_from_file")
-        assert callable(invariant_pkg.load_invariant_set_from_file)
-
-    except ImportError as e:
-        raise AssertionError(
-            f"Circular import detected in invariant package: {e}"
-        ) from e
+        except ImportError as e:
+            raise AssertionError(
+                f"Circular import detected in invariant package: {e}"
+            ) from e
 
 
 @pytest.mark.unit
