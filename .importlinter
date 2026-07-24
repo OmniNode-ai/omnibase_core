@@ -132,6 +132,48 @@ ignore_imports =
     # after which this line + the ratchet are deleted. The set only SHRINKS.
     omnibase_core.protocols.** -> omnibase_core.models.**
 
+[importlinter:contract:core-execution-tier-no-nodes]
+name = Execution-tier packages must not import nodes (direct)
+# OMN-14961 (OMN-3210 family, closure-boundary lock completing the OMN-14216
+# oracle's source coverage for the execution tier). `runtime`, `pipeline`, `cli`,
+# and `validators` were absent from every .importlinter source set despite
+# carrying real cross-subpackage traffic (runtime -> models 50 edges,
+# validators -> models 26, all downward-legal per the 2026-07-22 readback).
+# Their layer position existed only by convention; this block formalizes it.
+#
+# Honest framing: this contract changes no live edges for the four modules
+# below — it is a closure-boundary LOCK, not a closure shrink, matching the
+# ticket's precondition finding (live grimp re-verification, 2026-07-23).
+#
+# `infrastructure` is DELIBERATELY EXCLUDED from source_modules. The live
+# grimp readback found 4 real direct edges, all in one file:
+# src/omnibase_core/infrastructure/infra_bases.py imports ModelServiceCompute/
+# ModelServiceEffect/ModelServiceOrchestrator/ModelServiceReducer from
+# omnibase_core.nodes.node_service_{compute,effect,orchestrator,reducer}. That
+# file has zero production consumers anywhere in the OmniNode org (verified by
+# exhaustive grep across every canonical repo) but IS referenced as a
+# documented "Service Wrappers" pattern from 6 architecture/tutorial docs
+# (docs/architecture/overview.md, docs/architecture/NODE_CLASS_HIERARCHY.md,
+# docs/architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md,
+# docs/guides/node-building/03_EFFECT_NODE_TUTORIAL.md,
+# docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md,
+# docs/reference/SERVICE_WRAPPERS.md). Severing the 4 edges means either
+# relocating infra_bases.py into nodes/ or retiring the documented pattern —
+# an architecture call out of scope for a lint-contract ticket, not a
+# mechanical import removal. Per this ticket's own precondition contingency
+# ("otherwise drop that source module from the contract and record why"),
+# `infrastructure` is dropped from source_modules here; fast-follow tracked
+# under OMN-14961's follow-up ticket. Never add an ignore line instead.
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.runtime
+    omnibase_core.pipeline
+    omnibase_core.cli
+    omnibase_core.validators
+forbidden_modules =
+    omnibase_core.nodes
+
 [importlinter:contract:core-no-kafka-transport]
 name = Core must not import Kafka transport (aiokafka/confluent_kafka/omnibase_infra) — invariant I2
 # Invariant I2 of the single-runtime / transport-via-DI unification (epic OMN-14717,
