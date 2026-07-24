@@ -2518,7 +2518,17 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers]
+    #
+    # OMN-14887: contract-compliance is DELIBERATELY NOT a need here (removed).
+    # This job's downstream (detect-changes, test-parallel) skip whenever
+    # needs.quality-gate.result != 'success', and tests-gate treats a skipped
+    # test-parallel as PASSED. With the real DoD executor now wired into
+    # contract-compliance (see that job below), a single BLOCK there would have
+    # cascaded through quality-gate -> skip detect-changes/test-parallel ->
+    # tests-gate reports PASSED on zero tests run. ci-summary's independent
+    # GATE_JOBS entry ("Contract Compliance Check", scripts/ci/ci_summary_gate.py)
+    # keeps this job required and merge-blocking without that cascade.
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers]
     if: always()
 
     steps:
@@ -2539,10 +2549,6 @@ jobs:
           enum_gov="${{ needs.enum-governance.result }}"
           secrets="${{ needs.detect-secrets.result }}"
           sdk_boundary="${{ needs.sdk-boundary-check.result }}"
-          # OMN-13574: contract-compliance is in needs but was never captured in
-          # the gate logic — it could fail while quality-gate still passed. Same
-          # failing-rollup hole this ticket exists to close.
-          contract_compliance="${{ needs.contract-compliance.result }}"
           contract_config="${{ needs.contract-config-compliance.result }}"
           breaking_schema="${{ needs.breaking-schema-change.result }}"
           no_env_fallbacks="${{ needs.no-env-fallbacks.result }}"
@@ -2573,7 +2579,6 @@ jobs:
           echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
           echo "| SDK Boundary Guard | $sdk_boundary |" >> $GITHUB_STEP_SUMMARY
-          echo "| Contract Compliance | $contract_compliance |" >> $GITHUB_STEP_SUMMARY
           echo "| Contract-Config Compliance | $contract_config |" >> $GITHUB_STEP_SUMMARY
           echo "| Breaking-Schema-Change (OMN-12621) | $breaking_schema |" >> $GITHUB_STEP_SUMMARY
           echo "| No Env Fallbacks (OMN-7227) | $no_env_fallbacks |" >> $GITHUB_STEP_SUMMARY
@@ -2602,7 +2607,6 @@ jobs:
              [[ "$enum_gov" == "success" ]] && \
              [[ "$secrets" == "success" ]] && \
              [[ "$sdk_boundary" == "success" ]] && \
-             [[ "$contract_compliance" == "success" ]] && \
              [[ "$contract_config" == "success" ]] && \
              [[ "$breaking_schema" == "success" ]] && \
              [[ "$no_env_fallbacks" == "success" ]] && \
@@ -3198,38 +3202,84 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v7
-      - name: Clone onex_change_control
-        run: |
-          occ_dir="${RUNNER_TEMP}/onex_change_control_contract_compliance"
-          occ_ref="3c98ab30af75650952246c3467e02e240552427f"
-          rm -rf "$occ_dir"
-          git init "$occ_dir"
-          git -C "$occ_dir" remote add origin https://github.com/OmniNode-ai/onex_change_control.git
-          git -C "$occ_dir" fetch --depth=1 origin "$occ_ref"
-          git -C "$occ_dir" checkout --detach FETCH_HEAD
-          echo "OCC_DIR=$occ_dir" >> "$GITHUB_ENV"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - name: Checkout onex_change_control
+        uses: actions/checkout@v7
         with:
-          version: "0.8.3"
-      # OMN-14436: this step does NOT execute DoD check_values, and the comment that
-      # used to sit here claimed otherwise ("OMN-8808 — replaces dead
-      # run_contract_compliance_check.py ref"). NOTHING REPLACED IT.
+          repository: OmniNode-ai/onex_change_control
+          # OMN-14887: PINNED, mirroring the omnibase_infra OMN-14454 canary
+          # exactly. This job already carried a pinned OCC ref (from OMN-10445,
+          # 2026-05-03) rather than the unpinned default-branch clone the ticket
+          # description assumed -- but that old pin (3c98ab30) predates the
+          # OMN-14436 runner revival, so it cannot be trusted to contain
+          # scripts/ci/run_contract_compliance_check.py in working order.
+          # Re-pinned to OCC dev HEAD at the time of this change.
+          ref: 91f5b69104366c2d86e4bb21de67c3c497702111
+          path: onex_change_control
+          token: ${{ secrets.CROSS_REPO_PAT || github.token }}
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: false
+
+      - name: Install onex_change_control
+        working-directory: onex_change_control
+        run: |
+          set -euo pipefail
+          export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
+          attempt=1
+          max_attempts=3
+          delay=10
+          until uv sync --no-cache --all-extras; do
+            status=$?
+            if [[ "$attempt" -ge "$max_attempts" ]]; then
+              echo "::error::uv sync onex_change_control failed after ${attempt} attempt(s)"
+              exit "$status"
+            fi
+            echo "::warning::uv sync onex_change_control attempt ${attempt}/${max_attempts} failed with exit ${status}; retrying in ${delay}s"
+            sleep "$delay"
+            attempt=$((attempt + 1))
+          done
+
+      # OMN-14887: EXECUTE the DoD check_values against the PRODUCT tree.
       #
-      # validate-yaml only parses the contract YAML. A green result here means exactly
-      # "the contract files are well-formed" — it says nothing about whether the PR's
-      # evidence is true. The real executor (run_contract_compliance_check.py) was
-      # deleted platform-wide in 2026-04 on a misdiagnosis: it was reported "missing"
-      # only because onex_change_control's DEFAULT branch lagged the branch that had
-      # it. The DoD gate has been dead here ever since, behind this green check.
+      # What was here before -- `uv run validate-yaml $CONTRACTS` -- never ran a
+      # single check_value. It only parsed OCC's YAML, so a green
+      # "Contract Compliance Check" meant exactly "OCC's contract files are
+      # valid YAML" and nothing about this PR. The DoD gate has been dead here
+      # since the OMN-14436 fix (core#1435) documented that lie without
+      # replacing the executor -- fan-out was deliberately deferred until
+      # omnibase_infra (OMN-14454) burned in the pattern first.
       #
-      # The executor is revived and proven in onex_change_control (OMN-14436) and wired
-      # into omnibase_infra as the canary (OMN-14454), where it executes check_values
-      # against the PRODUCT tree and is demonstrated to BLOCK. Fan-out to this repo is a
-      # deliberate, watched decision — NOT a default — because a gate nobody watched
-      # come up is a gate nobody has. Until then this step keeps its real, narrow name.
-      - name: Parse ticket contract YAML (does NOT execute DoD checks — see OMN-14436)
-        run: cd "$OCC_DIR" && uv run validate-yaml "$GITHUB_WORKSPACE"/contracts/OMN-*.yaml
+      # --workspace is the load-bearing argument. It must be the PRODUCT
+      # checkout ($GITHUB_WORKSPACE), not the OCC clone -- pointing it at OCC
+      # is the original OMN-14436 defect.
+      #
+      # Landmine specific to this repo (see quality-gate job above): this job
+      # used to be a `needs:` predecessor of quality-gate, whose downstream
+      # (detect-changes, test-parallel) skip when quality-gate != success, and
+      # tests-gate treats a skipped test-parallel as PASSED. Turning on a real
+      # executor here without first decoupling would have let a single BLOCK
+      # cascade to "tests-gate: PASSED" on zero tests run -- strictly worse than
+      # infra's failure mode. contract-compliance is no longer in quality-gate's
+      # needs; ci-summary's independent GATE_JOBS entry keeps this required and
+      # merge-blocking without the cascade.
+      - name: Run DoD contract compliance against the product tree (OMN-14887)
+        working-directory: onex_change_control
+        run: |
+          set -euo pipefail
+          if [ -z "${PR_NUMBER:-}" ]; then
+            echo "::notice::No PR number (event=${{ github.event_name }}); DoD check_values are PR-scoped. Skipping."
+            exit 0
+          fi
+          uv run python scripts/ci/run_contract_compliance_check.py \
+            --pr "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --contracts-dir "$GITHUB_WORKSPACE/onex_change_control/contracts" \
+            --workspace "$GITHUB_WORKSPACE" \
+            --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control/scripts/ci/dod_runner_legacy_allowlist.txt"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
   ci-summary:
     name: CI Summary
