@@ -148,14 +148,25 @@ log "selection: is_full_suite=${IS_FULL} reason=${REASON:-none} paths=[ ${PATHS_
 # Assemble the pytest target set. tests/integration is always ignored -- it needs
 # real services and stays a CI-only concern (plan section 2 CI-only).
 RC=0
+# Bounded-timeout flags (OMN-14967): mirror the explicit CI invocation
+# (.github/workflows/ci.yml) so this hook is immune to whichever pytest ini
+# file wins config-precedence in a given worktree. tests/pytest.ini's addopts
+# has no -n/--timeout and silently outranks pyproject.toml's
+# [tool.pytest.ini_options] safety net whenever pytest is invoked with
+# `tests/` (or a tests/ subpath) as an argument -- pytest config discovery
+# picks the nearest ini to the invocation args, not pyproject.toml, and the
+# two do NOT merge. Passing these on the command line here means the
+# per-test timeout applies regardless of which ini file pytest resolves.
+PREPUSH_TIMEOUT_FLAGS="-n4 --dist=loadgroup --timeout=60 --timeout-method=thread"
+
 if [ "$IS_FULL" = "True" ] || [ "$IS_FULL" = "true" ]; then
-  log "running FULL suite (fail-closed escalation): uv run pytest tests/ --ignore=tests/integration ${PREPUSH_PYTEST_ARGS:-}"
+  log "running FULL suite (fail-closed escalation): uv run pytest tests/ --ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
   # shellcheck disable=SC2086
-  uv run pytest tests/ --ignore=tests/integration --tb=short ${PREPUSH_PYTEST_ARGS:-} || RC=$?
+  uv run pytest tests/ --ignore=tests/integration --tb=short ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-} || RC=$?
 elif [ "${#PATHS[@]}" -gt 0 ]; then
-  log "running impacted subset: uv run pytest ${PATHS_STR}--ignore=tests/integration ${PREPUSH_PYTEST_ARGS:-}"
+  log "running impacted subset: uv run pytest ${PATHS_STR}--ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
   # shellcheck disable=SC2086
-  uv run pytest "${PATHS[@]}" --ignore=tests/integration --tb=short ${PREPUSH_PYTEST_ARGS:-} || RC=$?
+  uv run pytest "${PATHS[@]}" --ignore=tests/integration --tb=short ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-} || RC=$?
 else
   log "no impacted unit tests mapped for this push (no source/test change contributed a target); nothing to run."
 fi
