@@ -57,4 +57,5 @@ class NodeTestSelectorCompute:
             feature_flag_enabled=request.feature_flag_enabled,
             pyproject_dependency_relevant=request.pyproject_dependency_relevant,
             test_file_counts=request.test_file_counts,
+            closure_selected_files=request.closure_selected_files,
         )

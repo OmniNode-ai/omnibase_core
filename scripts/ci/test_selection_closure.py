@@ -57,8 +57,10 @@ if TYPE_CHECKING:  # pragma: no cover - typing only; grimp import stays lazy
     from grimp.application.ports.graph import ImportGraph
 
 __all__ = [
+    "ModelClosureSelection",
     "ModelShadowClosureReport",
     "collect_direct_imports",
+    "compute_closure_selection",
     "compute_impacted_modules",
     "compute_shadow_closure",
     "graph_staleness_reason",
@@ -118,6 +120,31 @@ class ModelShadowClosureReport(BaseModel):
     kept_fail_closed_count: int = 0
     impacted_module_count: int = 0
     changed_file_count: int = 0
+    elapsed_seconds: float = 0.0
+
+
+class ModelClosureSelection(BaseModel):
+    """Governing (non-shadow) file-grain closure selection for one selector run.
+
+    Unlike :class:`ModelShadowClosureReport` — which measures a delta against a
+    module-grain answer restricted to that answer's own candidate directories —
+    this is computed over the WHOLE ``tests/unit/`` tree, because the promoted
+    selector has no module-grain candidate ceiling to shrink within (OMN-14921
+    promotion: the module-grain map is retired, not merely shadow-compared).
+
+    ``fail_closed=True`` means the caller MUST NOT narrow: ``selected_files``
+    is then the single-entry conservative sentinel ``["tests/unit/"]`` (the
+    same whole-tree fallback ``compute_selection`` has always used when no
+    mapping was found), never a partial/best-effort list.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    selected_files: list[str] = Field(default_factory=list)
+    fail_closed: bool = False
+    fail_closed_reasons: list[str] = Field(default_factory=list)
+    candidate_file_count: int = 0
+    impacted_module_count: int = 0
     elapsed_seconds: float = 0.0
 
 
@@ -456,5 +483,112 @@ def compute_shadow_closure(
         file_grain_file_count=len(file_grain),
         delta_file_count=len(candidates) - len(file_grain),
         kept_fail_closed_count=len(kept),
+        impacted_module_count=len(impacted),
+    )
+
+
+def compute_closure_selection(
+    changed_files: list[str],
+    repo_root: Path,
+    package_name: str = PACKAGE_NAME,
+) -> ModelClosureSelection:
+    """Governing (non-shadow) file-grain closure selection (OMN-14921 promotion).
+
+    Unlike :func:`compute_shadow_closure`, candidates are collected over the
+    WHOLE ``tests/unit/`` tree — there is no module-grain answer left to shrink
+    within, because the hand-curated map that produced that answer is retired
+    (26/40 declarations were false against the real graph). This is the single
+    primitive both ``scripts/ci/detect_test_paths.py`` (direct call — CLI/I/O
+    boundary) and ``node_test_selector_compute`` (caller/EFFECT boundary,
+    injected as ``ModelTestSelectionRequest.closure_selected_files``) consume;
+    neither surface re-implements its own reverse-dependency logic.
+
+    Every ambiguity fails closed to the single-entry conservative sentinel
+    ``["tests/unit/"]`` — never a partial, best-effort list.
+    """
+    started = time.monotonic()
+
+    def _result(**overrides: object) -> ModelClosureSelection:
+        base: dict[str, object] = {
+            "elapsed_seconds": round(time.monotonic() - started, 3)
+        }
+        base.update(overrides)
+        return ModelClosureSelection.model_validate(base)
+
+    def _fail_closed(reasons: list[str]) -> ModelClosureSelection:
+        return _result(
+            selected_files=[TEST_UNIT_PREFIX],
+            fail_closed=True,
+            fail_closed_reasons=reasons,
+        )
+
+    changed_modules, reasons = resolve_changed_src_modules(
+        changed_files, repo_root, package_name
+    )
+    if reasons:
+        return _fail_closed(reasons)
+
+    # Forced-keep: a directly-changed unit-test file keeps its own directory,
+    # independent of any src closure (module-grain parity for test-only edits).
+    forced_dirs: set[str] = set()
+    for path in changed_files:
+        if path.startswith(TEST_UNIT_PREFIX):
+            parts = path.split("/")
+            if len(parts) >= 3:
+                forced_dirs.add(f"{TEST_UNIT_PREFIX}{parts[2]}/")
+
+    if not changed_modules:
+        if not forced_dirs:
+            # Nothing resolvable at all (unrecognized/ambiguous paths,
+            # integration-only, or a metadata-only pyproject.toml alone) — the
+            # conservative whole-tree fallback, never an empty or near-empty
+            # false-confidence selection. Docs-only diffs are handled by the
+            # caller BEFORE this function is reached (compute_selection step 5).
+            return _result(selected_files=[TEST_UNIT_PREFIX])
+        # Test-only change(s), no src impact to compute a closure over: select
+        # exactly the changed test directories.
+        candidates = _collect_candidate_files(sorted(forced_dirs), repo_root)
+        return _result(
+            selected_files=candidates,
+            candidate_file_count=len(candidates),
+        )
+
+    stale = graph_staleness_reason(repo_root, package_name)
+    if stale is not None:
+        return _fail_closed([stale])
+
+    try:
+        import grimp  # deliberate lazy import: optional at selector runtime
+
+        graph = grimp.build_graph(package_name, cache_dir=None)
+    except Exception as exc:  # noqa: BLE001  # boundary-ok: graph build failure must fail closed
+        return _fail_closed([f"import graph build failed: {exc!r}"])
+
+    impacted, closure_reasons = compute_impacted_modules(graph, changed_modules)
+    if closure_reasons:
+        return _fail_closed(closure_reasons)
+
+    candidates = _collect_candidate_files([TEST_UNIT_PREFIX], repo_root)
+    forced_keep = {c for c in candidates if any(c.startswith(d) for d in forced_dirs)}
+
+    conftest_cache: dict[str, frozenset[str] | None] = {}
+    candidate_imports: dict[str, frozenset[str] | None] = {}
+    for candidate in candidates:
+        own = collect_direct_imports(repo_root / candidate, package_name)
+        if own is None:
+            candidate_imports[candidate] = None
+            continue
+        chain = _conftest_chain_imports(
+            candidate, repo_root, conftest_cache, package_name
+        )
+        candidate_imports[candidate] = None if chain is None else own | chain
+
+    selected, _kept = refine_candidates(
+        candidate_imports, impacted, frozenset(forced_keep)
+    )
+
+    return _result(
+        selected_files=selected,
+        candidate_file_count=len(candidates),
         impacted_module_count=len(impacted),
     )

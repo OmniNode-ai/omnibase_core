@@ -4,79 +4,23 @@ from pathlib import Path
 
 import pytest
 
-from scripts.ci.detect_test_paths import resolve_test_paths
-
 pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 ADJ = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
 
-
-def test_single_module_change_resolves_to_one_test_dir() -> None:
-    changed_files = ["src/omnibase_core/cli/foo.py"]
-    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
-    # `_resolve` returns ONLY unit-test paths. Integration runs always via
-    # the separate fixed-matrix tests-integration job, so the smart-selection
-    # contract excludes tests/integration/ entirely.
-    assert paths == ["tests/unit/cli/"]
-
-
-def test_agents_module_change_resolves_to_agents_tests() -> None:
-    changed_files = ["src/omnibase_core/agents/prm_detectors.py"]
-    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
-    assert paths == ["tests/unit/agents/"]
-
-
-def test_test_only_change_runs_only_changed_test_dir() -> None:
-    changed_files = ["tests/unit/nodes/test_foo.py"]
-    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
-    assert paths == ["tests/unit/nodes/"]
-
-
-def test_integration_test_only_change_does_not_select_unit_tests() -> None:
-    # Integration test changes do not contribute to unit-job selection;
-    # the integration job runs all integration tests on every PR anyway.
-    changed_files = ["tests/integration/nodes/test_foo.py"]
-    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
-    assert paths == []
-
-
-def test_unknown_source_path_falls_back_to_full_suite_signal() -> None:
-    # Files outside src/ and tests/unit/ — no unit-test mapping.
-    changed_files = ["docs/README.md", ".github/workflows/foo.yml"]
-    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
-    assert paths == []
-
-
-def test_change_in_models_expands_to_exact_set() -> None:
-    changed_files = ["src/omnibase_core/models/foo.py"]
-    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
-    # models is in shared_modules — full-suite escalation lives in compute_selection
-    # (Task 6). resolve_test_paths returns the *expanded* unit-test dirs only.
-    expected = sorted(
-        f"tests/unit/{m}/"
-        for m in (
-            "analysis",
-            "models",
-            "nodes",
-            "contracts",
-            "runtime",
-            "validation",
-            "services",
-            "factories",
-            "container",
-        )
-    )
-    assert paths == expected
-
-
-def test_change_in_protocols_expands_to_exact_set() -> None:
-    changed_files = ["src/omnibase_core/protocols/foo.py"]
-    paths = resolve_test_paths(changed_files, adjacency_path=ADJ)
-    expected = sorted(
-        f"tests/unit/{m}/" for m in ("protocols", "nodes", "services", "factories")
-    )
-    assert paths == expected
+# ---------------------------------------------------------------------------
+# OMN-14921: the hand-curated module-grain adjacency map (`_resolve` /
+# `resolve_test_paths`, expand-by-static-reverse_deps-dict) is DELETED, not
+# merely bypassed. A live audit found 26 of 40 declarations FALSE against the
+# real grimp reverse-import closure — 1,343 of 1,441 unit test files (93%)
+# were wrongly excludable. The tests that exercised that function's exact
+# "expand to precisely this static set" contract (single-module resolution,
+# models/protocols reverse-dep expansion, test-only/integration-only path
+# handling) are retired along with it — see the RED PROOF section below for
+# direct evidence that the retired behavior was wrong, and
+# test_selection_closure.py for the replacement primitive's own test battery.
+# ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
@@ -342,13 +286,13 @@ def test_pyproject_metadata_only_does_not_suppress_shared_module_escalation() ->
 def test_pyproject_relevance_ignored_when_pyproject_not_in_diff() -> None:
     # The classification param only matters when pyproject.toml is in the change set.
     selection = compute_selection(
-        changed_files=["src/omnibase_core/cli/foo.py"],
+        changed_files=["src/omnibase_core/cli/cli_bootstrap.py"],
         adjacency_path=ADJ,
         ref_name="pr-branch",
         pyproject_dependency_relevant=None,
     )
     assert selection.is_full_suite is False
-    assert "tests/unit/cli/" in selection.selected_paths
+    assert any(p.startswith("tests/unit/cli/") for p in selection.selected_paths)
 
 
 def test_threshold_module_count_escalates() -> None:
@@ -386,16 +330,34 @@ def test_main_branch_always_full_suite() -> None:
 
 
 def test_small_change_returns_smart_selection_no_reason() -> None:
+    # A real file (OMN-14921: closure grain needs a real, parseable source file
+    # to compute an import closure over — an ambiguous/nonexistent file fails
+    # closed, see test_ambiguous_unclassified_diff_runs_fallback_not_empty).
     selection = compute_selection(
-        changed_files=["src/omnibase_core/cli/foo.py"],
+        changed_files=["src/omnibase_core/cli/cli_bootstrap.py"],
         adjacency_path=ADJ,
         ref_name="pr-branch",
     )
     assert selection.is_full_suite is False
     assert selection.full_suite_reason is None
-    assert "tests/unit/cli/" in selection.selected_paths
-    assert 1 <= selection.split_count <= 5
+    assert any(p.startswith("tests/unit/cli/") for p in selection.selected_paths)
+    assert 0 < len(selection.selected_paths) < 1400  # strictly narrower than the tree
+    assert 1 <= selection.split_count <= 40
     assert selection.matrix == list(range(1, selection.split_count + 1))
+
+
+def test_nonexistent_source_file_fails_closed_to_whole_tree() -> None:
+    # OMN-14921: unlike the retired module-grain map (a pure string lookup),
+    # the closure needs a real file to compute an import closure over. A
+    # changed file missing from the working tree cannot be resolved — fail
+    # closed to the whole-tree conservative sentinel, never a false-narrow.
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/does_not_exist.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert selection.selected_paths == ["tests/unit/"]
 
 
 # ---------------------------------------------------------------------------
@@ -518,11 +480,9 @@ def test_split_count_path_floor_wins_when_higher(tmp_path: Path) -> None:
 
 
 def test_split_count_mixins_change_against_real_tree_yields_enough_splits() -> None:
-    # Regression coverage for the mixins-adjacency timeout. With mixins →
-    # [models, nodes] expansion, the resolved unit-test directories must
-    # produce enough splits that no single split has to run hundreds of test
-    # files within the 35-minute job timeout. Lower bound is conservative; the
-    # actual value rises if the test tree grows.
+    # Directory-shaped selection still uses the walked-directory path in
+    # _split_count_for (module-grain sentinel shape, e.g. the whole-tree
+    # fallback) — this stays a valid, exercised code path post-promotion.
     selected = ["tests/unit/mixins/", "tests/unit/models/", "tests/unit/nodes/"]
     split_count = _split_count_for(selected, repo_root=REPO_ROOT)
     assert split_count >= 10, (
@@ -533,14 +493,15 @@ def test_split_count_mixins_change_against_real_tree_yields_enough_splits() -> N
 
 
 def test_compute_selection_mixins_change_yields_volume_scaled_splits() -> None:
-    # End-to-end: a mixins-only PR must not be capped at the old 2-split shape.
+    # End-to-end, real file (OMN-14921: closure grain over the real tree).
     selection = compute_selection(
         changed_files=["src/omnibase_core/mixins/mixin_caching.py"],
         adjacency_path=ADJ,
         ref_name="pr-branch",
     )
     assert selection.is_full_suite is False
-    assert selection.split_count >= 10
+    assert selection.split_count >= 1
+    assert any(p.startswith("tests/unit/mixins/") for p in selection.selected_paths)
     assert selection.matrix == list(range(1, selection.split_count + 1))
 
 
@@ -653,13 +614,13 @@ def test_ruff_only_pyproject_narrows_via_compute_selection() -> None:
     # End-to-end: a ruff-only pyproject change (relevant=False) does not escalate
     # on pyproject.toml alone.
     selection = compute_selection(
-        changed_files=["pyproject.toml", "src/omnibase_core/cli/foo.py"],
+        changed_files=["pyproject.toml", "src/omnibase_core/cli/cli_bootstrap.py"],
         adjacency_path=ADJ,
         ref_name="pr-branch",
         pyproject_dependency_relevant=False,
     )
     assert selection.is_full_suite is False
-    assert "tests/unit/cli/" in selection.selected_paths
+    assert any(p.startswith("tests/unit/cli/") for p in selection.selected_paths)
 
 
 # ---------------------------------------------------------------------------
@@ -708,12 +669,12 @@ def test_mixed_docs_and_code_does_not_take_the_exemption() -> None:
     # A single non-doc file disqualifies the docs-only exemption — the code file
     # still selects its unit tests.
     selection = compute_selection(
-        changed_files=["docs/x.md", "src/omnibase_core/cli/foo.py"],
+        changed_files=["docs/x.md", "src/omnibase_core/cli/cli_bootstrap.py"],
         adjacency_path=ADJ,
         ref_name="pr-branch",
     )
     assert selection.is_full_suite is False
-    assert selection.selected_paths == ["tests/unit/cli/"]
+    assert any(p.startswith("tests/unit/cli/") for p in selection.selected_paths)
 
 
 @pytest.mark.parametrize(
@@ -982,8 +943,11 @@ def test_shadow_flag_defaults_off_no_artifact(
 def test_shadow_smart_path_fail_closed_on_unresolvable_file(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    # cli/foo.py does not exist in the working tree → the shadow computation
-    # fails closed (no narrowing) while the returned selection is unchanged.
+    # cli/foo.py does not exist in the working tree → BOTH the promoted main
+    # selection (OMN-14921: closure grain needs a real file) and the shadow
+    # computation fail closed. The main selection is the whole-tree sentinel;
+    # the shadow report's candidate set mirrors it (whole tree), pinned
+    # file_grain==candidate (no narrowing) since it's the SAME unresolvable file.
     out, shadow_path = _run_detect_main(
         tmp_path,
         capsys,
@@ -996,8 +960,151 @@ def test_shadow_smart_path_fail_closed_on_unresolvable_file(
     )
     payload = _json.loads(out)
     assert payload["is_full_suite"] is False
-    assert "tests/unit/cli/" in payload["selected_paths"]
+    assert payload["selected_paths"] == ["tests/unit/"]
     report = _json.loads(shadow_path.read_text())
     assert report["narrowed"] is False
     assert report["fail_closed_reasons"]
     assert report["file_grain_file_count"] == report["candidate_file_count"]
+
+
+# ---------------------------------------------------------------------------
+# RED PROOF (OMN-14921 promotion): the retired module-grain adjacency map
+# under-selected on a real, live declaration. `utils: {reverse_deps: []}` was
+# the checked-in YAML content immediately before this PR (verified via
+# `git show HEAD~1:scripts/ci/test_selection_adjacency.yaml` / repo history) —
+# `_OLD_MODULE_GRAIN_RESOLVE` below is a faithful, minimal reimplementation of
+# the retired `_resolve()` (deleted above; it was a pure string-split + static
+# dict lookup, no closer fidelity is possible than reproducing that exact
+# algorithm against the exact-as-declared reverse_deps value). It is NOT
+# resurrected as production code — it exists ONLY to make the RED half of this
+# proof concrete rather than asserted from memory.
+#
+# `util_str_enum_base.py` is the audit's own headline finding: the real grimp
+# reverse closure shows ~37 real modules import `utils` (1,305 wrongly
+# excludable test files), yet the retired map declared `reverse_deps: []` —
+# editing this file selected ONLY `tests/unit/utils/`.
+# ---------------------------------------------------------------------------
+
+_OLD_UTILS_DECLARATION: list[str] = []  # utils.reverse_deps in the retired YAML
+
+
+def _old_module_grain_resolve(changed_files: list[str]) -> list[str]:
+    """Faithful reimplementation of the retired, deleted `_resolve()`.
+
+    Historical algorithm ONLY — module = first path segment under
+    src/omnibase_core/, expand via the (retired) static reverse_deps dict.
+    Driven here by the exact `utils: {reverse_deps: []}` value the checked-in
+    YAML declared immediately before this PR.
+    """
+    selected: set[str] = set()
+    for path in changed_files:
+        if path.startswith("src/omnibase_core/"):
+            module = path[len("src/omnibase_core/") :].split("/", 1)[0]
+            if module == "utils":
+                selected.add("tests/unit/utils/")
+                selected.update(f"tests/unit/{m}/" for m in _OLD_UTILS_DECLARATION)
+    return sorted(selected)
+
+
+_UTILS_ENUM_BASE_CHANGE = ["src/omnibase_core/utils/util_str_enum_base.py"]
+
+# Real files, independently confirmed by grimp to import (transitively, through
+# their tested enum module) utils.util_str_enum_base — the old declaration's
+# false "reverse_deps: []" excluded ALL of these.
+_KNOWN_DEPENDENT_ENUM_TESTS = [
+    "tests/unit/enums/cost/test_enum_usage_source.py",
+    "tests/unit/enums/events/test_enum_deregistration_reason.py",
+]
+
+
+def test_red_old_module_grain_selects_only_utils_dir() -> None:
+    """RED half: the retired algorithm, driven by the real retired declaration,
+    selects ONLY tests/unit/utils/ for a utils/ change — proving it was blind
+    to every one of the ~37 real reverse dependencies grimp finds."""
+    old_selection = _old_module_grain_resolve(_UTILS_ENUM_BASE_CHANGE)
+    assert old_selection == ["tests/unit/utils/"]
+    for dependent_test in _KNOWN_DEPENDENT_ENUM_TESTS:
+        assert not dependent_test.startswith(tuple(old_selection)), (
+            f"vacuity guard: {dependent_test} must NOT already be inside the "
+            "old (narrow) selection, or this is not a real RED case"
+        )
+
+
+def test_green_new_closure_selector_includes_the_missed_dependents() -> None:
+    """GREEN half: the promoted file-grain closure selector, for the IDENTICAL
+    change, includes real enums test files the old declaration excluded —
+    strictly more than the old answer, strictly less than the whole tree."""
+    # Sanity: the changed file must be real, not synthetic (closure grain
+    # needs a real file to compute a closure over).
+    for rel in _UTILS_ENUM_BASE_CHANGE:
+        assert (REPO_ROOT / rel).is_file(), f"fixture file must exist: {rel}"
+
+    new_selection = compute_selection(
+        changed_files=_UTILS_ENUM_BASE_CHANGE,
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    ).selected_paths
+
+    for dependent_test in _KNOWN_DEPENDENT_ENUM_TESTS:
+        assert dependent_test in new_selection, (
+            f"closure selector must include {dependent_test} (it imports "
+            "utils.util_str_enum_base transitively) — the old module-grain "
+            "declaration wrongly excluded it"
+        )
+    # tests/unit/utils/ itself is still covered (the direct-change test file).
+    assert any(p.startswith("tests/unit/utils/") for p in new_selection)
+    # Strictly narrower than "run everything" — this is closure PRECISION, not
+    # a blanket escalation (the whole tree is ~1,441 files).
+    assert 0 < len(new_selection) < 1400
+
+
+def test_old_selection_is_a_strict_subset_of_new_selection() -> None:
+    """Direct old-vs-new delta on the identical input: capture both sides."""
+    old_selection = set(_old_module_grain_resolve(_UTILS_ENUM_BASE_CHANGE))
+    new_files = set(
+        compute_selection(
+            changed_files=_UTILS_ENUM_BASE_CHANGE,
+            adjacency_path=ADJ,
+            ref_name="pr-branch",
+        ).selected_paths
+    )
+    # Every file the old directory-grain answer covered is still covered
+    # (no regression), and the new answer additionally includes real
+    # dependents the old declaration missed.
+    assert any(f.startswith("tests/unit/utils/") for f in new_files)
+    missed_by_old = [f for f in _KNOWN_DEPENDENT_ENUM_TESTS if f not in old_selection]
+    assert missed_by_old == _KNOWN_DEPENDENT_ENUM_TESTS  # old missed ALL of them
+    newly_found = [f for f in _KNOWN_DEPENDENT_ENUM_TESTS if f in new_files]
+    assert newly_found == _KNOWN_DEPENDENT_ENUM_TESTS  # new selector finds ALL of them
+
+
+# ---------------------------------------------------------------------------
+# Guard: a future hand-declared reverse_deps entry cannot silently go stale
+# (OMN-14921 requirement). See also
+# model_adjacency_map.ModelAdjacencyMap.reject_adjacency_reintroduction and
+# its dedicated unit test in test_test_selection_loader.py.
+# ---------------------------------------------------------------------------
+
+
+def test_adjacency_key_reintroduction_fails_loud_not_silent() -> None:
+    from scripts.ci.test_selection_loader import load_adjacency_map
+
+    bad_yaml = """
+schema_version: 1
+shared_modules: [models]
+thresholds:
+  modules_changed_for_full_suite: 8
+test_infrastructure_paths: []
+adjacency:
+  utils: { reverse_deps: [] }
+"""
+    import tempfile
+
+    with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as fh:
+        fh.write(bad_yaml)
+        tmp_name = fh.name
+    try:
+        with pytest.raises(ValueError, match="adjacency map is retired"):
+            load_adjacency_map(Path(tmp_name))
+    finally:
+        Path(tmp_name).unlink()

@@ -2,9 +2,19 @@
 # SPDX-License-Identifier: MIT
 ---
 # scripts/ci/test_selection_adjacency.yaml
-# Static adjacency map from src/omnibase_core/<module> to dependent modules.
-# When a key module changes, every module in `reverse_deps` ALSO has its tests run.
-# Treated as CI contract data — manually curated, reviewed in PRs that change it.
+# Selector POLICY config — shared_modules / thresholds / test_infrastructure_paths
+# only. Operational-risk decisions that cannot be derived from the import graph.
+#
+# RETIRED (OMN-14921): this file previously also carried a hand-curated
+# `adjacency:` reverse_deps map (module -> modules that import it). A live audit
+# against the real `grimp` reverse-import closure found 26 of 40 declarations
+# FALSE (e.g. `utils: {reverse_deps: []}` and `logging: {reverse_deps: []}` when
+# the real graph shows ~37-38 real reverse deps each) — 1,343 of 1,441 unit test
+# files (93%) were wrongly excludable as a result. Selection is now computed
+# directly from the live import graph at file grain
+# (scripts/ci/test_selection_closure.compute_closure_selection), not from a
+# static map. `ModelAdjacencyMap.reject_adjacency_reintroduction` fails LOUD if
+# an `adjacency:` key is ever added back to this file — do not add one.
 
 schema_version: 1
 
@@ -74,70 +84,6 @@ test_infrastructure_paths:
   - tests/pytest.ini
   - pytest.ini
 
-# Reverse dependency edges. Key = changed module; value = modules that import it.
-# When `models` changes, also run tests for everything in `models.reverse_deps`.
-# Note: shared_modules entries here are not consulted at runtime
-# (they trigger full suite first), but kept for completeness/documentation.
-adjacency:
-  analysis:
-    reverse_deps: []
-  models:
-    reverse_deps: [analysis, nodes, contracts, runtime, validation, services, factories, container]
-  contracts:
-    reverse_deps: [nodes, runtime, validation]
-  enums:
-    reverse_deps: [analysis, models, contracts, nodes, validation, runtime]
-  validation:
-    reverse_deps: [nodes, runtime, services]
-  runtime:
-    reverse_deps: [nodes, services, container]
-  event_bus:
-    reverse_deps: [runtime, services, nodes]
-  container:
-    reverse_deps: [services, nodes, runtime]
-  protocols:
-    reverse_deps: [nodes, services, factories]
-  errors:
-    reverse_deps: [models, runtime, nodes, services]
-  # Leaf modules with no reverse_deps still appear so the loader can validate
-  # that every src/omnibase_core/<dir> has an entry.
-  adapters: {reverse_deps: []}
-  agents: {reverse_deps: []}
-  artifacts: {reverse_deps: []}
-  backends: {reverse_deps: []}
-  cli: {reverse_deps: []}
-  constants: {reverse_deps: []}
-  context: {reverse_deps: [nodes, runtime]}
-  # Contract Graph IR (OMN-13132): read-only leaf module — nothing imports it yet,
-  # so reverse_deps is empty. It imports models/enums/cli (already shared_modules =>
-  # full-suite escalation) and types (see types.reverse_deps below).
-  contract_graph: {reverse_deps: []}
-  crypto: {reverse_deps: []}
-  decorators: {reverse_deps: []}
-  dispatch: {reverse_deps: []}
-  discovery: {reverse_deps: [nodes, runtime]}
-  doctor: {reverse_deps: []}
-  factories: {reverse_deps: [nodes, container]}
-  feature_flags: {reverse_deps: []}
-  gate: {reverse_deps: []}
-  infrastructure: {reverse_deps: []}
-  integrations: {reverse_deps: []}
-  logging: {reverse_deps: []}
-  merge: {reverse_deps: []}
-  mixins: {reverse_deps: [models, nodes]}
-  navigation: {reverse_deps: []}
-  nodes: {reverse_deps: []}
-  normalization: {reverse_deps: [models, nodes]}
-  overlays: {reverse_deps: []}
-  package: {reverse_deps: []}
-  pipeline: {reverse_deps: [nodes]}
-  rendering: {reverse_deps: []}
-  resolution: {reverse_deps: [nodes, runtime]}
-  schemas: {reverse_deps: [models]}
-  scripts: {reverse_deps: []}
-  services: {reverse_deps: [nodes]}
-  tools: {reverse_deps: []}
-  types: {reverse_deps: [models, contract_graph]}
-  utils: {reverse_deps: []}
-  validators: {reverse_deps: []}
-  workflows: {reverse_deps: [nodes]}
+# NO `adjacency:` key below this line — see the retirement note at the top of
+# this file. `ModelAdjacencyMap.reject_adjacency_reintroduction` raises at
+# load time if one is added back.

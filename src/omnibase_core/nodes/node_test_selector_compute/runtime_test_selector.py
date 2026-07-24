@@ -153,6 +153,13 @@ def main(argv: list[str] | None = None) -> int:
     node = NodeTestSelectorCompute()
     feature_flag_enabled = args.feature_flag == "on"
 
+    # KNOWN GAP (OMN-14921 fast-follow, filed in the promotion PR body): this
+    # EFFECT boundary does not yet compute the file-grain closure
+    # (scripts.ci.test_selection_closure.compute_closure_selection) to inject as
+    # closure_selected_files. Left None, the pure node fails closed to the
+    # whole-tree fallback (never silently narrows on a missing closure) — this
+    # entrypoint is not wired into CI (detect_test_paths.py is the governing
+    # oracle), so the gap has no live-selection impact today.
     def _request(counts: dict[str, int]) -> ModelTestSelectionRequest:
         return ModelTestSelectionRequest(
             changed_files=changed,
@@ -162,6 +169,7 @@ def main(argv: list[str] | None = None) -> int:
             feature_flag_enabled=feature_flag_enabled,
             pyproject_dependency_relevant=pyproject_dependency_relevant,
             test_file_counts=counts,
+            closure_selected_files=None,
         )
 
     # Pass 1: selection (independent of test-file volume).

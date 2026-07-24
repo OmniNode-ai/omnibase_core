@@ -119,12 +119,18 @@ def _is_selected(file_path: str, predicted_paths: list[str], is_full: bool) -> b
 def changed_modules_for(
     changed_files: list[str], config: ModelAdjacencyMap
 ) -> list[str]:
-    """Top-level ``src/omnibase_core/<module>`` dirs touched by the change set."""
+    """Top-level ``src/omnibase_core/<module>`` dirs touched by the change set.
+
+    ``config`` is accepted for call-site stability only; the retired
+    hand-curated ``adjacency`` map (OMN-14921) is no longer consulted here —
+    every top-level module name under ``src/omnibase_core/`` is a real module,
+    so no "known module" filter is needed.
+    """
     mods = {
         path[len(SRC_PREFIX) :].split("/", 1)[0]
         for path in changed_files
         if path.startswith(SRC_PREFIX)
-    } & set(config.adjacency.keys())
+    }
     return sorted(mods)
 
 
