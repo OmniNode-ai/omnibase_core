@@ -178,6 +178,24 @@ repos:
         files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|src/omnibase_core/runtime/runtime_local(_adapter)?\.py|src/omnibase_core/mixins/mixin_envelope_extraction\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/test_selection_adjacency\.yaml|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-commit]
 
+      # RSD provenance-stamp fail-closed GATE (OMN-15011). The OMN-14355 ratchet
+      # above proves a node's SHAPE but is authorship-agnostic by design (a
+      # brand-new node born shape-canonical requires proof of nothing about how
+      # it came to exist). This classifies each node's ``.rsd_provenance.json``
+      # sidecar stamp (machine rsd_delegation, RECOMPUTED from live file
+      # sha256 — never trusted — or a sanctioned hand_authored + ticket
+      # exception), WARNs the baselined legacy debt, and HARD-FAILS a NEW node
+      # missing/invalid stamp or ANY growth of the frozen exemption baseline.
+      # Full-scan-always (cheap JSON+sha256 check, not diff-scoped — see the
+      # module docstring). Canary scope = omnibase_core; fan-out is a follow-on.
+      - id: rsd-provenance-stamp
+        name: RSD provenance-stamp fail-closed gate
+        entry: uv run python scripts/ci/rsd_provenance_stamp.py
+        language: system
+        pass_filenames: false
+        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*/\.rsd_provenance\.json|scripts/ci/rsd_provenance_stamp\.py|scripts/ci/rsd_provenance_stamp_baseline\.py)$
+        stages: [pre-commit]
+
       # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809). The
       # canonical-handler-shape ratchet (above) DECIDES a flip is proven; this gate
       # re-invokes that gate (verify_flip_receipt / classify_node — imported, not
