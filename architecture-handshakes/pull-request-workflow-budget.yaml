@@ -110,7 +110,22 @@ waivers:
     retires: >-
       The recurring manual post-incident .git/config + index forensics-and-repair step for hook-context
       test corruption, and the per-file hand-fix pattern of OMN-14744 that demonstrably did not hold.
-
+  - workflow_file: call-occ-companion-effect.yml
+    ticket: OMN-14990
+    expires: "2026-08-23"
+    justification: >-
+      Fan-out of the proven omnibase_infra OCC-companion-effect born-path caller (OMN-14941 canary, PR
+      #2394, discriminating readback passed on infra#2393 -> OCC#4618). This is an additive, non-required,
+      thin caller (own concurrency group, no interaction with ci.yml's job graph) that publishes a Kafka
+      command for the .201 dev-lane effects runtime to consume out of band -- it does not add a check
+      to the PR's required-status surface or block merges. Waived rather than budget-bumped so the count
+      lock stays flat; the slot regularizes either when a future PR retires an existing allowlisted workflow
+      (OMN-14877-style drain) and this takes the freed slot, or the waiver is renewed with fresh evidence
+      of continued live use.
+    retires: >-
+      The manual, implementer-adjacent OCC evidence-companion authoring step for every omnibase_core PR
+      (Codex hand-authoring every companion because the born path could never fire -- no call-occ-autobind.yml
+      or call-occ-companion-effect.yml existed in this repo before this ticket). #magic___^_^___line
 metadata:
   generated_by: "C7 / OMN-14907, 2026-07-21"
   baseline_ref: "origin/dev@d09128fc"
