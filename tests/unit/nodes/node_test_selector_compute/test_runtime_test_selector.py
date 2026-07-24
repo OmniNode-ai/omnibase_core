@@ -7,7 +7,18 @@ The follow-up (OMN-14700 DoD 2/3) will point the CI job and the pre-push hook at
 ``runtime_test_selector.main`` in place of ``detect_test_paths.main``. That swap
 is only safe if the two entrypoints emit identical stdout for identical args.
 This suite runs BOTH CLIs over the same change-sets, adjacency map, and repo root
-and asserts the emitted ``ModelTestSelection`` JSON line is byte-for-byte equal.
+and asserts the emitted ``ModelTestSelection`` JSON line is byte-for-byte equal —
+EXCEPT for the ONE known, documented gap (OMN-14921): ``runtime_test_selector.py``
+does not yet compute the file-grain import-graph closure (grimp graph build +
+AST reads are I/O, and this EFFECT boundary hasn't been wired to call
+``test_selection_closure.compute_closure_selection`` — filed as a fast-follow
+in the OMN-14921 PR body). Every case that resolves via an ESCALATION gate
+(shared_module, test_infra, main_branch, feature_flag_off, merge_group, or a
+changed file the closure itself fails closed on) is unaffected and stays
+byte-for-byte. The one case that reaches real closure narrowing on the oracle
+side (a real, resolvable source file) is split out below into
+``test_cli_stdout_diverges_on_smart_selection_pending_closure_wiring``, which
+asserts the divergence explicitly rather than silently dropping coverage.
 """
 
 from __future__ import annotations
@@ -39,11 +50,6 @@ _CASES: list[tuple[str, list[str], list[str]]] = [
         "feature_flag_off",
         ["src/omnibase_core/cli/x.py"],
         ["--ref-name", "pr-branch", "--feature-flag", "off"],
-    ),
-    (
-        "mixins_volume",
-        ["src/omnibase_core/mixins/mixin_caching.py"],
-        ["--ref-name", "pr-branch"],
     ),
     (
         "merge_group",
@@ -102,6 +108,54 @@ def test_cli_stdout_parity(
         "full_suite_reason",
         "matrix",
     }
+
+
+def test_cli_stdout_diverges_on_smart_selection_pending_closure_wiring(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Documents the ONE known gap (OMN-14921 fast-follow): a real, resolvable
+    source-file change narrows via the real closure on the oracle side, but
+    ``runtime_test_selector.py`` does not yet compute+inject that closure, so
+    it fails closed to the whole-tree sentinel. This asserts the divergence
+    explicitly — a silently-passing byte-for-byte comparison here would be a
+    false green masking the gap, not a proof it doesn't exist."""
+    changed_file = _changed_file(
+        tmp_path, ["src/omnibase_core/mixins/mixin_caching.py"]
+    )
+    common = [
+        "--changed-files-from",
+        str(changed_file),
+        "--adjacency",
+        str(ADJ),
+        "--repo-root",
+        str(REPO_ROOT),
+        "--ref-name",
+        "pr-branch",
+    ]
+
+    oracle_rc = oracle_main(common)
+    oracle_out = capsys.readouterr().out
+    node_rc = node_main(common)
+    node_out = capsys.readouterr().out
+
+    assert oracle_rc == 0
+    assert node_rc == 0
+    oracle_payload = json.loads(oracle_out)
+    node_payload = json.loads(node_out)
+
+    # Oracle: real closure narrowing (strictly fewer than the whole tree).
+    assert oracle_payload["is_full_suite"] is False
+    assert oracle_payload["selected_paths"] != ["tests/unit/"]
+    assert any(
+        p.startswith("tests/unit/mixins/") for p in oracle_payload["selected_paths"]
+    )
+
+    # Node: fails closed to the whole-tree sentinel (documented gap, not silent
+    # under-selection — the fallback is conservative, never narrower).
+    assert node_payload["is_full_suite"] is False
+    assert node_payload["selected_paths"] == ["tests/unit/"]
+
+    assert node_out != oracle_out
 
 
 def test_cli_emits_single_trailing_newline(

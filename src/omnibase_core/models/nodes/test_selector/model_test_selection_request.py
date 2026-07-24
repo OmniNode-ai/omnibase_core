@@ -14,6 +14,11 @@ boundary (``runtime_test_selector.py``), never inside the handler:
   path (a filesystem walk). The node sums the counts of the paths it selects to
   compute the volume-aware split count; an absent path counts as ``0``, exactly
   mirroring the oracle's ``_count_test_files`` skip-if-missing behaviour.
+* ``closure_selected_files`` — the file-grain import-graph-closure selection
+  (OMN-14921), computed via
+  ``scripts.ci.test_selection_closure.compute_closure_selection`` (grimp graph
+  build + test-file AST reads). ``None`` fails closed to the whole-tree
+  fallback — see ``selector_core.compute_selection``.
 """
 
 from __future__ import annotations
@@ -39,3 +44,4 @@ class ModelTestSelectionRequest(BaseModel):
     feature_flag_enabled: bool = True
     pyproject_dependency_relevant: bool | None = None
     test_file_counts: dict[str, int] = Field(default_factory=dict)
+    closure_selected_files: list[str] | None = None

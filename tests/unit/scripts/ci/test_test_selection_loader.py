@@ -18,13 +18,26 @@ def test_load_adjacency_map_parses_repo_yaml() -> None:
     assert isinstance(config, ModelAdjacencyMap)
     assert config.schema_version == 1
     assert "models" in config.shared_modules
-    assert "models" in config.adjacency
 
 
-def test_load_rejects_unknown_shared_module(tmp_path: Path) -> None:
+def test_repo_adjacency_map_is_retired_empty() -> None:
+    # OMN-14921: the checked-in YAML no longer carries an `adjacency:` block —
+    # test selection is computed from the live import graph, not this map.
+    # Positive-evidence check that the retirement actually landed (not just
+    # that the guard below exists).
+    config_path = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
+    config = load_adjacency_map(config_path)
+    assert config.adjacency == {}
+
+
+def test_load_rejects_reintroduced_adjacency_map(tmp_path: Path) -> None:
+    # OMN-14921 "cannot silently go stale" guard: ANY adjacency entry — even a
+    # single, otherwise-plausible one — fails loud at load time. A hand-curated
+    # reverse_deps map cannot be kept honest against the real import graph (26
+    # of 40 prior declarations were already false); do not resurrect one.
     bad_yaml = """
 schema_version: 1
-shared_modules: [does_not_exist]
+shared_modules: [models]
 thresholds:
   modules_changed_for_full_suite: 8
 test_infrastructure_paths: []
@@ -33,19 +46,8 @@ adjacency:
 """
     tmp = tmp_path / "bad_adj.yaml"
     tmp.write_text(bad_yaml)
-    with pytest.raises(ValueError, match="shared_module 'does_not_exist'"):
+    with pytest.raises(ValueError, match="adjacency map is retired"):
         load_adjacency_map(tmp)
-
-
-def test_every_src_module_has_adjacency_entry() -> None:
-    config_path = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
-    config = load_adjacency_map(config_path)
-    src_root = REPO_ROOT / "src/omnibase_core"
-    src_modules = {
-        p.name for p in src_root.iterdir() if p.is_dir() and not p.name.startswith("_")
-    }
-    missing = src_modules - set(config.adjacency.keys())
-    assert not missing, f"Modules missing adjacency entry: {missing}"
 
 
 # ---------------------------------------------------------------------------
@@ -99,9 +101,11 @@ adjacency:
         load_adjacency_map(tmp)
 
 
-def test_repo_adjacency_has_no_duplicate_keys() -> None:
-    # Regression for the removed `dispatch`/`analysis` duplicates: the real file
-    # must load clean (47 modules, no last-wins drop).
+def test_repo_yaml_loads_clean_no_duplicate_keys() -> None:
+    # The real file must still load clean under the duplicate-key-rejecting
+    # loader (OMN-14897) even with the adjacency block retired (OMN-14921) —
+    # shared_modules/thresholds/test_infrastructure_paths are the remaining
+    # surface a duplicate key could silently corrupt.
     config_path = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
     config = load_adjacency_map(config_path)
-    assert len(config.adjacency) == 47
+    assert len(config.shared_modules) == 6

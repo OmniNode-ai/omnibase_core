@@ -18,8 +18,10 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 def test_cli_emits_valid_model_test_selection_json(tmp_path: Path) -> None:
+    # A real file (OMN-14921: closure grain needs a real source to build a
+    # closure over — cli_bootstrap.py exists in this checkout).
     fake_diff = tmp_path / "diff.txt"
-    fake_diff.write_text("src/omnibase_core/cli/foo.py\n")
+    fake_diff.write_text("src/omnibase_core/cli/cli_bootstrap.py\n")
     result = subprocess.run(
         [
             sys.executable,
@@ -40,7 +42,7 @@ def test_cli_emits_valid_model_test_selection_json(tmp_path: Path) -> None:
     payload = json.loads(result.stdout)
     assert payload["is_full_suite"] is False
     assert payload["full_suite_reason"] is None
-    assert "tests/unit/cli/" in payload["selected_paths"]
+    assert any(p.startswith("tests/unit/cli/") for p in payload["selected_paths"])
     assert "matrix" in payload
     assert isinstance(payload["matrix"], list)
 

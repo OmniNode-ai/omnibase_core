@@ -12,8 +12,8 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from scripts.ci.test_selection_closure import compute_closure_selection
 from scripts.ci.test_selection_loader import (
-    ModelAdjacencyMap,
     load_adjacency_map,
 )
 from scripts.ci.test_selection_models import (
@@ -101,50 +101,6 @@ VOLUME_MAX_SPLITS = 40
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def resolve_test_paths(
-    changed_files: list[str],
-    adjacency_path: Path,
-) -> list[str]:
-    """Map changed file paths to deterministic UNIT test directories.
-
-    Behavior:
-      - Source changes under src/omnibase_core/<module>: include
-        tests/unit/<module>/.
-      - Test-only changes under tests/unit/: include the changed unit-test directory.
-      - Test-only changes under tests/integration/: ignored (integration runs always).
-      - Files outside src/ and tests/unit/: no contribution; caller decides
-        whether to escalate to full suite.
-
-    Adjacency expansion is added in Task 5.
-    """
-    config = load_adjacency_map(adjacency_path)
-    return _resolve(changed_files, config)
-
-
-def _resolve(changed_files: list[str], config: ModelAdjacencyMap) -> list[str]:
-    direct_modules: set[str] = set()
-    selected: set[str] = set()
-
-    for path in changed_files:
-        if path.startswith(SRC_PREFIX):
-            module = path[len(SRC_PREFIX) :].split("/", 1)[0]
-            if module in config.adjacency:
-                direct_modules.add(module)
-        elif path.startswith(TEST_UNIT_PREFIX):
-            parts = path.split("/")
-            if len(parts) >= 3:
-                selected.add(f"{TEST_UNIT_PREFIX}{parts[2]}/")
-
-    expanded: set[str] = set(direct_modules)
-    for module in direct_modules:
-        expanded.update(config.adjacency[module].reverse_deps)
-
-    for module in expanded:
-        selected.add(f"{TEST_UNIT_PREFIX}{module}/")
-
-    return sorted(selected)
-
-
 def compute_selection(
     changed_files: list[str],
     adjacency_path: Path,
@@ -152,6 +108,7 @@ def compute_selection(
     event_name: str = "pull_request",
     feature_flag_enabled: bool = True,
     pyproject_dependency_relevant: bool | None = None,
+    repo_root: Path | None = None,
 ) -> ModelTestSelection:
     """Resolve the test selection for a change set.
 
@@ -161,8 +118,13 @@ def compute_selection(
     is metadata-only (do not escalate on ``pyproject.toml`` alone), ``None`` = not
     classified. When ``pyproject.toml`` is in the change set and this is not
     ``False`` (i.e. ``True`` or ``None``), the selector fails closed and escalates.
+
+    ``repo_root`` is the tree the file-grain import-graph closure (OMN-14921) is
+    computed over — defaults to :data:`REPO_ROOT` (this checkout). Tests inject a
+    synthetic tree here so the closure runs over controlled fixtures.
     """
     config = load_adjacency_map(adjacency_path)
+    closure_root = repo_root if repo_root is not None else REPO_ROOT
 
     # 0. Feature flag short-circuit: off → legacy 40-split full suite.
     if not feature_flag_enabled:
@@ -194,12 +156,17 @@ def compute_selection(
         ):
             return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
 
-    # 3. Shared module escalation.
+    # 3. Shared module escalation. (OMN-14921: this set is the raw top-level
+    # module name under src/omnibase_core/ for every changed source file — it
+    # is no longer intersected against a hand-curated adjacency-map key set,
+    # which is retired. The intersection served only to filter to "known"
+    # modules; membership in `shared_modules`/the threshold count below needs
+    # no such filter.)
     changed_modules = {
         path[len(SRC_PREFIX) :].split("/", 1)[0]
         for path in changed_files
         if path.startswith(SRC_PREFIX)
-    } & set(config.adjacency.keys())
+    }
     if changed_modules & set(config.shared_modules):
         return _full_suite(EnumFullSuiteReason.SHARED_MODULE)
 
@@ -223,16 +190,15 @@ def compute_selection(
             matrix=[1],
         )
 
-    # 6. Smart selection.
-    selected = _resolve(changed_files, config)
-    if not selected:
-        # Conservative one-shard fallback over the full tests/unit/ tree. This
-        # is NOT a no-op — it runs ~3-5 min of unit tests. It fires for changes
-        # that have no unit-test mapping (doc-only, integration-only, or other
-        # low-signal metadata). CI workflow and selector changes are test
-        # infrastructure and escalate before this fallback.
-        selected = ["tests/unit/"]
-    split_count = _split_count_for(selected, repo_root=REPO_ROOT)
+    # 6. Smart selection (OMN-14921: file-grain import-graph closure, computed
+    # over the live grimp graph — replaces the retired hand-curated adjacency
+    # map). Every ambiguity fails closed to the conservative ["tests/unit/"]
+    # whole-tree sentinel inside compute_closure_selection itself; a genuinely
+    # empty result here means the closure positively proved zero test files
+    # reference the change (stronger evidence than "no mapping found").
+    closure = compute_closure_selection(changed_files, repo_root=closure_root)
+    selected = closure.selected_files
+    split_count = _split_count_for(selected, repo_root=closure_root)
 
     return ModelTestSelection(
         selected_paths=selected,
@@ -302,12 +268,20 @@ def _volume_split_count(selected_paths: list[str], repo_root: Path | None) -> in
 
 
 def _count_test_files(selected_paths: list[str], repo_root: Path) -> int:
+    """Count ``test_*.py`` files a selection covers.
+
+    ``selected_paths`` entries are either a directory (module-grain sentinel,
+    e.g. ``tests/unit/`` or ``tests/unit/cli/`` — walked recursively) or an
+    individual test FILE (OMN-14921 file-grain closure output, e.g.
+    ``tests/unit/cli/test_foo.py`` — counted directly, no walk needed).
+    """
     total = 0
     for rel in selected_paths:
-        directory = repo_root / rel
-        if not directory.is_dir():
-            continue
-        total += sum(1 for _ in directory.rglob("test_*.py"))
+        target = repo_root / rel
+        if target.is_dir():
+            total += sum(1 for _ in target.rglob("test_*.py"))
+        elif target.is_file():
+            total += 1
     return total
 
 
@@ -484,12 +458,17 @@ def main(argv: list[str] | None = None) -> int:
         event_name=args.event_name,
         feature_flag_enabled=(args.feature_flag == "on"),
         pyproject_dependency_relevant=pyproject_dependency_relevant,
+        repo_root=args.repo_root,
     )
     if args.shadow_closure == "on":
-        # SHADOW MODE (OMN-14921): observational only. The report is written to
-        # the artifact path + summarized on stderr (stdout stays reserved for the
-        # selection JSON the CI job parses). ANY shadow failure is contained here
-        # — it must never change or break the returned selection.
+        # SHADOW MODE (OMN-14921): now vestigial post-promotion — compute_selection's
+        # own smart-selection step already IS the closure computation, so this
+        # necessarily reports delta=0 (module_grain == the promoted selection).
+        # Left wired (harmless, non-blocking) rather than removed in this PR;
+        # a follow-up should retire the --shadow-closure flag and CI wiring once
+        # burn-in data collection for the (still-open) shared_modules-demotion
+        # question (OMN-14342) is no longer needed. ANY shadow failure is
+        # contained here — it must never change or break the returned selection.
         _emit_shadow_closure(changed, selection, args)
     sys.stdout.write(selection.model_dump_json())
     sys.stdout.write("\n")

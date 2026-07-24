@@ -67,11 +67,14 @@ def replay(prs: list[dict], adjacency_path: Path, *, pyproject_escalates: bool) 
             assert sel.full_suite_reason is not None
             reason_hist[sel.full_suite_reason.value] += 1
             if sel.full_suite_reason.value == "shared_module":
+                # OMN-14921: no longer intersected against the retired
+                # hand-curated adjacency-map keys — every top-level module
+                # name under src/omnibase_core/ is a real module.
                 changed_modules = {
                     p[len(SRC_PREFIX) :].split("/", 1)[0]
                     for p in files
                     if p.startswith(SRC_PREFIX)
-                } & set(config.adjacency.keys())
+                }
                 for m in sorted(changed_modules & shared):
                     shared_module_hist[m] += 1
         else:

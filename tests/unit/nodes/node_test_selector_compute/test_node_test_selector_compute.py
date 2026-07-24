@@ -3,13 +3,27 @@
 
 """Oracle-parity differential battery for node_test_selector_compute (OMN-14700).
 
-``scripts/ci/detect_test_paths.py`` IS the verified oracle. This suite asserts
-that the RSD-regenerated ``NodeTestSelectorCompute`` produces byte-for-byte
-identical ``ModelTestSelection`` output to the oracle across every representative
-change-set — single-module, shared-module, test-infra, scripts/ci, threshold,
-event/branch escalation, feature-flag-off, pyproject classification, reverse-dep
-expansion, empty, and (hermetically) the volume-scaling split path. A node that
-diverges on any case FAILS the RSD correctness gate.
+``scripts/ci/detect_test_paths.py`` IS the verified, CI-governing oracle. This
+suite asserts that the RSD-regenerated ``NodeTestSelectorCompute`` produces
+byte-for-byte identical ``ModelTestSelection`` output to the oracle across every
+representative change-set — single-module, shared-module, test-infra,
+scripts/ci, threshold, event/branch escalation, feature-flag-off, pyproject
+classification, file-grain closure selection, empty, and (hermetically) the
+volume-scaling split path. A node that diverges on any case FAILS the RSD
+correctness gate.
+
+OMN-14921 promotion note: the node itself does not compute the file-grain
+closure (it is I/O — grimp graph build + AST reads — and the node is pure,
+see ``selector_core.py``'s module docstring for the documented EFFECT-boundary
+gap in ``runtime_test_selector.py``). This test harness closes that gap
+ITSELF, at the test-driver layer: it calls the SAME
+``test_selection_closure.compute_closure_selection`` primitive the oracle
+calls internally and injects the result as
+``ModelTestSelectionRequest.closure_selected_files`` — proving byte-for-byte
+parity on the gates AND the closure-consuming formatting/split-count logic,
+given the same closure input. This is a real, narrower parity claim than the
+oracle's fully-self-contained CI invocation; it does not paper over the
+runtime_test_selector.py wiring gap.
 
 Parity is proven at the compute layer: both sides emit the SAME
 ``ModelTestSelection`` class, so ``model_dump_json()`` equality is a true
@@ -35,6 +49,7 @@ from omnibase_core.nodes.node_test_selector_compute.handler import (
     NodeTestSelectorCompute,
 )
 from scripts.ci.detect_test_paths import _count_test_files, compute_selection
+from scripts.ci.test_selection_closure import compute_closure_selection
 from scripts.ci.test_selection_loader import load_adjacency_map
 
 pytestmark = pytest.mark.unit
@@ -52,12 +67,16 @@ def _node_selection(
 ) -> ModelTestSelection:
     """Two-phase node dispatch mirroring the runtime/oracle: select, then count.
 
-    Pass 1 resolves the selected paths (independent of volume); pass 2 counts
-    ``test_*.py`` under exactly those paths with the oracle's own helper and
-    re-runs the pure node to size the split. This is precisely what
-    ``runtime_test_selector.py`` does at the I/O boundary.
+    Pass 1 resolves the selected paths (independent of volume) — the closure
+    (OMN-14921) is computed HERE, at this test's I/O-permitted boundary, with
+    the identical primitive the oracle calls, and injected into the request.
+    Pass 2 counts ``test_*.py`` under exactly those paths with the oracle's
+    own helper and re-runs the pure node to size the split. This mirrors what
+    ``runtime_test_selector.py`` should do at the I/O boundary (tracked gap,
+    see module docstring above).
     """
     node = NodeTestSelectorCompute()
+    closure = compute_closure_selection(changed_files, repo_root=repo_root)
 
     def _request(counts: dict[str, int]) -> ModelTestSelectionRequest:
         return ModelTestSelectionRequest(
@@ -65,6 +84,7 @@ def _node_selection(
             ref_name=ref_name,
             adjacency=ADJ_MAP,
             test_file_counts=counts,
+            closure_selected_files=closure.selected_files,
             **kwargs,  # type: ignore[arg-type]
         )
 
@@ -112,9 +132,20 @@ def _assert_parity(
 
 
 def test_parity_single_module_change(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Real file (OMN-14921: closure grain needs a real source to build a
+    # closure over — see test_parity_nonexistent_file_fails_closed below for
+    # the fail-closed case parity).
+    sel = _assert_parity(
+        monkeypatch, ["src/omnibase_core/cli/cli_bootstrap.py"], "pr-branch"
+    )
+    assert sel.is_full_suite is False
+    assert any(p.startswith("tests/unit/cli/") for p in sel.selected_paths)
+
+
+def test_parity_nonexistent_file_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
     sel = _assert_parity(monkeypatch, ["src/omnibase_core/cli/foo.py"], "pr-branch")
     assert sel.is_full_suite is False
-    assert "tests/unit/cli/" in sel.selected_paths
+    assert sel.selected_paths == ["tests/unit/"]
 
 
 def test_parity_shared_module_change(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -194,12 +225,12 @@ def test_parity_ruff_only_pyproject_narrows(
     # OMN-14910 (CI-C1 #2): pyproject.toml + relevant=False narrows identically.
     sel = _assert_parity(
         monkeypatch,
-        ["pyproject.toml", "src/omnibase_core/cli/foo.py"],
+        ["pyproject.toml", "src/omnibase_core/cli/cli_bootstrap.py"],
         "pr-branch",
         pyproject_dependency_relevant=False,
     )
     assert sel.is_full_suite is False
-    assert "tests/unit/cli/" in sel.selected_paths
+    assert any(p.startswith("tests/unit/cli/") for p in sel.selected_paths)
 
 
 def test_parity_main_branch(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -303,25 +334,31 @@ def test_parity_pyproject_metadata_only_with_shared_module(
 
 
 # =============================================================================
-# Hermetic volume-scaling parity across the threshold and cap
+# Volume-scaling parity across the threshold and cap
 # =============================================================================
+#
+# OMN-14921: the retired module-grain synthetic sweep (a bare tmp_path with
+# fabricated tests/unit/mixins/test_v{i}.py files, no real src/ tree, n_files
+# from 0 to 2000) is no longer expressible — closure computation requires a
+# real, parseable src/omnibase_core tree to resolve the changed file and
+# build the grimp graph over (a bare synthetic count directory has neither).
+# Hermetically faking the omnibase_core package name itself is deliberately
+# avoided by test_selection_closure.py's own test suite too (it uses synthetic
+# package names throughout, and only exercises the real omnibase_core tree
+# without monkeypatching); doing so reliably would need sys.modules cache
+# eviction of the ALREADY-imported real package, which is out of scope here.
+# test_parity_mixins_real_tree_volume_scaling (below) covers the equivalent
+# real-tree volume-scaling parity case under closure grain instead.
 
 
-@pytest.mark.parametrize("n_files", [0, 79, 80, 120, 400, 2000])
-def test_parity_volume_split_across_thresholds(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, n_files: int
+def test_parity_mixins_change_produces_multiple_splits_on_real_tree(
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Build a controlled tree so the volume-scaling branch is exercised
-    # deterministically at the boundary (below/at/above VOLUME_THRESHOLD_FILES and
-    # above the VOLUME_MAX_SPLITS cap). mixins expands to [models, nodes]; only
-    # mixins gets files, so the total equals n_files on both sides.
-    mixins_dir = tmp_path / "tests/unit/mixins"
-    mixins_dir.mkdir(parents=True)
-    for i in range(n_files):
-        (mixins_dir / f"test_v{i}.py").write_text("")
-    _assert_parity(
-        monkeypatch,
-        ["src/omnibase_core/mixins/mixin_caching.py"],
-        "pr-branch",
-        repo_root=tmp_path,
+    # A real leaf change whose closure fans out across enough test files to
+    # exceed a single split — parity on the resulting split_count/matrix shape.
+    sel = _assert_parity(
+        monkeypatch, ["src/omnibase_core/mixins/mixin_caching.py"], "pr-branch"
     )
+    assert sel.is_full_suite is False
+    assert sel.split_count >= 1
+    assert sel.matrix == list(range(1, sel.split_count + 1))

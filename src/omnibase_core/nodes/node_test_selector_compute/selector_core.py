@@ -2,17 +2,30 @@
 # SPDX-License-Identifier: MIT
 """Pure change-aware test-selection algorithm (OMN-14700).
 
-Verbatim port of the deterministic logic in ``scripts/ci/detect_test_paths.py``
-into the canonical node layer, with ONE structural change required for purity:
-the volume-aware split count takes a caller-supplied ``test_file_counts`` map
-instead of walking the filesystem. Every escalation branch, its ordering, the
-path-count floor, and the ceil/threshold/cap arithmetic are unchanged, so this
-module reproduces the oracle byte-for-byte (proven by the differential test
-battery in ``tests/unit/nodes/node_test_selector_compute/``).
+Port of the deterministic logic in ``scripts/ci/detect_test_paths.py`` into the
+canonical node layer, with TWO structural changes required for purity (no I/O
+inside a COMPUTE handler):
+
+1. The volume-aware split count takes a caller-supplied ``test_file_counts``
+   map instead of walking the filesystem.
+2. (OMN-14921) The file-grain import-graph-closure smart-selection result is
+   supplied by the caller as ``closure_selected_files`` instead of computed
+   here — building the grimp graph and reading test-file ASTs is I/O. The
+   retired hand-curated adjacency map (module-grain, ``resolve_test_paths``)
+   is deleted, not replaced 1:1: it is a real gap that
+   ``runtime_test_selector.py`` does not yet compute and inject that closure
+   (filed as a fast-follow in the OMN-14921 PR body) — until it does, this
+   node's smart-selection path fails closed to the whole-tree fallback,
+   same as an ambiguous closure result would.
+
+Every escalation branch (steps 0-5), their ordering, the path-count floor, and
+the ceil/threshold/cap arithmetic are otherwise unchanged from the oracle.
 
 No I/O, no clock, no global state — safe to run inside a COMPUTE handler.
-``detect_test_paths.py`` remains the frozen reference oracle until the CI +
-pre-push swap follow-up (OMN-14700 DoD 2/3) deletes it.
+``detect_test_paths.py`` remains the CI-governing surface; both surfaces share
+ONE closure primitive (``scripts.ci.test_selection_closure.compute_closure_selection``),
+computed by ``detect_test_paths.py`` directly (it is CLI/I/O-permitted) and
+meant to be injected here by the EFFECT boundary.
 """
 
 from __future__ import annotations
@@ -36,7 +49,6 @@ __all__ = [
     "classify_pyproject_dependency_relevant",
     "compute_selection",
     "path_count_floor",
-    "resolve_test_paths",
     "split_count_from_total",
     "volume_split_from_total",
 ]
@@ -109,43 +121,6 @@ VOLUME_THRESHOLD_FILES = 80
 VOLUME_MAX_SPLITS = 40
 
 
-def resolve_test_paths(
-    changed_files: list[str],
-    config: ModelAdjacencyMap,
-) -> list[str]:
-    """Map changed file paths to deterministic UNIT test directories.
-
-    Behavior:
-      - Source changes under src/omnibase_core/<module>: include
-        tests/unit/<module>/ plus the module's reverse-dep expansion.
-      - Test-only changes under tests/unit/: include the changed unit-test directory.
-      - Test-only changes under tests/integration/: ignored (integration runs always).
-      - Files outside src/ and tests/unit/: no contribution; the caller decides
-        whether to escalate to the full suite.
-    """
-    direct_modules: set[str] = set()
-    selected: set[str] = set()
-
-    for path in changed_files:
-        if path.startswith(SRC_PREFIX):
-            module = path[len(SRC_PREFIX) :].split("/", 1)[0]
-            if module in config.adjacency:
-                direct_modules.add(module)
-        elif path.startswith(TEST_UNIT_PREFIX):
-            parts = path.split("/")
-            if len(parts) >= 3:
-                selected.add(f"{TEST_UNIT_PREFIX}{parts[2]}/")
-
-    expanded: set[str] = set(direct_modules)
-    for module in direct_modules:
-        expanded.update(config.adjacency[module].reverse_deps)
-
-    for module in expanded:
-        selected.add(f"{TEST_UNIT_PREFIX}{module}/")
-
-    return sorted(selected)
-
-
 def compute_selection(
     changed_files: list[str],
     adjacency: ModelAdjacencyMap,
@@ -154,6 +129,7 @@ def compute_selection(
     feature_flag_enabled: bool = True,
     pyproject_dependency_relevant: bool | None = None,
     test_file_counts: dict[str, int] | None = None,
+    closure_selected_files: list[str] | None = None,
 ) -> ModelTestSelection:
     """Resolve the test selection for a change set — pure, deterministic.
 
@@ -168,6 +144,18 @@ def compute_selection(
     ``test_*.py`` files beneath it (computed by the caller/EFFECT boundary). It is
     consulted only on the smart-selection path to size the split count; an absent
     entry counts as ``0`` (mirrors the oracle's skip-if-missing directory).
+
+    ``closure_selected_files`` is the file-grain import-graph-closure selection
+    (OMN-14921), computed at the caller/EFFECT boundary via
+    ``scripts.ci.test_selection_closure.compute_closure_selection`` — this
+    handler is pure/no-I/O, so it cannot build the grimp graph or read test-file
+    ASTs itself. ``None`` means the caller did not supply a closure (a currently
+    real gap in ``runtime_test_selector.py``'s wiring — filed as a fast-follow,
+    OMN-14921 PR body); this function then fails closed to the whole-tree
+    sentinel exactly as an ambiguous closure result would, rather than guessing.
+    The retired hand-curated ``adjacency`` reverse_deps map (module-grain,
+    ``resolve_test_paths``) is deleted, not merely bypassed — 26/40 of its
+    declarations were false against the real import graph.
     """
     counts = test_file_counts or {}
 
@@ -199,12 +187,13 @@ def compute_selection(
         ):
             return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
 
-    # 3. Shared module escalation.
+    # 3. Shared module escalation. (OMN-14921: raw top-level module names, no
+    # longer intersected against the retired hand-curated adjacency-map keys.)
     changed_modules = {
         path[len(SRC_PREFIX) :].split("/", 1)[0]
         for path in changed_files
         if path.startswith(SRC_PREFIX)
-    } & set(adjacency.adjacency.keys())
+    }
     if changed_modules & set(adjacency.shared_modules):
         return _full_suite(EnumFullSuiteReason.SHARED_MODULE)
 
@@ -226,12 +215,15 @@ def compute_selection(
             matrix=[1],
         )
 
-    # 6. Smart selection.
-    selected = resolve_test_paths(changed_files, adjacency)
+    # 6. Smart selection (OMN-14921: file-grain import-graph closure). The
+    # closure itself is I/O — computed at the caller/EFFECT boundary and
+    # injected here; this stays a pure lookup + the same whole-tree fallback
+    # used when no closure could be computed (mirrors the retired module-grain
+    # oracle's fallback for "no unit-test mapping found").
+    selected = (
+        list(closure_selected_files) if closure_selected_files is not None else None
+    )
     if not selected:
-        # Conservative one-shard fallback over the full tests/unit/ tree. NOT a
-        # no-op — it runs the unit suite for changes with no unit-test mapping
-        # (integration-only, low-signal metadata not provably docs-only).
         selected = ["tests/unit/"]
     total = sum(counts.get(path, 0) for path in selected)
     split_count = split_count_from_total(selected, total)

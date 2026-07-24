@@ -25,7 +25,16 @@ __all__ = [
 
 TestPath = Annotated[
     str,
-    StringConstraints(pattern=r"^tests(/[A-Za-z0-9_./-]+)?/$|^tests/$"),
+    # OMN-14921: a selected path is either a directory sentinel (trailing "/" —
+    # "tests/", "tests/unit/", "tests/unit/<module>/", used by full-suite /
+    # conservative-fallback / test-only-forced-keep selections) OR an
+    # individual file-grain test file (trailing ".py" — the promoted closure
+    # selector's normal output, e.g. "tests/unit/enums/test_foo.py").
+    StringConstraints(
+        pattern=r"^tests/$"
+        r"|^tests(/[A-Za-z0-9_./-]+)?/$"
+        r"|^tests(/[A-Za-z0-9_./-]+)+\.py$"
+    ),
 ]
 ModuleName = Annotated[
     str,
