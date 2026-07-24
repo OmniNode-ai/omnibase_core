@@ -5,7 +5,7 @@
 
 from enum import Enum
 
-from omnibase_core.utils.util_str_enum_base import UtilStrValueHelper
+from omnibase_core.enums.enum_str_enum_base import UtilStrValueHelper
 
 
 class EnumInvariantReportStatus(UtilStrValueHelper, str, Enum):

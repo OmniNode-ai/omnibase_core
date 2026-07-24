@@ -1008,12 +1008,11 @@ def _old_module_grain_resolve(changed_files: list[str]) -> list[str]:
 
 _UTILS_ENUM_BASE_CHANGE = ["src/omnibase_core/utils/util_str_enum_base.py"]
 
-# Real files, independently confirmed by grimp to import (transitively, through
-# their tested enum module) utils.util_str_enum_base — the old declaration's
-# false "reverse_deps: []" excluded ALL of these.
+# Real file still importing the compatibility shim directly after OMN-14959
+# moved the canonical helper to enums.enum_str_enum_base. The old declaration's
+# false "reverse_deps: []" still excluded this non-utils dependent.
 _KNOWN_DEPENDENT_ENUM_TESTS = [
-    "tests/unit/enums/cost/test_enum_usage_source.py",
-    "tests/unit/enums/events/test_enum_deregistration_reason.py",
+    "tests/unit/enums/intelligence/test_enum_intent_category.py",
 ]
 
 
@@ -1047,8 +1046,8 @@ def test_green_new_closure_selector_includes_the_missed_dependents() -> None:
 
     for dependent_test in _KNOWN_DEPENDENT_ENUM_TESTS:
         assert dependent_test in new_selection, (
-            f"closure selector must include {dependent_test} (it imports "
-            "utils.util_str_enum_base transitively) — the old module-grain "
+            f"closure selector must include {dependent_test} (it imports the "
+            "utils.util_str_enum_base compatibility shim) — the old module-grain "
             "declaration wrongly excluded it"
         )
     # tests/unit/utils/ itself is still covered (the direct-change test file).

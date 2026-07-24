@@ -57,6 +57,7 @@ forbidden_modules =
     omnibase_core.services
     omnibase_core.validation
     omnibase_core.nodes
+    omnibase_core.utils
 ignore_imports =
     # OMN-3210 burn-down: types -> models — RETIRED (OMN-14337 + OMN-14339).
     # OMN-14337 retired 20 of 24 edges (ModelSemVer references repointed to the
