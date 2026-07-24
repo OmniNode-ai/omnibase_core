@@ -11,6 +11,8 @@ import sys
 
 import pytest
 
+from tests.unit.conftest import isolated_sys_modules
+
 
 @pytest.mark.unit
 class TestModelFastContractFactory:
@@ -465,28 +467,22 @@ class TestZeroImportTimeLoading:
     def test_no_imports_at_module_level(self):
         """Test that no contract imports occur at module import time."""
 
-        # Remove any cached contract modules
-        modules_to_remove = [
-            key
-            for key in list(sys.modules.keys())
-            if "model_contract_" in key and "model_fast_imports" not in key
-        ]
-        for mod in modules_to_remove:
-            del sys.modules[mod]
+        with isolated_sys_modules(
+            lambda key: "model_contract_" in key and "model_fast_imports" not in key
+        ):
+            # Import the fast imports module
 
-        # Import the fast imports module
+            # Verify no contract modules were imported
+            contract_modules = [
+                key
+                for key in sys.modules
+                if "model_contract_" in key and "model_fast_imports" not in key
+            ]
 
-        # Verify no contract modules were imported
-        contract_modules = [
-            key
-            for key in sys.modules
-            if "model_contract_" in key and "model_fast_imports" not in key
-        ]
-
-        # Should be empty (no imports at module level)
-        assert len(contract_modules) == 0, (
-            f"Contract modules imported at module level: {contract_modules}"
-        )
+            # Should be empty (no imports at module level)
+            assert len(contract_modules) == 0, (
+                f"Contract modules imported at module level: {contract_modules}"
+            )
 
     def test_imports_occur_only_on_demand(self):
         """Test that imports only occur when contracts are actually requested."""
