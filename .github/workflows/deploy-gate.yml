@@ -31,8 +31,20 @@ jobs:
       contracts-dir: contracts
       receipts-dir: drift/dod_receipts
 
+  # OMN-15057: `needs: occ-preflight` with no `if:` override is vector-5 — GitHub's
+  # implicit job-level `if:` is `success()` over `needs:`, so an occ-preflight
+  # FAILURE makes this job SKIP rather than fail, and a skipped job satisfies
+  # GitHub branch protection (skipped counts as passing). `if: always()` makes
+  # this job run unconditionally so it can never silently skip-as-pass.
+  # Eligibility enforcement does not depend on this job's own result: the
+  # `occ-preflight / eligibility` context (produced by call-occ-preflight.yml)
+  # is independently required on this repo's dev+main branch protection
+  # (restored 2026-07-25 after a 2026-06-25 OMN-13332 wiring regressed off
+  # silently — see OMN-15057 ledger), so an occ-preflight failure still blocks
+  # merge via that separate required context even though this job decouples.
   deploy-gate:
     needs: occ-preflight
+    if: always()
     uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@main
     with:
       contracts-dir: contracts

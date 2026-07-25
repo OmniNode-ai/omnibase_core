@@ -67,7 +67,26 @@ gates:
     workflow: call-receipt-gate.yml
     job_path: ["verify", "verify"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15057: the 'verify'
+      job's `needs: occ-preflight` previously had no `if:` override (vector-5) — fixed by adding `if:
+      always()`, so this job can no longer skip-as-pass when occ-preflight fails. Safe because receipt-gate.yml's
+      own verify logic independently re-validates the same dod_evidence receipts occ-preflight checks
+      (redundant coupling, matching the omnimarket#1890 precedent)."
+
+  - name: "occ-preflight / eligibility"
+    mode: REQUIRED
+    producer_kind: local
+    workflow: call-occ-preflight.yml
+    job_path: ["occ-preflight", "eligibility"]
+    skip_semantics: never
+    rationale: "OMN-15057: restored 2026-07-25 as a REQUIRED context on omnibase_core dev+main via gh
+      api PATCH. A 2026-06-25 OMN-13332 receipt (onex_change_control drift/dod_receipts/OMN-13332/ dod-required-context-proof/command.yaml)
+      attested this context present at required_status_checks index 7 on dev; live readback 2026-07-25
+      showed it ABSENT on both dev and main (also regressed on omnibase_infra/dev, same class, not touched
+      here). call-occ-preflight.yml has no `needs:` and fires unconditionally on pull_request/merge_group,
+      so it cannot skip-as-pass itself. This is the compensating control that makes decoupling deploy-gate.yml's
+      `deploy-gate` job (below) safe: an occ-preflight failure still blocks merge via this independently
+      required context even though deploy-gate no longer encodes eligibility in its own result."
 
   - name: "contract-validation"
     mode: REQUIRED
@@ -91,7 +110,13 @@ gates:
     workflow: deploy-gate.yml
     job_path: ["deploy-gate", "deploy-gate"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15057: the 'deploy-gate'
+      job's `needs: occ-preflight` previously had no `if:` override (vector-5) — fixed by adding `if:
+      always()`. UNLIKE 'verify / verify' this coupling was NOT redundant (OMN-14260: deploy-gate-reusable.yml
+      only validates deploy-evidence citation, a different concern from OCC eligibility) — decoupling
+      alone would have silently removed the only eligibility enforcement on this gate. Safe here only
+      because the 'occ-preflight / eligibility' context (row above) was restored as an independently REQUIRED
+      context in the same change; that context still blocks merge on an occ-preflight failure."
 
   - name: "Dep Provenance Gate"
     mode: REQUIRED

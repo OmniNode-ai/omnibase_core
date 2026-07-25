@@ -38,8 +38,19 @@ jobs:
       contracts-dir: contracts
       receipts-dir: drift/dod_receipts
 
+  # OMN-15057: `needs: occ-preflight` with no `if:` override is vector-5 — an
+  # occ-preflight FAILURE would SKIP this job (GitHub's implicit job-level
+  # `if:` is `success()` over `needs:`), and a skipped required job satisfies
+  # branch protection. `if: always()` makes `verify` run unconditionally.
+  # This is safe without any compensating control: receipt-gate.yml's own
+  # `verify` job independently re-resolves Evidence-Source and validates the
+  # same dod_evidence PASS receipts occ-preflight checks (OMN-10419), so an
+  # eligibility failure that would have failed occ-preflight also fails this
+  # job's own logic directly — the needs-coupling was redundant, matching the
+  # OMN-15057/omnimarket#1890 precedent.
   verify:
     needs: occ-preflight
+    if: always()
     uses: ./.github/workflows/receipt-gate.yml
     with:
       branch-policy-mode: ${{ (github.event.pull_request.base.ref == 'main' || github.event.merge_group.base_ref == 'refs/heads/main') && 'main-release' || 'legacy' }}
