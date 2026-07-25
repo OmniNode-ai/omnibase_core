@@ -16,9 +16,13 @@ from omnibase_core.models.delegation.wire.model_budget import (
     EnumBudgetAction,
     ModelBudgetLimits,
 )
-from omnibase_core.models.delegation.wire.model_delegation_result import (
+from omnibase_core.models.delegation.wire.model_delegation_completed import (
     ModelDelegationCompleted,
+)
+from omnibase_core.models.delegation.wire.model_delegation_failed import (
     ModelDelegationFailed,
+)
+from omnibase_core.models.delegation.wire.model_delegation_result import (
     ModelDelegationResult,
 )
 from omnibase_core.models.delegation.wire.model_delegation_wire_envelope import (
