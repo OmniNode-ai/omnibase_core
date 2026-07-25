@@ -19,9 +19,9 @@ from omnibase_core.validation.validator_evidence_commit_binding import (
     validate_evidence_commit_binding,
 )
 
-_REAL_OCC_SHA = "53e14f927a6ef80910fabeeabe58576b4cb21087"
-_ANCESTOR_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-_FABRICATED_SHA = "21b42c7879748f459cb108d009071a352c1b91dc"
+_REAL_OCC_SHA = "53e14f927a6ef80910fabeeabe58576b4cb21087"  # pragma: allowlist secret
+_ANCESTOR_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # pragma: allowlist secret
+_FABRICATED_SHA = "21b42c7879748f459cb108d009071a352c1b91dc"  # pragma: allowlist secret
 
 
 def _always_exists(sha: str) -> bool:
