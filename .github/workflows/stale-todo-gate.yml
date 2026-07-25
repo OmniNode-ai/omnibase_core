@@ -23,13 +23,20 @@ on:
     branches: [main, dev]
 
 jobs:
+  # EXPERIMENT (OMN-15112, throwaway PR, never merge): contracts-dir is
+  # deliberately pointed at a nonexistent path so THIS ONE occ-preflight
+  # invocation legitimately fails MISSING_CONTRACT while every other
+  # workflow's occ-preflight job (using the real "contracts" default) still
+  # succeeds — a controlled, self-limiting mixed pass/fail under the
+  # identical "occ-preflight / eligibility" required-context name, scoped to
+  # this single job in this single throwaway branch. Revert before close.
   occ-preflight:
     uses: ./.github/workflows/occ-preflight.yml
     permissions:
       contents: read
       pull-requests: read
     with:
-      contracts-dir: contracts
+      contracts-dir: nonexistent-experiment-omn-15112-any-vs-all
       receipts-dir: drift/dod_receipts
 
   stale-todo-gate:
