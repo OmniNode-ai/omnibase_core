@@ -30,13 +30,107 @@ permissions:
 
 jobs:
   occ-preflight:
-    uses: OmniNode-ai/omnibase_core/.github/workflows/occ-preflight.yml@main
+    # Poller, not a re-emitter (OMN-15112 collapse-to-one-producer): this job
+    # does NOT call the reusable occ-preflight.yml workflow. It polls the ONE
+    # canonical "occ-preflight / eligibility" check-run -- produced solely by
+    # call-occ-preflight.yml, the repo's single unconditional-on-every-PR
+    # caller -- via the Checks API, and blocks/fails this workflow's downstream
+    # job accordingly. Copied from the pattern omnimarket and omniclaude already
+    # run safely to avoid re-emitting the shared context name from every
+    # workflow file that needs to gate on it (GH Actions `needs:` cannot cross
+    # workflow files, so each file still needs its own gate -- but the gate
+    # does not have to be its own duplicate emission of the reusable workflow).
+    name: OCC Preflight Dependency
+    runs-on: ubuntu-latest
     permissions:
+      checks: read
       contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
+    steps:
+      - name: Wait for required OCC preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -uo pipefail
+
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "OCC preflight dependency is enforced by the pull_request gate; continuing for ${GITHUB_EVENT_NAME}."
+            exit 0
+          fi
+
+          # OMN-15112: desynchronize same-PR pollers across workflow files (GH
+          # Actions `needs:` can't cross workflow-file boundaries) so they
+          # don't all hit the Checks API in the same instant every 10s and
+          # exhaust the shared per-repo GitHub App installation rate-limit
+          # bucket (same rationale as omnimarket's OMN-14343).
+          sleep "$(( RANDOM % 15 ))"
+
+          backoff=5
+          elapsed=0
+          deadline=720
+
+          while [ "$elapsed" -lt "$deadline" ]; do
+            # GH Actions runs `run:` steps under `bash -e {0}` by default --
+            # that -e is already active before this script's own
+            # `set -uo pipefail` runs, and `set -uo pipefail` does NOT clear
+            # an inherited -e. A bare `response="$(gh api ...)"; status=$?`
+            # would therefore abort the whole step on ANY gh api failure
+            # before status is ever checked, silently defeating the retry
+            # logic below. Using the command substitution as the condition of
+            # this `if` is the errexit-safe form -- bash does not trigger -e
+            # for a command that is part of an if/while/until condition,
+            # regardless of ambient -e state.
+            response=""
+            status=0
+            if response="$(
+              gh api "repos/${REPO}/commits/${HEAD_SHA}/check-runs?filter=latest&check_name=occ-preflight%20%2F%20eligibility&per_page=1" \
+                --jq 'first(.check_runs[] | .conclusion) // ""' \
+                2>&1
+            )"; then
+              status=0
+            else
+              status=$?
+            fi
+
+            if [ "$status" -ne 0 ]; then
+              if echo "$response" | grep -qi "rate limit"; then
+                echo "::warning::gh api rate-limited waiting for occ-preflight; backing off ${backoff}s."
+                sleep "$backoff"
+                elapsed=$((elapsed + backoff))
+                backoff=$(( backoff * 2 < 60 ? backoff * 2 : 60 ))
+                continue
+              fi
+              echo "::error::gh api call failed (non-rate-limit): ${response}"
+              exit 1
+            fi
+            backoff=5
+
+            conclusion="$response"
+
+            case "$conclusion" in
+              success)
+                echo "OCC preflight passed for ${HEAD_SHA}."
+                exit 0
+                ;;
+              failure|cancelled|timed_out|action_required|startup_failure)
+                echo "::error::OCC preflight concluded ${conclusion}; refusing to start this workflow."
+                exit 1
+                ;;
+              "")
+                echo "Waiting for occ-preflight / eligibility to post for ${HEAD_SHA}..."
+                ;;
+              *)
+                echo "OCC preflight is ${conclusion}; waiting."
+                ;;
+            esac
+
+            sleep 10
+            elapsed=$((elapsed + 10))
+          done
+
+          echo "::error::Timed out waiting for occ-preflight / eligibility on ${HEAD_SHA}."
+          exit 1
 
   # OMN-15057: `needs: occ-preflight` with no `if:` override is vector-5 — an
   # occ-preflight FAILURE would SKIP this job (GitHub's implicit job-level

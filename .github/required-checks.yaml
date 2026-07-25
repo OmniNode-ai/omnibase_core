@@ -80,29 +80,37 @@ gates:
     job_path: ["occ-preflight", "eligibility"]
     skip_semantics: never
     rationale: "OMN-15057: restored 2026-07-25 as a REQUIRED context on omnibase_core dev+main via gh
-      api PATCH. A 2026-06-25 OMN-13332 receipt (onex_change_control drift/dod_receipts/OMN-13332/ dod-required-context-proof/command.yaml)
-      attested this context present at required_status_checks index 7 on dev; live readback 2026-07-25
-      showed it ABSENT on both dev and main (also regressed on omnibase_infra/dev, same class, not touched
-      here). call-occ-preflight.yml has no `needs:` and fires unconditionally on pull_request/merge_group,
-      so it cannot skip-as-pass itself. NOT a single producer (this row is misleading, kept for the primary/canonical
-      instance only — OMN-15112): the identical context name 'occ-preflight / eligibility' is ALSO emitted
-      by ~40 other omnibase_core workflows, each of which defines its own job literally named `occ-preflight`
-      calling `./.github/workflows/occ-preflight.yml` (now pinned to `@main` as of this PR — previously
-      unpinned, meaning a PR branch could have run a tampered local copy of the eligibility validator
-      under this same required name). A live, seeded OMN-15112 experiment (PR #1502, closed, never merged)
-      confirmed ~20+ simultaneous check-runs share this exact name on one commit with a genuine mixed
-      pass/fail (1 seeded failure, ~21 real successes) and did NOT determine that GitHub's required-status-check
-      matching treats this as 'ALL producers must succeed' — the failing run did not complete last among
-      the duplicates (an earlier failure, later superseded in completion order by successes), consistent
-      with GitHub's documented recency-based matching for duplicate same-named checks/statuses, which
-      is order/timing-dependent, not a deterministic ALL-must-succeed gate. Full terminal mergeable_state
-      confirmation was not reached (unrelated required checks queued on a congested self-hosted runner
-      fleet for 20+ minutes; the run was cancelled rather than keep burning shared CI capacity on a throwaway
-      probe). Treat this context as UNVERIFIED to safely gate on duplicate-producer failures until either
-      (a) the ~40 duplicate producers are collapsed to the single canonical instance (matching the omnimarket/
-      omniclaude poller pattern that avoids re-emitting this name at all), or (b) GitHub's matching semantics
-      for this specific context are confirmed ALL-must-succeed by a completed live test. See OMN-15112
-      for the full experiment record."
+      api PATCH. call-occ-preflight.yml has no `needs:` and fires unconditionally on pull_request/merge_group,
+      so it cannot skip-as-pass itself. COLLAPSE PROGRESS (OMN-15112, same-day follow-up): rather than
+      resolve the ANY-vs-ALL duplicate-name matching question (left open below), this context's ~40 duplicate
+      producers are being collapsed to ONE — the omnimarket/omniclaude poller pattern (a job named `occ-preflight`
+      that polls this context's check-runs via the Checks API instead of re-invoking the reusable occ-preflight.yml
+      workflow) has now been applied to 23 of the ~40 duplicate-producing workflow files (auto-merge,
+      call-receipt-gate, call-reject-skip, canonical-inference-gate, check-handshake, cr-thread-gate-caller,
+      contract-validation, deploy-gate, no-faked-boundary, main-target-guard, dep-provenance-gate, pr-title-check,
+      omni-standards-compliance, receipt-honesty, semantic-diff-labeler, security-scan, url-authority-gate,
+      required-check-skip-guard-caller, stale-todo-gate, validator-fsm-handler-drift, validator-no-plugin-daemon-classes,
+      validator-no-unguarded-git-subprocess, validator-runtime-profiles — the full set that fires unconditionally
+      on every PR with no `if:`/`paths:` filter on its own trigger). This is a behavior-preserving mechanical
+      change: the poller job still exposes the same success/failure/ skipped `result` to its file's own
+      `needs: occ-preflight` downstream job, so vector-5 exposure (fixed or unfixed) on any of these 23
+      files is unaffected by this PR. NOT YET a single producer: 21 callers remain unconverted — 15 are
+      dormant `workflow_dispatch`-only validators that do not fire on pull_request today (zero live duplicate-emission
+      risk, follow-up only), 3 are path-filtered (check-db-ownership.yml, check-llm-refs-drift.yml, propagate-config.yml
+      — fire only when their filtered paths change), 1 is schedule/dispatch-only (handshake-policy-gate.yml),
+      1 is the intentionally-untouched cross-repo nested reusable (cr-thread-gate.yml, invoked by omniclaude's
+      copy of the same file — touching a multi-repo-consumed reusable workflow is a separate risk class,
+      deliberately out of scope here), and 1 is this row's own canonical call-occ-preflight.yml. Observed
+      count before this PR: 27 check-runs on omnibase_core PR #1499 commit 42ecb63 (26 success, 1 failure
+      — the failure a genuine propagate-config.yml push-event eligibility miss, not a flake). Expected
+      count after this PR on an unfiltered PR: 27 minus the 23 converted producers that would have fired
+      on that same PR — see the PR body for the observed post-change count. The original ANY-vs-ALL open
+      question (a live, seeded OMN-15112 experiment, PR #1502, closed never merged, confirmed ~20+ simultaneous
+      check-runs sharing this exact name with a genuine mixed pass/fail and did NOT determine whether
+      GitHub's required-status-check matching demands ALL-must-succeed or is order/timing-dependent) is
+      now MOOT for the converted subset, since only one producer remains among them. It is still LIVE
+      for the 21 unconverted producers until they are converted or retired — full experiment record and
+      remaining risk in OMN-15112."
 
   - name: "contract-validation"
     mode: REQUIRED
@@ -131,20 +139,23 @@ gates:
       always()`. UNLIKE 'verify / verify' this coupling was NOT redundant (OMN-14260: deploy-gate-reusable.yml
       only validates deploy-evidence citation, a different concern from OCC eligibility) — decoupling
       alone would have silently removed the only eligibility enforcement on this gate. RESIDUAL RISK,
-      NOT fully closed (OMN-15112): this job's `if: always()` means it can never skip-as-pass on ITS OWN
-      occ-preflight instance, but deploy-gate-reusable.yml (omniclaude, a cross-repo `uses:` reusable-workflow
+      PARTIALLY NARROWED (OMN-15112): this job's `if: always()` means it can never skip-as-pass on ITS
+      OWN occ-preflight instance, but deploy-gate-reusable.yml (omniclaude, a cross-repo `uses:` reusable-workflow
       call with no room for an inline result check — a job body is either `uses:` or `steps:`, never both)
       does not itself consume or fail on occ-preflight's result. The only remaining enforcement is the
-      separately-required 'occ-preflight / eligibility' context — and OMN-15112's experiment (see that
-      row above) did NOT confirm GitHub enforces ALL-must-succeed across that context's ~40 duplicate
-      producers. A prior attempt to close this gap by nesting occ-preflight inside deploy-gate-reusable.yml
+      separately-required 'occ-preflight / eligibility' context. This file's own `occ-preflight` job is
+      now one of the 23 converted to the poller pattern (see that row above) — it no longer re-invokes
+      the reusable workflow, so it no longer contributes to the duplicate-producer count; the file's downstream
+      `deploy-gate` job's `needs: occ-preflight` / `if: always()` semantics are unchanged (behavior-preserving
+      conversion). The ANY-vs-ALL question is still open for the 21 producers not yet converted — until
+      they are, this row's enforcement still ultimately rests on the same open question the row above
+      tracks. A prior attempt to close this gap by nesting occ-preflight inside deploy-gate-reusable.yml
       itself (PR #1879 / OMN-14249) caused a repo-wide Deploy-Gate startup failure (OMN-14260: nested
       reusable workflows cannot escalate permissions beyond what the caller job granted) and was reverted
       — do not retry that shape without first granting `pull-requests: read` down through the caller chain.
-      Closing this residual requires either a deliberate, permissions-aware change to deploy-gate-reusable.yml
-      to accept and hard-fail on an explicit occ-preflight-result input, or collapsing the ~40 duplicate
-      'occ-preflight / eligibility' producers to the single canonical instance (poller pattern, matching
-      omnimarket/omniclaude). Neither is done here."
+      Closing this residual fully requires either a deliberate, permissions-aware change to deploy-gate-reusable.yml
+      to accept and hard-fail on an explicit occ-preflight-result input, or finishing the collapse of
+      the remaining 21 producers."
 
   - name: "Dep Provenance Gate"
     mode: REQUIRED
