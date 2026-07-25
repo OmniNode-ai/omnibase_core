@@ -43,6 +43,46 @@ die() {
   exit 1
 }
 
+# =============================================================================
+# .200-default host guard for the heavy (full-suite) escalation (OMN-15059)
+# =============================================================================
+# CLAUDE.md documents that pushes / heavy gate runs default to the `.200`
+# execution host, not the local Mac -- but a rule stated only in a doc/prompt
+# has zero enforcement force without a call-site mechanism (memory
+# feedback_a_rule_is_not_a_mechanism). Evidence this is load-bearing: a
+# 2026-07-24 session drove the local Mac to load ~55 / 93% swap running this
+# exact full-suite escalation for 115+ minutes before .200 was invoked as a
+# rescue instead of having been the execution target from the start. This
+# guard fires ONLY on the heavy branch below (full-suite fail-closed
+# escalation), never on the fast impacted-subset path -- gating every push
+# would get this hook disabled within a week, which is worse than no guard.
+#
+# This is a ROUTING OPTIMIZATION, not a security control: if host identity
+# cannot be determined, FAIL OPEN (let the push proceed on this host) rather
+# than lock a developer out of their own repo on an ambiguous read. Do not
+# "harden" this into a hard block later -- the failure mode this guard exists
+# to prevent is a stalled/contended local machine, not an untrusted push.
+PREPUSH_200_HOSTNAME="${PREPUSH_200_HOSTNAME:-stickybeatz-studio}"
+guard_full_suite_host() {
+  local host lc_host lc_target
+  host="$(hostname -s 2>/dev/null || true)"
+  if [ -z "$host" ]; then
+    log "WARNING: could not determine local hostname -- unable to verify this is the .200 build host; proceeding locally (fail-open: this guard is a routing optimization, not a security gate)."
+    return 0
+  fi
+  lc_host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
+  lc_target="$(printf '%s' "$PREPUSH_200_HOSTNAME" | tr '[:upper:]' '[:lower:]')"
+  if [ "$lc_host" = "$lc_target" ]; then
+    return 0
+  fi
+  if [ -n "${PREPUSH_ALLOW_LOCAL_FULL_SUITE:-}" ]; then
+    log "WARNING: DEGRADED-HOST OVERRIDE IN EFFECT (PREPUSH_ALLOW_LOCAL_FULL_SUITE set) -- running the full-suite fail-closed escalation on '${host}', NOT the designated .200 host ('${PREPUSH_200_HOSTNAME}'). This host has weaker isolation/headroom than .200; treat any evidence from this run as WEAKER than a .200-run gate. See docs/runbooks/200-build-lane-execution-pattern.md."
+    return 0
+  fi
+  die "heavy fail-closed full-suite escalation triggered on host '${host}', not the designated .200 build host ('${PREPUSH_200_HOSTNAME}')" \
+      "push from .200 instead (ssh jonah@stickybeatz-studio.tail75df5e.ts.net, wrap remote commands as zsh -lc \"...\"; see docs/runbooks/200-build-lane-execution-pattern.md for the full pattern), OR set PREPUSH_ALLOW_LOCAL_FULL_SUITE=1 to run the full suite on this host anyway (visible, degraded-evidence override -- do not use as a routine bypass)"
+}
+
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" \
   || die "not inside a git worktree" \
          "run 'git push' from within the omnibase_core repository"
@@ -160,6 +200,7 @@ RC=0
 PREPUSH_TIMEOUT_FLAGS="-n4 --dist=loadgroup --timeout=60 --timeout-method=thread"
 
 if [ "$IS_FULL" = "True" ] || [ "$IS_FULL" = "true" ]; then
+  guard_full_suite_host
   log "running FULL suite (fail-closed escalation): uv run pytest tests/ --ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
   # shellcheck disable=SC2086
   uv run pytest tests/ --ignore=tests/integration --tb=short ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-} || RC=$?
