@@ -118,7 +118,7 @@ gates:
     workflow: contract-validation.yml
     job_path: ["contract-validation"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "URL Authority Gate"
     mode: REQUIRED
@@ -126,7 +126,7 @@ gates:
     workflow: url-authority-gate.yml
     job_path: ["url-authority-gate"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "deploy-gate / deploy-gate"
     mode: REQUIRED
@@ -163,7 +163,7 @@ gates:
     workflow: dep-provenance-gate.yml
     job_path: ["dep-provenance-gate"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "Canonical Inference Gate"
     mode: REQUIRED
@@ -179,7 +179,7 @@ gates:
     workflow: no-faked-boundary.yml
     job_path: ["no-faked-boundary-gate"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "reason-graph"
     mode: REQUIRED
@@ -209,7 +209,18 @@ gates:
     cross_repo_ref: "OmniNode-ai/onex_change_control/.github/workflows/pr-title-check-reusable.yml@main"
     skip_semantics: never
     rationale: "Live required status check on omnibase_core dev branch protection (cross-repo reusable
-      caller)."
+      caller). OMN-15112 vector-5, PARTIAL fix (same residual shape as 'deploy-gate / deploy-gate' above):
+      added `if: always()` to the 'pr-title' caller job, which stops the skip-as-pass path. This is
+      NOT the full two-part fix used on the other 15 OMN-15112 findings, because a reusable-workflow-call
+      job body is either `uses:` or `steps:`, never both -- there is no way to insert an inline
+      `needs.occ-preflight.result` check ahead of the call, and pr-title-check-reusable.yml (owned by
+      onex_change_control) declares no `workflow_call.inputs`, so it cannot be told to consume or fail on
+      occ-preflight's result without a cross-repo change. `if: always()` therefore makes this job run
+      unconditionally regardless of occ-preflight's outcome -- decorative w.r.t. eligibility, exactly like
+      deploy-gate. Real enforcement for this path still rests entirely on the separately-required
+      'occ-preflight / eligibility' context. Closing this residual fully requires adding a gating input
+      (e.g. `occ-preflight-result`) to pr-title-check-reusable.yml in onex_change_control and hard-failing
+      on it -- tracked as a follow-up, not completed in this PR."
 
   - name: "no-plugin-daemon-classes"
     mode: REQUIRED
@@ -217,7 +228,7 @@ gates:
     workflow: validator-no-plugin-daemon-classes.yml
     job_path: ["no-plugin-daemon-classes"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "receipt-honesty"
     mode: REQUIRED
@@ -233,7 +244,7 @@ gates:
     workflow: validator-runtime-profiles.yml
     job_path: ["runtime-profiles"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "fsm-handler-drift"
     mode: REQUIRED
@@ -241,7 +252,7 @@ gates:
     workflow: validator-fsm-handler-drift.yml
     job_path: ["fsm-handler-drift"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "Check architecture handshake"
     mode: REQUIRED
@@ -249,7 +260,7 @@ gates:
     workflow: check-handshake.yml
     job_path: ["check-handshake"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "Stale TODO Gate"
     mode: REQUIRED
@@ -257,7 +268,7 @@ gates:
     workflow: stale-todo-gate.yml
     job_path: ["stale-todo-gate"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "AST Risk Labeler"
     mode: REQUIRED
@@ -265,7 +276,7 @@ gates:
     workflow: semantic-diff-labeler.yml
     job_path: ["label"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "Precommit Parity Gate"
     mode: REQUIRED
@@ -281,7 +292,7 @@ gates:
     workflow: omni-standards-compliance.yml
     job_path: ["onex-compliance"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "Legacy Compatibility Check"
     mode: REQUIRED
@@ -289,7 +300,7 @@ gates:
     workflow: omni-standards-compliance.yml
     job_path: ["legacy-compatibility-check"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "Decommissioned Pattern Scanner (OMN-4801)"
     mode: REQUIRED
@@ -297,7 +308,7 @@ gates:
     workflow: omni-standards-compliance.yml
     job_path: ["forbidden-pattern-scan"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "CI Naming Convention"
     mode: REQUIRED
@@ -305,7 +316,7 @@ gates:
     workflow: omni-standards-compliance.yml
     job_path: ["ci-naming-convention"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "Zone Filter (docs-only check)"
     mode: REQUIRED
@@ -627,7 +638,7 @@ gates:
     workflow: main-target-guard.yml
     job_path: ["main-target-guard"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-15112 vector-5 fix: added `if: always()` on the producing job plus an explicit first step that fails when `needs.occ-preflight.result != 'success'`, so the job can neither silently skip-as-pass nor decouple from occ-preflight's result."
 
   - name: "required-check-skip-guard / check-skip-vectors"
     mode: ADVISORY

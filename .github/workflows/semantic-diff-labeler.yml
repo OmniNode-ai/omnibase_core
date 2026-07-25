@@ -110,6 +110,7 @@ jobs:
 
   label:
     needs: occ-preflight
+    if: always()
     name: AST Risk Labeler
     runs-on: ubuntu-latest
     permissions:
@@ -118,6 +119,19 @@ jobs:
       pull-requests: write
 
     steps:
+      # OMN-15112 vector-5 fix: `needs: occ-preflight` alone lets GitHub's
+      # implicit `success()`-over-needs skip this job when occ-preflight
+      # fails/cancels, and a skipped job satisfies branch protection as
+      # passing. `if: always()` above stops the skip; this step is the other
+      # required half — it explicitly fails the job when occ-preflight did
+      # not succeed, so the job's own conclusion is FAILURE, never a
+      # decorative pass.
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run AST Risk Labeler."
+          exit 1
+
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0

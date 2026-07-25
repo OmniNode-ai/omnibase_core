@@ -145,9 +145,23 @@ jobs:
 
   dep-provenance-gate:
     needs: occ-preflight
+    if: always()
     name: Dep Provenance Gate
     runs-on: ubuntu-latest
     steps:
+      # OMN-15112 vector-5 fix: `needs: occ-preflight` alone lets GitHub's
+      # implicit `success()`-over-needs skip this job when occ-preflight
+      # fails/cancels, and a skipped job satisfies branch protection as
+      # passing. `if: always()` above stops the skip; this step is the other
+      # required half — it explicitly fails the job when occ-preflight did
+      # not succeed, so the job's own conclusion is FAILURE, never a
+      # decorative pass.
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run Dep Provenance Gate."
+          exit 1
+
       - name: Skip on merge_group
         if: ${{ github.event_name == 'merge_group' }}
         run: |

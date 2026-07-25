@@ -114,6 +114,23 @@ jobs:
 
   pr-title:
     needs: occ-preflight
+    # OMN-15112 vector-5, PARTIAL fix only (documented residual, see
+    # .github/required-checks.yaml "pr-title / check-title" row): a
+    # reusable-workflow-call job body is either `uses:` or `steps:`, never
+    # both, so there is no way to insert an inline `needs.occ-preflight.result`
+    # check ahead of the call the way the other 15 OMN-15112 findings do.
+    # `if: always()` still closes the SKIP-side of the bug (this job can no
+    # longer silently skip-as-pass when occ-preflight fails), matching the
+    # deploy-gate.yml precedent in this same repo, but it does not make
+    # pr-title-check-reusable.yml itself consume or fail on the occ-preflight
+    # result -- that reusable workflow (owned by onex_change_control) exposes
+    # no gating input today. Real enforcement for this path still rests on the
+    # independently-required "occ-preflight / eligibility" context, same as
+    # deploy-gate. Closing this fully requires a cross-repo change to
+    # onex_change_control/pr-title-check-reusable.yml to accept and hard-fail
+    # on an explicit occ-preflight-result input -- tracked as a follow-up, not
+    # done in this PR.
+    if: always()
     uses: OmniNode-ai/onex_change_control/.github/workflows/pr-title-check-reusable.yml@main
     permissions:
       pull-requests: read

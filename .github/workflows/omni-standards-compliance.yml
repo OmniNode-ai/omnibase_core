@@ -133,6 +133,7 @@ jobs:
 
   onex-compliance:
     needs: occ-preflight
+    if: always()
     name: ONEX Architecture Compliance
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -142,6 +143,19 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
+      # OMN-15112 vector-5 fix: `needs: occ-preflight` alone lets GitHub's
+      # implicit `success()`-over-needs skip this job when occ-preflight
+      # fails/cancels, and a skipped job satisfies branch protection as
+      # passing. `if: always()` above stops the skip; this step is the other
+      # required half — it explicitly fails the job when occ-preflight did
+      # not succeed, so the job's own conclusion is FAILURE, never a
+      # decorative pass.
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run ONEX Architecture Compliance."
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v7
 
@@ -170,6 +184,7 @@ jobs:
 
   legacy-compatibility-check:
     needs: occ-preflight
+    if: always()
     name: Legacy Compatibility Check
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -179,6 +194,19 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
+      # OMN-15112 vector-5 fix: `needs: occ-preflight` alone lets GitHub's
+      # implicit `success()`-over-needs skip this job when occ-preflight
+      # fails/cancels, and a skipped job satisfies branch protection as
+      # passing. `if: always()` above stops the skip; this step is the other
+      # required half — it explicitly fails the job when occ-preflight did
+      # not succeed, so the job's own conclusion is FAILURE, never a
+      # decorative pass.
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run Legacy Compatibility Check."
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v7
 
@@ -239,6 +267,7 @@ jobs:
 
   forbidden-pattern-scan:
     needs: occ-preflight
+    if: always()
     name: Decommissioned Pattern Scanner (OMN-4801)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -248,6 +277,19 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
+      # OMN-15112 vector-5 fix: `needs: occ-preflight` alone lets GitHub's
+      # implicit `success()`-over-needs skip this job when occ-preflight
+      # fails/cancels, and a skipped job satisfies branch protection as
+      # passing. `if: always()` above stops the skip; this step is the other
+      # required half — it explicitly fails the job when occ-preflight did
+      # not succeed, so the job's own conclusion is FAILURE, never a
+      # decorative pass.
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run Decommissioned Pattern Scanner."
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v7
 
@@ -260,6 +302,7 @@ jobs:
 
   ci-naming-convention:
     needs: occ-preflight
+    if: always()
     name: CI Naming Convention
     runs-on: >-
       ${{
@@ -268,6 +311,19 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
+      # OMN-15112 vector-5 fix: `needs: occ-preflight` alone lets GitHub's
+      # implicit `success()`-over-needs skip this job when occ-preflight
+      # fails/cancels, and a skipped job satisfies branch protection as
+      # passing. `if: always()` above stops the skip; this step is the other
+      # required half — it explicitly fails the job when occ-preflight did
+      # not succeed, so the job's own conclusion is FAILURE, never a
+      # decorative pass.
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run CI Naming Convention."
+          exit 1
+
       - name: Checkout code
         uses: actions/checkout@v7
 

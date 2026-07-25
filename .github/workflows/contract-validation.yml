@@ -143,6 +143,7 @@ jobs:
 
   contract-validation:
     needs: occ-preflight
+    if: always()
     name: contract-validation
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -154,6 +155,19 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # OMN-15112 vector-5 fix: `needs: occ-preflight` alone lets GitHub's
+      # implicit `success()`-over-needs skip this job when occ-preflight
+      # fails/cancels, and a skipped job satisfies branch protection as
+      # passing. `if: always()` above stops the skip; this step is the other
+      # required half — it explicitly fails the job when occ-preflight did
+      # not succeed, so the job's own conclusion is FAILURE, never a
+      # decorative pass.
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run contract-validation."
+          exit 1
+
       - name: Auth preflight — confirm onex_change_control action is accessible
         id: auth-preflight
         env:
