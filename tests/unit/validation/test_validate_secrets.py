@@ -441,7 +441,7 @@ redis_connection_string = "redis://user:pass123@redis.example.com:6379/1"
         """Test detection of MongoDB connection strings with credentials."""
         code = """
 mongo_database_url = "mongodb://admin:mongopass123@localhost:27017/mydb"
-mongodb_url = "mongodb+srv://user:password@cluster.mongodb.net/database"
+mongodb_url = "mongodb+srv://user:password@cluster.example.com/database"  # non-Atlas domain: avoids GH mongodb_atlas_db_uri_with_credentials false-positive (validator matches on variable-name pattern, not URI domain -- see _is_hardcoded_value)
 mongo_connection_string = "mongodb://dbuser:dbpass@mongo.example.com:27017/prod"
 """
         validator = PythonSecretValidator("test.py")
