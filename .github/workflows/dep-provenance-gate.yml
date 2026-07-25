@@ -41,7 +41,7 @@ permissions:
 
 jobs:
   occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
+    uses: OmniNode-ai/omnibase_core/.github/workflows/occ-preflight.yml@main
     permissions:
       contents: read
       pull-requests: read
