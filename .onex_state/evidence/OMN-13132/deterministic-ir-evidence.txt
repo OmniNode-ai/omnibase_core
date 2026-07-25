@@ -1,0 +1,19 @@
+=== DETERMINISTIC IR over >=2 REAL contracts (2 backend nodes + 1 UI component) ===
+nodes: [('compliance_status_grid', 'component'), ('node.compliance.evidence', 'effect'), ('node.compliance.report.reducer', 'reducer')]
+DETERMINISTIC (run1 JSON == run2 JSON): True
+
+=== HASH MANIFEST ===
+  ui_component  in-memory://compliance_status_grid
+      source_contract_sha256 = sha256:77b6cb763cc051afea434b84650c96958754794e727cba5b3bded1926f3f25e3
+      adapter_version_sha256 = sha256:aff0ebbd798f42325ea435bb681df7846916a47bdbbbd3268213b7389dc268f7
+  node          src/omnibase_core/nodes/node_compliance_evidence_effect/contract.yaml
+      source_contract_sha256 = sha256:5ff3915eec87f68f60d5bee4b8436eea78d42aa0485bdfa333934c9a7c995766
+      adapter_version_sha256 = sha256:a8dfea4e9625322db32399f108d10a0920aea2c11f0f645491b8e99ed2f47134
+  node          src/omnibase_core/nodes/node_compliance_report_reducer/contract.yaml
+      source_contract_sha256 = sha256:6bc01b5a506bed70de01db3738789f91ce4575fd96ece416307b2e81896c34c2
+      adapter_version_sha256 = sha256:a8dfea4e9625322db32399f108d10a0920aea2c11f0f645491b8e99ed2f47134
+
+=== NO-OP ROUND-TRIP == ZERO SEMANTIC DIFF (via cli_contract_diff) ===
+  effect node  : zero_diff=True total_changes=0
+  reducer node : zero_diff=True total_changes=0
+  ui component : zero_diff=True total_changes=0
