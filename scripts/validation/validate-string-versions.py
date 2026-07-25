@@ -301,6 +301,10 @@ class PythonASTValidator(ast.NodeVisitor):
             #   (validator_receipt_gate.ALLOWLIST_PATTERN captures a raw \S+ token,
             #   not a UUID).
             "allowlist_receipt_id",  # User-issued skip-token approval handle (not UUID)
+            # DEMAND_AWARE_LIVENESS_IDENTIFIERS (OMN-15126 / design OMN-14845)
+            # See: src/omnibase_core/models/runtime/model_liveness_registry_entry.py,
+            #      src/omnibase_core/models/runtime/model_liveness_receipt.py
+            "surface_id",  # Stable liveness surface slug, e.g. "omnimarket.node_x" (not UUID)
         }
 
     def visit_Import(self, node: ast.Import):

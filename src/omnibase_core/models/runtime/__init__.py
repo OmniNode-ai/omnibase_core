@@ -3,6 +3,7 @@
 
 """Runtime models for ONEX node execution."""
 
+from omnibase_core.models.runtime.model_demand_source_ref import ModelDemandSourceRef
 from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
     ModelDescriptorCircuitBreaker,
 )
@@ -13,10 +14,19 @@ from omnibase_core.models.runtime.model_domain_plugin import ModelDomainPluginCo
 from omnibase_core.models.runtime.model_domain_plugin_result import (
     ModelDomainPluginResult,
 )
+from omnibase_core.models.runtime.model_event_ref import ModelEventRef
 from omnibase_core.models.runtime.model_handler_behavior import (
     ModelHandlerBehavior,
 )
 from omnibase_core.models.runtime.model_handler_metadata import ModelHandlerMetadata
+from omnibase_core.models.runtime.model_liveness_artifact_ref import (
+    ModelArtifactRef as ModelLivenessArtifactRef,
+)
+from omnibase_core.models.runtime.model_liveness_receipt import ModelLivenessReceipt
+from omnibase_core.models.runtime.model_liveness_registry_entry import (
+    ModelLivenessRegistryEntry,
+)
+from omnibase_core.models.runtime.model_output_join_spec import ModelOutputJoinSpec
 from omnibase_core.models.runtime.model_runtime_address import ModelRuntimeAddress
 from omnibase_core.models.runtime.model_runtime_address_registry import (
     ModelRuntimeAddressRegistry,
@@ -42,6 +52,7 @@ from omnibase_core.models.runtime.model_runtime_skill_response import (
 from omnibase_core.models.runtime.model_runtime_target_selector import (
     ModelRuntimeTargetSelector,
 )
+from omnibase_core.models.runtime.model_sampling_policy import ModelSamplingPolicy
 from omnibase_core.models.runtime.model_transport_message import (
     ModelTransportMessage,
 )
@@ -76,6 +87,14 @@ __all__ = [
     "ModelRuntimeAlivenessProbeReceipt",
     "DEFAULT_TIMEOUT_SECONDS",
     "TIMEOUT_ENV_VAR",
+    # Demand-aware liveness contract (OMN-15126 / design OMN-14845)
+    "ModelLivenessArtifactRef",
+    "ModelDemandSourceRef",
+    "ModelEventRef",
+    "ModelLivenessReceipt",
+    "ModelLivenessRegistryEntry",
+    "ModelOutputJoinSpec",
+    "ModelSamplingPolicy",
     # Directive payload types (re-exported for convenience)
     "ModelDirectivePayload",
     "ModelDirectivePayloadBase",
