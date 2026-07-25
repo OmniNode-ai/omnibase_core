@@ -463,6 +463,20 @@ jobs:
       - name: Run canonical handler-shape growth ratchet
         run: uv run python scripts/ci/canonical_handler_shape.py
 
+      # RSD provenance-stamp fail-closed GATE (OMN-15011) — blocking. The OMN-14355
+      # ratchet above proves a node's SHAPE but is authorship-agnostic: a brand-new
+      # node born shape-canonical requires proof of nothing about HOW it came to
+      # exist. This classifies each node's ``.rsd_provenance.json`` sidecar (machine
+      # rsd_delegation stamp RECOMPUTED from live file sha256 — never trusted — or a
+      # sanctioned hand_authored + ticket exception), WARNs the frozen legacy
+      # exemption baseline, and HARD-FAILS a NEW node missing/invalid stamp or ANY
+      # growth of that baseline (shrink-only allowlist). Canary scope =
+      # omnibase_core; fan-out to omnimarket/omnibase_infra is a follow-on (OMN-15011
+      # acceptance #5). Runs in this job so it inherits the quality-gate blocking
+      # wiring, same as the ratchet above.
+      - name: Run RSD provenance-stamp gate
+        run: uv run python scripts/ci/rsd_provenance_stamp.py
+
       # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809). Re-invokes
       # the canonical-shape gate above (verify_flip_receipt / classify_node — imported,
       # not reimplemented) and adds six fail-closed assertions per NEWLY-flipped node
