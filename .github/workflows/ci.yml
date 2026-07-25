@@ -862,8 +862,22 @@ jobs:
           #   FQNs; a "module.path:ClassName" entry is key:value-shaped, so the
           #   Secret Keyword detector fires on names like model_network_restrictions
           #   — same false-positive class as the two baselines above)
+          #
+          # -n/--no-verify (OMN-15063): several plugins (SlackDetector,
+          # StripeDetector, ...) call the live vendor API to "verify" each
+          # regex-matched candidate, then silently drop anything that comes
+          # back VERIFIED_FALSE. RED-proven against this exact invocation: a
+          # synthetic Slack incoming-webhook URL and a synthetic Slack bot
+          # token, both matching the dedicated SlackDetector regex, are
+          # silently absent from the report without -n even though the
+          # regex matches — only the generic entropy/keyword plugins that
+          # don't verify still catch anything nearby. A negative/uncertain
+          # live-verification result must not silently remove a finding
+          # (fail-closed). Never remove this flag without re-proving the
+          # miss is fixed another way.
           set +e
           git ls-files -z | xargs -0 detect-secrets-hook \
+            --no-verify \
             --baseline .secrets.baseline \
             --exclude-files 'uv\.lock' \
             --exclude-files '\.venv/' \
@@ -887,7 +901,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "If these are false positives, regenerate the baseline:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            echo 'detect-secrets scan --all-files --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --exclude-files "url_authority_baseline\.json" --exclude-files "canonical_inference_baseline\.json" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
+            echo 'detect-secrets scan --all-files --no-verify --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --exclude-files "url_authority_baseline\.json" --exclude-files "canonical_inference_baseline\.json" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
