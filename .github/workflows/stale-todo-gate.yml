@@ -34,6 +34,7 @@ jobs:
 
   stale-todo-gate:
     needs: occ-preflight
+    if: always()
     name: Stale TODO Gate
     runs-on: >-
       ${{

@@ -16,6 +16,7 @@ jobs:
 
   label:
     needs: occ-preflight
+    if: always()
     name: AST Risk Labeler
     runs-on: ubuntu-latest
     permissions:

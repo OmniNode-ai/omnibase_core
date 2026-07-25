@@ -51,6 +51,7 @@ jobs:
 
   dep-provenance-gate:
     needs: occ-preflight
+    if: always()
     name: Dep Provenance Gate
     runs-on: ubuntu-latest
     steps:

@@ -39,6 +39,7 @@ jobs:
 
   onex-compliance:
     needs: occ-preflight
+    if: always()
     name: ONEX Architecture Compliance
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -76,6 +77,7 @@ jobs:
 
   legacy-compatibility-check:
     needs: occ-preflight
+    if: always()
     name: Legacy Compatibility Check
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -145,6 +147,7 @@ jobs:
 
   forbidden-pattern-scan:
     needs: occ-preflight
+    if: always()
     name: Decommissioned Pattern Scanner (OMN-4801)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -166,6 +169,7 @@ jobs:
 
   ci-naming-convention:
     needs: occ-preflight
+    if: always()
     name: CI Naming Convention
     runs-on: >-
       ${{

@@ -103,6 +103,7 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
     reach the actual pytest invocation."""
     env = dict(os.environ)
     env["PREPUSH_FULL_SUITE"] = "1"
+    env["PREPUSH_BASE_REF"] = "HEAD"
     env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
     result = subprocess.run(
         ["bash", str(HOOK_SCRIPT)],

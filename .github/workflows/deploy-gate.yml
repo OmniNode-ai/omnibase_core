@@ -33,6 +33,7 @@ jobs:
 
   deploy-gate:
     needs: occ-preflight
+    if: always()
     uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@main
     with:
       contracts-dir: contracts
