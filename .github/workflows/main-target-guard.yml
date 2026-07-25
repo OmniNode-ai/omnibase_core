@@ -23,6 +23,7 @@ jobs:
 
   main-target-guard:
     needs: occ-preflight
+    if: always()
     name: main-target-guard
     runs-on: >-
       ${{

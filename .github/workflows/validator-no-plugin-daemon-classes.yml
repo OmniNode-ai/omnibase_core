@@ -60,6 +60,7 @@ jobs:
 
   no-plugin-daemon-classes:
     needs: occ-preflight
+    if: always()
     name: no-plugin-daemon-classes
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-

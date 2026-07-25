@@ -48,6 +48,7 @@ jobs:
 
   no-faked-boundary-gate:
     needs: occ-preflight
+    if: always()
     name: No Faked Boundary Gate
     runs-on: ubuntu-latest
     steps:
