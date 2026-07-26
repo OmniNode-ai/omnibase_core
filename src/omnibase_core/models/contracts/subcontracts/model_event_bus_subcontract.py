@@ -337,7 +337,7 @@ class ModelEventBusSubcontract(BaseModel):
         return self
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from YAML contracts
+        extra="forbid",
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
     )

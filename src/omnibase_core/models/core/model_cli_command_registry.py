@@ -35,7 +35,7 @@ class ModelCliCommandRegistry(BaseModel):
     enabling third-party nodes to automatically expose their functionality.
     """
 
-    model_config = ConfigDict(extra="ignore", frozen=False)
+    model_config = ConfigDict(extra="forbid", frozen=False)
 
     commands: dict[str, ModelCliCommandDefinition] = Field(
         default_factory=dict,
@@ -336,9 +336,12 @@ def get_global_command_registry() -> ModelCliCommandRegistry:
         registry_obj = container.command_registry()
         registry = _coerce_reloaded_command_registry(registry_obj, container)
         if registry is None:
-            raise TypeError(
-                f"command_registry() returned {type(registry_obj).__name__}, "
-                "expected ModelCliCommandRegistry"
+            raise ModelOnexError(
+                message=(
+                    f"command_registry() returned {type(registry_obj).__name__}, "
+                    "expected ModelCliCommandRegistry"
+                ),
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
             )
         return registry
     except (AttributeError, KeyError, TypeError, ValueError) as e:
