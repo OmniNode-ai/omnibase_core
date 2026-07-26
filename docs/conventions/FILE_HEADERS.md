@@ -357,9 +357,16 @@ pre-commit run --all-files
 
 ---
 
+## Docstring Guidelines
+
+- **Write** for: complex logic, non-obvious behavior, public APIs, edge cases
+- **Skip** for: simple getters, obvious signatures, private helpers
+- **Never tautological**: `def get_name: """Get the name."""` adds no value
+
+---
+
 ## Related Documentation
 
-- [Docstring Guidelines](../../CLAUDE.md#docstring-guidelines) - When and how to write docstrings
 - [CLAUDE.md](../../CLAUDE.md) - Import conventions and development standards
 - [File Naming Conventions](../../CLAUDE.md#file-naming-conventions) - Directory-specific prefixes
 
