@@ -74,6 +74,7 @@ jobs:
 
   no-unguarded-git-subprocess:
     needs: occ-preflight
+    if: always()
     name: no-unguarded-git-subprocess
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
