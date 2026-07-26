@@ -95,6 +95,11 @@ def _commit_file(repo: Path, relpath: str, content: str) -> str:
     return _git(repo, "log", "-1", "--format=%H").strip()
 
 
+def _blob_sha(repo: Path, relpath: str) -> str:
+    """Return the git BLOB object id (not a commit) for a committed path."""
+    return _git(repo, "rev-parse", f"HEAD:{relpath}").strip()
+
+
 def _implementer_report(
     *, head_sha: str, files_changed_paths: list[str]
 ) -> ModelDispatchReportImplementer:
@@ -203,6 +208,26 @@ def test_fails_when_sha_does_not_resolve(tmp_path: Path) -> None:
     )
 
 
+def test_fails_when_sha_resolves_to_a_blob_not_a_commit(tmp_path: Path) -> None:
+    """A blob hash is a real object in the repo's git dir, but it is not a
+    commit -- a "*_sha" content anchor must reject it, not just check that
+    SOME object with that hash exists (plain `cat-file -e` without a `^{commit}`
+    peel accepts blobs/trees/tags too)."""
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    _commit_file(repo, "a.txt", "x\n")
+    blob_sha = _blob_sha(repo, "a.txt")
+    report = _implementer_report(head_sha=blob_sha, files_changed_paths=["a.txt"])
+
+    violations = check_dispatch_report_content_anchors(
+        report, git_dir=repo / ".git", repo_root=repo
+    )
+
+    assert any(
+        "head_sha" in v and "does not resolve to a real commit" in v for v in violations
+    )
+
+
 # --------------------------------------------------------------------------
 # RED: artifact path escapes repo_root
 # --------------------------------------------------------------------------
@@ -268,6 +293,35 @@ def test_fails_when_artifact_path_does_not_exist(tmp_path: Path) -> None:
         "does not exist under repo_root" in v and "this_file_was_never_written.py" in v
         for v in violations
     )
+
+
+def test_fails_when_artifact_path_resolves_to_a_directory(tmp_path: Path) -> None:
+    """A directory satisfies containment and existence but anchors no actual
+    artifact -- ``["."]``/``[""]`` (or any subdirectory) must be rejected,
+    including the degenerate case of citing repo_root itself."""
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    sha = _commit_file(repo, "subdir/a.txt", "x\n")
+    report = _implementer_report(head_sha=sha, files_changed_paths=["."])
+
+    violations = check_dispatch_report_content_anchors(
+        report, git_dir=repo / ".git", repo_root=repo
+    )
+
+    assert any("files_changed_paths" in v and "is not a file" in v for v in violations)
+
+
+def test_fails_when_artifact_path_resolves_to_a_subdirectory(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    sha = _commit_file(repo, "subdir/a.txt", "x\n")
+    report = _implementer_report(head_sha=sha, files_changed_paths=["subdir"])
+
+    violations = check_dispatch_report_content_anchors(
+        report, git_dir=repo / ".git", repo_root=repo
+    )
+
+    assert any("files_changed_paths" in v and "is not a file" in v for v in violations)
 
 
 # --------------------------------------------------------------------------

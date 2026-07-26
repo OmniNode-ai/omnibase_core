@@ -197,30 +197,27 @@ def validate_substantive_report_text(
     """
     stripped = value.strip()
     if not stripped:
-        # error-ok: pydantic field_validator helper -- see docstring above.
-        raise ValueError(f"{field_name} is empty or whitespace-only")
+        raise ValueError(  # error-ok: pydantic field_validator helper -- see docstring above.
+            f"{field_name} is empty or whitespace-only"
+        )
 
     normalized = _normalize_for_literal_match(stripped)
     if normalized in _PLACEHOLDER_LITERALS:
-        # error-ok: pydantic field_validator helper -- see above.
-        raise ValueError(
+        raise ValueError(  # error-ok: pydantic field_validator helper -- see above.
             f"{field_name} is the literal placeholder value {stripped!r} -- "
             "not a substantive report"
         )
     if normalized in _BARE_ACKNOWLEDGEMENT_LITERALS:
-        # error-ok: pydantic field_validator helper -- see above.
-        raise ValueError(
+        raise ValueError(  # error-ok: pydantic field_validator helper -- see above.
             f"{field_name} is a bare acknowledgement ({stripped!r}) with no typed result content"
         )
     if _is_repetitive_padding(stripped):
-        # error-ok: pydantic field_validator helper -- see above.
-        raise ValueError(
+        raise ValueError(  # error-ok: pydantic field_validator helper -- see above.
             f"{field_name} is repetitive low-content padding ({stripped!r}) -- a short "
             "literal or unit repeated to defeat the length minimum, not a substantive report"
         )
     if len(stripped) < _MIN_SUBSTANTIVE_LENGTH:
-        # error-ok: pydantic field_validator helper -- see above.
-        raise ValueError(
+        raise ValueError(  # error-ok: pydantic field_validator helper -- see above.
             f"{field_name} is only {len(stripped)} chars (minimum {_MIN_SUBSTANTIVE_LENGTH}) -- "
             "too short to be a substantive report"
         )

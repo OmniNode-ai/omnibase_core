@@ -61,8 +61,13 @@ __all__ = ["check_dispatch_report_content_anchors"]
 
 
 def _sha_resolves(git_dir: Path, sha: str) -> bool:
+    # `^{commit}` peels the object reference and requires it to dereference to
+    # a COMMIT specifically -- plain `cat-file -e <sha>` (no peel) succeeds for
+    # any object type (blob, tree, tag), so a blob hash would otherwise satisfy
+    # a `head_sha`/`verified_sha`/`merge_sha` content anchor despite the
+    # contract requiring a real commit.
     result = subprocess.run(
-        ["git", "--git-dir", str(git_dir), "cat-file", "-e", sha],
+        ["git", "--git-dir", str(git_dir), "cat-file", "-e", f"{sha}^{{commit}}"],
         capture_output=True,
         text=True,
         check=False,
@@ -140,5 +145,16 @@ def check_dispatch_report_content_anchors(
                     violations.append(
                         f"field '{field_name}' cites an artifact path that does not exist under "
                         f"repo_root {repo_root}: {artifact}"
+                    )
+                elif not resolved_artifact.is_file():
+                    # Catches a directory citation generally -- including the
+                    # degenerate case of the artifact resolving to repo_root
+                    # itself (e.g. "", ".", or an equivalent traversal): a
+                    # directory satisfies containment and existence without
+                    # anchoring any actual artifact, which is not what a
+                    # "*_paths" content anchor means.
+                    violations.append(
+                        f"field '{field_name}' cites an artifact path that is not a file "
+                        f"under repo_root {repo_root}: {artifact}"
                     )
     return violations

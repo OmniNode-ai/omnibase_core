@@ -10,7 +10,9 @@ Fleet-generic port of steel_onslaught PR #213's ``ROLE_TO_MODEL`` +
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
+
+from pydantic import Field
 
 from omnibase_core.enums.enum_dispatch_report_role import EnumDispatchReportRole
 from omnibase_core.models.dispatch.report.model_dispatch_report_implementer import (
@@ -31,12 +33,17 @@ if TYPE_CHECKING:
 
 __all__ = ["ROLE_TO_MODEL", "DispatchReport"]
 
-DispatchReport = (
+# Discriminated on "role" (mirrors ModelDirectivePayload's "kind" discriminator,
+# omnibase_core.models.runtime.payloads.model_directive_payload_union) so pydantic
+# dispatches directly to the matching role's model instead of trying every union
+# branch in sequence.
+DispatchReport = Annotated[
     ModelDispatchReportImplementer
     | ModelDispatchReportVerifier
     | ModelDispatchReportLander
-    | ModelDispatchReportScout
-)
+    | ModelDispatchReportScout,
+    Field(discriminator="role"),
+]
 
 ROLE_TO_MODEL: dict[EnumDispatchReportRole, type[BaseModel]] = {
     EnumDispatchReportRole.IMPLEMENTER: ModelDispatchReportImplementer,

@@ -74,3 +74,43 @@ def test_literal_test_placeholder_fill_is_red() -> None:
     fields_with_errors = {".".join(str(part) for part in err["loc"]) for err in errors}
     assert "verdict" in fields_with_errors
     assert any("placeholder value 'test'" in err["msg"] for err in errors)
+
+
+def test_blocked_land_omits_merge_sha_and_still_passes() -> None:
+    """A blocked land attempt happens before any merge commit exists --
+    merge_sha must be optional (and unset) for BLOCKED/ABORTED, not forced to
+    a fabricated value."""
+    report = _validate(
+        {
+            "role": "lander",
+            "pr_number": 4821,
+            "verdict": "blocked",
+            "summary": (
+                "Could not land PR #4821: CI red on the retry, deferring to the "
+                "implementer for a fix before another land attempt."
+            ),
+        }
+    )
+    assert report.merge_sha is None
+    assert report.verdict == EnumDispatchReportLanderVerdict.BLOCKED
+
+
+def test_merged_verdict_without_merge_sha_is_red() -> None:
+    with pytest.raises(ValidationError, match="merge_sha is required"):
+        _validate({**_valid_payload(), "merge_sha": None})
+
+
+def test_non_merged_verdict_with_merge_sha_is_red() -> None:
+    """A merge_sha content anchor on a report that claims BLOCKED/ABORTED
+    would cite a merge commit that (per the report's own verdict) never
+    happened -- reject the contradiction rather than silently accept it."""
+    with pytest.raises(ValidationError, match="must not be set"):
+        _validate(
+            {
+                "role": "lander",
+                "pr_number": 4821,
+                "merge_sha": _MERGE_SHA,
+                "verdict": "aborted",
+                "summary": _SUBSTANTIVE_SUMMARY,
+            }
+        )
