@@ -71,6 +71,22 @@ def test_workflow_only_change_no_longer_escalates() -> None:
     assert selection.selected_paths == ["tests/unit/"]
 
 
+def test_required_checks_manifest_uses_focused_guard_test() -> None:
+    selection = compute_selection(
+        changed_files=[".github/required-checks.yaml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+
+    assert selection.is_full_suite is False
+    assert selection.full_suite_reason is None
+    assert selection.selected_paths == [
+        "tests/unit/validation/test_required_check_skip_guard.py"
+    ]
+    assert selection.split_count == 1
+    assert selection.matrix == [1]
+
+
 def test_selector_change_escalates_to_distributed_full_suite() -> None:
     # OMN-14910 (CI-C1 #1): scripts/ci/ was NARROWED from a blanket directory
     # trigger to the selector's OWN files. detect_test_paths.py is the selector,

@@ -24,6 +24,10 @@ from scripts.ci.test_selection_models import (
 SRC_PREFIX = "src/omnibase_core/"
 TEST_UNIT_PREFIX = "tests/unit/"
 TEST_INTEGRATION_PREFIX = "tests/integration/"
+REQUIRED_CHECKS_MANIFEST_PATH = ".github/required-checks.yaml"
+REQUIRED_CHECKS_MANIFEST_TEST = (
+    "tests/unit/validation/test_required_check_skip_guard.py"
+)
 
 FULL_SUITE_BRANCHES = {"main"}
 
@@ -37,7 +41,9 @@ FULL_SUITE_BRANCHES = {"main"}
 # `.github/`, `.pre-commit-config.yaml`, or `scripts/hooks/`: core has
 # workflow-shape unit tests (tests/unit/validation/test_occ_preflight_workflow_shape.py,
 # test_receipt_gate_workflow_shape.py) whose outcome depends on those files, so a
-# change there must still run the fallback rather than select nothing.
+# change there must still run the fallback rather than select nothing. The
+# required-check manifest has a positive mapping below because otherwise the
+# generic import-graph closure cannot resolve it and falls back to all unit tests.
 DOCS_ONLY_SUFFIXES = (".md",)
 DOCS_ONLY_PREFIXES = ("docs/",)
 
@@ -184,6 +190,20 @@ def compute_selection(
     if changed_files and all(_is_docs_only_path(p) for p in changed_files):
         return ModelTestSelection(
             selected_paths=[],
+            split_count=1,
+            is_full_suite=False,
+            full_suite_reason=None,
+            matrix=[1],
+        )
+
+    # 5b. Required-check manifest changes are non-Python governance data with a
+    # dedicated validator test. Without this positive mapping the import-graph
+    # closure correctly treats the path as unresolved and selects tests/unit/,
+    # which makes pre-push run the broad unit/import suite for manifest-only
+    # reconciliations.
+    if changed_files and set(changed_files) == {REQUIRED_CHECKS_MANIFEST_PATH}:
+        return ModelTestSelection(
+            selected_paths=[REQUIRED_CHECKS_MANIFEST_TEST],
             split_count=1,
             is_full_suite=False,
             full_suite_reason=None,
