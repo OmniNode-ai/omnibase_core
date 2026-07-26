@@ -383,7 +383,7 @@ class ModelHandlerContract(BaseModel):
 
     model_config = ConfigDict(
         frozen=True,
-        extra="ignore",
+        extra="forbid",
         from_attributes=True,
         str_strip_whitespace=True,
     )

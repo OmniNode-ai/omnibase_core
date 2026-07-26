@@ -8,6 +8,7 @@ Comprehensive tests for event bus subcontract configuration and validation.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.contracts.subcontracts.model_event_bus_subcontract import (
     ModelEventBusSubcontract,
@@ -327,16 +328,15 @@ class TestModelEventBusSubcontractEdgeCases:
         assert subcontract.correlation_tracking is False
         assert subcontract.enable_lifecycle_events is False
 
-    def test_extra_fields_ignored(self):
-        """Test that extra fields are ignored per ConfigDict."""
+    def test_extra_fields_rejected(self):
+        """Test that extra fields are rejected per ConfigDict."""
         data = {
             "version": {"major": 1, "minor": 0, "patch": 0},
             "event_bus_type": "memory",
             "extra_unknown_field": "should_be_ignored",
         }
-        subcontract = ModelEventBusSubcontract.model_validate(data)
-        assert subcontract.event_bus_type == "memory"
-        assert not hasattr(subcontract, "extra_unknown_field")
+        with pytest.raises(ValidationError, match="extra_forbidden"):
+            ModelEventBusSubcontract.model_validate(data)
 
     def test_empty_default_event_patterns(self):
         """Test creating subcontract with empty event patterns."""
@@ -424,16 +424,16 @@ class TestModelEventBusSubcontractAttributes:
 class TestModelEventBusSubcontractConfigDict:
     """Test ModelEventBusSubcontract ConfigDict settings."""
 
-    def test_extra_fields_are_ignored(self):
-        """Test that extra='ignore' allows extra fields."""
+    def test_extra_fields_are_rejected(self):
+        """Test that extra='forbid' rejects extra fields."""
         data = {
             "version": {"major": 1, "minor": 0, "patch": 0},
             "event_bus_type": "memory",
             "unknown_field_1": "value1",
             "unknown_field_2": "value2",
         }
-        subcontract = ModelEventBusSubcontract.model_validate(data)
-        assert subcontract.event_bus_type == "memory"
+        with pytest.raises(ValidationError, match="extra_forbidden"):
+            ModelEventBusSubcontract.model_validate(data)
 
     def test_validate_assignment_enabled(self):
         """Test that validate_assignment=True validates on assignment."""

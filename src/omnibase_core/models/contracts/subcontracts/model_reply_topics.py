@@ -50,7 +50,7 @@ class ModelReplyTopics(BaseModel):
         return topic
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from YAML contracts for forward compatibility
+        extra="forbid",
         frozen=True,
         from_attributes=True,
     )

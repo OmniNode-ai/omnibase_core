@@ -14,8 +14,6 @@
 #     --write-baseline src/omnibase_core
 
 violations:
-  - "omnibase_core.errors.model_fail_fast_details:ModelFailFastDetails"
-  - "omnibase_core.errors.model_onex_error_data:_ModelOnexErrorData"
   - "omnibase_core.models.agents.model_activation_patterns:ModelActivationPatterns"
   - "omnibase_core.models.agents.model_agent_capabilities:ModelAgentCapabilities"
   - "omnibase_core.models.agents.model_agent_definition:ModelAgentDefinition"
@@ -209,8 +207,6 @@ violations:
   - "omnibase_core.models.contracts.model_event_registry_config:ModelEventRegistryConfig"
   - "omnibase_core.models.contracts.model_event_subscription:ModelEventSubscription"
   - "omnibase_core.models.contracts.model_filter_conditions:ModelFilterConditions"
-  - "omnibase_core.models.contracts.model_handler_contract:ModelHandlerContract"
-  - "omnibase_core.models.contracts.model_handler_contract_extended:ModelHandlerContractExtended"
   - "omnibase_core.models.contracts.model_input_validation_config:ModelInputValidationConfig"
   - "omnibase_core.models.contracts.model_io_operation_config:ModelIOOperationConfig"
   - "omnibase_core.models.contracts.model_lifecycle_config:ModelLifecycleConfig"
@@ -260,7 +256,6 @@ violations:
   - "omnibase_core.models.contracts.subcontracts.model_envelope_template:ModelEnvelopeTemplate"
   - "omnibase_core.models.contracts.subcontracts.model_environment_validation_rule:ModelEnvironmentValidationRule"
   - "omnibase_core.models.contracts.subcontracts.model_environment_validation_rules:ModelEnvironmentValidationRules"
-  - "omnibase_core.models.contracts.subcontracts.model_event_bus_subcontract:ModelEventBusSubcontract"
   - "omnibase_core.models.contracts.subcontracts.model_event_definition:ModelEventDefinition"
   - "omnibase_core.models.contracts.subcontracts.model_event_handling_subcontract:ModelEventHandlingSubcontract"
   - "omnibase_core.models.contracts.subcontracts.model_event_mapping_rule:ModelEventMappingRule"
@@ -292,9 +287,7 @@ violations:
   - "omnibase_core.models.contracts.subcontracts.model_operation_mapping:ModelOperationMapping"
   - "omnibase_core.models.contracts.subcontracts.model_progress_status:ModelProgressStatus"
   - "omnibase_core.models.contracts.subcontracts.model_query_parameter_rule:ModelQueryParameterRule"
-  - "omnibase_core.models.contracts.subcontracts.model_reply_topics:ModelReplyTopics"
   - "omnibase_core.models.contracts.subcontracts.model_request_response_config:ModelRequestResponseConfig"
-  - "omnibase_core.models.contracts.subcontracts.model_request_response_instance:ModelRequestResponseInstance"
   - "omnibase_core.models.contracts.subcontracts.model_request_transformation:ModelRequestTransformation"
   - "omnibase_core.models.contracts.subcontracts.model_resource_usage_metric:ModelResourceUsageMetric"
   - "omnibase_core.models.contracts.subcontracts.model_response_header_rule:ModelResponseHeaderRule"
@@ -350,7 +343,6 @@ violations:
   - "omnibase_core.models.core.model_cli_argument:ModelCLIArgument"
   - "omnibase_core.models.core.model_cli_command:ModelCLICommand"
   - "omnibase_core.models.core.model_cli_command_definition:ModelCliCommandDefinition"
-  - "omnibase_core.models.core.model_cli_command_registry:ModelCliCommandRegistry"
   - "omnibase_core.models.core.model_cli_discovery_stats:ModelCliDiscoveryStats"
   - "omnibase_core.models.core.model_cli_interface:ModelCLIInterface"
   - "omnibase_core.models.core.model_cli_output:ModelCLIOutput"

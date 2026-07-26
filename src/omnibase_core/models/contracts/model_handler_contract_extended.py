@@ -10,8 +10,8 @@ operation_bindings, activation, dict-form input_model/output_model).
 
 The base ``ModelHandlerContract`` stays strict (``extra="forbid"``) so
 all other consumers aren't forced to know about infra-specific fields.
-This extended variant uses ``extra="ignore"`` to silently discard any
-additional fields not declared here.
+This extended variant declares the infra-specific fields it accepts and
+rejects any additional undeclared fields.
 
 See Also:
     - OMN-6483: Create ModelHandlerContractExtended
@@ -46,7 +46,7 @@ class ModelHandlerContractExtended(ModelHandlerContract):
 
     model_config = ConfigDict(
         frozen=True,
-        extra="ignore",
+        extra="forbid",
         from_attributes=True,
         str_strip_whitespace=True,
     )

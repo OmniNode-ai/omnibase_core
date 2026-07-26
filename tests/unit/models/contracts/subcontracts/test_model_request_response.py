@@ -827,8 +827,8 @@ class TestModelEventBusSubcontractRequestResponseIntegration:
 class TestModelEventBusSubcontractRequestResponseEdgeCases:
     """Test edge cases for request_response integration."""
 
-    def test_extra_fields_in_request_response_config_ignored(self):
-        """Test that extra fields in request_response config are ignored."""
+    def test_extra_fields_in_request_response_config_rejected(self):
+        """Test that extra fields in request_response config are rejected."""
         data = {
             "version": {"major": 1, "minor": 0, "patch": 0},
             "request_response": {
@@ -846,9 +846,8 @@ class TestModelEventBusSubcontractRequestResponseEdgeCases:
                 "another_extra_field": "ignored",
             },
         }
-        subcontract = ModelEventBusSubcontract.model_validate(data)
-        assert subcontract.request_response is not None
-        assert len(subcontract.request_response.instances) == 1
+        with pytest.raises(ValidationError, match="extra_forbidden"):
+            ModelEventBusSubcontract.model_validate(data)
 
     def test_request_response_coexists_with_topic_lists(self):
         """Test that request_response works with publish/subscribe topics."""

@@ -30,6 +30,7 @@ class _ModelOnexErrorData(BaseModel):
     """
 
     model_config = ConfigDict(
+        extra="forbid",
         json_schema_extra={
             "example": {
                 "message": "File not found: config.yaml",

@@ -81,8 +81,8 @@ def test_extended_contract_accepts_dict_output_model() -> None:
 
 
 @pytest.mark.unit
-def test_base_contract_ignores_extra_fields() -> None:
-    """Base contract silently ignores extra fields (extra='ignore').
+def test_base_contract_rejects_extra_fields() -> None:
+    """Base contract rejects extra fields.
 
     Uses a field name that is genuinely unknown to ModelHandlerContract.
     ``handler_routing`` itself became a declared field on the base model
@@ -95,9 +95,8 @@ def test_base_contract_ignores_extra_fields() -> None:
         **_base_data(),
         "some_infra_specific_extra_field": {"strategy": "round-robin"},
     }
-    contract = ModelHandlerContract(**data)
-    # extra="ignore" means the field is accepted but not stored
-    assert not hasattr(contract, "some_infra_specific_extra_field")
+    with pytest.raises(ValidationError, match="extra_forbidden"):
+        ModelHandlerContract(**data)
 
 
 @pytest.mark.unit

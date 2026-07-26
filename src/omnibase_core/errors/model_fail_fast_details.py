@@ -37,4 +37,4 @@ class ModelFailFastDetails(BaseModel):
         description="Any additional structured information as string",
     )
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="forbid")
