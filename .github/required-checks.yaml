@@ -649,20 +649,20 @@ gates:
   - name: "CodeQL / CodeQL Analysis (python)"
     mode: REQUIRED
     branch: dev
-    producer_kind: cross_repo
+    producer_kind: matrix
     caller_workflow: security-scan.yml
     caller_job: codeql
     cross_repo_ref: "OmniNode-ai/onex_change_control/.github/workflows/codeql-reusable.yml@main"
-    skip_semantics: never
+    skip_semantics: matrix_unresolvable
     rationale: "OMN-15120 fan-out finding: this composed context's first segment is the caller job's DISPLAY
       NAME ('CodeQL', set via `name:`) rather than its `job_id` ('codeql') -- the guard's static resolve_context_to_job()
       only prefix-matches candidate `<job_id> / ` against the context string (see _workflow_model.py),
       so 'CodeQL / CodeQL Analysis (python)' is structurally UNRESOLVED to the static resolver. Not a
       skip-vector finding -- a resolver limitation, same class as the pre-existing 'Integration Tests
-      (Split N/4)' matrix rows below. producer_kind: cross_repo (rather than local) suppresses the vector-unresolved
-      finding path per validate_no_required_check_skip_vectors.py's producer_kind == 'local' gate. See
-      the sibling 'CodeQL' row above for the actual checkable vector-5 finding on the same caller job.
-      Tracked as a follow-up in OMN-14864 (resolver enhancement: match on display name as well as job_id)."
+      (Split N/4)' matrix rows below. producer_kind: matrix with skip_semantics: matrix_unresolvable documents
+      the static resolver exception already used for templated/composed required contexts. See the sibling
+      'CodeQL' row above for the actual checkable vector-5 finding on the same caller job. Tracked as
+      a follow-up in OMN-14864 (resolver enhancement: match on display name as well as job_id)."
 
   - name: "Ecosystem Integration Validation"
     mode: REQUIRED
