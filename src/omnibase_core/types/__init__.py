@@ -26,6 +26,8 @@ error_codes → types.__init__ → constraints → (circular back to error_codes
 Solution: Use TYPE_CHECKING and __getattr__ for lazy loading, similar to ModelBaseCollection.
 """
 
+from typing import TYPE_CHECKING
+
 # type_constraints and type_core are NOT imported eagerly here (OMN-14624).
 # Both import UP into ``omnibase_core.protocols``; importing them at package-init
 # time closes a ``protocols -> types -> protocols`` cycle whenever ``protocols`` is
@@ -359,6 +361,47 @@ from .typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 from .typed_dict_workflow_state import TypedDictWorkflowState
 from .typed_dict_yaml_dump_kwargs import TypedDictYamlDumpKwargs
 from .typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
+
+if TYPE_CHECKING:
+    from .type_constraints import (
+        BasicValueType,
+        CollectionItemType,
+        ComplexContextValueType,
+        Configurable,
+        ConfigurableType,
+        ContextValueType,
+        ErrorType,
+        Executable,
+        ExecutableType,
+        Identifiable,
+        IdentifiableType,
+        MetadataType,
+        ModelType,
+        Nameable,
+        NameableType,
+        NumericType,
+        PrimitiveValueType,
+        ProtocolMetadataProvider,
+        ProtocolValidatable,
+        Serializable,
+        SerializableType,
+        SimpleValueType,
+        SuccessType,
+        ValidatableType,
+        is_complex_context_value,
+        is_configurable,
+        is_context_value,
+        is_executable,
+        is_identifiable,
+        is_metadata_provider,
+        is_nameable,
+        is_primitive_value,
+        is_serializable,
+        is_validatable,
+        validate_context_value,
+        validate_primitive_value,
+    )
+    from .type_core import ProtocolSchemaValue, TypedDictBasicErrorContext
 
 __all__ = [
     # Core types (no dependencies)

@@ -97,11 +97,6 @@ from omnibase_core.models.logging.model_stdlib_log_emit import (
 )
 
 
-# Import context-based container management
-from omnibase_core.context.context_application import (
-    get_current_container,
-    set_current_container,
-)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -1091,6 +1086,11 @@ async def get_model_onex_container() -> ModelONEXContainer:
         # Legacy usage (still works):
         container = await get_model_onex_container()  # Creates if needed
     """
+    from omnibase_core.context.context_application import (
+        get_current_container,
+        set_current_container,
+    )
+
     container = get_current_container()
     if container is None:
         container = await create_model_onex_container()
@@ -1116,6 +1116,11 @@ def get_model_onex_container_sync() -> ModelONEXContainer:
     Returns:
         ModelONEXContainer: The container instance for the current context
     """
+    from omnibase_core.context.context_application import (
+        get_current_container,
+        set_current_container,
+    )
+
     # Check contextvar for existing container
     container = get_current_container()
     if container is not None:

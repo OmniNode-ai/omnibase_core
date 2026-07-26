@@ -33,6 +33,8 @@ if TYPE_CHECKING:
     )
     from omnibase_core.errors.model_onex_error import ModelOnexError
 
+    OnexError = ModelOnexError
+
 """Core error handling for ONEX framework."""
 
 # Core error system - comprehensive implementation

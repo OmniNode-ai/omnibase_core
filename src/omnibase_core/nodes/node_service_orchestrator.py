@@ -129,3 +129,4 @@ class ModelServiceOrchestrator(  # type: ignore[misc]
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
+        MixinMetrics.__init__(self)
