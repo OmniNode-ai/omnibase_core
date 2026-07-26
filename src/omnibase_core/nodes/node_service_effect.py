@@ -112,6 +112,7 @@ class ModelServiceEffect(  # type: ignore[misc]  # MRO method signature conflict
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
+        MixinMetrics.__init__(self)
 
     def cleanup_event_handlers(self) -> None:
         """

@@ -29,6 +29,7 @@ Usage Examples:
 """
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 # Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus
@@ -86,6 +87,17 @@ from omnibase_core.services.service_contract_validation_invariant_checker import
 # ModelValidationSuite is available via __getattr__ (emits deprecation warning)
 # Import directly from source module to satisfy mypy explicit-export requirement
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
+
+if TYPE_CHECKING:
+    from omnibase_core.services.service_contract_validator import (
+        ServiceContractValidator,
+    )
+    from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
+    from omnibase_core.services.service_protocol_migrator import ServiceProtocolMigrator
+    from omnibase_core.validation.validator_contract_linter import (
+        CONTRACT_MODELS,
+        ValidatorContractLinter,
+    )
 
 # Import validation functions for easy access
 # Import Architecture validator (OMN-1291)
