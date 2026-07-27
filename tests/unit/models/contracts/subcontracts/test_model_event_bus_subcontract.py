@@ -34,6 +34,7 @@ class TestModelEventBusSubcontractInitialization:
         assert subcontract.correlation_tracking is True
         assert subcontract.max_queue_size == 10000
         assert subcontract.batch_size == 100
+        assert subcontract.plugin_managed is False
 
     def test_event_bus_subcontract_with_custom_values(self):
         """Test creating event bus subcontract with custom values."""
@@ -71,6 +72,18 @@ class TestModelEventBusSubcontractInitialization:
 @pytest.mark.unit
 class TestModelEventBusSubcontractValidation:
     """Test ModelEventBusSubcontract field validation."""
+
+    def test_plugin_managed_contract_ownership_is_typed(self):
+        """Accept plugin-owned subscription metadata from event-bus contracts."""
+        subcontract = ModelEventBusSubcontract.model_validate(
+            {
+                "version": {"major": 1, "minor": 0, "patch": 0},
+                "plugin_managed": True,
+                "subscribe_topics": ["onex.cmd.omnibase-infra.delegation-request.v1"],
+            }
+        )
+
+        assert subcontract.plugin_managed is True
 
     def test_event_bus_type_valid_values(self):
         """Test event_bus_type accepts valid values."""
