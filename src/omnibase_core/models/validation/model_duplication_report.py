@@ -10,10 +10,10 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from omnibase_core.validation.validator_utils import (
+from omnibase_core.models.validation.model_duplication_info import (
     ModelDuplicationInfo,
-    ModelProtocolInfo,
 )
+from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)

@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-topic-literal: per-event topic SoT declaration (OMN-13944)
 
 """Contract resolve completed event model.
 
@@ -28,7 +29,7 @@ __all__ = [
     "ModelContractResolveCompletedEvent",
 ]
 
-CONTRACT_RESOLVE_COMPLETED_EVENT = "onex.contract.resolve.completed"
+CONTRACT_RESOLVE_COMPLETED_EVENT = "onex.contract.resolve.completed"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944)
 
 
 class ModelContractResolveCompletedEvent(BaseModel):

@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
@@ -50,7 +51,6 @@ class TestModelCliCommandRegistryCreation:
         """Test registry initialization with provided data."""
         commands = {"test_cmd": self._create_test_command("test_cmd", "test_node")}
         registry = ModelCliCommandRegistry(
-            version=DEFAULT_VERSION,
             commands=commands,
             commands_by_node={"test_node": ["test_cmd"]},
             commands_by_category={"general": ["test_cmd"]},
@@ -62,6 +62,11 @@ class TestModelCliCommandRegistryCreation:
         assert len(registry.commands_by_node) == 1
         assert len(registry.commands_by_category) == 1
         assert len(registry.discovery_paths) == 1
+
+    def test_registry_rejects_extra_fields(self):
+        """Test registry rejects undeclared fields."""
+        with pytest.raises(ValidationError, match="extra_forbidden"):
+            ModelCliCommandRegistry(version=DEFAULT_VERSION)
 
     def _create_test_command(
         self, command_name: str, node_name: str, category: str = "general"

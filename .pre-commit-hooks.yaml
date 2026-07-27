@@ -30,6 +30,19 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-duplicate-registry-ids
+  name: Check for duplicate ids in config/registry YAML files
+  description: >
+    OMN-14401: reject config/registry YAML files declaring duplicate ids over a key that is not guaranteed
+    unique (e.g. two routing_tiers.yaml model entries sharing an id with overlapping use_for, or two prod_promotion_grants.yaml
+    entries sharing a grant_id). Checked registries are declared config-as-data in a manifest file (default
+    .duplicate-id-registries.yaml at repo root); a repo with no manifest is a no-op. Consumers pass --manifest
+    / --repo-root via args: and scope triggering via files: on the manifest + declared registry paths.
+  language: python
+  entry: python -m omnibase_core.validation.validator_duplicate_config_ids
+  pass_filenames: false
+  stages: [pre-commit]
+
 - id: check-local-paths-compute
   name: Check for local path references (COMPUTE node over the bus)
   description: >
@@ -380,6 +393,111 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-no-utcnow
+  name: No datetime.utcnow() Usage (OMN-14656)
+  description: >
+    Reject datetime.utcnow() / datetime.datetime.utcnow() (any ast.Attribute with attr == "utcnow") —
+    timezone-naive timestamps cause clock-skew bugs when compared against timezone-aware datetimes from
+    Kafka or PostgreSQL. Ported from the CI gate at omniclaude/scripts/validation/validate_no_utcnow.py
+    (OMN-2592 Task 11) into a canonical two-node split (OMN-14656, revives OMN-2362): the AST scan itself
+    runs as a pure COMPUTE node (node_no_utcnow_check_compute) over explicit (path, source) pairs, and
+    the paired EFFECT node (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames)
+    invocation. Same node backs the pre-commit hook and any CI entrypoint — no separate implementation
+    to drift. Replace flagged usage with datetime.now(tz=timezone.utc) or datetime.now(UTC). No suppression
+    marker; timezone-naive timestamps are never acceptable.
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_utcnow_check_compute.runtime_no_utcnow_check
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-hardcoded-ip
+  name: No Hardcoded Internal IP Addresses (OMN-14659)
+  description: >
+    Reject hardcoded internal IP address literals (192.168.x.x, 10.x.x.x, 172.16-31.x.x, optionally http(s)-prefixed
+    and port-suffixed) in Python and YAML source. Ported from the CI gate at omniclaude/scripts/validation/validate_no_hardcoded_ip.py
+    into the node_no_utcnow_check_compute two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the line
+    scan itself runs as a pure COMPUTE node (node_no_hardcoded_ip_check_compute) over explicit (path,
+    source) pairs, and the paired EFFECT node (node_source_file_gather_effect) owns the filesystem walk
+    for full-tree (no-filenames) invocation. Same node backs the pre-commit hook and any CI entrypoint.
+    All endpoints must be configured via environment variables. Suppress a justified exception with: #
+    onex-allow-internal-ip
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check
+  types_or: [python, yaml]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-direct-kafka-producer
+  name: No Direct Kafka Producer Usage (OMN-14659)
+  description: >
+    Reject direct Kafka producer client usage (AIOKafkaProducer, KafkaProducer, confluent_kafka, aiokafka
+    via import, bare-name usage, or attribute access) outside the shared publisher layer. Ported from
+    the CI gate at omniclaude/scripts/validation/validate_no_direct_kafka_producer.py into the node_no_utcnow_check_compute
+    two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the AST scan itself runs as a pure COMPUTE
+    node (node_no_direct_kafka_producer_check_compute) over explicit (path, source) pairs, and the paired
+    EFFECT node (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames)
+    invocation. Same node backs the pre-commit hook and any CI entrypoint. Route through the shared publisher
+    abstraction (e.g. emit_via_daemon()) instead.
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.runtime_no_direct_kafka_producer_check
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-env-fallbacks
+  name: No Localhost/Hardcoded-Endpoint Fallbacks (OMN-14659)
+  description: >
+    Reject localhost/hardcoded-endpoint fallback defaults (os.environ.get / os.getenv defaults, Pydantic
+    Field defaults, bootstrap_servers literals, shell ${VAR:-...} expansions) in Python and shell source.
+    Ported from the canonical unified CI gate at omniclaude/scripts/validate_no_env_fallbacks.py into
+    the node_no_utcnow_check_compute two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the line scan
+    itself runs as a pure COMPUTE node (node_no_env_fallbacks_check_compute) over explicit (path, source)
+    pairs, and the paired EFFECT node (node_source_file_gather_effect) owns the filesystem walk for full-tree
+    (no-filenames) invocation. Same node backs the pre-commit hook and any CI entrypoint. Replace with
+    os.environ["VAR"] (fail-fast, no default) or raise explicitly. Suppress a justified exception with:
+    # fallback-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check
+  types_or: [python, shell]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-raw-sqlite3
+  name: No Raw sqlite3.connect() Outside Adapters (OMN-14659)
+  description: >
+    Reject raw sqlite3.connect() calls outside *_adapter.py definitions. Ported from the CI gate at omniclaude/scripts/validation/validate_no_raw_sqlite3.py
+    into the node_no_utcnow_check_compute two-node COMPUTE/EFFECT pattern (OMN-14656/OMN-14659): the AST
+    scan itself runs as a pure COMPUTE node (node_no_raw_sqlite3_check_compute) over explicit (path, source)
+    pairs, and the paired EFFECT node (node_source_file_gather_effect) owns the filesystem walk for full-tree
+    (no-filenames) invocation. Same node backs the pre-commit hook and any CI entrypoint. Database access
+    must go through an injected adapter. Suppress a legitimate adapter-bootstrap call site with: # di-ok
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-no-io-outside-effects
+  name: No I/O Outside EFFECT Node Packages (OMN-14694/OMN-14662)
+  description: >
+    Reject forbidden I/O surfaces inside .py modules that sit in a NON-EFFECT node package: database-driver
+    imports (sqlite3, aiosqlite, psycopg, psycopg2, asyncpg, sqlalchemy), network/HTTP clients (httpx,
+    requests, aiohttp, urllib3, socket, urllib.request), subprocess execution, git invocation, Linear
+    API access, filesystem writes (open write-mode, os/shutil mutators, pathlib.Path write methods), and
+    direct event-bus / infra-adapter instantiation. Unlike the universal OMN-14659 arch lints, this rule
+    is archetype-keyed: the pure COMPUTE node (node_no_io_outside_effects_check_compute) keys off each
+    node's declared archetype (contract.yaml node_type / descriptor.node_archetype) and only scans the
+    modules co-located with a non-EFFECT contract — EFFECT is the only I/O-permitted archetype. The paired
+    EFFECT node (node_source_file_gather_effect) owns the filesystem walk for full-tree (no-filenames)
+    invocation; the same COMPUTE node backs this pre-commit hook and the CI gate. Only EFFECT nodes may
+    perform I/O. Suppress a proven-legitimate exception with: # io-ok: <reason>
+  language: python
+  entry: python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check
+  types_or: [python, yaml]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-enum-governance
   name: ONEX Enum Governance Validation (OMN-13287)
   description: >
@@ -438,6 +556,46 @@
     contract. Consumers reference this hook by id to enforce the canonical 3-primitives architecture (OMN-12525).
   language: python
   entry: python -m omnibase_core.validators.no_plugin_daemon_classes
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: pydantic-extra-forbid
+  name: Pydantic extra="forbid" ratchet (OMN-14515)
+  description: >
+    Asserts the POSITIVE: every Pydantic model must resolve to an explicit extra="forbid" (inheriting
+    it from a compliant base counts). ABSENCE IS A VIOLATION — Pydantic's default for an undeclared extra
+    is "ignore", which SILENTLY DROPS unknown fields, so a model with no model_config at all is already
+    broken; a validator that only greps for the literal string extra="ignore" is vacuous. Four confirmed
+    live silent-data-loss bugs came from this exact shape (OMN-14490/14506/14513/14514). Resolution prefers
+    real runtime introspection of cls.model_config (Pydantic merges config down the MRO itself), falling
+    back to static AST for unimportable files. Ratchet, not allowlist: NEW models fail outright; --enforce-modified
+    <ref|:staged> also fails a BASELINED model whose body the diff touched; --check-stale forces the baseline
+    count down. The only suppression is an EXPIRING waiver keyed to an open ticket + PR — an expired waiver
+    is a hard failure. Consumers pass their own baseline + scan root via args, e.g. args: [--check-stale,
+    --baseline, .onex_ratchets/extra_forbid_baseline.yaml, --waivers, .onex_ratchets/extra_forbid_waivers.yaml,
+    src/<pkg>] plus a files: filter to scope the trigger. NOTE: prefer wiring this with language: system
+    + `uv run` in the consuming repo, so the validator runs in that repo's venv and can import its models
+    for runtime introspection; under this isolated `language: python` env the consuming repo is not importable
+    and the static AST fallback is used instead.
+  language: python
+  entry: python -m omnibase_core.validators.pydantic_extra_forbid
+  types: [python]
+  pass_filenames: false
+  stages: [pre-commit]
+
+- id: no-noncanonical-lifecycle-classes
+  name: Non-canonical lifecycle-class ratchet (OMN-14350)
+  description: >
+    Ratchet gate (OMN-14350) flagging CamelCase classes whose name carries a non-canonical lifecycle type-word
+    (Service, Engine, Adapter, Router, Daemon, Manager, Runner, Registry, Controller, Server, Client).
+    Blocks any NEW hard-fail class outside the consuming repo's frozen allowlist; the allowlist is a ratchet
+    that may only shrink. Consumers reference this hook by id and pass their own baseline + scan root
+    via args — e.g. args: [--allowlist, .onex_ratchets/noncanonical_class_allowlist.yaml, src/<pkg>] —
+    plus files: to scope the trigger. Enforces the canonical 3-primitives architecture (CONTRACT/NODE/HANDLER,
+    OMN-12525).
+  language: python
+  entry: python -m omnibase_core.validators.no_noncanonical_lifecycle_classes
   types: [python]
   pass_filenames: true
   stages: [pre-commit]
@@ -549,5 +707,23 @@
   language: python
   entry: python -m omnibase_core.validators.projection_exposure_drift
   files: (^|/)(contract\.yaml|migrations/.*\.sql)$
+  pass_filenames: false
+  stages: [pre-commit]
+
+- id: no-unguarded-git-subprocess
+  name: Block unguarded git subprocess calls in tests (OMN-14891)
+  description: >
+    OMN-14891: reject a subprocess call in tests/ whose argv starts with "git" unless it passes an env=
+    that provably drops GIT_DIR, GIT_WORK_TREE, GIT_INDEX_FILE, GIT_COMMON_DIR, GIT_OBJECT_DIRECTORY,
+    and GIT_ALTERNATE_OBJECT_DIRECTORIES. Git exports those into every hook environment and they OVERRIDE
+    both `cwd=` and `git -C`, so a tmp_path fixture running under a pre-push hook mutates the REAL invoking
+    worktree instead. `git config --global`/`--system` in tests/ is rejected outright. Consumers should
+    also install the session-level os.environ scrub in their top-level tests/conftest.py (see omnibase_core.validators.no_unguarded_git_subprocess.strip_git_location_env),
+    which is the primary remedy; this hook prevents reintroduction. Precedent: OMN-14744 (per-file fix
+    that did not hold).
+  language: system
+  entry: python -m omnibase_core.validators.no_unguarded_git_subprocess tests
+  types: [python]
+  files: ^tests/.*\.py$
   pass_filenames: false
   stages: [pre-commit]

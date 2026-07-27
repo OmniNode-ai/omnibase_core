@@ -133,6 +133,9 @@ mypy_*.txt
 # Ruff linter cache
 .ruff_cache/
 
+# import-linter / grimp import-graph cache (OMN-14216)
+.import_linter_cache/
+
 # =============================================================================
 # IDE & EDITOR SETTINGS
 # =============================================================================

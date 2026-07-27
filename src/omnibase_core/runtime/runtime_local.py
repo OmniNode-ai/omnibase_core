@@ -25,7 +25,7 @@ import inspect
 import json
 import logging
 import uuid
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
@@ -78,6 +78,32 @@ _KAFKA_EVENT_BUS_ENTRY_POINT: str = "event_bus_kafka"
 # (no override) both resolve to ``EventBusInmemory``; ``kafka`` resolves via
 # the ``onex.backends`` entry-point group.
 SUPPORTED_EVENT_BUS_VALUES: frozenset[str] = frozenset({"inmemory", "kafka"})
+
+# Handler-result ``status`` values that unambiguously mean the run failed.
+# Effect/reducer handlers report failures in-band by returning an error-shaped
+# response envelope (``status="error"`` plus an ``error_message``) rather than
+# raising — e.g. the "Handler not initialized" envelope every init/execute
+# handler emits before ``initialize()`` has run. Before OMN-14298 the classifier
+# recognised only ``status == "failure"``, so such runs were misclassified
+# COMPLETED (exit 0) — a false green over a broken run.
+_FAILURE_STATUS_VALUES: frozenset[str] = frozenset({"failure", "failed", "error"})
+
+# Handler-result ``status`` values that unambiguously mean the run succeeded.
+# ``no_results`` in particular is a successful query that simply matched nothing
+# and must never be classified FAILED. An explicit success status short-circuits
+# the error-attribute heuristic below.
+_SUCCESS_STATUS_VALUES: frozenset[str] = frozenset(
+    {
+        "success",
+        "ok",
+        "completed",
+        "complete",
+        "no_results",
+        "healthy",
+        "passed",
+        "pass",
+    }
+)
 
 RawWorkflowMap = dict[str, object]
 RuntimeCallable = Callable[..., object]
@@ -239,10 +265,7 @@ class RuntimeLocal:
         status = payload.get("status", "success")
         logger.info("RuntimeLocal: terminal event received (status=%s)", status)
         self._terminal_payload = payload
-        if status == "failure":
-            self._result = EnumWorkflowResult.FAILED
-        else:
-            self._result = EnumWorkflowResult.COMPLETED
+        self._result = self._classify_result(payload)
 
         self._terminal_received.set()
 
@@ -377,6 +400,82 @@ class RuntimeLocal:
         )
         return None, ""
 
+    @staticmethod
+    def _handler_reports_initialized(handler_instance: object) -> bool:
+        """Return True if the handler already reports itself initialized.
+
+        Honors a public ``is_initialized`` property first, then the private
+        ``_initialized`` flag the ONEX init/execute handlers set. Anything else
+        (attribute absent, non-bool) is treated as "not initialized" so the
+        guard errs toward calling ``initialize()``.
+        """
+        is_init = getattr(handler_instance, "is_initialized", None)
+        if isinstance(is_init, bool):
+            return is_init
+        return getattr(handler_instance, "_initialized", None) is True
+
+    async def _ensure_handler_initialized(self, handler_instance: object) -> None:
+        """Call ``handler.initialize()`` before invoking its entry method (OMN-14298).
+
+        ONEX effect/reducer handlers use an ``initialize()`` / ``execute()``
+        lifecycle: ``execute()`` returns a "Handler not initialized" error
+        envelope until ``initialize()`` has run. RuntimeLocal previously invoked
+        the fallback ``execute()`` (or ``run()``) method WITHOUT ``initialize()``,
+        so every such node returned a not-initialized error that the runtime then
+        misclassified as COMPLETED — the systemic false-green this fix closes.
+
+        The call is guarded and idempotent:
+        - no-op when the handler declares no callable ``initialize``
+        - no-op when the handler already reports itself initialized
+          (``is_initialized`` / ``_initialized``); the handlers also guard
+          internally, so a redundant call is harmless
+        - no-op (with a warning) when ``initialize()`` declares required
+          parameters the runtime cannot supply (e.g. a graph ``connection_uri``);
+          ``execute()`` then surfaces the real not-initialized state, which
+          ``_classify_result`` maps to FAILED rather than a false COMPLETED.
+
+        Any exception raised *inside* a zero-argument ``initialize()`` propagates
+        so the run is recorded FAILED (via ``run_async``'s handler) rather than
+        silently green.
+        """
+        initialize = getattr(handler_instance, "initialize", None)
+        if not callable(initialize):
+            return
+        if self._handler_reports_initialized(handler_instance):
+            return
+
+        try:
+            sig = inspect.signature(initialize)
+        except (TypeError, ValueError):
+            sig = None
+        if sig is not None:
+            required = [
+                param.name
+                for param in sig.parameters.values()
+                if param.kind
+                in (
+                    inspect.Parameter.POSITIONAL_ONLY,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    inspect.Parameter.KEYWORD_ONLY,
+                )
+                and param.default is inspect.Parameter.empty
+            ]
+            if required:
+                logger.warning(
+                    "RuntimeLocal: %s.initialize() requires parameter(s) %s the "
+                    "runtime cannot supply — skipping initialize(); execute() will "
+                    "report its real lifecycle state",
+                    type(handler_instance).__name__,
+                    required,
+                )
+                return
+
+        logger.info(
+            "RuntimeLocal: calling %s.initialize() before invocation",
+            type(handler_instance).__name__,
+        )
+        await self._maybe_await(initialize())
+
     async def _invoke_handler_method(
         self,
         method: RuntimeCallable,
@@ -389,7 +488,12 @@ class RuntimeLocal:
         ``handle()`` receives a single positional payload argument.
         ``run_full_cycle()`` receives a typed command model as its first arg.
         ``run()`` and ``execute()`` are tried with payload first, then without.
+
+        Handlers exposing an ``initialize()`` lifecycle are initialized first via
+        ``_ensure_handler_initialized`` (OMN-14298) so ``execute()`` does not
+        return a spurious "Handler not initialized" error.
         """
+        await self._ensure_handler_initialized(handler_instance)
         try:
             result = await self._maybe_await(method(initial_payload))
         except TypeError as original_exc:
@@ -708,6 +812,44 @@ class RuntimeLocal:
 
         return errors
 
+    def _load_published_events_map(self) -> dict[str, str]:
+        """Parse the contract's top-level ``published_events`` class -> topic map.
+
+        Mirrors ``omnibase_infra`` ``load_published_events_map`` but reads the
+        already-loaded contract dict (no file re-read): each entry is
+        ``{event_type: <short class name>, topic: <topic>}``. Malformed entries are
+        skipped; the map is validated for injectivity by the caller at boot.
+        Returns ``{}`` when the contract declares no ``published_events``.
+        """
+        raw = self._contract.get("published_events")
+        if not isinstance(raw, list):
+            return {}
+        result: dict[str, str] = {}
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            event_type = entry.get("event_type")
+            topic = entry.get("topic")
+            if (
+                isinstance(event_type, str)
+                and event_type
+                and isinstance(topic, str)
+                and topic
+            ):
+                prior_topic = result.get(event_type)
+                if prior_topic is not None and prior_topic != topic:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                        message=(
+                            "published_events declares event_type "
+                            f"{event_type!r} twice with different topics "
+                            f"({prior_topic!r} and {topic!r}); reconcile the "
+                            "duplicate entry."
+                        ),
+                    )
+                result[event_type] = topic
+        return result
+
     def _resolve_routing_entries(
         self,
         routing: RawWorkflowMap,
@@ -896,8 +1038,12 @@ class RuntimeLocal:
         from omnibase_core.protocols.runtime.protocol_local_runtime_callable_target import (
             ProtocolLocalRuntimeCallableTarget,
         )
+        from omnibase_core.runtime.runtime_fanout_resolver import (
+            assert_published_events_injective,
+        )
         from omnibase_core.runtime.runtime_local_adapter import (
             LocalRuntimeBusAdapter,
+            multi_event_publish_seam_enabled,
         )
 
         routing = self._as_workflow_map(self._contract.get("handler_routing", {}))
@@ -906,6 +1052,11 @@ class RuntimeLocal:
             event_bus_spec.get("subscribe_topics", [])
         )
         publish_topics = self._as_string_list(event_bus_spec.get("publish_topics", []))
+        terminal_topic = self._contract.get("terminal_event")
+        if not isinstance(terminal_topic, str) or not terminal_topic:
+            logger.error("RuntimeLocal: event-driven workflow missing terminal_event")
+            self._result = EnumWorkflowResult.FAILED
+            return
         if not subscribe_topics:
             logger.error(
                 "RuntimeLocal: event-driven mode requires non-empty "
@@ -942,6 +1093,19 @@ class RuntimeLocal:
         # --- 4. Wire adapters to bus ---
         unsubscribe_handles: list[UnsubscribeCallback] = []
         self._handlers_wired = [e.handler_name for e in resolved_entries]
+
+        # OMN-14403 §6ii: load the contract's published_events class -> topic map
+        # (when declared) so a def-B fan-out / multi-topic handler's emitted class
+        # resolves its own publish topic instead of the single per-entry
+        # output_topic, and assert the map is injective at boot. Default-OFF seam:
+        # when OFF this map is loaded but unused (single output_topic path).
+        published_events = self._load_published_events_map()
+        if published_events:
+            assert_published_events_injective(
+                published_events,
+                context=str(self._contract.get("name", "<workflow>")),
+            )
+        multi_event_seam_enabled = multi_event_publish_seam_enabled()
 
         def _fail_callback() -> None:
             self._result = EnumWorkflowResult.FAILED
@@ -980,6 +1144,15 @@ class RuntimeLocal:
 
                 return _cb
 
+            def _make_result_cb(output_topic: str) -> Callable[[object], None] | None:
+                if output_topic != terminal_topic:
+                    return None
+
+                def _cb(result: object) -> None:
+                    self._handler_result = result
+
+                return _cb
+
             adapter = LocalRuntimeBusAdapter(
                 handler=cast("ProtocolLocalRuntimeCallableTarget", handler_instance),
                 handler_name=entry.handler_name,
@@ -987,6 +1160,9 @@ class RuntimeLocal:
                 output_topic=entry.output_topic or None,
                 bus=bus,
                 on_error=_make_fail_cb(entry.handler_name),
+                on_result=_make_result_cb(entry.output_topic),
+                published_events=published_events,
+                multi_event_seam_enabled=multi_event_seam_enabled,
             )
 
             if not entry.input_topic:
@@ -1005,7 +1181,7 @@ class RuntimeLocal:
             )
             unsubscribe_handles.append(unsub)
 
-        # --- 5. Subscribe to terminal (publish) topics ---
+        # --- 5. Subscribe to the declared terminal event only ---
         async def _on_terminal_msg(msg: ProtocolLocalRuntimeMessage) -> None:
             decoded: object = (
                 json.loads(msg.value) if isinstance(msg.value, bytes) else {}
@@ -1013,13 +1189,12 @@ class RuntimeLocal:
             payload = decoded if isinstance(decoded, dict) else {}
             self._on_terminal_event(cast("RawWorkflowMap", payload))
 
-        for pub_topic in publish_topics:
-            unsub = await bus.subscribe(
-                pub_topic,
-                on_message=_on_terminal_msg,
-                group_id="runtime-local-terminal",
-            )
-            unsubscribe_handles.append(unsub)
+        unsub = await bus.subscribe(
+            terminal_topic,
+            on_message=_on_terminal_msg,
+            group_id="runtime-local-terminal",
+        )
+        unsubscribe_handles.append(unsub)
 
         # --- 6. Build and publish initial payload ---
         correlation_id = uuid.uuid4()
@@ -1701,17 +1876,51 @@ class RuntimeLocal:
                 return None
 
     @staticmethod
+    def _result_field(result_obj: object, field_name: str) -> object | None:
+        """Read a status/error field from dict-style or attribute-style envelopes."""
+        if isinstance(result_obj, Mapping):
+            return result_obj.get(field_name)
+        return getattr(result_obj, field_name, None)
+
+    @staticmethod
     def _classify_result(result_obj: object | None) -> EnumWorkflowResult:
-        """Inspect handler return value to determine success or failure."""
+        """Inspect a handler return value to determine success or failure.
+
+        A handler that *returns* an error-shaped envelope — rather than raising —
+        must still be classified FAILED. Effect/reducer handlers never raise from
+        ``execute()``; they return a response with ``status="error"`` and an
+        ``error_message`` (e.g. the "Handler not initialized" or a downstream
+        connection failure). Before OMN-14298 only ``status == "failure"`` was
+        detected, so those runs surfaced a false-green COMPLETED / exit 0.
+
+        Decision order:
+        1. ``None`` → COMPLETED (compute handlers that return nothing succeeded).
+        2. positive ``cycles_failed`` → FAILED.
+        3. ``status`` in :data:`_FAILURE_STATUS_VALUES` → FAILED.
+        4. ``status`` in :data:`_SUCCESS_STATUS_VALUES` → COMPLETED (an explicit
+           success — notably ``no_results`` — short-circuits the heuristic below).
+        5. a populated ``error_message`` / ``error`` string → FAILED.
+        6. otherwise → COMPLETED.
+        """
         if result_obj is None:
             return EnumWorkflowResult.COMPLETED
         # Check for common failure indicators on result objects
-        cycles_failed = getattr(result_obj, "cycles_failed", None)
+        cycles_failed = RuntimeLocal._result_field(result_obj, "cycles_failed")
         if isinstance(cycles_failed, int | float) and cycles_failed > 0:
             return EnumWorkflowResult.FAILED
-        status = getattr(result_obj, "status", None)
-        if status == "failure":
-            return EnumWorkflowResult.FAILED
+        status = RuntimeLocal._result_field(result_obj, "status")
+        if isinstance(status, str):
+            normalized = status.strip().lower()
+            if normalized in _FAILURE_STATUS_VALUES:
+                return EnumWorkflowResult.FAILED
+            if normalized in _SUCCESS_STATUS_VALUES:
+                return EnumWorkflowResult.COMPLETED
+        # No decisive status — a populated error message/attribute is an
+        # unambiguous failure signal even when the handler omits a status field.
+        for attr_name in ("error_message", "error"):
+            value = RuntimeLocal._result_field(result_obj, attr_name)
+            if isinstance(value, str) and value.strip():
+                return EnumWorkflowResult.FAILED
         return EnumWorkflowResult.COMPLETED
 
     def _write_state(self) -> None:

@@ -11,6 +11,8 @@ import sys
 
 import pytest
 
+from tests.unit.conftest import isolated_sys_modules
+
 
 @pytest.mark.unit
 class TestModelLazyContractLoader:
@@ -370,28 +372,22 @@ class TestLazyLoadingBehavior:
     def test_no_imports_at_module_level(self):
         """Test that no contract imports occur at module import time."""
 
-        # Remove any cached contract modules
-        modules_to_remove = [
-            key
-            for key in list(sys.modules.keys())
-            if "model_contract_" in key and "model_lazy_imports" not in key
-        ]
-        for mod in modules_to_remove:
-            del sys.modules[mod]
+        with isolated_sys_modules(
+            lambda key: "model_contract_" in key and "model_lazy_imports" not in key
+        ):
+            # Import the lazy imports module
 
-        # Import the lazy imports module
+            # Verify no contract modules were imported
+            contract_modules = [
+                key
+                for key in sys.modules
+                if "model_contract_" in key and "model_lazy_imports" not in key
+            ]
 
-        # Verify no contract modules were imported
-        contract_modules = [
-            key
-            for key in sys.modules
-            if "model_contract_" in key and "model_lazy_imports" not in key
-        ]
-
-        # Should be empty (no imports at module level)
-        assert len(contract_modules) == 0, (
-            f"Contract modules imported at module level: {contract_modules}"
-        )
+            # Should be empty (no imports at module level)
+            assert len(contract_modules) == 0, (
+                f"Contract modules imported at module level: {contract_modules}"
+            )
 
     def test_imports_occur_only_on_demand(self):
         """Test that imports only occur when contracts are actually requested."""
@@ -449,30 +445,24 @@ class TestPerformanceOptimization:
         """Test that lazy loading defers import penalty until first access."""
         import time
 
-        # Clear cached modules
-        modules_to_remove = [
-            key
-            for key in list(sys.modules.keys())
-            if "model_contract_" in key and "model_lazy_imports" not in key
-        ]
-        for mod in modules_to_remove:
-            del sys.modules[mod]
+        with isolated_sys_modules(
+            lambda key: "model_contract_" in key and "model_lazy_imports" not in key
+        ):
+            # Import lazy imports module - should be fast
+            start = time.perf_counter()
 
-        # Import lazy imports module - should be fast
-        start = time.perf_counter()
+            import_time = (time.perf_counter() - start) * 1000
 
-        import_time = (time.perf_counter() - start) * 1000
+            # Verify no contract modules loaded yet
+            contract_modules = [
+                key
+                for key in sys.modules
+                if "model_contract_" in key and "model_lazy_imports" not in key
+            ]
 
-        # Verify no contract modules loaded yet
-        contract_modules = [
-            key
-            for key in sys.modules
-            if "model_contract_" in key and "model_lazy_imports" not in key
-        ]
-
-        assert len(contract_modules) == 0, (
-            f"Import cascade detected: {contract_modules}"
-        )
+            assert len(contract_modules) == 0, (
+                f"Import cascade detected: {contract_modules}"
+            )
 
     def test_functools_cache_reduces_repeated_loading(self):
         """Test that functools.cache reduces repeated loading overhead."""

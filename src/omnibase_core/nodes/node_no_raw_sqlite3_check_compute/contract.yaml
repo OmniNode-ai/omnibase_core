@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the no_raw_sqlite3_check COMPUTE node.
+# AST-scans explicit (path, source) pairs for raw sqlite3.connect() calls outside
+# adapter definitions, reproducing the CI gate at
+# omniclaude/scripts/validation/validate_no_raw_sqlite3.py byte-for-byte per finding.
+#
+# See: OMN-14659 — WS8 fan-out (convert-clean generic omniclaude arch validators)
+
+name: node_no_raw_sqlite3_check_compute
+node_id: node_no_raw_sqlite3_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  AST-scans a set of explicit (path, source) pairs for raw sqlite3.connect() calls
+  (via `import sqlite3; sqlite3.connect(...)` or `from sqlite3 import connect [as alias]`),
+  skipping files whose name ends in _adapter.py (the authorised call site) and call sites
+  carrying a # di-ok annotation, and returns an OMN-2362 ValidationReport with a
+  per-violation finding reproducing the arch-no-raw-sqlite3 CI gate's message text
+  byte-for-byte. Pure — no filesystem access, no clock, no global state. #magic___^_^___line
+input_model: omnibase_core.models.nodes.no_raw_sqlite3_check.model_no_raw_sqlite3_check_input.ModelNoRawSqlite3CheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNoRawSqlite3CheckCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

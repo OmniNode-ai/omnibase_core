@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 """
-Handler Routing Entry Model — canonical 5-field live shape (OMN-12547 S-1c).
+Handler Routing Entry Model — canonical live routing shape (OMN-12547 S-1c).
 
 Replaces the dead routing_key/handler_key shape with the live infra shape
 (OMN-7654). Each entry identifies a handler class reference plus optional
@@ -27,7 +27,7 @@ from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
 
 
 class ModelHandlerRoutingEntry(BaseModel):
-    """Single handler routing entry in the canonical 5-field live shape (OMN-12547)."""
+    """Single handler routing entry in the canonical live routing shape (OMN-12547)."""
 
     model_config = ConfigDict(
         frozen=True,
@@ -63,5 +63,19 @@ class ModelHandlerRoutingEntry(BaseModel):
             "(EVENT, COMMAND, or INTENT). Required for mixed-topic contracts so "
             "command handlers do not inherit the category of the contract's first "
             "subscribed topic."
+        ),
+    )
+    # dispatch-surface-test-ok: additive optional field; inert in omnibase_core (no entry.topic consumer here — routing_map_builder that reads it lives in a sibling repo and is covered by that repo's real-dispatch tests when RuntimeDispatch lands). Model round-trip is unit-tested. (OMN-14771)
+    topic: str | None = Field(
+        default=None,
+        description=(
+            "Optional per-entry subscribe topic that owns this route (OMN-14771). "
+            "When present, RuntimeDispatch route resolution "
+            "(routing_map_builder._resolve_owning_entry) uses this to map a single "
+            "entry to its owning topic instead of failing closed on topic-agnostic "
+            "multiplexed orchestrator entries. Additive and backward-compatible: "
+            "existing entries omit it and default to None, leaving the legacy "
+            "payload_type_match path (which resolves the topic from the contract's "
+            "subscribe_topics list) unaffected."
         ),
     )

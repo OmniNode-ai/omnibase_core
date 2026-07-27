@@ -40,7 +40,7 @@ from omnibase_core.enums import EnumWidgetType
 from omnibase_core.models.dashboard.model_status_item_config import (
     ModelStatusItemConfig,
 )
-from omnibase_core.validation.validator_hex_color import validate_hex_color_mapping
+from omnibase_core.utils.util_hex_color import validate_hex_color_mapping
 
 __all__ = ("ModelWidgetConfigStatusGrid",)
 

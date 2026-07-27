@@ -4,14 +4,17 @@
 """ValidatorRoutingAuthority — pre-commit CLI wrapper for the routing-authority gate.
 
 Thin EFFECT boundary: reads files from the filesystem and delegates to the pure
-COMPUTE handler ``NodeRoutingAuthorityCheckCompute``. The handler itself never
-reads the filesystem (COMPUTE purity constraint).
+check logic in ``omnibase_core.validation.checker_routing_authority``. That
+module never reads the filesystem itself (COMPUTE purity constraint) except
+via the explicit ``check_routing_authority_at_path`` I/O helper called here.
 
 This file replaces omnimarket/scripts/ci/check_routing_authority.py.
-The canonical logic now lives in:
+The canonical check logic now lives in:
+    omnibase_core.validation.checker_routing_authority
+It is also wrapped as a dispatchable COMPUTE node at:
     omnibase_core.nodes.node_routing_authority_check_compute.handler
 
-See: OMN-13306 (W6b), OMN-12821, OMN-12877, OMN-12883
+See: OMN-13306 (W6b), OMN-12821, OMN-12877, OMN-12883, OMN-3210 (OMN-14289)
 
 Suppression: add ``# contract-config-ok`` on an exempted line.
 
@@ -37,9 +40,13 @@ import sys
 from pathlib import Path
 from typing import cast
 
-from omnibase_core.nodes.node_routing_authority_check_compute.handler import (
+from omnibase_core.models.validation.model_residue_entry import (
     ModelResidueEntry,
+)
+from omnibase_core.models.validation.model_routing_authority_check_output import (
     ModelRoutingAuthorityCheckOutput,
+)
+from omnibase_core.validation.checker_routing_authority import (
     check_routing_authority_at_path,
 )
 

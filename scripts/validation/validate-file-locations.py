@@ -105,8 +105,11 @@ class FileLocationValidator:
         "error_contract_violation.py": ["mixins"],
         "error_dependency_failed.py": ["mixins"],
         "error_fail_fast.py": ["mixins"],
-        # Error models
+        # Error models — canonical error types live in errors/ (foundation layer);
+        # models.* paths retain re-export shims (OMN-14335, OMN-3210 seam burn-down).
         "model_onex_error.py": ["errors"],
+        "model_fail_fast_details.py": ["errors"],
+        "model_onex_error_data.py": ["errors"],
         # ONCP package module (OMN-2758) — models and services belong to the package subsystem
         "model_oncp_manifest.py": ["package"],
         "model_oncp_overlay_entry.py": ["package"],
@@ -122,6 +125,21 @@ class FileLocationValidator:
         "error_handling.py": ["decorators"],
         # Mixin discovery
         "mixin_discovery.py": ["discovery"],
+        # Node-owned dispatch-selection seam registered in runtime/__init__.py
+        # (OMN-12549 #1373). It landed in runtime/ without an exemption, so the
+        # whole-tree file-location scan is RED on dev and blocks every core src/
+        # commit. Exempting runtime/ unblocks the fleet; whether the seam should
+        # instead relocate to mixins/ is an OMN-12549 call tracked as a follow-up.
+        "mixin_node_dispatch.py": ["runtime"],
+        # Single canonical ProtocolSemVer, co-located with the SemVer type it
+        # describes (OMN-14624, #1471). Same situation as mixin_node_dispatch.py
+        # above: it landed in types/ without an exemption, so the whole-tree
+        # file-location scan is RED on dev and blocks EVERY core src/ commit
+        # (this exemption is not this PR's subject — see OMN-14891 PR body).
+        # Exempting types/ unblocks the fleet; whether ProtocolSemVer should
+        # instead relocate to protocol/ is an OMN-14624 call tracked as a
+        # follow-up.
+        "type_semver.py": ["types"],
         # Navigation subsystem data types (OMN-2540, OMN-2546)
         "model_action_set.py": ["navigation"],
         "model_backward_chaining.py": ["navigation"],

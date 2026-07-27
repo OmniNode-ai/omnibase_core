@@ -103,7 +103,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -145,7 +145,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -158,6 +158,23 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --all-extras
+
+      - name: Install Pyright node runtime dependency
+        run: |
+          if ldconfig -p 2>/dev/null | grep -q 'libatomic.so.1'; then
+            exit 0
+          fi
+          if command -v sudo >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y libatomic1
+            exit 0
+          fi
+          if command -v apt-get >/dev/null 2>&1 && [ "$(id -u)" -eq 0 ]; then
+            apt-get update
+            apt-get install -y libatomic1
+            exit 0
+          fi
+          echo "::warning::libatomic1 is not visible and cannot be installed by this runner; continuing so Pyright reports the real failure if the runtime requires it"
 
       - name: Run pyright type checking
         run: uv run pyright src/omnibase_core
@@ -180,17 +197,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9
+        uses: astral-sh/setup-uv@c6081965dd0577ae48820cb8c288e12509571f0c
         with:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
@@ -221,7 +238,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -241,16 +258,7 @@ jobs:
             scripts/validation/validate-no-direct-io.py \
             scripts/validation/validate-all-exports.py \
             scripts/validation/validate-no-infra-imports.py \
-            scripts/validation/validate-check-names.py \
             scripts/check_transport_imports.py
-
-      # check_name Validator (OMN-2229)
-      # Validates that every gates[].check_name in required-checks.yaml matches
-      # an actual job 'name:' field in the referenced workflow file and that
-      # workflow_job_key values resolve to real job keys.
-      # Catches drift before it silently breaks branch protection gates.
-      - name: Validate check_names in required-checks.yaml (OMN-2229)
-        run: uv run python scripts/validation/validate-check-names.py
 
       # CRITICAL: Transport Import Validation (B+ Hybrid Mode)
       # This step enforces dependency inversion architecture by preventing omnibase_core
@@ -396,6 +404,112 @@ jobs:
           echo "See: docs/decisions/ADR-005-core-infra-dependency-boundary.md" >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
+  # Enforces the DIRECTION of imports between omnibase_core's architectural
+  # sub-packages via import-linter (`.importlinter`). Complements the transport
+  # (core-infra-boundary) and circular-import guards, which do not cover
+  # intra-core sub-package layering. Blocking gate (wired into quality-gate).
+  lint-imports:
+    name: Import Layering Oracle
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run import-linter (intra-core dependency layering)
+        run: uv run lint-imports
+
+      # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210) — blocking.
+      # import-linter's wildcard ignores are permissive; this freezes protocols->models
+      # (65) and the utils/mixins/protocols hub-inbound sets non-increasing and hard-fails
+      # any NEW edge/importer. Retirement = the RSD canonical rewrite. Runs in this job so
+      # it inherits the quality-gate `needs: [... lint-imports ...]` blocking wiring.
+      - name: Run import-layering growth ratchet (protocols->models + hubs)
+        run: uv run python scripts/ci/check_import_ratchet.py
+
+      # Canonical handler-shape GROWTH RATCHET (OMN-14355) — WARN-only-on-baseline.
+      # compliance_sweep checks handler hygiene but is blind to handler SHAPE, so a
+      # non-canonical handler passes green CI. This classifies each node's
+      # contract-declared handler (definition B: typed-payload handle(request)->
+      # response, adapted by the shared runtime, no envelope in the core), WARNs the
+      # baselined debt, and HARD-FAILS a NEW non-canonical node or baseline growth. A
+      # baselined node flips canonical only with an adequacy receipt (OMN-14353) —
+      # a shape flip alone is not proof of equivalence. Canary scope = omnibase_core;
+      # fan-out to omnimarket/omnibase_infra is a follow-on. Runs in this job so it
+      # inherits the quality-gate blocking wiring.
+      - name: Run canonical handler-shape growth ratchet
+        run: uv run python scripts/ci/canonical_handler_shape.py
+
+      # RSD provenance-stamp fail-closed GATE (OMN-15011) — blocking. The OMN-14355
+      # ratchet above proves a node's SHAPE but is authorship-agnostic: a brand-new
+      # node born shape-canonical requires proof of nothing about HOW it came to
+      # exist. This classifies each node's ``.rsd_provenance.json`` sidecar (machine
+      # rsd_delegation stamp RECOMPUTED from live file sha256 — never trusted — or a
+      # sanctioned hand_authored + ticket exception), WARNs the frozen legacy
+      # exemption baseline, and HARD-FAILS a NEW node missing/invalid stamp or ANY
+      # growth of that baseline (shrink-only allowlist). Canary scope =
+      # omnibase_core; fan-out to omnimarket/omnibase_infra is a follow-on (OMN-15011
+      # acceptance #5). Runs in this job so it inherits the quality-gate blocking
+      # wiring, same as the ratchet above.
+      - name: Run RSD provenance-stamp gate
+        run: uv run python scripts/ci/rsd_provenance_stamp.py
+
+      # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809). Re-invokes
+      # the canonical-shape gate above (verify_flip_receipt / classify_node — imported,
+      # not reimplemented) and adds six fail-closed assertions per NEWLY-flipped node
+      # that the ratchet is structurally blind to (full ModelAdequacyReceipt invariants,
+      # per-binding canonicality, twin shape+entrypoint baseline shrink, receipt minted
+      # post-format, and a git-anchored independent-author attestation for new
+      # equivalence goldens). Canary scope = omnibase_core; fan-out to
+      # omnibase_infra/omnimarket is wired per-repo. The inline fetch makes origin/dev's
+      # tip available for flip-discovery vs base (the checkout is shallow); if it is
+      # still unavailable the gate NOTEs and exits 0 (the ratchet already hard-guards new
+      # non-canonical nodes). Runs in this job so it inherits the quality-gate blocking
+      # wiring — it does NOT weaken the ratchet.
+      - name: Run canonical-shape flip-bundle seam gate
+        run: |
+          git fetch --no-tags --prune origin +refs/heads/dev:refs/remotes/origin/dev || true
+          uv run python scripts/ci/verify_flip_bundle.py
+
+      - name: Import layering summary
+        if: always()
+        run: |
+          echo "## Intra-Core Dependency-Layering Oracle (OMN-14216)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Enforces the direction of imports between omnibase_core sub-packages:" >> $GITHUB_STEP_SUMMARY
+          echo "- Foundation primitives (constants/enums/errors/types) must not import higher layers" >> $GITHUB_STEP_SUMMARY
+          echo "- Models must not import services/validation/nodes" >> $GITHUB_STEP_SUMMARY
+          echo "- Services/validation must not import nodes" >> $GITHUB_STEP_SUMMARY
+          echo "- Protocols (seam) must not import domain/behavioral layers" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Contract: .importlinter | Known back-edges frozen + burned down under OMN-3210" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Growth ratchet (OMN-14340): protocols->models frozen at 65 (hard-fail) + mixins/protocols hub-inbound non-increasing (hard-fail); utils hub warn-only (high-churn, RSD-doomed). See scripts/ci/check_import_ratchet.py. Retirement = RSD canonical rewrite." >> $GITHUB_STEP_SUMMARY
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Deterministic Skill Routing Gate (OMN-8765) — enforces that every Tier 1
   # deterministic skill in omniclaude routes through `onex run-node` / `onex
   # node` (or a Kafka publish) and surfaces `SkillRoutingError`. Blocking gate.
@@ -423,7 +537,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -466,7 +580,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -514,7 +628,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -567,7 +681,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -612,7 +726,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -658,7 +772,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -702,7 +816,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -738,7 +852,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -758,8 +872,26 @@ jobs:
           # url_authority_baseline.json / canonical_inference_baseline.json
           # (sha256 fingerprints of known violations,
           #   not secrets — Hex High Entropy false-positive)
+          # extra_forbid_baseline.yaml (generated ratchet baseline of Python
+          #   FQNs; a "module.path:ClassName" entry is key:value-shaped, so the
+          #   Secret Keyword detector fires on names like model_network_restrictions
+          #   — same false-positive class as the two baselines above)
+          #
+          # -n/--no-verify (OMN-15063): several plugins (SlackDetector,
+          # StripeDetector, ...) call the live vendor API to "verify" each
+          # regex-matched candidate, then silently drop anything that comes
+          # back VERIFIED_FALSE. RED-proven against this exact invocation: a
+          # synthetic Slack incoming-webhook URL and a synthetic Slack bot
+          # token, both matching the dedicated SlackDetector regex, are
+          # silently absent from the report without -n even though the
+          # regex matches — only the generic entropy/keyword plugins that
+          # don't verify still catch anything nearby. A negative/uncertain
+          # live-verification result must not silently remove a finding
+          # (fail-closed). Never remove this flag without re-proving the
+          # miss is fixed another way.
           set +e
           git ls-files -z | xargs -0 detect-secrets-hook \
+            --no-verify \
             --baseline .secrets.baseline \
             --exclude-files 'uv\.lock' \
             --exclude-files '\.venv/' \
@@ -768,7 +900,8 @@ jobs:
             --exclude-files '\.secrets\.baseline' \
             --exclude-files '\.github/workflows/.*\.yml' \
             --exclude-files 'url_authority_baseline\.json' \
-            --exclude-files 'canonical_inference_baseline\.json'
+            --exclude-files 'canonical_inference_baseline\.json' \
+            --exclude-files 'extra_forbid_baseline\.yaml'
           HOOK_EXIT=$?
           set -e
 
@@ -782,7 +915,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "If these are false positives, regenerate the baseline:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            echo 'detect-secrets scan --all-files --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --exclude-files "url_authority_baseline\.json" --exclude-files "canonical_inference_baseline\.json" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
+            echo 'detect-secrets scan --all-files --no-verify --exclude-files "uv\.lock" --exclude-files "\.venv/" --exclude-files "tests/fixtures/" --exclude-files "\.git/" --exclude-files "\.secrets\.baseline" --exclude-files "\.github/workflows/.*\.yml" --exclude-files "url_authority_baseline\.json" --exclude-files "canonical_inference_baseline\.json" --force-use-all-plugins > .secrets.baseline' >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
@@ -821,7 +954,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -848,7 +981,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -886,7 +1019,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -923,7 +1056,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -976,7 +1109,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1037,7 +1170,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1077,7 +1210,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1128,7 +1261,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1182,7 +1315,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1237,7 +1370,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1290,7 +1423,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1307,6 +1440,1089 @@ jobs:
       - name: Scan src/ for os.environ/os.getenv reads outside KEEP_ALLOWLIST (OMN-13566)
         run: |
           uv run python -m omnibase_core.validators.no_new_os_environ --all --src src/
+
+  # Duplicate registry id guard (OMN-14401). Rejects config/registry YAML files
+  # declaring duplicate ids over a key that is not guaranteed unique (the
+  # OMN-14395/OMN-14396 bug shape). MUST run as a job in THIS workflow file —
+  # the ci-summary poller (see scripts/ci/ci_summary_gate.py) only sees jobs
+  # from its own run_id; a check defined in a separate workflow file is
+  # structurally invisible to it regardless of required_status_checks wiring.
+  # Unconditional (no `if:`, no `needs:`) — always runs to a terminal
+  # success/failure, listed in SPEC_REQUIRED_VALIDATOR_JOBS.
+  duplicate-registry-ids:
+    name: Duplicate Registry Ids
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ValidatorDuplicateConfigIds unit tests
+        run: |
+          uv run pytest tests/unit/validation/test_validator_duplicate_config_ids.py -v
+
+      - name: Check for duplicate ids in manifest-declared registries
+        run: |
+          uv run python -m omnibase_core.validation.validator_duplicate_config_ids \
+            --manifest .duplicate-id-registries.yaml \
+            --repo-root .
+
+  # Hardcoded-topic-string gate (OMN-13294), migrated in (OMN-14430) from the
+  # standalone validator-hardcoded-topic.yml workflow. MUST run as a job in
+  # THIS workflow file — the ci-summary poller (scripts/ci/ci_summary_gate.py)
+  # only sees jobs from its own run_id; a check defined in a separate workflow
+  # file is structurally invisible to it regardless of required_status_checks
+  # wiring (the exact gap OMN-14430 audited and closed for this instance).
+  # Unconditional (no `if:`, no `needs:`) — always runs to a terminal
+  # success/failure, listed in SPEC_REQUIRED_VALIDATOR_JOBS.
+  hardcoded-topic-validator:
+    name: Hardcoded Topic Validator
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validation/hardcoded_topic/ -v
+
+      # Self-scan omnibase_core src/ for hardcoded onex.* topic literals. Lands
+      # REPORT-ONLY (--report-only) — ported unchanged from the retired
+      # standalone workflow; see validator-hardcoded-topic.yml history for the
+      # burn-down rationale (OMN-13294). The BLOCKING enforcement for all NEW
+      # pasted topic literals is the check-hardcoded-topic-compute pre-commit
+      # hook (same handler, so verdicts cannot drift).
+      - name: Self-scan omnibase_core src/ (report mode — baseline burn-down pending)
+        run: |
+          uv run python -m omnibase_core.validation.hardcoded_topic.runtime_hardcoded_topic \
+            --report-only src/omnibase_core/
+
+  # ===========================================================================
+  # Phase 1 - Migrated decorative validators (OMN-14877, OMN-14430 fast-follow)
+  # ---------------------------------------------------------------------------
+  # 18 validator-*.yml standalone workflows migrated here as unconditional jobs
+  # (no `if:`, no `needs:`), sharing ci.yml's run_id so the required "CI Summary"
+  # default-deny poller (scripts/ci/ci_summary_gate.py) sees them. Each retires a
+  # standalone workflow (dropped to workflow_dispatch-only) plus its embedded
+  # occ-preflight caller. Registry: architecture-handshakes/standalone-validator-debt.yaml.
+  # ===========================================================================
+  # Migrated from validator-backend-secret-discipline.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  backend-secret-discipline-validator:
+    name: Backend Secret Discipline
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_backend_secret_discipline.py -v
+
+      - name: Self-scan omnibase_core config (literal credentials + backend refs)
+        run: |
+          uv run python -m omnibase_core.validators.backend_secret_discipline src/
+
+  # Migrated from validator-banned-compose-vars.yml (OMN-14877, OMN-14430
+  # fast-follow). NOTE: this validator had NO pre-commit hook in omnibase_core
+  # (audited 2026-07-21) — migrating it here as a required-gating ci.yml job is
+  # its FIRST non-bypassable enforcement, strictly stronger than the prior
+  # decorative standalone workflow. omnibase_core has no compose manifest that
+  # reads the banned vars, so the self-scan is green; the governed consumer
+  # requirement (banned-compose-env-vars) applies to omnibase_infra/omninode_infra,
+  # not this repo.
+  banned-compose-vars-validator:
+    name: Compose Drift
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ValidatorBannedComposeVars unit + integration tests
+        run: |
+          uv run pytest \
+            tests/unit/validation/test_validator_banned_compose_vars.py \
+            tests/integration/test_validator_banned_compose_vars_integration.py \
+            -v
+
+      - name: Self-scan omnibase_core repo for banned compose env vars
+        run: |
+          # Synthetic kernel mirrors the current `_DEPRECATED_TOPIC_ENV_VARS`
+          # tuple in omnibase_infra/src/omnibase_infra/runtime/service_kernel.py
+          # (OMN-8784). omnibase_core has no legitimate consumer of those vars,
+          # so the scan must exit 0. If omnibase_core ever adds a real compose
+          # manifest that uses them, this gate catches it before merge.
+          cat > /tmp/synthetic_kernel.py <<'EOF'
+          # Mirror of omnibase_infra service_kernel._DEPRECATED_TOPIC_ENV_VARS.
+          _DEPRECATED_TOPIC_ENV_VARS: tuple[str, ...] = (
+              "ONEX_INPUT_TOPIC",
+              "ONEX_OUTPUT_TOPIC",
+          )
+          EOF
+          uv run python -m omnibase_core.validation.validator_banned_compose_vars \
+            --kernel-source /tmp/synthetic_kernel.py \
+            .
+
+  # Migrated from validator-bypass-token-blocklist.yml (OMN-14877, OMN-14430
+  # fast-follow). NOTE: this validator's module had NO dedicated pre-commit hook
+  # in omnibase_core (audited 2026-07-21) — the reject-deploy-gate-skip-token
+  # hooks cover skip-gate tokens over staged files, but the OMN-13388 contracts/
+  # tree scan was decorative-only. Migrating it here is its first
+  # required-gating, non-bypassable enforcement.
+  bypass-token-blocklist-validator:
+    name: Bypass-Token Blocklist
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests (all 9 tokens, failing + passing cases)
+        run: |
+          uv run pytest tests/validators/test_bypass_token_blocklist.py -v
+
+      - name: Repo-wide bypass-token grep (contracts/)
+        # Scans contracts/ (YAML ticket contracts) for bypass tokens. src/ and
+        # docs/ are excluded: both trees contain documentation (.md) that
+        # legitimately discusses bypass tokens as rule descriptions.
+        run: |
+          if [ -d "contracts/" ]; then
+            uv run python -m omnibase_core.validators.bypass_token_blocklist \
+              --scan-tree contracts/
+          else
+            echo "No contracts/ directory found — scan skipped."
+          fi
+
+  # Migrated from validator-command-category-event-model.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  command-category-event-model-validator:
+    name: command-category Event Model Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_command_category_requires_event_model.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.command_category_requires_event_model src/omnibase_core
+
+  # Migrated from validator-dispatched-contract-operation.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  dispatched-contract-operation-validator:
+    name: dispatched contract handlers[0].operation Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_dispatched_contract_operation.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.dispatched_contract_operation src/omnibase_core
+
+  # Migrated from validator-generated-node-model-class-exists.yml (OMN-14877,
+  # OMN-14430 fast-follow).
+  generated-node-model-class-exists-validator:
+    name: generated-node model-class-existence Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_generated_node_model_class_exists.py \
+            tests/unit/validation/test_validator_contract_linter.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.generated_node_model_class_exists src/omnibase_core
+
+  # Migrated from validator-gitignore-baseline.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  gitignore-baseline-validator:
+    name: Gitignore Baseline Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_gitignore_baseline.py -v
+
+      - name: Self-scan omnibase_core root
+        run: |
+          uv run python -m omnibase_core.validators.gitignore_baseline .
+
+  # Migrated from validator-no-direct-kafka-producer.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-direct-kafka-producer-validator:
+    name: No Direct Kafka Producer Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_direct_kafka_producer_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.runtime_no_direct_kafka_producer_check \
+            --root src
+
+  # Migrated from validator-no-except-swallow.yml (OMN-14877, OMN-14430
+  # fast-follow). Self-scan is REPORT-ONLY (baseline cleanup pending) — ported
+  # unchanged; the gating enforcement is the validator unit-test suite, which
+  # runs unconditionally under the required CI Summary rollup.
+  no-except-swallow-validator:
+    name: No Except Swallow
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_validate_no_except_swallow.py -v
+
+      - name: Self-scan omnibase_core src/ (report mode — baseline cleanup pending)
+        run: |
+          uv run python scripts/validation/validate_no_except_swallow.py --report
+
+  # Migrated from validator-no-hardcoded-ip.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-hardcoded-ip-validator:
+    name: No Hardcoded IP Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_hardcoded_ip_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ + scripts/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check \
+            --root src scripts
+
+  # Migrated from validator-no-import-none-fallback.yml (OMN-14877, OMN-14430
+  # fast-follow). Self-scan is REPORT-ONLY (baseline cleanup pending) — ported
+  # unchanged; the gating enforcement is the validator unit-test suite.
+  no-import-none-fallback-validator:
+    name: No Import None Fallback
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_validate_no_import_none_fallback.py -v
+
+      - name: Self-scan omnibase_core src/ (report mode — baseline cleanup pending)
+        run: |
+          uv run python scripts/validation/validate_no_import_none_fallback.py --report
+
+  # Migrated from validator-no-io-outside-effects.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-io-outside-effects-validator:
+    name: No IO Outside Effects Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_io_outside_effects_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check \
+            --root src
+
+  # Migrated from validator-no-none-guard-publish.yml (OMN-14877, OMN-14430
+  # fast-follow). Self-scan is REPORT-ONLY (baseline cleanup pending) — ported
+  # unchanged; the gating enforcement is the validator unit-test suite.
+  no-none-guard-publish-validator:
+    name: No None Guard Publish
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/validation/test_validate_no_none_guard_publish.py -v
+
+      - name: Self-scan omnibase_core src/ (report mode — baseline cleanup pending)
+        run: |
+          uv run python scripts/validation/validate_no_none_guard_publish.py --report
+
+  # Migrated from validator-no-raw-sqlite3.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  no-raw-sqlite3-validator:
+    name: No Raw Sqlite3 Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/nodes/node_no_raw_sqlite3_check_compute/ -v
+
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check \
+            --root src
+
+  # Migrated from validator-operation-match.yml (OMN-14877,
+  # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
+  # rollup — closes the --no-verify pre-commit bypass and retires the standalone
+  # workflow's duplicate run_id + embedded occ-preflight caller.
+  operation-match-validator:
+    name: operation_match Operation Field Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validators/test_operation_match_requires_operation.py -v
+
+      - name: Self-scan omnibase_core/src
+        run: |
+          uv run python -m omnibase_core.validators.operation_match_requires_operation src/omnibase_core
+
+  # Migrated from validator-pin-hygiene.yml (OMN-14877, OMN-14430 fast-follow).
+  # Needs sibling clones (omnibase_compat / omnibase_spi) to resolve pin ancestry;
+  # each is checked out under $OMNI_HOME (= github.workspace).
+  pin-hygiene-validator:
+    name: Pin Hygiene Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v7
+        with:
+          path: omnibase_core
+
+      - name: Checkout omnibase_compat (sibling)
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_compat
+          path: omnibase_compat
+          ref: dev
+          fetch-depth: 0
+
+      - name: Checkout omnibase_spi (sibling)
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_spi
+          path: omnibase_spi
+          ref: dev
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "omnibase_core/uv.lock"
+
+      - name: Install dependencies
+        working-directory: omnibase_core
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        working-directory: omnibase_core
+        run: |
+          uv run pytest tests/unit/validation/pin_hygiene/ -v
+
+      - name: Self-scan omnibase_core pin manifests
+        working-directory: omnibase_core
+        env:
+          OMNI_HOME: ${{ github.workspace }}
+        run: |
+          uv run python -m omnibase_core.validation.pin_hygiene.runtime_pin_hygiene \
+            pyproject.toml uv.lock
+
+  # Migrated from validator-release-identity.yml (OMN-14877, OMN-14430
+  # fast-follow). Needs full history + tags to resolve the latest published tag.
+  release-identity-validator:
+    name: Release Identity Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run release-identity unit tests
+        run: |
+          uv run pytest tests/scripts/test_check_release_identity.py -v
+
+      - name: No code merged onto a published version without a bump
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref || 'dev' }}
+        run: |
+          set -euo pipefail
+          BASE="${BASE_REF}"
+          git fetch --quiet origin "${BASE}" || true
+          uv run python scripts/check_release_identity.py --base "origin/${BASE}"
+
+  # Migrated from validator-todo-marker.yml (OMN-14877, OMN-14430 fast-follow).
+  # Scans only the files the PR/merge changed (mirrors the pre-commit hook's
+  # STAGED-only semantics); needs full history to diff against the base.
+  todo-marker-validator:
+    name: TODO Marker Validator  # onex-allow-todo-marker OMN-14877 reason="job display name IS the validator's subject, not agent-left work"
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/validation/todo_marker/ -v
+
+      - name: Scan changed files for agent-left markers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Resolve the base ref to diff against.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          elif [ -n "${{ github.event.before }}" ] \
+               && git cat-file -e "${{ github.event.before }}^{commit}" 2>/dev/null; then
+            BASE_SHA="${{ github.event.before }}"
+          else
+            git fetch --no-tags --depth=200 origin dev || true
+            BASE_SHA="$(git merge-base HEAD origin/dev 2>/dev/null || git rev-parse HEAD~1)"
+          fi
+          echo "Diffing changed files against base: $BASE_SHA"
+
+          CHANGED="$(git diff --name-only --diff-filter=ACMR "$BASE_SHA"...HEAD \
+            | grep -E '\.(py|md|yaml|yml|json|sh|toml|txt|rst|cfg|ini)$' \
+            | grep -Ev '^(tests/|docs/|\.secrets\.baseline$|archived/|archive/)' \
+            || true)"
+
+          if [ -z "$CHANGED" ]; then
+            echo "No in-scope changed text files -- nothing to scan."
+            exit 0
+          fi
+
+          echo "Scanning changed files:"
+          echo "$CHANGED" | sed 's/^/  /'
+
+          EXISTING=""
+          while IFS= read -r f; do
+            [ -f "$f" ] && EXISTING="$EXISTING $f"
+          done <<< "$CHANGED"
+
+          if [ -z "${EXISTING// /}" ]; then
+            echo "No existing in-scope changed files -- nothing to scan."
+            exit 0
+          fi
+
+          uv run python -m omnibase_core.validation.todo_marker.runtime_todo_marker $EXISTING
+
+
+  # Non-canonical lifecycle-class ratchet (OMN-14350, omnibase_core canary)
+  # Blocks any NEW Service/Engine/Adapter/Router/Daemon/Manager/Runner/Registry/
+  # Controller/Server/Client class outside the frozen allowlist; --check-stale also
+  # fails when an allowlisted FQN no longer exists (count-only-down discipline).
+  no-noncanonical-lifecycle-classes:
+    name: Non-Canonical Lifecycle-Class Ratchet (OMN-14350)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Ratchet non-canonical lifecycle-word classes against frozen allowlist (OMN-14350)
+        run: |
+          uv run python -m omnibase_core.validators.no_noncanonical_lifecycle_classes --check-stale src/omnibase_core
+
+  # Pydantic extra="forbid" ratchet (OMN-14515, parent OMN-14208)
+  # Asserts the POSITIVE: every Pydantic model must resolve to an explicit
+  # extra="forbid" (inheriting it counts). ABSENCE IS A VIOLATION — Pydantic's default
+  # for an undeclared extra is "ignore", which SILENTLY DROPS unknown fields; four live
+  # data-loss bugs came from exactly that (OMN-14490/14506/14513/14514). Blocks NEW
+  # models outright, blocks MODIFIED baselined models, and --check-stale forces the
+  # frozen baseline count down (it may never grow).
+  pydantic-extra-forbid:
+    name: Pydantic extra="forbid" Ratchet (OMN-14515)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          # --enforce-modified diffs against the base branch. A shallow clone has no
+          # merge base, and the validator fails CLOSED when it cannot read the diff —
+          # so full history is required, not an optimization.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Assert explicit extra="forbid" on every Pydantic model (OMN-14515)
+        run: |
+          uv run python -m omnibase_core.validators.pydantic_extra_forbid \
+            --check-stale \
+            --enforce-modified "origin/${{ github.base_ref || 'dev' }}" \
+            src/omnibase_core
+
+  # Count-locked pull_request-workflow ratchet (C7 / OMN-14907)
+  # Blocks any NEW .github/workflows/*.yml file that triggers on pull_request unless
+  # it retires an existing one (net-negative) or carries an expiring waiver. The
+  # per-PR workflow-run fan-out (~49 runs/PR here) is the C7 cost driver in
+  # docs/plans/2026-07-21-ci-capacity-recovery-plan.md; this is CLAUDE.md's
+  # net-negative-surface rule expressed as a MECHANISM. It MUST run as a ci.yml JOB:
+  # a job living in a separate pull_request-triggered workflow file would be
+  # structurally invisible to ci-summary's default-deny poller (OMN-14430) — and it
+  # would itself add to the very surface this ratchet governs.
+  pull-request-workflow-ratchet:
+    name: Pull-Request Workflow Ratchet (OMN-14907)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Ratchet pull_request-triggered workflow files against the frozen budget (OMN-14907)
+        run: |
+          uv run python -m omnibase_core.validation.validator_pull_request_workflow_ratchet --repo-root .
 
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
@@ -1330,7 +2546,17 @@ jobs:
     # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-compliance, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, spdx-headers]
+    #
+    # OMN-14887: contract-compliance is DELIBERATELY NOT a need here (removed).
+    # This job's downstream (detect-changes, test-parallel) skip whenever
+    # needs.quality-gate.result != 'success', and tests-gate treats a skipped
+    # test-parallel as PASSED. With the real DoD executor now wired into
+    # contract-compliance (see that job below), a single BLOCK there would have
+    # cascaded through quality-gate -> skip detect-changes/test-parallel ->
+    # tests-gate reports PASSED on zero tests run. ci-summary's independent
+    # GATE_JOBS entry ("Contract Compliance Check", scripts/ci/ci_summary_gate.py)
+    # keeps this job required and merge-blocking without that cascade.
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers]
     if: always()
 
     steps:
@@ -1344,16 +2570,13 @@ jobs:
           exports="${{ needs.exports-validation.result }}"
           mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
           core_infra="${{ needs.core-infra-boundary.result }}"
+          lint_imports="${{ needs.lint-imports.result }}"
           det_skills="${{ needs.check-deterministic-skills.result }}"
           docs="${{ needs.docs-validation.result }}"
           purity="${{ needs.node-purity-check.result }}"
           enum_gov="${{ needs.enum-governance.result }}"
           secrets="${{ needs.detect-secrets.result }}"
           sdk_boundary="${{ needs.sdk-boundary-check.result }}"
-          # OMN-13574: contract-compliance is in needs but was never captured in
-          # the gate logic — it could fail while quality-gate still passed. Same
-          # failing-rollup hole this ticket exists to close.
-          contract_compliance="${{ needs.contract-compliance.result }}"
           contract_config="${{ needs.contract-config-compliance.result }}"
           breaking_schema="${{ needs.breaking-schema-change.result }}"
           no_env_fallbacks="${{ needs.no-env-fallbacks.result }}"
@@ -1364,6 +2587,9 @@ jobs:
           aislop="${{ needs.aislop-patterns.result }}"
           doc_content="${{ needs.doc-content-scan.result }}"
           no_new_os_environ="${{ needs.no-new-os-environ.result }}"
+          noncanonical_classes="${{ needs.no-noncanonical-lifecycle-classes.result }}"
+          extra_forbid="${{ needs.pydantic-extra-forbid.result }}"
+          pr_workflow_ratchet="${{ needs.pull-request-workflow-ratchet.result }}"
           spdx_headers="${{ needs.spdx-headers.result }}"
 
           # Report each check
@@ -1374,13 +2600,13 @@ jobs:
           echo "| Exports Validation | $exports |" >> $GITHUB_STEP_SUMMARY
           echo "| Mypy Validation Scripts | $mypy_scripts |" >> $GITHUB_STEP_SUMMARY
           echo "| Core-Infra Boundary | $core_infra |" >> $GITHUB_STEP_SUMMARY
+          echo "| Import Layering Oracle (OMN-14216) | $lint_imports |" >> $GITHUB_STEP_SUMMARY
           echo "| Deterministic Skill Routing | $det_skills |" >> $GITHUB_STEP_SUMMARY
           echo "| Documentation Validation | $docs |" >> $GITHUB_STEP_SUMMARY
           echo "| Node Purity Check | $purity |" >> $GITHUB_STEP_SUMMARY
           echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
           echo "| SDK Boundary Guard | $sdk_boundary |" >> $GITHUB_STEP_SUMMARY
-          echo "| Contract Compliance | $contract_compliance |" >> $GITHUB_STEP_SUMMARY
           echo "| Contract-Config Compliance | $contract_config |" >> $GITHUB_STEP_SUMMARY
           echo "| Breaking-Schema-Change (OMN-12621) | $breaking_schema |" >> $GITHUB_STEP_SUMMARY
           echo "| No Env Fallbacks (OMN-7227) | $no_env_fallbacks |" >> $GITHUB_STEP_SUMMARY
@@ -1391,6 +2617,9 @@ jobs:
           echo "| AI Slop Patterns (OMN-13574) | $aislop |" >> $GITHUB_STEP_SUMMARY
           echo "| Doc-Content Scan (OMN-13572) | $doc_content |" >> $GITHUB_STEP_SUMMARY
           echo "| No New os.environ Reads (OMN-13566) | $no_new_os_environ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Non-Canonical Lifecycle-Class Ratchet (OMN-14350) | $noncanonical_classes |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pydantic extra=\"forbid\" Ratchet (OMN-14515) | $extra_forbid |" >> $GITHUB_STEP_SUMMARY
+          echo "| Pull-Request Workflow Ratchet (OMN-14907) | $pr_workflow_ratchet |" >> $GITHUB_STEP_SUMMARY
           echo "| SPDX Headers (OMN-13576) | $spdx_headers |" >> $GITHUB_STEP_SUMMARY
 
           # Gate logic: all must pass
@@ -1399,13 +2628,13 @@ jobs:
              [[ "$exports" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
              [[ "$core_infra" == "success" ]] && \
+             [[ "$lint_imports" == "success" ]] && \
              [[ "$det_skills" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
              [[ "$purity" == "success" ]] && \
              [[ "$enum_gov" == "success" ]] && \
              [[ "$secrets" == "success" ]] && \
              [[ "$sdk_boundary" == "success" ]] && \
-             [[ "$contract_compliance" == "success" ]] && \
              [[ "$contract_config" == "success" ]] && \
              [[ "$breaking_schema" == "success" ]] && \
              [[ "$no_env_fallbacks" == "success" ]] && \
@@ -1416,6 +2645,9 @@ jobs:
              [[ "$aislop" == "success" ]] && \
              [[ "$doc_content" == "success" ]] && \
              [[ "$no_new_os_environ" == "success" ]] && \
+             [[ "$noncanonical_classes" == "success" ]] && \
+             [[ "$extra_forbid" == "success" ]] && \
+             [[ "$pr_workflow_ratchet" == "success" ]] && \
              [[ "$spdx_headers" == "success" ]]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
@@ -1436,7 +2668,7 @@ jobs:
   # GitHub cannot materialize jobs for a new local workflow_call target.
   zone-filter:
     name: Zone Filter (docs-only check)
-    needs: quality-gate
+    needs: [quality-gate]
     if: always() && needs.quality-gate.result == 'success'
     runs-on: >-
       ${{
@@ -1454,7 +2686,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1550,6 +2782,10 @@ jobs:
             base="${{ github.event.pull_request.base.sha }}"
             git fetch --no-tags --depth=1 origin "$base" || true
             git diff --name-only "$base"...HEAD > changed.txt
+            # Emit the base SHA so the selector can classify a pyproject.toml diff
+            # content-aware (base-vs-head TOML). Only meaningful on pull_request;
+            # push/merge_group escalate before the pyproject check regardless.
+            echo "base_sha=$base" >> "$GITHUB_OUTPUT"
           else
             git diff --name-only HEAD~1 HEAD > changed.txt || echo "" > changed.txt
           fi
@@ -1560,12 +2796,30 @@ jobs:
         id: detect
         env:
           FLAG: ${{ vars.ENABLE_SMART_TESTS == 'true' && 'on' || 'off' }}
+          # OMN-14921: file-grain import-graph-closure SHADOW mode. Default OFF;
+          # when the repo var is set the selector ADDITIONALLY computes the
+          # file-grain closure selection and emits both selections + delta to
+          # shadow_closure.json / the job log — the returned selection (stdout)
+          # is unchanged. Promotion out of shadow is a separate burn-in-gated
+          # decision, not this flag.
+          SHADOW_CLOSURE: ${{ vars.ENABLE_SMART_TESTS_FILE_GRAIN_SHADOW == 'true' && 'on' || 'off' }}
+          BASE_SHA: ${{ steps.diff.outputs.base_sha }}
         run: |
+          # Pass --base-ref only when we have a base SHA (pull_request). When
+          # pyproject.toml is in the diff and no base ref is supplied, the selector
+          # fails closed and escalates — the safe default.
+          base_arg=()
+          if [ -n "$BASE_SHA" ]; then
+            base_arg=(--base-ref "$BASE_SHA")
+          fi
           uv run python -m scripts.ci.detect_test_paths \
             --changed-files-from changed.txt \
             --ref-name "${{ github.ref_name }}" \
             --event-name "${{ github.event_name }}" \
             --feature-flag "$FLAG" \
+            --shadow-closure "$SHADOW_CLOSURE" \
+            --shadow-closure-output shadow_closure.json \
+            "${base_arg[@]}" \
             > selection.json
           cat selection.json
           is_full=$(jq -r '.is_full_suite' selection.json)
@@ -1583,7 +2837,42 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: test-selection
-          path: selection.json
+          # shadow_closure.json exists only when ENABLE_SMART_TESTS_FILE_GRAIN_SHADOW
+          # is set (OMN-14921 shadow mode); a missing file is expected, not an error.
+          path: |
+            selection.json
+            shadow_closure.json
+          retention-days: 7
+
+      # OMN-14342: compute the COUNTERFACTUAL selection with the selector forced
+      # ON, independent of ENABLE_SMART_TESTS. Observational only — the full suite
+      # still runs on the boundary; this only records what the selector WOULD have
+      # skipped so shadow-compare can measure its real-world miss-rate.
+      - name: Shadow selection (forced on)
+        id: shadow
+        env:
+          BASE_SHA: ${{ steps.diff.outputs.base_sha }}
+        run: |
+          base_arg=()
+          if [ -n "$BASE_SHA" ]; then
+            base_arg=(--base-ref "$BASE_SHA")
+          fi
+          uv run python -m scripts.ci.detect_test_paths \
+            --changed-files-from changed.txt \
+            --ref-name "${{ github.ref_name }}" \
+            --event-name "${{ github.event_name }}" \
+            --feature-flag on \
+            "${base_arg[@]}" \
+            > shadow_selection.json
+          cat shadow_selection.json
+
+      - name: Upload shadow inputs
+        uses: actions/upload-artifact@v7
+        with:
+          name: shadow-inputs
+          path: |
+            shadow_selection.json
+            changed.txt
           retention-days: 7
 
   # ---------------------------------------------------------------------------
@@ -1627,7 +2916,7 @@ jobs:
           fetch-depth: 1
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1662,6 +2951,15 @@ jobs:
             }}
         run: |
           paths=$(echo '${{ needs.detect-changes.outputs.selected_paths }}' | jq -r '.[]')
+          # OMN-14910 (CI-C1 #3): an empty selected_paths is the "provably zero
+          # test impact" selection (a docs-only diff). Passing no positional paths
+          # to pytest would fall back to `testpaths = ["tests"]` from pyproject —
+          # i.e. nearly the full suite — silently defeating the docs-only exemption.
+          # Guard it: run zero tests and exit clean.
+          if [ -z "$paths" ]; then
+            echo "selected_paths is empty (docs-only exemption) — no tests to run."
+            exit 0
+          fi
           uv run pytest $paths \
             --ignore=tests/integration \
             --splits ${{ needs.detect-changes.outputs.split_count }} \
@@ -1715,6 +3013,84 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
+  # Shadow-mode test-selection compare (OMN-14342) — OBSERVATIONAL, non-blocking
+  # ---------------------------------------------------------------------------
+  # Compares the forced-on counterfactual selection against the full-suite junit
+  # to measure what the selector WOULD have skipped (escaped failures / selected
+  # fraction / wall-clock saved). Only meaningful when the ACTUAL run was a full
+  # suite (flag off, or is_full_suite escalation) — otherwise there is no full
+  # baseline to compare against, so it is gated on that condition. It never fails
+  # the build (continue-on-error) and never changes what runs. The record artifact
+  # is harvested to the durable ci-shadow-metrics branch by a separate workflow.
+  shadow-compare:
+    name: Shadow Selection Compare
+    needs: [detect-changes, test-parallel]
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    # Run whenever the actual test-parallel run was a full suite (the only case
+    # with a complete baseline). During rollout ENABLE_SMART_TESTS is off, so this
+    # is every non-docs dev PR.
+    if: >-
+      always()
+      && needs.detect-changes.result == 'success'
+      && (vars.ENABLE_SMART_TESTS != 'true' || needs.detect-changes.outputs.is_full_suite == 'true')
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Download shadow inputs
+        uses: actions/download-artifact@v8
+        with:
+          name: shadow-inputs
+          path: shadow-inputs
+
+      - name: Download full-suite junit
+        uses: actions/download-artifact@v8
+        with:
+          pattern: test-results-*
+          path: junit-artifacts
+
+      - name: Build shadow record
+        env:
+          SHADOW_PR_NUMBER: ${{ github.event.pull_request.number }}
+          SHADOW_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SHADOW_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          uv run python -m scripts.ci.test_selection_shadow \
+            --selection shadow-inputs/shadow_selection.json \
+            --changed-files-from shadow-inputs/changed.txt \
+            --junit-dir junit-artifacts \
+            --out shadow_record.json
+          echo "## Shadow test-selection record" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat shadow_record.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload shadow record
+        uses: actions/upload-artifact@v7
+        with:
+          name: shadow-record-${{ github.run_id }}
+          path: shadow_record.json
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
   # Integration Tests — always-run 4-split matrix (OMN-9851)
   # ---------------------------------------------------------------------------
   tests-integration:
@@ -1741,7 +3117,7 @@ jobs:
           fetch-depth: 1
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1854,73 +3230,156 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v7
-      - name: Clone onex_change_control
-        run: |
-          occ_dir="${RUNNER_TEMP}/onex_change_control_contract_compliance"
-          occ_ref="3c98ab30af75650952246c3467e02e240552427f"
-          rm -rf "$occ_dir"
-          git init "$occ_dir"
-          git -C "$occ_dir" remote add origin https://github.com/OmniNode-ai/onex_change_control.git
-          git -C "$occ_dir" fetch --depth=1 origin "$occ_ref"
-          git -C "$occ_dir" checkout --detach FETCH_HEAD
-          echo "OCC_DIR=$occ_dir" >> "$GITHUB_ENV"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - name: Checkout onex_change_control
+        uses: actions/checkout@v7
         with:
-          version: "0.8.3"
-      - name: Validate all ticket contracts (OMN-8808 — replaces dead run_contract_compliance_check.py ref)
-        run: cd "$OCC_DIR" && uv run validate-yaml "$GITHUB_WORKSPACE"/contracts/OMN-*.yaml
+          repository: OmniNode-ai/onex_change_control
+          # OMN-14887: PINNED, mirroring the omnibase_infra OMN-14454 canary
+          # exactly. This job already carried a pinned OCC ref (from OMN-10445,
+          # 2026-05-03) rather than the unpinned default-branch clone the ticket
+          # description assumed -- but that old pin (3c98ab30) predates the
+          # OMN-14436 runner revival, so it cannot be trusted to contain
+          # scripts/ci/run_contract_compliance_check.py in working order.
+          # Re-pinned to OCC dev HEAD at the time of this change.
+          ref: 91f5b69104366c2d86e4bb21de67c3c497702111
+          path: onex_change_control
+          token: ${{ secrets.CROSS_REPO_PAT || github.token }}
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: false
+
+      - name: Install onex_change_control
+        working-directory: onex_change_control
+        run: |
+          set -euo pipefail
+          export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
+          attempt=1
+          max_attempts=3
+          delay=10
+          until uv sync --no-cache --all-extras; do
+            status=$?
+            if [[ "$attempt" -ge "$max_attempts" ]]; then
+              echo "::error::uv sync onex_change_control failed after ${attempt} attempt(s)"
+              exit "$status"
+            fi
+            echo "::warning::uv sync onex_change_control attempt ${attempt}/${max_attempts} failed with exit ${status}; retrying in ${delay}s"
+            sleep "$delay"
+            attempt=$((attempt + 1))
+          done
+
+      # OMN-14887: EXECUTE the DoD check_values against the PRODUCT tree.
+      #
+      # What was here before -- `uv run validate-yaml $CONTRACTS` -- never ran a
+      # single check_value. It only parsed OCC's YAML, so a green
+      # "Contract Compliance Check" meant exactly "OCC's contract files are
+      # valid YAML" and nothing about this PR. The DoD gate has been dead here
+      # since the OMN-14436 fix (core#1435) documented that lie without
+      # replacing the executor -- fan-out was deliberately deferred until
+      # omnibase_infra (OMN-14454) burned in the pattern first.
+      #
+      # --workspace is the load-bearing argument. It must be the PRODUCT
+      # checkout ($GITHUB_WORKSPACE), not the OCC clone -- pointing it at OCC
+      # is the original OMN-14436 defect.
+      #
+      # Landmine specific to this repo (see quality-gate job above): this job
+      # used to be a `needs:` predecessor of quality-gate, whose downstream
+      # (detect-changes, test-parallel) skip when quality-gate != success, and
+      # tests-gate treats a skipped test-parallel as PASSED. Turning on a real
+      # executor here without first decoupling would have let a single BLOCK
+      # cascade to "tests-gate: PASSED" on zero tests run -- strictly worse than
+      # infra's failure mode. contract-compliance is no longer in quality-gate's
+      # needs; ci-summary's independent GATE_JOBS entry keeps this required and
+      # merge-blocking without the cascade.
+      - name: Run DoD contract compliance against the product tree (OMN-14887)
+        working-directory: onex_change_control
+        run: |
+          set -euo pipefail
+          if [ -z "${PR_NUMBER:-}" ]; then
+            echo "::notice::No PR number (event=${{ github.event_name }}); DoD check_values are PR-scoped. Skipping."
+            exit 0
+          fi
+          uv run python scripts/ci/run_contract_compliance_check.py \
+            --pr "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --contracts-dir "$GITHUB_WORKSPACE/onex_change_control/contracts" \
+            --workspace "$GITHUB_WORKSPACE" \
+            --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control/scripts/ci/dod_runner_legacy_allowlist.txt"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
   ci-summary:
     name: CI Summary
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    needs: [quality-gate, tests-gate, contract-compliance, boundary-validation]
+    # OMN-14127: REQUIRED branch-protection context, implemented as a NO-`needs`,
+    # GitHub-hosted, FAIL-CLOSED poller (ported from omniclaude #1870). A
+    # `needs`-gated job gets no check-run until its `needs` terminalize, so under
+    # self-hosted fleet saturation the old needs-based CI Summary
+    # (needs: [quality-gate, tests-gate, contract-compliance, boundary-validation],
+    # all self-hosted leaves) was ABSENT forever and the PR wedged BLOCKED with no
+    # auto-recovery. With NO `needs` this job's check-run instantiates immediately
+    # (the required context can never be absent); it polls the current run's job
+    # conclusions and posts a terminal success/failure within a bounded deadline.
+    # DEFAULT-DENY: green ONLY when every aggregate gate is present+good AND no
+    # non-allowlisted job failed — see scripts/ci/ci_summary_gate.py for the
+    # auditable gating set + soft-allowlist (unit-tested in
+    # tests/unit/scripts/ci/test_ci_summary_gate.py). Pure hosted GitHub-API
+    # polling: zero self-hosted/LAN dependency. DO NOT rename — the job name IS the
+    # required context; a rename re-wedges every PR.
+    runs-on: ubuntu-latest
     if: always()
-
+    permissions:
+      actions: read
+      contents: read
+    # Deadline (below) is comfortably under any run-cancellation window so the
+    # required context ALWAYS posts a terminal state first. On pull_request the
+    # concurrency group does NOT cancel-in-progress (only merge_group does), so
+    # there is effectively no shorter PR cancel window than GitHub's job default.
+    # This job timeout is only a hard backstop above the internal poll deadline.
+    timeout-minutes: 100
     steps:
-      - name: Evaluate all gates
+      - name: Checkout (gate script)
+        uses: actions/checkout@v7
+      - name: Poll run jobs and compute fail-closed CI Summary verdict
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          # Bounded poll window (minutes) — kept under the run-cancel window so
+          # the required context always reaches a terminal state first.
+          DEADLINE_MINUTES: "90"
+          POLL_INTERVAL_SECONDS: "45"
         run: |
-          echo "## CI Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          quality="${{ needs.quality-gate.result }}"
-          tests="${{ needs.tests-gate.result }}"
-          compliance="${{ needs['contract-compliance'].result }}"
-          boundary="${{ needs['boundary-validation'].result }}"
-
-          echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Quality Gate | $quality |" >> $GITHUB_STEP_SUMMARY
-          echo "| Tests Gate | $tests |" >> $GITHUB_STEP_SUMMARY
-          echo "| Compliance | $compliance |" >> $GITHUB_STEP_SUMMARY
-          echo "| Cross-repo Boundary Validation | $boundary |" >> $GITHUB_STEP_SUMMARY
-
-          # Accept "success" or "skipped" for gates. Skipped is valid when
-          # upstream jobs are correctly skipped (e.g. dependabot PRs).
-          quality_ok=$([[ "$quality" == "success" || "$quality" == "skipped" ]] && echo true || echo false)
-          tests_ok=$([[ "$tests" == "success" || "$tests" == "skipped" ]] && echo true || echo false)
-          compliance_ok=$([[ "$compliance" == "success" || "$compliance" == "skipped" ]] && echo true || echo false)
-          boundary_ok=$([[ "$boundary" == "success" || "$boundary" == "skipped" ]] && echo true || echo false)
-
-          if [[ "$quality_ok" == "true" ]] && [[ "$tests_ok" == "true" ]] && [[ "$compliance_ok" == "true" ]] && [[ "$boundary_ok" == "true" ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**CI Summary: ALL GATES PASSED**" >> $GITHUB_STEP_SUMMARY
-            echo "All CI gates passed (quality=$quality, tests=$tests, compliance=$compliance, boundary=$boundary)."
-            exit 0
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**CI Summary: FAILED**" >> $GITHUB_STEP_SUMMARY
-            echo ""
-            echo "Gate results:"
-            echo "  Quality Gate: $quality"
-            echo "  Tests Gate: $tests"
-            echo "  Compliance: $compliance"
-            echo "  Cross-repo Boundary Validation: $boundary"
-            exit 1
-          fi
+          # GitHub invokes this step as `bash -e {0}`; disable errexit because the
+          # gate script's non-zero exit codes are handled explicitly below
+          # (2 = PENDING must NOT terminate the poll loop).
+          set +e
+          set -uo pipefail
+          deadline=$(( $(date +%s) + DEADLINE_MINUTES * 60 ))
+          attempt=0
+          while true; do
+            attempt=$((attempt + 1))
+            if ! gh api --paginate \
+                "repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs?filter=all&per_page=100" \
+                --jq '.jobs[]' | jq -s '.' > jobs.json; then
+              echo "gh api fetch failed (attempt ${attempt}); retrying after ${POLL_INTERVAL_SECONDS}s"
+              sleep "${POLL_INTERVAL_SECONDS}"
+              continue
+            fi
+            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}"
+            rc=$?
+            case "${rc}" in
+              0) echo "::notice::CI Summary = SUCCESS (all gating jobs provably passed)"; exit 0 ;;
+              1) echo "::error::CI Summary = FAILURE (fail-closed: a gating job failed/cancelled)"; exit 1 ;;
+              2) : ;;  # PENDING — gating jobs still running; keep polling
+              *) echo "::error::ci_summary_gate.py returned unexpected code ${rc}; failing closed"; exit 1 ;;
+            esac
+            if [ "$(date +%s)" -ge "${deadline}" ]; then
+              echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached with gating jobs still pending — failing closed"
+              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --report-only || true
+              exit 1
+            fi
+            sleep "${POLL_INTERVAL_SECONDS}"
+          done

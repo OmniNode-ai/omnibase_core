@@ -16,6 +16,12 @@ from omnibase_core.models.delegation.wire.model_budget import (
     EnumBudgetAction,
     ModelBudgetLimits,
 )
+from omnibase_core.models.delegation.wire.model_delegation_completed import (
+    ModelDelegationCompleted,
+)
+from omnibase_core.models.delegation.wire.model_delegation_failed import (
+    ModelDelegationFailed,
+)
 from omnibase_core.models.delegation.wire.model_delegation_result import (
     ModelDelegationResult,
 )
@@ -71,8 +77,10 @@ __all__: list[str] = [
     "ModelComplianceLoopResult",
     "ModelDelegationBackendConfig",
     "ModelDelegationCircuitBreakerConfig",
+    "ModelDelegationCompleted",
     "ModelDelegationConfig",
     "ModelDelegationEventEnvelope",
+    "ModelDelegationFailed",
     "ModelDelegationFailoverConfig",
     "ModelDelegationFallbackPolicy",
     "ModelDelegationRequest",

@@ -48,7 +48,7 @@ RegistryErrorCode = EnumRegistryErrorCode
 
 # Import ModelCLIAdapter only when needed (lazy import to avoid circular dependency)
 def get_cli_adapter():
-    from omnibase_core.errors import ModelCLIAdapter
+    from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
     return ModelCLIAdapter
 

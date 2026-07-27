@@ -63,13 +63,13 @@ class NodeContractResolveCompute:
       (replacing the hardcoded stubs in ContractMergeEngine).
 
     Thread Safety:
-        Each call to :meth:`resolve` creates its own engine instance and is
+        Each call to :meth:`handle` creates its own engine instance and is
         therefore thread-safe. Do not share :class:`NodeContractResolveCompute`
         instances across threads without external synchronisation.
 
     Example:
         >>> node = NodeContractResolveCompute()
-        >>> output = node.resolve(input_model)
+        >>> output = node.handle(input_model)
         >>> output.resolved_hash  # deterministic SHA-256
         'abc123...'
     """
@@ -90,7 +90,7 @@ class NodeContractResolveCompute:
     # Public API
     # ─────────────────────────────────────────────────────────────────────────
 
-    def resolve(
+    def handle(
         self, input_model: ModelContractResolveInput
     ) -> ModelContractResolveOutput:
         """Resolve a contract by applying patches onto a base profile.

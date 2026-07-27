@@ -102,22 +102,27 @@ def apply_config(config: Config) -> None:
     ...
 ```
 
-### Option 2: Use SchemaDict or ModelSchemaValue (ONEX Standard)
+### Option 2: Use ModelSchemaValue (ONEX Standard)
 
-For schema-related data, use the ONEX type aliases:
+For schema-related data, use typed schema values:
 
 ```python
 # For dict[str, Any] replacement in schema contexts
-from omnibase_core.types.type_schema_aliases import SchemaDict
+from omnibase_core.models.common import ModelSchemaValue
 
-def process_schema(data: SchemaDict) -> SchemaDict:
+def process_schema(data: dict[str, ModelSchemaValue]) -> dict[str, ModelSchemaValue]:
     ...
 
 # For individual typed values
-from omnibase_core.models.common import ModelSchemaValue
-
 value: ModelSchemaValue = ModelSchemaValue.create_string("example")
 ```
+
+> Note: the former `SchemaDict` / `StepOutputs` aliases in
+> `omnibase_core.types.type_schema_aliases` were removed — they had zero
+> production importers and forced a `types -> models` import-layering
+> back-edge (see the types-to-models burn-down history in `.importlinter`).
+> Spell the dict type out or use `ModelSchemaDict`
+> (`omnibase_core.models.core.model_schema_dict`) for structured schemas.
 
 ### Option 3: Use @allow_dict_any Decorator (Last Resort - NOT for Payloads)
 
@@ -204,7 +209,6 @@ When addressing tech debt, prioritize by impact:
 - [ModelAction Typed Payloads](./MODELACTION_TYPED_PAYLOADS.md) - Action payload implementation guide
 - [Type System Architecture](./TYPE_SYSTEM.md) - Core type patterns
 - [ModelSchemaValue Type Definition](../../src/omnibase_core/models/common/model_schema_value.py)
-- [SchemaDict and StepOutputs Type Aliases](../../src/omnibase_core/types/type_schema_aliases.py)
 - [ONEX Terminology](../standards/onex_terminology.md)
 
 ## Verification

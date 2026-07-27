@@ -128,6 +128,13 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("infra_bases.py", "BaseNode"),
     ("node_base.py", "BaseNode"),
     ("node_core_base.py", "BaseNode"),
+    # OMN-14291: service-wrapper framework bases relocated from models/services
+    # to nodes/ to remove the models -> nodes import back-edge. The ModelService*
+    # public names remain compatibility API exposed by infra_bases.
+    ("node_service_compute.py", "ModelServiceCompute"),
+    ("node_service_effect.py", "ModelServiceEffect"),
+    ("node_service_orchestrator.py", "ModelServiceOrchestrator"),
+    ("node_service_reducer.py", "ModelServiceReducer"),
     # Private holder classes in utils (start with underscore handled separately)
     #
     # --- LEGACY EXCEPTIONS (address in future refactoring) ---  # TODO_FORMAT_EXEMPT: section header for legacy naming exceptions
@@ -147,6 +154,13 @@ ALLOWED_EXCEPTIONS: set[tuple[str, str]] = {
     ("util_field_converter.py", "FieldConverter"),
     # ToolLoggerCodeBlock is a context manager for logging
     ("util_tool_logger_code_block.py", "ToolLoggerCodeBlock"),
+    #
+    # OMN-14959: UtilStrValueHelper relocated utils/ -> enums/ to sever the
+    # 437-edge enums->utils import-linter back-edge (epic OMN-3210). The
+    # ticket required "name and API unchanged" (439 live importers reference
+    # this exact class name) so it keeps its Util* name despite now living in
+    # enums/ rather than being renamed to fit the Enum* convention.
+    ("enum_str_enum_base.py", "UtilStrValueHelper"),
     #
     # --- Contract Validation Pipeline (OMN-1128) ---
     #

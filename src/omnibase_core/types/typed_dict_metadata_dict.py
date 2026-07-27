@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, TypedDict
 from omnibase_core.types.type_serializable_value import SerializableValue
 
 if TYPE_CHECKING:
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
+    from omnibase_core.types.type_semver import ProtocolSemVer
 
 
 class TypedDictMetadataDict(TypedDict, total=False):
@@ -20,7 +20,7 @@ class TypedDictMetadataDict(TypedDict, total=False):
 
     name: str
     description: str
-    version: "ModelSemVer"
+    version: "ProtocolSemVer"
     tags: list[str]
     metadata: dict[str, SerializableValue]
 

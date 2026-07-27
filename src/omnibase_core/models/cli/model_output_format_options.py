@@ -271,10 +271,15 @@ class ModelOutputFormatOptions(BaseModel):
         if custom_options:
             kwargs_dict["custom_options"] = custom_options
 
-        return cls(**kwargs_dict)
+        # OMN-14339: TypedDictOutputFormatOptionsKwargs widens custom_options to
+        # the covariant Mapping[str, object] so the foundation-layer TypedDict
+        # does not import ModelValue (types -> models back-edge). model_validate
+        # re-validates every field — including that custom_options values are
+        # ModelValue instances — so this is equivalent to cls(**kwargs_dict).
+        return cls.model_validate(dict(kwargs_dict))
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

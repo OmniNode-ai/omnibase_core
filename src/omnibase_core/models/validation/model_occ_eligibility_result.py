@@ -25,6 +25,7 @@ class ModelOccEligibilityResult(BaseModel):
     receipt_ids: tuple[str, ...] = Field(default_factory=tuple)
     missing_contracts: tuple[str, ...] = Field(default_factory=tuple)
     missing_or_nonpass_receipts: tuple[str, ...] = Field(default_factory=tuple)
+    stale_receipt_bindings: tuple[str, ...] = Field(default_factory=tuple)
     dependency_prs: tuple[str, ...] = Field(default_factory=tuple)
     detail: str = Field(default="")
 
@@ -38,6 +39,7 @@ class ModelOccEligibilityResult(BaseModel):
             "receipt_ids": sorted(self.receipt_ids),
             "missing_contracts": sorted(self.missing_contracts),
             "missing_or_nonpass_receipts": sorted(self.missing_or_nonpass_receipts),
+            "stale_receipt_bindings": sorted(self.stale_receipt_bindings),
             "dependency_prs": sorted(self.dependency_prs, key=str),
             "detail": self.detail,
         }

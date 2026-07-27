@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
 if TYPE_CHECKING:
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
+    from omnibase_core.types.type_semver import ProtocolSemVer
 
 
 class TypedDictNodeCore(TypedDict):
@@ -24,7 +24,7 @@ class TypedDictNodeCore(TypedDict):
     node_type: str
     status: str
     complexity: str
-    version: "ModelSemVer"
+    version: "ProtocolSemVer"
     is_active: bool
     is_complex: bool
 

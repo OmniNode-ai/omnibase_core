@@ -19,7 +19,7 @@ from omnibase_core.models.events.model_runtime_event_base import (
 
 __all__ = ["ModelSubscriptionRemovedEvent", "SUBSCRIPTION_REMOVED_EVENT"]
 
-SUBSCRIPTION_REMOVED_EVENT = "onex.runtime.subscription.removed"
+SUBSCRIPTION_REMOVED_EVENT = "onex.runtime.subscription.removed"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944); onex-allow-topic-literal
 
 
 class ModelSubscriptionRemovedEvent(ModelRuntimeEventBase):

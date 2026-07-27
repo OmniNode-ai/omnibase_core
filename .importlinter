@@ -1,0 +1,209 @@
+# import-linter contract — intra-core dependency-layering oracle (OMN-14216)
+#
+# Encodes the DIRECTION of imports between omnibase_core's architectural
+# sub-packages, per ADR-001, ADR-005, and docs/architecture/DEPENDENCY_INVERSION.md.
+# This is the enforcement oracle every later decoupling change verifies against:
+# a new illegal back-edge fails `lint-imports`; the current known back-edges are
+# frozen below as an explicit, annotated allowlist to be burned down under the
+# Platform Tech Debt Reduction epic (OMN-3210).
+#
+# Doctrine layering (high -> low):
+#   nodes                            (top: coordination shells)
+#   services | validation            (behavioral layers)
+#   models                           (domain models)
+#   constants | enums | errors | types   (foundation primitives)
+#
+# WHY `forbidden` (direct) contracts and not a transitive `layers` contract:
+# core's import graph is densely interconnected through hub modules (utils,
+# mixins, protocols) that bridge nearly every sub-package, so a transitive
+# `layers` contract cannot be expressed today without an unmaintainable bridge
+# allowlist. These contracts therefore enforce DIRECT imports
+# (allow_indirect_imports = True). Tightening to a transitive contract is a
+# follow-up gated on slimming those hub modules.
+#
+# `protocols` is the seam layer (protocol source of truth; spi depends on core).
+# It sits low — everything depends on protocol interfaces — so it must not import
+# the domain/behavioral layers. It forms a real cycle with `models`
+# (protocols -> models AND models -> protocols): the protocols -> models
+# direction (protocol I/O type references) is frozen debt below and burned down
+# under OMN-3210; the models -> protocols direction (domain referencing
+# interfaces) is left permitted.
+#
+# Each ignore_imports line is a frozen current back-edge (fix later, OMN-3210).
+# unmatched_ignore_imports_alerting defaults to ERROR, so when a back-edge class
+# is fully removed its now-unmatched ignore line forces its own deletion (ratchet).
+
+[importlinter]
+root_packages =
+    omnibase_core
+# Required so the `core-no-kafka-transport` forbidden contract (invariant I2,
+# OMN-14719) can name external packages (aiokafka / confluent_kafka / omnibase_infra):
+# import-linter mandates this at the top level when any contract forbids external
+# modules. It adds external packages that core actually imports as leaf nodes; it does
+# not affect the intra-core forbidden/ratchet contracts (they name only omnibase_core.*).
+include_external_packages = True
+
+[importlinter:contract:core-foundation-no-upward]
+name = Foundation primitives must not import higher layers (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.constants
+    omnibase_core.enums
+    omnibase_core.errors
+    omnibase_core.types
+forbidden_modules =
+    omnibase_core.models
+    omnibase_core.services
+    omnibase_core.validation
+    omnibase_core.nodes
+    omnibase_core.utils
+ignore_imports =
+    # OMN-3210 burn-down: types -> models — RETIRED (OMN-14337 + OMN-14339).
+    # OMN-14337 retired 20 of 24 edges (ModelSemVer references repointed to the
+    # structural ProtocolSemVer in types.type_semver; immovable domain-model
+    # annotations widened; the dead ModelBase lazy re-export removed from types/).
+    # OMN-14339 retired the final 4: the dead SchemaDict/StepOutputs alias module
+    # (type_schema_aliases) was deleted (zero real importers); validator_info's
+    # func return was widened to object with a consumer-side cast in
+    # ServiceValidationSuite; the two model-constructor-kwargs shapes
+    # (output_format_options_kwargs, lifecycle_event_fields) were widened to
+    # covariant Mapping[str, object] / ProtocolSemVer and their sole consumers
+    # switched from **-unpack to model_validate(dict(...)).
+    # OMN-3210 burn-down: errors -> models — RETIRED (OMN-14335): ModelOnexError,
+    # ModelFailFastDetails, and _ModelOnexErrorData were relocated DOWN into the
+    # errors package (models.* paths keep re-export shims); the ModelOnexWarning/
+    # ModelRegistryError/ModelCLIAdapter convenience re-exports were pruned from
+    # errors/__init__.py.
+    # OMN-3210 burn-down: constants -> models — RETIRED (OMN-14221):
+    # constants_handler_capabilities no longer imports ModelOnexError; the
+    # get_capabilities_by_node_kind boundary now raises the built-in ValueError.
+
+[importlinter:contract:core-models-no-upward]
+name = Models must not import behavioral/orchestration layers (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.models
+forbidden_modules =
+    omnibase_core.services
+    omnibase_core.validation
+    omnibase_core.nodes
+    omnibase_core.logging
+ignore_imports =
+    # OMN-3210 burn-down: models -> validation — RETIRED (OMN-14331): all 18
+    # edges severed. Pure name/hex/topic-suffix validators relocated to
+    # utils/ (util_name_validation, util_hex_color, util_topic_suffix), workflow
+    # constants to constants/constants_workflow, the runtime-ops verb loader to
+    # utils/util_runtime_ops_verb_loader; migration TypedDicts and re-exported
+    # models now import their canonical types/ and models/validation/ sources.
+
+[importlinter:contract:core-midtier-no-top]
+name = Services and validation must not import nodes (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.services
+    omnibase_core.validation
+forbidden_modules =
+    omnibase_core.nodes
+
+[importlinter:contract:core-protocols-no-upward]
+name = Protocols (seam) must not import domain/behavioral layers (direct)
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.protocols
+forbidden_modules =
+    omnibase_core.models
+    omnibase_core.services
+    omnibase_core.validation
+    omnibase_core.nodes
+ignore_imports =
+    # OMN-3210 burn-down: protocols -> models (protocol I/O type references, 65 edges).
+    # NOT a permanent exception (operator ruling 2026-07-10). This wildcard ignore is
+    # permissive, so a monotonic-non-increasing RATCHET freezes the edge set at 65 and
+    # hard-fails any NEW protocols -> models edge: scripts/ci/check_import_ratchet.py
+    # (baseline scripts/ci/import_ratchet_baseline.yaml; wired as CI gate + pre-commit,
+    # OMN-14340). Owner: RSD canonical rewrite epic. Retirement mechanism: the rewrite
+    # regenerates these modules canonically (dissolving the protocols<->models cycle),
+    # after which this line + the ratchet are deleted. The set only SHRINKS.
+    omnibase_core.protocols.** -> omnibase_core.models.**
+
+[importlinter:contract:core-execution-tier-no-nodes]
+name = Execution-tier packages must not import nodes (direct)
+# OMN-14961 (OMN-3210 family, closure-boundary lock completing the OMN-14216
+# oracle's source coverage for the execution tier). `runtime`, `pipeline`, `cli`,
+# and `validators` were absent from every .importlinter source set despite
+# carrying real cross-subpackage traffic (runtime -> models 50 edges,
+# validators -> models 26, all downward-legal per the 2026-07-22 readback).
+# Their layer position existed only by convention; this block formalizes it.
+#
+# Honest framing: this contract changes no live edges for the four modules
+# below — it is a closure-boundary LOCK, not a closure shrink, matching the
+# ticket's precondition finding (live grimp re-verification, 2026-07-23).
+#
+# `infrastructure` is DELIBERATELY EXCLUDED from source_modules. The live
+# grimp readback found 4 real direct edges, all in one file:
+# src/omnibase_core/infrastructure/infra_bases.py imports ModelServiceCompute/
+# ModelServiceEffect/ModelServiceOrchestrator/ModelServiceReducer from
+# omnibase_core.nodes.node_service_{compute,effect,orchestrator,reducer}. That
+# file has zero production consumers anywhere in the OmniNode org (verified by
+# exhaustive grep across every canonical repo) but IS referenced as a
+# documented "Service Wrappers" pattern from 6 architecture/tutorial docs
+# (docs/architecture/overview.md, docs/architecture/NODE_CLASS_HIERARCHY.md,
+# docs/architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md,
+# docs/guides/node-building/03_EFFECT_NODE_TUTORIAL.md,
+# docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md,
+# docs/reference/SERVICE_WRAPPERS.md). Severing the 4 edges means either
+# relocating infra_bases.py into nodes/ or retiring the documented pattern —
+# an architecture call out of scope for a lint-contract ticket, not a
+# mechanical import removal. Per this ticket's own precondition contingency
+# ("otherwise drop that source module from the contract and record why"),
+# `infrastructure` is dropped from source_modules here; fast-follow tracked
+# under OMN-14961's follow-up ticket. Never add an ignore line instead.
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.runtime
+    omnibase_core.pipeline
+    omnibase_core.cli
+    omnibase_core.validators
+forbidden_modules =
+    omnibase_core.nodes
+
+[importlinter:contract:core-no-kafka-transport]
+name = Core must not import Kafka transport (aiokafka/confluent_kafka/omnibase_infra) — invariant I2
+# Invariant I2 of the single-runtime / transport-via-DI unification (epic OMN-14717,
+# ticket OMN-14719, plan 2026-07-17-single-runtime-transport-di-unification-plan.md).
+#
+# The target architecture puts the ONE runtime in omnibase_core and the concrete
+# Kafka transport in omnibase_infra, injected inward via the ProtocolTransport*
+# abstractions. Dependency inversion therefore REQUIRES that core never import Kafka
+# (aiokafka / confluent_kafka) nor reach "up" into omnibase_infra — that is what keeps
+# the compat <- core <- spi <- infra layering true. This contract is the mechanical
+# guard for that invariant.
+#
+# It is currently VACUOUS (grimp confirms core imports neither aiokafka,
+# confluent_kafka, nor omnibase_infra statically) — that is expected: it is the fence
+# that keeps the target true as the runtime moves into core, not a fix for a present
+# violation.
+#
+# `include_external_packages` is required so grimp records imports of the external
+# aiokafka / confluent_kafka / omnibase_infra packages. grimp attributes an external
+# import to its TOP-LEVEL package, so `omnibase_infra` (not the .event_bus.event_bus_kafka
+# submodule the plan names) is the checkable granularity — and forbidding all of
+# omnibase_infra is the stronger, layering-correct fence.
+#
+# Plan-declared deferred exception (I2): src/omnibase_core/cli/cli_run_node.py loads
+# confluent_kafka via importlib.import_module("confluent_kafka") (a DYNAMIC import).
+# grimp's static graph does not see dynamic importlib calls, so this contract stays
+# green without an ignore entry; cli_run_node.py is re-expressed over
+# ProtocolTransportProducer in a follow-up (plan step S11).
+type = forbidden
+source_modules =
+    omnibase_core
+forbidden_modules =
+    aiokafka
+    confluent_kafka
+    omnibase_infra

@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 if TYPE_CHECKING:
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
+    from omnibase_core.types.type_semver import ProtocolSemVer
 
 
 class TypedDictUsageMetadata(TypedDict, total=False):
@@ -20,7 +20,7 @@ class TypedDictUsageMetadata(TypedDict, total=False):
 
     name: NotRequired[str]
     description: NotRequired[str]
-    version: NotRequired[ModelSemVer]
+    version: NotRequired[ProtocolSemVer]
     tags: NotRequired[list[str]]
     metadata: NotRequired[dict[str, str]]
 

@@ -30,7 +30,7 @@ from omnibase_core.models.dashboard.model_action_gate_policy import (
 )
 from omnibase_core.models.ticket.model_gate import ModelGate
 from omnibase_core.models.validation.model_topic_suffix_parts import TOPIC_KIND_CMD
-from omnibase_core.validation.validator_topic_suffix import validate_topic_suffix
+from omnibase_core.utils.util_topic_suffix import check_topic_suffix
 
 __all__ = ["ModelActionContract"]
 
@@ -88,15 +88,15 @@ class ModelActionContract(BaseModel):
         embedding a topic literal, and requires the parsed kind token to be a
         command (``TOPIC_KIND_CMD``) — events/intents/snapshots are rejected.
         """
-        result = validate_topic_suffix(value)
-        if not result.is_valid or result.parsed is None:
+        result = check_topic_suffix(value)
+        if not result.is_valid or result.kind is None:
             raise ValueError(
                 f"command_topic {value!r} is not a valid ONEX topic suffix: "
                 f"{result.error}"
             )
-        if result.parsed.kind != TOPIC_KIND_CMD:
+        if result.kind != TOPIC_KIND_CMD:
             raise ValueError(
-                f"command_topic {value!r} has kind {result.parsed.kind!r}; "
+                f"command_topic {value!r} has kind {result.kind!r}; "
                 f"UI actions emit command topics only (kind={TOPIC_KIND_CMD!r})."
             )
         return value

@@ -12,11 +12,16 @@ identity gate (OMN-13412) and the recurrence guard for the OMN-13402/OMN-13405
 from __future__ import annotations
 
 import importlib.util
+import os
 import subprocess
 from pathlib import Path
 
 import pytest
 from packaging.version import Version
+
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
 
 _SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "check_release_identity.py"
 
@@ -123,7 +128,16 @@ def test_live_invocation_smoke():
     """
     repo = _SCRIPT.resolve().parents[1]
     smoke_tag = "v0.45.999999"
-    subprocess.run(["git", "tag", "-f", smoke_tag, "HEAD"], cwd=repo, check=True)
+    # OMN-14891: this test deliberately targets the real repo, but it must do so
+    # via cwd= rather than whatever GIT_DIR a git hook exported — otherwise the
+    # tag lands in an unrelated worktree's gitdir and the finally: below deletes
+    # a tag it never created.
+    subprocess.run(
+        ["git", "tag", "-f", smoke_tag, "HEAD"],
+        cwd=repo,
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
     try:
         result = subprocess.run(
             ["python", str(_SCRIPT)],
@@ -135,4 +149,9 @@ def test_live_invocation_smoke():
         assert result.returncode == 0, result.stderr
         assert "ahead of latest published" in result.stdout
     finally:
-        subprocess.run(["git", "tag", "-d", smoke_tag], cwd=repo, check=False)
+        subprocess.run(
+            ["git", "tag", "-d", smoke_tag],
+            cwd=repo,
+            check=False,
+            env=scrub_git_location_env(os.environ),
+        )

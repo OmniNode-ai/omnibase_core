@@ -18,15 +18,18 @@
 # (OMN-13412, scripts/check_release_identity.py). Same blocking direction, same
 # src/**-only enforcement, same docs/tests/CI exemption.
 
+# MIGRATED INTO ci.yml (OMN-14877, OMN-14430 fast-follow): this workflow used to
+# trigger on push/pull_request, giving it its OWN github.run_id — structurally
+# invisible to ci.yml's ci-summary default-deny poller and gating nothing
+# (pre-commit, if installed and not --no-verify'd, was the only enforcement).
+# Its validate steps now run UNCONDITIONALLY inside ci.yml under the required
+# "CI Summary" rollup, and its embedded occ-preflight caller no longer fires on
+# PRs. This file is retained workflow_dispatch-only for manual/ad-hoc invocation.
+#
 name: Release Identity Validator
 
 on:
-  push:
-    branches: [main, develop, dev, "hotfix/**"]
-  pull_request:
-    branches: [main, develop, dev]
-  merge_group:
-    branches: [main, develop, dev]
+  workflow_dispatch: {}
 
 env:
   PYTHON_VERSION: "3.12"
@@ -40,7 +43,17 @@ permissions:
   contents: read
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   validate:
+    needs: occ-preflight
     name: validate
     runs-on: >-
       ${{
@@ -52,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           # Full history + tags so the gate can resolve the latest published tag
           # and diff against the PR base.
@@ -60,12 +73,12 @@ jobs:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9
+        uses: astral-sh/setup-uv@c6081965dd0577ae48820cb8c288e12509571f0c
         with:
           version: ${{ env.UV_VERSION }}
 

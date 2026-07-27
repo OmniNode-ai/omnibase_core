@@ -36,8 +36,8 @@ What it checks (over the scanned config files or supplied file paths)
 The gate FAILS (exit 1) on any violation. There is no warn-only mode: a literal
 credential in committed config is never acceptable.
 
-COMPUTE handler usage (envelope-based)
---------------------------------------
+COMPUTE handler usage (definition B — typed request/response)
+---------------------------------------------------------------
 ::
 
     from omnibase_core.validation.validator_backend_secret_discipline import (
@@ -46,7 +46,10 @@ COMPUTE handler usage (envelope-based)
     )
 
     handler = HandlerBackendSecretDisciplineCompute()
-    # Drive via envelope.payload (pure, deterministic, no filesystem I/O in handler)
+    output = handler.handle(ModelBackendSecretDisciplineInput(config_contents={...}))
+    # Pure, deterministic, no filesystem I/O in the handler — the shared runtime
+    # adapter (omnibase_core.runtime.runtime_local_adapter) owns the bus-message
+    # boundary; this module never references the envelope type (OMN-14355 def-B).
 
 CLI / pre-commit usage
 ----------------------
@@ -79,14 +82,12 @@ import re
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
-from uuid import UUID, uuid4
+from typing import cast
 
 from yaml import YAMLError, safe_load
 
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.validation.model_backend_ref_violation import (
     ModelBackendRefViolation,
 )
@@ -99,9 +100,6 @@ from omnibase_core.models.validation.model_backend_secret_discipline_output impo
 from omnibase_core.models.validation.model_credential_violation import (
     ModelCredentialViolation,
 )
-
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 __all__ = [
     "HandlerBackendSecretDisciplineCompute",
@@ -334,33 +332,26 @@ class HandlerBackendSecretDisciplineCompute:
     def node_kind(self) -> EnumNodeKind:
         return EnumNodeKind.COMPUTE
 
-    async def handle(
-        self,
-        envelope: ModelEventEnvelope[ModelBackendSecretDisciplineInput],
-    ) -> ModelHandlerOutput[ModelBackendSecretDisciplineOutput]:
+    def handle(
+        self, request: ModelBackendSecretDisciplineInput
+    ) -> ModelBackendSecretDisciplineOutput:
         """Run the backend-secret-discipline check and return a typed verdict.
 
-        The envelope payload supplies all file contents to scan; the handler
-        performs no filesystem I/O.
+        Definition-B canonical shape (OMN-14355): typed request in, typed
+        response out, no envelope reference in the core. The shared runtime
+        adapter (``omnibase_core.runtime.runtime_local_adapter``) owns the
+        envelope boundary and adapts this call from the bus message.
+
+        ``request`` supplies all file contents to scan; the handler performs
+        no filesystem I/O.
 
         Args:
-            envelope: Input envelope carrying a
-                ``ModelBackendSecretDisciplineInput`` payload.
+            request: ``ModelBackendSecretDisciplineInput`` payload.
 
         Returns:
-            ``ModelHandlerOutput[ModelBackendSecretDisciplineOutput]`` with
-            the verdict in ``result``.
+            ``ModelBackendSecretDisciplineOutput`` verdict.
         """
-        payload: ModelBackendSecretDisciplineInput = envelope.payload
-        output = build_report_from_files(payload.config_contents)
-        # correlation_id is UUID | None on the envelope; for_compute requires UUID.
-        correlation_id: UUID = envelope.correlation_id or uuid4()
-        return ModelHandlerOutput.for_compute(
-            input_envelope_id=envelope.envelope_id,
-            correlation_id=correlation_id,
-            handler_id=self.handler_id,
-            result=output,
-        )
+        return build_report_from_files(request.config_contents)
 
 
 NodeBackendSecretDisciplineCompute = HandlerBackendSecretDisciplineCompute

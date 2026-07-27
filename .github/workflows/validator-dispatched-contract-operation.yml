@@ -17,15 +17,18 @@
 # dispatched-contract-operation pre-commit hook and a mirror of the `validate`
 # job in their own CI.
 
+# MIGRATED INTO ci.yml (OMN-14877, OMN-14430 fast-follow): this workflow used to
+# trigger on push/pull_request, giving it its OWN github.run_id — structurally
+# invisible to ci.yml's ci-summary default-deny poller and gating nothing
+# (pre-commit, if installed and not --no-verify'd, was the only enforcement).
+# Its validate steps now run UNCONDITIONALLY inside ci.yml under the required
+# "CI Summary" rollup, and its embedded occ-preflight caller no longer fires on
+# PRs. This file is retained workflow_dispatch-only for manual/ad-hoc invocation.
+#
 name: dispatched contract handlers[0].operation Validator
 
 on:
-  push:
-    branches: [main, develop, dev, "hotfix/**"]
-  pull_request:
-    branches: [main, develop, dev]
-  merge_group:
-    branches: [main, develop, dev]
+  workflow_dispatch: {}
 
 env:
   PYTHON_VERSION: "3.12"
@@ -36,7 +39,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   validate:
+    needs: occ-preflight
     name: validate
     runs-on: >-
       ${{
@@ -51,7 +64,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 

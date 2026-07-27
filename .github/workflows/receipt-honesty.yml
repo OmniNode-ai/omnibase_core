@@ -31,8 +31,6 @@ on:
     branches: [main, develop, dev, "hotfix/**"]
   pull_request:
     branches: [main, develop, dev]
-  merge_group:
-    branches: [main, develop, dev]
 
 env:
   PYTHON_VERSION: "3.12"
@@ -43,7 +41,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   receipt-honesty:
+    needs: occ-preflight
+    if: always()
     name: receipt-honesty
     runs-on: >-
       ${{
@@ -54,11 +63,17 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Fail when OCC preflight fails
+        if: needs.occ-preflight.result != 'success'
+        run: |
+          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run receipt-honesty."
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 

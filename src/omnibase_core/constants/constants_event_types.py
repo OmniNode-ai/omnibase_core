@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-topic-sot: canonical core event-type / topic constant registry (OMN-13944)
 
 """Core event types for the ONEX system.
 

@@ -43,7 +43,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
 )
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
-from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
+from omnibase_core.nodes.node_service_reducer import ModelServiceReducer
 
 
 class ConcreteReducerService(ModelServiceReducer):

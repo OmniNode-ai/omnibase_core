@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-topic-literal: per-event topic SoT declaration (OMN-13944)
 
 """
 Contract merge completed event model.
@@ -44,7 +45,7 @@ from omnibase_core.models.merge.model_overlay_ref import ModelOverlayRef
 
 __all__ = ["ModelContractMergeCompletedEvent", "CONTRACT_MERGE_COMPLETED_EVENT"]
 
-CONTRACT_MERGE_COMPLETED_EVENT = "onex.contract.merge.completed"
+CONTRACT_MERGE_COMPLETED_EVENT = "onex.contract.merge.completed"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944)
 
 
 class ModelContractMergeCompletedEvent(ModelContractValidationEventBase):

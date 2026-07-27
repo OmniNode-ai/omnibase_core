@@ -35,6 +35,24 @@ class ModelRoutingIntent(BaseModel):
             "None means normal tier selection from the lowest eligible tier."
         ),
     )
+    # OMN-14402: same-tier backend fallback. A local-backend transport/inference
+    # failure used to escalate the WHOLE tier straight to the next (possibly
+    # cloud) tier, even when a sibling backend in the SAME tier also declares the
+    # task type (e.g. routing_tiers.yaml's local tier carries both
+    # local-heavy-reasoning and local-reasoner for "research"). Backend refs
+    # already attempted and failed within the target tier are listed here so the
+    # routing reducer's selection can skip them and land on an untried sibling
+    # instead of deterministically re-resolving the one that just failed.
+    excluded_backend_refs: tuple[str, ...] = Field(
+        default_factory=tuple,
+        description=(
+            "Backend refs (routing_tiers.yaml backend_id) already attempted and "
+            "failed within the tier this intent routes to. The routing reducer "
+            "skips these when selecting a model, so a same-tier retry after a "
+            "transport/inference failure lands on a different backend instead "
+            "of deterministically re-selecting the one that just failed."
+        ),
+    )
 
 
 class ModelInferenceIntent(BaseModel):
@@ -74,6 +92,24 @@ class ModelInferenceIntent(BaseModel):
             "Additional OpenAI-compatible request body options required by the "
             "selected model protocol. The inference effect merges these at the "
             "provider-call boundary after core fields are constructed."
+        ),
+    )
+    # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
+    # OMN-14280 (OMN-14208 slice-2 A-now): the orchestrator stamps the workflow
+    # tenant onto the inference intent so the inference effect can independently
+    # attribute its own side effects (tenant-tagged logging/metrics, per-tenant
+    # credential/quota/cost) to the owning tenant instead of trusting a shared
+    # correlation_id -> tenant lookup. Optional now (backward-compatible wire);
+    # the fail-closed wire==topic-tenant guard + required-flip is A-enforce,
+    # gated behind the gateway topic-tenant stamp (deferred, not this slice).
+    tenant_id: str | None = Field(
+        default=None,
+        description=(
+            "Owning tenant for this inference call. Set by the delegation "
+            "orchestrator from the workflow tenant identity; the inference "
+            "effect reads it to tenant-tag its logs/metrics and round-trips it "
+            "onto ModelInferenceResponseData. Isolation-ready wire (not yet "
+            "isolation-enforced)."
         ),
     )
 
@@ -135,6 +171,18 @@ class ModelInferenceResponseData(BaseModel):
     error_message: str = Field(
         default="",
         description="Failure reason when inference could not produce content.",
+    )
+    # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
+    # OMN-14280 (OMN-14208 slice-2 A-now): round-tripped from ModelInferenceIntent
+    # by the inference effect so the tenant that owned the call is auditable on
+    # the response and the orchestrator can observability-cross-check it against
+    # the workflow tenant. Optional now; required-flip is A-enforce (deferred).
+    tenant_id: str | None = Field(
+        default=None,
+        description=(
+            "Owning tenant echoed back from the inference intent by the "
+            "inference effect. Isolation-ready wire (not yet isolation-enforced)."
+        ),
     )
 
 

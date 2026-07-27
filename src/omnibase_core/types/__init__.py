@@ -26,8 +26,15 @@ error_codes → types.__init__ → constraints → (circular back to error_codes
 Solution: Use TYPE_CHECKING and __getattr__ for lazy loading, similar to ModelBaseCollection.
 """
 
-# Constraint imports are direct at module level for IDE support and import performance.
-# The __getattr__ fallback at the bottom provides lazy-loading as a backup mechanism.
+from typing import TYPE_CHECKING
+
+# type_constraints and type_core are NOT imported eagerly here (OMN-14624).
+# Both import UP into ``omnibase_core.protocols``; importing them at package-init
+# time closes a ``protocols -> types -> protocols`` cycle whenever ``protocols`` is
+# imported before ``types`` (an order-dependent ImportError). Their public names are
+# served lazily via ``__getattr__`` at the bottom of this module; direct submodule
+# imports (``from omnibase_core.types.type_constraints import ...``) remain the fast
+# path for hot consumers and are unaffected.
 # Core types for breaking circular dependencies
 # Converter functions
 from .converter_error_details import convert_error_details_to_typed_dict
@@ -42,50 +49,10 @@ from .type_compute_pipeline import (
     StepResultMapping,
     TransformInputT,
 )
-from .type_constraints import (
-    BaseCollection,
-    BaseFactory,
-    BasicValueType,
-    CollectionItemType,
-    ComplexContextValueType,
-    Configurable,
-    ConfigurableType,
-    ContextValueType,
-    ErrorType,
-    Executable,
-    ExecutableType,
-    Identifiable,
-    IdentifiableType,
-    MetadataType,
-    ModelBaseCollection,
-    ModelBaseFactory,
-    ModelType,
-    Nameable,
-    NameableType,
-    NumericType,
-    PrimitiveValueType,
-    ProtocolMetadataProvider,
-    ProtocolValidatable,
-    Serializable,
-    SerializableType,
-    SimpleValueType,
-    SuccessType,
-    ValidatableType,
-    is_complex_context_value,
-    is_configurable,
-    is_context_value,
-    is_executable,
-    is_identifiable,
-    is_metadata_provider,
-    is_nameable,
-    is_primitive_value,
-    is_serializable,
-    is_validatable,
-    validate_context_value,
-    validate_primitive_value,
-)
-from .type_core import ProtocolSchemaValue, TypedDictBasicErrorContext
 
+# NOTE(OMN-14624): type_constraints + type_core public names are lazy-loaded via
+# __getattr__ below (both import upward into omnibase_core.protocols). Do NOT add
+# eager ``from .type_constraints import ...`` / ``from .type_core import ...`` here.
 # Effect result type aliases (centralized to avoid primitive soup unions)
 from .type_effect_result import DbParamType, EffectResultType
 
@@ -99,9 +66,6 @@ from .type_json import (
     StrictJsonType,
     ToolParameterValue,
 )
-
-# Schema type aliases (for type-safe schema patterns)
-from .type_schema_aliases import SchemaDict, StepOutputs
 
 # Serializable value types (for JSON-compatible data)
 from .type_serializable_value import SerializableValue, SerializedDict
@@ -398,6 +362,47 @@ from .typed_dict_workflow_state import TypedDictWorkflowState
 from .typed_dict_yaml_dump_kwargs import TypedDictYamlDumpKwargs
 from .typed_dict_yaml_dump_options import TypedDictYamlDumpOptions
 
+if TYPE_CHECKING:
+    from .type_constraints import (
+        BasicValueType,
+        CollectionItemType,
+        ComplexContextValueType,
+        Configurable,
+        ConfigurableType,
+        ContextValueType,
+        ErrorType,
+        Executable,
+        ExecutableType,
+        Identifiable,
+        IdentifiableType,
+        MetadataType,
+        ModelType,
+        Nameable,
+        NameableType,
+        NumericType,
+        PrimitiveValueType,
+        ProtocolMetadataProvider,
+        ProtocolValidatable,
+        Serializable,
+        SerializableType,
+        SimpleValueType,
+        SuccessType,
+        ValidatableType,
+        is_complex_context_value,
+        is_configurable,
+        is_context_value,
+        is_executable,
+        is_identifiable,
+        is_metadata_provider,
+        is_nameable,
+        is_primitive_value,
+        is_serializable,
+        is_validatable,
+        validate_context_value,
+        validate_primitive_value,
+    )
+    from .type_core import ProtocolSchemaValue, TypedDictBasicErrorContext
+
 __all__ = [
     # Core types (no dependencies)
     "TypedDictBasicErrorContext",
@@ -414,9 +419,6 @@ __all__ = [
     # Effect result type aliases
     "EffectResultType",
     "DbParamType",
-    # Schema type aliases
-    "SchemaDict",
-    "StepOutputs",
     # Compute pipeline type aliases
     "PathResolvedValue",
     "PipelineData",
@@ -438,10 +440,6 @@ __all__ = [
     "TypedDictAgentRoutingConfig",
     "TypedDictSerializedModel",
     # Type constraints and protocols
-    "ModelBaseCollection",
-    "ModelBaseFactory",
-    "BaseCollection",
-    "BaseFactory",
     "BasicValueType",
     "CollectionItemType",
     "ComplexContextValueType",
@@ -715,15 +713,29 @@ __all__ = [
 # =============================================================================
 def __getattr__(name: str) -> object:
     """
-    Lazy import for constraints module to avoid circular imports.
+    Lazy import for the ``type_constraints`` and ``type_core`` submodules.
 
-    All constraint imports are lazy-loaded to prevent circular dependency:
+    Both submodules import UP into ``omnibase_core.protocols``. Eager import at
+    package-init time therefore closes a ``protocols -> types -> protocols`` cycle
+    whenever ``protocols`` is imported before ``types`` (OMN-14624). Their public
+    names are resolved lazily here so ``types/__init__`` never imports ``protocols``
+    at module-init time:
     error_codes -> types.__init__ -> constraints -> models -> error_codes
     """
+    # Public names re-exported from ``type_core`` (imports omnibase_core.protocols).
+    type_core_exports = {
+        "ProtocolSchemaValue",
+        "TypedDictBasicErrorContext",
+    }
+    if name in type_core_exports:
+        from omnibase_core.types import type_core
+
+        attr = getattr(type_core, name)
+        globals()[name] = attr
+        return attr
+
     # List of all constraint exports that should be lazy-loaded
     constraint_exports = {
-        "BaseCollection",
-        "BaseFactory",
         "BasicValueType",
         "CollectionItemType",
         "ComplexContextValueType",
@@ -761,14 +773,6 @@ def __getattr__(name: str) -> object:
         "validate_context_value",
         "validate_primitive_value",
     }
-
-    # ModelBaseCollection and ModelBaseFactory come from models.base, not constraints
-    if name in ("ModelBaseCollection", "ModelBaseFactory"):
-        from omnibase_core.models.base import ModelBaseCollection, ModelBaseFactory
-
-        globals()["ModelBaseCollection"] = ModelBaseCollection
-        globals()["ModelBaseFactory"] = ModelBaseFactory
-        return globals()[name]
 
     # All other constraint exports come from .constraints
     if name in constraint_exports:

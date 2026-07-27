@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# No-raw-sqlite3 arch gate [OMN-14659 / self-wired OMN-14665]
+#
+# Required status check context: "No Raw Sqlite3 Validator / validate"
+#
+# Rejects raw sqlite3.connect() calls outside *_adapter.py definitions. Database
+# access must go through an injected adapter. The AST scan runs as a pure COMPUTE
+# node (node_no_raw_sqlite3_check_compute) over explicit (path, source) pairs;
+# the paired EFFECT node (node_source_file_gather_effect) owns the filesystem
+# walk for the full-tree run. The SAME COMPUTE node backs the check-no-raw-sqlite3
+# pre-commit hook, so local and CI verdicts cannot drift (enforcement, not
+# detection — CLAUDE.md Rule #5). Suppress a legitimate adapter-bootstrap call
+# site with `# di-ok`.
+#
+# STANDALONE workflow with NO `needs:` (OMN-14666 / OMN-14668 lesson): a
+# cross-job dependency can SKIP the gate on an unrelated failure, opening a
+# skip-then-vacuous-green window. This gate fires on every PR to main/dev on its
+# own evidence, never conditioned on another job's result.
+
+# MIGRATED INTO ci.yml (OMN-14877, OMN-14430 fast-follow): this workflow used to
+# trigger on push/pull_request, giving it its OWN github.run_id — structurally
+# invisible to ci.yml's ci-summary default-deny poller and gating nothing
+# (pre-commit, if installed and not --no-verify'd, was the only enforcement).
+# Its validate steps now run UNCONDITIONALLY inside ci.yml under the required
+# "CI Summary" rollup, and its embedded occ-preflight caller no longer fires on
+# PRs. This file is retained workflow_dispatch-only for manual/ad-hoc invocation.
+#
+name: No Raw Sqlite3 Validator
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
+  UV_HTTP_TIMEOUT: "600"
+
+concurrency:
+  group: validator-no-raw-sqlite3-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: validate
+    # OMNI_RUNNER_SELECTOR_V1 — trusted events default to self-hosted omnibase-ci;
+    # pull_request defaults to ubuntu-latest (hosted, so fleet saturation can
+    # never cancel this gate and falsely skip it).
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c6081965dd0577ae48820cb8c288e12509571f0c
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests (COMPUTE + CLI runtime)
+        run: |
+          uv run pytest tests/unit/nodes/node_no_raw_sqlite3_check_compute/ -v
+
+      # Blocking self-scan: this repo's src/ is clean against the rule (the 1
+      # pre-existing finding — the zero-infra local-harness projection store,
+      # which IS an in-process adapter bootstrap owning its own connection by
+      # design, OMN-13420 — was triaged with the sanctioned # di-ok marker under
+      # OMN-14665). The same COMPUTE node backs the check-no-raw-sqlite3
+      # pre-commit hook, so verdicts cannot drift.
+      - name: Self-scan omnibase_core src/ (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check \
+            --root src

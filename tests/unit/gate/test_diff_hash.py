@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import subprocess
 from pathlib import Path
 
@@ -22,11 +23,25 @@ pytestmark = pytest.mark.unit
 
 
 def _run_git(repo: Path, *args: str) -> subprocess.CompletedProcess[bytes]:
+    env = os.environ.copy()
+    for key in tuple(env):
+        if key.startswith("GIT_CONFIG"):
+            env.pop(key, None)
+    for key in (
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_COMMON_DIR",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ):
+        env.pop(key, None)
     return subprocess.run(
         ["git", *args],
         cwd=repo,
         capture_output=True,
         check=True,
+        env=env,
     )
 
 
@@ -45,6 +60,21 @@ def _init_repo_with_staged_change(repo: Path) -> None:
 def _commit(repo: Path, message: str) -> str:
     _run_git(repo, "commit", "-m", message)
     return _run_git(repo, "rev-parse", "HEAD").stdout.decode("utf-8").strip()
+
+
+def test_temp_git_helper_does_not_inherit_parent_git_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    parent = tmp_path / "parent"
+    parent.mkdir()
+    _init_repo(parent)
+    monkeypatch.setenv("GIT_DIR", str(parent / ".git"))
+
+    child = tmp_path / "child"
+    child.mkdir()
+    _init_repo_with_staged_change(child)
+
+    assert _run_git(parent, "ls-files").stdout == b""
 
 
 def _sha256_prefixed(content: bytes) -> str:

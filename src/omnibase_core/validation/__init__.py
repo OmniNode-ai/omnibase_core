@@ -29,6 +29,7 @@ Usage Examples:
 """
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 # Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus
@@ -52,6 +53,15 @@ from omnibase_core.models.validation.model_contract_validation_event import (
 # Import model from models/validation/
 from omnibase_core.models.validation.model_contract_validation_result import (
     ModelContractValidationResult,
+)
+from omnibase_core.models.validation.model_duplicate_id_check_spec import (
+    ModelDuplicateIdCheckSpec,
+)
+from omnibase_core.models.validation.model_duplicate_id_manifest import (
+    ModelDuplicateIdManifest,
+)
+from omnibase_core.models.validation.model_duplicate_id_violation import (
+    ModelDuplicateIdViolation,
 )
 from omnibase_core.models.validation.model_fsm_analysis_result import (
     ModelFSMAnalysisResult,
@@ -77,6 +87,29 @@ from omnibase_core.services.service_contract_validation_invariant_checker import
 # ModelValidationSuite is available via __getattr__ (emits deprecation warning)
 # Import directly from source module to satisfy mypy explicit-export requirement
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
+
+if TYPE_CHECKING:
+    from omnibase_core.services.service_contract_validator import (
+        ServiceContractValidator,
+    )
+    from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
+    from omnibase_core.services.service_protocol_migrator import ServiceProtocolMigrator
+    from omnibase_core.validation.validator_contract_linter import (
+        CONTRACT_MODELS,
+        ValidatorContractLinter,
+    )
+
+from omnibase_core.validation.validator_contract_linter import (
+    NODE_TYPE_MAPPING,
+    RULE_FINGERPRINT_FORMAT,
+    RULE_FINGERPRINT_MATCH,
+    RULE_MODEL_PREFIX,
+    RULE_NAMING_CONVENTION,
+    RULE_RECOMMENDED_FIELDS,
+    RULE_REQUIRED_FIELDS,
+    RULE_SCHEMA_VALIDATION,
+    RULE_YAML_SYNTAX,
+)
 
 # Import validation functions for easy access
 # Import Architecture validator (OMN-1291)
@@ -138,6 +171,7 @@ from .validator_contract_pipeline import (
     ContractValidationPipeline,
     ModelExpandedContractResult,
 )
+from .validator_duplicate_config_ids import ValidatorDuplicateConfigIds
 from .validator_hardcoded_topics import ValidatorHardcodedTopics
 from .validator_local_paths import (
     ModelLocalPathViolation,
@@ -282,6 +316,23 @@ def __getattr__(name: str) -> type:
 
 # Import FSM analysis
 # Import workflow linter
+# Import workflow constants (OMN-PR255; relocated to constants/ under OMN-14331)
+from omnibase_core.constants.constants_workflow import (
+    MAX_TIMEOUT_MS,
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+    VALID_STEP_TYPES,
+)
+
+# Import hex color validators (OMN-1284; relocated to utils/ under OMN-14331)
+from omnibase_core.utils.util_hex_color import (
+    HEX_COLOR_PATTERN,
+    UtilHexColorValidator,
+    validate_hex_color,
+    validate_hex_color_mapping,
+    validate_hex_color_optional,
+)
+
 from .checker_workflow_linter import WorkflowLinter
 from .validator_contracts import (
     validate_contracts_directory,
@@ -289,15 +340,6 @@ from .validator_contracts import (
     validate_yaml_file,
 )
 from .validator_fsm_analysis import analyze_fsm
-
-# Import hex color validators (OMN-1284)
-from .validator_hex_color import (
-    HEX_COLOR_PATTERN,
-    HexColorValidator,
-    validate_hex_color,
-    validate_hex_color_mapping,
-    validate_hex_color_optional,
-)
 from .validator_patterns import (
     RULE_UNKNOWN,
     ValidatorPatterns,
@@ -336,14 +378,6 @@ from .validator_workflow import (
     validate_execution_mode_string,
     validate_unique_step_ids,
     validate_workflow_definition,
-)
-
-# Import workflow constants (OMN-PR255)
-from .validator_workflow_constants import (
-    MAX_TIMEOUT_MS,
-    MIN_TIMEOUT_MS,
-    RESERVED_STEP_TYPES,
-    VALID_STEP_TYPES,
 )
 
 # Import common validators (OMN-1054)
@@ -505,6 +539,12 @@ __all__ = [
     # Local path validator — detect machine-specific absolute paths
     "ValidatorLocalPaths",
     "ModelLocalPathViolation",
+    # Duplicate registry id validator — reject config/registry files declaring
+    # duplicate ids over a non-unique key (OMN-14401)
+    "ValidatorDuplicateConfigIds",
+    "ModelDuplicateIdCheckSpec",
+    "ModelDuplicateIdManifest",
+    "ModelDuplicateIdViolation",
     "ValidatorNodePurity",
     "ModelNodePurityViolation",
     "EnumNodePurityRule",
@@ -560,7 +600,7 @@ __all__ = [
     "ErrorCode",
     # Hex color validators (OMN-1284)
     "HEX_COLOR_PATTERN",
-    "HexColorValidator",
+    "UtilHexColorValidator",
     "validate_hex_color",
     "validate_hex_color_optional",
     "validate_hex_color_mapping",

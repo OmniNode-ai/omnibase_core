@@ -9,6 +9,7 @@ A unified validation suite for ONEX compliance.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import cast
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -107,8 +108,15 @@ class ServiceValidationSuite:
         relevant_args: list[str] = validator_info["args"]
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in relevant_args}
 
-        # Direct call since validator_func is properly typed through ValidatorInfo
-        return validator_func(directory, **filtered_kwargs)
+        # OMN-14339: TypedDictValidatorInfo.func is widened to
+        # Callable[..., object] so the foundation-layer TypedDict does not
+        # import models (types -> models back-edge). The registry above is
+        # built exclusively from validators returning
+        # ModelValidationResult[None], so this narrowing cast is sound.
+        return cast(
+            "ModelValidationResult[None]",
+            validator_func(directory, **filtered_kwargs),
+        )
 
     def run_all_validations(
         self,

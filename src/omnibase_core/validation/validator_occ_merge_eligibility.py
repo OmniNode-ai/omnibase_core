@@ -121,7 +121,33 @@ def validate_occ_merge_eligibility(
     missing_contracts: list[str] = []
     missing_receipts: list[str] = []
     nonpass_receipts: list[str] = []
+    # OMN-14404: stale contract bindings accumulate like every other failure
+    # class in this function. Returning on the first one discards the other N-1
+    # already-resolved receipts and costs the operator a full CI round per stale
+    # receipt, which is what manufactured the #3965 -> #3966 -> #3968 -> #3969
+    # serial OCC repair chain. Keys mirror `missing_or_nonpass_receipts`;
+    # `stale_binding_details` holds the human-readable per-receipt message.
+    stale_bindings: list[str] = []
+    stale_binding_details: list[str] = []
     tickets_with_pr_bound_receipt: set[str] = set()
+
+    def _stale_binding_result() -> ModelOccEligibilityResult:
+        detail = "; ".join(stale_binding_details)
+        if len(stale_bindings) > 1:
+            detail = (
+                f"{len(stale_bindings)} receipts have stale contract bindings "
+                f"(repair all of them in one pass): {detail}"
+            )
+        return ModelOccEligibilityResult(
+            eligible=False,
+            reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
+            ticket_ids=ticket_ids,
+            occ_commit_sha=snapshot.occ_commit_sha,
+            contract_hashes=contract_hashes,
+            receipt_ids=tuple(sorted(receipt_ids)),
+            stale_receipt_bindings=tuple(sorted(stale_bindings)),
+            detail=detail,
+        )
 
     for ticket_id in ticket_ids:
         contract_path = snapshot.contracts_dir / f"{ticket_id}.yaml"
@@ -133,6 +159,13 @@ def validate_occ_merge_eligibility(
             contract_hash = _sha256_file(contract_path)
         except (OSError, yaml.YAMLError) as exc:
             missing_contracts.append(ticket_id)
+            # OMN-14404: a stale binding found in an earlier iteration still
+            # dominates, exactly as it did when the binding check returned
+            # inline. Same guard at every hard-fail return below; it can only
+            # fire on bindings from PRIOR iterations, because the binding check
+            # is the last check in an iteration and `continue`s on failure.
+            if stale_bindings:
+                return _stale_binding_result()
             return ModelOccEligibilityResult(
                 eligible=False,
                 reason=EnumOccEligibilityReason.MISSING_CONTRACT,
@@ -165,6 +198,8 @@ def validate_occ_merge_eligibility(
             if supersession is not None:
                 if supersession.error is not None:
                     nonpass_receipts.append(receipt_key)
+                    if stale_bindings:
+                        return _stale_binding_result()
                     return ModelOccEligibilityResult(
                         eligible=False,
                         reason=EnumOccEligibilityReason.NONPASS_RECEIPT,
@@ -189,6 +224,8 @@ def validate_occ_merge_eligibility(
                     receipt = ModelDodReceipt.model_validate(receipt_raw)
                 except (OSError, yaml.YAMLError, ValidationError) as exc:
                     nonpass_receipts.append(receipt_key)
+                    if stale_bindings:
+                        return _stale_binding_result()
                     return ModelOccEligibilityResult(
                         eligible=False,
                         reason=EnumOccEligibilityReason.NONPASS_RECEIPT,
@@ -201,6 +238,8 @@ def validate_occ_merge_eligibility(
                     )
                 receipt_source = receipt_path
             if receipt.ticket_id != ticket_id:
+                if stale_bindings:
+                    return _stale_binding_result()
                 return ModelOccEligibilityResult(
                     eligible=False,
                     reason=EnumOccEligibilityReason.PR_TICKET_MISMATCH,
@@ -242,6 +281,8 @@ def validate_occ_merge_eligibility(
                 receipt.contract_sha256 is None
                 and receipt.contract_entry_sha256 is None
             ):
+                if stale_bindings:
+                    return _stale_binding_result()
                 return ModelOccEligibilityResult(
                     eligible=False,
                     reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
@@ -265,15 +306,11 @@ def validate_occ_merge_eligibility(
                 is_bound_to_this_pr=is_bound,
             )
             if binding_error is not None:
-                return ModelOccEligibilityResult(
-                    eligible=False,
-                    reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
-                    ticket_ids=ticket_ids,
-                    occ_commit_sha=snapshot.occ_commit_sha,
-                    contract_hashes=contract_hashes,
-                    receipt_ids=tuple(sorted(receipt_ids)),
-                    detail=f"receipt {receipt_source}: {binding_error}",
+                stale_bindings.append(receipt_key)
+                stale_binding_details.append(
+                    f"receipt {receipt_source}: {binding_error}"
                 )
+                continue
             if is_bound:
                 tickets_with_pr_bound_receipt.add(ticket_id)
             if receipt.status is not EnumReceiptStatus.PASS:
@@ -281,6 +318,12 @@ def validate_occ_merge_eligibility(
                 continue
             receipt_ids.append(receipt_key)
 
+    # OMN-14404: stale bindings are reported FIRST, ahead of MISSING_CONTRACT,
+    # MISSING_RECEIPT/NONPASS_RECEIPT and the terminal unbound-ticket check. This
+    # reproduces the pre-batching precedence exactly: the old in-loop early return
+    # preempted every one of those post-loop checks, in every iteration order.
+    if stale_bindings:
+        return _stale_binding_result()
     if missing_contracts:
         return ModelOccEligibilityResult(
             eligible=False,

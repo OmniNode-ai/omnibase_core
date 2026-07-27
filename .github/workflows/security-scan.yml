@@ -17,7 +17,17 @@ on:
     - cron: "0 6 * * 1"
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   codeql:
+    needs: occ-preflight
     name: CodeQL
     uses: OmniNode-ai/onex_change_control/.github/workflows/codeql-reusable.yml@main
     with:

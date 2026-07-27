@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the no_utcnow_check COMPUTE node.
+# AST-scans explicit (path, source) pairs for datetime.utcnow() usage (any ast.Attribute
+# with attr == "utcnow"), reproducing the CI gate at
+# omniclaude/scripts/validation/validate_no_utcnow.py byte-for-byte.
+#
+# See: OMN-14656 — RSD canary (Characterize -> Generate two-node split)
+
+name: node_no_utcnow_check_compute
+node_id: node_no_utcnow_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  AST-scans a set of explicit (path, source) pairs for datetime.utcnow() attribute access (ast.Attribute
+  with attr == "utcnow", regardless of whether it is called), and returns an OMN-2362 ValidationReport
+  with a per-violation finding reproducing the arch-no-utcnow CI gate's message text byte-for-byte. Pure
+  — no filesystem access, no clock, no global state. #magic___^_^___line
+input_model: omnibase_core.models.nodes.no_utcnow_check.model_no_utcnow_check_input.ModelNoUtcnowCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNoUtcnowCheckCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

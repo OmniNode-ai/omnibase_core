@@ -39,8 +39,6 @@ on:
     branches: [main, develop, dev, "hotfix/**"]
   pull_request:
     branches: [main, develop, dev]
-  merge_group:
-    branches: [main, develop, dev]
 
 env:
   PYTHON_VERSION: "3.12"
@@ -51,7 +49,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   no-plugin-daemon-classes:
+    needs: occ-preflight
+    if: always()
     name: no-plugin-daemon-classes
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
@@ -67,7 +76,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 

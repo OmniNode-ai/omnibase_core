@@ -517,6 +517,12 @@ class NodeContractVerifyReplayCompute:
         synthetic_base.capability_outputs = []
         synthetic_base.handlers = []
         synthetic_base.dependencies = []
+        # OMN-14245: ContractMergeEngine now threads these through to the
+        # merged ModelHandlerContract; an un-set MagicMock attribute here
+        # fails Pydantic validation instead of being treated as absent.
+        synthetic_base.handler_routing = None
+        synthetic_base.yaml_consumed_events = []
+        synthetic_base.yaml_published_events = []
         synthetic_base.consumed_events = []
 
         synthetic_factory = MagicMock()

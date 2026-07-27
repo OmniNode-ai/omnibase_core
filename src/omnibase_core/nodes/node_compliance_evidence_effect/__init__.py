@@ -9,6 +9,9 @@ after durable persistence is confirmed.
 .. versionadded:: OMN-7071
 """
 
+from omnibase_core.models.nodes.compliance_evidence.model_compliance_evidence_output import (
+    ModelComplianceEvidenceOutput,
+)
 from omnibase_core.models.nodes.compliance_evidence.model_evidence_check_detail import (
     ModelEvidenceCheckDetail,
 )
@@ -20,6 +23,7 @@ from omnibase_core.nodes.node_compliance_evidence_effect.handler import (
 )
 
 __all__ = [
+    "ModelComplianceEvidenceOutput",
     "ModelEvidenceCheckDetail",
     "ModelEvidenceReportState",
     "NodeComplianceEvidenceEffect",

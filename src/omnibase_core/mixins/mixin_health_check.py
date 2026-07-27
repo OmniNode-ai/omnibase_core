@@ -41,7 +41,7 @@ from omnibase_core.logging.logging_structured import (
 )
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
 from omnibase_core.protocols.http import ProtocolHttpClient
-from omnibase_core.protocols.protocol_health_check_clients import (
+from omnibase_core.protocols.protocol_health_check_clients import (  # onex-allow-kafka-producer: ProtocolKafkaProducer* are health-check protocol type names, not direct producer clients
     ProtocolConnectionPool,
     ProtocolConnectionPoolWithConnection,
     ProtocolKafkaProducerAio,

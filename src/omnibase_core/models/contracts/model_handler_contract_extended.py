@@ -10,8 +10,8 @@ operation_bindings, activation, dict-form input_model/output_model).
 
 The base ``ModelHandlerContract`` stays strict (``extra="forbid"``) so
 all other consumers aren't forced to know about infra-specific fields.
-This extended variant uses ``extra="ignore"`` to silently discard any
-additional fields not declared here.
+This extended variant declares the infra-specific fields it accepts and
+rejects any additional undeclared fields.
 
 See Also:
     - OMN-6483: Create ModelHandlerContractExtended
@@ -46,18 +46,19 @@ class ModelHandlerContractExtended(ModelHandlerContract):
 
     model_config = ConfigDict(
         frozen=True,
-        extra="ignore",
+        extra="forbid",
         from_attributes=True,
         str_strip_whitespace=True,
     )
 
-    handler_routing: (
-        dict[str, object] | None
-    ) = (  # ONEX_EXCLUDE: dict_str_any - infra routing config has variable schema
-        Field(
-            default=None,
-            description="Infra-specific handler routing configuration",
-        )
+    # ONEX_EXCLUDE: dict_str_any - infra routing config has variable schema.
+    # OMN-14245: the parent ModelHandlerContract.handler_routing became a typed
+    # ModelHandlerRoutingSubcontract | None field (so ContractMergeEngine can
+    # carry it through a merge); this subclass keeps the widened dict-form for
+    # infra handler_contract.yaml variable-schema compatibility.
+    handler_routing: dict[str, object] | None = Field(  # type: ignore[assignment]  # OMN-14245: widened in subclass for infra YAML dict-form compatibility
+        default=None,
+        description="Infra-specific handler routing configuration",
     )
 
     operation_bindings: (

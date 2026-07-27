@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Composite action: run the deploy-gate validator.
+# Called by omnibase_core/.github/workflows/deploy-gate-reusable.yml
+# Canonical source for all repos.
+#
+# Relocated omniclaude -> omnibase_core (OMN-14277) to fix the inverted CI
+# layering: omnibase_core / omnibase_infra / omnimarket must not depend
+# up-layer on the omniclaude plugin. Original canonical source: OMN-9685
+# (validator), OMN-9734 (DGM-Phase6 centralisation).
+
+name: Deploy Gate Validator
+description: >
+  Validates that PRs touching runtime paths cite a ticket with deploy DoD evidence.
+  Canonical implementation: OMN-9685. Centralised: OMN-9734 (DGM-Phase6).
+  Relocated to omnibase_core: OMN-14277.
+
+inputs:
+  pr-number:
+    description: PR number to validate
+    required: true
+  github-token:
+    description: GitHub token for gh CLI access
+    required: true
+  contracts-dir:
+    description: >
+      Path to directory containing OMN-XXXX.yaml ticket contracts.
+      Canonical source is onex_change_control (OMN-11423); the reusable
+      workflow checks out OCC and passes _occ/contracts here.
+    required: false
+    default: _occ/contracts
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.12"
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: "0.8.3"
+
+    - name: Install pyyaml
+      shell: bash
+      run: python -m pip install pyyaml
+
+    - name: Run deploy gate
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        CONTRACTS_DIR: ${{ inputs.contracts-dir }}
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        if ! changed_files="$(gh pr diff "$PR_NUMBER" --name-only 2>/tmp/deploy-gate-gh-diff.err | tr '\n' ' ')"; then
+          base_ref="${GITHUB_BASE_REF:-main}"
+          echo "::notice::gh pr diff failed; falling back to local git diff against origin/${base_ref}"
+          cat /tmp/deploy-gate-gh-diff.err || true
+          git fetch origin "$base_ref" --no-tags
+          changed_files="$(git diff --name-only "origin/${base_ref}" HEAD | tr '\n' ' ')"
+        fi
+
+        python "$ACTION_PATH/validate_pr_deploy_required.py" \
+          --changed-files "$changed_files" \
+          --pr-body "$(gh pr view "$PR_NUMBER" --json body -q '.body')" \
+          --contracts-dir "$CONTRACTS_DIR"

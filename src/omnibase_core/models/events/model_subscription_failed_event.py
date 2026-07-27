@@ -19,7 +19,7 @@ from omnibase_core.models.events.model_runtime_event_base import (
 
 __all__ = ["ModelSubscriptionFailedEvent", "SUBSCRIPTION_FAILED_EVENT"]
 
-SUBSCRIPTION_FAILED_EVENT = "onex.runtime.subscription.failed"
+SUBSCRIPTION_FAILED_EVENT = "onex.runtime.subscription.failed"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944); onex-allow-topic-literal
 
 
 class ModelSubscriptionFailedEvent(ModelRuntimeEventBase):

@@ -38,7 +38,7 @@ from omnibase_core.models.discovery.model_node_shutdown_event import (
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase_core.models.services.model_service_compute import ModelServiceCompute
+from omnibase_core.nodes.node_service_compute import ModelServiceCompute
 
 
 class ComputeNodeForHealthTesting(ModelServiceCompute):

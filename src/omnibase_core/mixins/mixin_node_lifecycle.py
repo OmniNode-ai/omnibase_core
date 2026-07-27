@@ -168,6 +168,9 @@ class MixinNodeLifecycle:
                 signature_block=getattr(self, "signature_block", None),
                 node_version=parse_semver_from_string(
                     getattr(self, "node_version", None)
+                    # fallback-ok: deliberate NODE_ANNOUNCE version resolution
+                    # order — node attr, then metadata-block version, then the
+                    # documented "1.0.0" default for unversioned nodes.
                     or getattr(metadata_block, "version", None)
                     or "1.0.0"
                 ),
@@ -315,7 +318,15 @@ class MixinNodeLifecycle:
             event = ModelOnexEvent(
                 event_type=create_event_type_from_registry("NODE_START"),
                 node_id=node_id,
-                metadata=ModelOnexEventMetadata(**metadata) if metadata else None,
+                metadata=(
+                    # OMN-14339: model_validate instead of **-unpack so the
+                    # foundation TypedDict can type node_version structurally
+                    # (ProtocolSemVer) without a types -> models back-edge;
+                    # validation semantics are identical.
+                    ModelOnexEventMetadata.model_validate(dict(metadata))
+                    if metadata
+                    else None
+                ),
                 correlation_id=final_correlation_id,
             )
 
@@ -379,7 +390,15 @@ class MixinNodeLifecycle:
             event = ModelOnexEvent(
                 event_type=create_event_type_from_registry("NODE_SUCCESS"),
                 node_id=node_id,
-                metadata=ModelOnexEventMetadata(**metadata) if metadata else None,
+                metadata=(
+                    # OMN-14339: model_validate instead of **-unpack so the
+                    # foundation TypedDict can type node_version structurally
+                    # (ProtocolSemVer) without a types -> models back-edge;
+                    # validation semantics are identical.
+                    ModelOnexEventMetadata.model_validate(dict(metadata))
+                    if metadata
+                    else None
+                ),
                 correlation_id=final_correlation_id,
             )
 
@@ -443,7 +462,15 @@ class MixinNodeLifecycle:
             event = ModelOnexEvent(
                 event_type=create_event_type_from_registry("NODE_FAILURE"),
                 node_id=node_id,
-                metadata=ModelOnexEventMetadata(**metadata) if metadata else None,
+                metadata=(
+                    # OMN-14339: model_validate instead of **-unpack so the
+                    # foundation TypedDict can type node_version structurally
+                    # (ProtocolSemVer) without a types -> models back-edge;
+                    # validation semantics are identical.
+                    ModelOnexEventMetadata.model_validate(dict(metadata))
+                    if metadata
+                    else None
+                ),
                 correlation_id=final_correlation_id,
             )
 

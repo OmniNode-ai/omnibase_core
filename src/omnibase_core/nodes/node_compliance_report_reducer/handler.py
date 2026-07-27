@@ -17,6 +17,12 @@ from __future__ import annotations
 from omnibase_core.models.nodes.compliance_report.model_compliance_check_result import (
     ModelComplianceCheckResult,
 )
+from omnibase_core.models.nodes.compliance_report.model_compliance_report_reduce_request import (
+    ModelComplianceReportReduceRequest,
+)
+from omnibase_core.models.nodes.compliance_report.model_compliance_report_reduce_response import (
+    ModelComplianceReportReduceResponse,
+)
 from omnibase_core.models.nodes.compliance_report.model_compliance_report_state import (
     ModelComplianceReportState,
 )
@@ -88,3 +94,19 @@ class NodeComplianceReportReducer:
         check_result: ModelComplianceCheckResult,
     ) -> tuple[ModelComplianceReportState, list[ModelIntent]]:
         return reduce_compliance(state, check_result)
+
+    def handle(
+        self, request: ModelComplianceReportReduceRequest
+    ) -> ModelComplianceReportReduceResponse:
+        """Definition-B canonical entry-point (OMN-14355).
+
+        A pure reducer's ``delta(state, event) -> (new_state, intents[])``
+        shape is two-args-in/tuple-out — not directly def-B adaptable.
+        ``ModelComplianceReportReduceRequest`` composes ``state`` and
+        ``check_result`` into one typed request; the (unmodified)
+        ``reduce_compliance`` pure function still performs the actual
+        accumulation, and the ``(new_state, intents)`` tuple is composed
+        back into one typed response.
+        """
+        new_state, intents = reduce_compliance(request.state, request.check_result)
+        return ModelComplianceReportReduceResponse(state=new_state, intents=intents)

@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-topic-literal: per-event topic SoT declaration (OMN-13944)
 
 """
 Contract merge started event model.
@@ -41,7 +42,7 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_e
 
 __all__ = ["ModelContractMergeStartedEvent", "CONTRACT_MERGE_STARTED_EVENT"]
 
-CONTRACT_MERGE_STARTED_EVENT = "onex.contract.merge.started"
+CONTRACT_MERGE_STARTED_EVENT = "onex.contract.merge.started"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944)
 
 
 class ModelContractMergeStartedEvent(ModelContractValidationEventBase):

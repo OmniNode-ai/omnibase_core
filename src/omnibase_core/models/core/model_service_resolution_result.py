@@ -9,7 +9,7 @@ Pydantic model for service resolution operation results.
 
 from pydantic import BaseModel, Field
 
-from .model_service import ModelService
+from omnibase_core.models.container.model_service import ModelService
 
 
 class ModelServiceResolutionResult(BaseModel):

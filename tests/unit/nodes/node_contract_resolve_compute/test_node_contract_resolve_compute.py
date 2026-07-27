@@ -19,7 +19,16 @@ Ticket: OMN-2754
 
 from __future__ import annotations
 
+import hashlib
+import json
+from datetime import datetime
+from decimal import Decimal
+from enum import Enum
+from pathlib import Path
+from uuid import UUID
+
 import pytest
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_overlay_scope import EnumOverlayScope
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
@@ -123,6 +132,42 @@ class TestComputeCanonicalHash:
         h2 = compute_canonical_hash(compute_profile_ref)
         assert h1 == h2
         assert len(h1) == 64
+
+    def test_json_serializable_digest_is_unchanged(self) -> None:
+        """The fallback encoder does not affect already-serializable inputs."""
+        obj = {"kind": "handler", "enabled": True, "count": 3}
+        canonical_json = json.dumps(obj, sort_keys=True, ensure_ascii=True)
+        expected = hashlib.sha256(canonical_json.encode("ascii")).hexdigest()
+
+        assert compute_canonical_hash(obj) == expected
+
+    def test_pydantic_model_dump_values_are_json_encoded(self) -> None:
+        """Pydantic-supported values from model_dump() remain hashable."""
+
+        class SampleEnum(Enum):
+            ALPHA = "alpha"
+
+        class SampleModel(BaseModel):
+            identifier: UUID
+            created_at: datetime
+            amount: Decimal
+            marker: SampleEnum
+            path: Path
+            tags: set[str]
+
+        model = SampleModel(
+            identifier=UUID("00000000-0000-0000-0000-000000000001"),
+            created_at=datetime(2026, 1, 1, 12, 30, 0),
+            amount=Decimal("12.50"),
+            marker=SampleEnum.ALPHA,
+            path=Path("contracts/OMN-14403.yaml"),
+            tags={"fanout", "runtime"},
+        )
+
+        result = compute_canonical_hash(model)
+
+        assert len(result) == 64
+        assert result == compute_canonical_hash(model)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -276,7 +321,7 @@ class TestContractResolveEvents:
 
 
 class TestNodeContractResolveCompute:
-    """Integration tests for NodeContractResolveCompute.resolve()."""
+    """Integration tests for NodeContractResolveCompute.handle()."""
 
     def test_empty_patches_returns_output(
         self,
@@ -289,7 +334,7 @@ class TestNodeContractResolveCompute:
             patches=[],
             options=ModelContractResolveOptions(include_overlay_refs=False),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert isinstance(output, ModelContractResolveOutput)
         assert len(output.resolved_hash) == 64
@@ -308,7 +353,7 @@ class TestNodeContractResolveCompute:
             base_profile_ref=compute_profile_ref,
             patches=[single_patch],
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert len(output.resolved_hash) == 64
         assert len(output.patch_hashes) == 1
@@ -326,7 +371,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_overlay_refs=True),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert len(output.overlay_refs) == 1
         ref = output.overlay_refs[0]
@@ -358,7 +403,7 @@ class TestNodeContractResolveCompute:
             patches=[patch_a, patch_b],
             options=ModelContractResolveOptions(include_overlay_refs=True),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
 
         assert len(output.patch_hashes) == 2
         assert len(output.overlay_refs) == 2
@@ -379,7 +424,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_diff=False),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         assert output.diff is None
 
     def test_include_diff_true_provides_diff_string(
@@ -394,7 +439,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_diff=True),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         # The diff may be empty if no fields changed, but it must be a string.
         assert isinstance(output.diff, str)
 
@@ -408,7 +453,7 @@ class TestNodeContractResolveCompute:
             base_profile_ref=compute_profile_ref,
             patches=[],
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         assert isinstance(output.resolver_build, ModelResolverBuild)
         assert output.resolver_build.node_version == "1.0.0"
         assert len(output.resolver_build.build_hash) == 64
@@ -425,8 +470,8 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_overlay_refs=False),
         )
-        out1 = node.resolve(inp)
-        out2 = node.resolve(inp)
+        out1 = node.handle(inp)
+        out2 = node.handle(inp)
         assert out1.resolved_hash == out2.resolved_hash
 
     def test_overlay_refs_empty_when_disabled(
@@ -441,7 +486,7 @@ class TestNodeContractResolveCompute:
             patches=[single_patch],
             options=ModelContractResolveOptions(include_overlay_refs=False),
         )
-        output = node.resolve(inp)
+        output = node.handle(inp)
         assert output.overlay_refs == []
         # But patch_hashes are still computed.
         assert len(output.patch_hashes) == 1

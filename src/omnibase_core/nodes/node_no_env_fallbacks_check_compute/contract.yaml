@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the no_env_fallbacks_check COMPUTE node.
+# Line-scans explicit (path, source) pairs for localhost/hardcoded-endpoint fallback
+# defaults (os.environ.get/os.getenv defaults, Pydantic Field defaults, bootstrap_servers
+# literals, shell ${VAR:-...} expansions), reproducing the CI gate at
+# omniclaude/scripts/validate_no_env_fallbacks.py byte-for-byte per finding.
+#
+# See: OMN-14659 — WS8 fan-out (convert-clean generic omniclaude arch validators)
+
+name: node_no_env_fallbacks_check_compute
+node_id: node_no_env_fallbacks_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Line-scans a set of explicit (path, source) pairs for localhost/hardcoded-endpoint
+  fallback defaults across Python (os.environ.get/os.getenv defaults, default= / : str =
+  literals, bootstrap_servers= literals) and shell (${VAR:-localhost} / ${VAR:-192.168...})
+  source, and returns an OMN-2362 ValidationReport with a per-violation finding reproducing
+  the arch-no-env-fallbacks CI gate's flagged-line text byte-for-byte. A line carrying a
+  # fallback-ok / # cloud-bus-ok / # OMN-7227-exempt marker, or a pure-comment / docstring
+  line, is exempt. Pure — no filesystem access, no clock, no global state. #magic___^_^___line
+input_model: omnibase_core.models.nodes.no_env_fallbacks_check.model_no_env_fallbacks_check_input.ModelNoEnvFallbacksCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNoEnvFallbacksCheckCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

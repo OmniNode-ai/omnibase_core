@@ -393,7 +393,7 @@ jobs:
 
       - name: Set up Python 3.13
         if: steps.bot_exempt.outputs.exempt != 'true'
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
@@ -719,6 +719,27 @@ jobs:
             echo "contracts_dir=$contracts_dir"
             echo "receipts_dir=$receipts_dir"
           } >> "$GITHUB_OUTPUT"
+
+      # OMN-15111: The informal "Evidence-Commit: <sha>" PR-body trailer
+      # (hand-typed/tool-generated fleet-wide since OMN-14494, ~1045
+      # product-repo merged PRs carry it) was never validated by any gate —
+      # it is decorative text a human reviewer trusts but nothing resolves.
+      # Convention: Evidence-Commit cites the onex_change_control commit the
+      # adjacent Evidence-Source line resolves to. This step is additive
+      # inside the existing required `receipt-gate / verify` job — it is not
+      # a new required status-check context, and cannot be silently skipped
+      # via a needs: cascade. Runs on the same guard as Resolve
+      # Evidence-Source, reusing its /tmp/occ_sha.txt output and this job's
+      # /tmp/pr_body.txt.
+      - name: Validate Evidence-Commit binding
+        if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          "$RECEIPT_GATE_PY" -m omnibase_core.validation.validator_evidence_commit_binding_cli \
+            --pr-body-file /tmp/pr_body.txt \
+            --occ-sha-file /tmp/occ_sha.txt
 
       - name: Run OCC Eligibility
         if: steps.bot_exempt.outputs.exempt != 'true'

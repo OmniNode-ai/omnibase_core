@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.46.6"
+version = "0.46.8"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -48,6 +48,7 @@ dependencies = [
     "ruamel-yaml>=0.18.0",
     "tree-sitter>=0.25.2,<0.27",
     "tree-sitter-python>=0.25.0,<0.26",
+    "pathspec>=0.12.1",
 ]
 
 [project.urls]
@@ -64,6 +65,9 @@ omni-agent = "omnibase_core.cli.cli_commands:cli"
 omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
 check-local-paths = "omnibase_core.validation.validator_local_paths:main"
 check-github-token-env-reads = "omnibase_core.validation.validator_github_token_env_reads:main"
+# OMN-14401: reject config/registry YAML files declaring duplicate ids over a
+# non-unique key (checked registries are config-as-data via a manifest file).
+check-duplicate-registry-ids = "omnibase_core.validation.validator_duplicate_config_ids:main"
 # OMN-13293 (G1): the same local-paths check executed as a COMPUTE node over the
 # in-memory event bus (two-transport seam; Kafka backend in CI). Proven
 # equivalent to check-local-paths on the G1 corpus + 6999-file shadow-bake.
@@ -145,6 +149,14 @@ node_compliance_scan_compute = "omnibase_core.nodes.node_compliance_scan_compute
 node_backend_secret_discipline_compute = "omnibase_core.nodes.node_backend_secret_discipline_compute" # pragma: allowlist secret
 node_contract_resolve_compute = "omnibase_core.nodes.node_contract_resolve_compute"
 node_contract_verify_replay_compute = "omnibase_core.nodes.node_contract_verify_replay_compute"
+node_source_file_gather_effect = "omnibase_core.nodes.node_source_file_gather_effect"
+node_no_utcnow_check_compute = "omnibase_core.nodes.node_no_utcnow_check_compute"
+node_no_hardcoded_ip_check_compute = "omnibase_core.nodes.node_no_hardcoded_ip_check_compute"
+node_no_direct_kafka_producer_check_compute = "omnibase_core.nodes.node_no_direct_kafka_producer_check_compute"
+node_no_env_fallbacks_check_compute = "omnibase_core.nodes.node_no_env_fallbacks_check_compute"
+node_no_raw_sqlite3_check_compute = "omnibase_core.nodes.node_no_raw_sqlite3_check_compute"
+node_no_io_outside_effects_check_compute = "omnibase_core.nodes.node_no_io_outside_effects_check_compute"
+node_test_selector_compute = "omnibase_core.nodes.node_test_selector_compute"
 
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
@@ -172,6 +184,11 @@ dev = [
     "pytest-rerunfailures>=16.1",
     "pytest-testmon>=2.2.0",
     "interrogate>=1.7.0",
+    # OMN-14216: intra-core dependency-layering oracle (import-linter + grimp)
+    "import-linter>=2.13,<3.0.0",
+    # OMN-14921: file-grain import-graph-closure shadow selection imports grimp
+    # directly (previously only a transitive dep via import-linter) — declare it.
+    "grimp>=3.15,<4.0.0",
     "hypothesis>=6.150",
     "psutil>=7.2.1",
     "confluent-kafka>=2.12.0,<3.0.0",
@@ -345,7 +362,11 @@ ignore = [
 "src/omnibase_core/validation/validator_circular_import.py" = ["T201"]
 "src/omnibase_core/validation/validator_cli.py" = ["T201"]
 "src/omnibase_core/validation/validator_receipt_gate_cli.py" = ["T201"]
+"src/omnibase_core/validation/validator_evidence_shape_cli.py" = ["T201"]  # CLI output for the pre-push Evidence-Source shape check (OMN-14682)
+"src/omnibase_core/validation/validator_evidence_commit_binding_cli.py" = ["T201"]  # CLI output for the Evidence-Commit binding check (OMN-15111)
 "src/omnibase_core/validation/validator_receipt_reprobe.py" = ["T201"]  # CLI output for re-probe verification (OMN-9789)
+"src/omnibase_core/validation/validator_receipt_diff_consistency.py" = ["T201"]  # CLI output for the attestation diff-consistency gate (OMN-13927)
+"src/omnibase_core/validation/validator_duplicate_config_ids.py" = ["T201"]  # CLI output for the duplicate-registry-id guard (OMN-14401)
 "scripts/analysis/co_change_dark_matter.py" = ["T201"]
 "scripts/validation/validate_pr_receipts.py" = ["T201"]
 "scripts/validation/validate_pr_deploy_required.py" = ["T201"]
@@ -353,10 +374,18 @@ ignore = [
 "scripts/validation/validate_no_none_guard_publish.py" = ["T201"]
 "scripts/validation/validate_no_import_none_fallback.py" = ["T201"]
 "scripts/validation/check_ai_slop.py" = ["T201", "BLE001"]
-"scripts/validation/validate-check-names.py" = ["T201", "BLE001"]
 "scripts/validation/validate-stubbed-functionality.py" = ["T201", "BLE001"]
 "scripts/validation/validate-exception-handling.py" = ["T201", "BLE001"]
 "scripts/check_dep_provenance.py" = ["T201"]  # CLI output for dep-provenance gate (OMN-13873/OMN-13877)
+"scripts/ci/check_import_ratchet.py" = ["T201"]  # CLI output for import-layering growth-ratchet gate (OMN-14340)
+"scripts/ci/canonical_handler_shape.py" = ["T201", "BLE001"]  # CLI output + fail-closed catches for canonical handler-shape ratchet gate (OMN-14355)
+"scripts/ci/rsd_provenance_stamp.py" = ["T201"]  # CLI output for RSD provenance-stamp gate (OMN-15011)
+"scripts/ci/verify_flip_bundle.py" = ["T201", "BLE001"]  # CLI output + fail-closed ValidationError catch for the flip-bundle seam gate (OMN-14809)
+"scripts/ci/equivalence_producer.py" = ["BLE001"]  # fail-closed catches around untrusted-shaped handler replay execution (OMN-14905)
+"scripts/ci/product_readiness.py" = ["T201"]  # CLI output for Product Readiness classifier (OMN-14705 Phase 3 shadow)
+"scripts/ci/product_reason_graph.py" = ["T201"]  # CLI output for Product Readiness reason-graph emitter (OMN-14705 Phase 3 shadow)
+"scripts/validation/validate_precommit_fail_loud.py" = ["T201"]  # CLI output for WS7 pre-commit fail-loud meta-gate (OMN-14671)
+"scripts/validation/validate_precommit_pin_parity.py" = ["T201"]  # CLI output for WS7 pre-commit pin-parity gate (OMN-14671)
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/validator_routing_authority.py" = ["T201"]  # CLI output for routing-authority gate (OMN-13306)
 "src/omnibase_core/validation/delegation/validator_delegation_profile.py" = ["T201"]  # CLI output for delegation-profile hook (OMN-13306)
@@ -378,6 +407,17 @@ ignore = [
 "src/omnibase_core/validation/hardcoded_topic/runtime_hardcoded_topic.py" = ["T201"]
 # OMN-13569: CLI runner for the doc-content COMPUTE validator prints findings.
 "src/omnibase_core/validation/doc_content_scan/runtime_doc_content_scan.py" = ["T201"]
+# OMN-14656: CLI runner for the no-utcnow-check COMPUTE node prints findings.
+"src/omnibase_core/nodes/node_no_utcnow_check_compute/runtime_no_utcnow_check.py" = ["T201"]
+# OMN-14659: CLI runners for the WS8 convert_now COMPUTE nodes print findings.
+"src/omnibase_core/nodes/node_no_hardcoded_ip_check_compute/runtime_no_hardcoded_ip_check.py" = ["T201"]
+"src/omnibase_core/nodes/node_no_direct_kafka_producer_check_compute/runtime_no_direct_kafka_producer_check.py" = ["T201"]
+"src/omnibase_core/nodes/node_no_env_fallbacks_check_compute/runtime_no_env_fallbacks_check.py" = ["T201"]
+"src/omnibase_core/nodes/node_no_raw_sqlite3_check_compute/runtime_no_raw_sqlite3_check.py" = ["T201"]
+# OMN-14700: CLI runner for the test_selector COMPUTE node writes the selection JSON to stdout.
+"src/omnibase_core/nodes/node_test_selector_compute/runtime_test_selector.py" = ["T201"]
+# OMN-14694/OMN-14662: CLI runner for the no-io-outside-effects COMPUTE node prints findings.
+"src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/runtime_no_io_outside_effects_check.py" = ["T201"]
 "src/omnibase_core/validation/validator_transport_import.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-13283)
 "src/omnibase_core/validation/validator_node_purity.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-13283)
 "src/omnibase_core/validation/antipattern_checker.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-11923)

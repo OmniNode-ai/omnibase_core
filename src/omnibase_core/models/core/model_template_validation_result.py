@@ -5,7 +5,7 @@
 
 from pydantic import BaseModel
 
-from .model_validation_issue import ModelValidationIssue
+from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 
 
 class ModelTemplateValidationResult(BaseModel):

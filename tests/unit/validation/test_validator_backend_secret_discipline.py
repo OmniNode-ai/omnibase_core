@@ -7,7 +7,7 @@ Covers:
 - scan_literal_credentials: detects all 7 literal-credential patterns
 - scan_bifrost_backends: detects missing secret-ref and mutual-exclusion violations
 - build_report_from_files: PASS on clean input, FAIL on violation
-- HandlerBackendSecretDisciplineCompute handler: correct protocol properties + async handle
+- HandlerBackendSecretDisciplineCompute handler: correct protocol properties + handle()
 - ModelBackendSecretDisciplineInput / Output: frozen Pydantic models
 - CLI entry-point: --json flag, exit codes
 - Fail-closed proof: planted SA-JSON private_key → gate red; clean → green
@@ -20,12 +20,9 @@ Pre-port source SHA-256 (omnimarket/scripts/ci/check_backend_secret_discipline.p
 
 from __future__ import annotations
 
-import asyncio
 import json
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock
-from uuid import uuid4
 
 import pytest
 
@@ -343,49 +340,31 @@ def test_handler_protocol_properties() -> None:
 
 @pytest.mark.unit
 def test_handler_handle_returns_compute_output() -> None:
-    """Handler returns a ModelHandlerOutput with a ModelBackendSecretDisciplineOutput result."""
-    from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
-
+    """Handler.handle() is definition-B: typed request in, typed response out."""
     handler = HandlerBackendSecretDisciplineCompute()
 
-    payload = ModelBackendSecretDisciplineInput(
+    request = ModelBackendSecretDisciplineInput(
         config_contents={"bifrost_delegation.yaml": _CLEAN_BIFROST_YAML}
     )
-    envelope = MagicMock()
-    envelope.payload = payload
-    envelope.envelope_id = uuid4()
-    envelope.correlation_id = uuid4()
 
-    output: ModelHandlerOutput[ModelBackendSecretDisciplineOutput] = asyncio.run(
-        handler.handle(envelope)
-    )
+    output = handler.handle(request)
 
-    assert output.node_kind == EnumNodeKind.COMPUTE
-    assert output.result is not None
-    assert isinstance(output.result, ModelBackendSecretDisciplineOutput)
-    assert output.result.passed is True
+    assert isinstance(output, ModelBackendSecretDisciplineOutput)
+    assert output.passed is True
 
 
 @pytest.mark.unit
 def test_handler_handle_fail_closed_on_violation() -> None:
-    """Handler result.passed=False when payload contains a literal credential."""
-    from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
-
+    """Handler output.passed=False when the request contains a literal credential."""
     handler = HandlerBackendSecretDisciplineCompute()
-    payload = ModelBackendSecretDisciplineInput(
+    request = ModelBackendSecretDisciplineInput(
         config_contents={"routing.yaml": _LEAKED_SA_PRIVATE_KEY_YAML}
     )
-    envelope = MagicMock()
-    envelope.payload = payload
-    envelope.envelope_id = uuid4()
-    envelope.correlation_id = uuid4()
 
-    output: ModelHandlerOutput[ModelBackendSecretDisciplineOutput] = asyncio.run(
-        handler.handle(envelope)
-    )
-    assert output.result is not None
-    assert output.result.passed is False
-    assert len(output.result.literal_credential_violations) >= 1
+    output = handler.handle(request)
+
+    assert output.passed is False
+    assert len(output.literal_credential_violations) >= 1
 
 
 # ---------------------------------------------------------------------------

@@ -12,10 +12,10 @@ from dataclasses import dataclass
 from omnibase_core.models.validation.model_migration_conflict_union import (
     ModelMigrationConflictUnion,
 )
-from omnibase_core.validation.validator_migration_types import (
+from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
+from omnibase_core.types.typed_dict_migration_step_dict import (
     TypedDictMigrationStepDict,
 )
-from omnibase_core.validation.validator_utils import ModelProtocolInfo
 
 
 @dataclass

@@ -35,7 +35,7 @@ from omnibase_core.models.contracts.model_handler_spec import ModelHandlerSpec
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
 from omnibase_core.models.contracts.model_reference import ModelReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.validator_utils import (
+from omnibase_core.utils.util_name_validation import (
     detect_add_remove_conflicts,
     validate_onex_name_list,
     validate_string_list,

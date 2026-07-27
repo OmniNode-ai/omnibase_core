@@ -1,0 +1,89 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-14671 (WS7 fan-out #7, canary OMN-14655 / omniclaude#1904 / omnimarket#1783
+# / omnibase_infra#2318): CI mirror of the two local pre-commit meta-gates over
+# .pre-commit-config.yaml:
+#
+#   1. Fail-loud meta-gate — hard-rejects the exit-0-on-missing-path /
+#      WARN-SKIP-degrade shape (a skipped gate must be byte-indistinguishable
+#      from a failing gate), plus any hook `stages:` value that
+#      `default_install_hook_types` does not install (DRIFT-2 / DRIFT-2a).
+#   2. Pin-parity check — fails closed if the pre-commit `rev:` pin for a shared
+#      omnibase_core validator diverges from the SHA that validator's CI gate
+#      pins (DRIFT-3). omnibase_core is the layering root and pins no external
+#      omnibase_core git-SHA, so its PIN_PAIRS is empty; the `--self-test` leg
+#      proves the comparator is live so the gate is never a vacuous green.
+#
+# UNCONDITIONAL BY DESIGN (OMN-14666 / OMN-14668 canary lesson). This is a
+# STANDALONE workflow, NOT a job inside ci.yml. On omnimarket#1783 the fail-loud
+# gate shared a run with occ-preflight and `needs:`-ed it, so an occ-preflight
+# failure SKIPPED the byte-match proof on attempt 1 — a skip-then-vacuous-green
+# window in the very gate meant to kill false-greens; only a manual rerun made
+# it fire. Here the gate:
+#   * lives in its own workflow file, so a cross-job `needs: occ-preflight` is
+#     structurally impossible;
+#   * has NO `needs:` of any kind and NO `paths:` filter, so it fires on EVERY
+#     PR to main/dev and passes/fails on its own byte-match evidence, never
+#     conditioned on another job's result.
+#   * runs UNCONDITIONALLY on a GitHub-hosted runner (ubuntu-latest) for EVERY
+#     event — not just fork PRs (OMN-14668). The job is short and dependency-free
+#     (`uv run --no-project --with pyyaml`), so self-hosted fleet saturation or an
+#     absent self-hosted runner can never leave it queued/cancelled and falsely
+#     skip the gate. omnibase_core's `ci-summary` poller only inspects jobs within
+#     the ci.yml run, so this standalone job is its own independent check context
+#     and cannot be false-greened by the summary aggregator.
+#
+# Enforcement, not detection (CLAUDE.md Rule #5): wired as the CI counterpart of
+# the precommit-fail-loud-meta-gate + precommit-pin-parity pre-commit hooks
+# added in the SAME PR, so the checks it encodes cannot regress silently.
+
+name: Precommit Parity Gate
+
+on:
+  push:
+    branches: [main, dev, "hotfix/**"]
+  pull_request:
+    branches: [main, dev]
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  precommit-parity-gate:
+    name: Precommit Parity Gate
+    # OMN-14668: canonical OMNI_RUNNER_SELECTOR_V1 form for the byte-match parity
+    # gate is HOSTED-PINNED — `runs-on: ubuntu-latest`, unconditionally, for every
+    # event. It deliberately opts OUT of the trusted-self-hosted vs public-fork
+    # branch that heavier build jobs use, because this gate is short and
+    # dependency-free and must never depend on self-hosted fleet availability
+    # (a saturated/absent fleet = queued-or-cancelled = false-green window). This
+    # matches the already-hosted omnibase_spi / omnibase_compat parity gates; the
+    # prior form routed only fork PRs to hosted and left trusted push/merge_group
+    # on self-hosted.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c6081965dd0577ae48820cb8c288e12509571f0c # v7
+
+      - name: Fail-loud meta-gate (exit-0-on-missing / stages coverage)
+        run: |
+          uv run --no-project --with pyyaml \
+            python3 scripts/validation/validate_precommit_fail_loud.py
+
+      - name: Pin-parity self-test (comparator liveness)
+        run: |
+          uv run --no-project --with pyyaml \
+            python3 scripts/validation/validate_precommit_pin_parity.py --self-test
+
+      - name: Pin-parity check (pre-commit rev vs CI-pinned SHA)
+        run: |
+          uv run --no-project --with pyyaml \
+            python3 scripts/validation/validate_precommit_pin_parity.py

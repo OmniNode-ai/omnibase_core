@@ -37,6 +37,12 @@ from pydantic import BaseModel
 from omnibase_core.models.nodes.compliance_scan.model_check_result import (
     ModelCheckResult,
 )
+from omnibase_core.models.nodes.compliance_scan.model_compliance_scan_request import (
+    ModelComplianceScanRequest,
+)
+from omnibase_core.models.nodes.compliance_scan.model_compliance_scan_response import (
+    ModelComplianceScanResponse,
+)
 from omnibase_core.models.nodes.compliance_scan.model_scan_check_result import (
     ModelScanCheckResult,
 )
@@ -64,6 +70,23 @@ class NodeComplianceScanCompute:
     Discovers all contract.yaml files under a root directory and runs
     8 structural checks per contract.
     """
+
+    def handle(
+        self, request: ModelComplianceScanRequest
+    ) -> ModelComplianceScanResponse:
+        """Definition-B canonical entry-point (OMN-14355).
+
+        Typed request in, typed response out — wraps :meth:`scan` (the
+        pre-existing, independently-tested legacy entry-point, left
+        unmodified) so the runtime's shared adapter
+        (``omnibase_core.runtime.runtime_local_adapter``) can dispatch this
+        handler without a per-node envelope wrapper. The list result is
+        wrapped in a single response model rather than returned bare so the
+        adapter treats a directory scan as one aggregate event, not a def-B
+        fan-out sequence (OMN-14403 Sec6ii) of N per-node events.
+        """
+        results = self.scan(request.repo_root, source_only=request.source_only)
+        return ModelComplianceScanResponse(results=results)
 
     def scan(
         self, repo_root: str, *, source_only: bool = False
@@ -156,16 +179,21 @@ class NodeComplianceScanCompute:
                     )
                 )
 
-        node_id = ""
+        node_id = contract_path.parent.name
         if contract_data is not None:
-            node_id = str(
-                contract_data.get("node_id")
-                or contract_data.get("handler_id")
-                or contract_data.get("name")
-                or contract_path.parent.name
-            )
-        else:
-            node_id = contract_path.parent.name
+            # Explicit precedence: node_id > handler_id > name > directory
+            # name. Falls through on a falsy value (missing key or empty
+            # string) at each step, matching the prior 'or'-chain semantics
+            # but with each fallback step now traceable individually.
+            candidate_node_id = contract_data.get("node_id")
+            candidate_handler_id = contract_data.get("handler_id")
+            candidate_name = contract_data.get("name")
+            if candidate_node_id:
+                node_id = str(candidate_node_id)
+            elif candidate_handler_id:
+                node_id = str(candidate_handler_id)
+            elif candidate_name:
+                node_id = str(candidate_name)
 
         all_passed = all(c.passed for c in checks)
 
@@ -390,7 +418,17 @@ class NodeComplianceScanCompute:
         self, data: dict[str, Any], checks: list[ModelCheckResult]
     ) -> None:
         """Check 4: node_kind matches handler output constraints."""
-        node_kind = data.get("node_kind") or data.get("node_type") or ""
+        # Explicit precedence: node_kind > node_type > unset. Falls through
+        # on a falsy value (missing key or empty string) at each step,
+        # matching the prior 'or'-chain semantics but individually traceable.
+        candidate_node_kind = data.get("node_kind")
+        candidate_node_type = data.get("node_type")
+        if candidate_node_kind:
+            node_kind: Any = candidate_node_kind
+        elif candidate_node_type:
+            node_kind = candidate_node_type
+        else:
+            node_kind = ""
         node_kind_str = str(node_kind).upper()
 
         if not node_kind_str:
@@ -583,7 +621,17 @@ class NodeComplianceScanCompute:
                     item.get("infisical_path") or item.get("infisical")
                 )
                 if not has_env and not has_infisical:
-                    key = item.get("key") or item.get("name") or str(item)
+                    # Explicit precedence: key > name > str(item). Falls
+                    # through on a falsy value at each step, matching the
+                    # prior 'or'-chain semantics but individually traceable.
+                    candidate_key = item.get("key")
+                    candidate_name = item.get("name")
+                    if candidate_key:
+                        key = candidate_key
+                    elif candidate_name:
+                        key = candidate_name
+                    else:
+                        key = str(item)
                     missing.append(key)
             elif isinstance(item, str):
                 # String-only config requirement: presence check passes

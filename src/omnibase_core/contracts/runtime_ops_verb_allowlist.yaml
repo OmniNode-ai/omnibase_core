@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# src/omnibase_core/contracts/runtime_ops_verb_allowlist.yaml
+# Governed data (NOT code) for the RUNTIME_OPS_READBACK no-PR evidence class
+# (OMN-14168). Mirrors the data-not-code posture of
+# scripts/ci/test_selection_adjacency.yaml.
+#
+# A RUNTIME_OPS readback receipt (ModelDodReceipt.evidence_class == RUNTIME_OPS)
+# describes an independently-verified, no-source-change runtime-ops fix
+# (kubectl patch, live restart, config repair) that produced NO repo diff and
+# NO PR. Its ``mutation_verb`` MUST be one of the verbs below. The allowlist is
+# deliberately bounded to live-runtime mutations that cannot edit desired-state
+# SOURCE: ``git`` and image-digest promotion are intentionally EXCLUDED — a
+# source change produces a diff and therefore a PR, which must route through the
+# normal merged-PR gate (CONTRACT_CITES_MERGE_COMMIT), not this class (G2).
+#
+# Both enforcement surfaces read THIS file as the single source of truth:
+#   * omnibase_core ModelDodReceipt.mutation_verb field validator, and
+#   * omnimarket DurableEvidenceGate RUNTIME_OPS_READBACK branch (G2b).
+#
+# To add or remove a verb, edit this file (governed change) — never hardcode the
+# set in Python.
+
+schema_version: 1
+
+# Bounded runtime-ops mutation verbs. Each is a live mutation of a *running*
+# runtime object (deployment/pod/config), never an edit of source-of-record.
+runtime_ops_verbs:
+  - patch  # kubectl patch / strategic merge on a live Deployment
+  - rollout  # kubectl rollout restart / rollout undo
+  - scale  # kubectl scale (replica count on a live workload)
+  - restart  # live container/service restart
+  - recreate  # docker compose up --force-recreate of a running lane
+  - config-repair  # live config/secret repair applied to a running workload

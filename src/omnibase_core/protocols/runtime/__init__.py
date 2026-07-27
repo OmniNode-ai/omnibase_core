@@ -71,6 +71,15 @@ from omnibase_core.protocols.runtime.protocol_message_handler import (
 from omnibase_core.protocols.runtime.protocol_runtime_skill_client import (
     ProtocolRuntimeSkillClient,
 )
+from omnibase_core.protocols.runtime.protocol_transport_consumer import (
+    ProtocolTransportConsumer,
+)
+from omnibase_core.protocols.runtime.protocol_transport_message import (
+    ProtocolTransportMessage,
+)
+from omnibase_core.protocols.runtime.protocol_transport_producer import (
+    ProtocolTransportProducer,
+)
 
 __all__ = [
     "ProtocolHandlerRegistry",
@@ -83,5 +92,8 @@ __all__ = [
     "ProtocolLocalRuntimePayloadModel",
     "ProtocolMessageHandler",
     "ProtocolRuntimeSkillClient",
+    "ProtocolTransportConsumer",
+    "ProtocolTransportMessage",
+    "ProtocolTransportProducer",
     "UnsubscribeCallback",
 ]

@@ -31,10 +31,7 @@ This module defines the TypedDictToolPerformanceSummary TypedDict used to
 represent performance metrics for tool execution in a structured format.
 """
 
-from typing import TYPE_CHECKING, TypedDict
-
-if TYPE_CHECKING:
-    from omnibase_core.models.discovery.model_resource_usage import ModelResourceUsage
+from typing import TypedDict
 
 
 class TypedDictToolPerformanceSummary(TypedDict, total=False):
@@ -56,4 +53,6 @@ class TypedDictToolPerformanceSummary(TypedDict, total=False):
     mode: str
     queue_time_ms: int
     total_time_ms: int
-    resource_usage: "ModelResourceUsage"
+    # OMN-14337: was the resource-usage domain model (immovable); widened to
+    # object to sever types->models.
+    resource_usage: object

@@ -11,9 +11,13 @@ functions for better generic programming patterns.
 import pytest
 from pydantic import BaseModel
 
+# OMN-14337: ModelBaseCollection/ModelBaseFactory are no longer re-exported from
+# omnibase_core.types.type_constraints (dead lazy re-export removed to sever the
+# last types->models back-edge in this module). Import them from their canonical
+# home, omnibase_core.models.base.
+from omnibase_core.models.base import ModelBaseCollection as BaseCollection
+from omnibase_core.models.base import ModelBaseFactory as BaseFactory
 from omnibase_core.types.type_constraints import (
-    BaseCollection,
-    BaseFactory,
     Configurable,
     ContextValueType,
     Executable,

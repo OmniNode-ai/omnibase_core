@@ -146,15 +146,35 @@ from omnibase_core.models.dispatch.model_topic_parser import (
     ModelParsedTopic,
     ModelTopicParser,
 )
+from omnibase_core.models.dispatch.report import (
+    ROLE_TO_MODEL,
+    DispatchReport,
+    EnumDispatchReportImplementerVerdict,
+    EnumDispatchReportLanderVerdict,
+    EnumDispatchReportRole,
+    EnumDispatchReportScoutVerdict,
+    EnumDispatchReportVerifierVerdict,
+    ModelDispatchReportBase,
+    ModelDispatchReportImplementer,
+    ModelDispatchReportLander,
+    ModelDispatchReportScout,
+    ModelDispatchReportVerifier,
+)
 
 __all__ = [
     # Constants
     "DEFAULT_HEARTBEAT_REQUIRED_SECONDS",
     "HEARTBEAT_REQUIRED_ENV_VAR",
+    "ROLE_TO_MODEL",
     "SKILL_RESULT_SCHEMA_VERSION",
     # Enums
     "EnumDispatchLifecycleEmitter",
     "EnumDispatchLifecycleState",
+    "EnumDispatchReportImplementerVerdict",
+    "EnumDispatchReportLanderVerdict",
+    "EnumDispatchReportRole",
+    "EnumDispatchReportScoutVerdict",
+    "EnumDispatchReportVerifierVerdict",
     "EnumDispatchStatus",
     "EnumDispatchVerdict",
     "EnumTopicStandard",
@@ -162,6 +182,7 @@ __all__ = [
     "LifecycleEmitterError",
     "LifecycleTransitionError",
     # Models
+    "DispatchReport",
     "ModelLifecycleChain",
     "ModelDispatchClaim",
     "ModelDispatchBusCommand",
@@ -171,6 +192,11 @@ __all__ = [
     "ModelDispatchEvalResult",
     "ModelDispatchMetadata",
     "ModelDispatchOutputs",
+    "ModelDispatchReportBase",
+    "ModelDispatchReportImplementer",
+    "ModelDispatchReportLander",
+    "ModelDispatchReportScout",
+    "ModelDispatchReportVerifier",
     "ModelDispatchResult",
     "ModelDispatchRoute",
     "ModelCallRecord",

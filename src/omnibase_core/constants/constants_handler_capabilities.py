@@ -40,7 +40,6 @@ from omnibase_core.enums.enum_reducer_capability import EnumReducerCapability
 from omnibase_core.errors.exception_unsupported_capability_error import (
     UnsupportedCapabilityError,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from collections.abc import Set as AbstractSet
@@ -211,24 +210,18 @@ def get_capabilities_by_node_kind(node_kind: EnumNodeKind) -> frozenset[str]:
         # Raises ValueError
     """
     if node_kind == EnumNodeKind.RUNTIME_HOST:
-        raise ModelOnexError(
-            message=(
-                f"RUNTIME_HOST is an infrastructure type, not a core node type. "
-                f"It does not have a defined capability set. "
-                f"Use one of: {list(_NODE_KIND_TO_CAPABILITIES.keys())}"
-            ),
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            context={"node_kind": str(node_kind)},
+        raise ValueError(  # error-ok: standard input validation at function boundary
+            f"RUNTIME_HOST is an infrastructure type, not a core node type. "
+            f"It does not have a defined capability set. "
+            f"Use one of: {list(_NODE_KIND_TO_CAPABILITIES.keys())} "
+            f"(error_code: VALIDATION_ERROR, context: node_kind={node_kind})"
         )
 
     if node_kind not in _NODE_KIND_TO_CAPABILITIES:
-        raise ModelOnexError(
-            message=(
-                f"Unknown node kind: {node_kind}. "
-                f"Expected one of: {list(_NODE_KIND_TO_CAPABILITIES.keys())}"
-            ),
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            context={"node_kind": str(node_kind)},
+        raise ValueError(  # error-ok: standard input validation at function boundary
+            f"Unknown node kind: {node_kind}. "
+            f"Expected one of: {list(_NODE_KIND_TO_CAPABILITIES.keys())} "
+            f"(error_code: VALIDATION_ERROR, context: node_kind={node_kind})"
         )
 
     return _NODE_KIND_TO_CAPABILITIES[node_kind]

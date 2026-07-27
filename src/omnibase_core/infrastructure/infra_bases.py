@@ -31,12 +31,12 @@ Usage Examples:
 """
 
 # Standard service wrappers - production-ready mixin compositions
-from omnibase_core.models.services.model_service_compute import ModelServiceCompute
-from omnibase_core.models.services.model_service_effect import ModelServiceEffect
-from omnibase_core.models.services.model_service_orchestrator import (
+from omnibase_core.nodes.node_service_compute import ModelServiceCompute
+from omnibase_core.nodes.node_service_effect import ModelServiceEffect
+from omnibase_core.nodes.node_service_orchestrator import (
     ModelServiceOrchestrator,
 )
-from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
+from omnibase_core.nodes.node_service_reducer import ModelServiceReducer
 
 __all__ = [
     "ModelServiceCompute",

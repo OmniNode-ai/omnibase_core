@@ -77,23 +77,85 @@ def _spec_with_inline_workflow(
     return RollupCoverageVerifier(spec), tmp_path
 
 
-def test_planted_dropped_need_is_detected(spec: dict[str, Any], tmp_path: Path) -> None:
-    """PLANTED FAILURE (step 5): drop a covering job from quality-gate.needs and
-    confirm the verifier reports a coverage gap for that validator. This proves a
-    validator silently dropped from the required rollup makes the gate red."""
-    workflow = _ci_workflow_dict()
-    needs = workflow["jobs"]["quality-gate"]["needs"]
-    assert "aislop-patterns" in needs
-    workflow["jobs"]["quality-gate"]["needs"] = [
-        n for n in needs if n != "aislop-patterns"
+def test_planted_allowlisted_covering_job_is_detected(spec: dict[str, Any]) -> None:
+    """PLANTED FAILURE (poller mode): adding a covering job's display name to the
+    poller soft-allowlist sweeps it out of the fail-closed gate, so its failure no
+    longer turns the required context red. The verifier must flag the validator
+    whose only covering job is now allowlisted. This is the poller-mode equivalent
+    of silently dropping a validator from the required rollup (OMN-14127).
+
+    The pilot runs in ``poller`` mode, so the old needs-model attack (dropping a
+    job from ``quality-gate.needs``) no longer un-covers anything — the poller
+    still sweeps that job directly. Allowlisting the job is the equivalent attack.
+    """
+    mutated = copy.deepcopy(spec)
+    cfg = mutated["model_b_rollup_enforcement"]["repos"][PILOT_REPO]
+    # "AI Slop Patterns" is the ci.yml display name of the `aislop-patterns` job.
+    cfg["poller_soft_allowlist"] = list(cfg.get("poller_soft_allowlist", [])) + [
+        "AI Slop Patterns"
     ]
-    verifier, repo_root = _spec_with_inline_workflow(spec, workflow, tmp_path)
-    gaps = verifier.verify_repo(repo_name=PILOT_REPO, repo_root=repo_root)
+    verifier = RollupCoverageVerifier(mutated)
+    gaps = verifier.verify_repo(repo_name=PILOT_REPO, repo_root=REPO_ROOT)
     offenders = {g.validator for g in gaps}
     assert "aislop-patterns" in offenders, (
-        f"dropping aislop-patterns from the rollup needs must be detected; "
+        f"allowlisting a covering job's name must un-cover its validator; "
         f"gaps={offenders}"
     )
+
+
+def test_poller_rollup_with_needs_is_flagged(
+    spec: dict[str, Any], tmp_path: Path
+) -> None:
+    """A ``poller`` rollup that declares ``needs`` re-introduces the saturation
+    wedge (its check-run is absent until its needs terminalize). The verifier must
+    flag the rollup job itself."""
+    workflow = _ci_workflow_dict()
+    workflow["jobs"]["ci-summary"]["needs"] = ["quality-gate"]
+    verifier, repo_root = _spec_with_inline_workflow(spec, workflow, tmp_path)
+    gaps = verifier.verify_repo(repo_name=PILOT_REPO, repo_root=repo_root)
+    assert any(g.validator == "<rollup>" for g in gaps), (
+        "a poller rollup declaring needs must be flagged as a rollup gap"
+    )
+
+
+def test_needs_mode_reachability_is_enforced(tmp_path: Path) -> None:
+    """needs-mode coverage (the default for every non-poller repo): a covering job
+    NOT in the rollup's transitive ``needs`` is a gap; wiring it into ``needs``
+    closes the gap. Exercises the reachability branch in isolation now that the
+    pilot repo itself runs in poller mode."""
+    workflow: dict[str, Any] = {
+        "jobs": {
+            "leaf": {"name": "Leaf"},
+            "rollup": {"name": "Rollup Context", "needs": []},
+        }
+    }
+    synthetic_spec: dict[str, Any] = {
+        "required_validators": {
+            "v1": {"ci_workflow": "required", "applies_to_repos": ["fake"]},
+        },
+        "model_b_rollup_enforcement": {
+            "repos": {
+                "fake": {
+                    "required_rollup_context": "Rollup Context",
+                    "rollup_workflow": "ci.yml",
+                    "rollup_job": "rollup",
+                    "validator_jobs": {"v1": ["leaf"]},
+                }
+            }
+        },
+    }
+    wf_dir = tmp_path / ".github" / "workflows"
+    wf_dir.mkdir(parents=True, exist_ok=True)
+    (wf_dir / "ci.yml").write_text(yaml.safe_dump(workflow), encoding="utf-8")
+
+    verifier = RollupCoverageVerifier(synthetic_spec)
+    gaps = verifier.verify_repo(repo_name="fake", repo_root=tmp_path)
+    assert {g.validator for g in gaps} == {"v1"}, "leaf not in rollup.needs → gap"
+
+    workflow["jobs"]["rollup"]["needs"] = ["leaf"]
+    (wf_dir / "ci.yml").write_text(yaml.safe_dump(workflow), encoding="utf-8")
+    gaps_after = verifier.verify_repo(repo_name="fake", repo_root=tmp_path)
+    assert gaps_after == [], "leaf wired into rollup.needs → covered"
 
 
 def test_planted_continue_on_error_is_detected(

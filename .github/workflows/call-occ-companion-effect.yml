@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# call-occ-companion-effect.yml
+#
+# Per-repo occ-companion-effect trigger for omnibase_core (OMN-14990, fan-out
+# of the OMN-14941 omnibase_infra canary — its discriminating readback
+# passed, comment on OMN-14941, infra#2393 -> OCC#4618). Thin caller — all
+# publish logic lives in the omniclaude reusable, which runs omnimarket's
+# canonical publisher.
+#
+# On a ticketed product PR the reusable publishes
+# `onex.cmd.omnimarket.occ-companion-effect-requested.v1`; the .201 dev-lane
+# effects runtime (node_occ_companion_effect — the canonical RSD-3 write-
+# EFFECT) mints the OCC evidence companion and stamps
+# `Evidence-Source: OCC#<n>` onto this PR. Only this path produces
+# `occ:machine-minted` + `minted_by_node=true`.
+#
+# NOT call-occ-autobind.yml: OMN-14941 explicitly supersedes resurrecting the
+# legacy occ-autobind path for infra/core ("net-negative-surface: the
+# contract's own note targets retiring OccCompanionEmitter"). omnibase_core
+# gets only the current canonical born path, not the path being retired.
+#
+# TRIGGER COVERAGE (OMN-14987, applied here from the start rather than
+# patched in later the way omnibase_infra had to): opened/synchronize alone
+# miss two born-path holes. (1) draft->ready_for_review WITHOUT an
+# intervening push never re-fires either event — GitHub emits a distinct
+# ready_for_review event neither original omnibase_infra caller listened for,
+# so a PR opened as draft and later marked ready was permanently stranded
+# unbound (live case: infra#2407). (2) closed-then-reopened has the same hole
+# via the reopened event. Both are listed from the start here. The F-17
+# draft-suppression guard is NOT a trigger-level gate — it lives downstream in
+# node_occ_companion_compute (handler_occ_companion_compute.py), which checks
+# live pr_is_draft state at compute time, so listening for ready_for_review
+# here cannot cause a mint while the PR is still a draft; it only unblocks the
+# mint for the transition OUT of draft.
+#
+# TRIGGER — NO base-branch filter, deliberately (the #2377 stacked-PR
+# vector): a trigger-level `branches: [main, dev, hotfix/**]` filter means a
+# PR whose base is a feature branch never fires, and when that base later
+# retargets dev the opened/synchronize events have already passed — the PR
+# silently never gets a companion. Every pull_request fires here; the
+# reusable's own bot/OMN gate (plus this caller's copy of it) filters what
+# should not publish, and any future base filtering must be IN-JOB with a
+# logged skip, never at the trigger.
+#
+# ADDITIVE / REJECTS NOTHING: this workflow is NOT a required status check. It
+# publishes a command; it never fails a PR's merge. A fail-loud exit 1 on the
+# trusted runner (unreachable dev broker) is a non-blocking red signal, not a
+# merge gate.
+#
+# PIN CHOICE (OMN-14939/E1 failure class): the reusable is pinned `@dev`
+# because that is the ref that resolves — the reusable exists only on
+# omniclaude dev (verified 2026-07-23:
+# `gh api repos/OmniNode-ai/omniclaude/contents/.github/workflows/call-occ-companion-effect-reusable.yml?ref=dev`
+# resolves; `?ref=main` does not, the exact shape that silently killed the
+# infra autobind caller for weeks). `tests/ci/test_workflow_uses_refs_resolve.py`
+# + `tests/integration/ci/test_workflow_uses_refs_resolve_live.py` (ported
+# from omnibase_infra, OMN-14941/E1) fail closed if this pin — or any other
+# cross-repo `uses:@ref` pin in this repo — stops resolving live.
+#
+# RE-PIN FOLLOW-UP: once the reusable promotes to omniclaude main, re-pin this
+# `uses:` to `@main` or a main SHA so the caller no longer tracks a moving dev
+# branch (same follow-up named in the infra caller and in OMN-14812, which is
+# a separate ticket about the legacy autobind publisher's own promotion).
+#
+# SECRET-FREE: no `secrets: inherit` — the dev-lane broker comes from
+# omnimarket's committed config/ci_bus_lanes.yaml overlay (OMN-14813), and the
+# dev-lane listener is plaintext. This repo needs no Kafka secrets for this
+# workflow.
+#
+# Ticket: OMN-14990 (OMN-14941 / OMN-14811 / OMN-14987 lineage)
+
+name: OCC Companion Effect Publisher
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  occ-companion-effect:
+    # Skip dependency bots and PRs with no OMN ticket token (same gate the
+    # reusable enforces defensively). Gating here means the reusable is not
+    # even invoked for non-OMN / bot PRs.
+    if: >-
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'renovate[bot]' &&
+      (contains(github.event.pull_request.title, 'OMN-') ||
+       contains(github.event.pull_request.head.ref, 'OMN-'))
+    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev
+    with:
+      lane: dev

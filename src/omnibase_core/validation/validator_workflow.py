@@ -52,6 +52,10 @@ Thread Safety:
 from uuid import UUID
 
 from omnibase_core.constants.constants_field_limits import MAX_DFS_ITERATIONS
+from omnibase_core.constants.constants_workflow import (
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+)
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -70,10 +74,6 @@ from omnibase_core.models.validation.model_unique_name_result import (
 )
 from omnibase_core.models.validation.model_workflow_validation_result import (
     ModelWorkflowValidationResult,
-)
-from omnibase_core.validation.validator_workflow_constants import (
-    MIN_TIMEOUT_MS,
-    RESERVED_STEP_TYPES,
 )
 
 # Re-export sub-module symbols at package level
@@ -108,7 +108,7 @@ __all__ = [
     "RESERVED_EXECUTION_MODES",
     "ACCEPTED_EXECUTION_MODES",
     "ACCEPTED_STEP_TYPES",
-    # Re-exported from validator_workflow_constants (canonical source)
+    # Re-exported from constants_workflow (canonical source)
     "MAX_DFS_ITERATIONS",
     "RESERVED_STEP_TYPES",
     "MIN_TIMEOUT_MS",

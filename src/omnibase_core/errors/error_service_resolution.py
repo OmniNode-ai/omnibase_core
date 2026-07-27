@@ -11,7 +11,7 @@ unrelated `ContainerWiringError` subclass) propagates untouched so
 container-internal bugs are never silenced.
 
 Hierarchy:
-    ModelOnexError                          (omnibase_core.models.errors)
+    ModelOnexError                          (omnibase_core.errors)
         └── ContainerWiringError            (container_wiring_error.py)
                 └── ServiceResolutionError  (this module)
 

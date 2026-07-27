@@ -180,12 +180,12 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
 
 ### ModelServiceCompute
 
-**Location**: `omnibase_core.models.services.model_service_compute`
+**Location**: `omnibase_core.nodes.node_service_compute`
 
 **Purpose**: Pre-composed COMPUTE node with common mixins.
 
-```
-from omnibase_core.models.services.model_service_compute import ModelServiceCompute
+```python
+from omnibase_core.nodes.node_service_compute import ModelServiceCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeCompute, MixinHealthCheck, MixinCaching, MixinMetrics
@@ -194,12 +194,12 @@ service = ModelServiceCompute(container)
 
 ### ModelServiceEffect
 
-**Location**: `omnibase_core.models.services.model_service_effect`
+**Location**: `omnibase_core.nodes.node_service_effect`
 
 **Purpose**: Pre-composed EFFECT node with common mixins.
 
-```
-from omnibase_core.models.services.model_service_effect import ModelServiceEffect
+```python
+from omnibase_core.nodes.node_service_effect import ModelServiceEffect
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeEffect, MixinHealthCheck, MixinEventBus, MixinMetrics
@@ -208,12 +208,12 @@ service = ModelServiceEffect(container)
 
 ### ModelServiceReducer
 
-**Location**: `omnibase_core.models.services.model_service_reducer`
+**Location**: `omnibase_core.nodes.node_service_reducer`
 
 **Purpose**: Pre-composed REDUCER node with common mixins.
 
-```
-from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
+```python
+from omnibase_core.nodes.node_service_reducer import ModelServiceReducer
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeReducer, MixinHealthCheck, MixinCaching, MixinMetrics
@@ -222,12 +222,12 @@ service = ModelServiceReducer(container)
 
 ### ModelServiceOrchestrator
 
-**Location**: `omnibase_core.models.services.model_service_orchestrator`
+**Location**: `omnibase_core.nodes.node_service_orchestrator`
 
 **Purpose**: Pre-composed ORCHESTRATOR node with common mixins.
 
-```
-from omnibase_core.models.services.model_service_orchestrator import ModelServiceOrchestrator
+```python
+from omnibase_core.nodes.node_service_orchestrator import ModelServiceOrchestrator
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 # Pre-composed with MixinNodeService, NodeOrchestrator, MixinHealthCheck, MixinEventBus, MixinMetrics

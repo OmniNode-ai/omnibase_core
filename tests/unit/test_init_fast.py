@@ -9,6 +9,8 @@ Tests lazy loading of validation tools to prevent import-time penalties.
 
 import pytest
 
+from tests.unit.conftest import isolated_sys_modules
+
 
 @pytest.mark.unit
 class TestLazyValidationLoading:
@@ -46,23 +48,18 @@ class TestLazyValidationLoading:
         import sys
 
         # Remove validation modules if already imported
-        modules_to_remove = [
-            key
-            for key in sys.modules
-            if "omnibase_core.validation" in key and key != "omnibase_core"
-        ]
-        for mod in modules_to_remove:
-            del sys.modules[mod]
+        with isolated_sys_modules(
+            lambda key: "omnibase_core.validation" in key and key != "omnibase_core"
+        ):
+            # Import just the main module
 
-        # Import just the main module
-
-        # Validation modules should NOT be imported yet
-        validation_modules = [
-            key for key in sys.modules if "omnibase_core.validation" in key
-        ]
-        assert len(validation_modules) == 0, (
-            "Validation modules imported at module level (not lazy)"
-        )
+            # Validation modules should NOT be imported yet
+            validation_modules = [
+                key for key in sys.modules if "omnibase_core.validation" in key
+            ]
+            assert len(validation_modules) == 0, (
+                "Validation modules imported at module level (not lazy)"
+            )
 
     def test_get_validation_suite_returns_correct_types(self):
         """Test that get_validation_suite returns ModelValidationResult, ServiceValidationSuite, and validate_all."""
@@ -137,29 +134,24 @@ class TestLazyValidationLoading:
         import time
 
         # Clear any cached validation imports
-        modules_to_remove = [
-            key
-            for key in list(sys.modules.keys())
-            if "omnibase_core.validation" in key and key != "omnibase_core"
-        ]
-        for mod in modules_to_remove:
-            del sys.modules[mod]
+        with isolated_sys_modules(
+            lambda key: "omnibase_core.validation" in key and key != "omnibase_core"
+        ):
+            # Import main module - should be fast
+            start = time.perf_counter()
+            from omnibase_core.__init___fast import get_validation_tools
 
-        # Import main module - should be fast
-        start = time.perf_counter()
-        from omnibase_core.__init___fast import get_validation_tools
+            import_time = (time.perf_counter() - start) * 1000
 
-        import_time = (time.perf_counter() - start) * 1000
+            # Accessing the function should not trigger imports
+            start_access = time.perf_counter()
+            tools_func = get_validation_tools
+            access_time = (time.perf_counter() - start_access) * 1000
 
-        # Accessing the function should not trigger imports
-        start_access = time.perf_counter()
-        tools_func = get_validation_tools
-        access_time = (time.perf_counter() - start_access) * 1000
-
-        # Verify no validation modules loaded yet
-        validation_modules = [
-            key for key in sys.modules if "omnibase_core.validation." in key
-        ]
+            # Verify no validation modules loaded yet
+            validation_modules = [
+                key for key in sys.modules if "omnibase_core.validation." in key
+            ]
 
         # Should be minimal (not testing specific times, just that no cascade occurred)
         assert len(validation_modules) == 0, (

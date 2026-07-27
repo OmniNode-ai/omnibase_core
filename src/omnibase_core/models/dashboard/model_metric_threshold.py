@@ -21,7 +21,7 @@ Example:
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.validation.validator_hex_color import validate_hex_color
+from omnibase_core.utils.util_hex_color import validate_hex_color
 
 __all__ = ("ModelMetricThreshold",)
 

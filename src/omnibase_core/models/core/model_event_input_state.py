@@ -12,11 +12,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.validator_workflow_constants import (
+from omnibase_core.constants.constants_workflow import (
     MAX_TIMEOUT_MS,
     MIN_TIMEOUT_MS,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEventInputState(BaseModel):

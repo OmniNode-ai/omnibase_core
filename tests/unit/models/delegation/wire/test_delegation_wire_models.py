@@ -405,6 +405,34 @@ class TestModelRoutingIntent:
         intent = ModelRoutingIntent(payload=req, min_tier_name="cheap_cloud")
         assert intent.min_tier_name == "cheap_cloud"
 
+    def test_excluded_backend_refs_defaults_empty(self) -> None:
+        corr_id = uuid.uuid4()
+        req = ModelDelegationRequest(
+            prompt="test",
+            task_type="test",
+            correlation_id=corr_id,
+            emitted_at=datetime.now(tz=UTC),
+        )
+        intent = ModelRoutingIntent(payload=req)
+        assert intent.excluded_backend_refs == ()
+
+    def test_excluded_backend_refs_round_trips(self) -> None:
+        """OMN-14402: same-tier backend fallback threads already-failed backend
+        refs so the routing reducer can skip them and select a sibling."""
+        corr_id = uuid.uuid4()
+        req = ModelDelegationRequest(
+            prompt="test",
+            task_type="test",
+            correlation_id=corr_id,
+            emitted_at=datetime.now(tz=UTC),
+        )
+        intent = ModelRoutingIntent(
+            payload=req,
+            min_tier_name="local",
+            excluded_backend_refs=("local-heavy-reasoning",),
+        )
+        assert intent.excluded_backend_refs == ("local-heavy-reasoning",)
+
     def test_rejects_invalid_intent_literal(self) -> None:
         corr_id = uuid.uuid4()
         req = ModelDelegationRequest(
@@ -466,6 +494,31 @@ class TestModelInferenceIntent:
                 max_tokens=512,
                 correlation_id=uuid.uuid4(),
             )
+
+    def test_tenant_id_optional_and_settable(self) -> None:
+        # OMN-14280: tenant_id is an optional, top-level, str|None slug that
+        # defaults to None (backward-compatible wire) and round-trips verbatim.
+        default_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+        )
+        assert default_intent.tenant_id is None
+
+        tenant_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+            tenant_id="tenant-alpha",
+        )
+        assert tenant_intent.tenant_id == "tenant-alpha"
+        assert tenant_intent.model_dump()["tenant_id"] == "tenant-alpha"
 
 
 @pytest.mark.unit
@@ -945,6 +998,24 @@ class TestModelInferenceResponseData:
                 model_used="qwen3-14b",
                 prompt_tokens=-1,
             )
+
+    def test_tenant_id_optional_and_settable(self) -> None:
+        # OMN-14280: tenant_id round-trips the owning tenant back to the
+        # orchestrator; optional + defaults to None for backward compatibility.
+        default_resp = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="qwen3-14b",
+        )
+        assert default_resp.tenant_id is None
+
+        tenant_resp = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="qwen3-14b",
+            tenant_id="tenant-alpha",
+        )
+        assert tenant_resp.tenant_id == "tenant-alpha"
 
 
 @pytest.mark.unit

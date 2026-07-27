@@ -2,9 +2,19 @@
 # SPDX-License-Identifier: MIT
 ---
 # scripts/ci/test_selection_adjacency.yaml
-# Static adjacency map from src/omnibase_core/<module> to dependent modules.
-# When a key module changes, every module in `reverse_deps` ALSO has its tests run.
-# Treated as CI contract data — manually curated, reviewed in PRs that change it.
+# Selector POLICY config — shared_modules / thresholds / test_infrastructure_paths
+# only. Operational-risk decisions that cannot be derived from the import graph.
+#
+# RETIRED (OMN-14921): this file previously also carried a hand-curated
+# `adjacency:` reverse_deps map (module -> modules that import it). A live audit
+# against the real `grimp` reverse-import closure found 26 of 40 declarations
+# FALSE (e.g. `utils: {reverse_deps: []}` and `logging: {reverse_deps: []}` when
+# the real graph shows ~37-38 real reverse deps each) — 1,343 of 1,441 unit test
+# files (93%) were wrongly excludable as a result. Selection is now computed
+# directly from the live import graph at file grain
+# (scripts/ci/test_selection_closure.compute_closure_selection), not from a
+# static map. `ModelAdjacencyMap.reject_adjacency_reintroduction` fails LOUD if
+# an `adjacency:` key is ever added back to this file — do not add one.
 
 schema_version: 1
 
@@ -26,82 +36,54 @@ shared_modules:
 thresholds:
   modules_changed_for_full_suite: 8
 
-# Test infrastructure — any change forces the full suite.
+# Test infrastructure — any change to these paths forces the full suite via a
+# bare path-prefix / exact match in detect_test_paths.py step 2.
+#
+# Two triggers are handled specially and are intentionally ABSENT from this list
+# (OMN-14081):
+#   * pyproject.toml — handled CONTENT-AWARE in detect_test_paths.py
+#     (classify_pyproject_dependency_relevant): it escalates only when a
+#     dependency-bearing table changed (dependencies / optional-dependencies /
+#     dependency-groups / build-system / tool.* except tool.ruff /
+#     requires-python), not on a bare `version` bump, entry-point registration,
+#     lint-only [tool.ruff.*] edit, or metadata edit. Fail-closed:
+#     unparseable/unavailable TOML still escalates.
+#   * .github/workflows/ — removed to align with omnibase_infra (which omits it).
+#     A workflow-only change carries zero test-code delta, is exercised by the PR's
+#     own CI run, and is backstopped by the unconditional merge_group -> main full
+#     suite (root CLAUDE.md Rule #4).
+#
+# scripts/ci/ NARROWED to the SELECTOR'S OWN FILES ONLY (OMN-14910, CI-C1 #1).
+# OMN-14081 kept the whole `scripts/ci/` directory here as a "conservative — it
+# houses the selector itself" full-suite trigger. Measured over 30 merged PRs,
+# 6 of 7 `scripts/ci/` escalations touched files with zero relationship to test
+# selection (ci_summary_gate.py, verify_flip_bundle.py, canonical_handler_shape.py,
+# product_readiness.py, product_reason_graph.py, adequacy_receipts/*.json) — a
+# full 40-way suite for a change the selector cannot be affected by. The list
+# below keeps EXACTLY the selector surface as an unconditional trigger, so a
+# change to the selection logic or its config still re-runs everything (a selector
+# that narrowed on a change to ITSELF would be self-referentially fail-open):
+#   - the legacy oracle + its loader/models re-export shims (scripts/ci/)
+#   - the adjacency YAML (this file)
+#   - the canonical node's pure algorithm (selector_core.py)
+# The selector's model/enum deps (models/nodes/test_selector/*, enums/
+# enum_full_suite_reason.py) live under `models`/`enums` which are shared_modules,
+# so they already force the full suite via step 3 — no need to relist them here.
 test_infrastructure_paths:
-  - .github/workflows/
-  - scripts/ci/
+  - scripts/ci/detect_test_paths.py
+  - scripts/ci/test_selection_loader.py
+  - scripts/ci/test_selection_models.py
+  # OMN-14921: the shadow file-grain closure module is selector surface — a
+  # selector that narrowed on a change to its own (even shadow-only) code would
+  # be self-referentially fail-open once promoted.
+  - scripts/ci/test_selection_closure.py
+  - scripts/ci/test_selection_adjacency.yaml
+  - src/omnibase_core/nodes/node_test_selector_compute/selector_core.py
   - tests/conftest.py
   - tests/fixtures/
   - tests/pytest.ini
   - pytest.ini
-  - pyproject.toml
 
-# Reverse dependency edges. Key = changed module; value = modules that import it.
-# When `models` changes, also run tests for everything in `models.reverse_deps`.
-# Note: shared_modules entries here are not consulted at runtime
-# (they trigger full suite first), but kept for completeness/documentation.
-adjacency:
-  analysis:
-    reverse_deps: []
-  models:
-    reverse_deps: [analysis, nodes, contracts, runtime, validation, services, factories, container]
-  contracts:
-    reverse_deps: [nodes, runtime, validation]
-  enums:
-    reverse_deps: [analysis, models, contracts, nodes, validation, runtime]
-  validation:
-    reverse_deps: [nodes, runtime, services]
-  runtime:
-    reverse_deps: [nodes, services, container]
-  event_bus:
-    reverse_deps: [runtime, services, nodes]
-  container:
-    reverse_deps: [services, nodes, runtime]
-  protocols:
-    reverse_deps: [nodes, services, factories]
-  errors:
-    reverse_deps: [models, runtime, nodes, services]
-  # Leaf modules with no reverse_deps still appear so the loader can validate
-  # that every src/omnibase_core/<dir> has an entry.
-  adapters: {reverse_deps: []}
-  agents: {reverse_deps: []}
-  artifacts: {reverse_deps: []}
-  analysis: {reverse_deps: []}
-  backends: {reverse_deps: []}
-  cli: {reverse_deps: []}
-  constants: {reverse_deps: []}
-  context: {reverse_deps: [nodes, runtime]}
-  # Contract Graph IR (OMN-13132): read-only leaf module — nothing imports it yet,
-  # so reverse_deps is empty. It imports models/enums/cli (already shared_modules =>
-  # full-suite escalation) and types (see types.reverse_deps below).
-  contract_graph: {reverse_deps: []}
-  crypto: {reverse_deps: []}
-  decorators: {reverse_deps: []}
-  dispatch: {reverse_deps: []}
-  discovery: {reverse_deps: [nodes, runtime]}
-  dispatch: {reverse_deps: []}
-  doctor: {reverse_deps: []}
-  factories: {reverse_deps: [nodes, container]}
-  feature_flags: {reverse_deps: []}
-  gate: {reverse_deps: []}
-  infrastructure: {reverse_deps: []}
-  integrations: {reverse_deps: []}
-  logging: {reverse_deps: []}
-  merge: {reverse_deps: []}
-  mixins: {reverse_deps: [models, nodes]}
-  navigation: {reverse_deps: []}
-  nodes: {reverse_deps: []}
-  normalization: {reverse_deps: [models, nodes]}
-  overlays: {reverse_deps: []}
-  package: {reverse_deps: []}
-  pipeline: {reverse_deps: [nodes]}
-  rendering: {reverse_deps: []}
-  resolution: {reverse_deps: [nodes, runtime]}
-  schemas: {reverse_deps: [models]}
-  scripts: {reverse_deps: []}
-  services: {reverse_deps: [nodes]}
-  tools: {reverse_deps: []}
-  types: {reverse_deps: [models, contract_graph]}
-  utils: {reverse_deps: []}
-  validators: {reverse_deps: []}
-  workflows: {reverse_deps: [nodes]}
+# NO `adjacency:` key below this line — see the retirement note at the top of
+# this file. `ModelAdjacencyMap.reject_adjacency_reintroduction` raises at
+# load time if one is added back.

@@ -27,13 +27,21 @@ from uuid import uuid4
 
 import yaml
 
+from omnibase_core.models.nodes.compliance_evidence.model_compliance_evidence_output import (
+    ModelComplianceEvidenceOutput,
+)
 from omnibase_core.models.nodes.compliance_evidence.model_evidence_report_state import (
     ModelEvidenceReportState,
+)
+from omnibase_core.nodes.node_compliance_evidence_effect.event_bus_no_op import (
+    NoOpCompletionEventBus,
 )
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["NodeComplianceEvidenceEffect"]
+__all__ = ["NodeComplianceEvidenceEffect", "NoOpCompletionEventBus"]
+
+_NO_OP_EVENT_BUS = NoOpCompletionEventBus()
 
 
 class NodeComplianceEvidenceEffect:
@@ -41,15 +49,17 @@ class NodeComplianceEvidenceEffect:
 
     Args:
         state_root: Root directory for state artifacts (typically ``.onex_state``).
-        event_bus: Optional event bus for emitting completion events. When ``None``
-            the completion event is logged but not published (local-dev fallback).
+        event_bus: Event bus for emitting completion events. Defaults to a
+            no-op stub (:class:`NoOpCompletionEventBus`) when the caller has
+            no real bus to inject — the publish call always fires, it simply
+            has nowhere durable to land.
         completion_topic: Topic string from the contract's publish_topics.
     """
 
     def __init__(
         self,
         state_root: Path,
-        event_bus: Any = None,
+        event_bus: Any = _NO_OP_EVENT_BUS,
         completion_topic: str = "",
     ) -> None:
         self._state_root = Path(state_root)
@@ -61,6 +71,44 @@ class NodeComplianceEvidenceEffect:
 
         Returns:
             Path to the run-specific report file.
+        """
+        run_path, _run_id, _report_data = self._write_report(report)
+        return run_path
+
+    def handle(
+        self, request: ModelEvidenceReportState
+    ) -> ModelComplianceEvidenceOutput:
+        """Definition-B canonical entry-point (OMN-14355).
+
+        Typed request in, typed response out — shares the exact same durable
+        write path as :meth:`execute` (via ``_write_report``, extracted
+        unchanged from the pre-existing implementation) so both entry-points
+        stay behaviorally identical. ``execute`` is left in place returning
+        its original ``Path`` so its existing callers (including the
+        effect-golden readback canary) are unaffected.
+        """
+        run_path, run_id, report_data = self._write_report(request)
+        latest_path = self._state_root / "compliance" / "report.yaml"
+        return ModelComplianceEvidenceOutput(
+            run_id=run_id,
+            report_path=str(run_path),
+            latest_path=str(latest_path),
+            total=report_data["total"],
+            passed=report_data["passed"],
+            failed=report_data["failed"],
+        )
+
+    # ONEX_EXCLUDE: dict_str_any — report_data is model_dump output, typed at origin
+    def _write_report(
+        self, report: ModelEvidenceReportState
+    ) -> tuple[Path, str, dict[str, Any]]:
+        """Write the compliance report to disk and emit the completion event.
+
+        Shared by :meth:`execute` and :meth:`handle` so both entry-points
+        perform the identical durable write + event-emission sequence.
+
+        Returns:
+            Tuple of (run-specific report path, run_id, report_data dict).
         """
         run_id = report.run_id or str(uuid4())
         timestamp = report.scan_started_at or datetime.now(tz=UTC).isoformat()
@@ -96,7 +144,7 @@ class NodeComplianceEvidenceEffect:
         # 3. Emit completion event AFTER durable write
         self._emit_completion(run_id=run_id, report_data=report_data)
 
-        return run_path
+        return run_path, run_id, report_data
 
     # ONEX_EXCLUDE: dict_str_any — report_data is model_dump output, typed at origin
     def _emit_completion(
@@ -116,11 +164,5 @@ class NodeComplianceEvidenceEffect:
             "passed": report_data["passed"],
             "failed": report_data["failed"],
         }
-        if self._event_bus is not None:
-            self._event_bus.publish(self._completion_topic, event_payload)
-            logger.info("Completion event emitted: %s", self._completion_topic)
-        else:
-            logger.info(
-                "No event bus configured — completion event logged only: %s",
-                self._completion_topic,
-            )
+        self._event_bus.publish(self._completion_topic, event_payload)
+        logger.info("Completion event emitted: %s", self._completion_topic)

@@ -6,25 +6,6 @@
 
 ---
 
-## Table of Contents
-
-1. [Repo Invariants](#repo-invariants)
-2. [Non-Goals](#non-goals)
-3. [External SDK Surface](#external-sdk-surface)
-4. [Quick Reference](#quick-reference)
-5. [Python Development - uv](#python-development---uv)
-6. [Handler Output Constraints](#handler-output-constraints)
-7. [Forbidden Data Flow Patterns](#forbidden-data-flow-patterns)
-8. [Dependency Injection](#dependency-injection)
-9. [Error Handling](#error-handling)
-10. [Project Structure](#project-structure)
-11. [Pydantic Model Standards](#pydantic-model-standards)
-12. [Code Quality](#code-quality)
-13. [Common Pitfalls](#common-pitfalls)
-14. [Documentation](#documentation)
-
----
-
 ## Repo Invariants
 
 These are non-negotiable architectural truths:
@@ -40,20 +21,18 @@ These are non-negotiable architectural truths:
 
 ## Agent Behavioral Rules
 
-### Autonomous mode safety rails
-
-When operating autonomously in this repo:
-- Never disable pre-commit hooks, CI checks, or type checkers to make code pass.
-  Fix the code instead.
-- Never write state files to `~/.claude/` -- use the workspace-local
-  `.onex_state/` directory.
+- Never disable pre-commit hooks, CI checks, or type checkers to make code pass. Fix the code instead.
+- Never write state files to `~/.claude/` — use the workspace-local `.onex_state/` directory.
 
 ### Contract-first topic definitions
 
 This repo defines the contract framework that all ONEX nodes use. Kafka topic
 declarations belong in contract YAML files (`event_bus.publish_topics` /
-`subscribe_topics`), not hardcoded in application code. The `ContractConfigExtractor`
-and validation pipeline enforce this.
+`subscribe_topics`), not hardcoded in application code. Enforced by
+`validation/validator_hardcoded_topics.py` plus the `demo-path-topic-coherence`
+CI gate (`onex-demo-path-topic-gate`), and by
+`validators/contract_config_compliance.py` (bare env reads, bus-bypass imports,
+missing contract config; CI job `contract-config-compliance`).
 
 ---
 
@@ -100,47 +79,25 @@ OmniNode repo is allowed to hard-depend on.
 # Setup
 uv sync --all-extras && pre-commit install
 
-# Testing
-uv run pytest tests/                    # All tests (sequential by default)
-uv run pytest tests/ -n 4               # With 4 parallel workers
-uv run pytest tests/ -n 0 -xvs          # Debug mode (no parallelism)
-uv run pytest tests/ --cov              # With coverage (60% minimum required)
+# Testing — PARALLEL BY DEFAULT: addopts pins -n4, --timeout=60, --reruns=2
+uv run pytest tests/                    # All tests (4 xdist workers via addopts)
+uv run pytest tests/ -n 0 -xvs          # Debug mode (disable parallelism)
+uv run pytest tests/ --cov              # With coverage (fail_under=60 in pyproject)
 
 # Code Quality
-uv run mypy src/omnibase_core/          # Type checking (strict, 0 errors required)
+uv run mypy src/omnibase_core/          # Type checking (strict=true, 0 errors required)
 uv run ruff check src/ tests/           # Linting
 pre-commit run --all-files              # All hooks
 ```
 
-**Test markers**: `@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.slow`, `@pytest.mark.performance`, `@pytest.mark.memory_intensive`, `@pytest.mark.isolated`
+**Test markers**: `--strict-markers` is on. Markers are registered in
+`pyproject.toml` `[tool.pytest.ini_options] markers` plus `tests/conftest.py`
+(`memory_intensive`, `isolated`) — read those two sources, not a hand-copied list.
 
----
-
-## Python Development - uv
-
-> **Shared rules** (`--no-verify` prohibition, pre-commit hook policy) are in `~/.claude/CLAUDE.md`. Below are repo-specific additions only.
-
-### Package Manager
-
-This repository uses **uv** (not Poetry) for dependency management. All Python commands must be run via `uv run`.
-
-```bash
-uv sync --all-extras    # Install all dependencies (replaces: poetry install)
-uv run <command>        # Run command in venv (replaces: poetry run <command>)
-uv lock                 # Regenerate lockfile (replaces: poetry lock)
-```
-
-### Additional Git Commit Rules
-
-- **NEVER use `--no-gpg-sign`** unless explicitly requested by the user.
-- **NEVER run git commits in background mode** - always foreground.
-
-### Agent Instructions
-
-When spawning polymorphic agents or AI assistants:
-- **ALWAYS** instruct them to use `uv run` for Python commands
-- **NEVER** allow direct pip or python execution
-- **NEVER** run agents in background mode
+**uv, not Poetry**: `uv sync --all-extras` / `uv run <command>` / `uv lock`. All
+Python commands — including any spawned agent's — run via `uv run`, never bare
+`python`/`pip`. Shared git/hook rules (`--no-verify` / `--no-gpg-sign`
+prohibitions, no background commits) live in `~/.claude/CLAUDE.md`.
 
 ---
 
@@ -167,17 +124,11 @@ payload::
      "source": "runtime_local"}
 
 The `source: "runtime_local"` field lets consumers distinguish runtime-synthesized
-terminals from handler-published ones. This semantics applies **only** to the
-single-handler execution path; the event-driven path (`_run_event_driven`) still
-relies on handler-published terminals and must not double-emit.
-
-**Rationale**: before this change, sync-return handlers like `NodeMergeSweep`
-bypassed the bus entirely — the runtime classified the return value and wrote
-state without the terminal topic ever receiving a message. That made bus-transit
-claims unprovable for the single-handler path. Runtime-synthesized terminals
-make the bus participate in every completed workflow regardless of handler
-return style. FAILED results publish with `status: "failure"` — silence on
-failure would be worse than a documented failure event.
+terminals from handler-published ones. FAILED results publish `status: "failure"`.
+This applies **only** to the single-handler path; the event-driven path
+(`_run_event_driven`) relies on handler-published terminals and must not
+double-emit. Full rationale: `_publish_synthesized_terminal` docstring in
+`src/omnibase_core/runtime/runtime_local.py`.
 
 **See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md), [Canonical Execution Shapes](docs/architecture/CANONICAL_EXECUTION_SHAPES.md)
 
@@ -261,31 +212,16 @@ failure would be worse than a documented failure event.
 
 ### File Naming Conventions
 
-| Directory | Required Prefix | Example |
-|-----------|----------------|---------|
-| `cli/` | `cli_*` | `cli_commands.py` |
-| `constants/` | `constants_*` | `constants_event_types.py` |
-| `container/` | `container_*` | `container_service_registry.py` |
-| `context/` | `context_*` | `context_application.py` |
-| `contracts/` | `contract_*` | `contract_hash_registry.py` |
-| `decorators/` | `decorator_*` | `decorator_error_handling.py` |
-| `enums/` | `enum_*` | `enum_node_kind.py` |
-| `errors/` | `error_*` or `exception_*` | `exception_groups.py` |
-| `factories/` | `factory_*` | `factory_contract_profile.py` |
-| `infrastructure/` | `node_*` or `infra_*` | `node_base.py` |
-| `logging/` | `logging_*` | `logging_structured.py` |
-| `mixins/` | `mixin_*` | `mixin_handler_routing.py` |
-| `models/` | `model_*` | `model_event_envelope.py` |
-| `nodes/` | `node_*` | `node_compute.py` |
-| `pipeline/` | `builder_*`, `runner_*`, `manifest_*`, `handler_*` | `builder_execution_plan.py` |
-| `protocols/` | `protocol_*` | `protocol_event_bus.py` |
-| `runtime/` | `runtime_*`, `handler_*` | `runtime_file_registry.py` |
-| `services/` | `service_*` | `service_handler_registry.py` |
-| `types/` | `typed_dict_*`, `type_*`, `converter_*` | `type_compute_pipeline.py` |
-| `utils/` | `util_*` | `util_datetime_parser.py` |
-| `validation/` | `validator_*` or `checker_*` | `validator_contracts.py` |
-
-**Exceptions**: `__init__.py`, `conftest.py`, `py.typed` are always allowed.
+Every directory under `src/omnibase_core/` requires a file-name prefix
+(`models/` → `model_*`, `enums/` → `enum_*`, `nodes/` → `node_*`, ...). The
+enforced map is `DIRECTORY_PREFIX_RULES` in
+`src/omnibase_core/validation/checker_naming_convention.py` (CI job
+`naming-conventions`) — read it there; a hand-copied table here drifted.
+Traps: the rule keys on the FIRST directory after `omnibase_core/`
+(`models/cli/model_cli.py` follows the `models` rule, not `cli`), and several
+directories accept multiple prefixes (e.g. `pipeline/`, `types/`, `errors/`,
+`validation/`, `runtime/`). Always allowed: `__init__.py`, `conftest.py`,
+`py.typed`, and `_`-prefixed private modules.
 
 ---
 
@@ -295,7 +231,17 @@ failure would be worse than a documented failure event.
 |------------|---------------------|
 | **Immutable value** | `ConfigDict(frozen=True, extra="forbid", from_attributes=True)` |
 | **Mutable internal** | `ConfigDict(extra="forbid", from_attributes=True)` |
-| **Contract/external** | `ConfigDict(extra="ignore", ...)` |
+| **Contract/external** | `ConfigDict(extra="forbid", ...)` |
+
+**`extra="forbid"` is mandatory on EVERY model** — `extra="ignore"` and `extra="allow"` are
+default-deny. Declaring nothing is not neutral: Pydantic's default for an undeclared `extra`
+is `"ignore"`, so a model with no `model_config` is *already* silently dropping unknown
+fields. Multiple live silent-data-loss incidents came from exactly that. Inheriting `forbid`
+from a base counts — do not redundantly redeclare it. If a model must tolerate unknown input,
+add an explicit typed passthrough field; do not loosen `extra`. Enforced by
+`omnibase_core.validators.pydantic_extra_forbid` as a CI gate (inside the required Quality
+Gate) and a pre-commit hook; the only suppression is an expiring, ticket-and-PR-keyed waiver
+in `extra_forbid_waivers.yaml`.
 
 **`from_attributes=True`**: Required on frozen models for pytest-xdist compatibility.
 
@@ -311,81 +257,20 @@ failure would be worse than a documented failure event.
 
 ## Code Quality
 
-### TODO Policy
-
-```python
-# Correct - with Linear ticket
-# TODO(TICKET-ID): Add validation for edge case
-
-# Wrong - missing ticket
-# TODO: Fix this later
-```
-
-### Type Ignore Policy
-
-```python
-# Correct - specific code + explanation
-# NOTE(TICKET-ID): mypy false-positive due to Protocol-based DI.
-value = container.get_service("ProtocolLogger")  # type: ignore[arg-type]
-
-# Wrong - generic ignore
-value = some_call()  # type: ignore
-```
-
-### Docstring Guidelines
-
-- **Write** for: complex logic, non-obvious behavior, public APIs, edge cases
-- **Skip** for: simple getters, obvious signatures, private helpers
-- **Never tautological**: `def get_name: """Get the name."""` adds no value
-
-### Enum vs Literal Policy
-
-| Context | Use |
-|---------|-----|
-| **External contract surface** | Enums |
-| **Internal parsing glue** | Literals allowed |
-| **Cross-process boundaries** | Enums only |
-
-### Thread Safety
-
-Do NOT share node instances across threads without synchronization. Nodes are single-request scoped.
-
-**See**: [Threading Guide](docs/guides/THREADING.md)
+- **TODO policy**: `# TODO(TICKET-ID): ...` — a TODO without a Linear ticket is blocked by the agent-left-marker pre-commit hook.
+- **Type ignores**: specific code + reason — `# type: ignore[arg-type]` with a `NOTE(TICKET-ID):` explanation; never bare `# type: ignore`.
+- **Enum vs Literal**: Enums on external contract surfaces and cross-process boundaries; Literals allowed only in internal parsing glue.
+- **Thread safety**: Do NOT share node instances across threads — nodes are single-request scoped; use thread-local instances. See [Threading Guide](docs/guides/THREADING.md).
 
 ---
 
 ## Common Pitfalls
 
-### Don't
-
-1. **Skip base class initialization**
-   ```python
-   def __init__(self, container):
-       pass  # WRONG - missing super().__init__(container)
-   ```
-
-2. **Confuse container types**
-   ```python
-   def __init__(self, container: ModelContainer):  # WRONG - use ModelONEXContainer
-   ```
-
-3. **Return result from ORCHESTRATOR**
-   ```python
-   return ModelHandlerOutput.for_orchestrator(result={"status": "done"})  # ValueError!
-   ```
-
-4. **Share nodes across threads**
-   ```python
-   threading.Thread(target=node.process).start()  # UNSAFE
-   ```
-
-### Do
-
-1. Always call `super().__init__(container)` in node constructors
-2. Use `ModelONEXContainer` for dependency injection
-3. Use protocol names for DI: `container.get_service("ProtocolEventBus")`
-4. Use `uv run` for all Python commands
-5. Use thread-local instances for multi-threaded access
+- Always call `super().__init__(container)` in node constructors — skipping base-class init breaks DI.
+- Node `__init__` takes `ModelONEXContainer`, never `ModelContainer` (value wrapper).
+- `ModelHandlerOutput.for_orchestrator(result=...)` raises — ORCHESTRATOR cannot return `result` (see Handler Output Constraints).
+- Prefer type-based DI resolution (`container.get_service(ProtocolEventBus)`); string-based is the late-binding-plugin exception, not the default.
+- Use `uv run` for all Python commands.
 
 ---
 
@@ -409,4 +294,4 @@ Do NOT share node instances across threads without synchronization. Nodes are si
 
 ---
 
-**Python**: 3.12+ | **Ready?** → [Node Building Guide](docs/guides/node-building/README.md)
+**Ready?** → [Node Building Guide](docs/guides/node-building/README.md)

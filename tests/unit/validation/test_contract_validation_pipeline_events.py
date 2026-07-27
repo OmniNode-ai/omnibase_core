@@ -75,6 +75,9 @@ def create_mock_base_contract() -> Mock:
     mock.capability_outputs = []
     mock.behavior = None
     mock.tags = []
+    mock.handler_routing = None
+    mock.yaml_consumed_events = []
+    mock.yaml_published_events = []
     # Use valid handler_id format (dot-separated, each segment starting with letter/underscore)
     mock.handler_id = "node.base.contract"
     mock.descriptor = None

@@ -19,7 +19,7 @@ from omnibase_core.models.events.model_runtime_event_base import (
 
 __all__ = ["ModelNodeRegisteredEvent", "NODE_REGISTERED_EVENT"]
 
-NODE_REGISTERED_EVENT = "onex.runtime.node.registered"
+NODE_REGISTERED_EVENT = "onex.runtime.node.registered"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944); onex-allow-topic-literal
 
 
 class ModelNodeRegisteredEvent(ModelRuntimeEventBase):

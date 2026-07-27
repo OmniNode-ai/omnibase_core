@@ -30,8 +30,8 @@ Note:
     events from `omnibase_core.models.events.*` due to alphabetical ordering.
 
     For true discriminated union support with optimal performance,
-    event models would need Literal types for event_type (e.g.,
-    `event_type: Literal["onex.runtime.node.registered"]`).
+    event models would need Literal types for event_type (e.g.
+    ``event_type: Literal["onex.runtime.<event-name>"]``).
     Currently, Pydantic will try each type in order until validation
     succeeds. This is correct but less efficient than discriminated unions.
 """

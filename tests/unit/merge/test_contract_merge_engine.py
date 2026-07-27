@@ -118,6 +118,9 @@ def mock_base_contract() -> Mock:
     mock.capability_outputs = []
     mock.behavior = None
     mock.tags = []  # Required by merge engine for list(base.tags)
+    mock.handler_routing = None
+    mock.yaml_consumed_events = []
+    mock.yaml_published_events = []
 
     # Add model_dump method for serialization
     mock.model_dump = Mock(
@@ -1067,6 +1070,151 @@ class TestProfileResolution:
 
         # Factory should be called
         mock_profile_factory.get_profile.assert_called()
+
+
+class TestHandlerRoutingAndEventPreservation:
+    """Tests that handler_routing and event declarations survive a merge.
+
+    OMN-14245: ``_apply_patch_to_base`` previously constructed its output
+    ``ModelHandlerContract`` from only 9 named fields, silently dropping
+    ``handler_routing``, ``yaml_consumed_events``, and ``yaml_published_events``
+    even when the base ``ModelContractBase`` (from the profile factory) declared
+    them. ``ModelContractPatch`` has no override for these fields, so this is
+    pure preservation, not a new merge policy.
+    """
+
+    def test_handler_routing_preserved_through_merge(
+        self,
+        mock_profile_factory: Mock,
+        minimal_patch: ModelContractPatch,
+    ) -> None:
+        """A handler_routing block declared on the base profile must survive merge."""
+        from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
+        from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
+            ModelHandlerRoutingEntry,
+        )
+        from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+            ModelHandlerRoutingSubcontract,
+        )
+        from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
+
+        routing = ModelHandlerRoutingSubcontract(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            handlers=[
+                ModelHandlerRoutingEntry(
+                    handler=ModelHandlerRef(
+                        name="HandlerLedgerStats",
+                        module="omnimarket.nodes.node_ledger_stats_compute.handlers.handler_ledger_stats",
+                    ),
+                    operation="aggregate",
+                )
+            ],
+        )
+        mock_base = mock_profile_factory.get_profile.return_value
+        mock_base.handler_routing = routing
+
+        engine = ContractMergeEngine(mock_profile_factory)
+        result = engine.merge(minimal_patch)
+
+        assert result.handler_routing == routing
+
+    def test_yaml_consumed_events_preserved_through_merge(
+        self,
+        mock_profile_factory: Mock,
+        minimal_patch: ModelContractPatch,
+    ) -> None:
+        """A yaml_consumed_events list declared on the base profile must survive merge."""
+        from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
+        from omnibase_core.models.contracts.model_consumed_event_entry import (
+            ModelConsumedEventEntry,
+        )
+
+        consumed = [ModelConsumedEventEntry(event_type="jobs.events.created.v1")]
+        mock_base = mock_profile_factory.get_profile.return_value
+        mock_base.yaml_consumed_events = consumed
+
+        engine = ContractMergeEngine(mock_profile_factory)
+        result = engine.merge(minimal_patch)
+
+        assert result.yaml_consumed_events == consumed
+
+    def test_yaml_published_events_preserved_through_merge(
+        self,
+        mock_profile_factory: Mock,
+        minimal_patch: ModelContractPatch,
+    ) -> None:
+        """A yaml_published_events list declared on the base profile must survive merge."""
+        from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
+        from omnibase_core.models.contracts.model_published_event_entry import (
+            ModelPublishedEventEntry,
+        )
+
+        published = [
+            ModelPublishedEventEntry(
+                topic="jobs.events.started.v1", event_type="jobs.events.started.v1"
+            )
+        ]
+        mock_base = mock_profile_factory.get_profile.return_value
+        mock_base.yaml_published_events = published
+
+        engine = ContractMergeEngine(mock_profile_factory)
+        result = engine.merge(minimal_patch)
+
+        assert result.yaml_published_events == published
+
+    def test_handler_routing_survives_overlay_chaining(
+        self,
+        mock_profile_factory: Mock,
+        sample_profile_reference: ModelProfileReference,
+    ) -> None:
+        """handler_routing declared on the base must survive an overlay merge too.
+
+        ``_apply_overlay_entry`` re-enters ``_apply_patch_to_base`` using the
+        *current* (already-merged) contract as the new base — verifies the
+        preservation also holds across that second call site.
+        """
+        from omnibase_core.enums.enum_overlay_scope import EnumOverlayScope
+        from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
+        from omnibase_core.models.contracts.subcontracts.model_handler_routing_entry import (
+            ModelHandlerRoutingEntry,
+        )
+        from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+            ModelHandlerRoutingSubcontract,
+        )
+        from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
+        from omnibase_core.models.merge.model_overlay_stack_entry import (
+            ModelOverlayStackEntry,
+        )
+
+        routing = ModelHandlerRoutingSubcontract(
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            handlers=[
+                ModelHandlerRoutingEntry(
+                    handler=ModelHandlerRef(
+                        name="HandlerX", module="pkg.handlers.handler_x"
+                    ),
+                    operation="tick",
+                )
+            ],
+        )
+        mock_base = mock_profile_factory.get_profile.return_value
+        mock_base.handler_routing = routing
+
+        base_patch = ModelContractPatch(extends=sample_profile_reference)
+        overlay = ModelOverlayStackEntry(
+            overlay_id="session-override",
+            overlay_patch=ModelContractPatch(
+                extends=sample_profile_reference,
+                description="Session-scoped override",
+            ),
+            scope=EnumOverlayScope.SESSION,
+            version="1.0.0",
+        )
+
+        engine = ContractMergeEngine(mock_profile_factory)
+        result = engine.merge_with_overlays(base_patch, overlays=[overlay])
+
+        assert result.handler_routing == routing
 
 
 class TestModuleExports:

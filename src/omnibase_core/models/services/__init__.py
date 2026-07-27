@@ -50,6 +50,13 @@ from .model_service_type import ModelServiceType
 #   (ModelWorkflowExecutionArgs, ModelWorkflowListResult, ModelWorkflowOutputs,
 #    ModelWorkflowStatusResult, ModelWorkflowStopArgs)
 #
+# Phase 5 (OMN-3210 import-layering burn-down, OMN-14291):
+# - Node + mixin service-wrapper classes moved to: omnibase_core.nodes
+#   (ModelServiceCompute, ModelServiceEffect, ModelServiceOrchestrator,
+#    ModelServiceReducer) — these subclass Node* base classes and were never
+#    domain models; keeping them under models/ created a models -> nodes
+#    import-layering back-edge (.importlinter core-models-no-upward).
+#
 # Please update your imports to use the new locations.
 # Example:
 #   OLD: from omnibase_core.models.services import ModelDockerBuildConfig

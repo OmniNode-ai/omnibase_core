@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-topic-literal: per-event topic SoT declaration (OMN-13944)
 
 """
 Contract validation started event model.
@@ -46,7 +47,7 @@ from omnibase_core.models.events.contract_validation.model_contract_validation_e
 
 __all__ = ["ModelContractValidationStartedEvent", "CONTRACT_VALIDATION_STARTED_EVENT"]
 
-CONTRACT_VALIDATION_STARTED_EVENT = "onex.contract.validation.started"
+CONTRACT_VALIDATION_STARTED_EVENT = "onex.contract.validation.started"  # onex-topic-allow: canonical co-located event-type constant (OMN-13944)
 
 
 class ModelContractValidationStartedEvent(ModelContractValidationEventBase):

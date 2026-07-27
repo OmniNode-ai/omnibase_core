@@ -19,6 +19,12 @@ Related:
 """
 
 from omnibase_core.runtime.mixin_node_dispatch import MixinNodeDispatch
+from omnibase_core.runtime.runtime_dispatch import DispatchRoute, RuntimeDispatch
+from omnibase_core.runtime.runtime_envelope_router import (
+    decode_inbound_envelope,
+    derive_event_type_from_topic,
+    wrap_outbound_envelope,
+)
 from omnibase_core.runtime.runtime_file_registry import FileRegistry
 from omnibase_core.runtime.runtime_local import (
     ResolvedRoutingEntry,
@@ -29,11 +35,16 @@ from omnibase_core.runtime.runtime_local import (
 from omnibase_core.runtime.runtime_local_adapter import LocalRuntimeBusAdapter
 
 __all__ = [
+    "DispatchRoute",
     "FileRegistry",
     "LocalRuntimeBusAdapter",
     "MixinNodeDispatch",
     "ResolvedRoutingEntry",
+    "RuntimeDispatch",
     "RuntimeLocal",
+    "decode_inbound_envelope",
+    "derive_event_type_from_topic",
     "load_workflow_contract",
     "parse_backend_overrides",
+    "wrap_outbound_envelope",
 ]

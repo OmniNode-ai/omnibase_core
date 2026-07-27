@@ -447,15 +447,18 @@ class TestModelOutputFormatOptionsEdgeCases:
         assert options.page_size == 1
         assert options.max_items == 1
 
-    def test_model_config_extra_ignore(self):
-        """Test that extra fields are ignored."""
-        options = ModelOutputFormatOptions(
-            indent_size=4,
-            unknown_field="value",  # type: ignore[call-arg]
-        )
+    def test_model_config_extra_forbid(self):
+        """Test that unknown fields are rejected (extra="forbid").
 
-        assert options.indent_size == 4
-        assert not hasattr(options, "unknown_field")
+        The model previously declared extra="ignore" (unknown fields silently
+        dropped); the extra="forbid" ratchet (OMN-14515) flipped it when the
+        model body was touched, so unknown constructor kwargs now fail loudly.
+        """
+        with pytest.raises(ValidationError):
+            ModelOutputFormatOptions(
+                indent_size=4,
+                unknown_field="value",  # type: ignore[call-arg]
+            )
 
     def test_validate_assignment(self):
         """Test validate_assignment config."""

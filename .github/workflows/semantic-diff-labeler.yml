@@ -5,7 +5,18 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
+  occ-preflight:
+    uses: ./.github/workflows/occ-preflight.yml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      contracts-dir: contracts
+      receipts-dir: drift/dod_receipts
+
   label:
+    needs: occ-preflight
+    if: always()
     name: AST Risk Labeler
     runs-on: ubuntu-latest
     permissions:
@@ -19,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 

@@ -12,6 +12,12 @@ compliance across 8 verification dimensions.
 from omnibase_core.models.nodes.compliance_scan.model_check_result import (
     ModelCheckResult,
 )
+from omnibase_core.models.nodes.compliance_scan.model_compliance_scan_request import (
+    ModelComplianceScanRequest,
+)
+from omnibase_core.models.nodes.compliance_scan.model_compliance_scan_response import (
+    ModelComplianceScanResponse,
+)
 from omnibase_core.models.nodes.compliance_scan.model_scan_check_result import (
     ModelScanCheckResult,
 )
@@ -22,5 +28,7 @@ from omnibase_core.nodes.node_compliance_scan_compute.handler import (
 __all__ = [
     "NodeComplianceScanCompute",
     "ModelCheckResult",
+    "ModelComplianceScanRequest",
+    "ModelComplianceScanResponse",
     "ModelScanCheckResult",
 ]

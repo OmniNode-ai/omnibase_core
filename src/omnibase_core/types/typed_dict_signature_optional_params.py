@@ -15,12 +15,6 @@ from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
-    from omnibase_core.models.security.model_operation_details import (
-        ModelOperationDetails,
-    )
-    from omnibase_core.models.security.model_signature_metadata import (
-        ModelSignatureMetadata,
-    )
 
 
 class TypedDictSignatureOptionalParams(TypedDict, total=False):
@@ -30,14 +24,16 @@ class TypedDictSignatureOptionalParams(TypedDict, total=False):
     timestamp: datetime
     signature_algorithm: EnumSignatureAlgorithm
     certificate_thumbprint: str | None
-    operation_details: ModelOperationDetails | None
+    # OMN-14337: was the operation-details domain model (immovable).
+    operation_details: object | None
     previous_signature_hash: str | None
     security_clearance: str | None
     processing_time_ms: int | None
     signature_time_ms: int | None
     error_message: str | None
     warning_messages: list[str]
-    signature_metadata: ModelSignatureMetadata | None
+    # OMN-14337: was the signature-metadata domain model (immovable).
+    signature_metadata: object | None
 
 
 __all__ = ["TypedDictSignatureOptionalParams"]

@@ -134,6 +134,18 @@ class ModelDelegationResult(BaseModel):
             "(e.g. a remote-agent A2A terminal). OMN-13649."
         ),
     )
+    # string-id-ok: tenant_id is a named tenant identifier, not a UUID
+    tenant_id: str | None = Field(
+        default=None,
+        description=(
+            "Multi-tenant isolation identifier carried from the originating "
+            "request (or the ONEX_TENANT_ID env-var fallback at "
+            "request-acceptance). OPERATOR-ACCEPTED INTERIM (OMN-14058): None "
+            "means no tenant identity was resolved and the delegation "
+            "projection falls back to the shared 'omninode' tenant column "
+            "default. The durable per-tenant identity design is OMN-14107."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_total_tokens(self) -> Self:

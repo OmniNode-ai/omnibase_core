@@ -344,6 +344,20 @@ class RegistryTransitionDecl(BaseModel):
     label: str = Field(default="")
 
 
+# RegistryNode declares `declared_transitions: tuple[RegistryTransitionDecl, ...]`
+# as a forward reference (this module uses `from __future__ import annotations`).
+# Pydantic resolves that forward reference lazily via
+# `sys.modules[cls.__module__].__dict__` the first time RegistryNode is
+# constructed or validated. If this module has ever been evicted from and
+# re-added to `sys.modules` (e.g. a test that purges `omnibase_core.*` entries
+# from `sys.modules` -- see OMN-14944), that lazy lookup can go stale and the
+# first construction after re-import raises
+# `PydanticUserError: RegistryNode is not fully defined`. Rebuilding explicitly
+# here, once RegistryTransitionDecl exists in this module's namespace, removes
+# the dependency on sys.modules staying pristine at first-use time.
+RegistryNode.model_rebuild()
+
+
 class RegistrySnapshot(BaseModel):
     """A point-in-time snapshot of the node registry.
 

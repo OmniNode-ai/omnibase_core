@@ -15,7 +15,7 @@ while maintaining type clarity for FSM-specific usage.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal, NamedTuple, cast
 from uuid import UUID
 
 if TYPE_CHECKING:
@@ -125,9 +125,12 @@ async def execute_transition(
             context={"fsm": fsm.state_machine_name, "state": current_state},
         )
 
-    # 2. Find valid transition
-    transition = _find_transition(fsm, current_state, trigger)
-    if not transition:
+    # 2. Select the transition using priority-ordered guard fallthrough.
+    #    Implements the documented ModelFSMStateTransition.priority semantics:
+    #    among the transitions matching (current_state, trigger), guards are
+    #    evaluated in priority order and the first eligible one is chosen.
+    selection = await _select_transition(fsm, current_state, trigger, context)
+    if selection is None:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"No transition for trigger '{trigger}' from state '{current_state}'",
@@ -138,9 +141,14 @@ async def execute_transition(
             },
         )
 
-    # 3. Evaluate transition conditions
-    failed_conditions = await _evaluate_failed_conditions(transition, context)
-    if failed_conditions:
+    transition = selection.transition
+
+    # 3. Fail-closed guard evaluation. Selection already evaluated guards in
+    #    priority order; when no candidate is eligible (no guard passed and no
+    #    default edge is declared) the FSM stays in-state rather than silently
+    #    executing a transition whose guard is false.
+    if not selection.guard_passed:
+        failed_conditions = selection.failed_conditions
         # Create intent to log condition failure
         intents.append(
             ModelIntent(
@@ -415,21 +423,94 @@ def _get_state_definition(
     return None
 
 
-def _find_transition(
-    fsm: ModelFSMSubcontract, from_state: str, trigger: str
-) -> ModelFSMStateTransition | None:
-    """Find transition matching from_state and trigger."""
-    # First look for exact match
-    for transition in fsm.transitions:
-        if transition.from_state == from_state and transition.trigger == trigger:
-            return transition
+class _TransitionSelection(NamedTuple):
+    """Outcome of priority-ordered guard-fallthrough transition selection.
 
-    # Then look for wildcard transitions
-    for transition in fsm.transitions:
-        if transition.from_state == "*" and transition.trigger == trigger:
-            return transition
+    Attributes:
+        transition: The transition chosen for the (from_state, trigger) pair —
+            either the highest-priority candidate whose guard passed, or (when
+            no candidate is eligible) the highest-priority candidate whose guard
+            failed, so the caller can emit a fail-closed guard-rejection result.
+        guard_passed: True when ``transition`` is eligible to execute (its guard
+            passed, or it is an unconditional default edge). False when no
+            candidate was eligible and the FSM must stay in its current state.
+        failed_conditions: Names of the required conditions that rejected the
+            selected candidate; empty when ``guard_passed`` is True.
+    """
 
-    return None
+    transition: ModelFSMStateTransition
+    guard_passed: bool
+    failed_conditions: tuple[str, ...]
+
+
+async def _select_transition(
+    fsm: ModelFSMSubcontract,
+    from_state: str,
+    trigger: str,
+    context: FSMContextType,
+) -> _TransitionSelection | None:
+    """Select the transition to execute using priority-ordered guard fallthrough.
+
+    Implements the documented ``ModelFSMStateTransition.priority`` semantics
+    (see the model's "Priority Resolution" docstring):
+
+    1. Candidate set: transitions whose ``(from_state, trigger)`` match exactly.
+       Only when there is no exact match does the wildcard set
+       (``from_state == "*"``) apply — exact-state transitions always take
+       precedence over wildcard/global handlers (preserves prior behavior).
+    2. Candidates are evaluated in ``priority`` DESCENDING order; declaration
+       order is the stable tiebreak within equal priority.
+    3. The first candidate whose required conditions all pass is selected. A
+       transition with no required conditions is a trivially-passing "default
+       edge"; declared at the lowest priority it acts as the fallthrough once
+       every higher-priority guard has been rejected.
+    4. Fail-closed: if no candidate's guard passes (and no default edge is
+       declared), the highest-priority candidate is returned with
+       ``guard_passed=False``. The engine never silently executes a transition
+       whose guard is false; the caller emits a guard-rejection result and the
+       FSM stays in its current state.
+
+    Returns:
+        A ``_TransitionSelection``, or ``None`` when ``(from_state, trigger)``
+        matches no transition at all (the caller raises "no transition").
+    """
+    exact_candidates = [
+        transition
+        for transition in fsm.transitions
+        if transition.from_state == from_state and transition.trigger == trigger
+    ]
+    # Wildcard transitions apply only when no exact-state transition matches.
+    candidates = exact_candidates or [
+        transition
+        for transition in fsm.transitions
+        if transition.from_state == "*" and transition.trigger == trigger
+    ]
+    if not candidates:
+        return None
+
+    # Priority DESC; sorted() is stable, so equal-priority candidates keep
+    # their declaration order (the documented tiebreak).
+    ordered = sorted(
+        candidates, key=lambda transition: transition.priority, reverse=True
+    )
+
+    first_rejection: _TransitionSelection | None = None
+    for transition in ordered:
+        failed = await _evaluate_failed_conditions(transition, context)
+        if not failed:
+            # Guard passed (or unconditional default edge): the first eligible
+            # candidate in priority order wins.
+            return _TransitionSelection(transition, True, ())
+        if first_rejection is None:
+            # Remember the highest-priority guard failure for the fail-closed
+            # rejection result if no candidate turns out to be eligible.
+            first_rejection = _TransitionSelection(transition, False, failed)
+
+    # No candidate was eligible. ``first_rejection`` is guaranteed non-None here
+    # because the candidate list is non-empty and every candidate failed its
+    # guard (an eligible candidate would have returned above). Fail closed: the
+    # FSM stays in-state and no false-guard transition is silently executed.
+    return first_rejection
 
 
 async def _evaluate_conditions(

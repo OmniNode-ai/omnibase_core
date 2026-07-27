@@ -384,6 +384,30 @@ class TestFileRegistryDirectoryLoading:
         assert len(contracts) == 1
         assert isinstance(contracts[0], ModelRuntimeHostContract)
 
+    def test_load_all_only_non_yaml_files(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+    ) -> None:
+        """Test that load_all() returns [] for a directory with ONLY non-YAML files.
+
+        Distinct from test_load_all_empty_directory (no files at all) and
+        test_load_all_ignores_non_yaml_files (mixed YAML + non-YAML): here the
+        directory is populated exclusively with non-YAML files and no .yaml/.yml
+        file exists. load_all() must return an empty list, not error.
+        """
+        # Arrange - populate the directory with ONLY non-YAML files
+        (tmp_path / "readme.txt").write_text("This is not a YAML file")
+        (tmp_path / "config.json").write_text('{"key": "value"}')
+        (tmp_path / "script.py").write_text("print('hello')")
+        (tmp_path / "data.csv").write_text("col1,col2\n1,2\n")
+
+        # Act
+        contracts = file_registry.load_all(tmp_path)
+
+        # Assert - no YAML files means no registrations, and no error
+        assert contracts == []
+
     def test_load_all_handles_yml_extension(
         self,
         tmp_path: Path,

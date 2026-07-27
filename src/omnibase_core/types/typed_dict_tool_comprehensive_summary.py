@@ -20,11 +20,7 @@ from omnibase_core.types.typed_dict_tool_testing_summary import (
 )
 
 if TYPE_CHECKING:
-    from omnibase_core.models.core.model_tool_security_assessment import (
-        ModelToolSecurityAssessment,
-    )
-    from omnibase_core.models.core.model_tool_version import ModelToolVersion
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
+    from omnibase_core.types.type_semver import ProtocolSemVer
 
 
 class TypedDictToolComprehensiveSummary(TypedDict):
@@ -41,8 +37,8 @@ class TypedDictToolComprehensiveSummary(TypedDict):
     node_type: str
     business_logic_pattern: str
     status: str
-    current_stable_version: ModelSemVer
-    current_development_version: ModelSemVer | None
+    current_stable_version: ProtocolSemVer
+    current_development_version: ProtocolSemVer | None
     version_count: int
     active_version_count: int
     capability_count: int
@@ -51,8 +47,12 @@ class TypedDictToolComprehensiveSummary(TypedDict):
     optional_dependencies: int
     resource_requirements: TypedDictToolResourceSummary
     security_compliant: bool
-    recommended_version: ModelToolVersion | None
-    security_assessment: ModelToolSecurityAssessment
+    # OMN-14337: recommended_version/security_assessment carry the tool-version /
+    # tool-security-assessment domain models at runtime; widened to object to
+    # sever the types->models import-layering back-edge (immovable domain models;
+    # no consumer reads structured attributes off these fields).
+    recommended_version: object | None
+    security_assessment: object
     testing_requirements: TypedDictToolTestingSummary
 
 

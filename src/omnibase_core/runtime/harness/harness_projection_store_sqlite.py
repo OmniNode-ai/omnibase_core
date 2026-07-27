@@ -32,7 +32,9 @@ class SqliteProjectionStore:
         self._path = path
         # check_same_thread=False so the single-process asyncio harness can reuse
         # the connection across the event-loop callback boundary.
-        self._conn = sqlite3.connect(path, check_same_thread=False)
+        self._conn = sqlite3.connect(
+            path, check_same_thread=False
+        )  # di-ok: this IS the local-harness projection-store adapter bootstrap (zero-infra, in-process); it owns its own connection by design (OMN-13420)
         self._conn.execute(
             f"""
             CREATE TABLE IF NOT EXISTS {self._TABLE} (

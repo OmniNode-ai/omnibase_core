@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
+# onex-allow-file-todo-marker OMN-14410 reason="Rule B (PENDING_IN_PASS) names deferral-language placeholder tokens as its SUBJECT (the keyword list _DEFERRAL_RE matches); the tokens are not unfinished work"
 
 """Receipt-honesty validator — fail gamed DoD receipts (OMN-12791).
 
@@ -145,14 +146,45 @@ def _check_rule_a(receipt: ModelDodReceipt) -> HonestyViolation | None:
 # Rule B — PENDING-in-PASS
 # ---------------------------------------------------------------------------
 
+#
+# Structural-context exclusion (OMN-14410): ``probe_stdout`` and
+# ``actual_output`` are, per ``ModelDodReceipt``'s own field contract,
+# LITERAL/VERBATIM CAPTURE fields — "Literal captured stdout from the probe"
+# and "Truncated output from the check" respectively. Neither is an authored
+# narrative field (the schema has no ``conclusion``/``summary`` field), so a
+# receipt legitimately quoting real third-party tool output that happens to
+# contain a deferral keyword as a QUOTED JSON key — e.g. ``"pending":0`` — is
+# not an author admitting deferred work.
+#
+# The exclusion below requires the closing quote (``"``) to be MANDATORY,
+# not optional. round-1 review caught that an earlier version made the quote
+# optional (``"?``), which also matched bare colon-glued prose — a receipt
+# whose entire ``actual_output`` was an authored hedge phrase followed by a
+# colon and a deferral note slipped through as zero violations, the exact
+# gamed-receipt class (OMN-12780/12779) this rule exists to catch. Requiring
+# the literal quote means the exclusion fires ONLY for the true JSON-string-
+# key shape (``"pending":``); an unquoted colon-glued hedge still matches and
+# still fails. This is a deliberate fail-CLOSED choice for an honesty gate:
+# an unquoted YAML-style ``pending: 0`` verbatim capture will re-trip the
+# rule (a false positive costs a rewording), but a colon-glued authored
+# hedge can no longer buy a silent false-PASS (a false negative ships a
+# lie).
 _DEFERRAL_RE = re.compile(
-    r"\b(?:PENDING|TBD|TODO|not\s+implemented|not\s+yet|will\s+be|deferred)\b",
+    r"\b(?:PENDING|TBD|TODO|not\s+implemented|not\s+yet|will\s+be|deferred)\b"
+    r'(?!"\s*:)',
     re.IGNORECASE,
 )
 
 
 def _check_rule_b(receipt: ModelDodReceipt) -> HonestyViolation | None:
-    """Rule B: PASS receipt whose proof text contains deferral language."""
+    """Rule B: PASS receipt whose proof text contains deferral language.
+
+    Fields scanned (``probe_stdout``, ``actual_output``) are literal/verbatim
+    capture fields per ``ModelDodReceipt`` — see ``_DEFERRAL_RE``'s comment
+    for why the regex excludes the JSON/YAML key-colon shape rather than
+    excluding these fields outright (no authored-narrative field exists on
+    the receipt schema to move the check to).
+    """
     if receipt.status is not EnumReceiptStatus.PASS:
         return None
     for field_name, text in (

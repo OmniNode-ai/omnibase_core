@@ -89,17 +89,16 @@ from uuid import UUID, uuid4
 # OMN-13763: run_coro_sync graduated from omnibase_compat into omnibase_core (OMN-9237).
 from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
-
-# Import context-based container management
-from omnibase_core.context.context_application import (
-    get_current_container,
-    set_current_container,
+# OMN-14960: stdlib-only log emission -- severs the models -> omnibase_core.logging
+# edge required by the core-models-no-upward import-linter contract. See
+# model_stdlib_log_emit for the message-shape delta vs. emit_log_event_sync.
+from omnibase_core.models.logging.model_stdlib_log_emit import (
+    emit_log_event_stdlib as emit_log_event,
 )
+
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.logging.logging_structured import (
-    emit_log_event_sync as emit_log_event,
-)
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
@@ -1087,6 +1086,11 @@ async def get_model_onex_container() -> ModelONEXContainer:
         # Legacy usage (still works):
         container = await get_model_onex_container()  # Creates if needed
     """
+    from omnibase_core.context.context_application import (
+        get_current_container,
+        set_current_container,
+    )
+
     container = get_current_container()
     if container is None:
         container = await create_model_onex_container()
@@ -1112,6 +1116,11 @@ def get_model_onex_container_sync() -> ModelONEXContainer:
     Returns:
         ModelONEXContainer: The container instance for the current context
     """
+    from omnibase_core.context.context_application import (
+        get_current_container,
+        set_current_container,
+    )
+
     # Check contextvar for existing container
     container = get_current_container()
     if container is not None:
