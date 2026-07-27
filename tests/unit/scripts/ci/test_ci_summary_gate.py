@@ -26,6 +26,7 @@ from scripts.ci.ci_summary_gate import (
     EXIT_SUCCESS,
     GATE_JOBS,
     SPEC_REQUIRED_VALIDATOR_JOBS,
+    STRICT_SUCCESS_JOBS,
     evaluate,
 )
 
@@ -237,6 +238,32 @@ class TestCiSummaryGate:
         jobs = _all_good() + [_job("Some New Job", "neutral")]
         code, _ = evaluate(jobs)
         assert code == EXIT_FAILURE
+
+    def test_occ_companion_merged_gate_is_strict_and_fails_closed(self) -> None:
+        # OMN-15222 (OMN-15214 canary port): the companion-merged gate makes the
+        # 2026-07-26 hygiene-sweep trigger state (OPEN companion + MERGED product
+        # PR) unreachable via the merge path. It must be a GATE_JOB (CI Summary
+        # WAITS for it) AND strict-success (a skip/cancel fails closed) so a
+        # red/absent/skipped result can never green the "CI Summary" umbrella —
+        # folding into the umbrella instead of adding a new top-level required
+        # context avoids the never-reports wedge.
+        gate = "OCC Companion Merged Gate (OMN-15214)"
+        assert gate in GATE_JOBS
+        assert gate in STRICT_SUCCESS_JOBS
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        jobs.append(_job(gate, "failure"))
+        code, report = evaluate(jobs)
+        assert code == EXIT_FAILURE
+        assert gate in report
+        # A skip must also fail closed — the job is unconditional in ci.yml.
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        jobs.append(_job(gate, "skipped"))
+        code, _ = evaluate(jobs)
+        assert code == EXIT_FAILURE
+        # Absent entirely → PENDING (completeness anchor), never a vacuous green.
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        code, _ = evaluate(jobs)
+        assert code == EXIT_PENDING
 
     def test_spec_required_validator_jobs_match_spec(self) -> None:
         # SYNC GUARD (OMN-14127): SPEC_REQUIRED_VALIDATOR_JOBS must equal the set

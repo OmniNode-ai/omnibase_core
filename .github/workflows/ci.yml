@@ -3309,6 +3309,51 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
 
+  occ-companion-merged:
+    name: OCC Companion Merged Gate (OMN-15214)
+    # OMN-15222 (port of the OMN-15214 canary, omnibase_infra #2486): makes the
+    # 2026-07-26 OCC hygiene-sweep trigger state — an OPEN onex_change_control
+    # evidence companion whose product PR already MERGED — unreachable via the
+    # CI Summary merge path on this repo. The sweep closed five open companions
+    # (OCC#5012–#5016) whose product PRs had merged, destroying three evidence
+    # chains (OMN-15199/OMN-15200/OMN-15203). The durable fix is ordering: the
+    # companion must MERGE BEFORE the product PR can. This job polls the PR's
+    # live Evidence-Source (live body, not event payload — occ-autobind PATCHes
+    # it in after open) and greens ONLY when the cited OCC companion PR is
+    # MERGED or the cited OCC commit SHA is an ancestor of onex_change_control
+    # dev/main. A companion CLOSED without merging fails immediately (that IS
+    # the incident state).
+    #
+    # CI Summary GATE_JOB + STRICT_SUCCESS_JOB (scripts/ci/ci_summary_gate.py)
+    # — deliberately NOT a new top-level required context: a context that does
+    # not report on every PR shape wedges merges indefinitely under branch
+    # protection, and occ-autobind itself is network-flaky (omninode_infra#679,
+    # 2026-07-26). Unconditional (no needs/if) so CI Summary always WAITS for
+    # it and a skip/cancel fails closed; internal event scoping no-ops on
+    # push/workflow_dispatch (mirrors occ-preflight). GitHub-hosted + pure gh
+    # API polling: zero self-hosted/LAN dependency, and the poll window absorbs
+    # autobind mint + companion auto-merge latency instead of converting them
+    # into instant reds.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+      # Poll window (seconds) — bounded well under ci-summary's 90m deadline so
+      # this gate reaches a terminal state first; PENDING converts to FAIL.
+      DEADLINE_SECONDS: "1500"
+      POLL_INTERVAL_SECONDS: "30"
+    steps:
+      - name: Checkout (gate script)
+        uses: actions/checkout@v7
+      - name: Require cited OCC evidence to be merged/durable before product merge
+        run: python3 scripts/ci/check_occ_companion_merged.py
+
   ci-summary:
     name: CI Summary
     # OMN-14127: REQUIRED branch-protection context, implemented as a NO-`needs`,
