@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# SEEDED-RED PROOF ARTIFACT — X1 / OMN-15011.
+#
+# This node is a THROWAWAY control artifact for a live-CI proof that the RSD
+# provenance-stamp gate (scripts/ci/rsd_provenance_stamp.py, landed via
+# omnibase_core#1498, OMN-15011) actually HARD-FAILS a new, unstamped node in
+# real CI, not just locally/in review. It carries no `.rsd_provenance.json`
+# sidecar on purpose (the violation under test) and is otherwise built to be
+# canonical-handler-shape-clean so the "Import Layering Oracle" job reaches the
+# RSD provenance-stamp step instead of halting earlier on an unrelated failure.
+#
+# This PR will NOT be merged. It will be closed unmerged once the RED (this
+# commit) and GREEN (a follow-up commit adding a valid stamp) CI runs are
+# captured, and the branch will be deleted. See OMN-15011 for the proof record.
+
+name: node_x1_seeded_red_proof_compute
+node_id: node_x1_seeded_red_proof_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  SEEDED-RED PROOF ARTIFACT (X1 / OMN-15011) — throwaway node used solely to
+  prove the RSD provenance-stamp CI gate hard-fails a new node missing a valid
+  .rsd_provenance.json. Not real business logic. This PR is closed unmerged.
+input_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeX1SeededRedProofCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
