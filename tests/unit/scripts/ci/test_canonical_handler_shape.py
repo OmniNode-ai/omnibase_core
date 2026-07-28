@@ -586,6 +586,23 @@ def _write_handflip(dir_path, node_id: str, **overrides) -> None:
     )
 
 
+def _parity_executor(*, executed: bool = True, green: bool = True):
+    """An INJECTED parity verdict.
+
+    OMN-15340 made the executed verdict the evidence, so a hand-flip unit test must
+    say which verdict it is assuming instead of leaning on the receipt's ``status``
+    string. Without an injected executor the real one runs pytest against the working
+    tree — correct in production, meaningless against these synthetic receipts.
+    """
+
+    def _executor(node_id: str, test_ids: tuple[str, ...]):
+        return mod.ModelParityVerdict(
+            executed=executed, green=green, detail=f"stubbed verdict for {test_ids}"
+        )
+
+    return _executor
+
+
 def _handflip_env(tmp_path, monkeypatch, head_src: str, base_src: str) -> None:
     monkeypatch.setattr(mod, "RECEIPTS_DIR", tmp_path)
     head_file = tmp_path / "head_handler.py"
@@ -601,7 +618,9 @@ def _handflip_env(tmp_path, monkeypatch, head_src: str, base_src: str) -> None:
 def test_handflip_proof_verbatim_preserved_passes(tmp_path, monkeypatch) -> None:
     _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
     _write_handflip(tmp_path, "n.hand")
-    ok, reason, selected = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    ok, reason, selected = verify_handflip_proof(
+        "n.hand", handler_module="pkg.handler", parity_executor=_parity_executor()
+    )
     assert ok is True, reason
     assert "verbatim" in reason
     assert selected == ["h1"]
@@ -613,7 +632,9 @@ def test_handflip_proof_diverged_logic_fails(tmp_path, monkeypatch) -> None:
         tmp_path, monkeypatch, _CANONICAL_HANDLER_CHANGED_LOGIC, _LEGACY_HANDLER
     )
     _write_handflip(tmp_path, "n.hand")
-    ok, reason, _ = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    ok, reason, _ = verify_handflip_proof(
+        "n.hand", handler_module="pkg.handler", parity_executor=_parity_executor()
+    )
     assert ok is False
     assert "verbatim-preservation FAILED" in reason
 
@@ -621,7 +642,9 @@ def test_handflip_proof_diverged_logic_fails(tmp_path, monkeypatch) -> None:
 def test_handflip_proof_missing_symbol_in_head_fails(tmp_path, monkeypatch) -> None:
     _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
     _write_handflip(tmp_path, "n.hand", preserved_symbols=["_does_not_exist"])
-    ok, reason, _ = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    ok, reason, _ = verify_handflip_proof(
+        "n.hand", handler_module="pkg.handler", parity_executor=_parity_executor()
+    )
     assert ok is False
     assert "not all found in HEAD" in reason
 
@@ -633,15 +656,82 @@ def test_handflip_proof_parity_not_pass_fails(tmp_path, monkeypatch) -> None:
         "n.hand",
         parity={"test_ids": ["t::x"], "status": "fail", "selected_input_hashes": []},
     )
-    ok, reason, _ = verify_handflip_proof("n.hand", handler_module="pkg.handler")
+    ok, reason, _ = verify_handflip_proof(
+        "n.hand", handler_module="pkg.handler", parity_executor=_parity_executor()
+    )
     assert ok is False
     assert "parity" in reason
 
 
 def test_handflip_proof_missing_artifact_fails() -> None:
-    ok, reason, _ = verify_handflip_proof("n.absent", handler_module="pkg.handler")
+    ok, reason, _ = verify_handflip_proof(
+        "n.absent", handler_module="pkg.handler", parity_executor=_parity_executor()
+    )
     assert ok is False
     assert "no hand-flip proof artifact" in reason
+
+
+def test_handflip_proof_rejects_unexecuted_parity_claim(tmp_path, monkeypatch) -> None:
+    """OMN-15340: a recorded ``status: pass`` earns nothing on its own.
+
+    The receipt is otherwise perfect — verbatim-preserved symbols, a well-formed
+    parity block, ``status: pass``. Before OMN-15340 that was accepted. Now an
+    executor that could not run the declared ids rejects it.
+    """
+    _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
+    _write_handflip(tmp_path, "n.hand")
+
+    ok, reason, _ = verify_handflip_proof(
+        "n.hand",
+        handler_module="pkg.handler",
+        parity_executor=_parity_executor(executed=False, green=False),
+    )
+
+    assert ok is False
+    assert "UNEXECUTED" in reason
+    assert "not evidence" in reason
+
+
+def test_handflip_proof_rejects_executed_but_red_parity(tmp_path, monkeypatch) -> None:
+    """status=pass over tests that are actually RED on HEAD -> rejected."""
+    _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
+    _write_handflip(tmp_path, "n.hand")
+
+    ok, reason, _ = verify_handflip_proof(
+        "n.hand",
+        handler_module="pkg.handler",
+        parity_executor=_parity_executor(executed=True, green=False),
+    )
+
+    assert ok is False
+    assert "NOT GREEN when executed" in reason
+
+
+def test_handflip_proof_reason_names_the_executed_parity(tmp_path, monkeypatch) -> None:
+    """The success reason must record that parity was EXECUTED, not just declared."""
+    _handflip_env(tmp_path, monkeypatch, _CANONICAL_HANDLER_SAME_LOGIC, _LEGACY_HANDLER)
+    _write_handflip(tmp_path, "n.hand")
+
+    ok, reason, _ = verify_handflip_proof(
+        "n.hand", handler_module="pkg.handler", parity_executor=_parity_executor()
+    )
+
+    assert ok is True, reason
+    assert "parity-executed-green" in reason
+
+
+def test_default_parity_executor_fails_closed_without_a_git_root(
+    tmp_path, monkeypatch
+) -> None:
+    """No repo -> no execution -> no credit (never a silent skip)."""
+    monkeypatch.setattr(mod, "SRC_ROOT", tmp_path / "src")
+    monkeypatch.setattr(mod, "_git_repo_root", lambda path: None)
+    monkeypatch.setattr(mod, "_PARITY_CACHE", {})
+
+    verdict = mod.default_parity_executor("n.hand", ("tests/t.py::test_x",))
+
+    assert verdict.executed is False
+    assert verdict.green is False
 
 
 def test_flip_accepts_handflip_path(tmp_path, monkeypatch) -> None:
@@ -658,7 +748,11 @@ def test_flip_accepts_handflip_path(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(
         mod,
         "verify_handflip_proof",
-        lambda node_id, handler_module: (True, "handflip-verbatim-preserved", ["h1"]),
+        lambda node_id, handler_module, **kwargs: (
+            True,
+            "handflip-verbatim-preserved",
+            ["h1"],
+        ),
     )
     ok, reason = verify_flip_receipt("n.hand", handler_module="pkg.handler")
     assert ok is True
@@ -677,7 +771,7 @@ def test_flip_handflip_pair_incompatible_when_input_sets_differ(monkeypatch) -> 
     monkeypatch.setattr(
         mod,
         "verify_handflip_proof",
-        lambda node_id, handler_module: (True, "handflip", ["hX"]),
+        lambda node_id, handler_module, **kwargs: (True, "handflip", ["hX"]),
     )
     ok, reason = verify_flip_receipt("n.hand", handler_module="pkg.handler")
     assert ok is False

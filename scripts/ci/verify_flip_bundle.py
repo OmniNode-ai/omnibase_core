@@ -10,7 +10,7 @@ that only surface when the FIVE flip artifacts are checked jointly against live 
 the live handler source, and the full typed-receipt invariants. This gate RE-INVOKES
 the real consuming gate (it imports ``canonical_handler_shape`` and calls
 ``verify_flip_receipt`` / ``classify_node`` / the git + baseline helpers — it does NOT
-reimplement them) and adds six fail-closed assertions per flipped node that close the
+reimplement them) and adds seven fail-closed assertions per flipped node that close the
 blind spots enumerated below. It mirrors the ratchet's fan-out CLI
 (``--package`` / ``--src-root`` / ``--receipts-dir`` / ``--baseline``) so it points at
 omnibase_infra / omnimarket identically.
@@ -51,6 +51,16 @@ Blind spots this gate closes (each = one assertion; first failure exits non-zero
   (omnibase_core#1472): identity is not evidence — any second git identity satisfies an
   author check while proving nothing — whereas byte-equality with a deterministic rerun
   proves the artifact is mechanically reproducible (OMN-14905).
+* **P1 — parity tests that discriminate nothing.** Assertions 1-6 all grade artifacts
+  against the HEAD tree; nothing here or anywhere else in CI ever executed a candidate
+  test against the PRE-change tree, so "RED to GREEN for the right reason" was prose.
+  A hand-flip proof could declare parity tests that are ALREADY GREEN at its own
+  ``base_ref``. Assertion 7 (HAND-FLIP path only, NEW flips only) materializes that
+  ``base_ref`` as a detached worktree, overlays the HEAD copies of the declared test
+  files, and requires every declared id to fail there ON ITS OWN ASSERTION — a
+  collection/import error is not RED, it is the same evidence as no test at all. A
+  source-residency probe first proves the base worktree is what actually gets imported,
+  so the verdict cannot be vacuous (OMN-15340, ``scripts/ci/parity_replay.py``).
 
 Usage (pre-commit / CI, mirrors canonical_handler_shape)::
 
@@ -62,7 +72,7 @@ Usage (pre-commit / CI, mirrors canonical_handler_shape)::
 
 The gate discovers the nodes NEWLY flipped in this PR (removed from ``NON_CANONICAL``
 vs origin/dev and canonical now, or carrying a newly-added adequacy receipt) and runs
-all six assertions on each. Zero flips -> exit 0 (nothing to prove; the ratchet already
+all seven assertions on each. Zero flips -> exit 0 (nothing to prove; the ratchet already
 guards new non-canonical nodes). Any assertion failure -> exit 1.
 """
 
@@ -84,11 +94,13 @@ from pydantic import BaseModel, ConfigDict
 try:  # pragma: no cover - import shim
     from scripts.ci import canonical_handler_shape as chs
     from scripts.ci import equivalence_producer as eqp
+    from scripts.ci import parity_replay as prp
     from scripts.ci.adequacy_receipt import ModelAdequacyReceipt
 except ImportError:  # pragma: no cover - script-dir invocation
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import canonical_handler_shape as chs  # type: ignore[import-not-found, no-redef]
     import equivalence_producer as eqp  # type: ignore[import-not-found, no-redef]
+    import parity_replay as prp  # type: ignore[import-not-found, no-redef]
     from adequacy_receipt import (  # type: ignore[import-not-found, no-redef]
         ModelAdequacyReceipt,
     )
@@ -138,7 +150,7 @@ class ModelAssertionOutcome(BaseModel):
 
 
 class ModelFlipBundleResult(BaseModel):
-    """The joint verdict over one node's five flip artifacts."""
+    """The joint verdict over one node's flip artifacts."""
 
     model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
@@ -497,14 +509,18 @@ def _assert_reproducible_equivalence(
 
 
 def _flip_proof_is_new(
-    node_id: str, receipts_dir: Path, repo_root: Path, base_ref: str
+    node_id: str,
+    receipts_dir: Path,
+    repo_root: Path,
+    base_ref: str,
+    suffix: str | None = None,
 ) -> bool:
-    """A flip is NEW when its equivalence proof artifact is ABSENT at the git base.
+    """A flip is NEW when its proof artifact is ABSENT at the git base.
 
     Fail-closed: any inability to prove the artifact PRE-EXISTED at the base (artifact
-    outside the repo, base unresolvable) returns True -> assertion 6 is applied.
+    outside the repo, base unresolvable) returns True -> the assertion is applied.
     """
-    art = receipts_dir / f"{node_id}{chs.EQUIVALENCE_SUFFIX}"
+    art = receipts_dir / f"{node_id}{suffix or chs.EQUIVALENCE_SUFFIX}"
     try:
         rel = art.resolve().relative_to(repo_root.resolve())
     except ValueError:
@@ -516,7 +532,62 @@ def _flip_proof_is_new(
 
 
 # --------------------------------------------------------------------------- #
-# Orchestration: run the six assertions in order, stop at first failure.
+# Assertion 7 — declared parity tests RED on the receipt's own base_ref (OMN-15340)
+# --------------------------------------------------------------------------- #
+#
+# Assertions 1-6 all grade artifacts against the HEAD tree. None of them — and no
+# other mechanism in CI — ever executed a candidate test against the PRE-change tree,
+# so "RED to GREEN for the right reason" was prose. A hand-flip proof can therefore
+# declare parity tests that are ALREADY GREEN at ``base_ref``: they run, they pass,
+# they discriminate nothing, and the flip is credited with a behavior proof it never
+# earned.
+#
+# Assertion 7 materializes the receipt's OWN ``base_ref`` as a detached worktree,
+# overlays the HEAD copies of the declared test files onto that pre-change tree, and
+# requires EVERY declared id to fail there ON ITS OWN ASSERTION. Exit reasons are
+# distinguished, never collapsed into "non-zero": a collection/import error means the
+# test cannot even run against the old code, which is exactly as much evidence as no
+# test at all (``feedback_prove_red_against_exists_but_wrong``). Before any of that
+# counts, a residency probe proves the base worktree's source is what actually gets
+# imported — otherwise an editable install silently grades HEAD and every verdict,
+# RED or GREEN, is vacuous.
+
+
+def _assert_parity_red_on_base(
+    node_id: str,
+    receipts_dir: Path,
+    repo_root: Path,
+    src_root: Path,
+) -> tuple[bool, str]:
+    raw = chs._load_json(receipts_dir / f"{node_id}{chs.HANDFLIP_SUFFIX}")
+    if raw is None:
+        return False, "hand-flip proof unreadable for the parity RED-on-base check"
+    parity = raw.get("parity")
+    if not isinstance(parity, dict):
+        return False, "hand-flip proof missing parity block"
+    test_ids_raw = parity.get("test_ids")
+    if not isinstance(test_ids_raw, list) or not test_ids_raw:
+        return False, "hand-flip parity block names no test_ids to execute"
+    base_ref = raw.get("base_ref")
+    if not isinstance(base_ref, str) or not base_ref:
+        return False, "hand-flip proof missing base_ref"
+    legacy_module = raw.get("legacy_handler_module") or raw.get(
+        "canonical_handler_module"
+    )
+    if not isinstance(legacy_module, str) or not legacy_module:
+        return False, "hand-flip proof names no module for the residency probe"
+    return prp.red_on_base(
+        node_id,
+        tuple(str(t) for t in test_ids_raw),
+        base_ref,
+        legacy_module,
+        repo_root,
+        src_root,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Orchestration: run the seven assertions in order, stop at first failure.
 # --------------------------------------------------------------------------- #
 
 
@@ -528,10 +599,10 @@ def verify_flip_bundle(
     baseline: Path | None,
     base_ref: str = DEFAULT_BASE_REF,
 ) -> ModelFlipBundleResult:
-    """Verify one node's five flip artifacts jointly. Fail-closed, first-failure-wins.
+    """Verify one node's flip artifacts jointly. Fail-closed, first-failure-wins.
 
     Absence, unparseability, a None from any git probe, or an import failure all
-    evaluate to FAIL (never SKIP). Runs the six assertions in numeric order and stops at
+    evaluate to FAIL (never SKIP). Runs the seven assertions in numeric order and stops at
     the first failure so a seeded defect surfaces on its intended assertion, not
     incidentally on a later one. Snapshots + restores the ratchet's module globals so a
     fan-out call leaves no scope state behind for other callers/tests.
@@ -675,13 +746,47 @@ def _verify_flip_bundle_impl(
         )
     )
 
+    # Assertion 7 — declared parity tests RED-on-their-own-assertion at the receipt's
+    # own base_ref (OMN-15340). Hand-flip path only: the equivalence path carries no
+    # parity block and is covered by assertion 6's deterministic rerun.
+    handflip_path = s_recv / f"{node_id}{chs.HANDFLIP_SUFFIX}"
+    if not handflip_path.exists():
+        detail7 = (
+            "equivalence proof path — no hand-flip parity block to execute "
+            "(assertion 6 covers reproducibility)"
+        )
+    elif repo_root is None:
+        return _record(
+            7,
+            "parity-red-on-base",
+            False,
+            "cannot resolve git repo root to materialize the receipt's base_ref",
+        )
+    elif not _flip_proof_is_new(
+        node_id, s_recv, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+    ):
+        grandfathered = True
+        detail7 = (
+            "grandfathered — hand-flip proof pre-existing at base (not new vs "
+            f"{base_ref})"
+        )
+    else:
+        ok7, detail7 = _assert_parity_red_on_base(node_id, s_recv, repo_root, s_src)
+        if not ok7:
+            return _record(7, "parity-red-on-base", False, detail7)
+    outcomes.append(
+        ModelAssertionOutcome(
+            index=7, name="parity-red-on-base", ok=True, detail=detail7
+        )
+    )
+
     return ModelFlipBundleResult(
         node_id=node_id,
         ok=True,
         failed_assertion=None,
         grandfathered=grandfathered,
         outcomes=tuple(outcomes),
-        reason="all six flip-bundle assertions hold",
+        reason="all seven flip-bundle assertions hold",
     )
 
 
@@ -837,7 +942,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(
         f"verify_flip_bundle OK ({args.package}) — {len(node_ids)} flip bundle(s) "
-        f"coherent across all six assertions."
+        f"coherent across all seven assertions."
     )
     return 0
 

@@ -82,6 +82,7 @@ import ast
 import importlib.util
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
 
@@ -585,6 +586,96 @@ HANDFLIP_SUFFIX = ".handflip.json"
 EXPECTED_HANDFLIP_SCHEMA = "handflip_proof.v1"
 
 
+# --------------------------------------------------------------------------- #
+# Executed-parity seam (OMN-15340)
+# --------------------------------------------------------------------------- #
+#
+# Until OMN-15340 the hand-flip path credited ``parity.status == "pass"`` — a string
+# the flip author wrote — and merely COUNTED ``parity.test_ids``. Nothing executed
+# them, so "the parity tests are green" was an assertion about a file, not about the
+# code. The status string is no longer evidence in the positive direction: a claimed
+# ``pass`` must be EXECUTED (green on HEAD) or the proof is REJECTED. A self-declared
+# non-``pass`` stays a hard fail — a confession is trustworthy only in the negative
+# direction.
+#
+# The executor is injected so tests can state exactly what they are proving and so
+# the pre-PR seam gate (``verify_flip_bundle``) can reuse one execution. The default
+# executor really runs pytest (``scripts/ci/parity_replay.py``), imported lazily to
+# keep this module's import cost and dependency surface unchanged for every caller
+# that never touches a hand-flip receipt.
+
+
+class ModelParityVerdict(BaseModel):
+    """An EXECUTED verdict over a hand-flip receipt's declared parity test ids."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
+
+    executed: bool
+    green: bool
+    detail: str
+
+
+#: ``(node_id, test_ids) -> ModelParityVerdict``.
+ParityExecutor = Callable[[str, tuple[str, ...]], ModelParityVerdict]
+
+#: Memoized per-process: assertion 2 (via ``verify_flip_receipt``) and any later
+#: caller must not pay for the same pytest run twice within one gate invocation. The
+#: key carries the active ``SRC_ROOT`` because the same node_id + test ids under a
+#: different fan-out scope is a DIFFERENT tree and must be re-executed.
+_PARITY_CACHE: dict[tuple[str, str, tuple[str, ...]], ModelParityVerdict] = {}
+
+
+def default_parity_executor(
+    node_id: str, test_ids: tuple[str, ...]
+) -> ModelParityVerdict:
+    """Execute the declared parity ids against the working tree; all must PASS."""
+    cache_key = (str(SRC_ROOT), node_id, test_ids)
+    cached = _PARITY_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+    try:
+        try:  # pragma: no cover - import shim (mirrors this module's own dual import)
+            from scripts.ci import parity_replay
+        except ImportError:  # pragma: no cover - script-dir invocation
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import parity_replay  # type: ignore[import-not-found, no-redef]
+    except ImportError as exc:  # pragma: no cover - defensive, fail-closed
+        return ModelParityVerdict(
+            executed=False, green=False, detail=f"parity engine unavailable: {exc}"
+        )
+    repo_root = _git_repo_root(SRC_ROOT)
+    if repo_root is None:
+        verdict = ModelParityVerdict(
+            executed=False,
+            green=False,
+            detail=f"cannot resolve a git repo root from {SRC_ROOT} to run parity tests",
+        )
+        _PARITY_CACHE[cache_key] = verdict
+        return verdict
+    run = parity_replay.run_on_head(repo_root, SRC_ROOT, test_ids)
+    if not run.executed:
+        verdict = ModelParityVerdict(executed=False, green=False, detail=run.detail)
+    elif run.all_passed:
+        verdict = ModelParityVerdict(
+            executed=True,
+            green=True,
+            detail=f"{len(run.results)} declared parity id(s) executed GREEN on HEAD",
+        )
+    else:
+        offenders = "; ".join(
+            f"{r.test_id} -> {r.outcome.value}"
+            for r in run.results
+            if r.outcome.value != "passed"
+        )
+        verdict = ModelParityVerdict(
+            executed=True,
+            green=False,
+            detail=f"declared parity id(s) NOT green on HEAD: {offenders}",
+        )
+    _PARITY_CACHE[cache_key] = verdict
+    return verdict
+
+
 def _resolve_module_file(module: str) -> Path | None:
     candidate = SRC_ROOT / (module.replace(".", "/") + ".py")
     return candidate if candidate.exists() else None
@@ -859,7 +950,10 @@ def _module_repo_rel(module: str) -> tuple[Path, str] | None:
 
 
 def verify_handflip_proof(
-    node_id: str, handler_module: str | None
+    node_id: str,
+    handler_module: str | None,
+    *,
+    parity_executor: ParityExecutor | None = None,
 ) -> tuple[bool, str, list[str]]:
     """Sanctioned proof for a HAND-authored def-B flip (no fabricated replay).
 
@@ -867,8 +961,15 @@ def verify_handflip_proof(
     business-logic symbols from the git-BASE legacy module AND the HEAD canonical
     module and requires them byte-identical (post AST-normalization). This cannot
     be faked by writing a JSON file: the symbols must genuinely be unchanged across
-    the flip. Parity tests (green, bound to the selected input set) attest behavior;
-    the input-set binding is enforced by ``verify_flip_receipt``.
+    the flip.
+
+    Parity tests attest the behavior the verbatim check cannot cover, and since
+    OMN-15340 they are EXECUTED rather than credited from ``parity.status``: the
+    declared ids must run GREEN on HEAD through ``parity_executor`` (default:
+    ``default_parity_executor``, which really runs pytest). The complementary half —
+    that those same ids are RED on the receipt's own ``base_ref``, i.e. that they
+    discriminate the flip at all — is assertion 7 of ``verify_flip_bundle``. The
+    input-set binding is enforced by ``verify_flip_receipt``.
 
     Returns ``(ok, reason, selected_input_hashes)``.
     """
@@ -935,27 +1036,53 @@ def verify_handflip_proof(
     if not isinstance(parity, dict):
         return False, "hand-flip proof missing parity block", []
     if parity.get("status") != "pass":
+        # A self-declared failure is a confession — trusted in the negative direction
+        # only. A self-declared ``pass`` earns nothing; it must be executed below.
         return False, f"parity tests status={parity.get('status')!r}", []
     test_ids = parity.get("test_ids")
     if not isinstance(test_ids, list) or not test_ids:
         return False, "hand-flip parity block names no test_ids", []
+
+    # OMN-15340: run them or reject them. The recorded ``status`` never survives as
+    # evidence on its own.
+    executor = (
+        parity_executor if parity_executor is not None else default_parity_executor
+    )
+    verdict = executor(node_id, tuple(str(t) for t in test_ids))
+    if not verdict.executed:
+        return (
+            False,
+            f"parity claim UNEXECUTED — a recorded status string is not evidence "
+            f"({verdict.detail})",
+            [],
+        )
+    if not verdict.green:
+        return False, f"parity tests NOT GREEN when executed: {verdict.detail}", []
+
     hashes = parity.get("selected_input_hashes")
     selected = [str(h) for h in hashes] if isinstance(hashes, list) else []
     return (
         True,
-        f"handflip-verbatim-preserved({len(symbols)} symbol(s))",
+        f"handflip-verbatim-preserved({len(symbols)} symbol(s))"
+        f"+parity-executed-green({len(test_ids)} test id(s))",
         selected,
     )
 
 
-def verify_flip_receipt(node_id: str, handler_module: str | None) -> tuple[bool, str]:
+def verify_flip_receipt(
+    node_id: str,
+    handler_module: str | None,
+    *,
+    parity_executor: ParityExecutor | None = None,
+) -> tuple[bool, str]:
     """Return (ok, reason) for a non-canonical -> canonical baseline flip.
 
     Requires an adequacy receipt (re-derived verdict) AND one of two sanctioned
     behavior proofs, each bound to the SAME selected input set as the receipt:
       * RSD regen path: a GREEN regen-vs-legacy equivalence-replay artifact; OR
       * HAND-flip path (OMN-14781): a hand-flip proof whose verbatim-preservation
-        the gate re-derives from git and whose parity tests are green.
+        the gate re-derives from git and whose declared parity tests it EXECUTES
+        green on HEAD (OMN-15340 — the recorded status string is not evidence).
     Fail-closed: no adequacy, or neither proof, or a mismatched input set -> RED.
     """
     ok_a, reason_a, sel_receipt = verify_adequacy_receipt(node_id, handler_module)
@@ -963,7 +1090,9 @@ def verify_flip_receipt(node_id: str, handler_module: str | None) -> tuple[bool,
         return False, f"adequacy: {reason_a}"
 
     ok_e, reason_e, sel_equiv = verify_equivalence_replay(node_id)
-    ok_h, reason_h, sel_hand = verify_handflip_proof(node_id, handler_module)
+    ok_h, reason_h, sel_hand = verify_handflip_proof(
+        node_id, handler_module, parity_executor=parity_executor
+    )
     if not ok_e and not ok_h:
         return (
             False,
