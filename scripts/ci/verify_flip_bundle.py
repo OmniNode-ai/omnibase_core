@@ -254,29 +254,36 @@ def load_parity_baseline(path: Path) -> tuple[str, ...]:
         raise ValueError(f"parity baseline at {path} is unparseable: {exc}") from exc
 
 
-def load_base_parity_baseline(path: Path, base_ref: str) -> tuple[str, ...] | None:
-    """Parity-debt entries as of ``base_ref``.
+def load_base_parity_baseline(
+    path: Path, base_ref: str
+) -> tuple[tuple[str, ...] | None, bool]:
+    """Parity-debt entries as of ``base_ref``, plus whether the file EXISTED there.
 
-    ``()`` when the file did not exist at the base (a brand-new baseline has no prior
-    entries to protect); ``None`` when git cannot answer at all, which disables the
-    shrink-only comparison for that run — the same diff-unavailable tolerance the shape
-    ratchet already carries. In CI the PR base is always present, so it is live there.
+    Returns ``(entries, existed_at_base)``:
+
+    * ``(entries, True)``  — the baseline was present at the base; shrink-only is live.
+    * ``((), False)``      — the file is NEW in this change. Growth is not a meaningful
+      comparison there (every entry would be growth, so the seeding commit would fail
+      itself); the caller applies the seeding rule instead.
+    * ``(None, False)``    — git cannot answer at all, which disables the comparison for
+      that run, the same diff-unavailable tolerance the shape ratchet already carries.
+      In CI the PR base is always present, so it is live there.
     """
     anchor = path if path.exists() else path.parent
     repo_root = chs._git_repo_root(anchor)
     if repo_root is None or not chs._git_ref_exists(repo_root, base_ref):
-        return None
+        return None, False
     try:
         rel = path.resolve().relative_to(repo_root.resolve())
     except ValueError:
-        return None
+        return None, False
     source = chs._git_show(repo_root, base_ref, str(rel).replace(os.sep, "/"))
     if source is None:
-        return ()
+        return (), False
     try:
-        return _parse_symbol_tuple(source, PARITY_BASELINE_SYMBOL)
+        return _parse_symbol_tuple(source, PARITY_BASELINE_SYMBOL), True
     except (SyntaxError, ValueError):
-        return None
+        return None, False
 
 
 def _git_added_files(repo_root: Path, base_ref: str) -> list[str] | None:
@@ -688,6 +695,13 @@ def _assert_parity_red_on_base(
 #   REMOVAL  dropping an entry is a CLAIM that the node now passes, and the gate
 #            EXECUTES it: assertion 7 is re-armed for exactly that node and must pass.
 #            Removing the entry by deleting the hand-flip proof instead fails too.
+#   SEEDING  the commit that CREATES the file cannot be judged by growth — every entry
+#            would be growth and the seeding commit would fail itself. It is instead
+#            held to the rule that actually matters: a seed may contain only
+#            ALREADY-MERGED debt. A flip that is new in the same PR cannot be born
+#            baselined, so the one-time exemption buys no cover for a new flip. This
+#            path is unreachable a second time: once the file exists at the base, every
+#            later change is judged by growth/removal.
 #
 # The ratchet deliberately does NOT re-execute the whole baselined population on every
 # run: the 2026-07-28 census cost ~24 minutes of pytest for 22 receipts. Steady-state
@@ -704,6 +718,7 @@ def _assert_parity_red_on_base(
 def _parity_debt_ratchet(
     working: tuple[str, ...],
     base: tuple[str, ...] | None,
+    base_existed: bool,
     receipts_dir: Path,
     repo_root: Path | None,
     src_root: Path,
@@ -723,6 +738,18 @@ def _parity_debt_ratchet(
             )
 
     if base is None:
+        return errors
+
+    if not base_existed:
+        for node_id in sorted(working_set):
+            if repo_root is None or _flip_proof_is_new(
+                node_id, receipts_dir, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+            ):
+                errors.append(
+                    f"{node_id}: seeded into a NEW {PARITY_BASELINE_FILENAME}, but its "
+                    f"hand-flip proof is NEW in this change. The baseline may only be "
+                    f"seeded with already-merged debt — a new flip must pass assertion 7."
+                )
         return errors
 
     base_set = set(base)
@@ -1099,10 +1126,13 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as exc:
         print(f"verify_flip_bundle FAILED (OMN-15344) — {exc}", file=sys.stderr)
         return 1
-    parity_base = load_base_parity_baseline(parity_baseline_path, args.base_ref)
+    parity_base, parity_base_existed = load_base_parity_baseline(
+        parity_baseline_path, args.base_ref
+    )
     ratchet_errors = _parity_debt_ratchet(
         parity_working,
         parity_base,
+        parity_base_existed,
         s_recv,
         chs._git_repo_root(s_src),
         s_src,

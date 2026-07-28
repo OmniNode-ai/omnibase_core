@@ -678,6 +678,7 @@ def build_handflip_repo(
     parity_debt_at_head: tuple[str, ...] | None = None,
     ghost_debt: tuple[str, ...] = (),
     stale_debt: tuple[str, ...] = (),
+    merged_receipt_ids: tuple[str, ...] = (),
 ) -> FlipRepo:
     """A real 3-commit repo carrying a NEW HAND-FLIP (not an equivalence replay).
 
@@ -690,6 +691,8 @@ def build_handflip_repo(
       burn-down-by-deleting-the-proof attack.
     * ``stale_debt`` — ids present in the baseline at base AND head that never have a
       receipt at all.
+    * ``merged_receipt_ids`` — ids whose stub hand-flip receipt exists at the BASE and
+      survives at HEAD, i.e. already-merged debt.
 
     commit0: legacy def-A handler + contract + baseline (node non-canonical).
     commit1: pre-flip anchor == base_ref (of BOTH the gate and the hand-flip receipt).
@@ -728,10 +731,10 @@ def build_handflip_repo(
     wrote_base_parity = bool(base_entries) or parity_debt_at_base is not None
     if wrote_base_parity:
         _write(parity_baseline_path, _render_parity_baseline(base_entries))
-    for ghost in ghost_debt:
+    for stub in (*ghost_debt, *merged_receipt_ids):
         _write(
-            receipts_dir / f"{ghost}.handflip.json",
-            json.dumps({"receipt_schema": "handflip_proof.v1", "node_id": ghost}),
+            receipts_dir / f"{stub}.handflip.json",
+            json.dumps({"receipt_schema": "handflip_proof.v1", "node_id": stub}),
         )
 
     _git(root, "add", "-A")
@@ -933,6 +936,9 @@ def test_no_parity_baseline_still_passes(
     assert "baselined parity-red-on-base debt" not in capsys.readouterr().out
 
 
+MERGED_ID = "testpkg.nodes.node_already_merged_compute"
+
+
 def test_growth_of_parity_baseline_hard_fails(
     tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -940,13 +946,50 @@ def test_growth_of_parity_baseline_hard_fails(
     repo = build_handflip_repo(
         tmp_path,
         PARITY_TEST_NON_DISCRIMINATING,
-        parity_debt_at_head=(NODE_ID,),
+        merged_receipt_ids=(MERGED_ID,),
+        parity_debt_at_base=(MERGED_ID,),
+        parity_debt_at_head=(MERGED_ID, NODE_ID),
     )
 
     assert _main(repo) == 1
     err = capsys.readouterr().err
     assert "SHRINK-ONLY" in err
     assert f"{NODE_ID}: ADDED to {PARITY_BASELINE_FILENAME}" in err
+
+
+def test_seeding_the_baseline_with_already_merged_debt_passes(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The one-time seeding commit is landable — that is the whole per-repo rollout."""
+    repo = build_handflip_repo(
+        tmp_path,
+        PARITY_TEST_DISCRIMINATING,
+        merged_receipt_ids=(MERGED_ID,),
+        parity_debt_at_base=None,
+        parity_debt_at_head=(MERGED_ID,),
+    )
+
+    assert _main(repo) == 0
+    assert (
+        "1 node(s) carry baselined parity-red-on-base debt" in capsys.readouterr().out
+    )
+
+
+def test_seeding_the_baseline_with_a_new_flip_hard_fails(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The seeding exemption buys no cover for a flip that is new in the same PR."""
+    repo = build_handflip_repo(
+        tmp_path,
+        PARITY_TEST_NON_DISCRIMINATING,
+        parity_debt_at_base=None,
+        parity_debt_at_head=(NODE_ID,),
+    )
+
+    assert _main(repo) == 1
+    err = capsys.readouterr().err
+    assert f"{NODE_ID}: seeded into a NEW {PARITY_BASELINE_FILENAME}" in err
+    assert "already-merged debt" in err
 
 
 def test_stale_parity_baseline_entry_hard_fails(
