@@ -199,12 +199,16 @@ repos:
       # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809). The
       # canonical-handler-shape ratchet (above) DECIDES a flip is proven; this gate
       # re-invokes that gate (verify_flip_receipt / classify_node — imported, not
-      # reimplemented) and adds six fail-closed assertions per NEWLY-flipped node that
+      # reimplemented) and adds seven fail-closed assertions per NEWLY-flipped node that
       # the CI ratchet is structurally blind to: full ModelAdequacyReceipt invariants
       # (A1), per-binding canonicality so a multi-handler node cannot partial-flip (B5),
       # twin shape+entrypoint baseline shrink (B6), receipt-minted-post-format ordering
-      # (S1), and a deterministic producer rerun + byte-compare for new equivalence
-      # goldens (E1, OMN-14905 — replaces the earlier author-identity attestation).
+      # (S1), a deterministic producer rerun + byte-compare for new equivalence
+      # goldens (E1, OMN-14905 — replaces the earlier author-identity attestation), and
+      # the declared hand-flip parity tests EXECUTED against the receipt's own base_ref,
+      # where each must fail on its own assertion (P1, OMN-15340 — a test that is already
+      # green on the pre-change tree discriminates nothing, and one that cannot even
+      # import there proves nothing either).
       # Runs at PRE-PUSH (flip-discovery diffs the whole branch vs origin/dev, which is
       # present locally) — it does its OWN git discovery, so pass_filenames is false.
       # No committed flip in the diff -> exit 0.
@@ -213,7 +217,7 @@ repos:
         entry: uv run python scripts/ci/verify_flip_bundle.py
         language: system
         pass_filenames: false
-        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/adequacy_receipts/.*)$
+        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/parity_replay\.py|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-push]
 
       # Cleanup: Clear tmp/ directory before commits

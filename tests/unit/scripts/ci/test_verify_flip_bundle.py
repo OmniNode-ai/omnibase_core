@@ -386,9 +386,12 @@ def test_passes_on_coherent_new_flip(tmp_path: Path) -> None:
     a6 = next(o for o in result.outcomes if o.index == 6)
     assert a6.name == "reproducible-equivalence"
     assert "byte-identical" in a6.detail
-    # All six assertions recorded ok.
-    assert [o.index for o in result.outcomes] == [1, 2, 3, 4, 5, 6]
+    # All seven assertions recorded ok; 7 records the equivalence-path branch (a
+    # replay-proven flip carries no hand-flip parity block to execute).
+    assert [o.index for o in result.outcomes] == [1, 2, 3, 4, 5, 6, 7]
     assert all(o.ok for o in result.outcomes)
+    a7 = next(o for o in result.outcomes if o.index == 7)
+    assert "equivalence proof path" in a7.detail
 
 
 # --------------------------------------------------------------------------- #
@@ -576,3 +579,248 @@ def test_missing_adequacy_receipt_fails_closed_assertion_1(tmp_path: Path) -> No
     assert result.ok is False
     assert result.failed_assertion == 1
     assert "absent" in result.reason
+
+
+# --------------------------------------------------------------------------- #
+# 5. Assertion 7 (OMN-15340) — the declared parity tests must be RED on the
+#    receipt's OWN base_ref, and RED for the right reason.
+#
+# These cases prove the mechanism by EXECUTION, not by inspection: each builds a real
+# git repo, really materializes base_ref as a worktree, and really runs pytest there.
+# --------------------------------------------------------------------------- #
+
+# Hand-flip pair: `_compute` is byte-identical across the flip (verbatim-preserved);
+# only the entrypoint moves from def-A `run` to def-B `handle`.
+HANDFLIP_LEGACY_HANDLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+
+class HandlerDemoCompute:
+    def run(self, payload):
+        return self._compute(payload)
+
+    def _compute(self, payload):
+        return payload
+"""
+
+HANDFLIP_CANONICAL_HANDLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+
+class HandlerDemoCompute:
+    def handle(self, request):
+        return self._compute(request)
+
+    def _compute(self, payload):
+        return payload
+"""
+
+_PARITY_IMPORT = (
+    "from testpkg.nodes.node_demo_compute.handler import HandlerDemoCompute"
+)
+
+# GREEN case: the claim is ASSERTED, and the pre-change tree cannot satisfy it.
+PARITY_TEST_DISCRIMINATING = f"""{_PARITY_IMPORT}
+
+
+def test_handler_exposes_handle_entrypoint():
+    assert hasattr(HandlerDemoCompute, "handle"), "def-B handler must expose handle()"
+"""
+
+# RED case 1: green on HEAD *and* green on base — it discriminates nothing.
+PARITY_TEST_NON_DISCRIMINATING = f"""{_PARITY_IMPORT}
+
+
+def test_handler_class_exists():
+    assert HandlerDemoCompute is not None
+"""
+
+# RED case 2: the test cannot even be imported on the base tree.
+PARITY_TEST_IMPORT_ONLY_AT_HEAD = """from testpkg.nodes.node_demo_compute.only_at_head import MARKER
+
+
+def test_marker():
+    assert MARKER == "head"
+"""
+
+# RED case 3: fails on the base tree with AttributeError — an exception, not a claim.
+PARITY_TEST_NON_ASSERTION = f"""{_PARITY_IMPORT}
+
+
+def test_handle_returns_request():
+    assert HandlerDemoCompute().handle("x") == "x"
+"""
+
+PARITY_TEST_REL = "tests/test_parity_demo.py"
+
+
+def build_handflip_repo(tmp_path: Path, parity_test_source: str) -> FlipRepo:
+    """A real 3-commit repo carrying a NEW HAND-FLIP (not an equivalence replay).
+
+    commit0: legacy def-A handler + contract + baseline (node non-canonical).
+    commit1: pre-flip anchor == base_ref (of BOTH the gate and the hand-flip receipt).
+    commit2: the flip — def-B handler, the candidate parity test, the adequacy receipt
+             and the hand-flip proof, and the baseline shrink.
+
+    No equivalence artifact is written, so ``verify_flip_receipt`` takes the hand-flip
+    path and assertion 6 records the exempt branch — assertion 7 is the one under test.
+    """
+    root = tmp_path / "repo"
+    src_root = root / "src"
+    node_dir = src_root / "testpkg" / "nodes" / "node_demo_compute"
+    receipts_dir = root / "scripts" / "ci" / "adequacy_receipts"
+    baseline_path = root / "scripts" / "ci" / "canonical_handler_shape_baseline.py"
+    handler_file = node_dir / "handler.py"
+    contract_file = node_dir / "contract.yaml"
+
+    root.mkdir(parents=True)
+    _git(root, "init", "-q")
+
+    _write(contract_file, SINGLE_BINDING_CONTRACT)
+    _write(handler_file, HANDFLIP_LEGACY_HANDLER)
+    _write(baseline_path, 'NON_CANONICAL = ("testpkg.nodes.node_demo_compute",)\n')
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "base state (def-A)", author=AUTHOR_X)
+    anchor_x = _git(root, "rev-parse", "HEAD")
+
+    _write(root / "docs" / "anchor.md", "pre-flip base\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "pre-flip anchor", author=AUTHOR_Y)
+    base_ref = _git(root, "rev-parse", "HEAD")
+
+    _write(handler_file, HANDFLIP_CANONICAL_HANDLER)
+    _ruff_format(handler_file)
+    _write(node_dir / "only_at_head.py", 'MARKER = "head"\n')
+    _write(root / PARITY_TEST_REL, parity_test_source)
+    handler_sha = _sha256_file(handler_file)
+    _write(
+        receipts_dir / f"{NODE_ID}.json",
+        json.dumps(_adequacy_receipt(handler_sha, [_DUMMY_INPUT_HASH]), indent=2),
+    )
+    _write(
+        receipts_dir / f"{NODE_ID}.handflip.json",
+        json.dumps(
+            {
+                "receipt_schema": "handflip_proof.v1",
+                "node_id": NODE_ID,
+                "canonical_handler_module": "testpkg.nodes.node_demo_compute.handler",
+                "legacy_handler_module": "testpkg.nodes.node_demo_compute.handler",
+                "base_ref": base_ref,
+                "preserved_symbols": ["HandlerDemoCompute._compute"],
+                "parity": {
+                    "test_ids": [
+                        f"{PARITY_TEST_REL}::{_first_test_name(parity_test_source)}"
+                    ],
+                    "status": "pass",
+                    "selected_input_hashes": [_DUMMY_INPUT_HASH],
+                },
+            },
+            indent=2,
+        ),
+    )
+    _write(baseline_path, "NON_CANONICAL = ()\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-q", "-m", "hand-flip to canonical def-B", author=AUTHOR_X)
+    def_b_commit = _git(root, "rev-parse", "HEAD")
+
+    return FlipRepo(
+        root=root,
+        src_root=src_root,
+        receipts_dir=receipts_dir,
+        baseline_path=baseline_path,
+        handler_file=handler_file,
+        contract_file=contract_file,
+        base_ref=base_ref,
+        anchor_x=anchor_x,
+        def_b_commit=def_b_commit,
+    )
+
+
+def _first_test_name(source: str) -> str:
+    for line in source.splitlines():
+        if line.startswith("def test_"):
+            return line[len("def ") : line.index("(")]
+    raise AssertionError("fixture parity test declares no test function")
+
+
+def test_handflip_with_red_on_base_parity_passes_assertion_7(tmp_path: Path) -> None:
+    """GENUINE RED-on-base bundle -> assertion 7 PASSES (the mechanism's GREEN)."""
+    repo = build_handflip_repo(tmp_path, PARITY_TEST_DISCRIMINATING)
+
+    result = _run(repo)
+
+    assert result.ok, result.reason
+    assert [o.index for o in result.outcomes] == [1, 2, 3, 4, 5, 6, 7]
+    a6 = next(o for o in result.outcomes if o.index == 6)
+    assert "hand-flip proof path" in a6.detail
+    a7 = next(o for o in result.outcomes if o.index == 7)
+    assert a7.name == "parity-red-on-base"
+    assert "RED on their own assertion" in a7.detail
+    assert "resolves inside the base worktree" in a7.detail  # non-vacuity proven
+
+
+def test_handflip_with_already_green_parity_fails_assertion_7(tmp_path: Path) -> None:
+    """The attack: a parity test that is ALREADY GREEN on base proves nothing.
+
+    It passes on HEAD, so assertions 1-6 (including the executed HEAD parity run) are
+    all satisfied. Only assertion 7 can see that it never discriminated the flip.
+    """
+    repo = build_handflip_repo(tmp_path, PARITY_TEST_NON_DISCRIMINATING)
+
+    result = _run(repo)
+
+    assert result.ok is False
+    assert result.failed_assertion == 7, result.reason
+    assert "passed" in result.reason
+    assert "NOT RED-for-the-right-reason" in result.reason
+
+
+def test_handflip_parity_uncollectable_on_base_fails_assertion_7(
+    tmp_path: Path,
+) -> None:
+    """A test that cannot even import on the base tree is not RED — it is absent."""
+    repo = build_handflip_repo(tmp_path, PARITY_TEST_IMPORT_ONLY_AT_HEAD)
+
+    result = _run(repo)
+
+    assert result.ok is False
+    assert result.failed_assertion == 7, result.reason
+    assert "collection_error" in result.reason
+    # Distinct from the already-green rejection above.
+    assert "passed" not in result.reason
+
+
+def test_handflip_parity_non_assertion_failure_fails_assertion_7(
+    tmp_path: Path,
+) -> None:
+    """AttributeError on the base tree is an incompatibility, not a discriminating claim."""
+    repo = build_handflip_repo(tmp_path, PARITY_TEST_NON_ASSERTION)
+
+    result = _run(repo)
+
+    assert result.ok is False
+    assert result.failed_assertion == 7, result.reason
+    assert "red_exception" in result.reason
+
+
+def test_handflip_forged_parity_status_fails_when_executed(tmp_path: Path) -> None:
+    """OMN-15340 half 2: a ``status: pass`` string over a RED HEAD test is rejected.
+
+    The declared test is edited to fail on HEAD while the receipt still claims
+    ``pass``. Pre-OMN-15340 the gate credited the string; now the executed HEAD run
+    is the evidence and assertion 2 (``verify_flip_receipt``) rejects.
+    """
+    repo = build_handflip_repo(tmp_path, PARITY_TEST_DISCRIMINATING)
+    (repo.root / PARITY_TEST_REL).write_text(
+        PARITY_TEST_DISCRIMINATING.replace(
+            'assert hasattr(HandlerDemoCompute, "handle")',
+            'assert hasattr(HandlerDemoCompute, "never_exists")',
+        ),
+        encoding="utf-8",
+    )
+
+    result = _run(repo)
+
+    assert result.ok is False
+    assert result.failed_assertion == 2, result.reason
+    assert "NOT GREEN when executed" in result.reason
