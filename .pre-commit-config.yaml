@@ -217,7 +217,7 @@ repos:
         entry: uv run python scripts/ci/verify_flip_bundle.py
         language: system
         pass_filenames: false
-        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/parity_replay\.py|scripts/ci/adequacy_receipts/.*)$
+        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/parity_replay\.py|scripts/ci/parity_red_on_base_baseline\.py|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-push]
 
       # Cleanup: Clear tmp/ directory before commits

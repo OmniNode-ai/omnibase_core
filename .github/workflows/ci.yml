@@ -492,6 +492,15 @@ jobs:
       # stays unresolvable. If origin/dev itself is unavailable the gate NOTEs and exits 0
       # (the ratchet already hard-guards new non-canonical nodes). Runs in this job so it
       # inherits the quality-gate blocking wiring — it does NOT weaken the ratchet.
+      #
+      # OMN-15344 additionally runs the parity-debt SHRINK-ONLY ratchet over the
+      # repo-local `scripts/ci/parity_red_on_base_baseline.py` (convention-resolved
+      # beside the shape baseline; ABSENT == no declared debt, which is omnibase_core's
+      # own state). Growth hard-fails, a stale entry hard-fails, and removing an entry
+      # re-arms assertion 7 for that node and EXECUTES it. That ratchet is what puts
+      # assertion 7 in force over the already-merged hand-flip population, which lives
+      # entirely in omnibase_infra (15 receipts) and omnimarket (7) — those repos invoke
+      # this same script from their own CI.
       - name: Run canonical-shape flip-bundle seam gate
         run: |
           git fetch --no-tags --prune origin +refs/heads/dev:refs/remotes/origin/dev || true
