@@ -36,8 +36,15 @@ from pathlib import Path
 
 import pytest
 
+from scripts.ci import canonical_handler_shape as chs
 from scripts.ci import equivalence_producer as eqp
-from scripts.ci.verify_flip_bundle import ModelFlipBundleResult, verify_flip_bundle
+from scripts.ci.verify_flip_bundle import (
+    PARITY_BASELINE_FILENAME,
+    ModelFlipBundleResult,
+    load_parity_baseline,
+    verify_flip_bundle,
+)
+from scripts.ci.verify_flip_bundle import main as verify_flip_bundle_main
 
 pytestmark = pytest.mark.unit
 
@@ -654,8 +661,35 @@ def test_handle_returns_request():
 PARITY_TEST_REL = "tests/test_parity_demo.py"
 
 
-def build_handflip_repo(tmp_path: Path, parity_test_source: str) -> FlipRepo:
+def _render_parity_baseline(entries: list[str]) -> str:
+    body = "".join(f'    "{e}",\n' for e in sorted(entries))
+    return (
+        "PARITY_RED_ON_BASE_DEBT: tuple[str, ...] = (\n" + body + ")\n"
+        if entries
+        else "PARITY_RED_ON_BASE_DEBT: tuple[str, ...] = ()\n"
+    )
+
+
+def build_handflip_repo(
+    tmp_path: Path,
+    parity_test_source: str,
+    *,
+    parity_debt_at_base: tuple[str, ...] | None = None,
+    parity_debt_at_head: tuple[str, ...] | None = None,
+    ghost_debt: tuple[str, ...] = (),
+    stale_debt: tuple[str, ...] = (),
+) -> FlipRepo:
     """A real 3-commit repo carrying a NEW HAND-FLIP (not an equivalence replay).
+
+    OMN-15344 shaping of the repo-local parity-debt baseline:
+
+    * ``parity_debt_at_base`` / ``parity_debt_at_head`` — entries written into the
+      base commit / the flip commit. ``None`` means "no file authored here".
+    * ``ghost_debt`` — ids that exist at the BASE with a stub hand-flip receipt and are
+      then removed from BOTH the baseline and the receipts dir at HEAD. This is the
+      burn-down-by-deleting-the-proof attack.
+    * ``stale_debt`` — ids present in the baseline at base AND head that never have a
+      receipt at all.
 
     commit0: legacy def-A handler + contract + baseline (node non-canonical).
     commit1: pre-flip anchor == base_ref (of BOTH the gate and the hand-flip receipt).
@@ -684,9 +718,38 @@ def build_handflip_repo(tmp_path: Path, parity_test_source: str) -> FlipRepo:
     anchor_x = _git(root, "rev-parse", "HEAD")
 
     _write(root / "docs" / "anchor.md", "pre-flip base\n")
+
+    parity_baseline_path = baseline_path.parent / PARITY_BASELINE_FILENAME
+    base_entries = [
+        *(parity_debt_at_base or ()),
+        *ghost_debt,
+        *stale_debt,
+    ]
+    wrote_base_parity = bool(base_entries) or parity_debt_at_base is not None
+    if wrote_base_parity:
+        _write(parity_baseline_path, _render_parity_baseline(base_entries))
+    for ghost in ghost_debt:
+        _write(
+            receipts_dir / f"{ghost}.handflip.json",
+            json.dumps({"receipt_schema": "handflip_proof.v1", "node_id": ghost}),
+        )
+
     _git(root, "add", "-A")
     _git(root, "commit", "-q", "-m", "pre-flip anchor", author=AUTHOR_Y)
     base_ref = _git(root, "rev-parse", "HEAD")
+
+    head_entries = [
+        *(
+            parity_debt_at_head
+            if parity_debt_at_head is not None
+            else (parity_debt_at_base or ())
+        ),
+        *stale_debt,
+    ]
+    if head_entries or parity_debt_at_head is not None or wrote_base_parity:
+        _write(parity_baseline_path, _render_parity_baseline(head_entries))
+    for ghost in ghost_debt:
+        (receipts_dir / f"{ghost}.handflip.json").unlink()
 
     _write(handler_file, HANDFLIP_CANONICAL_HANDLER)
     _ruff_format(handler_file)
@@ -801,6 +864,182 @@ def test_handflip_parity_non_assertion_failure_fails_assertion_7(
     assert result.ok is False
     assert result.failed_assertion == 7, result.reason
     assert "red_exception" in result.reason
+
+
+# --------------------------------------------------------------------------- #
+# 6. OMN-15344 — the parity-debt baseline is SHRINK-ONLY, and a burn-down claim is
+#    EXECUTED, not accepted.
+#
+#    These drive ``main()`` (the artifact CI actually runs), not the library function,
+#    so the CLI wiring, the ratchet ordering and the exit code are all under test.
+# --------------------------------------------------------------------------- #
+
+GHOST_ID = "testpkg.nodes.node_ghost_compute"
+STALE_ID = "testpkg.nodes.node_never_existed_compute"
+
+
+@pytest.fixture
+def restore_scope():
+    """``main()`` mutates the ratchet's module globals and does not restore them."""
+    saved = (
+        chs.PACKAGE,
+        chs.SRC_ROOT,
+        chs.NODES_GLOB,
+        chs.BASELINE_PATH,
+        chs.RECEIPTS_DIR,
+    )
+    yield
+    (
+        chs.PACKAGE,
+        chs.SRC_ROOT,
+        chs.NODES_GLOB,
+        chs.BASELINE_PATH,
+        chs.RECEIPTS_DIR,
+    ) = saved
+
+
+def _main(repo: FlipRepo) -> int:
+    return verify_flip_bundle_main(
+        [
+            "--package",
+            PACKAGE,
+            "--src-root",
+            str(repo.src_root),
+            "--receipts-dir",
+            str(repo.receipts_dir),
+            "--baseline",
+            str(repo.baseline_path),
+            "--base-ref",
+            repo.base_ref,
+        ]
+    )
+
+
+def test_absent_parity_baseline_is_empty_debt(tmp_path: Path) -> None:
+    """Landing-order seam: an absent baseline file is legal and means no debt.
+
+    This is what lets the per-repo CI wiring that invokes this gate land BEFORE or
+    AFTER the baseline file exists without either side going red.
+    """
+    assert load_parity_baseline(tmp_path / PARITY_BASELINE_FILENAME) == ()
+
+
+def test_no_parity_baseline_still_passes(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repo = build_handflip_repo(tmp_path, PARITY_TEST_DISCRIMINATING)
+
+    assert _main(repo) == 0
+    assert "baselined parity-red-on-base debt" not in capsys.readouterr().out
+
+
+def test_growth_of_parity_baseline_hard_fails(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A NEW flip may not buy its way out of assertion 7 by baselining itself."""
+    repo = build_handflip_repo(
+        tmp_path,
+        PARITY_TEST_NON_DISCRIMINATING,
+        parity_debt_at_head=(NODE_ID,),
+    )
+
+    assert _main(repo) == 1
+    err = capsys.readouterr().err
+    assert "SHRINK-ONLY" in err
+    assert f"{NODE_ID}: ADDED to {PARITY_BASELINE_FILENAME}" in err
+
+
+def test_stale_parity_baseline_entry_hard_fails(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An entry naming a receipt that does not exist cannot sit in the list."""
+    repo = build_handflip_repo(
+        tmp_path, PARITY_TEST_DISCRIMINATING, stale_debt=(STALE_ID,)
+    )
+
+    assert _main(repo) == 1
+    err = capsys.readouterr().err
+    assert f"{STALE_ID}: STALE entry" in err
+
+
+def test_removal_without_a_real_fix_hard_fails(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Deleting the line is a CLAIM; the gate executes assertion 7 for that node."""
+    repo = build_handflip_repo(
+        tmp_path,
+        PARITY_TEST_NON_DISCRIMINATING,
+        parity_debt_at_base=(NODE_ID,),
+        parity_debt_at_head=(),
+    )
+
+    assert _main(repo) == 1
+    err = capsys.readouterr().err
+    assert f"{NODE_ID}: removed from {PARITY_BASELINE_FILENAME}" in err
+    assert "assertion 7 still FAILS when executed" in err
+    # RED_EXCEPTION stays inadmissible: the rejection names the executed outcome.
+    assert "passed" in err
+
+
+def test_removal_by_deleting_the_proof_hard_fails(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Burning down debt by deleting the hand-flip proof is not a burn-down."""
+    repo = build_handflip_repo(
+        tmp_path, PARITY_TEST_DISCRIMINATING, ghost_debt=(GHOST_ID,)
+    )
+
+    assert _main(repo) == 1
+    err = capsys.readouterr().err
+    assert f"{GHOST_ID}: removed from {PARITY_BASELINE_FILENAME} by DELETING" in err
+
+
+def test_genuine_burn_down_passes(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The GREEN of the ratchet: fix the parity tests, then drop the entry."""
+    repo = build_handflip_repo(
+        tmp_path,
+        PARITY_TEST_DISCRIMINATING,
+        parity_debt_at_base=(NODE_ID,),
+        parity_debt_at_head=(),
+    )
+
+    assert _main(repo) == 0
+    assert "FAILED" not in capsys.readouterr().err
+
+
+def test_baselined_node_skips_assertion_7_and_is_reported(
+    tmp_path: Path, restore_scope: None, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A baselined id is NOT credited with assertion 7 — it is recorded as debt.
+
+    Reachable in the real world only for the ALREADY-MERGED population (an id can only
+    be in the baseline at the base commit, and the growth + stale rules together make it
+    impossible to pre-seed one for a flip that has not landed yet).
+    """
+    repo = build_handflip_repo(
+        tmp_path,
+        PARITY_TEST_NON_DISCRIMINATING,
+        parity_debt_at_base=(NODE_ID,),
+    )
+
+    assert _main(repo) == 0
+    out = capsys.readouterr().out
+    assert "1 node(s) carry baselined parity-red-on-base debt" in out
+
+    result = verify_flip_bundle(
+        NODE_ID,
+        PACKAGE,
+        repo.src_root,
+        repo.receipts_dir,
+        repo.baseline_path,
+        base_ref=repo.base_ref,
+        parity_baseline=frozenset({NODE_ID}),
+    )
+    a7 = next(o for o in result.outcomes if o.index == 7)
+    assert "baselined parity debt" in a7.detail
+    assert "NOT credited" in a7.detail
 
 
 def test_handflip_forged_parity_status_fails_when_executed(tmp_path: Path) -> None:
