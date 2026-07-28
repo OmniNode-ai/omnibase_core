@@ -3165,38 +3165,88 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [test-parallel, tests-integration]
+    # zone-filter is in `needs:` so this gate can re-evaluate the SAME
+    # precondition the test jobs are gated on (OMN-15315). It is read for its
+    # `docs_only` output only, never for its `.result`.
+    needs: [test-parallel, tests-integration, zone-filter]
     if: always()
 
     steps:
       - name: Evaluate test results
         run: |
-          echo "## Tests Gate Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Tests Gate Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           parallel="${{ needs.test-parallel.result }}"
           integration="${{ needs.tests-integration.result }}"
+          docs_only="${{ needs.zone-filter.outputs.docs_only }}"
 
-          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Parallel Tests (dynamic splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
-          echo "| Integration Tests (4 splits) | $integration |" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Parallel Tests (dynamic splits) | $parallel |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Integration Tests (4 splits) | $integration |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| zone-filter docs_only | ${docs_only:-(unset)} |" >> "$GITHUB_STEP_SUMMARY"
 
-          # Accept "success" (tests ran and passed) or "skipped" (tests correctly
-          # skipped because upstream quality-gate was skipped, e.g. dependabot PRs
-          # that only touch .github/ files and skip version-pin-check).
-          if [[ ("$parallel" == "success" || "$parallel" == "skipped") && \
-                ("$integration" == "success" || "$integration" == "skipped") ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> $GITHUB_STEP_SUMMARY
-            echo "Test matrix result: unit=$parallel integration=$integration"
-            exit 0
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tests Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
-            echo "::error::tests gate failed (unit=$parallel integration=$integration)"
-            exit 1
-          fi
+          # OMN-15315 (OMN-15304 vector 6 — result triage). The previous pass
+          # condition admitted `success` OR `skipped` for both upstreams, so a
+          # SKIPPED test job rendered this gate green. `skipped` is the ABSENCE
+          # of a verdict exactly like `cancelled`, and it is precisely the state
+          # vectors 2/3/5 (conditional `if:`, needs-cascade) produce — so vector
+          # 5 and vector 6 composed into a bypass: strand the tests, and the
+          # gate that was supposed to catch it reports green with no test result
+          # in existence.
+          #
+          # PER-UPSTREAM SKIP POLICY, replacing the blanket `|| == skipped`:
+          # both `test-parallel` and `tests-integration` are gated on
+          # `always()` AND a successful quality-gate AND
+          # `needs.zone-filter.outputs.docs_only != 'true'` (see their job-level
+          # `if:` — the dotted result token is deliberately not spelled out here,
+          # because the vector-6 analyzer scans this whole `run:` blob for
+          # result tokens and a comment would register as an untriaged
+          # upstream), so exactly ONE of their skips is legitimate — a
+          # docs-only PR. This
+          # gate re-evaluates that precondition itself and admits `skipped` only
+          # when `docs_only == 'true'`. A skip caused by a non-success
+          # `quality-gate` is NOT admitted: tests that never ran because quality
+          # failed are absent tests, and this gate must say so. `zone-filter`
+          # itself is gated on `quality-gate` succeeding, so if quality fails,
+          # `docs_only` is empty and this gate fails closed on that path too.
+          #
+          # The gate stops at the first offending upstream; the per-upstream
+          # results are already written to the job summary above.
+          for check in \
+            "test-parallel=${{ needs.test-parallel.result }}" \
+            "tests-integration=${{ needs.tests-integration.result }}"; do
+            NAME="${check%%=*}"
+            RESULT="${check##*=}"
+            case "$RESULT" in
+              success)
+                echo "$NAME: success"
+                ;;
+              skipped)
+                if [ "$docs_only" != "true" ]; then
+                  echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
+                  echo "::error::$NAME was SKIPPED on a non-docs-only change (zone-filter docs_only='${docs_only:-unset}') — the absence of a test result is not a passing one."
+                  exit 1
+                fi
+                echo "$NAME: skipped (docs-only change — declared precondition not met)"
+                ;;
+              failure|cancelled)
+                echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
+                echo "::error::$NAME did not pass (result: $RESULT)"
+                exit 1
+                ;;
+              *)
+                echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
+                echo "::error::$NAME returned unrecognised result '$RESULT' — failing closed."
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Test matrix result: unit=$parallel integration=$integration"
 
   # CI Summary - final aggregator for all gates (OMN-2226)
   # Cross-repo boundary validation (OMN-6576, OMN-10978)
