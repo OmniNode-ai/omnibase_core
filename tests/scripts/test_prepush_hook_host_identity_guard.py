@@ -33,6 +33,18 @@ Three assertion classes:
    invoked -- while the identical selected work forced via
    `PREPUSH_FULL_SUITE=1` WAS refused. Assertion classes 1 and 2 above were
    green that entire time, because both only ever drove the flag-true path.
+4. Heavyweight-selection TARGET SET (OMN-15408 round 2) -- class 3 measured the
+   selection against `FULL_SUITE_TARGET` (`tests/`) alone, which made it INERT
+   for THIS repo's own dominant heavyweight shape. This repo's selector fails
+   closed to the single-entry sentinel `["tests/unit/"]` -- a DESCENDANT of
+   `tests/`, so a `tests/`-only target set can never trip on it. Measured on
+   `omnibook` 2026-07-29 against the SHIPPED round-1 hook at merged commit
+   c5b0a9e1, real selector, on round-1's own two-file diff: `is_full_suite=False
+   reason=None paths=[ tests/unit/ ]` -> `running impacted subset` -> guard never
+   invoked, exit 0, push allowed. That sentinel is 1452 of the 1520 test files
+   the escalation itself runs (95.5%). Class 3's tests were green that entire
+   time, because they only ever drove the `tests/` shape -- the one shape this
+   repo's selector reaches via the FLAG branch, which was already guarded.
 """
 
 from __future__ import annotations
@@ -42,6 +54,8 @@ import os
 import re
 import subprocess
 from pathlib import Path
+
+from scripts.ci.test_selection_closure import TEST_UNIT_PREFIX
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HOOK_SCRIPT = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
@@ -159,10 +173,25 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
 # the fix must not brick every push from this Mac.
 
 _FULL_SUITE_TARGET = "tests/"
+# The selector's own fail-closed whole-tree sentinel (OMN-15408 round 2) -- the
+# shape this repo ACTUALLY reaches with is_full_suite=False. Asserted below to
+# still equal scripts/ci/test_selection_closure.py::TEST_UNIT_PREFIX.
+_SELECTOR_WHOLE_TREE_SENTINEL = "tests/unit/"
+# The full heavy-target set the shipped predicate must be evaluated against.
+_HEAVY_SELECTION_TARGETS = f"{_FULL_SUITE_TARGET} {_SELECTOR_WHOLE_TREE_SENTINEL}"
 # The literal production shape from the OMN-15408 evidence table.
 _WHOLE_SUITE_SELECTION = "tests/"
-# A real, genuinely-narrow subdirectory of this repo's suite.
+# Real, genuinely-narrow subdirectories of this repo's suite. `tests/scripts/`
+# is 10 of 1520 files; `tests/unit/scripts/` is a strict descendant of the
+# sentinel, so widening the target set must not swallow it.
 _NARROW_SELECTION = "tests/scripts/"
+_NARROW_SELECTION_UNDER_SENTINEL = "tests/unit/scripts/"
+# Minimum share of the escalation target the sentinel must cover for listing it
+# as a heavy target to be justified rather than overreach. Measured 95.5%
+# (1452/1520) on 2026-07-29; the floor is deliberately slack so ordinary tree
+# growth does not trip it, but a real restructuring that turned tests/unit/ into
+# a minority of the suite (as it is in omnimarket, 33%) would.
+_SENTINEL_COVERAGE_FLOOR = 0.75
 
 _PREDICATE_RE = re.compile(
     r"^selection_is_whole_suite\(\) \{.*?^\}",
@@ -312,9 +341,197 @@ def test_full_suite_target_is_single_sourced() -> None:
         "expected the fail-closed escalation to run ${FULL_SUITE_TARGET} "
         "itself, so the guard predicate cannot drift from the run it guards"
     )
-    assert 'selection_is_whole_suite "$FULL_SUITE_TARGET"' in script_text, (
-        "expected the predicate to be evaluated against the SAME "
-        "FULL_SUITE_TARGET the escalation runs"
+    assert (
+        'HEAVY_SELECTION_TARGETS="${FULL_SUITE_TARGET} ${SELECTOR_WHOLE_TREE_SENTINEL}"'
+        in script_text
+    ), (
+        "expected the heavy-target set to be DERIVED from FULL_SUITE_TARGET (the "
+        "run it guards) plus the selector's own whole-tree sentinel, not "
+        "hard-coded independently of either"
+    )
+    assert 'selection_is_whole_suite "$HEAVY_SELECTION_TARGETS"' in script_text, (
+        "expected the predicate to be evaluated against the full "
+        "HEAVY_SELECTION_TARGETS set -- evaluating it against FULL_SUITE_TARGET "
+        "alone is the OMN-15408 round-1 inertness defect (the selector's "
+        "tests/unit/ sentinel is a DESCENDANT of tests/ and can never trip it)"
+    )
+
+
+# -----------------------------------------------------------------------------
+# OMN-15408 round 2: the target SET, not just the escalation target
+# -----------------------------------------------------------------------------
+# Round 1 measured the selection against `FULL_SUITE_TARGET` (`tests/`) only.
+# This repo's selector reaches `tests/` only on the FLAG branch (`_full_suite()`
+# returns `selected_paths=["tests/"]` with `is_full_suite=True`), which was
+# already guarded. Its `is_full_suite=False` heavyweight answer is the closure
+# sentinel `["tests/unit/"]` -- a DESCENDANT of `tests/`, so the round-1
+# predicate provably never fired on it. Executed proof (host `omnibook`,
+# 2026-07-29, SHIPPED hook at merged c5b0a9e1, real selector, round-1's own
+# two-file diff as the input): `is_full_suite=False reason=None
+# paths=[ tests/unit/ ]` -> `running impacted subset` -> guard never invoked,
+# exit 0. The tests below pin both halves of the justification: the sentinel
+# LITERAL still matches the selector's constant, and the sentinel still COVERS a
+# supermajority of the escalation target (i.e. listing it as heavy is warranted,
+# not overreach).
+
+
+def test_selector_whole_tree_sentinel_matches_the_selector_constant() -> None:
+    """Anti-drift: the hook's sentinel literal must equal the selector's own.
+
+    The hook cannot import Python, so the sentinel is a bash literal. That
+    literal is only correct as long as the selector still fails closed to the
+    same path. Bind the two here: if `compute_closure_selection`'s sentinel ever
+    moves, this test fails instead of the guard silently going inert again --
+    which is exactly the failure round 1 shipped.
+    """
+    assert _SELECTOR_WHOLE_TREE_SENTINEL == TEST_UNIT_PREFIX, (
+        "this test's expected sentinel drifted from the selector's "
+        f"TEST_UNIT_PREFIX ({TEST_UNIT_PREFIX!r})"
+    )
+    script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
+    assert f'SELECTOR_WHOLE_TREE_SENTINEL="{TEST_UNIT_PREFIX}"' in script_text, (
+        "expected the hook to declare SELECTOR_WHOLE_TREE_SENTINEL as the "
+        f"selector's own fail-closed sentinel {TEST_UNIT_PREFIX!r}; "
+        f"{HOOK_SCRIPT} is out of sync with "
+        "scripts/ci/test_selection_closure.py::TEST_UNIT_PREFIX"
+    )
+
+
+def test_sentinel_covers_a_supermajority_of_the_escalation_target() -> None:
+    """The measured justification for treating the sentinel as heavyweight.
+
+    A heavy-target list is a per-repo MEASURED claim, not a constant to copy
+    between repos: in omnimarket the same `tests/unit/` path is 33% of the suite
+    and listing it would be overreach. Here it is 95.5% (1452/1520 on
+    2026-07-29) of exactly what the escalation runs -- `tests/` minus the
+    always-ignored `tests/integration`. If a restructuring ever made it a
+    minority, the guard would start refusing genuine narrowings and this test
+    fails first.
+    """
+    escalation_root = REPO_ROOT / _FULL_SUITE_TARGET
+    sentinel_root = REPO_ROOT / _SELECTOR_WHOLE_TREE_SENTINEL
+    assert sentinel_root.is_dir(), f"expected the sentinel tree at {sentinel_root}"
+
+    ignored = REPO_ROOT / "tests" / "integration"
+    escalation_files = {
+        p for p in escalation_root.rglob("test_*.py") if not p.is_relative_to(ignored)
+    }
+    sentinel_files = set(sentinel_root.rglob("test_*.py"))
+
+    assert escalation_files, f"found no test files under {escalation_root}"
+    assert sentinel_files <= escalation_files, (
+        "the sentinel tree must be a subset of what the escalation runs"
+    )
+    share = len(sentinel_files) / len(escalation_files)
+    assert share >= _SENTINEL_COVERAGE_FLOOR, (
+        f"{_SELECTOR_WHOLE_TREE_SENTINEL} now covers only {share:.1%} "
+        f"({len(sentinel_files)}/{len(escalation_files)}) of the escalation "
+        f"target, below the {_SENTINEL_COVERAGE_FLOOR:.0%} floor. It is no "
+        "longer whole-suite-equivalent, so listing it in "
+        "HEAVY_SELECTION_TARGETS has become overreach -- drop it from the set "
+        "rather than lowering this floor."
+    )
+
+
+def test_predicate_flags_the_selector_whole_tree_sentinel() -> None:
+    """THE ROUND-1 INERTNESS, at predicate grain.
+
+    RED against the round-1 hook: `selection_is_whole_suite "tests/"
+    "tests/unit/"` returns false, because `tests/unit/` is a descendant of the
+    target and the predicate only matches the target itself or an ancestor.
+    """
+    assert _predicate_says_whole_suite(
+        _HEAVY_SELECTION_TARGETS, _SELECTOR_WHOLE_TREE_SENTINEL
+    ), (
+        "the selector's fail-closed whole-tree sentinel is the heaviest "
+        "is_full_suite=False selection this repo produces; it must be treated "
+        "as heavyweight"
+    )
+    assert _predicate_says_whole_suite(
+        _HEAVY_SELECTION_TARGETS, _SELECTOR_WHOLE_TREE_SENTINEL.rstrip("/")
+    ), "a trailing-slash-less sentinel must normalize to the same target"
+    assert _predicate_says_whole_suite(
+        _HEAVY_SELECTION_TARGETS, _NARROW_SELECTION, _SELECTOR_WHOLE_TREE_SENTINEL
+    ), "one heavyweight path anywhere in the selection makes it heavyweight"
+    # The round-1 target set is preserved, not replaced.
+    assert _predicate_says_whole_suite(_HEAVY_SELECTION_TARGETS, _FULL_SUITE_TARGET)
+
+
+def test_predicate_still_allows_narrowings_under_the_widened_target_set() -> None:
+    """Anti-overreach pin against the WIDENED set.
+
+    Adding a second, deeper heavy target is the change most likely to start
+    swallowing genuine narrowings. `tests/scripts/` (10 files) and
+    `tests/unit/scripts/` (a strict descendant of the sentinel) must both stay
+    ALLOWED, or the guard becomes a blanket push block.
+    """
+    assert not _predicate_says_whole_suite(_HEAVY_SELECTION_TARGETS, _NARROW_SELECTION)
+    assert not _predicate_says_whole_suite(
+        _HEAVY_SELECTION_TARGETS, _NARROW_SELECTION_UNDER_SENTINEL
+    )
+    assert not _predicate_says_whole_suite(
+        _HEAVY_SELECTION_TARGETS, f"{_NARROW_SELECTION_UNDER_SENTINEL}test_thing.py"
+    )
+    assert not _predicate_says_whole_suite(
+        _HEAVY_SELECTION_TARGETS, "tests/unit/models/", "tests/unit/cli/"
+    ), "several real subdirectories are still a proper narrowing"
+    assert not _predicate_says_whole_suite(_HEAVY_SELECTION_TARGETS)
+
+
+def test_guard_refuses_selector_whole_tree_sentinel_when_flag_is_false(
+    tmp_path: Path,
+) -> None:
+    """THE OMN-15408 ROUND-2 REGRESSION, end-to-end through the real hook.
+
+    `is_full_suite=False` + `selected_paths=["tests/unit/"]` on a non-`.200`
+    host is the shape the SHIPPED round-1 hook allowed through to pytest at
+    merged commit c5b0a9e1 (verified against the real selector on that commit's
+    own diff, not stubbed). RED against round 1; GREEN after.
+    """
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=False,
+        selected_paths=[_SELECTOR_WHOLE_TREE_SENTINEL],
+    )
+    assert result.returncode != 0, (
+        "expected the host guard to refuse the selector's fail-closed "
+        "whole-tree sentinel selection even though is_full_suite=False; got "
+        f"exit {result.returncode}. "
+        f"stdout={result.stdout!r} stderr={result.stderr!r}"
+    )
+    assert "not the designated .200 build host" in result.stderr, (
+        f"expected the refusal message in stderr, got: {result.stderr!r}"
+    )
+    assert "STUB-PYTEST-INVOKED" not in result.stdout, (
+        "the guard must refuse BEFORE pytest is invoked -- found a pytest "
+        f"invocation in stdout: {result.stdout!r}"
+    )
+
+
+def test_guard_allows_a_narrow_selection_under_the_sentinel_on_a_local_host(
+    tmp_path: Path,
+) -> None:
+    """Anti-overreach pin, end-to-end, for the newly-added heavy target.
+
+    `tests/unit/scripts/` sits UNDER the sentinel. It must still run locally --
+    the widened target set must catch the sentinel itself, not everything
+    beneath it.
+    """
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=False,
+        selected_paths=[_NARROW_SELECTION_UNDER_SENTINEL],
+    )
+    assert result.returncode == 0, (
+        "expected a narrow selection under the sentinel to be allowed on a "
+        f"non-.200 host; got exit {result.returncode}. "
+        f"stdout={result.stdout!r} stderr={result.stderr!r}"
+    )
+    assert "not the designated .200 build host" not in result.stderr, (
+        f"the guard must NOT refuse a proper narrowing; stderr: {result.stderr!r}"
+    )
+    assert "STUB-PYTEST-INVOKED" in result.stdout, (
+        f"expected the narrow selection to reach pytest; stdout: {result.stdout!r}"
     )
 
 
