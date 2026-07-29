@@ -44,7 +44,7 @@ import yaml
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Sentinel values backfilled into legacy receipts. ``verifier`` is the
 # only one with semantic weight — it triggers the ``verifier == runner``

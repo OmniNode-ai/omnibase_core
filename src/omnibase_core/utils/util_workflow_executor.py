@@ -118,12 +118,12 @@ from omnibase_core.enums.enum_workflow_execution import (
 )
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.orchestrator.payloads import create_action_payload
 from omnibase_core.models.workflow.execution.model_declarative_workflow_result import (

@@ -69,6 +69,7 @@ PipelineDataType = dict[str, object] | BaseModel | object
 
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.compute.model_compute_execution_context import (
     ModelComputeExecutionContext,
 )
@@ -87,7 +88,6 @@ from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step imp
 from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
     ModelComputeSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_compute_transformations import execute_transformation
 
 

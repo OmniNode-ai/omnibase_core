@@ -51,11 +51,11 @@ from uuid import uuid4
 from omnibase_core.crypto.crypto_blake3_hasher import hash_bytes
 from omnibase_core.enums.enum_resolution_failure_code import EnumResolutionFailureCode
 from omnibase_core.enums.enum_resolution_tier import EnumResolutionTier
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.bindings.model_resolution_result import ModelResolutionResult
 from omnibase_core.models.capabilities.model_capability_dependency import (
     ModelCapabilityDependency,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.routing.model_capability_token import ModelCapabilityToken
 from omnibase_core.models.routing.model_hop_constraints import ModelHopConstraints
 from omnibase_core.models.routing.model_policy_bundle import ModelPolicyBundle

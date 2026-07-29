@@ -53,6 +53,7 @@ from omnibase_core.contracts.contract_hash_registry import (
     compute_contract_fingerprint,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_topic_migration_contract import (
     ModelTopicMigrationContract,
 )
@@ -60,7 +61,6 @@ from omnibase_core.models.contracts.model_topic_schema_binding import (
     ModelTopicSchemaBinding,
     detect_breaking_delta,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_breaking_schema_finding import (
     ModelBreakingSchemaFinding,
 )

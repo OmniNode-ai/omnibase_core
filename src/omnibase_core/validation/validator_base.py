@@ -83,6 +83,7 @@ from omnibase_core.errors.exception_groups import (
     PYDANTIC_MODEL_ERRORS,
     YAML_PARSING_ERRORS,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -91,7 +92,6 @@ from omnibase_core.models.common.model_validation_result import ModelValidationR
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_registry import (
     ModelAntipatternRegistry,
 )

@@ -54,6 +54,7 @@ from omnibase_core.enums.enum_check_status import EnumCheckStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_overall_status import EnumOverallStatus
 from omnibase_core.enums.enum_verify_tier import EnumVerifyTier
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
 from omnibase_core.models.contract_verify_replay.model_verify_check_result import (
     ModelVerifyCheckResult,
@@ -64,7 +65,6 @@ from omnibase_core.models.contract_verify_replay.model_verify_replay_input impor
 from omnibase_core.models.contract_verify_replay.model_verify_replay_output import (
     ModelVerifyReplayOutput,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.merge.model_overlay_stack_entry import ModelOverlayStackEntry
 from omnibase_core.package.model_oncp_manifest import ModelOncpManifest
 from omnibase_core.package.service_oncp_reader import OncpReader

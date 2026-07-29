@@ -32,8 +32,8 @@ from typing import Any
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.runtime.harness.model_harness_result import ModelHarnessResult
 from omnibase_core.protocols.runtime.protocol_message_handler import (

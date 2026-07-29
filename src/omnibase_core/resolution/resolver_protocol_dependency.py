@@ -44,11 +44,11 @@ from types import ModuleType
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
     ModelProtocolDependency,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Rate limiting for optional missing dependency warnings
 _OPTIONAL_WARNING_INTERVAL_MS = 60_000  # 1 minute

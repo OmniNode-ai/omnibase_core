@@ -27,7 +27,7 @@ Security:
 from typing import Final
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Supported operators for FSM condition expressions
 # These correspond to operators used in fsm_executor._evaluate_single_condition()

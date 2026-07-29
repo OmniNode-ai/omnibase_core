@@ -17,12 +17,12 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.enums.enum_transition_type import EnumTransitionType
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.models.core.model_generic_contract import ModelGenericContract
 from omnibase_core.models.core.model_state_transition import ModelStateTransition
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_default_output_state import (
     TypedDictDefaultOutputState,

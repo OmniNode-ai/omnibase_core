@@ -32,8 +32,8 @@ from omnibase_core.constants.constants_workflow import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.validator_reserved_enum import validate_execution_mode
 from omnibase_core.validation.validator_workflow_graph import WorkflowValidator
 

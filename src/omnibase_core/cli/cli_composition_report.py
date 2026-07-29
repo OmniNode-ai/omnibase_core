@@ -19,7 +19,7 @@ from typing import Literal, assert_never, cast
 import click
 from pydantic import ValidationError
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.manifest.model_execution_manifest import (
     ModelExecutionManifest,
 )

@@ -24,7 +24,7 @@ import yaml
 from pydantic import ValidationError
 
 from omnibase_core.enums import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.invariant.model_invariant_set import ModelInvariantSet
 
 logger = logging.getLogger(__name__)

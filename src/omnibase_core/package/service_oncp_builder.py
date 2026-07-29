@@ -31,8 +31,8 @@ import yaml
 import omnibase_core
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_overlay_scope import EnumOverlayScope
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.package.model_oncp_invariant_entry import ModelOncpInvariantEntry
 from omnibase_core.package.model_oncp_manifest import (
     MANIFEST_VERSION,

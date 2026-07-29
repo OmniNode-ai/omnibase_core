@@ -15,6 +15,7 @@ import click
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.gate import (
     compute_config_hash,
     compute_pr_diff_hash,
@@ -22,7 +23,6 @@ from omnibase_core.gate import (
     discover_omnigate_config,
     load_omnigate_config,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 _CONFIG_NAME = ".omnigate.yaml"
 _HOOK_NAME = "pre-push"

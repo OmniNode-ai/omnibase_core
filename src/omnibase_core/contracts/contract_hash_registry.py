@@ -58,6 +58,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_contract_fingerprint import (
     ModelContractFingerprint,
 )
@@ -70,7 +71,6 @@ from omnibase_core.models.contracts.model_drift_result import (
     DriftType,
     ModelDriftResult,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 def _convert_to_json_serializable(value: object) -> object:

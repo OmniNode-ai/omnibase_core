@@ -27,8 +27,8 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import emit_log_event_sync
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_validation_result import (

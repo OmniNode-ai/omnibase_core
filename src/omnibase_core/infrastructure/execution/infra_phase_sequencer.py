@@ -44,6 +44,7 @@ from datetime import UTC, datetime
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_execution_phase import EnumHandlerExecutionPhase
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_execution_ordering_policy import (
     ModelExecutionOrderingPolicy,
 )
@@ -51,7 +52,6 @@ from omnibase_core.models.contracts.model_execution_profile import (
     DEFAULT_EXECUTION_PHASES,
     ModelExecutionProfile,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.execution.model_execution_plan import ModelExecutionPlan
 from omnibase_core.models.execution.model_phase_step import ModelPhaseStep
 

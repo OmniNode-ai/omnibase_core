@@ -18,7 +18,7 @@ from typing import TypeVar, cast
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.types import JsonSerializable
 from omnibase_core.types.typed_dict_mixin_types import TypedDictLazyCacheStats
 
