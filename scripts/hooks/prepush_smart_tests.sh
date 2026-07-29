@@ -104,35 +104,70 @@ guard_full_suite_host() {
 # a flag.
 #
 # SEAM -- what "heavyweight selection" means, exactly: the selection is
-# heavyweight when the paths pytest is about to be handed COVER THE ENTIRE
-# full-suite target this hook would run on a fail-closed escalation
-# (`$FULL_SUITE_TARGET`, defined next to the pytest invocation below so the
-# predicate and the actual run can never drift apart). Concretely: some
-# selected path is `$FULL_SUITE_TARGET` itself or a directory ANCESTOR of it.
-# That is "the selection failed to be a proper narrowing" expressed against the
-# selector's own output -- NOT a parallel cost model, no test counting, no
-# timing heuristic, nothing this hook does not already parse.
+# heavyweight when the paths pytest is about to be handed COVER THE ENTIRETY of
+# any HEAVY TARGET (`$HEAVY_SELECTION_TARGETS`, defined next to the pytest
+# invocation below so the predicate and the actual run can never drift apart).
+# Concretely: some selected path is a heavy target itself or a directory
+# ANCESTOR of one. Expressed against the selector's own output -- NOT a parallel
+# cost model, no test counting, no timing heuristic, nothing this hook does not
+# already parse.
 #
-# A genuine narrow selection (`tests/unit/scripts/`, a single test module) is
-# strictly below the target and stays runnable locally -- the guard must not
-# brick every push from a developer's machine, only the ones that are the
-# full-suite run wearing a different label.
+# There are exactly TWO heavy targets, and the second one is the OMN-15408
+# remediation. Round 1 measured the selection against `$FULL_SUITE_TARGET`
+# (`tests/`) alone, which made the fix INERT for this repo's own dominant
+# heavyweight shape:
 #
-# Keep this function self-contained (target passed in, no globals): it is
+#   * `$FULL_SUITE_TARGET` (`tests/`) -- what the fail-closed escalation runs.
+#     Reached when the selector sets `is_full_suite=True` (guarded on the flag
+#     branch too) or emits `selected_paths=["tests/"]`.
+#   * `$SELECTOR_WHOLE_TREE_SENTINEL` (`tests/unit/`) -- the selector's OWN
+#     fail-closed "I could not narrow this" answer. It is a DESCENDANT of
+#     `tests/`, never an ancestor, so a target set of `tests/` alone can never
+#     trip on it. Measured on host `omnibook` 2026-07-29 against the SHIPPED
+#     round-1 hook at merged commit c5b0a9e1, real selector, on round-1's own
+#     two-file diff (`PREPUSH_BASE_REF=c5b0a9e1^`):
+#     `selection: is_full_suite=False reason=None paths=[ tests/unit/ ]` ->
+#     `running impacted subset` -> guard NEVER invoked, exit 0, push allowed.
+#     That sentinel is 1452 of the 1520 test files the escalation itself would
+#     run (95.5%; `tests/` minus the always-ignored `tests/integration`), and
+#     the selector's own cost model shards it 37 ways versus 40 for the true
+#     full suite. It is the full-suite run wearing a different label, not a
+#     narrowing in any practical sense.
+#
+# This is deliberately NOT "any large selection" -- the sentinel is heavy
+# because it is the selector's declared no-narrowing-achieved answer, a signal
+# the selector already emits. A genuine narrow selection (`tests/scripts/`,
+# `tests/unit/scripts/`, a single test module) is strictly below every heavy
+# target and stays runnable locally -- the guard must not brick every push from
+# a developer's machine, only the ones that are the full-suite run relabelled.
+# Repos whose fail-closed sentinel is a genuine minority of their suite
+# (omnimarket: `tests/unit/` is 411 of 1251 files, 33%) correctly do NOT list it
+# as a heavy target; a heavy-target list is a per-repo measured claim, not a
+# constant to copy.
+#
+# Keep this function self-contained (targets passed in, no globals): it is
 # extracted and EXECUTED directly by
 # tests/scripts/test_prepush_hook_host_identity_guard.py.
 selection_is_whole_suite() {
-  local target normalized_target p normalized
-  target="$1"
+  # $1 = space-separated heavy-target list; remaining args = selected paths.
+  # Word-splitting $1 is INTENTIONAL (the target list is a hook-declared
+  # constant, never user input, and pytest directory targets contain no
+  # whitespace). A single target still behaves exactly as it did in round 1.
+  local targets normalized_target p normalized t
+  targets="$1"
   shift
-  [ -n "$target" ] || return 1
-  normalized_target="${target%/}/"
-  for p in "$@"; do
-    [ -n "$p" ] || continue
-    normalized="${p%/}/"
-    case "$normalized_target" in
-      "$normalized"*) return 0 ;;
-    esac
+  [ -n "$targets" ] || return 1
+  # shellcheck disable=SC2086
+  for t in $targets; do
+    [ -n "$t" ] || continue
+    normalized_target="${t%/}/"
+    for p in "$@"; do
+      [ -n "$p" ] || continue
+      normalized="${p%/}/"
+      case "$normalized_target" in
+        "$normalized"*) return 0 ;;
+      esac
+    done
   done
   return 1
 }
@@ -259,6 +294,22 @@ PREPUSH_TIMEOUT_FLAGS="-n4 --dist=loadgroup --timeout=60 --timeout-method=thread
 # escalation target automatically moves the guard predicate with it.
 FULL_SUITE_TARGET="tests/"
 
+# The governed selector's OWN fail-closed whole-tree sentinel -- the single-entry
+# answer it emits to mean "no narrowing achieved" (with `is_full_suite=False`,
+# which is exactly why round 1 missed it). Single-sourced from the selector:
+# `scripts/ci/test_selection_closure.py::TEST_UNIT_PREFIX`, which
+# `compute_closure_selection` returns as `selected_files=[TEST_UNIT_PREFIX]` on
+# every ambiguity, and which `scripts/ci/detect_test_paths.py` passes straight
+# through. tests/scripts/test_prepush_hook_host_identity_guard.py asserts this
+# literal still equals that constant AND that it still covers a supermajority of
+# the escalation target, so neither half of the claim can drift silently.
+SELECTOR_WHOLE_TREE_SENTINEL="tests/unit/"
+
+# The heavy-target set the selection is measured against. Space-separated; see
+# the SEAM comment on `selection_is_whole_suite` above for why there are two and
+# what each one is.
+HEAVY_SELECTION_TARGETS="${FULL_SUITE_TARGET} ${SELECTOR_WHOLE_TREE_SENTINEL}"
+
 if [ "$IS_FULL" = "True" ] || [ "$IS_FULL" = "true" ]; then
   guard_full_suite_host
   log "running FULL suite (fail-closed escalation): uv run pytest ${FULL_SUITE_TARGET} --ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
@@ -266,10 +317,10 @@ if [ "$IS_FULL" = "True" ] || [ "$IS_FULL" = "true" ]; then
   uv run pytest "${FULL_SUITE_TARGET}" --ignore=tests/integration --tb=short ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-} || RC=$?
 elif [ "${#PATHS[@]}" -gt 0 ]; then
   # OMN-15408: guard on the SELECTED WORK, not the is_full_suite flag. A
-  # selection that covers the whole full-suite target is the heavy run under
-  # another name and must be routed to .200 exactly as the flagged escalation is.
-  if selection_is_whole_suite "$FULL_SUITE_TARGET" "${PATHS[@]}"; then
-    guard_full_suite_host "whole-suite-equivalent impacted selection (is_full_suite=${IS_FULL}, selected paths [ ${PATHS_STR}] cover the entire '${FULL_SUITE_TARGET}' escalation target)"
+  # selection that covers a whole heavy target is the heavy run under another
+  # name and must be routed to .200 exactly as the flagged escalation is.
+  if selection_is_whole_suite "$HEAVY_SELECTION_TARGETS" "${PATHS[@]}"; then
+    guard_full_suite_host "whole-suite-equivalent impacted selection (is_full_suite=${IS_FULL}, selected paths [ ${PATHS_STR}] cover an entire heavyweight target [ ${HEAVY_SELECTION_TARGETS} ])"
   fi
   log "running impacted subset: uv run pytest ${PATHS_STR}--ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
   # shellcheck disable=SC2086
