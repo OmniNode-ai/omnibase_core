@@ -9,6 +9,9 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
+from omnibase_core.enums.ticket.enum_dod_evidence_execution_scope import (
+    EnumDodEvidenceExecutionScope,
+)
 from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
     ModelDodEvidenceCheck,
 )
@@ -17,6 +20,36 @@ from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDod
 
 @pytest.mark.unit
 class TestModelContractDodItemExtendedChecks:
+    def test_execution_scope_defaults_to_hosted_and_local(self) -> None:
+        item = ModelContractDodItem(
+            id="dod-default-scope",
+            description="Default evidence is evaluated by both consumers",
+        )
+
+        assert item.execution_scope is EnumDodEvidenceExecutionScope.HOSTED_AND_LOCAL
+
+    def test_local_done_gate_execution_scope_round_trips(self) -> None:
+        item = ModelContractDodItem.model_validate(
+            {
+                "id": "dod-private-runtime-proof",
+                "description": "Private runtime evidence",
+                "execution_scope": "local_done_gate",
+            }
+        )
+
+        assert item.execution_scope is EnumDodEvidenceExecutionScope.LOCAL_DONE_GATE
+        assert item.model_dump(mode="json")["execution_scope"] == "local_done_gate"
+
+    def test_unknown_execution_scope_is_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelContractDodItem.model_validate(
+                {
+                    "id": "dod-invalid-scope",
+                    "description": "Unknown consumers must fail closed",
+                    "execution_scope": "hosted_maybe",
+                }
+            )
+
     def test_grep_check_type_with_dict_check_value_validates(self) -> None:
         check = ModelDodEvidenceCheck(
             check_type=EnumDodCheckType.GREP,
