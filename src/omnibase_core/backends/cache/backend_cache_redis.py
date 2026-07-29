@@ -74,7 +74,7 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 
 from omnibase_core.enums import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Type-only imports for static analysis (ADR-005 compliant)
 # These are only evaluated by type checkers, not at runtime

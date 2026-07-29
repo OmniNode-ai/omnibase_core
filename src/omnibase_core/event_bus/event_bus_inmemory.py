@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_consumer_group_purpose import EnumConsumerGroupPurpose
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_event_bus_readiness import (
     ModelEventBusReadiness,
 )

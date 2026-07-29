@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 @dataclass(frozen=True)

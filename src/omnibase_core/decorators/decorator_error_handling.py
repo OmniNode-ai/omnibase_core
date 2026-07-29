@@ -24,7 +24,7 @@ R = TypeVar("R")
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 def _is_pydantic_validation_error_structure(errors_result: object) -> bool:

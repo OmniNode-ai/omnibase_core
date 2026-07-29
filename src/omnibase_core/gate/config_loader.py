@@ -12,7 +12,7 @@ from typing import NoReturn
 import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.gate import ModelOmniGateConfig
 
 DEFAULT_OMNIGATE_CONFIG_NAMES: tuple[str, ...] = (

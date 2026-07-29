@@ -37,7 +37,7 @@ from typing import TYPE_CHECKING
 
 from omnibase_core.crypto.crypto_ed25519_signer import verify_base64
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_cli_contribution import (

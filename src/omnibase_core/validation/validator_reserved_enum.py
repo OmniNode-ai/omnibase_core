@@ -39,7 +39,7 @@ Reserved Fields Global Rule (v1.0.4 Normative):
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 __all__ = [
     "validate_execution_mode",

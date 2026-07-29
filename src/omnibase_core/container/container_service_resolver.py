@@ -14,9 +14,9 @@ from typing import Any, TypeVar, cast
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.container.model_service import ModelService
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 T = TypeVar("T")
 

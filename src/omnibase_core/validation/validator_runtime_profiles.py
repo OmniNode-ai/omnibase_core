@@ -66,11 +66,11 @@ from omnibase_core.constants.constants_runtime_profiles import (
     REGISTERED_RUNTIME_PROFILES,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.validator_base import ValidatorBase
 from omnibase_core.validation.validator_topic_suffix import TOPIC_PREFIX
 

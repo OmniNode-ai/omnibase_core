@@ -17,8 +17,8 @@ import click
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import emit_log_event_sync
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.validation.validator_utils import ModelValidationResult
@@ -527,7 +527,7 @@ def _check_core_imports() -> tuple[bool, str]:
     """
     try:
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         # Verify we can use the imports
         _ = EnumCoreErrorCode.VALIDATION_ERROR
@@ -567,7 +567,7 @@ def _check_error_handling() -> tuple[bool, str]:
     """
     try:
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         # Create and catch a test error
         try:

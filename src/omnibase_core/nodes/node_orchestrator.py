@@ -20,6 +20,7 @@ from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_handler_routing import MixinHandlerRouting
@@ -29,7 +30,6 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator import ModelOrchestratorOutput
 from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,

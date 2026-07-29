@@ -43,6 +43,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
 from omnibase_core.enums.enum_node_archetype import EnumNodeArchetype
 from omnibase_core.enums.enum_overlay_scope import SCOPE_ORDER
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.merge.merge_rules import (
     apply_list_operations,
     merge_scalar,
@@ -52,7 +53,6 @@ from omnibase_core.models.contracts.model_contract_capability_dependency import 
 )
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.merge.model_merge_conflict import ModelMergeConflict
 from omnibase_core.models.merge.model_overlay_ref import ModelOverlayRef
 from omnibase_core.models.merge.model_overlay_stack_entry import ModelOverlayStackEntry

@@ -75,6 +75,7 @@ if TYPE_CHECKING:
 from omnibase_core.enums.enum_contract_diff_change_type import (
     EnumContractDiffChangeType,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.diff.model_contract_diff import ModelContractDiff
 from omnibase_core.models.contracts.diff.model_contract_field_diff import (
@@ -88,7 +89,6 @@ from omnibase_core.models.contracts.diff.model_diff_configuration import (
 )
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_profile_reference import ModelProfileReference
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Extended identity keys for contract diffing
 # Maps field paths (or final path components) to the identity key field

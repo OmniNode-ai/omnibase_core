@@ -104,6 +104,7 @@ from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
@@ -125,7 +126,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context i
 )
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_effect_operation_config import (
     ModelEffectOperationConfig,
 )

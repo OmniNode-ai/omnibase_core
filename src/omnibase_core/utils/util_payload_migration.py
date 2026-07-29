@@ -45,7 +45,7 @@ from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 # This migration utility handles untyped dict input from legacy code
 LegacyDictPayload = dict[str, object]
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.payloads.model_event_payload_union import (
     ModelEventPayloadUnion,
     ModelNodeGraphReadyEvent,

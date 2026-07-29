@@ -56,7 +56,7 @@ from datetime import datetime
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.trace import ModelExecutionTrace
 from omnibase_core.models.trace_query import ModelTraceQuery, ModelTraceSummary
 from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore

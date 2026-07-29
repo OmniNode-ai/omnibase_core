@@ -52,9 +52,9 @@ from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.diff import ModelContractDiff
 from omnibase_core.models.diff.model_diff_query import ModelDiffQuery
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
 from omnibase_core.rendering.renderer_diff import RendererDiff
 

@@ -53,6 +53,7 @@ from typing import ClassVar
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
@@ -60,7 +61,6 @@ from omnibase_core.models.common.model_validation_metadata import (
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.validator_base import ValidatorBase
 from omnibase_core.validation.validator_utils import ModelValidationResult
 

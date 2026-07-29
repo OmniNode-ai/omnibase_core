@@ -54,6 +54,8 @@ import re
 from re import Pattern
 from typing import TYPE_CHECKING
 
+# dispatch-surface-test-ok: OMN-14965 mechanical import-path repoint only (models.errors -> errors); no handler routing or live dispatch behavior changed.
+
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
         ModelHandlerRoutingSubcontract,
@@ -69,10 +71,10 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_handler_routing_strategy import EnumHandlerRoutingStrategy
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = ["MixinHandlerRouting"]
 

@@ -22,9 +22,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Use ModelSchemaValue directly for ONEX compliance
 

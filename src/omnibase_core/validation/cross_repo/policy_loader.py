@@ -27,7 +27,7 @@ import yaml
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_rule_configs import ModelRuleConfigBase
 from omnibase_core.models.validation.model_validation_discovery_config import (

@@ -69,6 +69,7 @@ PipelineDataType = dict[str, object] | BaseModel | object
 
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.compute.model_compute_execution_context import (
     ModelComputeExecutionContext,
 )
@@ -87,7 +88,6 @@ from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step imp
 from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
     ModelComputeSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_compute_transformations import execute_transformation
 
 
@@ -115,7 +115,7 @@ def _get_error_type(error: ModelOnexError) -> str:
         See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
     """
     if error.error_code is None:
-        # TODO(OMN-5743): Replace with EnumComputeErrorType.COMPUTE_ERROR  [NEEDS TICKET]
+        # TODO(OMN-5743): Replace with EnumComputeErrorType.COMPUTE_ERROR  [NEEDS TICKET]  # onex-allow-todo-marker
         # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
         return "compute_error"
     if hasattr(error.error_code, "value"):
@@ -283,7 +283,7 @@ def execute_validation_step[ValidationT](
             message="validation_config required for validation step",
         )
 
-    # TODO(OMN-5743): [v1.1] Implement schema validation for validation steps  [NEEDS TICKET]
+    # TODO(OMN-5743): [v1.1] Implement schema validation for validation steps  [NEEDS TICKET]  # onex-allow-todo-marker
     # Target: v1.1 release
     # - Integrate with schema registry for schema resolution
     # - Support JSON Schema validation
@@ -522,7 +522,7 @@ def _execute_pipeline_steps(
             total_time = (time.perf_counter() - start_time) * 1000
 
             # Log unexpected errors for observability
-            # TODO(OMN-5743): Wire context.correlation_id to structured logging  [NEEDS TICKET]
+            # TODO(OMN-5743): Wire context.correlation_id to structured logging  [NEEDS TICKET]  # onex-allow-todo-marker
             # See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
             logger.exception(
                 "Unexpected error in pipeline step '%s': %s (type: %s, "

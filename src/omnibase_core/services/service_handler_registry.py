@@ -45,7 +45,7 @@ from omnibase_core.decorators.decorator_error_handling import standard_error_han
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_execution_shape_validation import (
     ModelExecutionShapeValidation,
 )
