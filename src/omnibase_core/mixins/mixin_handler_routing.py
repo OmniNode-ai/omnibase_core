@@ -54,6 +54,8 @@ import re
 from re import Pattern
 from typing import TYPE_CHECKING
 
+# dispatch-surface-test-ok: OMN-14965 mechanical import-path repoint only (models.errors -> errors); no handler routing or live dispatch behavior changed.
+
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
         ModelHandlerRoutingSubcontract,

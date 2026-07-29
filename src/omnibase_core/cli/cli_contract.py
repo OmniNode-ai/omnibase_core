@@ -404,7 +404,11 @@ def _generate_patch_template(
     # Add name and version fields unless override_only mode
     if not override_only:
         contract_name = name if name else "my_contract_name"
-        name_comment = "" if name else "  # TODO(OMN-5746): Change this  [NEEDS TICKET]"
+        name_comment = (
+            ""
+            if name
+            else "  # TODO(OMN-5746): Change this  [NEEDS TICKET]  # onex-allow-todo-marker"
+        )
         lines.extend(
             [
                 "# Required for new contracts:",
@@ -560,14 +564,14 @@ def _get_runtime_version() -> str:
 
         return version("omnibase_core")
     except (ImportError, PackageNotFoundError):
-        try:
+        try:  # fallback-ok: version getter must never crash
             from omnibase_core import __version__
 
             return __version__
         except (
             AttributeError,
             ImportError,
-        ):  # fallback-ok: version getter must never crash
+        ):
             return "unknown"
 
 

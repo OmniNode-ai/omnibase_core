@@ -190,8 +190,8 @@ def validate_no_manual_yaml(directory: Path) -> list[str]:
                 # Look for manual creation indicators
                 manual_indicators = [
                     "# Manual",
-                    "# TODO",
-                    "# FIXME",
+                    "# TODO",  # onex-allow-todo-marker
+                    "# FIXME",  # onex-allow-todo-marker
                     "# NOTE:",
                     "# manually created",
                 ]
