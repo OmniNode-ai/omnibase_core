@@ -15,13 +15,18 @@ Invariants:
 from __future__ import annotations
 
 import io
+import re
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_database_schema_domain import EnumDatabaseSchemaDomain
 from omnibase_core.enums.enum_deployment_mode import EnumDeploymentMode
+from omnibase_core.models.core.model_deployment_topology_database import (
+    ModelDeploymentTopologyDatabase,
+)
 from omnibase_core.models.core.model_deployment_topology_local_config import (
     ModelDeploymentTopologyLocalConfig,
 )
@@ -30,7 +35,14 @@ from omnibase_core.models.core.model_deployment_topology_service import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
+if TYPE_CHECKING:
+    from omnibase_core.models.contracts.subcontracts.model_db_table_declaration import (
+        ModelDbTableDeclaration,
+    )
+
 __all__ = ["ModelDeploymentTopology"]
+
+_LOGICAL_DATABASE_REFERENCE_PATTERN = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
 def _sort_dict_recursively(obj: Any) -> Any:
@@ -51,7 +63,7 @@ class ModelDeploymentTopology(BaseModel):
     to activate together.
     """
 
-    model_config = {"frozen": True, "extra": "forbid"}
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # string-version-ok: YAML-deserialization boundary; topology files on disk carry plain strings
     schema_version: str = Field(
@@ -61,6 +73,13 @@ class ModelDeploymentTopology(BaseModel):
         default_factory=dict,
         description="Map of service name to its deployment service config.",
     )
+    databases: dict[str, ModelDeploymentTopologyDatabase] = Field(
+        default_factory=dict,
+        description=(
+            "Logical application-database resources. Checked-in environment topology "
+            "instances populate this map; host-local topology files are projections."
+        ),
+    )
     presets: dict[str, list[str]] = Field(
         default_factory=dict,
         description="Named presets mapping preset name to list of service names.",
@@ -69,6 +88,34 @@ class ModelDeploymentTopology(BaseModel):
         default=None,
         description="Currently active preset name (or None for no active preset).",
     )
+
+    @model_validator(mode="after")
+    def validate_database_references(self) -> ModelDeploymentTopology:
+        """Ensure nested consumer bindings resolve to their containing database."""
+        for database_ref, database in self.databases.items():
+            if (
+                len(database_ref) > 63
+                or _LOGICAL_DATABASE_REFERENCE_PATTERN.fullmatch(database_ref) is None
+            ):
+                # error-ok: Pydantic validators require ValueError to produce ValidationError.
+                raise ValueError(
+                    "databases keys must be lowercase logical SQL identifiers, "
+                    f"got '{database_ref}'"
+                )
+            for consumer, binding in database.bindings.items():
+                if binding.database_ref not in self.databases:
+                    # error-ok: Pydantic validators require ValueError to produce ValidationError.
+                    raise ValueError(
+                        f"Binding '{consumer}' references unknown database_ref "
+                        f"'{binding.database_ref}'"
+                    )
+                if binding.database_ref != database_ref:
+                    # error-ok: Pydantic validators require ValueError to produce ValidationError.
+                    raise ValueError(
+                        f"Binding '{consumer}' database_ref '{binding.database_ref}' "
+                        f"does not match containing database '{database_ref}'"
+                    )
+        return self
 
     # -----------------------------------------------------------------
     # Query helpers
@@ -92,6 +139,31 @@ class ModelDeploymentTopology(BaseModel):
     def services_for_preset(self, preset_name: str) -> list[str]:
         """Return the list of service names for a named preset."""
         return self.presets.get(preset_name, [])
+
+    def schema_domain(
+        self,
+        database_ref: str,
+        schema: str,
+    ) -> EnumDatabaseSchemaDomain:
+        """Resolve the authoritative domain for a logical database/schema pair."""
+        database = self.databases.get(database_ref)
+        if database is None:
+            # error-ok: Public lookup helper reports unresolved contract references.
+            raise ValueError(f"Unknown database_ref '{database_ref}'")
+        schema_config = database.schemas.get(schema)
+        if schema_config is None:
+            # error-ok: Public lookup helper reports unresolved contract references.
+            raise ValueError(
+                f"Unknown schema '{schema}' for database_ref '{database_ref}'"
+            )
+        return schema_config.domain
+
+    def table_domain(
+        self,
+        declaration: ModelDbTableDeclaration,
+    ) -> EnumDatabaseSchemaDomain:
+        """Derive a table domain solely from its topology-owned schema location."""
+        return self.schema_domain(declaration.database_ref, declaration.schema)
 
     # -----------------------------------------------------------------
     # Factory methods
@@ -162,6 +234,7 @@ class ModelDeploymentTopology(BaseModel):
         return cls(
             schema_version=base.schema_version,
             services=new_services,
+            databases=base.databases,
             presets=new_presets,
             active_preset="standard",
         )
@@ -196,6 +269,7 @@ class ModelDeploymentTopology(BaseModel):
         return cls(
             schema_version=base.schema_version,
             services=new_services,
+            databases=base.databases,
             presets=new_presets,
             active_preset="full",
         )

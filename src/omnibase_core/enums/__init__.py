@@ -123,6 +123,9 @@ from .enum_data_classification import EnumDataClassification
 
 # Database engine enum (OMN-1782)
 from .enum_database_engine import EnumDatabaseEngine
+from .enum_database_grant_object_type import EnumDatabaseGrantObjectType
+from .enum_database_privilege import EnumDatabasePrivilege
+from .enum_database_schema_domain import EnumDatabaseSchemaDomain
 
 # Decision type enums (OMN-1235)
 from .enum_decision_type import EnumDecisionType
@@ -712,6 +715,9 @@ __all__ = [
     "EnumAuthType",
     "EnumBackoffStrategy",
     "EnumDatabaseEngine",
+    "EnumDatabaseGrantObjectType",
+    "EnumDatabasePrivilege",
+    "EnumDatabaseSchemaDomain",
     "EnumNotificationMethod",
     # Binding function domain (Operation Bindings DSL - OMN-1410)
     "EnumBindingFunction",
