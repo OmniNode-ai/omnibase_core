@@ -918,7 +918,7 @@ dev = [
     { name = "pytest-testmon", specifier = ">=2.2.0" },
     { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.14.13,<0.16.0" },
+    { name = "ruff", specifier = ">=0.14.13,<0.17.0" },
     { name = "sqlglot", specifier = ">=26.0.0,<31.0.0" },
     { name = "types-psutil", specifier = ">=7.2.1.20260116" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250822" },
