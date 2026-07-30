@@ -750,6 +750,28 @@ class TestModelInferenceIntent:
         assert tenant_intent.tenant_id == "tenant-alpha"
         assert tenant_intent.model_dump()["tenant_id"] == "tenant-alpha"
 
+    def test_inference_attempt_id_is_optional_and_round_trips_as_uuid(self) -> None:
+        correlation_id = uuid.uuid4()
+        default_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=correlation_id,
+        )
+        assert default_intent.inference_attempt_id is None
+
+        attempt_id = uuid.uuid4()
+        parsed_intent = ModelInferenceIntent.model_validate(
+            {
+                **default_intent.model_dump(),
+                "inference_attempt_id": str(attempt_id),
+            }
+        )
+        assert parsed_intent.inference_attempt_id == attempt_id
+        assert isinstance(parsed_intent.inference_attempt_id, uuid.UUID)
+
     def test_response_format_is_typed_and_optional(self) -> None:
         default_intent = ModelInferenceIntent(
             base_url="http://localhost:8000",
@@ -1286,6 +1308,24 @@ class TestModelInferenceResponseData:
             tenant_id="tenant-alpha",
         )
         assert tenant_resp.tenant_id == "tenant-alpha"
+
+    def test_inference_attempt_id_is_optional_and_round_trips_as_uuid(self) -> None:
+        default_resp = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="qwen3-14b",
+        )
+        assert default_resp.inference_attempt_id is None
+
+        attempt_id = uuid.uuid4()
+        parsed_resp = ModelInferenceResponseData.model_validate(
+            {
+                **default_resp.model_dump(),
+                "inference_attempt_id": str(attempt_id),
+            }
+        )
+        assert parsed_resp.inference_attempt_id == attempt_id
+        assert isinstance(parsed_resp.inference_attempt_id, uuid.UUID)
 
 
 @pytest.mark.unit

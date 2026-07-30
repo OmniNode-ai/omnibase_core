@@ -75,6 +75,14 @@ class ModelInferenceIntent(BaseModel):
         description="Backend-owned timeout for the downstream inference call.",
     )
     correlation_id: UUID
+    inference_attempt_id: UUID | None = Field(
+        default=None,
+        description=(
+            "Identity of this specific inference attempt within the delegation "
+            "workflow. The inference effect echoes it on the response so the "
+            "orchestrator can reject a late response from an earlier route."
+        ),
+    )
     api_key_ref: str | None = Field(
         default=None,
         description=(
@@ -170,6 +178,13 @@ class ModelInferenceResponseData(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     correlation_id: UUID = Field(..., description="Workflow correlation ID.")
+    inference_attempt_id: UUID | None = Field(
+        default=None,
+        description=(
+            "Inference-attempt identity echoed from ModelInferenceIntent. "
+            "Optional for backward-compatible parsing of pre-OMN-15542 events."
+        ),
+    )
     content: str = Field(..., description="Generated text from the LLM.")
     model_used: str = Field(
         ..., description="Model identifier that produced the response."
