@@ -65,6 +65,14 @@ class ModelQualityGateInput(BaseModel):
         default=(),
         description="Request-level quality checks enforced by the quality gate.",
     )
+    response_contract: dict[str, object] | None = Field(
+        default=None,
+        description=(
+            "Optional caller-declared JSON Schema used as the structural "
+            "acceptance authority. None lets the consumer resolve the "
+            "task-class default contract."
+        ),
+    )
 
 
 class ModelQualityGateResult(BaseModel):

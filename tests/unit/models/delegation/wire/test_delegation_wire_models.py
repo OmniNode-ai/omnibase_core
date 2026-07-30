@@ -75,6 +75,54 @@ class TestModelDelegationRequest:
         r = self._make()
         assert r.task_type == "test"
 
+    def test_cloud_completion_shaping_defaults_are_backward_compatible(self) -> None:
+        request = self._make()
+
+        assert request.backend_id is None
+        assert request.response_contract is None
+        assert request.system_prompt is None
+        assert request.temperature is None
+        assert request.response_format is None
+
+    def test_cloud_completion_shaping_round_trips_on_canonical_wire(self) -> None:
+        response_contract: dict[str, object] = {
+            "type": "object",
+            "required": ["answer"],
+            "properties": {"answer": {"type": "string"}},
+        }
+        response_format: dict[str, object] = {"type": "json_object"}
+
+        request = self._make(
+            backend_id="cloud-gemini-pro",
+            response_contract=response_contract,
+            system_prompt="Return one JSON object.",
+            temperature=0.2,
+            response_format=response_format,
+        )
+
+        assert request.backend_id == "cloud-gemini-pro"
+        assert request.response_contract == response_contract
+        assert request.system_prompt == "Return one JSON object."
+        assert request.temperature == 0.2
+        assert request.response_format == response_format
+        assert (
+            ModelDelegationRequest.model_validate_json(request.model_dump_json())
+            == request
+        )
+
+    @pytest.mark.parametrize("temperature", [-0.01, 2.01])
+    def test_cloud_completion_shaping_rejects_invalid_temperature(
+        self, temperature: float
+    ) -> None:
+        with pytest.raises(ValidationError):
+            self._make(temperature=temperature)
+
+    def test_cloud_completion_shaping_rejects_unsupported_response_format(
+        self,
+    ) -> None:
+        with pytest.raises(ValidationError, match="unsupported response_format"):
+            self._make(response_format={"type": "json_schema"})
+
     def test_context_pack_hash_defaults_to_off_arm(self) -> None:
         r = self._make()
         assert r.context_pack == ""
@@ -520,6 +568,31 @@ class TestModelInferenceIntent:
         assert tenant_intent.tenant_id == "tenant-alpha"
         assert tenant_intent.model_dump()["tenant_id"] == "tenant-alpha"
 
+    def test_response_format_is_typed_and_optional(self) -> None:
+        default_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+        )
+        assert default_intent.response_format is None
+
+        response_format = {"type": "json_object"}
+        json_intent = default_intent.model_copy(
+            update={"response_format": response_format}
+        )
+        # model_copy(update=...) does not revalidate, so prove the actual wire
+        # parser accepts and round-trips the typed directive.
+        json_intent = ModelInferenceIntent.model_validate(json_intent.model_dump())
+        assert json_intent.response_format == response_format
+
+        with pytest.raises(ValidationError, match="unsupported response_format"):
+            ModelInferenceIntent.model_validate(
+                {**default_intent.model_dump(), "response_format": {"type": "text"}}
+            )
+
 
 @pytest.mark.unit
 class TestModelRoutingTier:
@@ -650,6 +723,21 @@ class TestModelQualityGate:
             llm_response_content="This is the response.",
         )
         assert inp.min_response_length == 60
+        assert inp.response_contract is None
+
+    def test_gate_input_carries_caller_response_contract(self) -> None:
+        response_contract: dict[str, object] = {
+            "type": "object",
+            "required": ["answer"],
+        }
+        inp = ModelQualityGateInput(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            llm_response_content='{"answer": "ok"}',
+            response_contract=response_contract,
+        )
+
+        assert inp.response_contract == response_contract
 
     def test_gate_input_rejects_negative_min_response_length(self) -> None:
         with pytest.raises(ValidationError):
