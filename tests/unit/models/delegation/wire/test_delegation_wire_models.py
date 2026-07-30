@@ -15,14 +15,18 @@ from pydantic import ValidationError
 from omnibase_core.models.delegation.wire import (
     TASK_DELEGATED_TOPIC_V1,
     EnumBudgetAction,
+    EnumDelegationTerminalFailureCause,
+    EnumQualityScoreComparison,
     EnumTierCostType,
     ModelBaselineIntent,
     ModelBifrostDelegationConfig,
     ModelBudgetLimits,
     ModelComplianceLoopResult,
     ModelDelegationBackendConfig,
+    ModelDelegationCompleted,
     ModelDelegationConfig,
     ModelDelegationEventEnvelope,
+    ModelDelegationFailed,
     ModelDelegationFallbackPolicy,
     ModelDelegationRequest,
     ModelDelegationResult,
@@ -329,6 +333,184 @@ class TestModelDelegationResult:
         assert r.escalation_history == ()
         assert r.terminal_failure_reason is None
         assert r.attempts_count == 1
+
+    def test_structured_quality_evidence_defaults_for_release_compatibility(
+        self,
+    ) -> None:
+        """Older producers can omit the additive quality-evidence fields."""
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+
+        assert r.required_quality_bar is None
+        assert r.score_vs_required_bar is None
+        assert r.failed_acceptance_criteria == ()
+
+    def test_structured_quality_evidence_round_trips_exact_live_case(self) -> None:
+        """The 0.867/0.800 canary evidence is machine-readable on the wire."""
+        failure = "TASK_MISMATCH: failed step_by_step_explanation"
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="reasoning",
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com",
+            content="result",
+            quality_passed=False,
+            quality_score=0.867,
+            required_quality_bar=0.800,
+            score_vs_required_bar=EnumQualityScoreComparison.AT_OR_ABOVE_BAR,
+            failed_acceptance_criteria=(failure,),
+            latency_ms=100,
+            fallback_to_claude=True,
+            failure_reason=(
+                "acceptance_criteria_failed: actual_score=0.867 "
+                "required_bar=0.800 score_vs_bar=at_or_above_bar"
+            ),
+        )
+
+        dumped = r.model_dump(mode="json")
+        assert dumped["required_quality_bar"] == pytest.approx(0.800)
+        assert dumped["score_vs_required_bar"] == "at_or_above_bar"
+        assert dumped["failed_acceptance_criteria"] == [failure]
+        assert ModelDelegationResult.model_validate(dumped) == r
+
+    @pytest.mark.parametrize(
+        ("score", "bar", "comparison"),
+        [
+            (0.867, 0.800, EnumQualityScoreComparison.BELOW_BAR),
+            (0.500, 0.800, EnumQualityScoreComparison.AT_OR_ABOVE_BAR),
+        ],
+    )
+    def test_rejects_inconsistent_quality_score_comparison(
+        self,
+        score: float,
+        bar: float,
+        comparison: EnumQualityScoreComparison,
+    ) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="score_vs_required_bar must match quality_score",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=score,
+                required_quality_bar=bar,
+                score_vs_required_bar=comparison,
+                latency_ms=100,
+                fallback_to_claude=True,
+            )
+
+    def test_score_equal_to_bar_is_at_or_above(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="reasoning",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.8,
+            required_quality_bar=0.8,
+            score_vs_required_bar=EnumQualityScoreComparison.AT_OR_ABOVE_BAR,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+
+        assert r.score_vs_required_bar is EnumQualityScoreComparison.AT_OR_ABOVE_BAR
+
+    def test_terminal_failure_cause_defaults_for_release_compatibility(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+
+        assert r.terminal_failure_cause is None
+
+    def test_failed_terminal_round_trips_provider_quota_exhausted_cause(
+        self,
+    ) -> None:
+        r = ModelDelegationFailed(
+            correlation_id=uuid.uuid4(),
+            task_type="refactor",
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+            failure_reason="429 RESOURCE_EXHAUSTED",
+            terminal_failure_reason="no_higher_tier_available",
+            terminal_failure_cause=(
+                EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+            ),
+        )
+
+        dumped = r.model_dump(mode="json")
+        assert dumped["terminal_failure_cause"] == "provider_quota_exhausted"
+        assert ModelDelegationFailed.model_validate(dumped) == r
+
+    def test_completed_terminal_rejects_terminal_failure_cause(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="completed delegation cannot carry terminal_failure_cause",
+        ):
+            ModelDelegationCompleted(
+                correlation_id=uuid.uuid4(),
+                task_type="refactor",
+                model_used="gemini-2.5-flash",
+                endpoint_url="https://generativelanguage.googleapis.com",
+                content="result",
+                # Exercise the terminal-class invariant independently of the
+                # base quality_passed invariant below.
+                quality_passed=False,
+                quality_score=0.0,
+                latency_ms=100,
+                fallback_to_claude=False,
+                terminal_failure_cause=(
+                    EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+                ),
+            )
+
+    def test_quality_passed_base_result_rejects_terminal_failure_cause(self) -> None:
+        """Base-model consumers retain the completed-result invariant."""
+        with pytest.raises(
+            ValidationError,
+            match="completed delegation cannot carry terminal_failure_cause",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="refactor",
+                model_used="gemini-2.5-flash",
+                endpoint_url="https://generativelanguage.googleapis.com",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                latency_ms=100,
+                fallback_to_claude=False,
+                terminal_failure_cause=(
+                    EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+                ),
+            )
 
     def test_context_pack_hash_defaults_to_off_arm(self) -> None:
         r = ModelDelegationResult(
