@@ -201,6 +201,7 @@ class ModelDelegationRequest(BaseModel):
     backend_id: str | None = (
         Field(  # string-id-ok: backend references are named contract slugs, not UUIDs
             default=None,
+            exclude_if=lambda value: value is None,
             min_length=1,
             description=(
                 "Optional exact routing backend reference. None preserves normal "
@@ -210,6 +211,7 @@ class ModelDelegationRequest(BaseModel):
     )
     response_contract: dict[str, object] | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Optional caller-declared JSON Schema used by the quality gate. "
             "It is never sent to the inference provider."
@@ -217,6 +219,7 @@ class ModelDelegationRequest(BaseModel):
     )
     system_prompt: str | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         min_length=1,
         description=(
             "Optional caller system message. None preserves the task-class "
@@ -225,6 +228,7 @@ class ModelDelegationRequest(BaseModel):
     )
     temperature: float | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         ge=0.0,
         le=2.0,
         description=(
@@ -234,6 +238,7 @@ class ModelDelegationRequest(BaseModel):
     )
     response_format: dict[str, object] | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Optional provider response-format directive. Distinct from the "
             "quality-gate response_contract."

@@ -77,6 +77,7 @@ class ModelInferenceIntent(BaseModel):
     correlation_id: UUID
     inference_attempt_id: UUID | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Identity of this specific inference attempt within the delegation "
             "workflow. The inference effect echoes it on the response so the "
@@ -105,6 +106,7 @@ class ModelInferenceIntent(BaseModel):
     )
     response_format: dict[str, object] | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Optional provider response-format directive carried separately "
             "from provider_request_options so callers cannot override core "
@@ -180,6 +182,7 @@ class ModelInferenceResponseData(BaseModel):
     correlation_id: UUID = Field(..., description="Workflow correlation ID.")
     inference_attempt_id: UUID | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Inference-attempt identity echoed from ModelInferenceIntent. "
             "Optional for backward-compatible parsing of pre-OMN-15542 events."

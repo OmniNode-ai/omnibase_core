@@ -87,6 +87,15 @@ class TestModelDelegationRequest:
         assert request.system_prompt is None
         assert request.temperature is None
         assert request.response_format is None
+        dumped = request.model_dump()
+        for field_name in (
+            "backend_id",
+            "response_contract",
+            "system_prompt",
+            "temperature",
+            "response_format",
+        ):
+            assert field_name not in dumped
 
     def test_cloud_completion_shaping_round_trips_on_canonical_wire(self) -> None:
         response_contract: dict[str, object] = {
@@ -109,6 +118,12 @@ class TestModelDelegationRequest:
         assert request.system_prompt == "Return one JSON object."
         assert request.temperature == 0.2
         assert request.response_format == response_format
+        dumped = request.model_dump()
+        assert dumped["backend_id"] == "cloud-gemini-pro"
+        assert dumped["response_contract"] == response_contract
+        assert dumped["system_prompt"] == "Return one JSON object."
+        assert dumped["temperature"] == pytest.approx(0.2)
+        assert dumped["response_format"] == response_format
         assert (
             ModelDelegationRequest.model_validate_json(request.model_dump_json())
             == request
@@ -353,6 +368,10 @@ class TestModelDelegationResult:
         assert r.required_quality_bar is None
         assert r.score_vs_required_bar is None
         assert r.failed_acceptance_criteria == ()
+        dumped = r.model_dump()
+        assert "required_quality_bar" not in dumped
+        assert "score_vs_required_bar" not in dumped
+        assert "failed_acceptance_criteria" not in dumped
 
     def test_structured_quality_evidence_round_trips_exact_live_case(self) -> None:
         """The 0.867/0.800 canary evidence is machine-readable on the wire."""
@@ -444,6 +463,7 @@ class TestModelDelegationResult:
         )
 
         assert r.terminal_failure_cause is None
+        assert "terminal_failure_cause" not in r.model_dump()
 
     def test_failed_terminal_round_trips_provider_quota_exhausted_cause(
         self,
@@ -761,6 +781,7 @@ class TestModelInferenceIntent:
             correlation_id=correlation_id,
         )
         assert default_intent.inference_attempt_id is None
+        assert "inference_attempt_id" not in default_intent.model_dump()
 
         attempt_id = uuid.uuid4()
         parsed_intent = ModelInferenceIntent.model_validate(
@@ -782,6 +803,7 @@ class TestModelInferenceIntent:
             correlation_id=uuid.uuid4(),
         )
         assert default_intent.response_format is None
+        assert "response_format" not in default_intent.model_dump()
 
         response_format = {"type": "json_object"}
         json_intent = default_intent.model_copy(
@@ -928,6 +950,7 @@ class TestModelQualityGate:
         )
         assert inp.min_response_length == 60
         assert inp.response_contract is None
+        assert "response_contract" not in inp.model_dump()
 
     def test_gate_input_carries_caller_response_contract(self) -> None:
         response_contract: dict[str, object] = {
@@ -942,6 +965,7 @@ class TestModelQualityGate:
         )
 
         assert inp.response_contract == response_contract
+        assert inp.model_dump()["response_contract"] == response_contract
 
     def test_gate_input_rejects_negative_min_response_length(self) -> None:
         with pytest.raises(ValidationError):
@@ -1316,6 +1340,7 @@ class TestModelInferenceResponseData:
             model_used="qwen3-14b",
         )
         assert default_resp.inference_attempt_id is None
+        assert "inference_attempt_id" not in default_resp.model_dump()
 
         attempt_id = uuid.uuid4()
         parsed_resp = ModelInferenceResponseData.model_validate(

@@ -67,6 +67,7 @@ class ModelQualityGateInput(BaseModel):
     )
     response_contract: dict[str, object] | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Optional caller-declared JSON Schema used as the structural "
             "acceptance authority. None lets the consumer resolve the "

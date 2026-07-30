@@ -48,6 +48,7 @@ class ModelDelegationResult(BaseModel):
     )
     required_quality_bar: float | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         ge=0.0,
         le=1.0,
         description=(
@@ -57,6 +58,7 @@ class ModelDelegationResult(BaseModel):
     )
     score_vs_required_bar: EnumQualityScoreComparison | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Typed comparison of quality_score to required_quality_bar. None when "
             "no quality bar was evaluated."
@@ -64,6 +66,7 @@ class ModelDelegationResult(BaseModel):
     )
     failed_acceptance_criteria: tuple[str, ...] = Field(
         default=(),
+        exclude_if=lambda value: not value,
         description=(
             "Authoritative quality-gate failure details. Empty when no acceptance "
             "criterion failed or no quality gate ran."
@@ -114,6 +117,7 @@ class ModelDelegationResult(BaseModel):
     )
     terminal_failure_cause: EnumDelegationTerminalFailureCause | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Stable machine-readable cause for a terminal delegation failure. "
             "None for completed results and legacy failure producers."
