@@ -288,7 +288,7 @@ def rebuild_model_references(
         ... )
     """
     from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-    from omnibase_core.models.errors.model_onex_error import ModelOnexError
+    from omnibase_core.errors.model_onex_error import ModelOnexError
 
     # Import Pydantic-specific exceptions for precise error handling
     try:
@@ -659,7 +659,7 @@ def auto_rebuild_on_module_load(  # stub-ok: fully implemented with extensive do
 
     try:
         # Import error handling infrastructure
-        from omnibase_core.models.errors.model_onex_error import (
+        from omnibase_core.errors.model_onex_error import (
             ModelOnexError as _ModelOnexError,
         )
 

@@ -505,3 +505,50 @@ class TestImportPathConsistency:
         assert issubclass(NodeOrchestrator, NodeCoreBase), (
             "NodeOrchestrator should inherit from NodeCoreBase"
         )
+
+
+@pytest.mark.unit
+class TestLegacyModelsErrorsShimIdentity:
+    """OMN-14965: the legacy ``models.errors`` shims must stay object-identical.
+
+    OMN-14965 repointed every in-core cross-subpackage importer from
+    ``omnibase_core.models.errors.*`` to the canonical foundation-layer
+    ``omnibase_core.errors.*``, and fenced the legacy path with the
+    ``core-no-legacy-onex-error-path`` import-linter contract. The shims are
+    deliberately KEPT for cross-repo importers, so the two paths must resolve to
+    the same object -- otherwise an ``except ModelOnexError`` in one repo would
+    silently stop catching an error raised through the other path.
+    """
+
+    def test_model_onex_error_shim_is_canonical_object(self) -> None:
+        """Legacy and canonical ModelOnexError import paths are the same class."""
+        from omnibase_core.errors.model_onex_error import (
+            ModelOnexError as CanonicalModelOnexError,
+        )
+        from omnibase_core.models.errors.model_onex_error import (
+            ModelOnexError as LegacyModelOnexError,
+        )
+
+        assert LegacyModelOnexError is CanonicalModelOnexError
+
+    def test_model_onex_error_package_shim_is_canonical_object(self) -> None:
+        """The ``models.errors`` package-level re-export is the same class too."""
+        from omnibase_core.errors.model_onex_error import (
+            ModelOnexError as CanonicalModelOnexError,
+        )
+        from omnibase_core.models.errors import (
+            ModelOnexError as LegacyPackageModelOnexError,
+        )
+
+        assert LegacyPackageModelOnexError is CanonicalModelOnexError
+
+    def test_model_fail_fast_details_shim_is_canonical_object(self) -> None:
+        """Legacy and canonical ModelFailFastDetails import paths agree."""
+        from omnibase_core.errors.model_fail_fast_details import (
+            ModelFailFastDetails as CanonicalModelFailFastDetails,
+        )
+        from omnibase_core.models.errors.model_fail_fast_details import (
+            ModelFailFastDetails as LegacyModelFailFastDetails,
+        )
+
+        assert LegacyModelFailFastDetails is CanonicalModelFailFastDetails

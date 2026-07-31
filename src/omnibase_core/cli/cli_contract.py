@@ -27,8 +27,8 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.enums.enum_validation_phase import EnumValidationPhase
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import emit_log_event_sync
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_validation_result import (
@@ -404,7 +404,11 @@ def _generate_patch_template(
     # Add name and version fields unless override_only mode
     if not override_only:
         contract_name = name if name else "my_contract_name"
-        name_comment = "" if name else "  # TODO(OMN-5746): Change this  [NEEDS TICKET]"
+        name_comment = (
+            ""
+            if name
+            else "  # TODO(OMN-5746): Change this  [NEEDS TICKET]  # onex-allow-todo-marker"
+        )
         lines.extend(
             [
                 "# Required for new contracts:",
@@ -560,14 +564,14 @@ def _get_runtime_version() -> str:
 
         return version("omnibase_core")
     except (ImportError, PackageNotFoundError):
-        try:
+        try:  # fallback-ok: version getter must never crash
             from omnibase_core import __version__
 
             return __version__
         except (
             AttributeError,
             ImportError,
-        ):  # fallback-ok: version getter must never crash
+        ):
             return "unknown"
 
 

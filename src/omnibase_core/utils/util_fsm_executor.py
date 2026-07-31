@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
 )
@@ -36,7 +37,6 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm.model_fsm_state_snapshot import (
     ModelFSMStateSnapshot as FSMState,
 )

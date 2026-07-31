@@ -69,6 +69,19 @@ GATE_JOBS: tuple[str, ...] = (
     "Tests Gate",  # tests-gate: aggregates test-parallel + tests-integration
     "Contract Compliance Check",  # contract-compliance job (NOT "Contract Compliance")
     "Cross-repo boundary validation",  # boundary-validation job
+    "OCC Companion Merged Gate (OMN-15214)",  # occ-companion-merged — cited OCC evidence must be MERGED before product merge (OMN-15222 port)
+)
+
+# OMN-15222 (port of the omnibase_infra OMN-15214 canary, mirroring omniclaude's
+# OMN-14350 STRICT_SUCCESS_JOBS precedent): jobs that must be EXACTLY
+# ``success`` — stricter than GATE_JOBS membership, whose completeness anchor
+# accepts ``success``||``skipped``. Each of these runs UNCONDITIONALLY in ci.yml
+# (no ``if:``, no ``needs:``), so a SKIPPED or CANCELLED conclusion is anomalous
+# un-enforcement and must fail closed, not pass.
+STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
+    {
+        "OCC Companion Merged Gate (OMN-15214)",
+    }
 )
 
 # Jobs that do NOT gate merge today (verified against ci.yml ``needs`` graph on
@@ -242,6 +255,21 @@ def evaluate(
             and state.conclusion not in GOOD_CONCLUSIONS
         }
     )
+
+    # (1b) Strict-success jobs (OMN-15222): unconditional ci.yml jobs whose
+    #     SKIPPED/CANCELLED conclusion is anomalous un-enforcement and must fail
+    #     closed. The GATE_JOBS completeness anchor accepts ``skipped``, so
+    #     without this a skip would silently un-enforce the gate (mirrors
+    #     omniclaude's OMN-14350 STRICT_SUCCESS_JOBS and the omnibase_infra
+    #     STRICT_GATE_JOBS posture of the OMN-15214 canary).
+    strict_success_failures = sorted(
+        name
+        for name in STRICT_SUCCESS_JOBS
+        if (st := latest.get(name)) is not None
+        and st.status == "completed"
+        and st.conclusion != "success"
+    )
+    sweep_failures = sorted(set(sweep_failures) | set(strict_success_failures))
 
     # (2) Spec-required-validator anchor (OMN-14127 load-bearing): each covering
     #     job runs unconditionally in ci.yml, so it must be present + completed +

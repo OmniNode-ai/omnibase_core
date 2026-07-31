@@ -18,7 +18,7 @@ import re
 from enum import StrEnum
 
 from omnibase_core.enums import EnumCoreErrorCode
-from omnibase_core.models.errors import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 # Valid topic name pattern: alphanumeric segments separated by single dots
 # No leading/trailing dots, no consecutive dots, no special characters except dots

@@ -32,15 +32,16 @@ env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
   # GitHub-hosted PR runners and merge-queue self-hosted runners have reproduced
-  # xdist worker crashes under the default four-worker split load. PRs stay at
-  # one worker; merge_group uses two workers to finish inside the queue window.
+  # xdist worker crashes under the former four-worker split load. Every full
+  # matrix already fans out across many runners, so the trusted-event default is
+  # one worker per shard; merge_group may opt into two inside its queue window.
   PYTEST_XDIST_WORKERS: >-
     ${{
       github.event_name == 'pull_request'
       && (vars.OMNI_PUBLIC_PR_PYTEST_XDIST_WORKERS || '1')
       || github.event_name == 'merge_group'
       && (vars.OMNI_MERGE_GROUP_PYTEST_XDIST_WORKERS || '2')
-      || (vars.OMNI_PYTEST_XDIST_WORKERS || '4')
+      || (vars.OMNI_PYTEST_XDIST_WORKERS || '1')
     }}
 
 jobs:
@@ -206,18 +207,8 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@c6081965dd0577ae48820cb8c288e12509571f0c
-        with:
-          version: ${{ env.UV_VERSION }}
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
       - name: Validate __all__ exports
-        run: uv run python scripts/validation/validate-all-exports.py
+        run: python3 scripts/validation/validate-all-exports.py
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Separate job for validation scripts mypy (not blocking test-parallel)
@@ -231,7 +222,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -248,9 +239,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen
 
       - name: Run mypy on architectural validation scripts (strict)
         run: |
@@ -477,18 +469,30 @@ jobs:
       - name: Run RSD provenance-stamp gate
         run: uv run python scripts/ci/rsd_provenance_stamp.py
 
-      # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809). Re-invokes
-      # the canonical-shape gate above (verify_flip_receipt / classify_node — imported,
-      # not reimplemented) and adds six fail-closed assertions per NEWLY-flipped node
-      # that the ratchet is structurally blind to (full ModelAdequacyReceipt invariants,
-      # per-binding canonicality, twin shape+entrypoint baseline shrink, receipt minted
-      # post-format, and a git-anchored independent-author attestation for new
-      # equivalence goldens). Canary scope = omnibase_core; fan-out to
+      # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809 + OMN-15340).
+      # Re-invokes the canonical-shape gate above (verify_flip_receipt / classify_node —
+      # imported, not reimplemented) and adds seven fail-closed assertions per
+      # NEWLY-flipped node that the ratchet is structurally blind to (full
+      # ModelAdequacyReceipt invariants, per-binding canonicality, twin shape+entrypoint
+      # baseline shrink, receipt minted post-format, a deterministic producer rerun +
+      # byte-compare for new equivalence goldens, and — OMN-15340 — the declared
+      # hand-flip parity tests EXECUTED against the receipt's own base_ref, each of which
+      # must fail there on its own assertion). Canary scope = omnibase_core; fan-out to
       # omnibase_infra/omnimarket is wired per-repo. The inline fetch makes origin/dev's
-      # tip available for flip-discovery vs base (the checkout is shallow); if it is
-      # still unavailable the gate NOTEs and exits 0 (the ratchet already hard-guards new
-      # non-canonical nodes). Runs in this job so it inherits the quality-gate blocking
-      # wiring — it does NOT weaken the ratchet.
+      # tip available for flip-discovery vs base (the checkout is shallow); assertion 7
+      # additionally fetches a receipt's own base_ref on demand and FAILS CLOSED if it
+      # stays unresolvable. If origin/dev itself is unavailable the gate NOTEs and exits 0
+      # (the ratchet already hard-guards new non-canonical nodes). Runs in this job so it
+      # inherits the quality-gate blocking wiring — it does NOT weaken the ratchet.
+      #
+      # OMN-15344 additionally runs the parity-debt SHRINK-ONLY ratchet over the
+      # repo-local `scripts/ci/parity_red_on_base_baseline.py` (convention-resolved
+      # beside the shape baseline; ABSENT == no declared debt, which is omnibase_core's
+      # own state). Growth hard-fails, a stale entry hard-fails, and removing an entry
+      # re-arms assertion 7 for that node and EXECUTES it. That ratchet is what puts
+      # assertion 7 in force over the already-merged hand-flip population, which lives
+      # entirely in omnibase_infra (15 receipts) and omnimarket (7) — those repos invoke
+      # this same script from their own CI.
       - name: Run canonical-shape flip-bundle seam gate
         run: |
           git fetch --no-tags --prune origin +refs/heads/dev:refs/remotes/origin/dev || true
@@ -632,21 +636,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
       - name: Run Node Purity Check
         run: |
           # Node Purity Check (OMN-203)
           # Validates declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
-          uv run python scripts/check_node_purity.py --verbose
+          python3 scripts/check_node_purity.py --verbose
 
       - name: Node purity check summary
         if: always()
@@ -674,7 +668,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -691,12 +685,13 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Run enum governance validator
-        run: uv run python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
+        run: .venv/bin/python -m omnibase_core.validation.checker_enum_governance src/omnibase_core/
 
       - name: Enum governance summary
         if: always()
@@ -719,7 +714,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -736,12 +731,13 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Run contract-config compliance validator
-        run: uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/ scripts/
+        run: .venv/bin/python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/ scripts/
         # CI runners don't have ambient PYTHONPATH; runs cleanly without env -u PYTHONPATH
 
       - name: Contract-config compliance summary
@@ -765,7 +761,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -782,12 +778,13 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Run breaking-schema-change validator
-        run: uv run python -m omnibase_core.validators.breaking_schema_change src/omnibase_core/
+        run: .venv/bin/python -m omnibase_core.validators.breaking_schema_change src/omnibase_core/
         # CI runners don't have ambient PYTHONPATH; runs cleanly without env -u PYTHONPATH
 
       - name: Breaking-schema-change summary
@@ -820,18 +817,8 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
       - name: Run no-env-fallbacks validator
-        run: uv run python scripts/validate_no_env_fallbacks.py
+        run: python3 scripts/validate_no_env_fallbacks.py
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Baseline security scan using detect-secrets (OMN-2226)
@@ -845,7 +832,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 6
 
     steps:
       - name: Checkout code
@@ -974,7 +961,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -991,9 +978,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen
 
       - name: Check SDK boundary (no internal hard deps)
         run: uv run pytest tests/unit/test_no_internal_deps.py -v
@@ -1049,7 +1037,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -1066,9 +1054,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Run demo-path topic coherence gate
         run: |
@@ -1076,7 +1065,7 @@ jobs:
           # Scans contracts with metadata.demo_path: true across the repo.
           # Fails on orphan topics, pub/sub mismatches, missing widget producers,
           # and hand-authored topic literals in source files.
-          uv run onex-demo-path-topic-gate src/
+          .venv/bin/onex-demo-path-topic-gate src/
 
       - name: Gate summary
         if: always()
@@ -1100,7 +1089,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -1119,9 +1108,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Resolve base ref
         id: base
@@ -1135,7 +1125,7 @@ jobs:
 
       - name: Run dispatch-surface-test-required validator
         run: |
-          uv run python -m omnibase_core.validators.dispatch_surface_test_required \
+          .venv/bin/python -m omnibase_core.validators.dispatch_surface_test_required \
             --base "${{ steps.base.outputs.ref }}"
 
       - name: Dispatch-surface gate summary
@@ -1174,18 +1164,8 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
       - name: Validate class naming conventions
-        run: uv run python scripts/validate_class_naming.py
+        run: python3 scripts/validate_class_naming.py
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Pydantic Patterns (OMN-13574: Model B failing-rollup enforcement)
@@ -1214,16 +1194,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Install dependencies
-        run: uv sync --all-extras
-
       - name: Validate Pydantic patterns
         run: |
           # Match the pre-commit file scope: src/ excluding tests/, archived/,
@@ -1235,7 +1205,7 @@ jobs:
             exit 0
           fi
           # shellcheck disable=SC2086
-          uv run python scripts/validation/validate-pydantic-patterns.py $files
+          python3 scripts/validation/validate-pydantic-patterns.py $files
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # AI-Slop Patterns (OMN-13574: Model B failing-rollup enforcement)
@@ -1254,7 +1224,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -1271,9 +1241,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Check tracked tree for AI-slop patterns (strict)
         run: |
@@ -1286,7 +1257,7 @@ jobs:
             exit 0
           fi
           # shellcheck disable=SC2086
-          uv run python scripts/validation/check_ai_slop.py --strict $files
+          .venv/bin/python scripts/validation/check_ai_slop.py --strict $files
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Doc-Content Scan (OMN-13572: wire doc_content_scan as a required gate)
@@ -1308,7 +1279,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 6
 
     steps:
       - name: Checkout code
@@ -1325,9 +1296,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Scan documentation for local-env traces + ticket refs (OMN-13572)
         run: |
@@ -1342,7 +1314,7 @@ jobs:
             exit 0
           fi
           # shellcheck disable=SC2086
-          uv run python -m omnibase_core.validation.doc_content_scan.runtime_doc_content_scan $files
+          .venv/bin/python -m omnibase_core.validation.doc_content_scan.runtime_doc_content_scan $files
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # SPDX Headers (OMN-13576: burn down validator-requirements baseline ratchet)
@@ -1363,7 +1335,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 6
 
     steps:
       - name: Checkout code
@@ -1380,9 +1352,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Validate SPDX headers (OMN-13576)
         run: |
@@ -1400,7 +1373,7 @@ jobs:
             exit 0
           fi
           # shellcheck disable=SC2086
-          uv run python scripts/validation/validate_spdx_headers.py $files
+          .venv/bin/python scripts/validation/validate_spdx_headers.py $files
 
   # No-new-os-environ gate (OMN-13566) — canonical AST-based env-read enforcement.
   # Blocks ALL os.environ/os.getenv reads outside KEEP_ALLOWLIST. Feeds quality-gate
@@ -1416,7 +1389,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 6
 
     steps:
       - name: Checkout code
@@ -1433,13 +1406,14 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Scan src/ for os.environ/os.getenv reads outside KEEP_ALLOWLIST (OMN-13566)
         run: |
-          uv run python -m omnibase_core.validators.no_new_os_environ --all --src src/
+          .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all --src src/
 
   # Duplicate registry id guard (OMN-14401). Rejects config/registry YAML files
   # declaring duplicate ids over a key that is not guaranteed unique (the
@@ -1458,7 +1432,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -1475,9 +1449,10 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen
 
       - name: Run ValidatorDuplicateConfigIds unit tests
         run: |
@@ -1570,7 +1545,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1615,7 +1590,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1675,7 +1650,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1724,7 +1699,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1765,7 +1740,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1804,7 +1779,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1847,7 +1822,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1888,7 +1863,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1931,7 +1906,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -1972,7 +1947,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2014,7 +1989,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2055,7 +2030,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2097,7 +2072,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2138,7 +2113,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2181,7 +2156,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2239,7 +2214,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2286,7 +2261,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2333,7 +2308,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -2407,7 +2382,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 7
 
     steps:
       - name: Checkout code
@@ -2424,13 +2399,14 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Ratchet non-canonical lifecycle-word classes against frozen allowlist (OMN-14350)
         run: |
-          uv run python -m omnibase_core.validators.no_noncanonical_lifecycle_classes --check-stale src/omnibase_core
+          .venv/bin/python -m omnibase_core.validators.no_noncanonical_lifecycle_classes --check-stale src/omnibase_core
 
   # Pydantic extra="forbid" ratchet (OMN-14515, parent OMN-14208)
   # Asserts the POSITIVE: every Pydantic model must resolve to an explicit
@@ -2499,7 +2475,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 6
 
     steps:
       - name: Checkout code
@@ -2516,13 +2492,14 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          save-cache: false
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --no-dev
 
       - name: Ratchet pull_request-triggered workflow files against the frozen budget (OMN-14907)
         run: |
-          uv run python -m omnibase_core.validation.validator_pull_request_workflow_ratchet --repo-root .
+          .venv/bin/python -m omnibase_core.validation.validator_pull_request_workflow_ratchet --repo-root .
 
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
@@ -2926,6 +2903,9 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+          # Forty shards restore the cache after Phase 1 has populated it. They
+          # must not race to reserve and save the same key during teardown.
+          save-cache: false
 
       - name: Install dependencies
         run: uv sync --all-extras
@@ -3132,6 +3112,8 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run integration tests (split ${{ matrix.split }}/4)
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_PAT || github.token }}
         run: |
           uv run pytest tests/integration/ \
             --splits 4 --group ${{ matrix.split }} \
@@ -3163,38 +3145,88 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    needs: [test-parallel, tests-integration]
+    # zone-filter is in `needs:` so this gate can re-evaluate the SAME
+    # precondition the test jobs are gated on (OMN-15315). It is read for its
+    # `docs_only` output only, never for its `.result`.
+    needs: [test-parallel, tests-integration, zone-filter]
     if: always()
 
     steps:
       - name: Evaluate test results
         run: |
-          echo "## Tests Gate Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Tests Gate Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           parallel="${{ needs.test-parallel.result }}"
           integration="${{ needs.tests-integration.result }}"
+          docs_only="${{ needs.zone-filter.outputs.docs_only }}"
 
-          echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Parallel Tests (dynamic splits) | $parallel |" >> $GITHUB_STEP_SUMMARY
-          echo "| Integration Tests (4 splits) | $integration |" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Parallel Tests (dynamic splits) | $parallel |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Integration Tests (4 splits) | $integration |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| zone-filter docs_only | ${docs_only:-(unset)} |" >> "$GITHUB_STEP_SUMMARY"
 
-          # Accept "success" (tests ran and passed) or "skipped" (tests correctly
-          # skipped because upstream quality-gate was skipped, e.g. dependabot PRs
-          # that only touch .github/ files and skip version-pin-check).
-          if [[ ("$parallel" == "success" || "$parallel" == "skipped") && \
-                ("$integration" == "success" || "$integration" == "skipped") ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> $GITHUB_STEP_SUMMARY
-            echo "Test matrix result: unit=$parallel integration=$integration"
-            exit 0
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Tests Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
-            echo "::error::tests gate failed (unit=$parallel integration=$integration)"
-            exit 1
-          fi
+          # OMN-15315 (OMN-15304 vector 6 — result triage). The previous pass
+          # condition admitted `success` OR `skipped` for both upstreams, so a
+          # SKIPPED test job rendered this gate green. `skipped` is the ABSENCE
+          # of a verdict exactly like `cancelled`, and it is precisely the state
+          # vectors 2/3/5 (conditional `if:`, needs-cascade) produce — so vector
+          # 5 and vector 6 composed into a bypass: strand the tests, and the
+          # gate that was supposed to catch it reports green with no test result
+          # in existence.
+          #
+          # PER-UPSTREAM SKIP POLICY, replacing the blanket `|| == skipped`:
+          # both `test-parallel` and `tests-integration` are gated on
+          # `always()` AND a successful quality-gate AND
+          # `needs.zone-filter.outputs.docs_only != 'true'` (see their job-level
+          # `if:` — the dotted result token is deliberately not spelled out here,
+          # because the vector-6 analyzer scans this whole `run:` blob for
+          # result tokens and a comment would register as an untriaged
+          # upstream), so exactly ONE of their skips is legitimate — a
+          # docs-only PR. This
+          # gate re-evaluates that precondition itself and admits `skipped` only
+          # when `docs_only == 'true'`. A skip caused by a non-success
+          # `quality-gate` is NOT admitted: tests that never ran because quality
+          # failed are absent tests, and this gate must say so. `zone-filter`
+          # itself is gated on `quality-gate` succeeding, so if quality fails,
+          # `docs_only` is empty and this gate fails closed on that path too.
+          #
+          # The gate stops at the first offending upstream; the per-upstream
+          # results are already written to the job summary above.
+          for check in \
+            "test-parallel=${{ needs.test-parallel.result }}" \
+            "tests-integration=${{ needs.tests-integration.result }}"; do
+            NAME="${check%%=*}"
+            RESULT="${check##*=}"
+            case "$RESULT" in
+              success)
+                echo "$NAME: success"
+                ;;
+              skipped)
+                if [ "$docs_only" != "true" ]; then
+                  echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
+                  echo "::error::$NAME was SKIPPED on a non-docs-only change (zone-filter docs_only='${docs_only:-unset}') — the absence of a test result is not a passing one."
+                  exit 1
+                fi
+                echo "$NAME: skipped (docs-only change — declared precondition not met)"
+                ;;
+              failure|cancelled)
+                echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
+                echo "::error::$NAME did not pass (result: $RESULT)"
+                exit 1
+                ;;
+              *)
+                echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
+                echo "::error::$NAME returned unrecognised result '$RESULT' — failing closed."
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Test matrix result: unit=$parallel integration=$integration"
 
   # CI Summary - final aggregator for all gates (OMN-2226)
   # Cross-repo boundary validation (OMN-6576, OMN-10978)
@@ -3308,6 +3340,51 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+
+  occ-companion-merged:
+    name: OCC Companion Merged Gate (OMN-15214)
+    # OMN-15222 (port of the OMN-15214 canary, omnibase_infra #2486): makes the
+    # 2026-07-26 OCC hygiene-sweep trigger state — an OPEN onex_change_control
+    # evidence companion whose product PR already MERGED — unreachable via the
+    # CI Summary merge path on this repo. The sweep closed five open companions
+    # (OCC#5012–#5016) whose product PRs had merged, destroying three evidence
+    # chains (OMN-15199/OMN-15200/OMN-15203). The durable fix is ordering: the
+    # companion must MERGE BEFORE the product PR can. This job polls the PR's
+    # live Evidence-Source (live body, not event payload — occ-autobind PATCHes
+    # it in after open) and greens ONLY when the cited OCC companion PR is
+    # MERGED or the cited OCC commit SHA is an ancestor of onex_change_control
+    # dev/main. A companion CLOSED without merging fails immediately (that IS
+    # the incident state).
+    #
+    # CI Summary GATE_JOB + STRICT_SUCCESS_JOB (scripts/ci/ci_summary_gate.py)
+    # — deliberately NOT a new top-level required context: a context that does
+    # not report on every PR shape wedges merges indefinitely under branch
+    # protection, and occ-autobind itself is network-flaky (omninode_infra#679,
+    # 2026-07-26). Unconditional (no needs/if) so CI Summary always WAITS for
+    # it and a skip/cancel fails closed; internal event scoping no-ops on
+    # push/workflow_dispatch (mirrors occ-preflight). GitHub-hosted + pure gh
+    # API polling: zero self-hosted/LAN dependency, and the poll window absorbs
+    # autobind mint + companion auto-merge latency instead of converting them
+    # into instant reds.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ secrets.CROSS_REPO_PAT || github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+      # Poll window (seconds) — bounded well under ci-summary's 90m deadline so
+      # this gate reaches a terminal state first; PENDING converts to FAIL.
+      DEADLINE_SECONDS: "1500"
+      POLL_INTERVAL_SECONDS: "30"
+    steps:
+      - name: Checkout (gate script)
+        uses: actions/checkout@v7
+      - name: Require cited OCC evidence to be merged/durable before product merge
+        run: python3 scripts/ci/check_occ_companion_merged.py
 
   ci-summary:
     name: CI Summary

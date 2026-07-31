@@ -49,9 +49,9 @@ from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_patch_validation_error_code import (
     EnumPatchValidationErrorCode,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 __all__ = [

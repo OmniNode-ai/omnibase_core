@@ -5,14 +5,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_budget_action import EnumBudgetAction
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     ModelDelegationRequest,
+    validate_response_format,
 )
 from omnibase_core.models.delegation.wire.model_quality_gate import (
     ModelQualityGateInput,
@@ -74,6 +75,15 @@ class ModelInferenceIntent(BaseModel):
         description="Backend-owned timeout for the downstream inference call.",
     )
     correlation_id: UUID
+    inference_attempt_id: UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Identity of this specific inference attempt within the delegation "
+            "workflow. The inference effect echoes it on the response so the "
+            "orchestrator can reject a late response from an earlier route."
+        ),
+    )
     api_key_ref: str | None = Field(
         default=None,
         description=(
@@ -86,12 +96,21 @@ class ModelInferenceIntent(BaseModel):
         default=None,
         description="Additional HTTP headers required by the selected backend.",
     )
-    provider_request_options: dict[str, Any] | None = Field(
+    provider_request_options: dict[str, object] | None = Field(
         default=None,
         description=(
             "Additional OpenAI-compatible request body options required by the "
             "selected model protocol. The inference effect merges these at the "
             "provider-call boundary after core fields are constructed."
+        ),
+    )
+    response_format: dict[str, object] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Optional provider response-format directive carried separately "
+            "from provider_request_options so callers cannot override core "
+            "request fields through an untyped options mapping."
         ),
     )
     # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
@@ -102,16 +121,26 @@ class ModelInferenceIntent(BaseModel):
     # correlation_id -> tenant lookup. Optional now (backward-compatible wire);
     # the fail-closed wire==topic-tenant guard + required-flip is A-enforce,
     # gated behind the gateway topic-tenant stamp (deferred, not this slice).
-    tenant_id: str | None = Field(
-        default=None,
-        description=(
-            "Owning tenant for this inference call. Set by the delegation "
-            "orchestrator from the workflow tenant identity; the inference "
-            "effect reads it to tenant-tag its logs/metrics and round-trips it "
-            "onto ModelInferenceResponseData. Isolation-ready wire (not yet "
-            "isolation-enforced)."
-        ),
+    # string-id-ok: tenant identity is a named slug, not a UUID
+    tenant_id: str | None = (
+        Field(  # string-id-ok: tenant identity is a named slug, not a UUID
+            default=None,
+            description=(
+                "Owning tenant for this inference call. Set by the delegation "
+                "orchestrator from the workflow tenant identity; the inference "
+                "effect reads it to tenant-tag its logs/metrics and round-trips it "
+                "onto ModelInferenceResponseData. Isolation-ready wire (not yet "
+                "isolation-enforced)."
+            ),
+        )
     )
+
+    @field_validator("response_format")
+    @classmethod
+    def _validate_response_format(
+        cls, response_format: dict[str, object] | None
+    ) -> dict[str, object] | None:
+        return validate_response_format(response_format)
 
 
 class ModelQualityGateIntent(BaseModel):
@@ -151,6 +180,14 @@ class ModelInferenceResponseData(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     correlation_id: UUID = Field(..., description="Workflow correlation ID.")
+    inference_attempt_id: UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Inference-attempt identity echoed from ModelInferenceIntent. "
+            "Optional for backward-compatible parsing of pre-OMN-15542 events."
+        ),
+    )
     content: str = Field(..., description="Generated text from the LLM.")
     model_used: str = Field(
         ..., description="Model identifier that produced the response."
@@ -177,12 +214,15 @@ class ModelInferenceResponseData(BaseModel):
     # by the inference effect so the tenant that owned the call is auditable on
     # the response and the orchestrator can observability-cross-check it against
     # the workflow tenant. Optional now; required-flip is A-enforce (deferred).
-    tenant_id: str | None = Field(
-        default=None,
-        description=(
-            "Owning tenant echoed back from the inference intent by the "
-            "inference effect. Isolation-ready wire (not yet isolation-enforced)."
-        ),
+    # string-id-ok: tenant identity is a named slug, not a UUID
+    tenant_id: str | None = (
+        Field(  # string-id-ok: tenant identity is a named slug, not a UUID
+            default=None,
+            description=(
+                "Owning tenant echoed back from the inference intent by the "
+                "inference effect. Isolation-ready wire (not yet isolation-enforced)."
+            ),
+        )
     )
 
 

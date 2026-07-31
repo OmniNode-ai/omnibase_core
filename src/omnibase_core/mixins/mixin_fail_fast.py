@@ -20,10 +20,10 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 
 # Import extracted error classes
 from omnibase_core.errors.exception_fail_fast import ExceptionFailFastError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type variable for return types
 T = TypeVar("T")

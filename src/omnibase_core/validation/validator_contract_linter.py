@@ -67,6 +67,7 @@ from omnibase_core.contracts import (
 )
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, VALIDATION_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.contracts.model_contract_effect import ModelContractEffect
@@ -80,7 +81,6 @@ from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.validator_base import ValidatorBase
 
 # Rule IDs for contract linting violations

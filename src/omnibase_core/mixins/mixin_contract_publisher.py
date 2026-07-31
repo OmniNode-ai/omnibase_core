@@ -44,7 +44,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.events.enum_deregistration_reason import (
     EnumDeregistrationReason,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.contract_registration import (
     CONTRACT_DEREGISTERED_EVENT,
     CONTRACT_REGISTERED_EVENT,

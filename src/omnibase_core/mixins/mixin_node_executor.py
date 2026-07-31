@@ -52,6 +52,7 @@ from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.models.core.model_log_context import ModelLogContext
@@ -64,7 +65,6 @@ from omnibase_core.models.discovery.model_tool_invocation_event import (
 from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.services.replay.service_time_injector import ServiceTimeInjector
 
 _COMPONENT_NAME = Path(__file__).stem

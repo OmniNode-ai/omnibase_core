@@ -250,7 +250,6 @@ violations:
   - "omnibase_core.models.contracts.subcontracts.model_correlation_config:ModelCorrelationConfig"
   - "omnibase_core.models.contracts.subcontracts.model_data_grouping:ModelDataGrouping"
   - "omnibase_core.models.contracts.subcontracts.model_db_ownership_subcontract:ModelDbOwnershipSubcontract"
-  - "omnibase_core.models.contracts.subcontracts.model_db_table_declaration:ModelDbTableDeclaration"
   - "omnibase_core.models.contracts.subcontracts.model_dependency_health:ModelDependencyHealth"
   - "omnibase_core.models.contracts.subcontracts.model_discovery_subcontract:ModelDiscoverySubcontract"
   - "omnibase_core.models.contracts.subcontracts.model_envelope_template:ModelEnvelopeTemplate"

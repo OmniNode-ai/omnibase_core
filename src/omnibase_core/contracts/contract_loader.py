@@ -79,7 +79,7 @@ import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_ERRORS
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict.typed_dict_contract_loader_cache_stats import (
     TypedDictContractLoaderCacheStats,
 )

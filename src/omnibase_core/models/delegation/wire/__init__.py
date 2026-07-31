@@ -23,6 +23,8 @@ from omnibase_core.models.delegation.wire.model_delegation_failed import (
     ModelDelegationFailed,
 )
 from omnibase_core.models.delegation.wire.model_delegation_result import (
+    EnumDelegationTerminalFailureCause,
+    EnumQualityScoreComparison,
     ModelDelegationResult,
 )
 from omnibase_core.models.delegation.wire.model_delegation_wire_envelope import (
@@ -68,8 +70,10 @@ __all__: list[str] = [
     "SUPPORTED_ACCEPTANCE_CRITERIA",
     "TASK_DELEGATED_TOPIC_V1",
     "EnumBudgetAction",
+    "EnumDelegationTerminalFailureCause",
     "EnumQualityContractMode",
     "EnumQualityGateCategory",
+    "EnumQualityScoreComparison",
     "EnumTierCostType",
     "ModelBaselineIntent",
     "ModelBifrostDelegationConfig",

@@ -13,6 +13,7 @@ from typing import cast
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.dispatch.model_dispatch_bus_command import (
     ModelDispatchBusCommand,
@@ -21,7 +22,6 @@ from omnibase_core.models.dispatch.model_dispatch_bus_route import ModelDispatch
 from omnibase_core.models.dispatch.model_dispatch_bus_terminal_result import (
     ModelDispatchBusTerminalResult,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.protocols.event_bus.protocol_dispatch_bus_client_transport import (

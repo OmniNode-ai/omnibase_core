@@ -16,8 +16,8 @@ from pydantic import TypeAdapter, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Discovery constants

@@ -20,6 +20,7 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
     ModelDodEvidenceItem,
 )
@@ -30,7 +31,6 @@ from omnibase_core.models.contracts.ticket.model_runtime_sha_classify_result imp
 from omnibase_core.models.contracts.ticket.model_runtime_sha_match_output import (
     ModelRuntimeShaMatchOutput,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 CHECK_TYPE_RUNTIME_SHA_MATCH = "runtime_sha_match"
 

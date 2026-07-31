@@ -50,8 +50,8 @@ from pathlib import Path
 from omnibase_core.decorators.decorator_allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.exception_groups import ATTRIBUTE_ACCESS_ERRORS
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
 from omnibase_core.models.validation.model_protocol_signature_extractor import (

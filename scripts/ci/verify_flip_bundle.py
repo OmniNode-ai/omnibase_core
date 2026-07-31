@@ -10,7 +10,7 @@ that only surface when the FIVE flip artifacts are checked jointly against live 
 the live handler source, and the full typed-receipt invariants. This gate RE-INVOKES
 the real consuming gate (it imports ``canonical_handler_shape`` and calls
 ``verify_flip_receipt`` / ``classify_node`` / the git + baseline helpers — it does NOT
-reimplement them) and adds six fail-closed assertions per flipped node that close the
+reimplement them) and adds seven fail-closed assertions per flipped node that close the
 blind spots enumerated below. It mirrors the ratchet's fan-out CLI
 (``--package`` / ``--src-root`` / ``--receipts-dir`` / ``--baseline``) so it points at
 omnibase_infra / omnimarket identically.
@@ -51,6 +51,26 @@ Blind spots this gate closes (each = one assertion; first failure exits non-zero
   (omnibase_core#1472): identity is not evidence — any second git identity satisfies an
   author check while proving nothing — whereas byte-equality with a deterministic rerun
   proves the artifact is mechanically reproducible (OMN-14905).
+* **P1 — parity tests that discriminate nothing.** Assertions 1-6 all grade artifacts
+  against the HEAD tree; nothing here or anywhere else in CI ever executed a candidate
+  test against the PRE-change tree, so "RED to GREEN for the right reason" was prose.
+  A hand-flip proof could declare parity tests that are ALREADY GREEN at its own
+  ``base_ref``. Assertion 7 (HAND-FLIP path only, NEW flips only) materializes that
+  ``base_ref`` as a detached worktree, overlays the HEAD copies of the declared test
+  files, and requires every declared id to fail there ON ITS OWN ASSERTION — a
+  collection/import error is not RED, it is the same evidence as no test at all. A
+  source-residency probe first proves the base worktree is what actually gets imported,
+  so the verdict cannot be vacuous (OMN-15340, ``scripts/ci/parity_replay.py``).
+
+Assertion 7 is forward-only by construction (NEW flips only), so the hand-flip receipts
+already merged before it existed are outside it. That silence is itself a hole: a 2026-07-28
+census that executed assertion 7 against every committed receipt with the newness rule
+bypassed measured 21 of 22 FAILING (102 of 126 declared parity ids not
+red-on-their-own-assertion at their own ``base_ref``). ``PARITY_RED_ON_BASE_DEBT`` in a
+repo-local ``parity_red_on_base_baseline.py`` (OMN-15344) names that population explicitly
+and makes it SHRINK-ONLY: growth hard-fails, an entry naming a receipt that does not exist
+hard-fails, and REMOVING an entry re-arms assertion 7 for that node — a burn-down is a claim
+the gate executes, not a line you delete. A frozen list is honest debt; silence is not.
 
 Usage (pre-commit / CI, mirrors canonical_handler_shape)::
 
@@ -62,13 +82,14 @@ Usage (pre-commit / CI, mirrors canonical_handler_shape)::
 
 The gate discovers the nodes NEWLY flipped in this PR (removed from ``NON_CANONICAL``
 vs origin/dev and canonical now, or carrying a newly-added adequacy receipt) and runs
-all six assertions on each. Zero flips -> exit 0 (nothing to prove; the ratchet already
+all seven assertions on each. Zero flips -> exit 0 (nothing to prove; the ratchet already
 guards new non-canonical nodes). Any assertion failure -> exit 1.
 """
 
 from __future__ import annotations
 
 import argparse
+import ast
 import importlib.util
 import json
 import os
@@ -84,11 +105,13 @@ from pydantic import BaseModel, ConfigDict
 try:  # pragma: no cover - import shim
     from scripts.ci import canonical_handler_shape as chs
     from scripts.ci import equivalence_producer as eqp
+    from scripts.ci import parity_replay as prp
     from scripts.ci.adequacy_receipt import ModelAdequacyReceipt
 except ImportError:  # pragma: no cover - script-dir invocation
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import canonical_handler_shape as chs  # type: ignore[import-not-found, no-redef]
     import equivalence_producer as eqp  # type: ignore[import-not-found, no-redef]
+    import parity_replay as prp  # type: ignore[import-not-found, no-redef]
     from adequacy_receipt import (  # type: ignore[import-not-found, no-redef]
         ModelAdequacyReceipt,
     )
@@ -106,6 +129,15 @@ GRANDFATHERED_FLIPS: frozenset[str] = frozenset(
 )
 
 DEFAULT_BASE_REF = "origin/dev"
+
+# Repo-local parity-debt baseline (OMN-15344). Resolved BY CONVENTION beside whatever
+# canonical_handler_shape baseline the caller points at, deliberately NOT via a required
+# new flag: the per-repo CI wiring that consumes this gate (omnibase_infra / omnimarket)
+# pins omnibase_core at a moving ref, so a required flag would make the pair landable in
+# exactly one order. An ABSENT file is legal and means "no declared debt" — byte-for-byte
+# today's behavior — which is what keeps both sides green before AND after either lands.
+PARITY_BASELINE_FILENAME = "parity_red_on_base_baseline.py"
+PARITY_BASELINE_SYMBOL = "PARITY_RED_ON_BASE_DEBT"
 
 # Candidate (validator, baseline) locations for the per-repo entrypoint-dispatch gate
 # (``omnibase_infra.validators.handler_dispatch_entrypoint`` + its known_entrypointless
@@ -138,7 +170,7 @@ class ModelAssertionOutcome(BaseModel):
 
 
 class ModelFlipBundleResult(BaseModel):
-    """The joint verdict over one node's five flip artifacts."""
+    """The joint verdict over one node's flip artifacts."""
 
     model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
@@ -177,6 +209,81 @@ def _apply_scope(
     chs.BASELINE_PATH = s_base
     chs.RECEIPTS_DIR = s_recv
     return s_src, s_glob, s_base, s_recv
+
+
+def _resolve_parity_baseline(baseline_path: Path, override: Path | None) -> Path:
+    """Convention-resolved path to the target repo's parity-debt baseline."""
+    if override is not None:
+        return override
+    return baseline_path.parent / PARITY_BASELINE_FILENAME
+
+
+def _parse_symbol_tuple(source: str, symbol: str) -> tuple[str, ...]:
+    """Read a module-level ``symbol = (...)`` literal out of Python SOURCE.
+
+    AST-parsed, never exec'd: the base-ref copy comes straight out of ``git show`` and
+    must not be executable input. Mirrors ``canonical_handler_shape._parse_non_canonical``.
+    """
+    for node in ast.parse(source).body:
+        targets: list[str] = []
+        value: ast.expr | None = None
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            targets = [node.target.id]
+            value = node.value
+        elif isinstance(node, ast.Assign):
+            targets = [t.id for t in node.targets if isinstance(t, ast.Name)]
+            value = node.value
+        if symbol in targets and value is not None:
+            return tuple(str(item) for item in ast.literal_eval(value))
+    return ()
+
+
+def load_parity_baseline(path: Path) -> tuple[str, ...]:
+    """Working-tree parity-debt entries. ABSENT file -> ``()`` (no debt declared).
+
+    Unparseable is NOT empty: a baseline the gate cannot read is a gate that silently
+    stops enforcing, so it raises and the caller fails closed.
+    """
+    if not path.exists():
+        return ()
+    try:
+        return _parse_symbol_tuple(
+            path.read_text(encoding="utf-8"), PARITY_BASELINE_SYMBOL
+        )
+    except (OSError, SyntaxError, ValueError) as exc:
+        raise ValueError(f"parity baseline at {path} is unparseable: {exc}") from exc
+
+
+def load_base_parity_baseline(
+    path: Path, base_ref: str
+) -> tuple[tuple[str, ...] | None, bool]:
+    """Parity-debt entries as of ``base_ref``, plus whether the file EXISTED there.
+
+    Returns ``(entries, existed_at_base)``:
+
+    * ``(entries, True)``  — the baseline was present at the base; shrink-only is live.
+    * ``((), False)``      — the file is NEW in this change. Growth is not a meaningful
+      comparison there (every entry would be growth, so the seeding commit would fail
+      itself); the caller applies the seeding rule instead.
+    * ``(None, False)``    — git cannot answer at all, which disables the comparison for
+      that run, the same diff-unavailable tolerance the shape ratchet already carries.
+      In CI the PR base is always present, so it is live there.
+    """
+    anchor = path if path.exists() else path.parent
+    repo_root = chs._git_repo_root(anchor)
+    if repo_root is None or not chs._git_ref_exists(repo_root, base_ref):
+        return None, False
+    try:
+        rel = path.resolve().relative_to(repo_root.resolve())
+    except ValueError:
+        return None, False
+    source = chs._git_show(repo_root, base_ref, str(rel).replace(os.sep, "/"))
+    if source is None:
+        return (), False
+    try:
+        return _parse_symbol_tuple(source, PARITY_BASELINE_SYMBOL), True
+    except (SyntaxError, ValueError):
+        return None, False
 
 
 def _git_added_files(repo_root: Path, base_ref: str) -> list[str] | None:
@@ -497,14 +604,18 @@ def _assert_reproducible_equivalence(
 
 
 def _flip_proof_is_new(
-    node_id: str, receipts_dir: Path, repo_root: Path, base_ref: str
+    node_id: str,
+    receipts_dir: Path,
+    repo_root: Path,
+    base_ref: str,
+    suffix: str | None = None,
 ) -> bool:
-    """A flip is NEW when its equivalence proof artifact is ABSENT at the git base.
+    """A flip is NEW when its proof artifact is ABSENT at the git base.
 
     Fail-closed: any inability to prove the artifact PRE-EXISTED at the base (artifact
-    outside the repo, base unresolvable) returns True -> assertion 6 is applied.
+    outside the repo, base unresolvable) returns True -> the assertion is applied.
     """
-    art = receipts_dir / f"{node_id}{chs.EQUIVALENCE_SUFFIX}"
+    art = receipts_dir / f"{node_id}{suffix or chs.EQUIVALENCE_SUFFIX}"
     try:
         rel = art.resolve().relative_to(repo_root.resolve())
     except ValueError:
@@ -516,7 +627,174 @@ def _flip_proof_is_new(
 
 
 # --------------------------------------------------------------------------- #
-# Orchestration: run the six assertions in order, stop at first failure.
+# Assertion 7 — declared parity tests RED on the receipt's own base_ref (OMN-15340)
+# --------------------------------------------------------------------------- #
+#
+# Assertions 1-6 all grade artifacts against the HEAD tree. None of them — and no
+# other mechanism in CI — ever executed a candidate test against the PRE-change tree,
+# so "RED to GREEN for the right reason" was prose. A hand-flip proof can therefore
+# declare parity tests that are ALREADY GREEN at ``base_ref``: they run, they pass,
+# they discriminate nothing, and the flip is credited with a behavior proof it never
+# earned.
+#
+# Assertion 7 materializes the receipt's OWN ``base_ref`` as a detached worktree,
+# overlays the HEAD copies of the declared test files onto that pre-change tree, and
+# requires EVERY declared id to fail there ON ITS OWN ASSERTION. Exit reasons are
+# distinguished, never collapsed into "non-zero": a collection/import error means the
+# test cannot even run against the old code, which is exactly as much evidence as no
+# test at all (``feedback_prove_red_against_exists_but_wrong``). Before any of that
+# counts, a residency probe proves the base worktree's source is what actually gets
+# imported — otherwise an editable install silently grades HEAD and every verdict,
+# RED or GREEN, is vacuous.
+
+
+def _assert_parity_red_on_base(
+    node_id: str,
+    receipts_dir: Path,
+    repo_root: Path,
+    src_root: Path,
+) -> tuple[bool, str]:
+    raw = chs._load_json(receipts_dir / f"{node_id}{chs.HANDFLIP_SUFFIX}")
+    if raw is None:
+        return False, "hand-flip proof unreadable for the parity RED-on-base check"
+    parity = raw.get("parity")
+    if not isinstance(parity, dict):
+        return False, "hand-flip proof missing parity block"
+    test_ids_raw = parity.get("test_ids")
+    if not isinstance(test_ids_raw, list) or not test_ids_raw:
+        return False, "hand-flip parity block names no test_ids to execute"
+    base_ref = raw.get("base_ref")
+    if not isinstance(base_ref, str) or not base_ref:
+        return False, "hand-flip proof missing base_ref"
+    legacy_module = raw.get("legacy_handler_module") or raw.get(
+        "canonical_handler_module"
+    )
+    if not isinstance(legacy_module, str) or not legacy_module:
+        return False, "hand-flip proof names no module for the residency probe"
+    return prp.red_on_base(
+        node_id,
+        tuple(str(t) for t in test_ids_raw),
+        base_ref,
+        legacy_module,
+        repo_root,
+        src_root,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Parity-debt SHRINK-ONLY ratchet (OMN-15344)
+# --------------------------------------------------------------------------- #
+#
+# Three rules, all fail-closed:
+#
+#   GROWTH   adding a node id is a hard fail. A new hand-flip may not be baselined out
+#            of assertion 7 — that is the entire thing assertion 7 exists to stop.
+#   STALE    an entry naming a hand-flip proof that does not exist at HEAD is a hard
+#            fail, so the list cannot rot into decoration and cannot be pre-seeded with
+#            a node id ahead of the PR that would smuggle its receipt in.
+#   REMOVAL  dropping an entry is a CLAIM that the node now passes, and the gate
+#            EXECUTES it: assertion 7 is re-armed for exactly that node and must pass.
+#            Removing the entry by deleting the hand-flip proof instead fails too.
+#   SEEDING  the commit that CREATES the file cannot be judged by growth — every entry
+#            would be growth and the seeding commit would fail itself. It is instead
+#            held to the rule that actually matters: a seed may contain only
+#            ALREADY-MERGED debt. A flip that is new in the same PR cannot be born
+#            baselined, so the one-time exemption buys no cover for a new flip. This
+#            path is unreachable a second time: once the file exists at the base, every
+#            later change is judged by growth/removal.
+#
+# The ratchet deliberately does NOT re-execute the whole baselined population on every
+# run: the 2026-07-28 census cost ~24 minutes of pytest for 22 receipts. Steady-state
+# cost here is a git-show plus a set comparison; real pytest is paid only when a
+# burn-down is claimed.
+#
+# ``RED_EXCEPTION`` stays inadmissible. ``parity_replay`` counts only ``RED_ASSERTION``,
+# and nothing in this ratchet adds an admissibility path — an exception at the base tree
+# is indistinguishable from a test that is merely incompatible with the old code, which
+# is not a discriminating claim. Admitting it is what would make most of this debt
+# evaporate without a single test getting better.
+
+
+def _parity_debt_ratchet(
+    working: tuple[str, ...],
+    base: tuple[str, ...] | None,
+    base_existed: bool,
+    receipts_dir: Path,
+    repo_root: Path | None,
+    src_root: Path,
+    base_ref: str,
+) -> list[str]:
+    """Enforce shrink-only on the parity-debt baseline; returns violation strings."""
+    errors: list[str] = []
+    working_set = set(working)
+
+    for node_id in sorted(working_set):
+        art = receipts_dir / f"{node_id}{chs.HANDFLIP_SUFFIX}"
+        if not art.exists():
+            errors.append(
+                f"{node_id}: STALE entry in {PARITY_BASELINE_FILENAME} — it names a "
+                f"hand-flip proof that does not exist at HEAD ({art}). Remove the entry; "
+                f"the baseline may not carry ids without a receipt."
+            )
+
+    if base is None:
+        return errors
+
+    if not base_existed:
+        for node_id in sorted(working_set):
+            if repo_root is None or _flip_proof_is_new(
+                node_id, receipts_dir, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+            ):
+                errors.append(
+                    f"{node_id}: seeded into a NEW {PARITY_BASELINE_FILENAME}, but its "
+                    f"hand-flip proof is NEW in this change. The baseline may only be "
+                    f"seeded with already-merged debt — a new flip must pass assertion 7."
+                )
+        return errors
+
+    base_set = set(base)
+
+    for node_id in sorted(working_set - base_set):
+        errors.append(
+            f"{node_id}: ADDED to {PARITY_BASELINE_FILENAME} — the parity-debt baseline "
+            f"is SHRINK-ONLY. A new hand-flip must declare parity tests that are RED on "
+            f"their own assertion at its base_ref; it may not be baselined out of "
+            f"assertion 7."
+        )
+
+    for node_id in sorted(base_set - working_set):
+        art = receipts_dir / f"{node_id}{chs.HANDFLIP_SUFFIX}"
+        if not art.exists():
+            if repo_root is not None and not _flip_proof_is_new(
+                node_id, receipts_dir, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+            ):
+                errors.append(
+                    f"{node_id}: removed from {PARITY_BASELINE_FILENAME} by DELETING its "
+                    f"hand-flip proof (present at {base_ref}, absent at HEAD). Burning "
+                    f"down parity debt means making the declared tests discriminate, not "
+                    f"deleting the proof that records that they do not."
+                )
+            continue
+        if repo_root is None:
+            errors.append(
+                f"{node_id}: removed from {PARITY_BASELINE_FILENAME}, but the git repo "
+                f"root is unresolvable so the burn-down claim cannot be EXECUTED "
+                f"(fail-closed)."
+            )
+            continue
+        ok, detail = _assert_parity_red_on_base(
+            node_id, receipts_dir, repo_root, src_root
+        )
+        if not ok:
+            errors.append(
+                f"{node_id}: removed from {PARITY_BASELINE_FILENAME}, but assertion 7 "
+                f"still FAILS when executed -> {detail}"
+            )
+    return errors
+
+
+# --------------------------------------------------------------------------- #
+# Orchestration: run the seven assertions in order, stop at first failure.
 # --------------------------------------------------------------------------- #
 
 
@@ -527,11 +805,12 @@ def verify_flip_bundle(
     receipts_dir: Path | None,
     baseline: Path | None,
     base_ref: str = DEFAULT_BASE_REF,
+    parity_baseline: frozenset[str] = frozenset(),
 ) -> ModelFlipBundleResult:
-    """Verify one node's five flip artifacts jointly. Fail-closed, first-failure-wins.
+    """Verify one node's flip artifacts jointly. Fail-closed, first-failure-wins.
 
     Absence, unparseability, a None from any git probe, or an import failure all
-    evaluate to FAIL (never SKIP). Runs the six assertions in numeric order and stops at
+    evaluate to FAIL (never SKIP). Runs the seven assertions in numeric order and stops at
     the first failure so a seeded defect surfaces on its intended assertion, not
     incidentally on a later one. Snapshots + restores the ratchet's module globals so a
     fan-out call leaves no scope state behind for other callers/tests.
@@ -545,7 +824,13 @@ def verify_flip_bundle(
     )
     try:
         return _verify_flip_bundle_impl(
-            node_id, package, src_root, receipts_dir, baseline, base_ref
+            node_id,
+            package,
+            src_root,
+            receipts_dir,
+            baseline,
+            base_ref,
+            parity_baseline,
         )
     finally:
         (
@@ -564,6 +849,7 @@ def _verify_flip_bundle_impl(
     receipts_dir: Path | None,
     baseline: Path | None,
     base_ref: str,
+    parity_baseline: frozenset[str] = frozenset(),
 ) -> ModelFlipBundleResult:
     s_src, _glob, s_base, s_recv = _apply_scope(
         package, src_root, receipts_dir, baseline
@@ -675,13 +961,54 @@ def _verify_flip_bundle_impl(
         )
     )
 
+    # Assertion 7 — declared parity tests RED-on-their-own-assertion at the receipt's
+    # own base_ref (OMN-15340). Hand-flip path only: the equivalence path carries no
+    # parity block and is covered by assertion 6's deterministic rerun.
+    handflip_path = s_recv / f"{node_id}{chs.HANDFLIP_SUFFIX}"
+    if not handflip_path.exists():
+        detail7 = (
+            "equivalence proof path — no hand-flip parity block to execute "
+            "(assertion 6 covers reproducibility)"
+        )
+    elif node_id in parity_baseline:
+        grandfathered = True
+        detail7 = (
+            f"baselined parity debt ({PARITY_BASELINE_FILENAME}) — assertion 7 NOT "
+            f"credited for this node; the entry is shrink-only and removing it re-arms "
+            f"the executed check"
+        )
+    elif repo_root is None:
+        return _record(
+            7,
+            "parity-red-on-base",
+            False,
+            "cannot resolve git repo root to materialize the receipt's base_ref",
+        )
+    elif not _flip_proof_is_new(
+        node_id, s_recv, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+    ):
+        grandfathered = True
+        detail7 = (
+            "grandfathered — hand-flip proof pre-existing at base (not new vs "
+            f"{base_ref})"
+        )
+    else:
+        ok7, detail7 = _assert_parity_red_on_base(node_id, s_recv, repo_root, s_src)
+        if not ok7:
+            return _record(7, "parity-red-on-base", False, detail7)
+    outcomes.append(
+        ModelAssertionOutcome(
+            index=7, name="parity-red-on-base", ok=True, detail=detail7
+        )
+    )
+
     return ModelFlipBundleResult(
         node_id=node_id,
         ok=True,
         failed_assertion=None,
         grandfathered=grandfathered,
         outcomes=tuple(outcomes),
-        reason="all six flip-bundle assertions hold",
+        reason="all seven flip-bundle assertions hold",
     )
 
 
@@ -766,6 +1093,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Override the canonical_handler_shape baseline module path for --package.",
     )
     parser.add_argument(
+        "--parity-baseline",
+        type=Path,
+        default=None,
+        help=(
+            f"Override the parity-debt baseline path (default: {PARITY_BASELINE_FILENAME} "
+            f"beside --baseline)."
+        ),
+    )
+    parser.add_argument(
         "--base-ref",
         default=DEFAULT_BASE_REF,
         help="Git base ref for flip detection / newness / growth (default origin/dev).",
@@ -780,6 +1116,44 @@ def main(argv: list[str] | None = None) -> int:
     s_src, _glob, s_base, s_recv = _apply_scope(
         args.package, args.src_root, args.receipts_dir, args.baseline
     )
+
+    # Parity-debt shrink-only ratchet (OMN-15344). Runs BEFORE flip discovery and
+    # independently of it: the population it governs is the ALREADY-MERGED receipts,
+    # which by definition produce no flips in this PR.
+    parity_baseline_path = _resolve_parity_baseline(s_base, args.parity_baseline)
+    try:
+        parity_working = load_parity_baseline(parity_baseline_path)
+    except ValueError as exc:
+        print(f"verify_flip_bundle FAILED (OMN-15344) — {exc}", file=sys.stderr)
+        return 1
+    parity_base, parity_base_existed = load_base_parity_baseline(
+        parity_baseline_path, args.base_ref
+    )
+    ratchet_errors = _parity_debt_ratchet(
+        parity_working,
+        parity_base,
+        parity_base_existed,
+        s_recv,
+        chs._git_repo_root(s_src),
+        s_src,
+        args.base_ref,
+    )
+    if ratchet_errors:
+        print(
+            f"verify_flip_bundle FAILED (OMN-15344) — the parity-red-on-base debt "
+            f"baseline is SHRINK-ONLY; {len(ratchet_errors)} violation(s):",
+            file=sys.stderr,
+        )
+        for err in ratchet_errors:
+            print(f"    - {err}", file=sys.stderr)
+        return 1
+    if parity_working:
+        print(
+            f"verify_flip_bundle NOTE — {len(parity_working)} node(s) carry baselined "
+            f"parity-red-on-base debt ({parity_baseline_path.name}); shrink-only. Burn "
+            f"down by making the declared parity tests assert the def-A -> def-B "
+            f"transition, then remove the entry (the gate re-executes assertion 7)."
+        )
 
     if args.node_id:
         node_ids: list[str] | None = [args.node_id]
@@ -810,6 +1184,7 @@ def main(argv: list[str] | None = None) -> int:
             args.receipts_dir,
             args.baseline,
             base_ref=args.base_ref,
+            parity_baseline=frozenset(parity_working),
         )
         if result.ok:
             tag = " (grandfathered a6)" if result.grandfathered else ""
@@ -837,7 +1212,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     print(
         f"verify_flip_bundle OK ({args.package}) — {len(node_ids)} flip bundle(s) "
-        f"coherent across all six assertions."
+        f"coherent across all seven assertions."
     )
     return 0
 

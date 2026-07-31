@@ -15,14 +15,18 @@ from pydantic import ValidationError
 from omnibase_core.models.delegation.wire import (
     TASK_DELEGATED_TOPIC_V1,
     EnumBudgetAction,
+    EnumDelegationTerminalFailureCause,
+    EnumQualityScoreComparison,
     EnumTierCostType,
     ModelBaselineIntent,
     ModelBifrostDelegationConfig,
     ModelBudgetLimits,
     ModelComplianceLoopResult,
     ModelDelegationBackendConfig,
+    ModelDelegationCompleted,
     ModelDelegationConfig,
     ModelDelegationEventEnvelope,
+    ModelDelegationFailed,
     ModelDelegationFallbackPolicy,
     ModelDelegationRequest,
     ModelDelegationResult,
@@ -74,6 +78,98 @@ class TestModelDelegationRequest:
     def test_basic_construction(self) -> None:
         r = self._make()
         assert r.task_type == "test"
+
+    def test_cloud_completion_shaping_defaults_are_backward_compatible(self) -> None:
+        request = self._make()
+
+        assert request.backend_id is None
+        assert request.response_contract is None
+        assert request.system_prompt is None
+        assert request.temperature is None
+        assert request.response_format is None
+        dumped = request.model_dump()
+        for field_name in (
+            "backend_id",
+            "response_contract",
+            "system_prompt",
+            "temperature",
+            "response_format",
+        ):
+            assert field_name not in dumped
+
+    def test_cloud_completion_shaping_round_trips_on_canonical_wire(self) -> None:
+        response_contract: dict[str, object] = {
+            "type": "object",
+            "required": ["answer"],
+            "properties": {"answer": {"type": "string"}},
+        }
+        response_format: dict[str, object] = {"type": "json_object"}
+
+        request = self._make(
+            backend_id="cloud-gemini-pro",
+            response_contract=response_contract,
+            system_prompt="Return one JSON object.",
+            temperature=0.2,
+            response_format=response_format,
+        )
+
+        assert request.backend_id == "cloud-gemini-pro"
+        assert request.response_contract == response_contract
+        assert request.system_prompt == "Return one JSON object."
+        assert request.temperature == 0.2
+        assert request.response_format == response_format
+        dumped = request.model_dump()
+        assert dumped["backend_id"] == "cloud-gemini-pro"
+        assert dumped["response_contract"] == response_contract
+        assert dumped["system_prompt"] == "Return one JSON object."
+        assert dumped["temperature"] == pytest.approx(0.2)
+        assert dumped["response_format"] == response_format
+        assert (
+            ModelDelegationRequest.model_validate_json(request.model_dump_json())
+            == request
+        )
+
+    @pytest.mark.parametrize("temperature", [-0.01, 2.01])
+    def test_cloud_completion_shaping_rejects_invalid_temperature(
+        self, temperature: float
+    ) -> None:
+        with pytest.raises(ValidationError):
+            self._make(temperature=temperature)
+
+    def test_cloud_completion_shaping_rejects_unsupported_response_format(
+        self,
+    ) -> None:
+        with pytest.raises(ValidationError, match="unsupported response_format"):
+            self._make(response_format={"type": "json_schema"})
+
+    def test_cloud_completion_shaping_rejects_non_string_response_format_type(
+        self,
+    ) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="response_format type must be a string",
+        ):
+            self._make(response_format={"type": []})
+
+    @pytest.mark.parametrize("backend_id", [" ", " cloud-gemini-pro"])
+    def test_cloud_completion_shaping_rejects_whitespace_backend_id(
+        self,
+        backend_id: str,
+    ) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="backend_id must not be blank or contain surrounding whitespace",
+        ):
+            self._make(backend_id=backend_id)
+
+    def test_cloud_completion_shaping_rejects_non_json_response_contract(
+        self,
+    ) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="response_contract must be JSON-serializable",
+        ):
+            self._make(response_contract={"type": object()})
 
     def test_context_pack_hash_defaults_to_off_arm(self) -> None:
         r = self._make()
@@ -281,6 +377,382 @@ class TestModelDelegationResult:
         assert r.escalation_history == ()
         assert r.terminal_failure_reason is None
         assert r.attempts_count == 1
+
+    def test_structured_quality_evidence_defaults_for_release_compatibility(
+        self,
+    ) -> None:
+        """Older producers can omit the additive quality-evidence fields."""
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+
+        assert r.required_quality_bar is None
+        assert r.score_vs_required_bar is None
+        assert r.failed_acceptance_criteria == ()
+        dumped = r.model_dump()
+        assert "required_quality_bar" not in dumped
+        assert "score_vs_required_bar" not in dumped
+        assert "failed_acceptance_criteria" not in dumped
+
+    def test_structured_quality_evidence_round_trips_exact_live_case(self) -> None:
+        """The 0.867/0.800 canary evidence is machine-readable on the wire."""
+        failure = "TASK_MISMATCH: failed step_by_step_explanation"
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="reasoning",
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com",
+            content="result",
+            quality_passed=False,
+            quality_score=0.867,
+            required_quality_bar=0.800,
+            score_vs_required_bar=EnumQualityScoreComparison.AT_OR_ABOVE_BAR,
+            failed_acceptance_criteria=(failure,),
+            latency_ms=100,
+            fallback_to_claude=True,
+            failure_reason=(
+                "acceptance_criteria_failed: actual_score=0.867 "
+                "required_bar=0.800 score_vs_bar=at_or_above_bar"
+            ),
+        )
+
+        dumped = r.model_dump(mode="json")
+        assert dumped["required_quality_bar"] == pytest.approx(0.800)
+        assert dumped["score_vs_required_bar"] == "at_or_above_bar"
+        assert dumped["failed_acceptance_criteria"] == [failure]
+        assert ModelDelegationResult.model_validate(dumped) == r
+
+    def test_rejects_required_quality_bar_without_comparison(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "required_quality_bar and score_vs_required_bar must be "
+                "provided together"
+            ),
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=0.5,
+                required_quality_bar=0.8,
+                latency_ms=100,
+                fallback_to_claude=True,
+            )
+
+    def test_rejects_quality_comparison_without_required_bar(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "required_quality_bar and score_vs_required_bar must be "
+                "provided together"
+            ),
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=0.5,
+                score_vs_required_bar=EnumQualityScoreComparison.BELOW_BAR,
+                latency_ms=100,
+                fallback_to_claude=True,
+            )
+
+    def test_rejects_failed_acceptance_criteria_when_quality_passed(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="quality_passed result cannot carry failed_acceptance_criteria",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                failed_acceptance_criteria=("criterion_failed",),
+                latency_ms=100,
+                fallback_to_claude=False,
+            )
+
+    def test_rejects_quality_passed_when_score_is_below_required_bar(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="quality_passed result cannot be below required_quality_bar",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=0.5,
+                required_quality_bar=0.8,
+                score_vs_required_bar=EnumQualityScoreComparison.BELOW_BAR,
+                latency_ms=100,
+                fallback_to_claude=False,
+            )
+
+    def test_rejects_failed_quality_above_bar_without_failed_criteria(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "quality-failed result at or above required_quality_bar must "
+                "carry failed_acceptance_criteria"
+            ),
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=0.9,
+                required_quality_bar=0.8,
+                score_vs_required_bar=(EnumQualityScoreComparison.AT_OR_ABOVE_BAR),
+                latency_ms=100,
+                fallback_to_claude=True,
+                failure_reason="legacy prose must not replace structured truth",
+            )
+
+    @pytest.mark.parametrize("criterion", ["", "  "])
+    def test_rejects_blank_failed_acceptance_criterion(self, criterion: str) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="failed_acceptance_criteria entries must not be blank",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=0.9,
+                required_quality_bar=0.8,
+                score_vs_required_bar=(EnumQualityScoreComparison.AT_OR_ABOVE_BAR),
+                failed_acceptance_criteria=(criterion,),
+                latency_ms=100,
+                fallback_to_claude=True,
+            )
+
+    @pytest.mark.parametrize(
+        ("score", "bar", "comparison"),
+        [
+            (0.867, 0.800, EnumQualityScoreComparison.BELOW_BAR),
+            (0.500, 0.800, EnumQualityScoreComparison.AT_OR_ABOVE_BAR),
+        ],
+    )
+    def test_rejects_inconsistent_quality_score_comparison(
+        self,
+        score: float,
+        bar: float,
+        comparison: EnumQualityScoreComparison,
+    ) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="score_vs_required_bar must match quality_score",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=score,
+                required_quality_bar=bar,
+                score_vs_required_bar=comparison,
+                latency_ms=100,
+                fallback_to_claude=True,
+            )
+
+    def test_score_equal_to_bar_is_at_or_above(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="reasoning",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.8,
+            required_quality_bar=0.8,
+            score_vs_required_bar=EnumQualityScoreComparison.AT_OR_ABOVE_BAR,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+
+        assert r.score_vs_required_bar is EnumQualityScoreComparison.AT_OR_ABOVE_BAR
+
+    def test_terminal_failure_cause_defaults_for_release_compatibility(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+
+        assert r.terminal_failure_cause is None
+        assert "terminal_failure_cause" not in r.model_dump()
+
+    def test_failed_terminal_round_trips_provider_quota_exhausted_cause(
+        self,
+    ) -> None:
+        r = ModelDelegationFailed(
+            correlation_id=uuid.uuid4(),
+            task_type="refactor",
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+            failure_reason="429 RESOURCE_EXHAUSTED",
+            terminal_failure_reason="no_higher_tier_available",
+            terminal_failure_cause=(
+                EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+            ),
+        )
+
+        dumped = r.model_dump(mode="json")
+        assert dumped["terminal_failure_cause"] == "provider_quota_exhausted"
+        assert ModelDelegationFailed.model_validate(dumped) == r
+
+    def test_completed_terminal_rejects_terminal_failure_cause(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="completed delegation cannot carry terminal_failure_cause",
+        ):
+            ModelDelegationCompleted(
+                correlation_id=uuid.uuid4(),
+                task_type="refactor",
+                model_used="gemini-2.5-flash",
+                endpoint_url="https://generativelanguage.googleapis.com",
+                content="result",
+                # Exercise the terminal-class invariant independently of the
+                # base quality_passed invariant below.
+                quality_passed=False,
+                quality_score=0.0,
+                latency_ms=100,
+                fallback_to_claude=False,
+                terminal_failure_cause=(
+                    EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+                ),
+            )
+
+    def test_completed_terminal_rejects_quality_failed_verdict(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="completed delegation requires quality_passed",
+        ):
+            ModelDelegationCompleted(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=0.9,
+                latency_ms=100,
+                fallback_to_claude=False,
+            )
+
+    @pytest.mark.parametrize(
+        ("field_name", "field_value", "message"),
+        [
+            (
+                "failure_reason",
+                "provider failed",
+                "completed delegation cannot carry failure_reason",
+            ),
+            (
+                "terminal_failure_reason",
+                "no_higher_tier_available",
+                "completed delegation cannot carry terminal_failure_reason",
+            ),
+        ],
+    )
+    def test_completed_terminal_rejects_failure_state_fields(
+        self,
+        field_name: str,
+        field_value: str,
+        message: str,
+    ) -> None:
+        payload: dict[str, object] = {
+            "correlation_id": uuid.uuid4(),
+            "task_type": "reasoning",
+            "model_used": "qwen3",
+            "endpoint_url": "http://localhost:8000",
+            "content": "result",
+            "quality_passed": True,
+            "quality_score": 0.9,
+            "latency_ms": 100,
+            "fallback_to_claude": False,
+            field_name: field_value,
+        }
+        with pytest.raises(ValidationError, match=message):
+            ModelDelegationCompleted.model_validate(payload)
+
+    def test_failed_terminal_rejects_quality_passed_verdict(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="failed delegation requires quality_passed=false",
+        ):
+            ModelDelegationFailed(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                latency_ms=100,
+                fallback_to_claude=False,
+            )
+
+    def test_quality_passed_base_result_rejects_terminal_failure_cause(self) -> None:
+        """Base-model consumers retain the completed-result invariant."""
+        with pytest.raises(
+            ValidationError,
+            match="completed delegation cannot carry terminal_failure_cause",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="refactor",
+                model_used="gemini-2.5-flash",
+                endpoint_url="https://generativelanguage.googleapis.com",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                latency_ms=100,
+                fallback_to_claude=False,
+                terminal_failure_cause=(
+                    EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+                ),
+            )
 
     def test_context_pack_hash_defaults_to_off_arm(self) -> None:
         r = ModelDelegationResult(
@@ -520,6 +992,55 @@ class TestModelInferenceIntent:
         assert tenant_intent.tenant_id == "tenant-alpha"
         assert tenant_intent.model_dump()["tenant_id"] == "tenant-alpha"
 
+    def test_inference_attempt_id_is_optional_and_round_trips_as_uuid(self) -> None:
+        correlation_id = uuid.uuid4()
+        default_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=correlation_id,
+        )
+        assert default_intent.inference_attempt_id is None
+        assert "inference_attempt_id" not in default_intent.model_dump()
+
+        attempt_id = uuid.uuid4()
+        parsed_intent = ModelInferenceIntent.model_validate(
+            {
+                **default_intent.model_dump(),
+                "inference_attempt_id": str(attempt_id),
+            }
+        )
+        assert parsed_intent.inference_attempt_id == attempt_id
+        assert isinstance(parsed_intent.inference_attempt_id, uuid.UUID)
+
+    def test_response_format_is_typed_and_optional(self) -> None:
+        default_intent = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+        )
+        assert default_intent.response_format is None
+        assert "response_format" not in default_intent.model_dump()
+
+        response_format = {"type": "json_object"}
+        json_intent = default_intent.model_copy(
+            update={"response_format": response_format}
+        )
+        # model_copy(update=...) does not revalidate, so prove the actual wire
+        # parser accepts and round-trips the typed directive.
+        json_intent = ModelInferenceIntent.model_validate(json_intent.model_dump())
+        assert json_intent.response_format == response_format
+
+        with pytest.raises(ValidationError, match="unsupported response_format"):
+            ModelInferenceIntent.model_validate(
+                {**default_intent.model_dump(), "response_format": {"type": "text"}}
+            )
+
 
 @pytest.mark.unit
 class TestModelRoutingTier:
@@ -650,6 +1171,35 @@ class TestModelQualityGate:
             llm_response_content="This is the response.",
         )
         assert inp.min_response_length == 60
+        assert inp.response_contract is None
+        assert "response_contract" not in inp.model_dump()
+
+    def test_gate_input_carries_caller_response_contract(self) -> None:
+        response_contract: dict[str, object] = {
+            "type": "object",
+            "required": ["answer"],
+        }
+        inp = ModelQualityGateInput(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            llm_response_content='{"answer": "ok"}',
+            response_contract=response_contract,
+        )
+
+        assert inp.response_contract == response_contract
+        assert inp.model_dump()["response_contract"] == response_contract
+
+    def test_gate_input_rejects_non_json_response_contract(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="response_contract must be JSON-serializable",
+        ):
+            ModelQualityGateInput(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                llm_response_content='{"answer": "ok"}',
+                response_contract={"type": object()},
+            )
 
     def test_gate_input_rejects_negative_min_response_length(self) -> None:
         with pytest.raises(ValidationError):
@@ -1016,6 +1566,25 @@ class TestModelInferenceResponseData:
             tenant_id="tenant-alpha",
         )
         assert tenant_resp.tenant_id == "tenant-alpha"
+
+    def test_inference_attempt_id_is_optional_and_round_trips_as_uuid(self) -> None:
+        default_resp = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="qwen3-14b",
+        )
+        assert default_resp.inference_attempt_id is None
+        assert "inference_attempt_id" not in default_resp.model_dump()
+
+        attempt_id = uuid.uuid4()
+        parsed_resp = ModelInferenceResponseData.model_validate(
+            {
+                **default_resp.model_dump(),
+                "inference_attempt_id": str(attempt_id),
+            }
+        )
+        assert parsed_resp.inference_attempt_id == attempt_id
+        assert isinstance(parsed_resp.inference_attempt_id, uuid.UUID)
 
 
 @pytest.mark.unit

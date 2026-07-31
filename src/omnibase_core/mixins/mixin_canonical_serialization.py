@@ -30,9 +30,9 @@ from typing import Union, cast
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.protocols import ContextValue, ProtocolCanonicalSerializer
 
 

@@ -29,6 +29,7 @@ import functools
 import hashlib
 import io
 import json
+import tempfile
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
@@ -159,20 +160,25 @@ def _measured_arcs(
 ) -> set[tuple[str, int, int]]:
     """Branch arcs exercised by ``run()``, restricted to files matching ``source_match``."""
     # config_file=False so the repo's [tool.coverage] source/omit does not scope us.
-    cov = coverage.Coverage(branch=True, config_file=False)
-    cov.start()
-    try:
-        run()
-    finally:
-        cov.stop()
-    data = cov.get_data()
-    arcs: set[tuple[str, int, int]] = set()
-    for filename in data.measured_files():
-        if source_match not in filename:
-            continue
-        for a0, a1 in data.arcs(filename) or []:
-            arcs.add((filename, a0, a1))
-    return arcs
+    with tempfile.TemporaryDirectory(prefix="adequacy-coverage-") as tmpdir:
+        cov = coverage.Coverage(
+            branch=True,
+            config_file=False,
+            data_file=str(Path(tmpdir) / ".coverage"),
+        )
+        cov.start()
+        try:
+            run()
+        finally:
+            cov.stop()
+        data = cov.get_data()
+        arcs: set[tuple[str, int, int]] = set()
+        for filename in data.measured_files():
+            if source_match not in filename:
+                continue
+            for a0, a1 in data.arcs(filename) or []:
+                arcs.add((filename, a0, a1))
+        return arcs
 
 
 def select_covering(
@@ -218,20 +224,25 @@ def coverage_pct_for(*, run: Callable[[], object], source_match: str) -> float:
     # config_file=False so the repo's [tool.coverage] source does not scope us;
     # report() is then given the explicit measured handler files (morfs) so the
     # percent is for the handler alone, not diluted across the package.
-    cov = coverage.Coverage(branch=True, config_file=False)
-    cov.start()
-    try:
-        run()
-    finally:
-        cov.stop()
-    morfs = [f for f in cov.get_data().measured_files() if source_match in f]
-    if not morfs:
-        return 0.0
-    sink = io.StringIO()
-    try:
-        return round(float(cov.report(morfs=morfs, file=sink)), 2)
-    except coverage.exceptions.NoDataError:
-        return 0.0
+    with tempfile.TemporaryDirectory(prefix="adequacy-coverage-") as tmpdir:
+        cov = coverage.Coverage(
+            branch=True,
+            config_file=False,
+            data_file=str(Path(tmpdir) / ".coverage"),
+        )
+        cov.start()
+        try:
+            run()
+        finally:
+            cov.stop()
+        morfs = [f for f in cov.get_data().measured_files() if source_match in f]
+        if not morfs:
+            return 0.0
+        sink = io.StringIO()
+        try:
+            return round(float(cov.report(morfs=morfs, file=sink)), 2)
+        except coverage.exceptions.NoDataError:
+            return 0.0
 
 
 def build_receipt(

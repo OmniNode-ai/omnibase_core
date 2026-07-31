@@ -201,6 +201,14 @@ class ModelEventBusSubcontract(BaseModel):
         description="Default event patterns if no other patterns can be determined",
     )
 
+    plugin_managed: bool = Field(
+        default=False,
+        description=(
+            "Whether a domain plugin owns this contract's event-bus subscriptions. "
+            "Generic auto-wiring must skip subscriber creation when enabled."
+        ),
+    )
+
     # Topic-based routing configuration (OMN-1537)
     publish_topics: list[str] = Field(
         default_factory=list,

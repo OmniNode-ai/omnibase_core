@@ -56,7 +56,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, TYPE_CHECKING
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
 import asyncio

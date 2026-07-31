@@ -84,9 +84,9 @@ class MixinNodeTypeValidator:
             EnumNodeType.COMPUTE_GENERIC
         """
         # Runtime imports to avoid circular import
+        from omnibase_core.errors.model_onex_error import ModelOnexError
         from omnibase_core.models.common.model_error_context import ModelErrorContext
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         # Handle EnumNodeArchitectureType - return contract-specific default
         if isinstance(v, EnumNodeArchitectureType):

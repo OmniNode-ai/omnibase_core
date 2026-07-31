@@ -58,11 +58,11 @@ from uuid import UUID
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_field_limits import MAX_BFS_ITERATIONS
 from omnibase_core.enums import EnumCoreErrorCode, EnumStepType
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 

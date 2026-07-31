@@ -20,6 +20,25 @@ from .model_custom_properties import ModelCustomProperties
 
 # Deployment topology models (OMN-3490)
 from .model_deployment_topology import ModelDeploymentTopology
+from .model_deployment_topology_database import ModelDeploymentTopologyDatabase
+from .model_deployment_topology_database_binding import (
+    ModelDeploymentTopologyDatabaseBinding,
+)
+from .model_deployment_topology_database_grant import (
+    ModelDeploymentTopologyDatabaseGrant,
+)
+from .model_deployment_topology_database_migration_ledger import (
+    ModelDeploymentTopologyDatabaseMigrationLedger,
+)
+from .model_deployment_topology_database_owner import (
+    ModelDeploymentTopologyDatabaseOwner,
+)
+from .model_deployment_topology_database_principal import (
+    ModelDeploymentTopologyDatabasePrincipal,
+)
+from .model_deployment_topology_database_schema import (
+    ModelDeploymentTopologyDatabaseSchema,
+)
 from .model_deployment_topology_local_config import ModelDeploymentTopologyLocalConfig
 from .model_deployment_topology_service import ModelDeploymentTopologyService
 
@@ -140,6 +159,13 @@ __all__ = [
     "ModelStorageCheckpointMetadata",
     # Deployment topology models (OMN-3490)
     "ModelDeploymentTopology",
+    "ModelDeploymentTopologyDatabase",
+    "ModelDeploymentTopologyDatabaseBinding",
+    "ModelDeploymentTopologyDatabaseGrant",
+    "ModelDeploymentTopologyDatabaseMigrationLedger",
+    "ModelDeploymentTopologyDatabaseOwner",
+    "ModelDeploymentTopologyDatabasePrincipal",
+    "ModelDeploymentTopologyDatabaseSchema",
     "ModelDeploymentTopologyLocalConfig",
     "ModelDeploymentTopologyService",
     # Configuration base classes

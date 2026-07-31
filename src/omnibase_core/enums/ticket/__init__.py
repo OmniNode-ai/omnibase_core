@@ -15,6 +15,9 @@ from omnibase_core.enums.ticket.enum_definition_location import (
     EnumDefinitionLocation,
 )
 from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
+from omnibase_core.enums.ticket.enum_dod_evidence_execution_scope import (
+    EnumDodEvidenceExecutionScope,
+)
 from omnibase_core.enums.ticket.enum_interface_kind import (
     EnumInterfaceKind,
     InterfaceKind,
@@ -73,6 +76,8 @@ __all__ = [
     "EnumContractInterfaceSurface",
     # OMN-10241: DoD evidence check types
     "EnumDodCheckType",
+    # OMN-15392: explicit hosted/local evidence execution audience
+    "EnumDodEvidenceExecutionScope",
     # OMN-13338: tiered proof-packet enums
     "EnumProofTier",
     "EnumTicketClass",

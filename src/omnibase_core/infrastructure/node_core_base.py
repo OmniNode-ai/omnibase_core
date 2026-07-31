@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_protocols_namespace import (
     ModelProtocolsNamespace,
 )
@@ -14,7 +15,6 @@ from omnibase_core.models.contracts.model_contract_config import ModelContractCo
 from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
     ModelProtocolDependency,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.resolution.resolver_handler import (
     HandlerCallable,

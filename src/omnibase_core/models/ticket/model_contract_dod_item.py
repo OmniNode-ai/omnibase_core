@@ -11,8 +11,9 @@ which serves the PR-gate receipt validation path.
 After Task 4 lands (OCC re-export + ModelDodCheck collision resolution),
 OCC will re-export this class as its ModelDodEvidenceItem.
 
-Field inventory (from OCC model_ticket_contract.py line 103):
-  id, description, source, linear_dod_text, checks, status, evidence_artifact
+Field inventory (from OCC model_ticket_contract.py line 103, plus OMN-15392):
+  id, description, source, linear_dod_text, checks, execution_scope, status,
+  evidence_artifact
 
 Security constraints: _MAX_STRING_LENGTH = 10000, _MAX_LIST_ITEMS = 1000.
 """
@@ -23,6 +24,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.ticket.enum_dod_evidence_execution_scope import (
+    EnumDodEvidenceExecutionScope,
+)
 from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
     ModelDodEvidenceCheck,
 )
@@ -63,6 +67,13 @@ class ModelContractDodItem(BaseModel):
         default_factory=list,
         description="Executable checks that verify this DoD item",
         max_length=_MAX_LIST_ITEMS,
+    )
+    execution_scope: EnumDodEvidenceExecutionScope = Field(
+        default=EnumDodEvidenceExecutionScope.HOSTED_AND_LOCAL,
+        description=(
+            "Gate audience authorized to execute this evidence item. "
+            "local_done_gate items are not evaluated by hosted compliance."
+        ),
     )
     status: Literal["pending", "verified", "failed", "skipped"] = Field(
         default="pending",

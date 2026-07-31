@@ -26,8 +26,8 @@ from pathlib import Path
 import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.package.model_oncp_manifest import ModelOncpManifest
 from omnibase_core.package.model_oncp_scenario_entry import ModelOncpScenarioEntry
 

@@ -56,7 +56,7 @@ from collections.abc import Mapping, Sequence
 from typing import cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.model_transport_message import ModelTransportMessage
 from omnibase_core.runtime.transport.runtime_in_memory_broker import InMemoryBroker
 

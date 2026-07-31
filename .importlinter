@@ -207,3 +207,79 @@ forbidden_modules =
     aiokafka
     confluent_kafka
     omnibase_infra
+
+[importlinter:contract:core-no-legacy-onex-error-path]
+name = Import ModelOnexError from canonical errors/, not the legacy models.errors shims (direct)
+# OMN-14965 (OMN-3210 family). OMN-14335 relocated ModelOnexError / ModelFailFastDetails
+# DOWN into the foundation-layer `errors` package, leaving `models/errors/*` as re-export
+# shims. 119 files across 23 subpackages (plus the root module `topics`) still imported
+# through the legacy `models.errors` path, dragging `models` into their static import
+# closure for an error type whose canonical home is the foundation layer. This contract
+# is the fence that keeps the repoint true.
+#
+# Justified on layering architecture ONLY (standing rule: never CI cost).
+#
+# MEASURED OUTCOME, recorded honestly (grimp, .200 runtime, 2026-07-29): this repoint
+# severs 119 DIRECT edges (utils->models 79->62, mixins->models 151->131,
+# all->models.errors 462->343, exactly as OMN-14965 predicted) but shrinks the
+# TRANSITIVE reverse closure of `models` by ZERO modules: 551 -> 551 counting
+# TYPE_CHECKING edges, 496 -> 496 with exclude_type_checking_imports=True.
+# Root cause: the canonical target `errors.model_onex_error` is ITSELF downstream of
+# `models` (errors.model_onex_error -> types.type_core -> protocols -> ... -> models),
+# so a repointed file keeps `models` in its closure through the protocols<->models
+# cycle. That cycle is RSD-canonical-rewrite-owned and must not be hand-burned, so it
+# -- not this family -- is the binding constraint on the OMN-14921 file-grain selector.
+# This contract is therefore a layering fence, NOT a selector win; do not re-derive a
+# selector rationale from it.
+#
+# ZERO ignore lines by construction: the repoint severed every in-scope edge in the
+# same PR, so there is no allowlist to burn down later.
+#
+# Sources DELIBERATELY EXCLUDE:
+#   - constants / enums / errors / types — already fenced from models by
+#     `core-foundation-no-upward`.
+#   - protocols — RSD-canonical-rewrite-owned (65-edge wildcard ignore + frozen
+#     ratchet); must not be touched here.
+#   - models — owns the shims; its ~343 intra-package legacy-path imports are
+#     deliberately out of scope (intra-package edges, zero cross-subpackage closure gain).
+#   - the root package `omnibase_core` itself — src/omnibase_core/__init__.py was
+#     repointed by this PR (2 function-local imports), but `omnibase_core` cannot be
+#     named as a source module without also covering `models`, which would fail
+#     immediately on the out-of-scope intra-models imports. Residual, recorded here:
+#     the root __init__ is repointed but unfenced.
+#   - top-level subpackages with zero legacy-path imports today (adapters, agents,
+#     artifacts, context, contract_graph, discovery, doctor, factories, feature_flags,
+#     integrations, logging, navigation, normalization, overlays, schemas, tools,
+#     workflows). They are clean but therefore also unfenced — a currently-clean
+#     subpackage can still add a legacy-path import without tripping this contract.
+#     Honest residual; widening the source list is a free follow-up (no ignore lines
+#     would be needed), deliberately not bundled into this bounded single-pattern PR.
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    omnibase_core.analysis
+    omnibase_core.backends
+    omnibase_core.cli
+    omnibase_core.container
+    omnibase_core.contracts
+    omnibase_core.crypto
+    omnibase_core.decorators
+    omnibase_core.dispatch
+    omnibase_core.event_bus
+    omnibase_core.gate
+    omnibase_core.infrastructure
+    omnibase_core.merge
+    omnibase_core.mixins
+    omnibase_core.nodes
+    omnibase_core.package
+    omnibase_core.pipeline
+    omnibase_core.rendering
+    omnibase_core.resolution
+    omnibase_core.runtime
+    omnibase_core.services
+    omnibase_core.topics
+    omnibase_core.utils
+    omnibase_core.validation
+    omnibase_core.validators
+forbidden_modules =
+    omnibase_core.models.errors

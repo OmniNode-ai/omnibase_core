@@ -19,6 +19,7 @@ from omnibase_core.enums import (
     EnumServiceLifecycle,
 )
 from omnibase_core.errors.error_service_resolution import ServiceResolutionError
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
@@ -40,7 +41,6 @@ from omnibase_core.models.container.model_service_metadata import ModelServiceMe
 from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.protocols import (
     ProtocolServiceFactory,
     ProtocolServiceValidator,
