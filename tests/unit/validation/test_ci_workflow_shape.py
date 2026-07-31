@@ -47,44 +47,88 @@ NO_DEV_WORKFLOW_EXECUTION_CONTRACT = (
     "d7dfb006ec524bc384a900b284fc56cbf2a3d7d00a9e1709906ed4e5aebb0d8e"
 )
 
-# SHA-256 over canonical JSON of each job's complete ordered steps plus inherited
-# job env/defaults. This locks every run/uses step and every step key, including
-# with/env/if/id/shell, without attempting to interpret shell syntax. Updating a
-# digest requires auditing the readable workflow diff first.
-NO_DEV_JOB_EXECUTION_CONTRACTS = {
+# SHA-256 over canonical JSON of each complete audited guard job. No job key is
+# excluded: steps, env, defaults, container, runs-on, if, continue-on-error,
+# strategy, needs, permissions, timeout, and future job-level keys are all part
+# of the contract. Updating a digest requires auditing the readable workflow
+# diff first; this deliberately avoids another partial execution-surface list.
+AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
+    "exports-validation": (
+        "54ac4c9daa5992acfd905b46e1d994db0091303b779bc179da509a9ed9184f4e"
+    ),
+    "mypy-validation-scripts": (
+        "05cb980f356187d9a359d068b136553085243698d2286fe55e8800b68138d79d"
+    ),
+    "core-infra-boundary": (
+        "403fa52e3d6f4b8954bc692c6ec40d133278cc00cc34807fa7552732866275ad"
+    ),
+    "check-deterministic-skills": (
+        "8f0e02654254289640c6298ed043de77e3b3ce203421c8e1e4f229a9afd2e717"
+    ),
+    "node-purity-check": (
+        "b633627655c01a98bcce39c4e998529c976659f10cdd70f1a5969772bf8444eb"
+    ),
     "enum-governance": (
-        "4f9d527f1dbc432d05852d1e86d006adbb92cbeb1445cbc5aedb4275d2db7b6b"
+        "b2e4c2e5fc424c462712c9b4d48aea0cb85af1c67d4000f556f4b6ddf56bc215"
     ),
     "contract-config-compliance": (
-        "856550ce6318cf4e5ef2c623561019f2b1d389f57f7277aa65df421913cf74b3"
+        "83cd9a9099bc9f063e98b64bc03cb576290ebc545ae310ee7e41fbe73e29f95c"
     ),
     "breaking-schema-change": (
-        "5b3d3a100c83ff8d5cccf5cc316c17e1c2cf888be3555fbf23fd2bcfd20c89f9"
+        "ee0658f793f00e8e6f179d913343d37504e128dcf73a459b075230adae4a64d8"
+    ),
+    "no-env-fallbacks": (
+        "a0f24383df3a8974b1615035d4df05eb67924a1cda40d9c7a7f85379d816a475"
+    ),
+    "detect-secrets": (
+        "e52c18585e93fd68b8ea8e1db1689fb5bd255e352e176e362b359ede4f346d9b"
+    ),
+    "version-pin-check": (
+        "ade3ee77ab47c64b1cfc44f135116eec3d290c7505a30e54d8093c27a56f59bb"
+    ),
+    "sdk-boundary-check": (
+        "75dc4af7bbf72d5b9cf033d906ebefa51b95bd43c2c89acac430e526e3af923e"
     ),
     "demo-path-topic-coherence": (
-        "ac6c4c93b7b73ca86ffb9079b3f704a7bf4ed0722a2816e3e9f8150d96bb1d13"
+        "94bf6dfc92a03f6c281789316292e59c61ef6d7cd3aca07aae1f2e710d5da094"
     ),
     "dispatch-surface-test-required": (
-        "e3ab562dbc0eea02827d3203928ffbb63b8f05224f6f58f97579c8a0f80690a8"
+        "7f292453c6e38618c81f8e39e6361183e936ed6fbcdf9823b3a4b6cb1d1fcd81"
+    ),
+    "naming-conventions": (
+        "4c018ad075660fc1c8d68c65c84c00b5c7bcd82ba4a70267baa7f6e2ce377aa7"
+    ),
+    "pydantic-patterns": (
+        "0c69ccc1414177fc6b8ce43a34990d8fbd3c63de3ad58a0dc0eb735cf95d8f1b"
     ),
     "aislop-patterns": (
-        "3a89cbab7e77abb9f4d1d16ad6ce2f99b13340889b38e75e745f7c9cea74ec8c"
+        "677edc4eb5c9e263658b04262fc5830a80a9888fbe03b365c76ceb8d58be8319"
     ),
     "doc-content-scan": (
-        "ec5409c441f9a9db7cbb452626de866d111a95daad9b2f4e39fd8a7d1f4c61ef"
+        "83527bb968e8fec272ecb192139b9d941fc8247ae70ec4dbd446a7a1adaddff4"
     ),
     "spdx-headers": (
-        "8efdce9449a64b7759ab9cefd6a88c35133ddc964a27d8e3cf345b6d4fb81cdb"
+        "5ba1941f8549116b224e51ea893864bae25febdbb0e0eafae8f5cf268d7613f0"
     ),
     "no-new-os-environ": (
-        "405eb439e6c2c4861eddf69c0b0bd628fa4af77f1aa4942c30507c9e366e4ebc"
+        "486c2017dc4561d97747ff09d30819011a8aee9a1f30e844ff3b40ca97c2bcdf"
+    ),
+    "duplicate-registry-ids": (
+        "c457353e5aa56dda35a5d34b968e393024e84c3ac60a64bb964fbf52c304e691"
     ),
     "no-noncanonical-lifecycle-classes": (
-        "c98604598238d5543f1f6786f6b540d8eeeba0a825cb6747fb84d97784d65664"
+        "5cae23b307954cd43c5e17198715700a045986a07bb3f5a2941c334936de6b5a"
     ),
     "pull-request-workflow-ratchet": (
-        "ed0d0b95a8a02f19d98526cf9255443c7782cf8da72e4b00587f6781853ff412"
+        "4e10b330674d98df5a7341802e88b8471ff2e4e675c510a37e745373e362e91b"
     ),
+}
+
+OTHER_AUDITED_GUARD_JOBS = {
+    "core-infra-boundary",
+    "check-deterministic-skills",
+    "detect-secrets",
+    "version-pin-check",
 }
 
 NO_DEV_DIRECT_EXECUTABLES = {
@@ -182,12 +226,46 @@ def _workflow_execution_surface(workflow: dict[str, object]) -> dict[str, object
     }
 
 
-def _job_execution_surface(job: dict[str, object]) -> dict[str, object]:
-    return {
-        "steps": job.get("steps", []),
-        "env": job.get("env", {}),
-        "defaults": job.get("defaults", {}),
-    }
+def _guard_job_contract_violations(
+    workflow: dict[str, object], job_names: set[str] | None = None
+) -> list[str]:
+    """Return audited guard jobs whose complete job definition changed."""
+    selected_names = (
+        set(AUDITED_GUARD_JOB_EXECUTION_CONTRACTS) if job_names is None else job_names
+    )
+    jobs = workflow.get("jobs")
+    if not isinstance(jobs, dict):
+        return sorted(selected_names)
+
+    violations: list[str] = []
+    for job_name in sorted(selected_names):
+        job = jobs.get(job_name)
+        expected_digest = AUDITED_GUARD_JOB_EXECUTION_CONTRACTS.get(job_name)
+        if (
+            not isinstance(job, dict)
+            or expected_digest is None
+            or _execution_contract_digest(job) != expected_digest
+        ):
+            violations.append(job_name)
+    return violations
+
+
+def _guard_contract_diagnostics(
+    workflow: dict[str, object], violations: list[str]
+) -> str:
+    """Render expected and actual digests for an intentional contract update."""
+    jobs = workflow.get("jobs")
+    details = ["Audited guard job execution contract mismatch:"]
+    for job_name in violations:
+        expected = AUDITED_GUARD_JOB_EXECUTION_CONTRACTS.get(job_name, "<undeclared>")
+        job = jobs.get(job_name) if isinstance(jobs, dict) else None
+        actual = (
+            _execution_contract_digest(job)
+            if isinstance(job, dict)
+            else "<missing-or-invalid-job>"
+        )
+        details.append(f"- {job_name}: expected={expected} actual={actual}")
+    return "\n".join(details)
 
 
 def _env_keys(container: dict[str, object]) -> set[str] | None:
@@ -215,9 +293,10 @@ def _no_dev_contract_violations(workflow: dict[str, object]) -> list[str]:
     if not isinstance(jobs, dict):
         return [WORKFLOW_CONTRACT_SCOPE]
 
-    declared_jobs = set(NO_DEV_JOB_EXECUTION_CONTRACTS)
+    declared_jobs = set(NO_DEV_DIRECT_EXECUTABLES)
     discovered_jobs = _literal_no_dev_job_names(workflow)
     violations.update(declared_jobs.symmetric_difference(discovered_jobs))
+    violations.update(_guard_job_contract_violations(workflow, declared_jobs))
 
     workflow_env_keys = _env_keys(workflow)
     if (
@@ -228,19 +307,14 @@ def _no_dev_contract_violations(workflow: dict[str, object]) -> list[str]:
     ):
         violations.add(WORKFLOW_CONTRACT_SCOPE)
 
-    for job_name, expected_digest in NO_DEV_JOB_EXECUTION_CONTRACTS.items():
+    for job_name in declared_jobs:
         job = jobs.get(job_name)
         if not isinstance(job, dict):
             violations.add(job_name)
             continue
 
         job_env_keys = _env_keys(job)
-        if (
-            job_env_keys is None
-            or job_env_keys & FORBIDDEN_EXECUTION_ENV_KEYS
-            or _execution_contract_digest(_job_execution_surface(job))
-            != expected_digest
-        ):
+        if job_env_keys is None or job_env_keys & FORBIDDEN_EXECUTION_ENV_KEYS:
             violations.add(job_name)
 
     return sorted(violations)
@@ -301,6 +375,19 @@ def test_test_shards_restore_uv_cache_without_competing_to_save_it() -> None:
     assert setup_uv_steps[0]["with"]["save-cache"] is False
 
 
+def test_audited_guard_jobs_match_complete_execution_contracts() -> None:
+    workflow = _ci_workflow()
+    expected_jobs = (
+        set(STDLIB_ONLY_GUARD_COMMANDS)
+        | set(DEPENDENCY_GUARD_PROFILES)
+        | OTHER_AUDITED_GUARD_JOBS
+    )
+    violations = _guard_job_contract_violations(workflow)
+
+    assert set(AUDITED_GUARD_JOB_EXECUTION_CONTRACTS) == expected_jobs
+    assert violations == [], _guard_contract_diagnostics(workflow, violations)
+
+
 @pytest.mark.parametrize(
     ("job_name", "expected_command"), STDLIB_ONLY_GUARD_COMMANDS.items()
 )
@@ -316,6 +403,46 @@ def test_stdlib_only_guards_do_not_build_a_project_environment(
     assert "uv sync" not in rendered
     assert expected_command in rendered
     assert _ci_job(job_name)["timeout-minutes"] == 5
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    ["if-false", "continue-on-error", "mask-command-failure"],
+)
+def test_bare_guard_contract_rejects_advisory_or_masked_execution(
+    mutation: str,
+) -> None:
+    workflow = copy.deepcopy(_ci_workflow())
+    steps = _workflow_job_steps(workflow, "exports-validation")
+    validation_step = next(
+        step for step in steps if step.get("name") == "Validate __all__ exports"
+    )
+
+    if mutation == "if-false":
+        validation_step["if"] = "${{ false }}"
+    elif mutation == "continue-on-error":
+        validation_step["continue-on-error"] = True
+    else:
+        run = validation_step.get("run")
+        assert isinstance(run, str)
+        validation_step["run"] = f"{run} || true"
+
+    assert _guard_job_contract_violations(workflow) == ["exports-validation"]
+
+
+def test_no_dev_contract_rejects_job_container_environment_injection() -> None:
+    workflow = copy.deepcopy(_ci_workflow())
+    jobs = workflow["jobs"]
+    assert isinstance(jobs, dict)
+    job = jobs["enum-governance"]
+    assert isinstance(job, dict)
+    job["container"] = {
+        "image": "ubuntu:24.04",
+        "env": {"PYTHONPATH": "${{ github.workspace }}/ci_injection"},
+    }
+
+    assert _guard_job_contract_violations(workflow) == ["enum-governance"]
+    assert _no_dev_contract_violations(workflow) == ["enum-governance"]
 
 
 @pytest.mark.parametrize(
@@ -351,9 +478,8 @@ def test_dependency_guards_use_minimal_locked_sync_and_measured_budgets(
 def test_no_dev_execution_surface_matches_declared_contract() -> None:
     workflow = _ci_workflow()
 
-    assert _literal_no_dev_job_names(workflow) == set(NO_DEV_JOB_EXECUTION_CONTRACTS)
-    assert set(NO_DEV_DIRECT_EXECUTABLES) == set(NO_DEV_JOB_EXECUTION_CONTRACTS)
-    for job_name in NO_DEV_JOB_EXECUTION_CONTRACTS:
+    assert _literal_no_dev_job_names(workflow) == set(NO_DEV_DIRECT_EXECUTABLES)
+    for job_name in NO_DEV_DIRECT_EXECUTABLES:
         assert all(("run" in step) ^ ("uses" in step) for step in _job_steps(job_name))
     assert _no_dev_contract_violations(workflow) == []
 
