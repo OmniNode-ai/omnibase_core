@@ -105,19 +105,52 @@ def _git_changed_py_files(base: str, head: str, repo_root: Path) -> list[Path]:
     return [repo_root / line for line in result.stdout.splitlines() if line]
 
 
-def _git_file_at(ref: str, rel_path: str, repo_root: Path) -> str:
-    """Return file content at given ref, empty string if not present."""
-    try:
-        result = subprocess.run(
-            ["git", "show", f"{ref}:{rel_path}"],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return result.stdout
-    except subprocess.CalledProcessError:
-        return ""
+def _git_files_at(
+    repo_root: Path, requests: list[tuple[str, str]]
+) -> dict[tuple[str, str], str]:
+    """Read every requested ``<ref>:<path>`` blob in ONE git process.
+
+    The previous shape spawned two ``git show`` processes per changed file, so a
+    1,000-file diff paid ~2,000 process spawns and that dominated CLI runtime --
+    enough, under the parallel test gate, to push the run past its per-test
+    timeout. ``git cat-file --batch`` answers the whole set from a single
+    process. Missing blobs yield "", matching the previous per-file behaviour.
+    See OMN-15431.
+    """
+    if not requests:
+        return {}
+
+    payload = "".join(f"{ref}:{rel}\n" for ref, rel in requests).encode()
+    result = subprocess.run(
+        ["git", "cat-file", "--batch"],
+        cwd=repo_root,
+        input=payload,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return {}
+
+    out = result.stdout
+    sources: dict[tuple[str, str], str] = {}
+    pos = 0
+    for key in requests:
+        end_of_header = out.find(b"\n", pos)
+        if end_of_header == -1:
+            break
+        header = out[pos:end_of_header]
+        pos = end_of_header + 1
+        # Success is "<oid> <type> <size>"; absence is "<request> missing".
+        fields = header.split(b" ")
+        try:
+            size = int(fields[2])
+        except (IndexError, ValueError):
+            sources[key] = ""
+            continue
+        sources[key] = out[pos : pos + size].decode("utf-8", errors="replace")
+        pos += size + 1  # blob payload plus its trailing newline
+
+    return sources
 
 
 def _compute_report(base: str, head: str, repo_root: Path) -> ModelSemanticDiffReport:
@@ -133,10 +166,17 @@ def _compute_report(base: str, head: str, repo_root: Path) -> ModelSemanticDiffR
     all_changes: list[ModelSymbolChange] = []
     total_consumers = 0
 
-    for file_path in changed_files:
-        rel = file_path.relative_to(repo_root).as_posix()
-        old_source = _git_file_at(base, rel, repo_root)
-        new_source = _git_file_at(head, rel, repo_root)
+    rel_paths = [
+        file_path.relative_to(repo_root).as_posix() for file_path in changed_files
+    ]
+    sources = _git_files_at(
+        repo_root,
+        [(ref, rel) for rel in rel_paths for ref in (base, head)],
+    )
+
+    for rel in rel_paths:
+        old_source = sources.get((base, rel), "")
+        new_source = sources.get((head, rel), "")
         consumers = consumer_graph.get(rel, 0)
         report = compute_diff(old_source, new_source, rel, consumers)
         all_changes.extend(report.changes)
