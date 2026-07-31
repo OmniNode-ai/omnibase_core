@@ -198,27 +198,34 @@ class ModelDelegationResult(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def validate_quality_score_comparison(self) -> Self:
-        """Reject a structured comparison that contradicts its numeric evidence."""
-        if self.required_quality_bar is None or self.score_vs_required_bar is None:
-            return self
-
-        expected = (
-            EnumQualityScoreComparison.BELOW_BAR
-            if self.quality_score < self.required_quality_bar
-            else EnumQualityScoreComparison.AT_OR_ABOVE_BAR
-        )
-        if self.score_vs_required_bar is not expected:
+    def validate_structured_terminal_evidence(self) -> Self:
+        """Reject incomplete or contradictory structured terminal evidence."""
+        required_bar = self.required_quality_bar
+        comparison = self.score_vs_required_bar
+        if (required_bar is None) != (comparison is None):
             msg = (
-                "score_vs_required_bar must match quality_score and "
-                "required_quality_bar"
+                "required_quality_bar and score_vs_required_bar must be "
+                "provided together"
             )
             raise ValueError(msg)
-        return self
 
-    @model_validator(mode="after")
-    def validate_terminal_failure_cause(self) -> Self:
-        """Prevent an accepted/completed result from naming a failure cause."""
+        if required_bar is not None and comparison is not None:
+            expected = (
+                EnumQualityScoreComparison.BELOW_BAR
+                if self.quality_score < required_bar
+                else EnumQualityScoreComparison.AT_OR_ABOVE_BAR
+            )
+            if comparison is not expected:
+                msg = (
+                    "score_vs_required_bar must match quality_score and "
+                    "required_quality_bar"
+                )
+                raise ValueError(msg)
+
+        if self.quality_passed and self.failed_acceptance_criteria:
+            msg = "quality_passed result cannot carry failed_acceptance_criteria"
+            raise ValueError(msg)
+
         if self.quality_passed and self.terminal_failure_cause is not None:
             msg = "completed delegation cannot carry terminal_failure_cause"
             raise ValueError(msg)

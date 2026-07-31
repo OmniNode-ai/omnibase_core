@@ -401,6 +401,66 @@ class TestModelDelegationResult:
         assert dumped["failed_acceptance_criteria"] == [failure]
         assert ModelDelegationResult.model_validate(dumped) == r
 
+    def test_rejects_required_quality_bar_without_comparison(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "required_quality_bar and score_vs_required_bar must be "
+                "provided together"
+            ),
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=0.5,
+                required_quality_bar=0.8,
+                latency_ms=100,
+                fallback_to_claude=True,
+            )
+
+    def test_rejects_quality_comparison_without_required_bar(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match=(
+                "required_quality_bar and score_vs_required_bar must be "
+                "provided together"
+            ),
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=False,
+                quality_score=0.5,
+                score_vs_required_bar=EnumQualityScoreComparison.BELOW_BAR,
+                latency_ms=100,
+                fallback_to_claude=True,
+            )
+
+    def test_rejects_failed_acceptance_criteria_when_quality_passed(self) -> None:
+        with pytest.raises(
+            ValidationError,
+            match="quality_passed result cannot carry failed_acceptance_criteria",
+        ):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="reasoning",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                failed_acceptance_criteria=("criterion_failed",),
+                latency_ms=100,
+                fallback_to_claude=False,
+            )
+
     @pytest.mark.parametrize(
         ("score", "bar", "comparison"),
         [
