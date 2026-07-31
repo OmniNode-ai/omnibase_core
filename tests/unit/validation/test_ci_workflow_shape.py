@@ -43,9 +43,7 @@ DEPENDENCY_GUARD_PROFILES = {
     "pull-request-workflow-ratchet": ("uv sync --frozen --no-dev", 6),
 }
 
-NO_DEV_WORKFLOW_EXECUTION_CONTRACT = (
-    "d7dfb006ec524bc384a900b284fc56cbf2a3d7d00a9e1709906ed4e5aebb0d8e"
-)
+NO_DEV_WORKFLOW_EXECUTION_CONTRACT = "d7dfb006ec524bc384a900b284fc56cbf2a3d7d00a9e1709906ed4e5aebb0d8e"  # pragma: allowlist secret
 
 # SHA-256 over canonical JSON of each complete audited guard job. No job key is
 # excluded: steps, env, defaults, container, runs-on, if, continue-on-error,
@@ -54,73 +52,73 @@ NO_DEV_WORKFLOW_EXECUTION_CONTRACT = (
 # diff first; this deliberately avoids another partial execution-surface list.
 AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     "exports-validation": (
-        "54ac4c9daa5992acfd905b46e1d994db0091303b779bc179da509a9ed9184f4e"
+        "54ac4c9daa5992acfd905b46e1d994db0091303b779bc179da509a9ed9184f4e"  # pragma: allowlist secret
     ),
     "mypy-validation-scripts": (
-        "05cb980f356187d9a359d068b136553085243698d2286fe55e8800b68138d79d"
+        "05cb980f356187d9a359d068b136553085243698d2286fe55e8800b68138d79d"  # pragma: allowlist secret
     ),
     "core-infra-boundary": (
-        "403fa52e3d6f4b8954bc692c6ec40d133278cc00cc34807fa7552732866275ad"
+        "403fa52e3d6f4b8954bc692c6ec40d133278cc00cc34807fa7552732866275ad"  # pragma: allowlist secret
     ),
     "check-deterministic-skills": (
-        "8f0e02654254289640c6298ed043de77e3b3ce203421c8e1e4f229a9afd2e717"
+        "8f0e02654254289640c6298ed043de77e3b3ce203421c8e1e4f229a9afd2e717"  # pragma: allowlist secret
     ),
     "node-purity-check": (
-        "b633627655c01a98bcce39c4e998529c976659f10cdd70f1a5969772bf8444eb"
+        "b633627655c01a98bcce39c4e998529c976659f10cdd70f1a5969772bf8444eb"  # pragma: allowlist secret
     ),
     "enum-governance": (
-        "b2e4c2e5fc424c462712c9b4d48aea0cb85af1c67d4000f556f4b6ddf56bc215"
+        "b2e4c2e5fc424c462712c9b4d48aea0cb85af1c67d4000f556f4b6ddf56bc215"  # pragma: allowlist secret
     ),
     "contract-config-compliance": (
-        "83cd9a9099bc9f063e98b64bc03cb576290ebc545ae310ee7e41fbe73e29f95c"
+        "83cd9a9099bc9f063e98b64bc03cb576290ebc545ae310ee7e41fbe73e29f95c"  # pragma: allowlist secret
     ),
     "breaking-schema-change": (
-        "ee0658f793f00e8e6f179d913343d37504e128dcf73a459b075230adae4a64d8"
+        "ee0658f793f00e8e6f179d913343d37504e128dcf73a459b075230adae4a64d8"  # pragma: allowlist secret
     ),
     "no-env-fallbacks": (
-        "a0f24383df3a8974b1615035d4df05eb67924a1cda40d9c7a7f85379d816a475"
+        "a0f24383df3a8974b1615035d4df05eb67924a1cda40d9c7a7f85379d816a475"  # pragma: allowlist secret
     ),
     "detect-secrets": (
-        "e52c18585e93fd68b8ea8e1db1689fb5bd255e352e176e362b359ede4f346d9b"
+        "e52c18585e93fd68b8ea8e1db1689fb5bd255e352e176e362b359ede4f346d9b"  # pragma: allowlist secret
     ),
     "version-pin-check": (
-        "ade3ee77ab47c64b1cfc44f135116eec3d290c7505a30e54d8093c27a56f59bb"
+        "ade3ee77ab47c64b1cfc44f135116eec3d290c7505a30e54d8093c27a56f59bb"  # pragma: allowlist secret
     ),
     "sdk-boundary-check": (
-        "75dc4af7bbf72d5b9cf033d906ebefa51b95bd43c2c89acac430e526e3af923e"
+        "75dc4af7bbf72d5b9cf033d906ebefa51b95bd43c2c89acac430e526e3af923e"  # pragma: allowlist secret
     ),
     "demo-path-topic-coherence": (
-        "94bf6dfc92a03f6c281789316292e59c61ef6d7cd3aca07aae1f2e710d5da094"
+        "94bf6dfc92a03f6c281789316292e59c61ef6d7cd3aca07aae1f2e710d5da094"  # pragma: allowlist secret
     ),
     "dispatch-surface-test-required": (
-        "7f292453c6e38618c81f8e39e6361183e936ed6fbcdf9823b3a4b6cb1d1fcd81"
+        "7f292453c6e38618c81f8e39e6361183e936ed6fbcdf9823b3a4b6cb1d1fcd81"  # pragma: allowlist secret
     ),
     "naming-conventions": (
-        "4c018ad075660fc1c8d68c65c84c00b5c7bcd82ba4a70267baa7f6e2ce377aa7"
+        "4c018ad075660fc1c8d68c65c84c00b5c7bcd82ba4a70267baa7f6e2ce377aa7"  # pragma: allowlist secret
     ),
     "pydantic-patterns": (
-        "0c69ccc1414177fc6b8ce43a34990d8fbd3c63de3ad58a0dc0eb735cf95d8f1b"
+        "0c69ccc1414177fc6b8ce43a34990d8fbd3c63de3ad58a0dc0eb735cf95d8f1b"  # pragma: allowlist secret
     ),
     "aislop-patterns": (
-        "677edc4eb5c9e263658b04262fc5830a80a9888fbe03b365c76ceb8d58be8319"
+        "677edc4eb5c9e263658b04262fc5830a80a9888fbe03b365c76ceb8d58be8319"  # pragma: allowlist secret
     ),
     "doc-content-scan": (
-        "83527bb968e8fec272ecb192139b9d941fc8247ae70ec4dbd446a7a1adaddff4"
+        "83527bb968e8fec272ecb192139b9d941fc8247ae70ec4dbd446a7a1adaddff4"  # pragma: allowlist secret
     ),
     "spdx-headers": (
-        "5ba1941f8549116b224e51ea893864bae25febdbb0e0eafae8f5cf268d7613f0"
+        "5ba1941f8549116b224e51ea893864bae25febdbb0e0eafae8f5cf268d7613f0"  # pragma: allowlist secret
     ),
     "no-new-os-environ": (
-        "486c2017dc4561d97747ff09d30819011a8aee9a1f30e844ff3b40ca97c2bcdf"
+        "486c2017dc4561d97747ff09d30819011a8aee9a1f30e844ff3b40ca97c2bcdf"  # pragma: allowlist secret
     ),
     "duplicate-registry-ids": (
-        "c457353e5aa56dda35a5d34b968e393024e84c3ac60a64bb964fbf52c304e691"
+        "c457353e5aa56dda35a5d34b968e393024e84c3ac60a64bb964fbf52c304e691"  # pragma: allowlist secret
     ),
     "no-noncanonical-lifecycle-classes": (
-        "5cae23b307954cd43c5e17198715700a045986a07bb3f5a2941c334936de6b5a"
+        "5cae23b307954cd43c5e17198715700a045986a07bb3f5a2941c334936de6b5a"  # pragma: allowlist secret
     ),
     "pull-request-workflow-ratchet": (
-        "4e10b330674d98df5a7341802e88b8471ff2e4e675c510a37e745373e362e91b"
+        "4e10b330674d98df5a7341802e88b8471ff2e4e675c510a37e745373e362e91b"  # pragma: allowlist secret
     ),
 }
 
