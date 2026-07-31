@@ -200,6 +200,10 @@ class ModelDelegationResult(BaseModel):
     @model_validator(mode="after")
     def validate_structured_terminal_evidence(self) -> Self:
         """Reject incomplete or contradictory structured terminal evidence."""
+        if any(not item.strip() for item in self.failed_acceptance_criteria):
+            msg = "failed_acceptance_criteria entries must not be blank"
+            raise ValueError(msg)
+
         required_bar = self.required_quality_bar
         comparison = self.score_vs_required_bar
         if (required_bar is None) != (comparison is None):
@@ -219,6 +223,24 @@ class ModelDelegationResult(BaseModel):
                 msg = (
                     "score_vs_required_bar must match quality_score and "
                     "required_quality_bar"
+                )
+                raise ValueError(msg)
+
+            if (
+                comparison is EnumQualityScoreComparison.BELOW_BAR
+                and self.quality_passed
+            ):
+                msg = "quality_passed result cannot be below required_quality_bar"
+                raise ValueError(msg)
+
+            if (
+                comparison is EnumQualityScoreComparison.AT_OR_ABOVE_BAR
+                and not self.quality_passed
+                and not self.failed_acceptance_criteria
+            ):
+                msg = (
+                    "quality-failed result at or above required_quality_bar must "
+                    "carry failed_acceptance_criteria"
                 )
                 raise ValueError(msg)
 

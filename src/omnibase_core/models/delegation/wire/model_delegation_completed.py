@@ -23,10 +23,19 @@ class ModelDelegationCompleted(ModelDelegationResult):
     """
 
     @model_validator(mode="after")
-    def validate_no_terminal_failure_cause(self) -> Self:
-        """A completed terminal cannot simultaneously name a failure cause."""
+    def validate_completed_terminal_truth(self) -> Self:
+        """Keep the completed topic identity consistent with its payload."""
         if self.terminal_failure_cause is not None:
             msg = "completed delegation cannot carry terminal_failure_cause"
+            raise ValueError(msg)
+        if self.terminal_failure_reason is not None:
+            msg = "completed delegation cannot carry terminal_failure_reason"
+            raise ValueError(msg)
+        if self.failure_reason:
+            msg = "completed delegation cannot carry failure_reason"
+            raise ValueError(msg)
+        if not self.quality_passed:
+            msg = "completed delegation requires quality_passed"
             raise ValueError(msg)
         return self
 

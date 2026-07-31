@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime
 from typing import Literal, Self
@@ -66,12 +67,31 @@ def validate_response_format(
             f"{sorted(response_format)!r}"
         )
     response_type = response_format["type"]
+    if not isinstance(response_type, str):
+        raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+            "response_format type must be a string"
+        )
     if response_type not in SUPPORTED_RESPONSE_FORMAT_TYPES:
         raise ValueError(  # error-ok: Pydantic field validator requires ValueError
             f"unsupported response_format type {response_type!r}; supported: "
             f"{sorted(SUPPORTED_RESPONSE_FORMAT_TYPES)!r}"
         )
     return response_format
+
+
+def validate_response_contract(
+    response_contract: dict[str, object] | None,
+) -> dict[str, object] | None:
+    """Require response contracts to survive the JSON wire boundary."""
+    if response_contract is None:
+        return None
+    try:
+        json.dumps(response_contract, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+            "response_contract must be JSON-serializable"
+        ) from exc
+    return response_contract
 
 
 def validate_acceptance_criteria(criteria: tuple[str, ...]) -> tuple[str, ...]:
@@ -252,6 +272,24 @@ class ModelDelegationRequest(BaseModel):
     ) -> dict[str, object] | None:
         return validate_response_format(response_format)
 
+    @field_validator("backend_id")
+    @classmethod
+    def _validate_backend_id(cls, backend_id: str | None) -> str | None:
+        if backend_id is not None and (
+            not backend_id.strip() or backend_id != backend_id.strip()
+        ):
+            raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+                "backend_id must not be blank or contain surrounding whitespace"
+            )
+        return backend_id
+
+    @field_validator("response_contract")
+    @classmethod
+    def _validate_response_contract(
+        cls, response_contract: dict[str, object] | None
+    ) -> dict[str, object] | None:
+        return validate_response_contract(response_contract)
+
     @model_validator(mode="after")
     def _validate_compliance_loop_config(self) -> Self:
         if self.output_schema_key is not None and self.compliance_budget is None:
@@ -272,5 +310,6 @@ __all__: list[str] = [
     "EnumQualityContractMode",
     "ModelDelegationRequest",
     "validate_acceptance_criteria",
+    "validate_response_contract",
     "validate_response_format",
 ]
