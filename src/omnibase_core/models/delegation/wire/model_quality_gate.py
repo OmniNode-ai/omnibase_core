@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_quality_gate_result import EnumQualityGateResult
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     EnumQualityContractMode,
+    validate_response_contract,
 )
 
 EnumQualityGateCategory = EnumQualityGateResult
@@ -65,6 +66,22 @@ class ModelQualityGateInput(BaseModel):
         default=(),
         description="Request-level quality checks enforced by the quality gate.",
     )
+    response_contract: dict[str, object] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Optional caller-declared JSON Schema used as the structural "
+            "acceptance authority. None lets the consumer resolve the "
+            "task-class default contract."
+        ),
+    )
+
+    @field_validator("response_contract")
+    @classmethod
+    def _validate_response_contract(
+        cls, response_contract: dict[str, object] | None
+    ) -> dict[str, object] | None:
+        return validate_response_contract(response_contract)
 
 
 class ModelQualityGateResult(BaseModel):

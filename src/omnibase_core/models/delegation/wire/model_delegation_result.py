@@ -10,6 +10,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_delegation_terminal_failure_cause import (
+    EnumDelegationTerminalFailureCause,
+)
+from omnibase_core.enums.enum_quality_score_comparison import (
+    EnumQualityScoreComparison,
+)
+
 
 class ModelDelegationResult(BaseModel):
     """Delegation outcome: content, quality status, model info, and metrics."""
@@ -38,6 +45,32 @@ class ModelDelegationResult(BaseModel):
         ge=0.0,
         le=1.0,
         description="Quality score from 0.0 to 1.0.",
+    )
+    required_quality_bar: float | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Authoritative minimum quality score applied to this result. None when "
+            "no quality bar was evaluated."
+        ),
+    )
+    score_vs_required_bar: EnumQualityScoreComparison | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed comparison of quality_score to required_quality_bar. None when "
+            "no quality bar was evaluated."
+        ),
+    )
+    failed_acceptance_criteria: tuple[str, ...] = Field(
+        default=(),
+        exclude_if=lambda value: not value,
+        description=(
+            "Authoritative quality-gate failure details. Empty when no acceptance "
+            "criterion failed or no quality gate ran."
+        ),
     )
     latency_ms: int = Field(
         ..., ge=0, description="End-to-end latency in milliseconds."
@@ -81,6 +114,14 @@ class ModelDelegationResult(BaseModel):
     terminal_failure_reason: str | None = Field(
         default=None,
         description="Terminal failure reason when delegation fails after escalation.",
+    )
+    terminal_failure_cause: EnumDelegationTerminalFailureCause | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Stable machine-readable cause for a terminal delegation failure. "
+            "None for completed results and legacy failure producers."
+        ),
     )
     routing_tiers_hash: str | None = Field(
         default=None,
@@ -156,5 +197,65 @@ class ModelDelegationResult(BaseModel):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def validate_structured_terminal_evidence(self) -> Self:
+        """Reject incomplete or contradictory structured terminal evidence."""
+        if any(not item.strip() for item in self.failed_acceptance_criteria):
+            msg = "failed_acceptance_criteria entries must not be blank"
+            raise ValueError(msg)
 
-__all__: list[str] = ["ModelDelegationResult"]
+        required_bar = self.required_quality_bar
+        comparison = self.score_vs_required_bar
+        if (required_bar is None) != (comparison is None):
+            msg = (
+                "required_quality_bar and score_vs_required_bar must be "
+                "provided together"
+            )
+            raise ValueError(msg)
+
+        if required_bar is not None and comparison is not None:
+            expected = (
+                EnumQualityScoreComparison.BELOW_BAR
+                if self.quality_score < required_bar
+                else EnumQualityScoreComparison.AT_OR_ABOVE_BAR
+            )
+            if comparison is not expected:
+                msg = (
+                    "score_vs_required_bar must match quality_score and "
+                    "required_quality_bar"
+                )
+                raise ValueError(msg)
+
+            if (
+                comparison is EnumQualityScoreComparison.BELOW_BAR
+                and self.quality_passed
+            ):
+                msg = "quality_passed result cannot be below required_quality_bar"
+                raise ValueError(msg)
+
+            if (
+                comparison is EnumQualityScoreComparison.AT_OR_ABOVE_BAR
+                and not self.quality_passed
+                and not self.failed_acceptance_criteria
+            ):
+                msg = (
+                    "quality-failed result at or above required_quality_bar must "
+                    "carry failed_acceptance_criteria"
+                )
+                raise ValueError(msg)
+
+        if self.quality_passed and self.failed_acceptance_criteria:
+            msg = "quality_passed result cannot carry failed_acceptance_criteria"
+            raise ValueError(msg)
+
+        if self.quality_passed and self.terminal_failure_cause is not None:
+            msg = "completed delegation cannot carry terminal_failure_cause"
+            raise ValueError(msg)
+        return self
+
+
+__all__: list[str] = [
+    "EnumDelegationTerminalFailureCause",
+    "EnumQualityScoreComparison",
+    "ModelDelegationResult",
+]

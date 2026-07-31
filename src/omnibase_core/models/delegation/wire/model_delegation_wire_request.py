@@ -5,16 +5,19 @@
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime
 from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.delegation.wire.model_budget import ModelBudgetLimits
 
 EnumQualityContractMode = Literal["extend_task_class", "replace_task_class"]
+
+SUPPORTED_RESPONSE_FORMAT_TYPES = frozenset({"json_object"})
 
 SUPPORTED_ACCEPTANCE_CRITERIA = frozenset(
     {
@@ -45,6 +48,50 @@ SUPPORTED_ACCEPTANCE_CRITERIA = frozenset(
     }
 )
 MAX_WORDS_PER_SENTENCE_RE = re.compile(r"^max_words_per_sentence_([1-9]\d*)$")
+
+
+def validate_response_format(
+    response_format: dict[str, object] | None,
+) -> dict[str, object] | None:
+    """Validate the provider response-format subset carried by delegation.
+
+    The canonical wire accepts only the mode the delegation provider boundary
+    implements. Schema-shaped output requirements belong on
+    ``response_contract`` and are evaluated by the quality gate instead.
+    """
+    if response_format is None:
+        return None
+    if set(response_format) != {"type"}:
+        raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+            "response_format must contain exactly the key 'type'; got "
+            f"{sorted(response_format)!r}"
+        )
+    response_type = response_format["type"]
+    if not isinstance(response_type, str):
+        raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+            "response_format type must be a string"
+        )
+    if response_type not in SUPPORTED_RESPONSE_FORMAT_TYPES:
+        raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+            f"unsupported response_format type {response_type!r}; supported: "
+            f"{sorted(SUPPORTED_RESPONSE_FORMAT_TYPES)!r}"
+        )
+    return response_format
+
+
+def validate_response_contract(
+    response_contract: dict[str, object] | None,
+) -> dict[str, object] | None:
+    """Require response contracts to survive the JSON wire boundary."""
+    if response_contract is None:
+        return None
+    try:
+        json.dumps(response_contract, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+            "response_contract must be JSON-serializable"
+        ) from exc
+    return response_contract
 
 
 def validate_acceptance_criteria(criteria: tuple[str, ...]) -> tuple[str, ...]:
@@ -170,6 +217,78 @@ class ModelDelegationRequest(BaseModel):
             "The durable per-tenant identity design is OMN-14107."
         ),
     )
+    # string-id-ok: backend references are named contract slugs, not UUIDs
+    backend_id: str | None = (
+        Field(  # string-id-ok: backend references are named contract slugs, not UUIDs
+            default=None,
+            exclude_if=lambda value: value is None,
+            min_length=1,
+            description=(
+                "Optional exact routing backend reference. None preserves normal "
+                "contract-driven tier selection."
+            ),
+        )
+    )
+    response_contract: dict[str, object] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Optional caller-declared JSON Schema used by the quality gate. "
+            "It is never sent to the inference provider."
+        ),
+    )
+    system_prompt: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        min_length=1,
+        description=(
+            "Optional caller system message. None preserves the task-class "
+            "routing prompt."
+        ),
+    )
+    temperature: float | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        ge=0.0,
+        le=2.0,
+        description=(
+            "Optional provider sampling temperature. None preserves the "
+            "task-class default."
+        ),
+    )
+    response_format: dict[str, object] | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Optional provider response-format directive. Distinct from the "
+            "quality-gate response_contract."
+        ),
+    )
+
+    @field_validator("response_format")
+    @classmethod
+    def _validate_response_format(
+        cls, response_format: dict[str, object] | None
+    ) -> dict[str, object] | None:
+        return validate_response_format(response_format)
+
+    @field_validator("backend_id")
+    @classmethod
+    def _validate_backend_id(cls, backend_id: str | None) -> str | None:
+        if backend_id is not None and (
+            not backend_id.strip() or backend_id != backend_id.strip()
+        ):
+            raise ValueError(  # error-ok: Pydantic field validator requires ValueError
+                "backend_id must not be blank or contain surrounding whitespace"
+            )
+        return backend_id
+
+    @field_validator("response_contract")
+    @classmethod
+    def _validate_response_contract(
+        cls, response_contract: dict[str, object] | None
+    ) -> dict[str, object] | None:
+        return validate_response_contract(response_contract)
 
     @model_validator(mode="after")
     def _validate_compliance_loop_config(self) -> Self:
@@ -187,7 +306,10 @@ class ModelDelegationRequest(BaseModel):
 __all__: list[str] = [
     "MAX_WORDS_PER_SENTENCE_RE",
     "SUPPORTED_ACCEPTANCE_CRITERIA",
+    "SUPPORTED_RESPONSE_FORMAT_TYPES",
     "EnumQualityContractMode",
     "ModelDelegationRequest",
     "validate_acceptance_criteria",
+    "validate_response_contract",
+    "validate_response_format",
 ]
