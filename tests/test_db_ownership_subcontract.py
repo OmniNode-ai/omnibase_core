@@ -4,6 +4,7 @@
 """Tests for ModelDbOwnershipSubcontract and ModelDbTableDeclaration."""
 
 import pytest
+from pydantic import ValidationError
 
 pytestmark = pytest.mark.unit
 
@@ -18,6 +19,8 @@ def test_db_tables_field_exists():
         db_tables=[
             {
                 "name": "delegation_events",
+                "database_ref": "application",
+                "schema": "tenant",
                 "migration": "0007_delegation_events.sql",
                 "access": "write",
                 "role": "events",
@@ -39,12 +42,16 @@ def test_db_tables_role_lookup():
         db_tables=[
             {
                 "name": "delegation_events",
+                "database_ref": "application",
+                "schema": "tenant",
                 "migration": "0007_delegation_events.sql",
                 "access": "write",
                 "role": "events",
             },
             {
                 "name": "delegation_shadow_comparisons",
+                "database_ref": "application",
+                "schema": "tenant",
                 "migration": "0007_delegation_events.sql",
                 "access": "write",
                 "role": "shadow_comparisons",
@@ -74,6 +81,8 @@ def test_db_table_declaration_access_literal():
 
     t = ModelDbTableDeclaration(
         name="llm_cost_aggregates",
+        database_ref="application",
+        schema="omninode_internal",
         migration="0003_llm_cost_aggregates.sql",
         access="read_write",
         role="aggregates",
@@ -83,24 +92,43 @@ def test_db_table_declaration_access_literal():
     with pytest.raises(Exception):
         ModelDbTableDeclaration(
             name="llm_cost_aggregates",
+            database_ref="application",
+            schema="omninode_internal",
             migration="0003_llm_cost_aggregates.sql",
             access="invalid_access",  # type: ignore[arg-type]
             role="aggregates",
         )
 
 
-def test_db_table_declaration_default_database():
-    """database field must default to omnidash_analytics."""
+def test_db_table_declaration_requires_database_ref_and_schema():
+    """Table location must be explicit; no physical-database default is allowed."""
     from omnibase_core.models.contracts.subcontracts.model_db_ownership_subcontract import (
         ModelDbTableDeclaration,
     )
 
-    t = ModelDbTableDeclaration(
-        name="session_outcomes",
-        migration="0021_session_outcomes.sql",
-        role="outcomes",
+    with pytest.raises(ValidationError):
+        ModelDbTableDeclaration(
+            name="session_outcomes",
+            migration="0021_session_outcomes.sql",
+            role="outcomes",
+        )
+
+
+def test_db_table_declaration_rejects_retired_database_field():
+    """The retired physical database field cannot coexist with database_ref."""
+    from omnibase_core.models.contracts.subcontracts.model_db_ownership_subcontract import (
+        ModelDbTableDeclaration,
     )
-    assert t.database == "omnidash_analytics"
+
+    with pytest.raises(ValidationError, match="database"):
+        ModelDbTableDeclaration(
+            name="session_outcomes",
+            database_ref="application",
+            schema="tenant",
+            migration="0021_session_outcomes.sql",
+            role="outcomes",
+            database="omnidash_analytics",  # type: ignore[call-arg]
+        )
 
 
 def test_exports_from_subcontracts_init():
