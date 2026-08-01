@@ -18,11 +18,15 @@ The tests below are deliberately split into two kinds:
 
 * **Shape** assertions, parsing the real workflow YAML (job graph, step order,
   runner, recovery inputs).
-* **Behaviour** assertions, which extract the publish step's real ``run:``
-  script out of the real workflow file and *execute it* under ``bash -e`` (the
-  shell GitHub Actions uses) against a stubbed ``uv``/``sleep`` on ``PATH``.
-  Nothing is re-implemented here -- a regression in the committed shell is a
-  regression in these tests.
+* **Behaviour** assertions, which extract a step's real ``run:`` script out of
+  the real workflow file and *execute it* under ``bash -e`` (the shell GitHub
+  Actions uses) against stubbed ``uv``/``sleep``/``curl`` on ``PATH``. Both
+  shell steps -- ``Publish to PyPI`` and ``Report partial release state`` --
+  are covered this way. Nothing is re-implemented here: a regression in the
+  committed shell is a regression in these tests. Both steps therefore have to
+  stay free of inline ``${{ }}`` expressions (values arrive through ``env:``),
+  which the harnesses assert -- an expression would make the committed shell
+  unrunnable here and quietly turn these tests into string matching.
 """
 
 from __future__ import annotations
@@ -197,6 +201,108 @@ def _run_publish_script(tmp_path: Path, *, fail_times: int) -> _PublishRun:
 
 
 # --------------------------------------------------------------------------
+# behaviour harness: run the REAL partial-state script with a stubbed curl
+# --------------------------------------------------------------------------
+_STUB_CURL = """#!/bin/bash
+printf '%s\\n' "$*" >> "$CURL_STUB_ARGV_LOG"
+if [ "$CURL_STUB_FAIL" = "1" ]; then
+  exit 6
+fi
+cat "$CURL_STUB_BODY"
+exit 0
+"""
+
+
+@dataclass(frozen=True)
+class _PartialStateRun:
+    returncode: int
+    stdout: str
+    stderr: str
+    curl_invocations: list[str]
+
+
+def _run_partial_state_script(
+    tmp_path: Path,
+    *,
+    release_tag: str,
+    dist_files: tuple[str, ...],
+    index_files: tuple[str, ...] = (),
+    curl_fails: bool = False,
+) -> _PartialStateRun:
+    """Execute the committed partial-state shell with ``curl`` stubbed out.
+
+    This block is the one thing a stranded release has left to tell a human
+    what happened, and it only ever runs on the failure path -- so it is
+    exactly the shell most likely to ship a latent ``set -u`` / glob / errexit
+    bug unnoticed. Asserting on the ``run:`` string cannot catch that; running
+    it can.
+    """
+    step = _step(_PARTIAL_STATE_STEP)
+    script = str(step["run"])
+    # The tag must arrive via `env:`, not an inline expression -- otherwise the
+    # committed shell is unexecutable here and this harness goes vacuous.
+    assert "${{" not in script, (
+        "the partial-state step must contain no ${{ }} expressions so that its "
+        "real shell can be executed under test"
+    )
+    step_env = _as_mapping(step["env"], f"{_PARTIAL_STATE_STEP} `env:`")
+    assert step_env["RELEASE_TAG"] == "${{ steps.tag.outputs.tag }}"
+
+    script_path = tmp_path / "partial_state_step.sh"
+    script_path.write_text(script)
+
+    workdir = tmp_path / "work"
+    (workdir / "dist").mkdir(parents=True)
+    for name in dist_files:
+        (workdir / "dist" / name).write_text("artifact")
+
+    body = tmp_path / "index.html"
+    body.write_text(
+        "<html><body>"
+        + "".join(f'<a href="/x/{name}">{name}</a>' for name in index_files)
+        + "</body></html>"
+    )
+
+    stub_bin = tmp_path / "stub_bin"
+    stub_bin.mkdir()
+    stub = stub_bin / "curl"
+    stub.write_text(_STUB_CURL)
+    stub.chmod(0o755)
+
+    argv_log = tmp_path / "curl_argv.log"
+    argv_log.write_text("")
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "PATH": f"{stub_bin}{os.pathsep}{env['PATH']}",
+            "CURL_STUB_ARGV_LOG": str(argv_log),
+            "CURL_STUB_BODY": str(body),
+            "CURL_STUB_FAIL": "1" if curl_fails else "0",
+            "RELEASE_TAG": release_tag,
+        }
+    )
+
+    proc = subprocess.run(
+        ["bash", "-e", str(script_path)],
+        cwd=workdir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
+    )
+    return _PartialStateRun(
+        returncode=proc.returncode,
+        stdout=proc.stdout,
+        stderr=proc.stderr,
+        curl_invocations=[
+            line for line in argv_log.read_text().splitlines() if line.strip()
+        ],
+    )
+
+
+# --------------------------------------------------------------------------
 # AC1 -- resumable publish
 # --------------------------------------------------------------------------
 def test_publish_passes_check_url_so_already_landed_files_are_skipped(
@@ -324,23 +430,88 @@ def test_dist_artifacts_are_preserved_before_publish() -> None:
     assert with_["if-no-files-found"] == "error"
 
 
-def test_partial_release_state_is_reported_loudly_on_failure() -> None:
-    """AC4: a stranded release must name which artifacts landed."""
+def test_partial_release_state_step_is_wired_to_the_failure_path() -> None:
+    """AC4 (shape): the report must fire on failure, after the release step."""
     step = _step(_PARTIAL_STATE_STEP)
 
     assert str(step["if"]).strip() == "failure()"
     assert _step_index(_PARTIAL_STATE_STEP) > _step_index(_RELEASE_STEP)
 
-    run = str(step["run"])
-    assert "::error::" in run
-    assert "RELEASE INCOMPLETE" in run
-    assert "LANDED on PyPI" in run
-    assert "MISSING from PyPI" in run
-    assert "gh workflow run release.yml" in run
-    assert '[ -e "$path" ] || continue' in run
-    assert '[ -n "$RELEASE_TAG" ]' in run
-    assert "tag=${RELEASE_TAG}" in run
-    assert "tag=<tag>" in run
+
+def test_partial_release_state_names_landed_and_missing_artifacts(
+    tmp_path: Path,
+) -> None:
+    """AC4 (behaviour): the exact 0.46.8 wreckage, executed, not pattern-matched.
+
+    Wheel on the index, sdist not, tag resolved -- the report must say which is
+    which and hand back a runnable recovery command.
+    """
+    run = _run_partial_state_script(
+        tmp_path,
+        release_tag="v0.46.8",
+        dist_files=(
+            "omnibase_core-0.46.8-py3-none-any.whl",
+            "omnibase_core-0.46.8.tar.gz",
+        ),
+        index_files=("omnibase_core-0.46.8-py3-none-any.whl",),
+    )
+
+    assert run.returncode == 0, run.stderr
+    assert "::error::RELEASE INCOMPLETE for v0.46.8" in run.stdout
+    assert (
+        "::error::LANDED on PyPI: omnibase_core-0.46.8-py3-none-any.whl" in run.stdout
+    )
+    assert "::error::MISSING from PyPI: omnibase_core-0.46.8.tar.gz" in run.stdout
+    assert "dist-v0.46.8" in run.stdout
+    assert "gh workflow run release.yml" in run.stdout
+    assert "-f tag=v0.46.8" in run.stdout
+    # It must actually consult the real public index, not a placeholder.
+    assert any(
+        "https://pypi.org/simple/omnibase-core/" in call
+        for call in run.curl_invocations
+    ), run.curl_invocations
+
+
+def test_partial_release_state_survives_an_unresolved_tag_and_empty_dist(
+    tmp_path: Path,
+) -> None:
+    """AC4 (behaviour, negative): failing before `Set release tag` is the case
+    most likely to trip `set -u` -- the report must still emit, not crash."""
+    run = _run_partial_state_script(tmp_path, release_tag="", dist_files=())
+
+    assert run.returncode == 0, run.stderr
+    assert "::error::RELEASE INCOMPLETE for <tag unresolved>" in run.stdout
+    assert "No dist artifact can be claimed" in run.stdout
+    assert "-f tag=<tag>" in run.stdout
+    assert "LANDED on PyPI" not in run.stdout
+    assert "MISSING from PyPI" not in run.stdout
+
+
+def test_partial_release_state_reports_unknown_when_the_index_is_unreachable(
+    tmp_path: Path,
+) -> None:
+    """AC4 (behaviour, negative): an unreadable index must not be reported as
+    proof of absence -- claiming MISSING there is a false statement about a
+    public index, and the recovery decision differs."""
+    run = _run_partial_state_script(
+        tmp_path,
+        release_tag="v0.46.8",
+        dist_files=(
+            "omnibase_core-0.46.8-py3-none-any.whl",
+            "omnibase_core-0.46.8.tar.gz",
+        ),
+        index_files=("omnibase_core-0.46.8-py3-none-any.whl",),
+        curl_fails=True,
+    )
+
+    assert run.returncode == 0, run.stderr
+    assert "landed/missing state is UNKNOWN" in run.stdout
+    assert (
+        "::error::UNKNOWN on PyPI: omnibase_core-0.46.8-py3-none-any.whl" in run.stdout
+    )
+    assert "::error::UNKNOWN on PyPI: omnibase_core-0.46.8.tar.gz" in run.stdout
+    assert "LANDED on PyPI" not in run.stdout
+    assert "MISSING from PyPI" not in run.stdout
 
 
 def test_dependency_cascade_still_runs_off_the_release_output() -> None:

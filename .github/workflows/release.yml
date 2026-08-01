@@ -163,17 +163,34 @@ jobs:
       # wreckage -- the downstream steps just showed "skipped" and nothing said
       # which artifacts had already landed on the public index. This step names
       # the partial state and the canonical recovery command.
+      # The tag arrives through `env:` rather than inline `${{ }}` so the
+      # committed shell is executable verbatim -- that is what lets
+      # test_release_workflow_shape.py RUN this block under `bash -e` instead
+      # of pattern-matching the string and shipping a shell bug green.
       - name: Report partial release state
         if: failure()
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -uo pipefail
-          RELEASE_TAG="${{ steps.tag.outputs.tag }}"
+          RELEASE_TAG="${RELEASE_TAG:-}"
           echo "::error::RELEASE INCOMPLETE for ${RELEASE_TAG:-<tag unresolved>} -- GitHub Release and Dependency Cascade did NOT run."
-          index=$(curl -sSL --max-time 60 https://pypi.org/simple/omnibase-core/ || true)
+          # An unreachable index means the landed/missing question is UNKNOWN.
+          # Reporting "MISSING" there would be a false claim about a public
+          # index, which is the opposite of what this step exists to do.
+          if index=$(curl -sSL --max-time 60 https://pypi.org/simple/omnibase-core/); then
+            index_read=1
+          else
+            index_read=0
+            index=""
+            echo "::error::Could not read the PyPI simple index -- landed/missing state is UNKNOWN."
+          fi
           for path in dist/*.whl dist/*.tar.gz; do
             [ -e "$path" ] || continue
             name=$(basename "$path")
-            if printf '%s' "$index" | grep -qF -- "$name"; then
+            if [ "$index_read" -eq 0 ]; then
+              echo "::error::UNKNOWN on PyPI: ${name}"
+            elif printf '%s' "$index" | grep -qF -- "$name"; then
               echo "::error::LANDED on PyPI: ${name}"
             else
               echo "::error::MISSING from PyPI: ${name}"
