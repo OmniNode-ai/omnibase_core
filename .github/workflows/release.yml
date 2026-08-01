@@ -171,6 +171,7 @@ jobs:
           echo "::error::RELEASE INCOMPLETE for ${RELEASE_TAG:-<tag unresolved>} -- GitHub Release and Dependency Cascade did NOT run."
           index=$(curl -sSL --max-time 60 https://pypi.org/simple/omnibase-core/ || true)
           for path in dist/*.whl dist/*.tar.gz; do
+            [ -e "$path" ] || continue
             name=$(basename "$path")
             if printf '%s' "$index" | grep -qF -- "$name"; then
               echo "::error::LANDED on PyPI: ${name}"
@@ -178,8 +179,13 @@ jobs:
               echo "::error::MISSING from PyPI: ${name}"
             fi
           done
-          echo "::error::Built artifacts preserved as workflow artifact 'dist-${RELEASE_TAG}'."
-          echo "::error::Recover with: gh workflow run release.yml --repo OmniNode-ai/omnibase_core --ref dev -f tag=${RELEASE_TAG}"
+          if [ -n "$RELEASE_TAG" ] && ls dist/*.whl dist/*.tar.gz >/dev/null 2>&1; then
+            echo "::error::Built artifacts preserved as workflow artifact 'dist-${RELEASE_TAG}'."
+            echo "::error::Recover with: gh workflow run release.yml --repo OmniNode-ai/omnibase_core --ref dev -f tag=${RELEASE_TAG}"
+          else
+            echo "::error::No dist artifact can be claimed for an unresolved release tag."
+            echo "::error::Recover by determining the intended tag, then run: gh workflow run release.yml --repo OmniNode-ai/omnibase_core --ref dev -f tag=<tag>"
+          fi
 
   # ---------------------------------------------------------------------------
   # Post-release: open dependency bump PRs in downstream repos (OMN-5109)

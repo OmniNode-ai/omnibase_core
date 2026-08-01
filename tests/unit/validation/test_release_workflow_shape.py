@@ -337,6 +337,10 @@ def test_partial_release_state_is_reported_loudly_on_failure() -> None:
     assert "LANDED on PyPI" in run
     assert "MISSING from PyPI" in run
     assert "gh workflow run release.yml" in run
+    assert '[ -e "$path" ] || continue' in run
+    assert '[ -n "$RELEASE_TAG" ]' in run
+    assert "tag=${RELEASE_TAG}" in run
+    assert "tag=<tag>" in run
 
 
 def test_dependency_cascade_still_runs_off_the_release_output() -> None:
