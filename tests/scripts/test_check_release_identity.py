@@ -153,12 +153,22 @@ def _isolated_checkout(tmp_path: Path, *, published_tag: str) -> Path:
 
 
 def _run_gate(root: Path) -> subprocess.CompletedProcess[str]:
+    """Run the gate against ``root`` only.
+
+    The scrub is load-bearing, not ceremony: GIT_DIR / GIT_WORK_TREE override
+    ``cwd``, so an ambient one (a git hook exports exactly these -- the
+    OMN-14891 case) would make the gate's internal ``git tag --list`` read the
+    developer's real checkout instead of the isolated repo, and the isolation
+    this whole helper exists to provide would silently evaporate.
+    """
+    scrubbed_git_env = scrub_git_location_env(os.environ)
     return subprocess.run(
         [sys.executable, str(root / "scripts" / _SCRIPT.name)],
         capture_output=True,
         text=True,
         check=False,
         cwd=root,
+        env=scrubbed_git_env,
     )
 
 
