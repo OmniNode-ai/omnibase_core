@@ -20,12 +20,17 @@ concurrency:
 
 jobs:
   release:
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    # OMN-15603: this job used to run on the trusted self-hosted `omnibase-ci`
+    # runner. Measured egress from that runner to upload.pypi.org is
+    # 30-39 KiB/s, and upload.pypi.org enforces a hard ~240s server-side
+    # request deadline. The 6.4 MiB wheel clears it (170-216s); the 9.2 MiB
+    # sdist deterministically does not (241.4s -> HTTP 500 after the full body
+    # transferred, identical to the tenth of a second on two attempts of run
+    # 30674223657), which stranded omnibase-core 0.46.8 wheel-only. The job
+    # publishes to a public index and reads no LAN service, so nothing here
+    # needs the self-hosted runner; it moves to a GitHub-hosted runner whose
+    # egress clears the deadline (AC2).
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.tag.outputs.tag }}
     steps:
@@ -78,12 +83,10 @@ jobs:
             exit 1
           }
 
-      - name: Publish to PyPI
-        run: |
-          uv publish --token "$UV_PUBLISH_TOKEN" dist/*.whl dist/*.tar.gz
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
-
+      # OMN-15603 (AC4): checksums and the release tag are derived BEFORE the
+      # publish attempt. They are pure local computations that used to sit
+      # behind the single non-idempotent publish step, so a publish failure
+      # silently skipped them along with the GitHub Release and the cascade.
       - name: Generate checksums
         run: sha256sum dist/*.whl dist/*.tar.gz > dist/SHA256SUMS.txt
 
@@ -96,6 +99,55 @@ jobs:
             echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           fi
 
+      # OMN-15603 (AC4): preserve the built artifacts BEFORE publishing. Run
+      # 30674223657 ended with total_count=0 artifacts, so the only way to
+      # recover the stranded sdist was to rebuild it from the tag.
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ steps.tag.outputs.tag }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 90
+
+      # OMN-15603 (AC1 + AC3): resumable, retried publish.
+      #
+      # --check-url makes the upload idempotent: uv queries the PyPI simple
+      # index and skips every file already present, so a retry re-transfers
+      # only what is still missing. The URL must be the simple index ROOT --
+      # uv appends the package name itself. Verified empirically against uv
+      # 0.12.1 (the version astral-sh/setup-uv@v7 resolves) with the published
+      # 0.46.8 wheel: `--check-url https://pypi.org/simple/` prints
+      # "File omnibase_core-0.46.8-py3-none-any.whl already exists, skipping",
+      # while the package-scoped `https://pypi.org/simple/omnibase-core/`
+      # re-uploads exactly as if no --check-url had been passed at all.
+      #
+      # The retry loop absorbs the 5xx that upload.pypi.org returns on a
+      # request that overruns its server-side deadline. Retries are cheap
+      # because --check-url skips whatever already landed.
+      - name: Publish to PyPI
+        run: |
+          set -uo pipefail
+          attempt=1
+          max_attempts=3
+          backoff=15
+          until uv publish \
+            --check-url https://pypi.org/simple/ \
+            --token "$UV_PUBLISH_TOKEN" \
+            dist/*.whl dist/*.tar.gz
+          do
+            if [ "$attempt" -ge "$max_attempts" ]; then
+              echo "ERROR: uv publish failed after ${max_attempts} attempts" >&2
+              exit 1
+            fi
+            echo "uv publish attempt ${attempt}/${max_attempts} failed; retrying in ${backoff}s" >&2
+            sleep "$backoff"
+            attempt=$((attempt + 1))
+            backoff=$((backoff * 3))
+          done
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
@@ -106,6 +158,28 @@ jobs:
             dist/SHA256SUMS.txt
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, 'rc') }}
+
+      # OMN-15603 (AC4): a failed release used to be silent about its own
+      # wreckage -- the downstream steps just showed "skipped" and nothing said
+      # which artifacts had already landed on the public index. This step names
+      # the partial state and the canonical recovery command.
+      - name: Report partial release state
+        if: failure()
+        run: |
+          set -uo pipefail
+          RELEASE_TAG="${{ steps.tag.outputs.tag }}"
+          echo "::error::RELEASE INCOMPLETE for ${RELEASE_TAG:-<tag unresolved>} -- GitHub Release and Dependency Cascade did NOT run."
+          index=$(curl -sSL --max-time 60 https://pypi.org/simple/omnibase-core/ || true)
+          for path in dist/*.whl dist/*.tar.gz; do
+            name=$(basename "$path")
+            if printf '%s' "$index" | grep -qF -- "$name"; then
+              echo "::error::LANDED on PyPI: ${name}"
+            else
+              echo "::error::MISSING from PyPI: ${name}"
+            fi
+          done
+          echo "::error::Built artifacts preserved as workflow artifact 'dist-${RELEASE_TAG}'."
+          echo "::error::Recover with: gh workflow run release.yml --repo OmniNode-ai/omnibase_core --ref dev -f tag=${RELEASE_TAG}"
 
   # ---------------------------------------------------------------------------
   # Post-release: open dependency bump PRs in downstream repos (OMN-5109)
