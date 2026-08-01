@@ -125,22 +125,53 @@ jobs:
       # The retry loop absorbs the 5xx that upload.pypi.org returns on a
       # request that overruns its server-side deadline. Retries are cheap
       # because --check-url skips whatever already landed.
+      #
+      # AC3 says "retry on 5xx", so the loop READS the failure instead of
+      # retrying every non-zero exit. A 4xx (bad token, malformed metadata,
+      # rejected filename) is deterministic: retrying it burns the full
+      # 15s + 45s backoff and then reports a permanent fault in the language
+      # of a transient one. Only an upstream 5xx or a transport-level fault
+      # -- the classes that a second attempt can actually clear -- is retried.
       - name: Publish to PyPI
         run: |
           set -uo pipefail
           attempt=1
           max_attempts=3
           backoff=15
-          until uv publish \
-            --check-url https://pypi.org/simple/ \
-            --token "$UV_PUBLISH_TOKEN" \
-            dist/*.whl dist/*.tar.gz
-          do
+          publish_log="$(mktemp)"
+
+          # upload.pypi.org returns 500 when a request overruns its ~240s
+          # server-side deadline; 502/503/504 are the other transient upstream
+          # classes. The transport patterns cover a connection dropped before
+          # any HTTP status was seen, which is the same "try again" class.
+          # `\b` is not portable across GNU and BSD grep, and this shell is
+          # executed verbatim by the tests on both -- so the patterns stay in
+          # plain POSIX ERE.
+          is_retryable() {
+            grep -Eqi \
+              -e 'status code 5[0-9][0-9]' \
+              -e '(internal server error|bad gateway|service unavailable|gateway time-?out)' \
+              -e '(error sending request|connection (reset|closed|refused)|operation timed out|timed out|broken pipe)' \
+              "$1"
+          }
+
+          while true; do
+            if uv publish \
+              --check-url https://pypi.org/simple/ \
+              --token "$UV_PUBLISH_TOKEN" \
+              dist/*.whl dist/*.tar.gz 2>&1 | tee "$publish_log"
+            then
+              exit 0
+            fi
+            if ! is_retryable "$publish_log"; then
+              echo "ERROR: uv publish failed with a non-retryable error (no 5xx or transport fault in the output); not retrying" >&2
+              exit 1
+            fi
             if [ "$attempt" -ge "$max_attempts" ]; then
               echo "ERROR: uv publish failed after ${max_attempts} attempts" >&2
               exit 1
             fi
-            echo "uv publish attempt ${attempt}/${max_attempts} failed; retrying in ${backoff}s" >&2
+            echo "uv publish attempt ${attempt}/${max_attempts} failed with a retryable 5xx/transport fault; retrying in ${backoff}s" >&2
             sleep "$backoff"
             attempt=$((attempt + 1))
             backoff=$((backoff * 3))
@@ -159,22 +190,78 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, 'rc') }}
 
-      # OMN-15603 (AC4): a failed release used to be silent about its own
-      # wreckage -- the downstream steps just showed "skipped" and nothing said
-      # which artifacts had already landed on the public index. This step names
-      # the partial state and the canonical recovery command.
-      # The tag arrives through `env:` rather than inline `${{ }}` so the
-      # committed shell is executable verbatim -- that is what lets
-      # test_release_workflow_shape.py RUN this block under `bash -e` instead
-      # of pattern-matching the string and shipping a shell bug green.
+  # ---------------------------------------------------------------------------
+  # Post-release: open dependency bump PRs in downstream repos (OMN-5109)
+  # ---------------------------------------------------------------------------
+  # When omnibase_core is released, downstream repos (omnibase_infra,
+  # omniintelligence, omnimemory, omniclaude) need their lockfiles updated.
+  dependency-cascade:
+    name: Dependency Cascade
+    needs: release
+    if: ${{ !contains(needs.release.outputs.version, 'rc') }}
+    uses: ./.github/workflows/dependency-cascade.yml
+    with:
+      package: omnibase_core
+      version: ${{ needs.release.outputs.version }}
+    secrets:
+      cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}
+
+  # ---------------------------------------------------------------------------
+  # OMN-15603 (AC4): a failed release used to be silent about its own wreckage
+  # -- the downstream steps just showed "skipped" and nothing said which
+  # artifacts had already landed on the public index. This names the partial
+  # state and the canonical recovery command.
+  #
+  # It is a JOB rather than a step inside `release` because AC4 names the
+  # Dependency Cascade among the things that must "either run, or the run fails
+  # loudly naming which artifacts landed" -- and a step inside `release` cannot
+  # observe a cascade failure. With `release` green and a cascade matrix job
+  # red, the run went red and nothing emitted the artifact census. As a job
+  # with `needs: [release, dependency-cascade]` it covers every way this
+  # workflow ends badly, with ONE copy of the shell rather than two.
+  #
+  # The tag and the upstream job results arrive through `env:` rather than
+  # inline `${{ }}` so the committed shell is executable verbatim -- that is
+  # what lets test_release_workflow_shape.py RUN this block under `bash -e`
+  # instead of pattern-matching the string and shipping a shell bug green.
+  # ---------------------------------------------------------------------------
+  report-partial-state:
+    name: Report partial release state
+    runs-on: ubuntu-latest
+    needs: [release, dependency-cascade]
+    # `skipped` is deliberately NOT a trigger. dependency-cascade is skipped by
+    # design on an rc tag, so a `!= 'success'` condition would fire this report
+    # on a perfectly good rc release.
+    if: ${{ always() && (needs.release.result == 'failure' || needs.release.result == 'cancelled' || needs['dependency-cascade'].result == 'failure' || needs['dependency-cascade'].result == 'cancelled') }}
+    steps:
+      # Best-effort: when `release` died before `Upload dist artifacts` there is
+      # nothing to download and the report must still emit, so a missing
+      # artifact must not fail this job. The shell below handles an empty
+      # dist/ (see test_partial_release_state_survives_an_unresolved_tag_...).
+      - name: Download preserved dist artifacts
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: dist-${{ needs.release.outputs.version }}
+          path: dist/
+
       - name: Report partial release state
-        if: failure()
         env:
-          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+          RELEASE_TAG: ${{ needs.release.outputs.version }}
+          RELEASE_RESULT: ${{ needs.release.result }}
+          CASCADE_RESULT: ${{ needs['dependency-cascade'].result }}
         run: |
           set -uo pipefail
           RELEASE_TAG="${RELEASE_TAG:-}"
-          echo "::error::RELEASE INCOMPLETE for ${RELEASE_TAG:-<tag unresolved>} -- GitHub Release and Dependency Cascade did NOT run."
+          RELEASE_RESULT="${RELEASE_RESULT:-unknown}"
+          CASCADE_RESULT="${CASCADE_RESULT:-unknown}"
+          echo "::error::RELEASE INCOMPLETE for ${RELEASE_TAG:-<tag unresolved>} -- release job: ${RELEASE_RESULT}, dependency cascade: ${CASCADE_RESULT}."
+          if [ "$RELEASE_RESULT" != "success" ]; then
+            echo "::error::GitHub Release and Dependency Cascade did NOT run."
+          fi
+          if [ "$CASCADE_RESULT" = "failure" ] || [ "$CASCADE_RESULT" = "cancelled" ]; then
+            echo "::error::Dependency Cascade did NOT complete (${CASCADE_RESULT}) -- downstream lockfile bump PRs were NOT opened."
+          fi
           # An unreachable index means the landed/missing question is UNKNOWN.
           # Reporting "MISSING" there would be a false claim about a public
           # index, which is the opposite of what this step exists to do.
@@ -203,19 +290,3 @@ jobs:
             echo "::error::No dist artifact can be claimed for an unresolved release tag."
             echo "::error::Recover by determining the intended tag, then run: gh workflow run release.yml --repo OmniNode-ai/omnibase_core --ref dev -f tag=<tag>"
           fi
-
-  # ---------------------------------------------------------------------------
-  # Post-release: open dependency bump PRs in downstream repos (OMN-5109)
-  # ---------------------------------------------------------------------------
-  # When omnibase_core is released, downstream repos (omnibase_infra,
-  # omniintelligence, omnimemory, omniclaude) need their lockfiles updated.
-  dependency-cascade:
-    name: Dependency Cascade
-    needs: release
-    if: ${{ !contains(needs.release.outputs.version, 'rc') }}
-    uses: ./.github/workflows/dependency-cascade.yml
-    with:
-      package: omnibase_core
-      version: ${{ needs.release.outputs.version }}
-    secrets:
-      cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}

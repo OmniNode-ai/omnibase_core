@@ -27,6 +27,10 @@ The tests below are deliberately split into two kinds:
   stay free of inline ``${{ }}`` expressions (values arrive through ``env:``),
   which the harnesses assert -- an expression would make the committed shell
   unrunnable here and quietly turn these tests into string matching.
+
+``Report partial release state`` is a **job**, not a step inside ``release``:
+AC4 names the Dependency Cascade among the things that must either run or fail
+loudly, and a step inside ``release`` cannot observe a cascade failure.
 """
 
 from __future__ import annotations
@@ -56,6 +60,10 @@ _UPLOAD_STEP = "Upload dist artifacts"
 _RELEASE_STEP = "Create GitHub Release"
 _PARTIAL_STATE_STEP = "Report partial release state"
 
+_RELEASE_JOB = "release"
+_CASCADE_JOB = "dependency-cascade"
+_PARTIAL_STATE_JOB = "report-partial-state"
+
 
 # --------------------------------------------------------------------------
 # workflow parsing helpers
@@ -76,15 +84,28 @@ def _triggers() -> dict[object, object]:
     return _as_mapping(workflow[key], "release.yml `on:`")
 
 
+def _jobs() -> dict[object, object]:
+    return _as_mapping(_workflow()["jobs"], "release.yml `jobs:`")
+
+
+def _job(name: str) -> dict[object, object]:
+    jobs = _jobs()
+    assert name in jobs, f"release.yml must define a `{name}` job; has {list(jobs)}"
+    return _as_mapping(jobs[name], f"the `{name}` job")
+
+
 def _release_job() -> dict[object, object]:
-    jobs = _as_mapping(_workflow()["jobs"], "release.yml `jobs:`")
-    return _as_mapping(jobs["release"], "the `release` job")
+    return _job(_RELEASE_JOB)
+
+
+def _job_steps(job: dict[object, object]) -> list[dict[object, object]]:
+    steps = job["steps"]
+    assert isinstance(steps, list)
+    return [step for step in steps if isinstance(step, dict)]
 
 
 def _steps() -> list[dict[object, object]]:
-    steps = _release_job()["steps"]
-    assert isinstance(steps, list)
-    return [step for step in steps if isinstance(step, dict)]
+    return _job_steps(_release_job())
 
 
 def _step_index(name: str) -> int:
@@ -96,6 +117,21 @@ def _step_index(name: str) -> int:
 
 def _step(name: str) -> dict[object, object]:
     return _steps()[_step_index(name)]
+
+
+def _partial_state_step() -> dict[object, object]:
+    """The partial-state report lives in its own job, not in ``release``.
+
+    A step inside ``release`` cannot observe a ``dependency-cascade`` failure,
+    which AC4 names explicitly; see
+    ``test_partial_release_state_job_also_covers_a_dependency_cascade_failure``.
+    """
+    for step in _job_steps(_job(_PARTIAL_STATE_JOB)):
+        if step.get("name") == _PARTIAL_STATE_STEP:
+            return step
+    raise AssertionError(
+        f"the `{_PARTIAL_STATE_JOB}` job must have a step named {_PARTIAL_STATE_STEP!r}"
+    )
 
 
 def _publish_script() -> str:
@@ -112,12 +148,27 @@ printf '%s\\n' "$*" >> "$UV_STUB_ARGV_LOG"
 printf 'x' >> "$UV_STUB_COUNTER"
 attempts=$(($(wc -c < "$UV_STUB_COUNTER")))
 if [ "$attempts" -le "$UV_STUB_FAIL_TIMES" ]; then
-  echo "Server returned status code 500 Internal Server Error" >&2
+  echo "$UV_STUB_FAIL_MESSAGE" >&2
   exit 1
 fi
 echo "Uploaded ok"
 exit 0
 """
+
+# What upload.pypi.org actually emits when a request overruns its ~240s
+# server-side deadline -- the exact 0.46.8 failure.
+_UV_5XX_MESSAGE = (
+    "Failed to publish `dist/omnibase_core-0.46.8.tar.gz` to "
+    "https://upload.pypi.org/legacy/\n"
+    "  Caused by: Upload failed with status code 500 Internal Server Error."
+)
+# A deterministic, permanent rejection. Retrying this cannot help.
+_UV_4XX_MESSAGE = (
+    "Failed to publish `dist/omnibase_core-0.46.8.tar.gz` to "
+    "https://upload.pypi.org/legacy/\n"
+    "  Caused by: Upload failed with status code 403 Forbidden. "
+    "Invalid or non-existent authentication information."
+)
 
 _STUB_SLEEP = """#!/bin/bash
 printf '%s\\n' "$1" >> "$SLEEP_STUB_LOG"
@@ -134,7 +185,12 @@ class _PublishRun:
     sleep_seconds: list[int]
 
 
-def _run_publish_script(tmp_path: Path, *, fail_times: int) -> _PublishRun:
+def _run_publish_script(
+    tmp_path: Path,
+    *,
+    fail_times: int,
+    fail_message: str = _UV_5XX_MESSAGE,
+) -> _PublishRun:
     """Execute the committed publish shell with ``uv``/``sleep`` stubbed out."""
     script = _publish_script()
     # A GH expression would make the committed shell unexecutable here and the
@@ -172,6 +228,7 @@ def _run_publish_script(tmp_path: Path, *, fail_times: int) -> _PublishRun:
             "UV_STUB_ARGV_LOG": str(argv_log),
             "UV_STUB_COUNTER": str(counter),
             "UV_STUB_FAIL_TIMES": str(fail_times),
+            "UV_STUB_FAIL_MESSAGE": fail_message,
             "SLEEP_STUB_LOG": str(sleep_log),
             "UV_PUBLISH_TOKEN": "pypi-test-token",
         }
@@ -228,6 +285,9 @@ def _run_partial_state_script(
     dist_files: tuple[str, ...],
     index_files: tuple[str, ...] = (),
     curl_fails: bool = False,
+    release_result: str = "failure",
+    cascade_result: str = "skipped",
+    bind_env: bool = True,
 ) -> _PartialStateRun:
     """Execute the committed partial-state shell with ``curl`` stubbed out.
 
@@ -236,8 +296,14 @@ def _run_partial_state_script(
     exactly the shell most likely to ship a latent ``set -u`` / glob / errexit
     bug unnoticed. Asserting on the ``run:`` string cannot catch that; running
     it can.
+
+    ``bind_env=False`` removes ``RELEASE_TAG`` / ``RELEASE_RESULT`` /
+    ``CASCADE_RESULT`` from the child environment entirely, which is what makes
+    the ``${VAR:-}`` guards in the committed shell load-bearing rather than
+    decorative -- see
+    ``test_partial_release_state_survives_an_entirely_unbound_environment``.
     """
-    step = _step(_PARTIAL_STATE_STEP)
+    step = _partial_state_step()
     script = str(step["run"])
     # The tag must arrive via `env:`, not an inline expression -- otherwise the
     # committed shell is unexecutable here and this harness goes vacuous.
@@ -246,7 +312,11 @@ def _run_partial_state_script(
         "real shell can be executed under test"
     )
     step_env = _as_mapping(step["env"], f"{_PARTIAL_STATE_STEP} `env:`")
-    assert step_env["RELEASE_TAG"] == "${{ steps.tag.outputs.tag }}"
+    # The report is a separate job now, so the tag arrives off the `release`
+    # job's declared output, not off a sibling step in the same job.
+    assert step_env["RELEASE_TAG"] == "${{ needs.release.outputs.version }}"
+    assert step_env["RELEASE_RESULT"] == "${{ needs.release.result }}"
+    assert step_env["CASCADE_RESULT"] == "${{ needs['dependency-cascade'].result }}"
 
     script_path = tmp_path / "partial_state_step.sh"
     script_path.write_text(script)
@@ -279,9 +349,19 @@ def _run_partial_state_script(
             "CURL_STUB_ARGV_LOG": str(argv_log),
             "CURL_STUB_BODY": str(body),
             "CURL_STUB_FAIL": "1" if curl_fails else "0",
-            "RELEASE_TAG": release_tag,
         }
     )
+    if bind_env:
+        env.update(
+            {
+                "RELEASE_TAG": release_tag,
+                "RELEASE_RESULT": release_result,
+                "CASCADE_RESULT": cascade_result,
+            }
+        )
+    else:
+        for unbound in ("RELEASE_TAG", "RELEASE_RESULT", "CASCADE_RESULT"):
+            env.pop(unbound, None)
 
     proc = subprocess.run(
         ["bash", "-e", str(script_path)],
@@ -396,6 +476,48 @@ def test_publish_stops_retrying_once_it_succeeds(tmp_path: Path) -> None:
     assert run.sleep_seconds == [], run.sleep_seconds
 
 
+def test_publish_does_not_retry_a_non_retryable_failure(tmp_path: Path) -> None:
+    """AC3, exists-but-wrong guard: the retry must be *on 5xx*, not on any exit.
+
+    ``until uv publish; do ...; done`` retries every non-zero exit, so a
+    permanent 403 (bad token) or 400 (malformed metadata) burns the whole
+    15s + 45s backoff and is then reported with ``retrying`` -- the language of
+    a transient fault -- before failing anyway. AC3 as written says "on 5xx",
+    so the loop has to read the failure. A retry loop that cannot tell a 500
+    from a 403 satisfies the letter of "retries" and none of its intent.
+    """
+    run = _run_publish_script(tmp_path, fail_times=99, fail_message=_UV_4XX_MESSAGE)
+
+    assert run.returncode != 0, run.stdout
+    assert len(run.uv_invocations) == 1, (
+        "a 403 is deterministic; a second attempt cannot clear it: "
+        f"{run.uv_invocations}"
+    )
+    assert run.sleep_seconds == [], (
+        f"no backoff may be burned on a non-retryable failure: {run.sleep_seconds}"
+    )
+    assert "non-retryable" in run.stderr, run.stderr
+    assert "retrying in" not in run.stderr, (
+        "a permanent failure must not be reported in the language of a "
+        f"transient one: {run.stderr}"
+    )
+
+
+def test_publish_still_retries_the_real_pypi_deadline_5xx(tmp_path: Path) -> None:
+    """AC3 companion to the guard above: the 0.46.8 failure IS retryable.
+
+    Uses the verbatim shape uv emits when upload.pypi.org returns 500 after the
+    ~240s server-side deadline. A classifier tightened to the point where the
+    actual observed failure stops being retried would pass the negative test
+    above and silently un-fix the ticket.
+    """
+    run = _run_publish_script(tmp_path, fail_times=1, fail_message=_UV_5XX_MESSAGE)
+
+    assert run.returncode == 0, run.stderr
+    assert len(run.uv_invocations) == 2, run.uv_invocations
+    assert run.sleep_seconds == [15], run.sleep_seconds
+
+
 # --------------------------------------------------------------------------
 # AC2 -- runner egress
 # --------------------------------------------------------------------------
@@ -430,12 +552,64 @@ def test_dist_artifacts_are_preserved_before_publish() -> None:
     assert with_["if-no-files-found"] == "error"
 
 
-def test_partial_release_state_step_is_wired_to_the_failure_path() -> None:
-    """AC4 (shape): the report must fire on failure, after the release step."""
-    step = _step(_PARTIAL_STATE_STEP)
+def test_partial_release_state_job_also_covers_a_dependency_cascade_failure() -> None:
+    """AC4 (shape): the report has to be able to observe a cascade failure.
 
-    assert str(step["if"]).strip() == "failure()"
-    assert _step_index(_PARTIAL_STATE_STEP) > _step_index(_RELEASE_STEP)
+    AC4 names the Dependency Cascade among the things that must "either run, or
+    the run fails loudly naming which artifacts landed". While the report was a
+    step inside ``release`` it could not fire for a cascade failure at all --
+    ``release`` green + a red cascade matrix job produced a red run and total
+    silence about what had landed. It therefore has to be a job that needs
+    both.
+    """
+    job = _job(_PARTIAL_STATE_JOB)
+
+    needs = job["needs"]
+    assert isinstance(needs, list), needs
+    assert _RELEASE_JOB in needs, needs
+    assert _CASCADE_JOB in needs, needs
+
+    condition = str(job["if"])
+    assert "always()" in condition, condition
+    for upstream in (
+        "needs.release.result == 'failure'",
+        "needs['dependency-cascade'].result == 'failure'",
+    ):
+        assert upstream in condition, f"{upstream!r} missing from {condition!r}"
+
+
+def test_partial_release_state_does_not_fire_on_a_skipped_cascade() -> None:
+    """AC4 (shape, negative): an rc release is not a partial release.
+
+    ``dependency-cascade`` carries ``if: !contains(version, 'rc')``, so it is
+    ``skipped`` by design on every rc tag. A condition written as
+    ``result != 'success'`` -- the obvious way to write this -- would report a
+    perfectly good rc release as INCOMPLETE, every time.
+    """
+    condition = str(_job(_PARTIAL_STATE_JOB)["if"])
+
+    assert "!= 'success'" not in condition, condition
+    assert "'skipped'" not in condition, condition
+
+    cascade = _job(_CASCADE_JOB)
+    assert "rc" in str(cascade["if"]), (
+        "this test's premise is that the cascade is skipped on rc tags; if that "
+        f"stopped being true the assertions above are meaningless: {cascade['if']}"
+    )
+
+
+def test_partial_release_state_is_not_a_step_in_the_release_job() -> None:
+    """AC4 (shape, net-negative-surface): exactly one copy of this shell.
+
+    Keeping the old in-job step alongside the new job would leave two
+    independently-drifting copies of the only diagnostic a stranded release
+    emits.
+    """
+    release_step_names = [step.get("name") for step in _steps()]
+
+    assert _PARTIAL_STATE_STEP not in release_step_names, release_step_names
+    # ...and the release job still does the thing the report reports about.
+    assert _RELEASE_STEP in release_step_names, release_step_names
 
 
 def test_partial_release_state_names_landed_and_missing_artifacts(
@@ -512,6 +686,77 @@ def test_partial_release_state_reports_unknown_when_the_index_is_unreachable(
     assert "::error::UNKNOWN on PyPI: omnibase_core-0.46.8.tar.gz" in run.stdout
     assert "LANDED on PyPI" not in run.stdout
     assert "MISSING from PyPI" not in run.stdout
+
+
+def test_partial_release_state_names_a_failed_dependency_cascade(
+    tmp_path: Path,
+) -> None:
+    """AC4 (behaviour): the gap this remediation closes, executed.
+
+    ``release`` green, cascade red -- every artifact landed, but the downstream
+    bump PRs were never opened. Before this was a job, that combination
+    produced a red run and no census at all.
+    """
+    run = _run_partial_state_script(
+        tmp_path,
+        release_tag="v0.46.8",
+        dist_files=(
+            "omnibase_core-0.46.8-py3-none-any.whl",
+            "omnibase_core-0.46.8.tar.gz",
+        ),
+        index_files=(
+            "omnibase_core-0.46.8-py3-none-any.whl",
+            "omnibase_core-0.46.8.tar.gz",
+        ),
+        release_result="success",
+        cascade_result="failure",
+    )
+
+    assert run.returncode == 0, run.stderr
+    assert "::error::RELEASE INCOMPLETE for v0.46.8" in run.stdout
+    assert "dependency cascade: failure" in run.stdout
+    assert "Dependency Cascade did NOT complete (failure)" in run.stdout
+    # The release job succeeded, so claiming it did not run would be false.
+    assert "GitHub Release and Dependency Cascade did NOT run." not in run.stdout
+    # Both artifacts are on the index -- the census must say so, not guess.
+    assert (
+        "::error::LANDED on PyPI: omnibase_core-0.46.8-py3-none-any.whl" in run.stdout
+    )
+    assert "::error::LANDED on PyPI: omnibase_core-0.46.8.tar.gz" in run.stdout
+    assert "MISSING from PyPI" not in run.stdout
+
+
+def test_partial_release_state_survives_an_entirely_unbound_environment(
+    tmp_path: Path,
+) -> None:
+    """AC4 (behaviour, negative): the ``${VAR:-}`` guards must be load-bearing.
+
+    Every other case in this file binds all three variables through the child
+    env, exactly as Actions does via the step's ``env:`` block -- which means
+    none of them would notice if the guards were deleted. This one removes the
+    variables outright. Under ``set -u`` an unguarded expansion aborts the
+    script, and the *only* diagnostic a stranded release emits disappears at
+    the moment it is needed.
+    """
+    run = _run_partial_state_script(
+        tmp_path,
+        release_tag="",
+        dist_files=("omnibase_core-0.46.8-py3-none-any.whl",),
+        index_files=(),
+        bind_env=False,
+    )
+
+    assert run.returncode == 0, (
+        f"the report must not abort on an unbound variable: {run.stderr!r}"
+    )
+    assert "::error::RELEASE INCOMPLETE for <tag unresolved>" in run.stdout
+    assert "release job: unknown" in run.stdout
+    assert "dependency cascade: unknown" in run.stdout
+    # The census still has to run: dist/ is readable regardless of the env.
+    assert "::error::MISSING from PyPI: omnibase_core-0.46.8-py3-none-any.whl" in (
+        run.stdout
+    )
+    assert "unbound variable" not in run.stderr, run.stderr
 
 
 def test_dependency_cascade_still_runs_off_the_release_output() -> None:
