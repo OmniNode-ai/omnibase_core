@@ -4,11 +4,39 @@
 """Static import graph builder for Python and JavaScript/TypeScript files."""
 
 import ast
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
 _JS_EXTS = (".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs")
 _PY_EXTS = (".py",)
+
+# Directories that never contain first-party repo source. Descending into them
+# is both a correctness bug (vendored site-packages copies of a first-party
+# module shadow the real `src/` file when resolving a dotted import, so real
+# consumers get undercounted) and the dominant cost of a cold graph build:
+# an unpruned walk of a synced worktree AST-parses thousands of dependency
+# files. See OMN-15431.
+_PRUNED_DIR_NAMES = frozenset(
+    {
+        ".git",
+        ".hg",
+        ".svn",
+        ".venv",
+        "venv",
+        ".tox",
+        ".nox",
+        ".eggs",
+        "site-packages",
+        "node_modules",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".onex_state",
+        "htmlcov",
+    }
+)
 
 
 @dataclass
@@ -26,18 +54,8 @@ def build_import_graph(repo_root: Path) -> ImportGraph:
     """Build a static import graph for Python and JS/TS files under repo_root."""
     graph = ImportGraph()
     repo_root = repo_root.resolve()
-    python_search_roots = _python_search_roots(repo_root)
-
-    py_files: list[Path] = []
-    js_files: list[Path] = []
-
-    for path in repo_root.rglob("*"):
-        if not path.is_file():
-            continue
-        if path.suffix in _PY_EXTS:
-            py_files.append(path)
-        elif path.suffix in _JS_EXTS:
-            js_files.append(path)
+    py_files, js_files, src_dirs = _walk_source_tree(repo_root)
+    python_search_roots = [repo_root, *src_dirs]
 
     for path in py_files:
         rel = _to_repo_rel(path, repo_root)
@@ -91,11 +109,41 @@ def _parse_python_imports(
     return edges
 
 
-def _python_search_roots(repo_root: Path) -> list[Path]:
-    """Return module-resolution roots once per graph build."""
-    roots = [repo_root]
-    roots.extend(path for path in repo_root.rglob("src") if path.is_dir())
-    return roots
+def _is_pruned_dir(path: Path, repo_root: Path) -> bool:
+    """Return True for directories that hold no first-party repo source."""
+    name = path.name
+    if name in _PRUNED_DIR_NAMES or name.endswith(".egg-info"):
+        return True
+    # A nested checkout (submodule, sibling clone, or git worktree parked inside
+    # the tree) carries its own history and is not this repo's source.
+    return path != repo_root and (path / ".git").exists()
+
+
+def _walk_source_tree(repo_root: Path) -> tuple[list[Path], list[Path], list[Path]]:
+    """Walk repo_root once, returning (python files, JS/TS files, ``src`` dirs).
+
+    A single pruned walk replaces the previous pair of unpruned ``rglob`` passes.
+    Pruning happens in-place on ``os.walk``'s dirnames so excluded subtrees are
+    never descended into at all, rather than being enumerated and then filtered.
+    """
+    py_files: list[Path] = []
+    js_files: list[Path] = []
+    src_dirs: list[Path] = []
+
+    for dirpath, dirnames, filenames in os.walk(repo_root):
+        current = Path(dirpath)
+        dirnames[:] = [
+            name for name in dirnames if not _is_pruned_dir(current / name, repo_root)
+        ]
+        src_dirs.extend(current / name for name in dirnames if name == "src")
+        for name in filenames:
+            path = current / name
+            if path.suffix in _PY_EXTS:
+                py_files.append(path)
+            elif path.suffix in _JS_EXTS:
+                js_files.append(path)
+
+    return py_files, js_files, src_dirs
 
 
 def _relative_import_names(
