@@ -288,6 +288,66 @@ def test_git_files_at_batches_reads_and_reports_missing_blobs(tmp_path: Path) ->
 
 
 @pytest.mark.unit
+def test_git_files_at_survives_a_newline_inside_a_tracked_path(tmp_path: Path) -> None:
+    """A newline in a path must not split one request into two and desync the stream.
+
+    git permits a newline inside a path. A newline-framed ``git cat-file
+    --batch`` request stream turns such a path into two requests, so every
+    response after it is read against the wrong header and unrelated files come
+    back corrupted or empty -- a regression the per-file ``git show`` shape this
+    batching replaced could not have. The batch reader must be NUL-framed.
+    """
+    module = _load_cli_module()
+
+    weird_rel = "we\nird.py"
+    after = "AFTER = 2\n"
+    (tmp_path / weird_rel).write_text("WEIRD = 1\n", encoding="utf-8")
+    (tmp_path / "after.py").write_text(after, encoding="utf-8")
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "seed", "--no-gpg-sign")
+
+    sources = module._git_files_at(
+        tmp_path,
+        [("HEAD", weird_rel), ("HEAD", "after.py")],
+    )
+
+    assert sources[("HEAD", weird_rel)] == "WEIRD = 1\n"
+    # The real regression: the blob AFTER the newline-bearing path.
+    assert sources[("HEAD", "after.py")] == after
+
+
+@pytest.mark.unit
+def test_git_files_at_normalises_newlines_like_the_previous_per_file_read(
+    tmp_path: Path,
+) -> None:
+    """CRLF/CR blobs must arrive LF-normalised, as universal-newline reads gave.
+
+    The replaced ``git show`` call used ``text=True``, so callers have always
+    seen LF. Reading raw bytes out of the batch stream would hand ``compute_diff``
+    CRLF instead; this pins the translation rather than leaving it incidental.
+    """
+    module = _load_cli_module()
+
+    (tmp_path / "crlf.py").write_bytes(b"a = 1\r\nb = 2\r\n")
+    (tmp_path / "cr.py").write_bytes(b"a = 1\rb = 2\r")
+    _git(tmp_path, "init", "-q")
+    # -A with core.autocrlf unset stores the bytes verbatim; pin it so a global
+    # ~/.gitconfig cannot normalise the fixture out from under the assertion.
+    _git(tmp_path, "config", "core.autocrlf", "false")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "seed", "--no-gpg-sign")
+
+    sources = module._git_files_at(
+        tmp_path,
+        [("HEAD", "crlf.py"), ("HEAD", "cr.py")],
+    )
+
+    assert sources[("HEAD", "crlf.py")] == "a = 1\nb = 2\n"
+    assert sources[("HEAD", "cr.py")] == "a = 1\nb = 2\n"
+
+
+@pytest.mark.unit
 def test_git_files_at_returns_empty_for_no_requests(tmp_path: Path) -> None:
     """No requested blobs means no git process at all."""
     module = _load_cli_module()

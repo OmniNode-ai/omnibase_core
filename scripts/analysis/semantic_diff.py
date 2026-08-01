@@ -105,6 +105,21 @@ def _git_changed_py_files(base: str, head: str, repo_root: Path) -> list[Path]:
     return [repo_root / line for line in result.stdout.splitlines() if line]
 
 
+def _decode_blob(raw: bytes) -> str:
+    """Decode one blob the way the previous per-file ``git show`` read did.
+
+    The old shape ran ``subprocess.run(..., text=True)``, i.e. universal
+    newlines, so a CRLF or CR source arrived LF-normalised. Reading raw bytes
+    out of the batch stream would silently drop that translation, so it is done
+    explicitly here and pinned by a test. Decoding with ``errors="replace"`` is
+    deliberately MORE forgiving than the old strict decode, which raised on a
+    non-UTF-8 blob and aborted an advisory report outright.
+    """
+    return (
+        raw.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
+    )
+
+
 def _git_files_at(
     repo_root: Path, requests: list[tuple[str, str]]
 ) -> dict[tuple[str, str], str]:
@@ -116,13 +131,20 @@ def _git_files_at(
     timeout. ``git cat-file --batch`` answers the whole set from a single
     process. Missing blobs yield "", matching the previous per-file behaviour.
     See OMN-15431.
+
+    Requests are NUL-delimited (``-z``), not newline-delimited: git permits a
+    newline inside a path, and a newline-framed request stream would split such
+    a path into two requests and desynchronise every response after it --
+    silently corrupting the content of unrelated files. The per-file ``git
+    show`` shape this replaced had no such coupling, so ``-z`` is what keeps the
+    batching behaviour-preserving.
     """
     if not requests:
         return {}
 
-    payload = "".join(f"{ref}:{rel}\n" for ref, rel in requests).encode()
+    payload = b"".join(f"{ref}:{rel}\0".encode() for ref, rel in requests)
     result = subprocess.run(
-        ["git", "cat-file", "--batch"],
+        ["git", "cat-file", "--batch", "-z"],
         cwd=repo_root,
         input=payload,
         capture_output=True,
@@ -147,7 +169,7 @@ def _git_files_at(
         except (IndexError, ValueError):
             sources[key] = ""
             continue
-        sources[key] = out[pos : pos + size].decode("utf-8", errors="replace")
+        sources[key] = _decode_blob(out[pos : pos + size])
         pos += size + 1  # blob payload plus its trailing newline
 
     return sources
