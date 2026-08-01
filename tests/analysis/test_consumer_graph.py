@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import time
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -289,3 +290,29 @@ def test_build_still_completes_when_the_lock_cannot_be_taken(
 
     assert result["b.py"] == 1
     assert time.monotonic() - started < 60.0
+
+
+@pytest.mark.unit
+def test_lock_wait_never_outlasts_the_gate_per_test_timeout() -> None:
+    """A waiter must not block past the budget that will kill it anyway.
+
+    The single-flight lock turns N-1 concurrent cold builders into N-1 waiters.
+    pytest-timeout kills each of them at the ``--timeout=`` pinned in pyproject
+    addopts, so a wait longer than that budget cannot rescue a waiter -- it only
+    keeps an already-doomed process holding an xdist worker slot, which is the
+    exact OMN-15431 failure shape. This pins the lock wait against the real
+    gate value rather than a number copied into a comment.
+    """
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    with pyproject.open("rb") as handle:
+        addopts = tomllib.load(handle)["tool"]["pytest"]["ini_options"]["addopts"]
+
+    timeouts = [
+        float(opt.split("=", 1)[1]) for opt in addopts if opt.startswith("--timeout=")
+    ]
+    assert timeouts, f"no --timeout= in pyproject addopts: {addopts}"
+
+    assert min(timeouts) >= consumer_graph_module._LOCK_TIMEOUT_SECONDS, (
+        f"lock wait {consumer_graph_module._LOCK_TIMEOUT_SECONDS}s exceeds the "
+        f"gate per-test timeout {min(timeouts)}s; waiters would be killed mid-wait"
+    )

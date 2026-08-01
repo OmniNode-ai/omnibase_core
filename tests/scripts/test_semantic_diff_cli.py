@@ -296,6 +296,11 @@ def test_git_files_at_survives_a_newline_inside_a_tracked_path(tmp_path: Path) -
     response after it is read against the wrong header and unrelated files come
     back corrupted or empty -- a regression the per-file ``git show`` shape this
     batching replaced could not have. The batch reader must be NUL-framed.
+
+    This covers the PRESENT-blob half only: ``-z`` frames stdin, which is what
+    this case needs. The absent-blob half re-injects the newline on git's
+    LF-framed STDOUT and is a separate defect, pinned by the sibling test
+    :func:`test_git_files_at_survives_a_newline_inside_a_missing_path`.
     """
     module = _load_cli_module()
 
@@ -315,6 +320,69 @@ def test_git_files_at_survives_a_newline_inside_a_tracked_path(tmp_path: Path) -
     assert sources[("HEAD", weird_rel)] == "WEIRD = 1\n"
     # The real regression: the blob AFTER the newline-bearing path.
     assert sources[("HEAD", "after.py")] == after
+
+
+@pytest.mark.unit
+def test_git_files_at_survives_a_newline_inside_a_missing_path(tmp_path: Path) -> None:
+    """A newline in an ABSENT path must not desync the blobs that follow it either.
+
+    ``-z`` frames stdin only; git's stdout stays LF-framed (``-Z`` needs git
+    >= 2.42, the fleet runs 2.39). git answers an unresolvable name by echoing
+    the request VERBATIM plus " missing", so a newline-bearing absent path puts
+    its own newline back into the response stream. Scanning for the next LF
+    splits that echo, burns an extra response slot, and silently loses the
+    FOLLOWING blob -- the response must be matched against the request instead.
+
+    Not exotic: ``_compute_report`` requests every changed path at both base and
+    head, so every added or deleted file is a missing-blob request.
+    """
+    module = _load_cli_module()
+
+    weird_rel = "we\nird.py"
+    after = "AFTER = 2\n"
+    # Only after.py is committed, so weird_rel is MISSING at HEAD.
+    (tmp_path / "after.py").write_text(after, encoding="utf-8")
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "seed", "--no-gpg-sign")
+
+    sources = module._git_files_at(
+        tmp_path,
+        [("HEAD", weird_rel), ("HEAD", "after.py")],
+    )
+
+    assert sources[("HEAD", weird_rel)] == ""
+    # The regression: the blob after a MISSING newline-bearing path.
+    assert sources[("HEAD", "after.py")] == after
+
+
+@pytest.mark.unit
+def test_git_files_at_warns_instead_of_silently_emptying_the_whole_report(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failed git process must say so, not masquerade as a clean diff.
+
+    One non-zero exit resolves EVERY blob to "", so ``compute_diff`` reports no
+    semantic changes for the whole diff -- byte-identical to a genuinely clean
+    result. The per-file ``git show`` shape this batching replaced could only
+    lose one file at a time, so batching made a silent failure global.
+    """
+    module = _load_cli_module()
+
+    # GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE are exported into hook processes and
+    # override cwd=, which would retarget this call at a REAL repo and make it
+    # succeed (OMN-14891).
+    for var in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+        monkeypatch.delenv(var, raising=False)
+
+    # Not a git repository, so cat-file cannot start: a real process-level
+    # failure, not a simulated one.
+    sources = module._git_files_at(tmp_path, [("HEAD", "one.py")])
+
+    assert sources == {}
+    assert "git cat-file failed" in capsys.readouterr().err
 
 
 @pytest.mark.unit

@@ -120,6 +120,21 @@ def _decode_blob(raw: bytes) -> str:
     )
 
 
+def _absent_response_length(out: bytes, pos: int, request: bytes) -> int | None:
+    """Length of the "not resolvable" response at ``pos``, or None if it is a blob.
+
+    ``git cat-file --batch`` answers an unresolvable name by echoing the request
+    back verbatim plus a status word. Matching that echo against the request we
+    actually sent is the only framing-independent way to consume the response:
+    the echo carries whatever bytes the path carried, newlines included, so
+    scanning for the next LF splits it and loses the FOLLOWING blob.
+    """
+    for status in (b" missing\n", b" ambiguous\n"):
+        if out.startswith(request + status, pos):
+            return len(request) + len(status)
+    return None
+
+
 def _git_files_at(
     repo_root: Path, requests: list[tuple[str, str]]
 ) -> dict[tuple[str, str], str]:
@@ -138,6 +153,16 @@ def _git_files_at(
     silently corrupting the content of unrelated files. The per-file ``git
     show`` shape this replaced had no such coupling, so ``-z`` is what keeps the
     batching behaviour-preserving.
+
+    ``-z`` frames stdin ONLY; git's stdout stays LF-framed on every git version
+    this repo supports (``-Z``, which also frames stdout, needs git >= 2.42 and
+    the fleet runs 2.39). So responses are NOT scanned for the next LF -- an
+    absent blob is answered by echoing the request VERBATIM followed by
+    " missing", which re-injects the embedded newline and would burn one
+    response slot per line. Each response is instead matched against the exact
+    request that produced it, which is framing-independent. This is not an
+    exotic case: :func:`_compute_report` asks for every changed path at BOTH
+    base and head, so every added or deleted file is a missing-blob request.
     """
     if not requests:
         return {}
@@ -151,18 +176,34 @@ def _git_files_at(
         check=False,
     )
     if result.returncode != 0:
+        # Degrade loudly. Every blob resolving to "" makes compute_diff report
+        # "no semantic changes" for the WHOLE diff, which reads identically to
+        # a genuinely clean diff; the per-file shape this replaced could only
+        # ever lose one file at a time.
+        print(  # noqa: T201
+            "warning: git cat-file failed; emitting empty advisory report for "
+            f"all {len(requests)} requested blobs: "
+            f"{result.stderr.decode('utf-8', errors='replace').strip()}",
+            file=sys.stderr,
+        )
         return {}
 
     out = result.stdout
     sources: dict[tuple[str, str], str] = {}
     pos = 0
     for key in requests:
+        ref, rel = key
+        absent_len = _absent_response_length(out, pos, f"{ref}:{rel}".encode())
+        if absent_len is not None:
+            sources[key] = ""
+            pos += absent_len
+            continue
         end_of_header = out.find(b"\n", pos)
         if end_of_header == -1:
             break
         header = out[pos:end_of_header]
         pos = end_of_header + 1
-        # Success is "<oid> <type> <size>"; absence is "<request> missing".
+        # Success is "<oid> <type> <size>"; absence was handled above.
         fields = header.split(b" ")
         try:
             size = int(fields[2])

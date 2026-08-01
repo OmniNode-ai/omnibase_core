@@ -22,7 +22,13 @@ except ImportError:  # pragma: no cover - non-POSIX fallback
     _HAVE_FCNTL = False
 
 _LOCK_POLL_SECONDS = 0.05
-_LOCK_TIMEOUT_SECONDS = 300.0
+
+# The canonical gate pins --timeout=60 (pyproject.toml [tool.pytest.ini_options]
+# addopts), so a waiter that blocks past 60s is killed by pytest-timeout anyway.
+# Waiting longer cannot rescue it -- it only keeps a doomed process holding an
+# xdist worker slot. The wait therefore never exceeds the tightest per-test
+# budget this lock is documented against (OMN-15431).
+_LOCK_TIMEOUT_SECONDS = 60.0
 
 
 def build_consumer_graph(repo_root: Path) -> dict[str, int]:
@@ -34,8 +40,15 @@ def build_consumer_graph(repo_root: Path) -> dict[str, int]:
     Concurrent callers are single-flighted through an inter-process lock: when
     several processes hit a cold cache at once, exactly one computes the graph
     and the rest wait and then read its result. Without that, N concurrent test
-    workers each ran a full-repo build simultaneously and all of them blew the
-    per-test timeout (OMN-15431).
+    workers each ran a full-repo build simultaneously (OMN-15431).
+
+    Read the division of labour precisely, because the lock alone is NOT a fix
+    for the timeout class: it collapses N concurrent builds into one, removing
+    the CPU/IO contention that made every one of them slower, but it converts
+    N-1 builders into N-1 waiters. What bounds the latency of the single
+    remaining build -- and so of everyone waiting on it -- is the pruned tree
+    walk in ``build_import_graph``. If that build ever regresses past the gate's
+    per-test budget again, the waiters die with it.
     """
     repo_root = repo_root.resolve()
     state_dir = repo_root / ".onex_state"
