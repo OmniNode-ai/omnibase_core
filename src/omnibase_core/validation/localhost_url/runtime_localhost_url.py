@@ -35,6 +35,7 @@ from omnibase_core.constants.constants_event_types import (
     TOPIC_VALIDATION_LOCALHOST_URL_SCAN_REQUESTED_CMD,
 )
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.localhost_url.handler import HandlerLocalhostUrlCompute
@@ -55,8 +56,16 @@ __all__ = [
 COMMAND_TOPIC: Final[str] = TOPIC_VALIDATION_LOCALHOST_URL_SCAN_REQUESTED_CMD
 RESULT_TOPIC: Final[str] = TOPIC_VALIDATION_LOCALHOST_URL_SCAN_COMPLETED_EVENT
 
-_RUNNER_GROUP: Final[str] = "validator-localhost-url-runner"
-_HANDLER_GROUP: Final[str] = "validator-localhost-url-compute"
+# Consumer groups are derived, never literal: an ad-hoc literal is matched by no
+# MSK IAM pattern and fails at the broker with GroupAuthorizationFailedError
+# (OMN-15639). These runners are in-memory-bus only today, but they are held to
+# the same grammar so the AC3 gate can stay default-deny.
+_RUNNER_GROUP: Final[str] = derive_service_group_id(
+    "validator_localhost_url_runner", service="omnibase_core"
+)
+_HANDLER_GROUP: Final[str] = derive_service_group_id(
+    "validator_localhost_url_compute", service="omnibase_core"
+)
 
 # Text extensions scanned + directories pruned — the EFFECT boundary that decides
 # which files are loaded at all. Same sets as the private-IP / local-paths canaries.
@@ -151,7 +160,7 @@ class LocalhostUrlBusRunner:
             if scan_input.path not in self._results
         ]
         if missing:
-            raise RuntimeError(
+            raise RuntimeError(  # error-ok: bus-runner invariant breach (a dispatched input produced no result), not a domain validation outcome; surfaces as a non-zero CLI exit. Pre-existing, annotated under OMN-15639 as the first change to this file since the hook began flagging it.
                 "localhost-url validator did not receive results for "
                 f"{len(missing)} input(s): {', '.join(missing[:5])}"
             )
@@ -192,7 +201,7 @@ def _read_text(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8", errors="replace")
     except OSError as exc:  # PermissionError is an OSError subclass
-        raise OSError(  # fail-closed: an unreadable file is not a clean file
+        raise OSError(  # error-ok: deliberately re-raises the OS-level failure so callers can distinguish an unreadable file from a clean one; fail-closed, see the docstring above. Pre-existing, annotated under OMN-15639.
             f"localhost-url validator could not read {path}: {exc}"
         ) from exc
 

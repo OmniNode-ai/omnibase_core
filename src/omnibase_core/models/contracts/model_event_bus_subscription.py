@@ -9,13 +9,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelEventBusSubscription(BaseModel):
-    """A single normalized subscription parsed from an event_bus contract block."""
+    """A single normalized subscription parsed from an event_bus contract block.
+
+    Carries only the topic. The former ``consumer_group`` field was parsed and never
+    read; consumer group IDs are now derived from node identity by
+    :mod:`omnibase_core.event_bus.util_consumer_group` so that every minted name is matched
+    by the MSK IAM authorized pattern set (OMN-15639).
+    """
 
     topic: str = Field(..., description="Topic suffix to subscribe to.")
-    consumer_group: str | None = Field(
-        default=None,
-        description="Optional consumer group; only present in the nested shape.",
-    )
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
