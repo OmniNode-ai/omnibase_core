@@ -1217,6 +1217,29 @@ def test_always_run_patterns_match_pytest_python_files() -> None:
     assert list(TEST_FILE_PATTERNS) == list(python_files)
 
 
+def test_nested_always_run_scan_errors_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Nested traversal errors must propagate to the caller's full-suite fallback."""
+    import scripts.ci.detect_test_paths as detect
+
+    target = tmp_path / "tests" / "gates"
+    target.mkdir(parents=True)
+
+    def _walk(
+        _directory: Path,
+        onerror: object | None = None,
+    ) -> object:
+        yield str(target), [], []
+        assert callable(onerror)
+        onerror(PermissionError("nested scan denied"))
+
+    monkeypatch.setattr(detect.os, "walk", _walk)
+
+    with pytest.raises(PermissionError, match="nested scan denied"):
+        detect.unnarrowable_test_paths(tmp_path)
+
+
 def test_cli_run_node_only_diff_selects_the_ac3_gate() -> None:
     """AC1/AC3: the exact RED change-set now reaches tests/gates/.
 

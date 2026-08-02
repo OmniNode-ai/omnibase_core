@@ -29,8 +29,12 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.nodes.node_test_selector_compute.runtime_test_selector import (
+    _TEST_FILE_PATTERNS as RUNTIME_TEST_FILE_PATTERNS,
+)
+from omnibase_core.nodes.node_test_selector_compute.runtime_test_selector import (
     main as node_main,
 )
+from scripts.ci.detect_test_paths import TEST_FILE_PATTERNS as ORACLE_TEST_FILE_PATTERNS
 from scripts.ci.detect_test_paths import main as oracle_main
 from scripts.ci.detect_test_paths import unnarrowable_test_paths
 
@@ -76,6 +80,8 @@ def test_cli_stdout_parity(
     changed: list[str],
     extra: list[str],
 ) -> None:
+    assert RUNTIME_TEST_FILE_PATTERNS == ORACLE_TEST_FILE_PATTERNS
+
     changed_file = _changed_file(tmp_path, changed)
     common = [
         "--changed-files-from",

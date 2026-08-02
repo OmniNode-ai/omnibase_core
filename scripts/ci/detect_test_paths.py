@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import fnmatch
 import math
+import os
 import subprocess
 import sys
 import tomllib
@@ -150,6 +151,10 @@ def is_test_file_name(name: str) -> bool:
     return any(fnmatch.fnmatch(name, pattern) for pattern in TEST_FILE_PATTERNS)
 
 
+def _raise_walk_error(error: OSError) -> None:
+    raise error
+
+
 def _contains_collectable_test(directory: Path) -> bool:
     """True when ``directory`` holds at least one file pytest would collect.
 
@@ -157,7 +162,10 @@ def _contains_collectable_test(directory: Path) -> bool:
     out of the always-run set on POSITIVE evidence — there is nothing in them to
     run — rather than by naming them in an exclusion list that would rot.
     """
-    return any(is_test_file_name(path.name) for path in directory.rglob("*.py"))
+    for _root, _dirs, files in os.walk(directory, onerror=_raise_walk_error):
+        if any(is_test_file_name(name) for name in files):
+            return True
+    return False
 
 
 def unnarrowable_test_paths(repo_root: Path) -> list[str]:

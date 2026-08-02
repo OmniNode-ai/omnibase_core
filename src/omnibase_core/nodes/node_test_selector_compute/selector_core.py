@@ -228,17 +228,17 @@ def compute_selection(
             matrix=[1],
         )
 
-    # 6. Smart selection (OMN-14921: file-grain import-graph closure). The
-    # closure itself is I/O — computed at the caller/EFFECT boundary and
-    # injected here; this stays a pure lookup + the same whole-tree fallback
-    # used when no closure could be computed (mirrors the retired module-grain
-    # oracle's fallback for "no unit-test mapping found").
     # 5a. Always-run set (OMN-15661) — see the parameter's docstring entry. Not
     # supplied means not proven, and the fail-closed answer on this path is the
     # full suite (every conservative alternative still drops tests/gates/).
     if unnarrowable_test_paths is None:
         return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
 
+    # 6. Smart selection (OMN-14921: file-grain import-graph closure). The
+    # closure itself is I/O — computed at the caller/EFFECT boundary and
+    # injected here; this stays a pure lookup + the same whole-tree fallback
+    # used when no closure could be computed (mirrors the retired module-grain
+    # oracle's fallback for "no unit-test mapping found").
     selected = (
         list(closure_selected_files) if closure_selected_files is not None else None
     )

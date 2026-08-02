@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import os
 import sys
 from pathlib import Path
 
@@ -96,6 +97,17 @@ def _is_test_file_name(name: str) -> bool:
     return any(fnmatch.fnmatch(name, pattern) for pattern in _TEST_FILE_PATTERNS)
 
 
+def _raise_walk_error(error: OSError) -> None:
+    raise error
+
+
+def _contains_collectable_test(directory: Path) -> bool:
+    for _root, _dirs, files in os.walk(directory, onerror=_raise_walk_error):
+        if any(_is_test_file_name(name) for name in files):
+            return True
+    return False
+
+
 def _unnarrowable_test_paths(repo_root: Path) -> list[str]:
     """Always-run test paths the import-graph closure cannot select (OMN-15661).
 
@@ -117,7 +129,7 @@ def _unnarrowable_test_paths(repo_root: Path) -> list[str]:
         if name in _CLOSURE_NARROWABLE_TEST_ROOTS or name in _SEPARATELY_GATED_ROOTS:
             continue
         if entry.is_dir():
-            if any(_is_test_file_name(p.name) for p in entry.rglob("*.py")):
+            if _contains_collectable_test(entry):
                 paths.append(f"{_TESTS_DIR}/{name}/")
         elif _is_test_file_name(name):
             paths.append(f"{_TESTS_DIR}/{name}")
