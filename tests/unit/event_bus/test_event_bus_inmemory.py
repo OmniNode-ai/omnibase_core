@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
@@ -86,6 +87,26 @@ class TestEventBusInmemoryPubSub:
         await unsub()
         await bus.publish("events.test", b"key2", b"value2")
         assert len(received) == 1  # no new messages after unsubscribe
+
+        await bus.close()
+
+    @pytest.mark.asyncio
+    async def test_subscriber_model_onex_error_propagates(self) -> None:
+        bus = EventBusInmemory(environment="test", group="unit")
+        await bus.start()
+
+        async def handler(msg: ModelEventMessage) -> None:
+            raise ModelOnexError(
+                "subscriber domain failure",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+
+        await bus.subscribe("events.test", group_id="domain-errors", on_message=handler)
+
+        with pytest.raises(ModelOnexError, match="subscriber domain failure"):
+            await bus.publish("events.test", None, b"payload")
+
+        assert ("events.test", "domain-errors") not in bus._subscriber_failures
 
         await bus.close()
 

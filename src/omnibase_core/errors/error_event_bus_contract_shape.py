@@ -17,10 +17,11 @@ class EventBusContractShapeError(ValueError):
 
     1. Classic: ``event_bus.subscribe_topics`` is a ``list[str]``.
     2. Nested: ``event_bus.subscribe`` is a ``list[dict]`` where each dict has
-       a required ``topic`` field and optional ``consumer_group``.
+       a required ``topic`` field.
 
-    Any other shape (or a recognized shape missing required fields) raises this
-    error so the contract author sees a loud failure instead of a silent skip.
+    Any other shape (a recognized shape missing required fields, or the removed
+    ``consumer_group`` key — see OMN-15639) raises this error so the contract author
+    sees a loud failure instead of a silent skip.
     """
 
 

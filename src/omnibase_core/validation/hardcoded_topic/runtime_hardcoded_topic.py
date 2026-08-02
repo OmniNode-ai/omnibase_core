@@ -35,6 +35,7 @@ from omnibase_core.constants.constants_event_types import (
     TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_REQUESTED_CMD,
 )
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.hardcoded_topic.handler import (
@@ -57,8 +58,16 @@ __all__ = [
 COMMAND_TOPIC: Final[str] = TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_REQUESTED_CMD
 RESULT_TOPIC: Final[str] = TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_COMPLETED_EVENT
 
-_RUNNER_GROUP: Final[str] = "validator-hardcoded-topic-runner"
-_HANDLER_GROUP: Final[str] = "validator-hardcoded-topic-compute"
+# Consumer groups are derived, never literal: an ad-hoc literal is matched by no
+# MSK IAM pattern and fails at the broker with GroupAuthorizationFailedError
+# (OMN-15639). These runners are in-memory-bus only today, but they are held to
+# the same grammar so the AC3 gate can stay default-deny.
+_RUNNER_GROUP: Final[str] = derive_service_group_id(
+    "validator_hardcoded_topic_runner", service="omnibase_core"
+)
+_HANDLER_GROUP: Final[str] = derive_service_group_id(
+    "validator_hardcoded_topic_compute", service="omnibase_core"
+)
 
 # Text extensions scanned + directories pruned — the EFFECT boundary that decides
 # which files are loaded at all. Same sets as the local-paths / private-IP /

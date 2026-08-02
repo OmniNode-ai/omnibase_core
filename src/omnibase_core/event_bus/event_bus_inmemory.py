@@ -19,10 +19,8 @@ Protocol Compatibility:
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 import logging
-import re
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
@@ -40,67 +38,14 @@ from omnibase_core.types.typed_dict.typed_dict_event_bus_health import (
     TypedDictEventBusHealth,
 )
 
+from .util_consumer_group import compute_consumer_group_id
+
 if TYPE_CHECKING:
     from omnibase_core.protocols.event_bus.protocol_node_identity import (
         ProtocolNodeIdentity,
     )
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# Consumer group ID helpers (inlined from omnibase_infra to avoid dep)
-# ---------------------------------------------------------------------------
-
-_INVALID_CHAR_PATTERN = re.compile(r"[^a-z0-9._-]")
-_CONSECUTIVE_SEPARATOR_PATTERN = re.compile(r"[._-]{2,}")
-_EDGE_SEPARATOR_PATTERN = re.compile(r"^[._-]+|[._-]+$")
-_KAFKA_CONSUMER_GROUP_MAX_LENGTH = 255
-
-
-def _normalize_kafka_identifier(value: str) -> str:
-    """Normalize a string for use as a consumer group ID component."""
-    if not value:
-        raise ValueError(  # error-ok: pure validation helper
-            "Consumer group component cannot be empty"
-        )
-    result = value.lower()
-    result = _INVALID_CHAR_PATTERN.sub("_", result)
-    result = _CONSECUTIVE_SEPARATOR_PATTERN.sub(lambda m: m.group(0)[0], result)
-    result = _EDGE_SEPARATOR_PATTERN.sub("", result)
-    if not result:
-        raise ValueError(  # error-ok: pure validation helper
-            f"Input {value!r} results in empty string after normalization"
-        )
-    if len(result) > _KAFKA_CONSUMER_GROUP_MAX_LENGTH:
-        hash_suffix = hashlib.sha256(value.encode()).hexdigest()[:8]
-        max_prefix = _KAFKA_CONSUMER_GROUP_MAX_LENGTH - 9
-        result = f"{result[:max_prefix]}_{hash_suffix}"
-    return result
-
-
-def _compute_consumer_group_id(
-    identity: ProtocolNodeIdentity,
-    purpose: EnumConsumerGroupPurpose = EnumConsumerGroupPurpose.CONSUME,
-) -> str:
-    """Compute canonical consumer group ID from node identity."""
-    parts = [
-        _normalize_kafka_identifier(identity.env),
-        _normalize_kafka_identifier(identity.service),
-        _normalize_kafka_identifier(identity.node_name),
-        _normalize_kafka_identifier(purpose.value),
-        _normalize_kafka_identifier(identity.version),
-    ]
-    group_id = ".".join(parts)
-    if len(group_id) > _KAFKA_CONSUMER_GROUP_MAX_LENGTH:
-        hash_input = (
-            f"{identity.env}|{identity.service}|{identity.node_name}|"
-            f"{purpose.value}|{identity.version}"
-        )
-        hash_suffix = hashlib.sha256(hash_input.encode()).hexdigest()[:8]
-        max_prefix = _KAFKA_CONSUMER_GROUP_MAX_LENGTH - 9
-        group_id = f"{group_id[:max_prefix]}_{hash_suffix}"
-    return group_id
-
 
 # ---------------------------------------------------------------------------
 # EventBusInmemory
@@ -249,7 +194,9 @@ class EventBusInmemory:
                 async with self._lock:
                     if failure_key in self._subscriber_failures:
                         del self._subscriber_failures[failure_key]
-            except Exception as e:
+            except ModelOnexError:
+                raise
+            except Exception as e:  # fallback-ok: one subscriber's callback must not tear down the delivery loop for every other subscriber; the failure is counted per (topic, group) into _subscriber_failures, which drives the circuit breaker, and is logged with correlation_id. Pre-existing behaviour, annotated under OMN-15639 because that PR is the first to modify this file since the hook began flagging it.
                 async with self._lock:
                     self._subscriber_failures[failure_key] = (
                         self._subscriber_failures.get(failure_key, 0) + 1
@@ -324,7 +271,17 @@ class EventBusInmemory:
         if group_id is not None:
             effective_group_id = group_id
         elif node_identity is not None:
-            effective_group_id = _compute_consumer_group_id(node_identity, purpose)
+            # Components are unpacked here rather than passed as an identity
+            # object: util_consumer_group must not import the `protocols` hub
+            # (OMN-14340 ratchet), so the protocol-typed value is destructured at
+            # the call site that already depends on the protocol.
+            effective_group_id = compute_consumer_group_id(
+                env=node_identity.env,
+                service=node_identity.service,
+                node_name=node_identity.node_name,
+                version=node_identity.version,
+                purpose=purpose,
+            )
         else:
             raise ModelOnexError(
                 "subscribe() requires either node_identity or group_id",

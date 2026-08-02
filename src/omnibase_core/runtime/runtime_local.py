@@ -28,7 +28,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
+from typing import Final, cast
 
 import yaml
 from pydantic import BaseModel
@@ -37,6 +37,7 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
     ProtocolLocalRuntimeBus,
     UnsubscribeCallback,
@@ -52,6 +53,36 @@ from omnibase_core.protocols.runtime.protocol_local_runtime_payload_model import
 )
 
 logger = logging.getLogger(__name__)
+
+# Service token for consumer groups minted by this runtime.
+RUNTIME_LOCAL_SERVICE: Final[str] = "omnibase_core"
+
+# Node name for the subscription that watches the declared terminal event.
+TERMINAL_CONSUMER_NODE_NAME: Final[str] = "runtime_local_terminal"
+
+
+def derive_runtime_local_group_id(node_name: str) -> str:
+    """Derive the consumer group ID for a RuntimeLocal subscription.
+
+    RuntimeLocal is NOT local-only: ``_create_kafka_event_bus()`` loads ``EventBusKafka``
+    through the ``onex.backends`` entry point when ``--backend event_bus=kafka``, so the
+    names minted here reach MSK. Before OMN-15639 they were f-string literals
+    (``f"runtime-local-{handler}"``, ``"runtime-local-terminal"``) that no MSK IAM
+    pattern authorized, and every in-cluster ``onex delegate --bus kafka`` submission
+    died with ``GroupAuthorizationFailedError`` before publishing.
+
+    The environment token is resolved from ``ENVIRONMENT`` rather than hardcoded — the
+    adjacent ``EventBusInmemory(environment="local", ...)`` default is a local-bus
+    concern and must not leak into a name the broker sees.
+
+    Args:
+        node_name: Handler or subscription name.
+
+    Returns:
+        An environment-qualified, IAM-authorized consumer group ID.
+    """
+    return derive_service_group_id(node_name, service=RUNTIME_LOCAL_SERVICE)
+
 
 # Known backend protocol keys that --backend can override.
 # kafka_bootstrap is a Kafka-specific tuning knob: when ``event_bus=kafka`` is
@@ -560,7 +591,7 @@ class RuntimeLocal:
         await bus.subscribe(
             terminal_topic,
             on_message=_on_terminal_msg,
-            group_id="runtime-local-terminal",
+            group_id=derive_runtime_local_group_id(TERMINAL_CONSUMER_NODE_NAME),
         )
         logger.info("RuntimeLocal: subscribed to terminal topic '%s'", terminal_topic)
 
@@ -1177,7 +1208,7 @@ class RuntimeLocal:
             unsub = await bus.subscribe(
                 entry.input_topic,
                 on_message=adapter.on_message,
-                group_id=f"runtime-local-{entry.handler_name}",
+                group_id=derive_runtime_local_group_id(entry.handler_name),
             )
             unsubscribe_handles.append(unsub)
 
@@ -1192,7 +1223,7 @@ class RuntimeLocal:
         unsub = await bus.subscribe(
             terminal_topic,
             on_message=_on_terminal_msg,
-            group_id="runtime-local-terminal",
+            group_id=derive_runtime_local_group_id(TERMINAL_CONSUMER_NODE_NAME),
         )
         unsubscribe_handles.append(unsub)
 

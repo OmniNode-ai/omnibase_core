@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-# onex-allow-file-todo-marker OMN-13480 reason="this validator's docs/strings name the TODO/FIXME/HACK marker token as their SUBJECT; the tokens are not unfinished work"
+# onex-allow-file-todo-marker OMN-13480 reason="this validator's docs/strings name the marker tokens it scans for as their SUBJECT; they are not unfinished work. The token names are deliberately not spelled here: the file-level directive suppresses the rest of the file but not its own line, so spelling them made this very comment the sole reported violation (observed on OMN-15639)."
 """Two-transport runner for the TODO-marker COMPUTE validator (OMN-13480, §1A).
 
 The seam that makes the SAME ``HandlerTodoMarkerCompute`` run over a swappable bus
@@ -35,6 +35,7 @@ from omnibase_core.constants.constants_event_types import (
     TOPIC_VALIDATION_TODO_MARKER_SCAN_REQUESTED_CMD,
 )
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.todo_marker.handler import HandlerTodoMarkerCompute
@@ -55,8 +56,16 @@ __all__ = [
 COMMAND_TOPIC: Final[str] = TOPIC_VALIDATION_TODO_MARKER_SCAN_REQUESTED_CMD
 RESULT_TOPIC: Final[str] = TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT
 
-_RUNNER_GROUP: Final[str] = "validator-todo-marker-runner"
-_HANDLER_GROUP: Final[str] = "validator-todo-marker-compute"
+# Consumer groups are derived, never literal: an ad-hoc literal is matched by no
+# MSK IAM pattern and fails at the broker with GroupAuthorizationFailedError
+# (OMN-15639). These runners are in-memory-bus only today, but they are held to
+# the same grammar so the AC3 gate can stay default-deny.
+_RUNNER_GROUP: Final[str] = derive_service_group_id(
+    "validator_todo_marker_runner", service="omnibase_core"
+)
+_HANDLER_GROUP: Final[str] = derive_service_group_id(
+    "validator_todo_marker_compute", service="omnibase_core"
+)
 
 # Text extensions scanned + directories pruned — the EFFECT boundary that decides
 # which files are loaded at all. Same sets as the local-paths / private-IP canaries.

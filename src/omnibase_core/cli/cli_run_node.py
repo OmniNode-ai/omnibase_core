@@ -20,9 +20,40 @@ import click
 from omnibase_core.cli.cli_node import _resolve_packaged_contract
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
+from omnibase_core.models.event_bus.model_consumer_group_scope import (
+    ModelConsumerGroupScope,
+)
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
+
+# Service and node tokens for the one-shot consumer this CLI creates.
+RUN_NODE_SERVICE = "omnibase_core"
+RUN_NODE_NAME = "cli_run_node"
+
+
+def derive_run_node_group_id(correlation_id: UUID) -> str:
+    """Derive the ephemeral consumer group ID for one ``onex run-node`` invocation.
+
+    This consumer is genuinely one-shot — a single request/response round trip — so it
+    needs a unique group per invocation. Before OMN-15639 the uniqueness was expressed
+    as the literal ``f"onex-run-node-{correlation_id}"``, which no MSK IAM pattern
+    authorized. The correlation ID is now carried as a declared scope discriminator
+    instead, so the environment token still leads and the name stays authorized while
+    remaining unique per run.
+
+    Args:
+        correlation_id: The invocation's correlation UUID.
+
+    Returns:
+        An environment-qualified, per-invocation consumer group ID.
+    """
+    return derive_service_group_id(
+        RUN_NODE_NAME,
+        service=RUN_NODE_SERVICE,
+        scope=ModelConsumerGroupScope(correlation_id=correlation_id),
+    )
 
 
 def load_workflow_contract(path: Path) -> dict[str, object]:
@@ -210,7 +241,7 @@ def publish_and_poll(
     consumer = Consumer(
         {
             "bootstrap.servers": bootstrap_servers,
-            "group.id": f"onex-run-node-{correlation_id}",
+            "group.id": derive_run_node_group_id(correlation_uuid),
             "auto.offset.reset": "latest",
             "enable.auto.commit": False,
         }
