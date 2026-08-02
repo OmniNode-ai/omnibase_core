@@ -444,7 +444,7 @@ def test_pinned_pattern_set_matches_recorded_digest() -> None:
     assert document.pattern_set_sha256 == compute_pattern_set_digest(patterns)
     assert (
         document.source.file_sha256
-        == "46b1742a195afffc5b6291d51d2be28b941ef355b79983e12a3c719cee5fd528"
+        == "46b1742a195afffc5b6291d51d2be28b941ef355b79983e12a3c719cee5fd528"  # pragma: allowlist secret
     )
     assert document.source.path == ("aws/cluster-dev/managed-data-plane.auto.tfvars")
 

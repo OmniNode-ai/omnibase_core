@@ -29,12 +29,12 @@ source:
   path: aws/cluster-dev/managed-data-plane.auto.tfvars
   variable: managed_kafka_client_group_patterns
   consumed_by: aws/cluster-dev/msk_kafka.tf (AlterGroup/DescribeGroup resource ARNs)
-  file_sha256: 46b1742a195afffc5b6291d51d2be28b941ef355b79983e12a3c719cee5fd528
-  last_touch_commit: 39fcff2a8e0062a3d25d0beabef73926e49d09ca
+  file_sha256: 46b1742a195afffc5b6291d51d2be28b941ef355b79983e12a3c719cee5fd528  # pragma: allowlist secret
+  last_touch_commit: 39fcff2a8e0062a3d25d0beabef73926e49d09ca  # pragma: allowlist secret
   verified_at: "2026-08-02"
   ticket: OMN-15639
 
-pattern_set_sha256: e75f830b0a00d41c64900a05f3a7309997d83de3c23fbed2d4109af0e69b2616
+pattern_set_sha256: e75f830b0a00d41c64900a05f3a7309997d83de3c23fbed2d4109af0e69b2616  # pragma: allowlist secret
 
 # Verbatim, in source order (managed-data-plane.auto.tfvars:33-42).
 authorized_patterns:
