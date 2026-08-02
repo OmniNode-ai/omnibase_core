@@ -27,10 +27,23 @@ ADJ = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
 # Task 6: compute_selection escalation tests
 # ---------------------------------------------------------------------------
 
-from scripts.ci.detect_test_paths import compute_selection
+from scripts.ci.detect_test_paths import compute_selection, unnarrowable_test_paths
 from scripts.ci.test_selection_models import (
     EnumFullSuiteReason,
 )
+
+# OMN-15661: every narrowed, non-empty selection now also carries the test paths
+# the import-graph closure structurally cannot select (it only ever considers
+# tests/unit/). The literal expected set is pinned in
+# test_always_run_set_is_exactly_the_non_unit_test_tree below; this derived value
+# is used to build expected selections for the other cases so a single tree
+# change does not require rewriting every assertion in this file.
+ALWAYS_RUN = unnarrowable_test_paths(REPO_ROOT)
+
+
+def _narrowed(*paths: str) -> list[str]:
+    """Expected narrowed selection: ``paths`` followed by the always-run set."""
+    return [*paths, *[p for p in ALWAYS_RUN if p not in paths]]
 
 
 def test_shared_module_change_escalates_to_full_suite() -> None:
@@ -68,7 +81,7 @@ def test_workflow_only_change_no_longer_escalates() -> None:
     )
     assert selection.is_full_suite is False
     assert selection.full_suite_reason is None
-    assert selection.selected_paths == ["tests/unit/"]
+    assert selection.selected_paths == _narrowed("tests/unit/")
 
 
 def test_required_checks_manifest_uses_focused_guard_test() -> None:
@@ -80,11 +93,12 @@ def test_required_checks_manifest_uses_focused_guard_test() -> None:
 
     assert selection.is_full_suite is False
     assert selection.full_suite_reason is None
-    assert selection.selected_paths == [
+    # The focused guard test remains the only tests/unit/ entry; the always-run
+    # set (OMN-15661) rides along because this is still a narrowed selection.
+    assert selection.selected_paths == _narrowed(
         "tests/unit/validation/test_required_check_skip_guard.py"
-    ]
-    assert selection.split_count == 1
-    assert selection.matrix == [1]
+    )
+    assert selection.split_count == len(selection.matrix)
 
 
 def test_selector_change_escalates_to_distributed_full_suite() -> None:
@@ -260,7 +274,7 @@ def test_pyproject_version_bump_narrows_via_compute_selection() -> None:
     )
     assert selection.is_full_suite is False
     assert selection.full_suite_reason is None
-    assert selection.selected_paths == ["tests/unit/"]
+    assert selection.selected_paths == _narrowed("tests/unit/")
 
 
 def test_pyproject_dependency_change_escalates_via_compute_selection() -> None:
@@ -373,7 +387,7 @@ def test_nonexistent_source_file_fails_closed_to_whole_tree() -> None:
         ref_name="pr-branch",
     )
     assert selection.is_full_suite is False
-    assert selection.selected_paths == ["tests/unit/"]
+    assert selection.selected_paths == _narrowed("tests/unit/")
 
 
 # ---------------------------------------------------------------------------
@@ -580,7 +594,7 @@ def test_unrelated_scripts_ci_file_no_longer_escalates(unrelated_ci_file: str) -
     )
     assert selection.is_full_suite is False, f"{unrelated_ci_file} should not escalate"
     assert selection.full_suite_reason is None
-    assert selection.selected_paths == ["tests/unit/"]
+    assert selection.selected_paths == _narrowed("tests/unit/")
 
 
 # ---------------------------------------------------------------------------
@@ -711,7 +725,7 @@ def test_github_precommit_hooks_are_not_docs_exempt(non_doc_only: list[str]) -> 
         ref_name="pr-branch",
     )
     assert selection.is_full_suite is False
-    assert selection.selected_paths == ["tests/unit/"]
+    assert selection.selected_paths == _narrowed("tests/unit/")
 
 
 def test_docs_only_does_not_suppress_shared_module_escalation() -> None:
@@ -741,7 +755,7 @@ def test_ambiguous_unclassified_diff_runs_fallback_not_empty() -> None:
         ref_name="pr-branch",
     )
     assert selection.is_full_suite is False
-    assert selection.selected_paths == ["tests/unit/"]
+    assert selection.selected_paths == _narrowed("tests/unit/")
     assert selection.selected_paths != []
 
 
@@ -976,7 +990,7 @@ def test_shadow_smart_path_fail_closed_on_unresolvable_file(
     )
     payload = _json.loads(out)
     assert payload["is_full_suite"] is False
-    assert payload["selected_paths"] == ["tests/unit/"]
+    assert payload["selected_paths"] == _narrowed("tests/unit/")
     report = _json.loads(shadow_path.read_text())
     assert report["narrowed"] is False
     assert report["fail_closed_reasons"]
@@ -1123,3 +1137,245 @@ adjacency:
             load_adjacency_map(Path(tmp_name))
     finally:
         Path(tmp_name).unlink()
+
+
+# ---------------------------------------------------------------------------
+# OMN-15661: test paths the import-graph closure structurally cannot select
+# must always run on the narrowed path.
+#
+# RED (dev @ dc35561c, live selector, ENABLE_SMART_TESTS=true):
+#   changed = ["src/omnibase_core/cli/cli_run_node.py"]
+#   -> {"selected_paths":["tests/unit/"],"is_full_suite":false}
+#   -> `pytest tests/unit/ --collect-only` collected 42,869 tests, of which
+#      tests/gates/ contributed ZERO.
+# The OMN-15639 AC3 consumer-group/MSK-IAM gate therefore did not gate the
+# everyday dev path at all: a PR reintroducing the exact defect literal that
+# gate guards would have merged green.
+# ---------------------------------------------------------------------------
+
+
+def test_always_run_set_is_exactly_the_non_unit_test_tree() -> None:
+    """Pin the derived always-run set against the real tree.
+
+    Deliberately an exact-equality pin, not a containment check: this set is
+    what a narrowed CI run adds on top of the closure's answer, so both a
+    silent DROP (a gate family stops running) and a silent ADD (a heavy tree
+    starts running on every PR) must surface in review rather than in a
+    surprise. Adding a `tests/<dir>/` therefore updates this list — which is
+    the point, since that directory is now always-run.
+    """
+    assert unnarrowable_test_paths(REPO_ROOT) == [
+        "tests/agents/",
+        "tests/analysis/",
+        "tests/ci/",
+        "tests/enums/",
+        "tests/gates/",
+        "tests/models/",
+        "tests/performance/",
+        "tests/scripts/",
+        "tests/test_db_ownership_subcontract.py",
+        "tests/test_direct_instantiation_danger.py",
+        "tests/test_doctor/",
+        "tests/test_json_serialization_crash.py",
+        "tests/utils/",
+        "tests/validation/",
+        "tests/validators/",
+    ]
+
+
+def test_always_run_set_excludes_the_closure_universe_and_integration() -> None:
+    """tests/unit/ is the closure's own tree; tests/integration/ has its own job.
+
+    Including either would be double-selection, not extra safety:
+    `tests/integration/` is run unconditionally by ci.yml's `tests-integration`
+    job and is explicitly `--ignore`d by both pytest steps in `test-parallel`.
+    """
+    always_run = unnarrowable_test_paths(REPO_ROOT)
+    assert "tests/unit/" not in always_run
+    assert "tests/integration/" not in always_run
+    # Directories with nothing pytest would collect stay out on positive
+    # evidence (there is nothing in them to run), not via an exclusion list.
+    assert "tests/fixtures/" not in always_run
+    assert not any("__pycache__" in path for path in always_run)
+
+
+def test_always_run_patterns_match_pytest_python_files() -> None:
+    """The file-name patterns must track pyproject's `python_files`.
+
+    If pytest is taught to collect a new file shape, the always-run derivation
+    has to learn it in the same commit — otherwise a newly-collectable family
+    silently stops being selected on the narrowed path, which is this ticket's
+    defect in a new costume.
+    """
+    import tomllib
+
+    from scripts.ci.detect_test_paths import TEST_FILE_PATTERNS
+
+    with (REPO_ROOT / "pyproject.toml").open("rb") as handle:
+        pyproject = tomllib.load(handle)
+    python_files = pyproject["tool"]["pytest"]["ini_options"]["python_files"]
+    assert list(TEST_FILE_PATTERNS) == list(python_files)
+
+
+def test_nested_always_run_scan_errors_fail_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Nested traversal errors must propagate to the caller's full-suite fallback."""
+    import scripts.ci.detect_test_paths as detect
+
+    target = tmp_path / "tests" / "gates"
+    target.mkdir(parents=True)
+
+    def _walk(
+        _directory: Path,
+        onerror: object | None = None,
+    ) -> object:
+        yield str(target), [], []
+        assert callable(onerror)
+        onerror(PermissionError("nested scan denied"))
+
+    monkeypatch.setattr(detect.os, "walk", _walk)
+
+    with pytest.raises(PermissionError, match="nested scan denied"):
+        detect.unnarrowable_test_paths(tmp_path)
+
+
+def test_cli_run_node_only_diff_selects_the_ac3_gate() -> None:
+    """AC1/AC3: the exact RED change-set now reaches tests/gates/.
+
+    `cli_run_node.py` is one of the OMN-15639 migrated call sites — its
+    `derive_run_node_group_id` is imported and asserted on by the AC3 gate.
+    """
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/cli/cli_run_node.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert "tests/gates/" in selection.selected_paths
+    assert selection.selected_paths == _narrowed("tests/unit/")
+
+
+@pytest.mark.parametrize(
+    "producer_source",
+    [
+        # Every OMN-15639 migrated call site named by the AC3 gate's assertion B.
+        # `cli_run_node.py` (module `cli`) is the one that NARROWS — which is
+        # exactly why OMN-15661 named it. `runtime_local.py`, the consumer-group
+        # util, and the eight validation runtimes live under `runtime`,
+        # `event_bus`, and `validation`, all of which are `shared_modules` and
+        # therefore escalate. Both routes must reach the gate; asserting only
+        # "narrows and contains gates" would encode today's shared_modules list
+        # into this test, and a future demotion (the YAML explicitly allows one
+        # on shadow data) would then silently drop the gate instead of failing.
+        "src/omnibase_core/cli/cli_run_node.py",
+        "src/omnibase_core/runtime/runtime_local.py",
+        "src/omnibase_core/event_bus/util_consumer_group.py",
+        "src/omnibase_core/validation/todo_marker/runtime_todo_marker.py",
+        "src/omnibase_core/validation/pin_hygiene/runtime_pin_hygiene.py",
+        "src/omnibase_core/validation/private_ip/runtime_private_ip.py",
+        # A source with no relationship to consumer groups at all: the gate is
+        # reachable from ANY diff, because its static scan covers every file
+        # under src/ regardless of import edges.
+        "src/omnibase_core/cli/cli_bootstrap.py",
+    ],
+)
+def test_gate_is_reachable_from_every_producer_diff(producer_source: str) -> None:
+    """The AC3 gate runs for every migrated producer — narrowed or escalated."""
+    selection = compute_selection(
+        changed_files=[producer_source],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    if selection.is_full_suite:
+        # The full suite is `pytest tests/`, which collects tests/gates/.
+        assert selection.selected_paths == ["tests/"], producer_source
+    else:
+        assert "tests/gates/" in selection.selected_paths, producer_source
+
+
+def test_pinned_iam_pattern_file_change_reaches_the_gate() -> None:
+    """The gate's own pinned data file must also route to it.
+
+    `consumer_group_iam_patterns.yaml` is non-Python, so the import graph cannot
+    resolve it at all — it is exactly the "changed file the closure fails closed
+    on" case. Fail-closed is what saves it here, and the always-run set is what
+    makes that closure land on the gate rather than on tests/unit/ alone.
+    """
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/contracts/consumer_group_iam_patterns.yaml"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    if selection.is_full_suite:
+        assert selection.selected_paths == ["tests/"]
+    else:
+        assert "tests/gates/" in selection.selected_paths
+
+
+def test_docs_only_selection_stays_empty() -> None:
+    """The one exemption: documentation is positively proven test-inert.
+
+    The always-run set must NOT resurrect tests here — that would undo the
+    OMN-14910 docs-only exemption and make every README edit run tests.
+    """
+    selection = compute_selection(
+        changed_files=["docs/x.md", "README.md"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is False
+    assert selection.selected_paths == []
+
+
+def test_full_suite_escalations_are_unchanged() -> None:
+    """No narrowing regression in the other direction: escalations still win.
+
+    The always-run union happens only on the narrowed path, so a shared-module
+    change still returns the plain `["tests/"]` 40-split shape rather than a
+    hybrid selection.
+    """
+    selection = compute_selection(
+        changed_files=["src/omnibase_core/models/foo.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+    )
+    assert selection.is_full_suite is True
+    assert selection.selected_paths == ["tests/"]
+    assert selection.split_count == 40
+
+
+def test_unreadable_tests_tree_fails_closed_to_full_suite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Fail-closed: if the tests/ tree cannot be enumerated, escalate.
+
+    A narrowed selection is only honest if we can prove it covers the
+    unnarrowable paths. When the walk raises, we cannot — so the selector must
+    escalate rather than emit its best guess.
+    """
+    import scripts.ci.detect_test_paths as detect
+
+    (tmp_path / "tests").mkdir()
+
+    def _boom(_repo_root: Path) -> list[str]:
+        raise OSError("permission denied")
+
+    monkeypatch.setattr(detect, "unnarrowable_test_paths", _boom)
+    selection = detect.compute_selection(
+        changed_files=["src/omnibase_core/cli/cli_bootstrap.py"],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        repo_root=tmp_path,
+    )
+    assert selection.is_full_suite is True
+    assert selection.full_suite_reason == EnumFullSuiteReason.TEST_INFRASTRUCTURE
+
+
+def test_synthetic_tree_without_tests_dir_adds_nothing(tmp_path: Path) -> None:
+    """A repo root with no tests/ tree yields an empty always-run set.
+
+    "No tests/ directory" is not the same failure as "cannot read tests/": the
+    former positively means nothing is being dropped.
+    """
+    assert unnarrowable_test_paths(tmp_path) == []

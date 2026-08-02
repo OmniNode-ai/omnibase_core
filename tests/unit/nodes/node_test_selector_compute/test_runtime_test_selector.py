@@ -29,9 +29,14 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.nodes.node_test_selector_compute.runtime_test_selector import (
+    _TEST_FILE_PATTERNS as RUNTIME_TEST_FILE_PATTERNS,
+)
+from omnibase_core.nodes.node_test_selector_compute.runtime_test_selector import (
     main as node_main,
 )
+from scripts.ci.detect_test_paths import TEST_FILE_PATTERNS as ORACLE_TEST_FILE_PATTERNS
 from scripts.ci.detect_test_paths import main as oracle_main
+from scripts.ci.detect_test_paths import unnarrowable_test_paths
 
 pytestmark = pytest.mark.unit
 
@@ -75,6 +80,8 @@ def test_cli_stdout_parity(
     changed: list[str],
     extra: list[str],
 ) -> None:
+    assert RUNTIME_TEST_FILE_PATTERNS == ORACLE_TEST_FILE_PATTERNS
+
     changed_file = _changed_file(tmp_path, changed)
     common = [
         "--changed-files-from",
@@ -151,9 +158,17 @@ def test_cli_stdout_diverges_on_smart_selection_pending_closure_wiring(
     )
 
     # Node: fails closed to the whole-tree sentinel (documented gap, not silent
-    # under-selection — the fallback is conservative, never narrower).
+    # under-selection — the fallback is conservative, never narrower). The
+    # always-run paths (OMN-15661) are present on BOTH sides: unlike the
+    # closure, this EFFECT boundary does resolve them, so the divergence stays
+    # confined to the closure gap.
     assert node_payload["is_full_suite"] is False
-    assert node_payload["selected_paths"] == ["tests/unit/"]
+    assert node_payload["selected_paths"] == [
+        "tests/unit/",
+        *unnarrowable_test_paths(REPO_ROOT),
+    ]
+    for path in unnarrowable_test_paths(REPO_ROOT):
+        assert path in oracle_payload["selected_paths"]
 
     assert node_out != oracle_out
 
@@ -178,3 +193,22 @@ def test_cli_emits_single_trailing_newline(
     assert rc == 0
     assert out.endswith("\n")
     assert not out.rstrip("\n").endswith("\n")  # exactly one trailing newline
+
+
+def test_always_run_derivations_agree_between_the_two_surfaces() -> None:
+    """OMN-15661: the oracle and this EFFECT boundary derive the SAME set.
+
+    `runtime_test_selector.py` cannot import `scripts/ci/` (src must not depend
+    on the CI scripts tree), so the walk exists twice — the same arrangement
+    already used for `_count_test_files`. This asserts the two copies agree on
+    the real tree directly, rather than leaving it implied by the stdout parity
+    cases above, and it fails the moment one side learns a rule the other has
+    not.
+    """
+    from omnibase_core.nodes.node_test_selector_compute.runtime_test_selector import (
+        _unnarrowable_test_paths,
+    )
+
+    derived = _unnarrowable_test_paths(REPO_ROOT)
+    assert derived == unnarrowable_test_paths(REPO_ROOT)
+    assert "tests/gates/" in derived

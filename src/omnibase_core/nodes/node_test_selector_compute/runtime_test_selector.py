@@ -40,6 +40,8 @@ Exit code: always 0 on a successful computation (the selection JSON is the produ
 from __future__ import annotations
 
 import argparse
+import fnmatch
+import os
 import sys
 from pathlib import Path
 
@@ -65,6 +67,12 @@ _DEFAULT_ADJACENCY_REL = "scripts/ci/test_selection_adjacency.yaml"
 # when pyproject.toml is in the diff.
 _PYPROJECT_RELEVANT: dict[str, bool] = {"on": True, "off": False}
 
+# OMN-15661 always-run set — mirrors the oracle's constants of the same names.
+_TESTS_DIR = "tests"
+_CLOSURE_NARROWABLE_TEST_ROOTS = frozenset({"unit"})
+_SEPARATELY_GATED_ROOTS = frozenset({"integration"})
+_TEST_FILE_PATTERNS = ("test_*.py", "*_test.py")
+
 
 def _load_adjacency(path: Path) -> ModelAdjacencyMap:
     """YAML read boundary — parse the static adjacency map into its typed model.
@@ -82,6 +90,50 @@ def _count_test_files(rel_path: str, repo_root: Path) -> int:
     if not directory.is_dir():
         return 0
     return sum(1 for _ in directory.rglob("test_*.py"))
+
+
+def _is_test_file_name(name: str) -> bool:
+    """True when pytest would collect a file with this name (``python_files``)."""
+    return any(fnmatch.fnmatch(name, pattern) for pattern in _TEST_FILE_PATTERNS)
+
+
+def _raise_walk_error(error: OSError) -> None:
+    raise error
+
+
+def _contains_collectable_test(directory: Path) -> bool:
+    for _root, _dirs, files in os.walk(directory, onerror=_raise_walk_error):
+        if any(_is_test_file_name(name) for name in files):
+            return True
+    return False
+
+
+def _unnarrowable_test_paths(repo_root: Path) -> list[str]:
+    """Always-run test paths the import-graph closure cannot select (OMN-15661).
+
+    Filesystem walk — this is the EFFECT boundary that owns it; the pure node
+    receives the resolved list. Mirrors
+    ``scripts.ci.detect_test_paths.unnarrowable_test_paths`` (the CI-governing
+    oracle), which this module is required to reproduce byte-for-byte; the
+    duplication is held honest by the CLI stdout parity battery in
+    ``tests/unit/nodes/node_test_selector_compute/test_runtime_test_selector.py``,
+    which runs BOTH entrypoints over the real repo root — the same arrangement
+    already used for ``_count_test_files``.
+    """
+    tests_dir = repo_root / _TESTS_DIR
+    if not tests_dir.is_dir():
+        return []
+    paths: list[str] = []
+    for entry in sorted(tests_dir.iterdir()):
+        name = entry.name
+        if name in _CLOSURE_NARROWABLE_TEST_ROOTS or name in _SEPARATELY_GATED_ROOTS:
+            continue
+        if entry.is_dir():
+            if _contains_collectable_test(entry):
+                paths.append(f"{_TESTS_DIR}/{name}/")
+        elif _is_test_file_name(name):
+            paths.append(f"{_TESTS_DIR}/{name}")
+    return paths
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -160,6 +212,16 @@ def main(argv: list[str] | None = None) -> int:
     # whole-tree fallback (never silently narrows on a missing closure) — this
     # entrypoint is not wired into CI (detect_test_paths.py is the governing
     # oracle), so the gap has no live-selection impact today.
+    # OMN-15661: the always-run paths ARE resolved here — a tests/ directory walk
+    # is read-only filesystem access this boundary already performs for
+    # test-file counts, so there is no reason to leave the node failing closed.
+    try:
+        unnarrowable: list[str] | None = _unnarrowable_test_paths(repo_root)
+    except OSError:  # boundary-ok: unreadable tests/ tree must fail closed
+        # None -> the pure node escalates to the full suite, matching the
+        # oracle's TEST_INFRASTRUCTURE escalation on the same failure.
+        unnarrowable = None
+
     def _request(counts: dict[str, int]) -> ModelTestSelectionRequest:
         return ModelTestSelectionRequest(
             changed_files=changed,
@@ -170,6 +232,7 @@ def main(argv: list[str] | None = None) -> int:
             pyproject_dependency_relevant=pyproject_dependency_relevant,
             test_file_counts=counts,
             closure_selected_files=None,
+            unnarrowable_test_paths=unnarrowable,
         )
 
     # Pass 1: selection (independent of test-file volume).

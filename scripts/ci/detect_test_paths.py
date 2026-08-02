@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import math
+import os
 import subprocess
 import sys
 import tomllib
@@ -106,6 +108,100 @@ VOLUME_MAX_SPLITS = 40
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+# --- Unnarrowable test paths (OMN-15661) -----------------------------------
+# The import-graph closure narrows WITHIN `tests/unit/`: that is the only tree
+# `compute_closure_selection` collects candidates from. `tests/integration/` is
+# excluded because it has its own unconditional CI job (ci.yml `tests-integration`,
+# and both pytest steps pass `--ignore=tests/integration`). EVERY OTHER test path
+# the full-suite step runs (`pytest tests/`) — `tests/gates/`, `tests/validation/`,
+# `tests/scripts/`, the loose `tests/test_*.py` files, and whatever lands
+# tomorrow — is outside the closure's candidate universe and can therefore never
+# appear in a narrowed selection, no matter what changed.
+#
+# That is fail-OPEN, and it was live: the OMN-15639 AC3 gate
+# (`tests/gates/test_consumer_group_name_authorization.py`) was collected ZERO
+# times on the everyday narrowed dev path, so a PR reintroducing the exact
+# consumer-group defect literal it guards would have passed narrowed CI
+# (OMN-15661). The closure cannot fix this by widening its candidate set either:
+# that gate's relationship to a source change is not an import edge at all — it
+# AST-scans every file under `src/` off disk, an edge no import graph models.
+#
+# So these paths are ALWAYS selected alongside the closure's answer whenever the
+# selection is narrowed and non-empty. The only exemption stays the docs-only
+# selection (step 5), which is positively proven to be able to affect nothing.
+#
+# The set is DERIVED from the tree, never hand-listed: a new `tests/<dir>/` is
+# covered the day it lands, with nobody having to remember a list — the same
+# default-deny posture the rest of this selector is built on.
+TESTS_DIR = "tests"
+
+# Roots deliberately NOT treated as unnarrowable, each for a proven reason.
+CLOSURE_NARROWABLE_TEST_ROOTS = frozenset({"unit"})  # the closure's own universe
+SEPARATELY_GATED_TEST_ROOTS = frozenset({"integration"})  # own unconditional job
+
+# Mirrors `[tool.pytest.ini_options] python_files` in pyproject.toml. Held equal
+# by tests/unit/scripts/ci/test_detect_test_paths.py, which reads that key — so
+# widening pytest's collection patterns without widening this fails a test rather
+# than silently dropping a newly-collectable family from the narrowed path.
+TEST_FILE_PATTERNS = ("test_*.py", "*_test.py")
+
+
+def is_test_file_name(name: str) -> bool:
+    """True when pytest would collect a file with this name (``python_files``)."""
+    return any(fnmatch.fnmatch(name, pattern) for pattern in TEST_FILE_PATTERNS)
+
+
+def _raise_walk_error(error: OSError) -> None:
+    raise error
+
+
+def _contains_collectable_test(directory: Path) -> bool:
+    """True when ``directory`` holds at least one file pytest would collect.
+
+    Keeps genuinely test-free directories (``tests/fixtures/``, ``__pycache__``)
+    out of the always-run set on POSITIVE evidence — there is nothing in them to
+    run — rather than by naming them in an exclusion list that would rot.
+    """
+    for _root, _dirs, files in os.walk(directory, onerror=_raise_walk_error):
+        if any(is_test_file_name(name) for name in files):
+            return True
+    return False
+
+
+def unnarrowable_test_paths(repo_root: Path) -> list[str]:
+    """Test paths the full suite runs that the closure cannot reason about.
+
+    Everything directly under ``tests/`` that holds collectable tests, minus the
+    closure's own universe (``tests/unit/``) and the separately-gated
+    ``tests/integration/``. See the block comment on
+    :data:`CLOSURE_NARROWABLE_TEST_ROOTS` for why these must always run.
+
+    Raises ``OSError`` when the tree cannot be enumerated — the caller escalates
+    to the full suite rather than emitting a selection it cannot prove covers
+    them.
+    """
+    tests_dir = repo_root / TESTS_DIR
+    if not tests_dir.is_dir():
+        # No tests/ tree at all (synthetic fixture roots): nothing is being
+        # dropped, so there is nothing to force. Distinct from "cannot read".
+        return []
+    paths: list[str] = []
+    for entry in sorted(tests_dir.iterdir()):
+        name = entry.name
+        if name in CLOSURE_NARROWABLE_TEST_ROOTS or name in SEPARATELY_GATED_TEST_ROOTS:
+            continue
+        if entry.is_dir():
+            if _contains_collectable_test(entry):
+                paths.append(f"{TESTS_DIR}/{name}/")
+        elif is_test_file_name(name):
+            paths.append(f"{TESTS_DIR}/{name}")
+    return paths
+
+
+def _with_unnarrowable(selected: list[str], unnarrowable: list[str]) -> list[str]:
+    """Union a narrowed selection with the always-run paths, order-stable."""
+    return [*selected, *[path for path in unnarrowable if path not in selected]]
+
 
 def compute_selection(
     changed_files: list[str],
@@ -196,18 +292,32 @@ def compute_selection(
             matrix=[1],
         )
 
+    # 5a. Always-run set (OMN-15661). Resolved once here, after the docs-only
+    # exemption (which stays empty — documentation is positively proven inert)
+    # and before every branch that emits a narrowed selection. Enumerating the
+    # tests/ tree is the same class of read this function already does through
+    # the closure; if it fails we cannot prove the narrowed selection covers the
+    # gates, so we fail closed. TEST_INFRASTRUCTURE is the honest reason: the
+    # tests/ tree IS the test infrastructure being enumerated.
+    try:
+        unnarrowable = unnarrowable_test_paths(closure_root)
+    except OSError:
+        return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
+
     # 5b. Required-check manifest changes are non-Python governance data with a
     # dedicated validator test. Without this positive mapping the import-graph
     # closure correctly treats the path as unresolved and selects tests/unit/,
     # which makes pre-push run the broad unit/import suite for manifest-only
     # reconciliations.
     if changed_files and set(changed_files) == {REQUIRED_CHECKS_MANIFEST_PATH}:
+        selected = _with_unnarrowable([REQUIRED_CHECKS_MANIFEST_TEST], unnarrowable)
+        split_count = _split_count_for(selected, repo_root=closure_root)
         return ModelTestSelection(
-            selected_paths=[REQUIRED_CHECKS_MANIFEST_TEST],
-            split_count=1,
+            selected_paths=selected,
+            split_count=split_count,
             is_full_suite=False,
             full_suite_reason=None,
-            matrix=[1],
+            matrix=list(range(1, split_count + 1)),
         )
 
     # 6. Smart selection (OMN-14921: file-grain import-graph closure, computed
@@ -217,7 +327,9 @@ def compute_selection(
     # empty result here means the closure positively proved zero test files
     # reference the change (stronger evidence than "no mapping found").
     closure = compute_closure_selection(changed_files, repo_root=closure_root)
-    selected = closure.selected_files
+    # The closure answers only for tests/unit/; the paths it structurally cannot
+    # see (OMN-15661) are unioned in so a narrowed run still covers them.
+    selected = _with_unnarrowable(closure.selected_files, unnarrowable)
     split_count = _split_count_for(selected, repo_root=closure_root)
 
     return ModelTestSelection(
