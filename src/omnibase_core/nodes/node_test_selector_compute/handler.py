@@ -58,4 +58,5 @@ class NodeTestSelectorCompute:
             pyproject_dependency_relevant=request.pyproject_dependency_relevant,
             test_file_counts=request.test_file_counts,
             closure_selected_files=request.closure_selected_files,
+            unnarrowable_test_paths=request.unnarrowable_test_paths,
         )

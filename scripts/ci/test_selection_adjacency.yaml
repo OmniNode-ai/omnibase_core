@@ -79,6 +79,10 @@ test_infrastructure_paths:
   - scripts/ci/test_selection_closure.py
   - scripts/ci/test_selection_adjacency.yaml
   - src/omnibase_core/nodes/node_test_selector_compute/selector_core.py
+  # OMN-15661: this EFFECT boundary now resolves the always-run test paths the
+  # closure cannot select (the mirror of the oracle's unnarrowable_test_paths),
+  # so it is selection-affecting surface on the same footing as selector_core.py.
+  - src/omnibase_core/nodes/node_test_selector_compute/runtime_test_selector.py
   - tests/conftest.py
   - tests/fixtures/
   - tests/pytest.ini

@@ -130,6 +130,7 @@ def compute_selection(
     pyproject_dependency_relevant: bool | None = None,
     test_file_counts: dict[str, int] | None = None,
     closure_selected_files: list[str] | None = None,
+    unnarrowable_test_paths: list[str] | None = None,
 ) -> ModelTestSelection:
     """Resolve the test selection for a change set — pure, deterministic.
 
@@ -156,6 +157,18 @@ def compute_selection(
     The retired hand-curated ``adjacency`` reverse_deps map (module-grain,
     ``resolve_test_paths``) is deleted, not merely bypassed — 26/40 of its
     declarations were false against the real import graph.
+
+    ``unnarrowable_test_paths`` (OMN-15661) is the always-run set: the test paths
+    the full suite runs that the import-graph closure structurally cannot select,
+    because they live outside ``tests/unit/`` (its only candidate tree) — e.g.
+    ``tests/gates/``, whose AC3 consumer-group gate AST-scans ``src/`` off disk
+    rather than importing it. Enumerating them is a filesystem read, so it is
+    resolved at the caller/EFFECT boundary (``runtime_test_selector.py``) and
+    injected here, exactly like ``test_file_counts``. ``None`` means the caller
+    supplied nothing: the narrowed path then FAILS CLOSED to the full suite
+    rather than emitting a selection that provably drops those gates. Unlike the
+    ``closure_selected_files`` gap, no conservative in-between exists — the
+    whole-tree ``tests/unit/`` sentinel is itself a selection that misses them.
     """
     counts = test_file_counts or {}
 
@@ -220,11 +233,21 @@ def compute_selection(
     # injected here; this stays a pure lookup + the same whole-tree fallback
     # used when no closure could be computed (mirrors the retired module-grain
     # oracle's fallback for "no unit-test mapping found").
+    # 5a. Always-run set (OMN-15661) — see the parameter's docstring entry. Not
+    # supplied means not proven, and the fail-closed answer on this path is the
+    # full suite (every conservative alternative still drops tests/gates/).
+    if unnarrowable_test_paths is None:
+        return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
+
     selected = (
         list(closure_selected_files) if closure_selected_files is not None else None
     )
     if not selected:
         selected = ["tests/unit/"]
+    selected = [
+        *selected,
+        *[path for path in unnarrowable_test_paths if path not in selected],
+    ]
     total = sum(counts.get(path, 0) for path in selected)
     split_count = split_count_from_total(selected, total)
 

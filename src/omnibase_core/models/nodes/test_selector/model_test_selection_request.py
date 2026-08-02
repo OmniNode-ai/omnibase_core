@@ -19,6 +19,10 @@ boundary (``runtime_test_selector.py``), never inside the handler:
   ``scripts.ci.test_selection_closure.compute_closure_selection`` (grimp graph
   build + test-file AST reads). ``None`` fails closed to the whole-tree
   fallback — see ``selector_core.compute_selection``.
+* ``unnarrowable_test_paths`` — the always-run test paths the closure cannot
+  select because they live outside ``tests/unit/`` (OMN-15661; a ``tests/``
+  directory walk). ``None`` fails closed to the FULL SUITE on the narrowed
+  path, because every narrower answer provably drops ``tests/gates/``.
 """
 
 from __future__ import annotations
@@ -45,3 +49,4 @@ class ModelTestSelectionRequest(BaseModel):
     pyproject_dependency_relevant: bool | None = None
     test_file_counts: dict[str, int] = Field(default_factory=dict)
     closure_selected_files: list[str] | None = None
+    unnarrowable_test_paths: list[str] | None = None

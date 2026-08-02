@@ -48,7 +48,11 @@ from omnibase_core.models.nodes.test_selector.model_test_selection_request impor
 from omnibase_core.nodes.node_test_selector_compute.handler import (
     NodeTestSelectorCompute,
 )
-from scripts.ci.detect_test_paths import _count_test_files, compute_selection
+from scripts.ci.detect_test_paths import (
+    _count_test_files,
+    compute_selection,
+    unnarrowable_test_paths,
+)
 from scripts.ci.test_selection_closure import compute_closure_selection
 from scripts.ci.test_selection_loader import load_adjacency_map
 
@@ -57,6 +61,16 @@ pytestmark = pytest.mark.unit
 REPO_ROOT = Path(__file__).resolve().parents[4]
 ADJ = REPO_ROOT / "scripts/ci/test_selection_adjacency.yaml"
 ADJ_MAP = load_adjacency_map(ADJ)
+
+# OMN-15661: a narrowed selection now also carries the always-run paths the
+# closure cannot select. Both surfaces produce them, so parity is unaffected —
+# only the literal expectations below grow.
+ALWAYS_RUN = unnarrowable_test_paths(REPO_ROOT)
+
+
+def _narrowed(*paths: str) -> list[str]:
+    """Expected narrowed selection: ``paths`` followed by the always-run set."""
+    return [*paths, *[p for p in ALWAYS_RUN if p not in paths]]
 
 
 def _node_selection(
@@ -77,6 +91,11 @@ def _node_selection(
     """
     node = NodeTestSelectorCompute()
     closure = compute_closure_selection(changed_files, repo_root=repo_root)
+    # OMN-15661: the always-run paths are the other I/O-derived input the pure
+    # node cannot compute. Resolved here with the oracle's own derivation, the
+    # same way the closure above is — a divergent copy would make the parity
+    # claim about this harness rather than about the node.
+    unnarrowable = unnarrowable_test_paths(repo_root)
 
     def _request(counts: dict[str, int]) -> ModelTestSelectionRequest:
         return ModelTestSelectionRequest(
@@ -85,6 +104,7 @@ def _node_selection(
             adjacency=ADJ_MAP,
             test_file_counts=counts,
             closure_selected_files=closure.selected_files,
+            unnarrowable_test_paths=unnarrowable,
             **kwargs,  # type: ignore[arg-type]
         )
 
@@ -145,7 +165,7 @@ def test_parity_single_module_change(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_parity_nonexistent_file_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
     sel = _assert_parity(monkeypatch, ["src/omnibase_core/cli/foo.py"], "pr-branch")
     assert sel.is_full_suite is False
-    assert sel.selected_paths == ["tests/unit/"]
+    assert sel.selected_paths == _narrowed("tests/unit/")
 
 
 def test_parity_shared_module_change(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -185,7 +205,7 @@ def test_parity_multi_module_threshold(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_parity_empty_change_set(monkeypatch: pytest.MonkeyPatch) -> None:
     sel = _assert_parity(monkeypatch, [], "pr-branch")
     assert sel.is_full_suite is False
-    assert sel.selected_paths == ["tests/unit/"]
+    assert sel.selected_paths == _narrowed("tests/unit/")
 
 
 def test_parity_docs_only_selects_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -203,7 +223,7 @@ def test_parity_unrelated_scripts_ci_no_escalate(
     # identically in oracle and node.
     sel = _assert_parity(monkeypatch, ["scripts/ci/ci_summary_gate.py"], "pr-branch")
     assert sel.is_full_suite is False
-    assert sel.selected_paths == ["tests/unit/"]
+    assert sel.selected_paths == _narrowed("tests/unit/")
 
 
 def test_parity_selector_core_change_escalates(
@@ -277,7 +297,7 @@ def test_parity_integration_only_change(monkeypatch: pytest.MonkeyPatch) -> None
     sel = _assert_parity(
         monkeypatch, ["tests/integration/nodes/test_foo.py"], "pr-branch"
     )
-    assert sel.selected_paths == ["tests/unit/"]
+    assert sel.selected_paths == _narrowed("tests/unit/")
 
 
 def test_parity_protocols_reverse_dep_expansion(
