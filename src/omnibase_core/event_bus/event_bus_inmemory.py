@@ -194,6 +194,8 @@ class EventBusInmemory:
                 async with self._lock:
                     if failure_key in self._subscriber_failures:
                         del self._subscriber_failures[failure_key]
+            except ModelOnexError:
+                raise
             except Exception as e:  # fallback-ok: one subscriber's callback must not tear down the delivery loop for every other subscriber; the failure is counted per (topic, group) into _subscriber_failures, which drives the circuit breaker, and is logged with correlation_id. Pre-existing behaviour, annotated under OMN-15639 because that PR is the first to modify this file since the hook began flagging it.
                 async with self._lock:
                     self._subscriber_failures[failure_key] = (

@@ -75,6 +75,23 @@ def test_classic_and_nested_shapes_merge() -> None:
 
 
 @pytest.mark.unit
+def test_nested_subscribe_unknown_key_is_rejected() -> None:
+    """Regression: unknown nested keys were silently dropped.
+
+    The subscription model is built from ``topic`` alone, so an unrecognized key never
+    reached ``ModelEventBusSubscription``'s ``extra="forbid"`` — it was discarded here.
+    A silent subscription-shape drop is precisely what this parser exists to prevent.
+    """
+    contract = {
+        "event_bus": {
+            "subscribe": [{"topic": "onex.evt.bar.v1", "subscrbe_group": "typo"}],
+        },
+    }
+    with pytest.raises(EventBusContractShapeError, match="subscrbe_group"):
+        parse_event_bus(contract)
+
+
+@pytest.mark.unit
 def test_nested_shape_missing_topic_field_raises() -> None:
     contract = {"event_bus": {"subscribe": [{"not_a_topic": "x"}]}}
     with pytest.raises(EventBusContractShapeError, match="topic"):

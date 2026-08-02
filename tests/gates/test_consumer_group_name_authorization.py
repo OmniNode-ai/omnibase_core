@@ -38,6 +38,7 @@ Structure
 from __future__ import annotations
 
 import ast
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 from uuid import UUID
@@ -96,9 +97,53 @@ _MUST_BE_UNAUTHORIZED = (
     # Prefix-ish but not prefixed.
     "not-onex-dev.omnimarket.node.consume.v1",
     "",
+    # Trailing newline: Python's `$` matches immediately before it, so an anchor of
+    # `^...$` instead of `^...\\Z` would authorize this. MSK would not.
+    "onex-dev.omnimarket.node.consume.v1\n",
+    "onex-dev.omnimarket.node.consume.v1\n\n",
 )
 
 _SAMPLE_CORRELATION_ID = UUID("9f2c0000-0000-4000-8000-000000000000")
+
+# The eight validation runtimes bind their consumer groups at MODULE level, so the
+# env-parametrized tests below must reload them to observe a managed environment.
+_VALIDATOR_RUNTIME_SLUGS = (
+    "doc_content_scan",
+    "hardcoded_topic",
+    "local_paths",
+    "localhost_url",
+    "no_faked_boundary",
+    "pin_hygiene",
+    "private_ip",
+    "todo_marker",
+)
+
+
+def _validator_runtime_modules() -> tuple[str, ...]:
+    return tuple(
+        f"omnibase_core.validation.{slug}.runtime_{slug}"
+        for slug in _VALIDATOR_RUNTIME_SLUGS
+    )
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _restore_validator_module_state() -> Iterator[None]:
+    """Reload the validation runtimes after this module runs.
+
+    ``_real_producer_group_names`` reloads them under ``ENVIRONMENT=onex-dev`` to read
+    the names they actually mint. ``monkeypatch`` restores the env var, but NOT the
+    module-level ``_RUNNER_GROUP`` / ``_HANDLER_GROUP`` constants those reloads already
+    recomputed — so without this teardown a later test in the same worker would see
+    ``onex-dev.*`` groups instead of its own environment's, and the in-memory bus keys
+    subscriptions by group id. ``runtime_local`` and ``cli_run_node`` resolve the
+    environment lazily per call and need no cleanup.
+    """
+    import importlib
+
+    yield
+    for module_name in _validator_runtime_modules():
+        if module_name in sys.modules:
+            importlib.reload(sys.modules[module_name])
 
 
 # ---------------------------------------------------------------------------
@@ -223,20 +268,8 @@ def _real_producer_group_names(
 
     monkeypatch.setenv("ENVIRONMENT", env)
 
-    validator_modules = (
-        "doc_content_scan",
-        "hardcoded_topic",
-        "local_paths",
-        "localhost_url",
-        "no_faked_boundary",
-        "pin_hygiene",
-        "private_ip",
-        "todo_marker",
-    )
-
     names: dict[str, str] = {}
-    for slug in validator_modules:
-        module_name = f"omnibase_core.validation.{slug}.runtime_{slug}"
+    for module_name in _validator_runtime_modules():
         module = importlib.reload(importlib.import_module(module_name))
         names[f"{module_name}._RUNNER_GROUP"] = module._RUNNER_GROUP
         names[f"{module_name}._HANDLER_GROUP"] = module._HANDLER_GROUP
@@ -415,6 +448,19 @@ def test_wildcard_is_the_only_metacharacter() -> None:
     assert is_authorized_group_name("onex.anything")
     assert not is_authorized_group_name("onexZanything")
     assert not is_authorized_group_name("onex")
+
+
+@pytest.mark.unit
+def test_match_is_anchored_against_a_trailing_newline() -> None:
+    """Regression: the end anchor must be ``\\Z``, not ``$``.
+
+    Python's ``$`` matches immediately before a trailing newline, so ``^onex-dev\\..*$``
+    accepts ``"onex-dev.svc\\n"``. MSK matches the whole group name with no such
+    allowance, so a ``$`` anchor authorizes names the broker would refuse.
+    """
+    assert is_authorized_group_name("onex-dev.svc.node.consume.v1")
+    assert not is_authorized_group_name("onex-dev.svc.node.consume.v1\n")
+    assert not is_authorized_group_name("onex-dev.svc\nnot-authorized")
 
 
 # ---------------------------------------------------------------------------

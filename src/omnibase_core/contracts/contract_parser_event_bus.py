@@ -38,6 +38,9 @@ from omnibase_core.models.contracts.model_event_bus_subscription import (
 
 _RECOGNIZED_KEYS: frozenset[str] = frozenset({"subscribe_topics", "subscribe"})
 
+# Keys allowed inside an `event_bus.subscribe[*]` mapping.
+_RECOGNIZED_SUBSCRIBE_KEYS: frozenset[str] = frozenset({"topic"})
+
 
 def parse_event_bus(contract: dict[str, object]) -> ModelEventBusParseResult:
     """Parse the ``event_bus`` block of a contract into normalized subscriptions.
@@ -108,6 +111,18 @@ def parse_event_bus(contract: dict[str, object]) -> ModelEventBusParseResult:
                     "(OMN-15639): consumer group IDs are derived from node identity "
                     "by omnibase_core.event_bus.util_consumer_group so that every minted "
                     "name is authorized by the MSK IAM pattern set. Remove the field.",
+                )
+            # Reject every other unknown key too. The model is built from `topic`
+            # alone, so an unrecognized key would be discarded here before
+            # ModelEventBusSubscription's extra="forbid" could ever see it — a silent
+            # subscription-shape drop, which is exactly what this parser exists to
+            # prevent. Mirrors the top-level _RECOGNIZED_KEYS check above.
+            unknown_entry_keys = sorted(set(entry) - _RECOGNIZED_SUBSCRIBE_KEYS)
+            if unknown_entry_keys:
+                raise EventBusContractShapeError(
+                    "event_bus.subscribe entries contain unrecognized keys; "
+                    f"got {unknown_entry_keys!r}, expected only "
+                    f"{sorted(_RECOGNIZED_SUBSCRIBE_KEYS)!r}",
                 )
             subscriptions.append(ModelEventBusSubscription(topic=topic))
 

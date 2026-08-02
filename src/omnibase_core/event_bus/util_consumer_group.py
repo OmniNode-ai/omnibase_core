@@ -487,14 +487,21 @@ def _compile_iam_glob(pattern: str) -> re.Pattern[str]:
     """Compile an IAM resource glob into an anchored regex.
 
     ``*`` matches any run of characters (including none); ``?`` matches exactly one.
-    Every other character — crucially ``.`` — is a literal. The result is anchored at
-    both ends, so matching is whole-name, never substring.
+    Every other character — crucially ``.`` — is a literal. The result is anchored with
+    ``^``/``\\Z``, so matching is whole-name, never substring, and never tolerates a
+    trailing newline the way ``$`` would.
     """
     compiled = "".join(
         ".*" if char == "*" else "." if char == "?" else re.escape(char)
         for char in pattern
     )
-    return re.compile(f"^{compiled}$")
+    # \Z, not $: in Python `$` also matches immediately BEFORE a trailing newline,
+    # so `^onex-dev\..*$` would authorize "onex-dev.svc\n". MSK matches the whole
+    # name with no such allowance. Derived names cannot contain a newline
+    # (normalize_kafka_identifier strips it), but is_authorized_group_name is also
+    # the gate's matcher for arbitrary caller-supplied names, so the anchor must be
+    # exact rather than rely on an upstream invariant.
+    return re.compile(f"^{compiled}\\Z")
 
 
 def is_authorized_group_name(group_name: str) -> bool:
