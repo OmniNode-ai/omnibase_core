@@ -6,6 +6,7 @@
 from .model_consumer_group_iam_patterns import ModelConsumerGroupIamPatterns
 from .model_consumer_group_iam_source import ModelConsumerGroupIamSource
 from .model_consumer_group_scope import ModelConsumerGroupScope
+from .model_delivery_failure_evidence import ModelDeliveryFailureEvidence
 from .model_delivery_result import ModelDeliveryResult
 from .model_event_bus_bootstrap_result import ModelEventBusBootstrapResult
 from .model_event_bus_input_output_state import ModelEventBusInputOutputState
@@ -18,11 +19,13 @@ from .model_event_headers import ModelEventHeaders
 from .model_event_message import ModelEventMessage
 from .model_producer_health_status import ModelProducerHealthStatus
 from .model_producer_message import ModelProducerMessage
+from .model_quarantine_wire_payload import ModelQuarantineWirePayload
 
 __all__ = [
     "ModelConsumerGroupIamPatterns",
     "ModelConsumerGroupIamSource",
     "ModelConsumerGroupScope",
+    "ModelDeliveryFailureEvidence",
     "ModelDeliveryResult",
     "ModelEventBusBootstrapResult",
     "ModelEventBusInputOutputState",
@@ -35,4 +38,5 @@ __all__ = [
     "ModelEventMessage",
     "ModelProducerHealthStatus",
     "ModelProducerMessage",
+    "ModelQuarantineWirePayload",
 ]
