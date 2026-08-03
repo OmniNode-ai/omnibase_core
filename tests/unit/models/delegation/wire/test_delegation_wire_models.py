@@ -46,6 +46,26 @@ from omnibase_core.models.delegation.wire import (
     validate_acceptance_criteria,
 )
 
+_CANONICAL_DELEGATION_TASK_TYPES = frozenset(
+    {
+        "agent_delegation",
+        "code_generation",
+        "code_review",
+        "complex_reasoning",
+        "document",
+        "documentation",
+        "escalation",
+        "planning",
+        "reasoning",
+        "refactor",
+        "research",
+        "review",
+        "summarization",
+        "test",
+        "validator_generation",
+    }
+)
+
 
 @pytest.mark.unit
 class TestModelBudget:
@@ -290,38 +310,32 @@ class TestModelDelegationRequest:
 
     @pytest.mark.parametrize(
         "task_type",
-        [
-            "test",
-            "document",
-            "research",
-            "code_generation",
-            "code_review",
-            "refactor",
-            "reasoning",
-            "complex_reasoning",
-            "planning",
-            "review",
-            "summarization",
-            "agent_delegation",
-            "escalation",
-        ],
+        sorted(_CANONICAL_DELEGATION_TASK_TYPES),
     )
-    def test_all_compat_task_types_accepted(self, task_type: str) -> None:
-        """All compat task_type values must be accepted (OMN-12663 parity fix).
+    def test_all_canonical_task_classes_accepted(self, task_type: str) -> None:
+        """Every Market-authoritative task class crosses the Core wire.
 
-        OMN-13541: ``code_review`` added — the consumer-facing delegation surface
-        (node_delegate_skill_orchestrator.allowed_task_types + the claude/codex
-        adapter) already accepts it, so the wire DTO must carry it or the bus
-        consumer rejects the command and emits no terminal event (Pattern-B
-        timeout, zero inference).
+        OMN-15651 keeps this consumer mechanically coherent with the Market-owned
+        15-class authority through cross-repository admission. Core intentionally
+        does not import Market at runtime.
         """
         r = self._make(task_type=task_type)
         assert r.task_type == task_type
 
+    def test_task_type_schema_is_exact_canonical_full_universe(self) -> None:
+        task_type_schema = ModelDelegationRequest.model_json_schema()["properties"][
+            "task_type"
+        ]
+
+        assert frozenset(task_type_schema["enum"]) == (_CANONICAL_DELEGATION_TASK_TYPES)
+
     def test_invalid_task_type_rejected(self) -> None:
-        """task_type values outside the compat set must be rejected (OMN-12663)."""
-        with pytest.raises(Exception):
+        """Unknown task classes fail closed at the Core wire boundary."""
+        with pytest.raises(ValidationError) as exc_info:
             self._make(task_type="invalid_task_type")
+
+        assert exc_info.value.errors()[0]["loc"] == ("task_type",)
+        assert exc_info.value.errors()[0]["type"] == "literal_error"
 
 
 @pytest.mark.unit
