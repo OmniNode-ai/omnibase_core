@@ -27,6 +27,9 @@ from omnibase_core.models.runtime.model_liveness_registry_entry import (
     ModelLivenessRegistryEntry,
 )
 from omnibase_core.models.runtime.model_output_join_spec import ModelOutputJoinSpec
+from omnibase_core.models.runtime.model_quarantine_disposition_receipt import (
+    ModelQuarantineDispositionReceipt,
+)
 from omnibase_core.models.runtime.model_runtime_address import ModelRuntimeAddress
 from omnibase_core.models.runtime.model_runtime_address_registry import (
     ModelRuntimeAddressRegistry,
@@ -95,6 +98,8 @@ __all__ = [
     "ModelLivenessRegistryEntry",
     "ModelOutputJoinSpec",
     "ModelSamplingPolicy",
+    # Canonical quarantine disposition receipt (OMN-15667)
+    "ModelQuarantineDispositionReceipt",
     # Directive payload types (re-exported for convenience)
     "ModelDirectivePayload",
     "ModelDirectivePayloadBase",
