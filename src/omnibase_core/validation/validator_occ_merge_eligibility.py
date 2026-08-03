@@ -30,6 +30,7 @@ from omnibase_core.models.validation.model_occ_eligibility_result import (
 from omnibase_core.validation.validator_receipt_gate import (
     _CONTRACT_SHA256_REQUIRED_AFTER,
     _extract_ticket_ids,
+    _honestly_superseded_dod_ids,
     _iter_dod_evidence,
     check_receipt_contract_binding,
 )
@@ -180,7 +181,23 @@ def validate_occ_merge_eligibility(
         if not triples:
             missing_receipts.append(f"{ticket_id}:*:*")
             continue
+        dod_evidence_raw = (
+            contract_data.get("dod_evidence", [])
+            if isinstance(contract_data, dict)
+            else []
+        )
+        honestly_superseded = _honestly_superseded_dod_ids(dod_evidence_raw)
         for evidence_item_id, check_type, _check_value in triples:
+            if evidence_item_id in honestly_superseded:
+                # OMN-15664 AC5: a later dod_evidence item's evidence_artifact
+                # honestly supersedes this one (see
+                # _honestly_superseded_dod_ids docstring for the exact
+                # honesty conditions). This item's own receipt requirement is
+                # excused; it is not silently dropped from the contract, and
+                # contract_compliance_check independently reports it WARN
+                # "superseded" rather than executing its (possibly dead)
+                # checks.
+                continue
             receipt_path = (
                 snapshot.receipts_dir
                 / ticket_id
