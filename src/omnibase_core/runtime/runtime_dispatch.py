@@ -35,6 +35,13 @@ What it owns (runtime = policy; transport = mechanism, plan I6):
    prefix; the first ``REDELIVER`` stops that partition's prefix and nothing past it is
    committed this round. ONE commit per partition per poll (throughput), correctness by
    the same decision.
+7. The RECEIPT boundary (OMN-15665): a canonical, immutable ``ModelDeliveryContext``
+   (``envelope_id``/``topic``/``partition``/``offset``) is built fail-closed at this
+   boundary for every record — never a fabricated identity — and, when an optional
+   ``delivery_receipt_adapter_factory`` is injected, its per-message zero-arg receipt-ack
+   callable is awaited before the message becomes committable. Omitting the factory
+   (the default) preserves the pre-ticket at-least-once behavior unchanged; see
+   :attr:`RuntimeDispatch.delivery_receipts_enabled`.
 """
 
 from __future__ import annotations
@@ -54,6 +61,8 @@ from omnibase_core.enums.enum_delivery_disposition import EnumDeliveryDispositio
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.runtime.model_delivery_context import ModelDeliveryContext
+from omnibase_core.runtime.runtime_delivery_context import build_delivery_context
 from omnibase_core.runtime.runtime_envelope_router import (
     decode_inbound_envelope,
     wrap_outbound_envelope,
@@ -184,10 +193,20 @@ class RuntimeDispatch:
         max_retries: int = _DEFAULT_MAX_RETRIES,
         dlq_topic_resolver: Callable[[str], str] | None = None,
         clock: Callable[[], datetime] | None = None,
+        delivery_receipt_adapter_factory: (
+            Callable[[ModelDeliveryContext], Callable[[], Awaitable[None]]] | None
+        ) = None,
     ) -> None:
         self._consumer = consumer
         self._producer = producer
         self._routing_map: dict[str, DispatchRoute] = dict(routing_map)
+        # OMN-15665: optional, keyword-only, default None. A required kwarg here
+        # broke every existing RuntimeDispatch(...) call site (the 2026-08-02
+        # CORE-PASS / CROSS-REPO-FAIL defect at omnibase_infra composition.py:430)
+        # — never repeat that. Existing composition roots that omit this preserve
+        # the pre-ticket at-least-once behavior and make no durable-receipt claim
+        # (see delivery_receipts_enabled).
+        self._delivery_receipt_adapter_factory = delivery_receipt_adapter_factory
         # Extension point (plan section (g), S0 binding schemas): a fallback route so a
         # polled topic absent from ``routing_map`` is NOT silently dropped. The
         # omniclaude ``io_operations`` shell-binding + ``default_handler`` coverage
@@ -216,6 +235,17 @@ class RuntimeDispatch:
                 self._default_route.published_events,
                 context=f"default_route::{self._default_route.name}",
             )
+
+    @property
+    def delivery_receipts_enabled(self) -> bool:
+        """``True`` only when a receipt-adapter factory was injected at construction.
+
+        ``False`` (the default) makes NO durable-receipt claim — the pre-ticket
+        at-least-once behavior is unchanged. Never presented as durable evidence
+        by a volatile or pass-through adapter; that determination belongs to the
+        injected factory/adapter, not to this flag alone.
+        """
+        return self._delivery_receipt_adapter_factory is not None
 
     def stop(self) -> None:
         """Request the :meth:`run` loop to exit after the current poll cycle."""
@@ -327,6 +357,19 @@ class RuntimeDispatch:
                     error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
                 )
             envelope = decode_inbound_envelope(message.value)
+            # OMN-15665 receipt boundary: the canonical immutable delivery context
+            # is built here, UNCONDITIONALLY and fail-closed — envelope_id is read
+            # from the raw wire bytes (never the pydantic-fabricated default), and
+            # topic/partition/offset are this record's own broker coordinates. A
+            # message that cannot produce a truthful context is never committed
+            # with a fabricated identity, whether or not a receipt adapter is
+            # configured.
+            delivery_context = build_delivery_context(
+                topic=message.topic,
+                partition=message.partition,
+                offset=message.offset,
+                raw_value=message.value,
+            )
             request = self._coerce_request(envelope, route)
             result = await self._invoke(route, request)
             pairs = self._resolve_outbound(result, route)
@@ -355,6 +398,19 @@ class RuntimeDispatch:
                     value=out_envelope.model_dump_json().encode("utf-8"),
                     headers={},
                 )
+
+            # OMN-15665: when a receipt-adapter factory is configured, it receives
+            # THIS message's immutable delivery context and its bound zero-arg
+            # receipt-ack callable is awaited BEFORE the message becomes
+            # committable. A receipt-adapter failure falls through to the same
+            # except-block below (redeliver within budget, else DLQ) — never a
+            # silent commit past an unacknowledged receipt.
+            if self._delivery_receipt_adapter_factory is not None:
+                receipt_adapter = self._delivery_receipt_adapter_factory(
+                    delivery_context
+                )
+                await receipt_adapter()
+
             self._attempts.pop(key, None)
             return EnumDeliveryDisposition.COMMIT
         except Exception as exc:  # fallback-ok: the failure is SURFACED (logged) and converted to a delivery disposition (redeliver within budget, else DLQ) — the at-least-once contract, NOT a swallow; re-raising would abort the whole poll loop. CancelledError is BaseException and stays uncaught.
