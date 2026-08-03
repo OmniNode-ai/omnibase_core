@@ -396,6 +396,7 @@ from .enum_registry_error_code import EnumRegistryErrorCode
 from .enum_registry_health_status import EnumRegistryHealthStatus
 from .enum_registry_type import EnumRegistryType
 from .enum_renderer_interaction_model import EnumRendererInteractionModel
+from .enum_reserved_group_prefix import EnumReservedGroupPrefix
 
 # Resolution tier enums (authenticated dependency resolution - OMN-2890)
 from .enum_resolution_failure_code import EnumResolutionFailureCode
@@ -785,6 +786,7 @@ __all__ = [
     "EnumComputationType",
     # Consumer group purpose domain (event bus subscription)
     "EnumConsumerGroupPurpose",
+    "EnumReservedGroupPrefix",
     # Contract-driven NodeCompute v1.0 domain
     "EnumCaseMode",
     "EnumComputeStepType",

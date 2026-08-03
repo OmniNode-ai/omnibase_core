@@ -348,3 +348,11 @@ dist/
 build/
 *.egg-info/
 # === end onex-managed: python ===
+
+# Consumer-graph cache, its single-flight lock, and any interrupted temp file.
+# Derived build artifacts keyed to the local HEAD SHA -- never committed. Scoped
+# to these names, not all of .onex_state/, which holds tracked evidence
+# (OMN-15431).
+.onex_state/consumer-graph.json
+.onex_state/consumer-graph.lock
+.onex_state/consumer-graph.json.*.tmp

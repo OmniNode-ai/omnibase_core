@@ -26,6 +26,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from omnibase_core.event_bus.util_consumer_group import INSTANCE_SCOPE_INFIX
+
 pytestmark = pytest.mark.unit
 
 
@@ -238,8 +240,11 @@ class TestCliEnvelopeRoundTrip:
 
         def _make_consumer(config: dict[str, Any]) -> MagicMock:
             consumer = MagicMock()
+            # OMN-15639: the group ID is now identity-derived and carries the
+            # correlation UUID as a `.__i.` scope discriminator instead of the
+            # unauthorized `onex-run-node-<uuid>` literal.
             group_id = str(config.get("group.id", ""))
-            corr = group_id.removeprefix("onex-run-node-")
+            corr = group_id.rpartition(INSTANCE_SCOPE_INFIX)[2]
 
             topic_metadata = MagicMock()
             topic_metadata.partitions = {0: object()}

@@ -3,6 +3,9 @@
 
 """Event bus models for ONEX message handling."""
 
+from .model_consumer_group_iam_patterns import ModelConsumerGroupIamPatterns
+from .model_consumer_group_iam_source import ModelConsumerGroupIamSource
+from .model_consumer_group_scope import ModelConsumerGroupScope
 from .model_delivery_result import ModelDeliveryResult
 from .model_event_bus_bootstrap_result import ModelEventBusBootstrapResult
 from .model_event_bus_input_output_state import ModelEventBusInputOutputState
@@ -17,6 +20,9 @@ from .model_producer_health_status import ModelProducerHealthStatus
 from .model_producer_message import ModelProducerMessage
 
 __all__ = [
+    "ModelConsumerGroupIamPatterns",
+    "ModelConsumerGroupIamSource",
+    "ModelConsumerGroupScope",
     "ModelDeliveryResult",
     "ModelEventBusBootstrapResult",
     "ModelEventBusInputOutputState",

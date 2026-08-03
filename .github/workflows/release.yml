@@ -20,12 +20,17 @@ concurrency:
 
 jobs:
   release:
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    # OMN-15603: this job used to run on the trusted self-hosted `omnibase-ci`
+    # runner. Measured egress from that runner to upload.pypi.org is
+    # 30-39 KiB/s, and upload.pypi.org enforces a hard ~240s server-side
+    # request deadline. The 6.4 MiB wheel clears it (170-216s); the 9.2 MiB
+    # sdist deterministically does not (241.4s -> HTTP 500 after the full body
+    # transferred, identical to the tenth of a second on two attempts of run
+    # 30674223657), which stranded omnibase-core 0.46.8 wheel-only. The job
+    # publishes to a public index and reads no LAN service, so nothing here
+    # needs the self-hosted runner; it moves to a GitHub-hosted runner whose
+    # egress clears the deadline (AC2).
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.tag.outputs.tag }}
     steps:
@@ -78,12 +83,10 @@ jobs:
             exit 1
           }
 
-      - name: Publish to PyPI
-        run: |
-          uv publish --token "$UV_PUBLISH_TOKEN" dist/*.whl dist/*.tar.gz
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
-
+      # OMN-15603 (AC4): checksums and the release tag are derived BEFORE the
+      # publish attempt. They are pure local computations that used to sit
+      # behind the single non-idempotent publish step, so a publish failure
+      # silently skipped them along with the GitHub Release and the cascade.
       - name: Generate checksums
         run: sha256sum dist/*.whl dist/*.tar.gz > dist/SHA256SUMS.txt
 
@@ -95,6 +98,86 @@ jobs:
           else
             echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           fi
+
+      # OMN-15603 (AC4): preserve the built artifacts BEFORE publishing. Run
+      # 30674223657 ended with total_count=0 artifacts, so the only way to
+      # recover the stranded sdist was to rebuild it from the tag.
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ steps.tag.outputs.tag }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 90
+
+      # OMN-15603 (AC1 + AC3): resumable, retried publish.
+      #
+      # --check-url makes the upload idempotent: uv queries the PyPI simple
+      # index and skips every file already present, so a retry re-transfers
+      # only what is still missing. The URL must be the simple index ROOT --
+      # uv appends the package name itself. Verified empirically against uv
+      # 0.12.1 (the version astral-sh/setup-uv@v7 resolves) with the published
+      # 0.46.8 wheel: `--check-url https://pypi.org/simple/` prints
+      # "File omnibase_core-0.46.8-py3-none-any.whl already exists, skipping",
+      # while the package-scoped `https://pypi.org/simple/omnibase-core/`
+      # re-uploads exactly as if no --check-url had been passed at all.
+      #
+      # The retry loop absorbs the 5xx that upload.pypi.org returns on a
+      # request that overruns its server-side deadline. Retries are cheap
+      # because --check-url skips whatever already landed.
+      #
+      # AC3 says "retry on 5xx", so the loop READS the failure instead of
+      # retrying every non-zero exit. A 4xx (bad token, malformed metadata,
+      # rejected filename) is deterministic: retrying it burns the full
+      # 15s + 45s backoff and then reports a permanent fault in the language
+      # of a transient one. Only an upstream 5xx or a transport-level fault
+      # -- the classes that a second attempt can actually clear -- is retried.
+      - name: Publish to PyPI
+        run: |
+          set -uo pipefail
+          attempt=1
+          max_attempts=3
+          backoff=15
+          publish_log="$(mktemp)"
+
+          # upload.pypi.org returns 500 when a request overruns its ~240s
+          # server-side deadline; 502/503/504 are the other transient upstream
+          # classes. The transport patterns cover a connection dropped before
+          # any HTTP status was seen, which is the same "try again" class.
+          # `\b` is not portable across GNU and BSD grep, and this shell is
+          # executed verbatim by the tests on both -- so the patterns stay in
+          # plain POSIX ERE.
+          is_retryable() {
+            grep -Eqi \
+              -e 'status code 5[0-9][0-9]' \
+              -e '(internal server error|bad gateway|service unavailable|gateway time-?out)' \
+              -e '(error sending request|connection (reset|closed|refused)|operation timed out|timed out|broken pipe)' \
+              "$1"
+          }
+
+          while true; do
+            if uv publish \
+              --check-url https://pypi.org/simple/ \
+              --token "$UV_PUBLISH_TOKEN" \
+              dist/*.whl dist/*.tar.gz 2>&1 | tee "$publish_log"
+            then
+              exit 0
+            fi
+            if ! is_retryable "$publish_log"; then
+              echo "ERROR: uv publish failed with a non-retryable error (no 5xx or transport fault in the output); not retrying" >&2
+              exit 1
+            fi
+            if [ "$attempt" -ge "$max_attempts" ]; then
+              echo "ERROR: uv publish failed after ${max_attempts} attempts" >&2
+              exit 1
+            fi
+            echo "uv publish attempt ${attempt}/${max_attempts} failed with a retryable 5xx/transport fault; retrying in ${backoff}s" >&2
+            sleep "$backoff"
+            attempt=$((attempt + 1))
+            backoff=$((backoff * 3))
+          done
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
@@ -122,3 +205,88 @@ jobs:
       version: ${{ needs.release.outputs.version }}
     secrets:
       cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}
+
+  # ---------------------------------------------------------------------------
+  # OMN-15603 (AC4): a failed release used to be silent about its own wreckage
+  # -- the downstream steps just showed "skipped" and nothing said which
+  # artifacts had already landed on the public index. This names the partial
+  # state and the canonical recovery command.
+  #
+  # It is a JOB rather than a step inside `release` because AC4 names the
+  # Dependency Cascade among the things that must "either run, or the run fails
+  # loudly naming which artifacts landed" -- and a step inside `release` cannot
+  # observe a cascade failure. With `release` green and a cascade matrix job
+  # red, the run went red and nothing emitted the artifact census. As a job
+  # with `needs: [release, dependency-cascade]` it covers every way this
+  # workflow ends badly, with ONE copy of the shell rather than two.
+  #
+  # The tag and the upstream job results arrive through `env:` rather than
+  # inline `${{ }}` so the committed shell is executable verbatim -- that is
+  # what lets test_release_workflow_shape.py RUN this block under `bash -e`
+  # instead of pattern-matching the string and shipping a shell bug green.
+  # ---------------------------------------------------------------------------
+  report-partial-state:
+    name: Report partial release state
+    runs-on: ubuntu-latest
+    needs: [release, dependency-cascade]
+    # `skipped` is deliberately NOT a trigger. dependency-cascade is skipped by
+    # design on an rc tag, so a `!= 'success'` condition would fire this report
+    # on a perfectly good rc release.
+    if: ${{ always() && (needs.release.result == 'failure' || needs.release.result == 'cancelled' || needs['dependency-cascade'].result == 'failure' || needs['dependency-cascade'].result == 'cancelled') }}
+    steps:
+      # Best-effort: when `release` died before `Upload dist artifacts` there is
+      # nothing to download and the report must still emit, so a missing
+      # artifact must not fail this job. The shell below handles an empty
+      # dist/ (see test_partial_release_state_survives_an_unresolved_tag_...).
+      - name: Download preserved dist artifacts
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: dist-${{ needs.release.outputs.version }}
+          path: dist/
+
+      - name: Report partial release state
+        env:
+          RELEASE_TAG: ${{ needs.release.outputs.version }}
+          RELEASE_RESULT: ${{ needs.release.result }}
+          CASCADE_RESULT: ${{ needs['dependency-cascade'].result }}
+        run: |
+          set -uo pipefail
+          RELEASE_TAG="${RELEASE_TAG:-}"
+          RELEASE_RESULT="${RELEASE_RESULT:-unknown}"
+          CASCADE_RESULT="${CASCADE_RESULT:-unknown}"
+          echo "::error::RELEASE INCOMPLETE for ${RELEASE_TAG:-<tag unresolved>} -- release job: ${RELEASE_RESULT}, dependency cascade: ${CASCADE_RESULT}."
+          if [ "$RELEASE_RESULT" != "success" ]; then
+            echo "::error::GitHub Release and Dependency Cascade did NOT run."
+          fi
+          if [ "$CASCADE_RESULT" = "failure" ] || [ "$CASCADE_RESULT" = "cancelled" ]; then
+            echo "::error::Dependency Cascade did NOT complete (${CASCADE_RESULT}) -- downstream lockfile bump PRs were NOT opened."
+          fi
+          # An unreachable index means the landed/missing question is UNKNOWN.
+          # Reporting "MISSING" there would be a false claim about a public
+          # index, which is the opposite of what this step exists to do.
+          if index=$(curl -sSL --max-time 60 https://pypi.org/simple/omnibase-core/); then
+            index_read=1
+          else
+            index_read=0
+            index=""
+            echo "::error::Could not read the PyPI simple index -- landed/missing state is UNKNOWN."
+          fi
+          for path in dist/*.whl dist/*.tar.gz; do
+            [ -e "$path" ] || continue
+            name=$(basename "$path")
+            if [ "$index_read" -eq 0 ]; then
+              echo "::error::UNKNOWN on PyPI: ${name}"
+            elif printf '%s' "$index" | grep -qF -- "$name"; then
+              echo "::error::LANDED on PyPI: ${name}"
+            else
+              echo "::error::MISSING from PyPI: ${name}"
+            fi
+          done
+          if [ -n "$RELEASE_TAG" ] && ls dist/*.whl dist/*.tar.gz >/dev/null 2>&1; then
+            echo "::error::Built artifacts preserved as workflow artifact 'dist-${RELEASE_TAG}'."
+            echo "::error::Recover with: gh workflow run release.yml --repo OmniNode-ai/omnibase_core --ref dev -f tag=${RELEASE_TAG}"
+          else
+            echo "::error::No dist artifact can be claimed for an unresolved release tag."
+            echo "::error::Recover by determining the intended tag, then run: gh workflow run release.yml --repo OmniNode-ai/omnibase_core --ref dev -f tag=<tag>"
+          fi

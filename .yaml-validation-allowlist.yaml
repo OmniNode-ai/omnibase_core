@@ -367,6 +367,18 @@ allowed_files:
     added: "2026-05-17"
     review: "2026-12-13"
 
+  - file: "src/omnibase_core/event_bus/util_consumer_group.py"
+    reason: >-
+      MSK IAM consumer-group pattern mirror loader (OMN-15639) — identical two-step pipeline to the aislop_rule_loader
+      entry above: yaml.safe_load() → ModelConsumerGroupIamPatterns.model_validate(). The raw mapping
+      is never used unvalidated, and the model is frozen/extra=forbid so a malformed mirror fails at load
+      rather than degrading into a silently-empty authorized-pattern set. Reading via omnibase_core.utils.util_safe_yaml_loader
+      was the first implementation and is the reason this entry exists rather than reusing that helper:
+      it adds a new importer to the `utils` hub, which the OMN-14340 import-layering ratchet tracks and
+      fails a test on, and this module has no other reason to depend on utils.
+    added: "2026-08-02"
+    review: "2027-02-02"
+
   - file: "src/omnibase_core/validators/breaking_schema_change.py"
     reason: >-
       Breaking-schema-change validator (OMN-12621) — must read adjacent *.topic-schema.yaml declarations

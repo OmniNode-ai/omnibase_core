@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+#
+# Pinned mirror of the MSK IAM consumer-group authorization pattern set.
+#
+# THIS FILE IS A MIRROR, NOT THE SOURCE OF TRUTH. The authoritative value is the
+# terraform variable `managed_kafka_client_group_patterns` in the `source` block
+# below. It is mirrored here so that omnibase_core can assert, at CI time and
+# without AWS credentials, that every consumer-group name the runtime can mint is
+# matched by at least one authorized pattern (OMN-15639 AC3).
+#
+# Drift protection: `pattern_set_sha256` is the sha256 of the `authorized_patterns`
+# strings joined by "\n" with NO trailing newline. The AC3 gate recomputes it and
+# fails closed on mismatch, so an edit to `authorized_patterns` that does not also
+# update the digest is rejected. Refreshing this file requires re-reading the
+# terraform source and updating `source.file_sha256` /
+# `source.last_touch_commit` / `source.verified_at` together.
+#
+# Semantics reminder (this is the defect OMN-15639 was filed for): MSK IAM
+# resource patterns are whole-name glob matches, NOT substring matches. `onex.*`
+# authorizes a group whose name BEGINS `onex.` — it does not authorize
+# `runtime-local-HandlerDelegateSkill.__t.onex.cmd.omnimarket.delegate-skill.v1`
+# merely because `onex.` appears inside it. Any matcher implemented as a substring
+# test is a vacuous implementation of this contract.
+
+source:
+  repo: omninode_infra
+  path: aws/cluster-dev/managed-data-plane.auto.tfvars
+  variable: managed_kafka_client_group_patterns
+  consumed_by: aws/cluster-dev/msk_kafka.tf (AlterGroup/DescribeGroup resource ARNs)
+  file_sha256: 46b1742a195afffc5b6291d51d2be28b941ef355b79983e12a3c719cee5fd528  # pragma: allowlist secret
+  last_touch_commit: 39fcff2a8e0062a3d25d0beabef73926e49d09ca  # pragma: allowlist secret
+  verified_at: "2026-08-02"
+  ticket: OMN-15639
+
+pattern_set_sha256: e75f830b0a00d41c64900a05f3a7309997d83de3c23fbed2d4109af0e69b2616  # pragma: allowlist secret
+
+# Verbatim, in source order (managed-data-plane.auto.tfvars:33-42).
+authorized_patterns:
+  - "onex-dev.*"
+  - "local.runtime_config.*"
+  - "pattern-b-broker-*"
+  - "onex.*"
+  - "omninode.*"
+  - "phase5-msk-smoke-*"
+
+# Environments whose brokers are MSK and therefore subject to the IAM policy above.
+# Identity-derived group IDs lead with the environment token, so a managed
+# environment is authorized iff `"<env>."` is matched by some authorized pattern —
+# the AC3 gate asserts exactly that, so adding an environment here without IAM
+# coverage fails CI rather than failing at runtime with GroupAuthorizationFailedError.
+#
+# Environments NOT listed here (e.g. `local`, the `.201` Redpanda lanes) have no
+# MSK IAM policy in front of them; they are out of scope for the authorization
+# assertion, not silently exempted from it.
+managed_environments:
+  - "onex-dev"

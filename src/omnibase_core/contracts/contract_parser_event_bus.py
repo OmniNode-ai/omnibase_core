@@ -7,12 +7,21 @@ Parses the ``event_bus`` block of a node contract into a normalized list of
 subscriptions. Supports two shapes:
 
 1. **Classic** (``event_bus.subscribe_topics``): ``list[str]`` of topic suffixes.
-2. **Nested** (``event_bus.subscribe``): ``list[dict]`` with required ``topic``
-   and optional ``consumer_group``.
+2. **Nested** (``event_bus.subscribe``): ``list[dict]`` with a required ``topic``.
 
 Both shapes may coexist in a single contract; classic entries are emitted first.
 Unknown shapes (or a recognized shape missing required fields) raise
 :class:`EventBusContractShapeError` so silent subscription drops cannot occur.
+
+``consumer_group`` used to be accepted here as an optional per-subscription field.
+It was parsed into :class:`ModelEventBusSubscription` and then **never read by
+anything** — a contract could declare a consumer group and the runtime would silently
+ignore it. Under OMN-15639 consumer-group names are derived from node identity by
+``omnibase_core.event_bus.util_consumer_group`` so that every minted name is matched by the
+MSK IAM authorized pattern set; a contract-supplied override is exactly the ad-hoc
+naming surface that ruling removed. The key is now **rejected loudly** rather than
+accepted-and-ignored, per ``feedback_optional_input_means_the_check_does_not_exist``.
+No contract in any repo declared it, so nothing is broken by the removal.
 """
 
 from __future__ import annotations
@@ -28,6 +37,9 @@ from omnibase_core.models.contracts.model_event_bus_subscription import (
 )
 
 _RECOGNIZED_KEYS: frozenset[str] = frozenset({"subscribe_topics", "subscribe"})
+
+# Keys allowed inside an `event_bus.subscribe[*]` mapping.
+_RECOGNIZED_SUBSCRIBE_KEYS: frozenset[str] = frozenset({"topic"})
 
 
 def parse_event_bus(contract: dict[str, object]) -> ModelEventBusParseResult:
@@ -93,17 +105,26 @@ def parse_event_bus(contract: dict[str, object]) -> ModelEventBusParseResult:
                 raise EventBusContractShapeError(
                     "event_bus.subscribe entries require a 'topic' string field",
                 )
-            consumer_group = entry.get("consumer_group")
-            if consumer_group is not None and not isinstance(consumer_group, str):
+            if "consumer_group" in entry:
                 raise EventBusContractShapeError(
-                    "event_bus.subscribe[*].consumer_group must be a string when present",
+                    "event_bus.subscribe[*].consumer_group is no longer supported "
+                    "(OMN-15639): consumer group IDs are derived from node identity "
+                    "by omnibase_core.event_bus.util_consumer_group so that every minted "
+                    "name is authorized by the MSK IAM pattern set. Remove the field.",
                 )
-            subscriptions.append(
-                ModelEventBusSubscription(
-                    topic=topic,
-                    consumer_group=consumer_group,
-                ),
-            )
+            # Reject every other unknown key too. The model is built from `topic`
+            # alone, so an unrecognized key would be discarded here before
+            # ModelEventBusSubscription's extra="forbid" could ever see it — a silent
+            # subscription-shape drop, which is exactly what this parser exists to
+            # prevent. Mirrors the top-level _RECOGNIZED_KEYS check above.
+            unknown_entry_keys = sorted(set(entry) - _RECOGNIZED_SUBSCRIBE_KEYS)
+            if unknown_entry_keys:
+                raise EventBusContractShapeError(
+                    "event_bus.subscribe entries contain unrecognized keys; "
+                    f"got {unknown_entry_keys!r}, expected only "
+                    f"{sorted(_RECOGNIZED_SUBSCRIBE_KEYS)!r}",
+                )
+            subscriptions.append(ModelEventBusSubscription(topic=topic))
 
     return ModelEventBusParseResult(subscriptions=subscriptions)
 
