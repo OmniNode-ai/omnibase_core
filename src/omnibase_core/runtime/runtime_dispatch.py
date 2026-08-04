@@ -42,6 +42,13 @@ What it owns (runtime = policy; transport = mechanism, plan I6):
    callable is awaited before the message becomes committable. Omitting the factory
    (the default) preserves the pre-ticket at-least-once behavior unchanged; see
    :attr:`RuntimeDispatch.delivery_receipts_enabled`.
+8. DUAL-SINK terminal durability (OMN-15666): when an optional
+   ``terminal_disposition_adapter`` is injected, an exhausted record is terminalized
+   through :mod:`omnibase_core.runtime.runtime_dual_sink` — primary DLQ exactly once,
+   canonical quarantine only on its failure, and NO commit when both fail (the record
+   redelivers instead). Omitting the adapter (the default) keeps the legacy
+   raw-bytes :meth:`RuntimeDispatch._send_to_dlq` path byte-for-byte unchanged; see
+   :attr:`RuntimeDispatch.dual_sink_enabled`.
 """
 
 from __future__ import annotations
@@ -60,9 +67,19 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_delivery_disposition import EnumDeliveryDisposition
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.event_bus.model_delivery_failure_evidence import (
+    ModelDeliveryFailureEvidence,
+)
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.runtime.model_delivery_context import ModelDeliveryContext
+from omnibase_core.models.runtime.model_terminal_disposition_request import (
+    ModelTerminalDispositionRequest,
+)
 from omnibase_core.runtime.runtime_delivery_context import build_delivery_context
+from omnibase_core.runtime.runtime_dual_sink import (
+    DualPublishFailureError,
+    build_terminal_disposition_request,
+)
 from omnibase_core.runtime.runtime_envelope_router import (
     decode_inbound_envelope,
     wrap_outbound_envelope,
@@ -140,6 +157,25 @@ class _HandlerLike(Protocol):
     handle: Callable[..., object]
 
 
+class _TerminalDispositionAdapterLike(Protocol):
+    """Dual-sink terminal disposition seam (mirror of the canonical
+    ``omnibase_core.protocols.runtime.protocol_terminal_disposition_adapter.
+    ProtocolTerminalDispositionAdapter``, declared locally for the same
+    protocols-hub ratchet reason as the transport mirrors above).
+
+    ``execute_once`` returns the typed terminal receipt (the ONLY thing that
+    licenses committing the source offset) and raises ``DualPublishFailureError``
+    when neither sink became durable.
+    """
+
+    async def execute_once(
+        self,
+        context: ModelDeliveryContext,
+        request: ModelTerminalDispositionRequest,
+        /,
+    ) -> object: ...
+
+
 @dataclass(frozen=True)
 class DispatchRoute:
     """One resolved subscribe-topic route: how to dispatch a message on a topic.
@@ -196,6 +232,8 @@ class RuntimeDispatch:
         delivery_receipt_adapter_factory: (
             Callable[[ModelDeliveryContext], Callable[[], Awaitable[None]]] | None
         ) = None,
+        terminal_disposition_adapter: _TerminalDispositionAdapterLike | None = None,
+        quarantine_topic_resolver: Callable[[str], str] | None = None,
     ) -> None:
         self._consumer = consumer
         self._producer = producer
@@ -207,6 +245,13 @@ class RuntimeDispatch:
         # the pre-ticket at-least-once behavior and make no durable-receipt claim
         # (see delivery_receipts_enabled).
         self._delivery_receipt_adapter_factory = delivery_receipt_adapter_factory
+        # OMN-15666: optional, keyword-only, default None — same non-breaking shape,
+        # same reason. With no adapter the legacy raw-bytes DLQ path is unchanged and
+        # this runtime makes NO dual-sink durability claim (see dual_sink_enabled).
+        self._terminal_disposition_adapter = terminal_disposition_adapter
+        self._quarantine_topic_resolver = (
+            quarantine_topic_resolver or _default_quarantine_topic
+        )
         # Extension point (plan section (g), S0 binding schemas): a fallback route so a
         # polled topic absent from ``routing_map`` is NOT silently dropped. The
         # omniclaude ``io_operations`` shell-binding + ``default_handler`` coverage
@@ -246,6 +291,16 @@ class RuntimeDispatch:
         injected factory/adapter, not to this flag alone.
         """
         return self._delivery_receipt_adapter_factory is not None
+
+    @property
+    def dual_sink_enabled(self) -> bool:
+        """``True`` only when a terminal-disposition adapter was injected.
+
+        ``False`` (the default) makes NO dual-sink durability claim: an exhausted
+        record takes the legacy single raw-bytes DLQ send, exactly as before
+        OMN-15666.
+        """
+        return self._terminal_disposition_adapter is not None
 
     def stop(self) -> None:
         """Request the :meth:`run` loop to exit after the current poll cycle."""
@@ -319,8 +374,15 @@ class RuntimeDispatch:
                 if disposition is EnumDeliveryDisposition.COMMIT:
                     last_committable = message
                 elif disposition is EnumDeliveryDisposition.DLQ:
-                    await self._send_to_dlq(message)
-                    last_committable = message
+                    # OMN-15666: the source offset becomes committable ONLY if a
+                    # sink became durable. A dual-sink failure stops this
+                    # partition's prefix exactly like a REDELIVER — nothing past
+                    # it is committed and the same record is reprocessed.
+                    if await self._terminalize(message):
+                        last_committable = message
+                    else:
+                        redeliver_from = message
+                        break
                 else:  # REDELIVER — stop this partition's prefix HERE (HOLE 1)
                     redeliver_from = message
                     break
@@ -497,6 +559,92 @@ class RuntimeDispatch:
             route.published_events, elements, message_type=route.name
         )
 
+    async def _terminalize(self, message: _TransportMessageLike) -> bool:
+        """Terminalize an exhausted record; ``True`` iff the source offset may commit.
+
+        With no ``terminal_disposition_adapter`` injected this is the unchanged
+        legacy single-sink DLQ send (``_send_to_dlq`` awaits the producer, so a
+        transport failure still propagates rather than committing silently).
+
+        With one injected, the OMN-15666 dual-sink invariant applies: primary DLQ
+        exactly once, canonical quarantine only on its failure, and a
+        ``DualPublishFailureError`` (neither sink durable) returns ``False`` so the
+        caller leaves the offset uncommitted.
+        """
+        if self._terminal_disposition_adapter is None:
+            await self._send_to_dlq(message)
+            return True
+
+        try:
+            context = build_delivery_context(
+                topic=message.topic,
+                partition=message.partition,
+                offset=message.offset,
+                raw_value=message.value,
+            )
+        except ModelOnexError:
+            # No truthful envelope_id on the wire => no authoritative identity to
+            # key an idempotent terminal disposition on. NEVER fabricate one (the
+            # OMN-15665 fail-closed guarantee). Fall back to the legacy raw-bytes
+            # DLQ so a poison record still makes progress instead of wedging the
+            # partition forever — with NO durable-receipt claim. This boundary is
+            # outside every OMN-15666 acceptance criterion (all of which presume a
+            # truthful source identity) and is covered by its own regression test.
+            logger.warning(
+                "RuntimeDispatch: dual-sink SKIPPED for topic=%s partition=%d "
+                "offset=%d — the record carries no truthful envelope_id, so no "
+                "authoritative terminal-disposition identity exists. Falling back "
+                "to the legacy raw-bytes DLQ (no durable-receipt claim).",
+                message.topic,
+                message.partition,
+                message.offset,
+            )
+            await self._send_to_dlq(message)
+            return True
+
+        request = build_terminal_disposition_request(
+            context=context,
+            primary_dlq_topic=self._dlq_topic_resolver(message.topic),
+            quarantine_topic=self._quarantine_topic_resolver(message.topic),
+            source_key=message.key,
+            source_value=message.value,
+            source_headers=message.headers,
+            source_failure=ModelDeliveryFailureEvidence(
+                stage="handler_dispatch",
+                error_type="RetryBudgetExhausted",
+                error_message=(
+                    f"dispatch failed {self._max_retries + 1} time(s) for "
+                    f"topic={message.topic} partition={message.partition} "
+                    f"offset={message.offset}; terminalizing."
+                ),
+                retryable=False,
+            ),
+        )
+        try:
+            await self._terminal_disposition_adapter.execute_once(context, request)
+        except DualPublishFailureError:
+            logger.exception(
+                "RuntimeDispatch: DUAL-SINK FAILURE topic=%s partition=%d offset=%d "
+                "— neither the primary DLQ nor quarantine became durable; the "
+                "source offset is NOT committed and the record will be reprocessed.",
+                message.topic,
+                message.partition,
+                message.offset,
+            )
+            return False
+        except Exception:  # fallback-ok: an UNEXPECTED terminal-adapter failure (e.g. a durable disposition-store I/O error, which resolve_terminal_disposition never converts to DualPublishFailureError) is SURFACED (logged) and converted to "do not commit" for THIS record only. _terminalize is called from run_once OUTSIDE _dispatch_one's guard, so re-raising would escape the poll loop and skip the commit/nack for every already-succeeded offset in this partition prefix AND every later partition group — strictly worse than redelivering one record. CancelledError is BaseException and stays uncaught.
+            logger.exception(
+                "RuntimeDispatch: terminal-disposition adapter FAILED UNEXPECTEDLY "
+                "topic=%s partition=%d offset=%d — the source offset is NOT "
+                "committed and the record will be reprocessed; the rest of this "
+                "poll cycle continues.",
+                message.topic,
+                message.partition,
+                message.offset,
+            )
+            return False
+        return True
+
     async def _send_to_dlq(self, message: _TransportMessageLike) -> None:
         """Send the ORIGINAL message bytes to its dead-letter topic (durable evidence).
 
@@ -528,3 +676,14 @@ def _default_dlq_topic(topic: str) -> str:
     (and DLQ non-silent) when none is supplied.
     """
     return f"{topic}.dlq"
+
+
+def _default_quarantine_topic(topic: str) -> str:
+    """Default canonical quarantine topic resolver: ``<topic>.quarantine``.
+
+    Like the DLQ resolver, quarantine-topic resolution is a contract concern the
+    composition root injects. This default only applies when a
+    ``terminal_disposition_adapter`` was injected WITHOUT a resolver — it keeps
+    the fallback sink addressable rather than silently unset.
+    """
+    return f"{topic}.quarantine"

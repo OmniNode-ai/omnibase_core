@@ -17,9 +17,13 @@ from .model_event_bus_readiness import ModelEventBusReadiness
 from .model_event_bus_runtime_state import ModelEventBusRuntimeState
 from .model_event_headers import ModelEventHeaders
 from .model_event_message import ModelEventMessage
+from .model_primary_dlq_wire_payload import ModelPrimaryDlqWirePayload
 from .model_producer_health_status import ModelProducerHealthStatus
 from .model_producer_message import ModelProducerMessage
 from .model_quarantine_wire_payload import ModelQuarantineWirePayload
+from .model_transport_publish_acknowledgement import (
+    ModelTransportPublishAcknowledgement,
+)
 
 __all__ = [
     "ModelConsumerGroupIamPatterns",
@@ -38,5 +42,7 @@ __all__ = [
     "ModelEventMessage",
     "ModelProducerHealthStatus",
     "ModelProducerMessage",
+    "ModelPrimaryDlqWirePayload",
     "ModelQuarantineWirePayload",
+    "ModelTransportPublishAcknowledgement",
 ]
