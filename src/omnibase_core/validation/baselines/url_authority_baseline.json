@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "count": 212,
+  "count": 215,
   "violations": [
     {
       "repo": "omnibase_core",
@@ -79,6 +79,24 @@
       "path": "src/omnibase_core/models/vector/model_vector_connection_config.py",
       "rule": "public-https-literal",
       "fingerprint": "50e72ba0afdcfd2e8ff263e257daecbdf9157327d0f5d0066d29b8b1559205de"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "docker/docker-compose.gateway.yml",
+      "rule": "msk-direct-broker-endpoint",
+      "fingerprint": "075c0e54d2ff8b46b86719569d7199e0c52a6bf67b4bae4e6f9efbdd41d0f777"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "docker/docker-compose.gateway.yml",
+      "rule": "msk-direct-broker-endpoint",
+      "fingerprint": "e68997feb334f60de65562bd0ecfbfc94ca14467baa1345312d43b167826c2a1"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "docker/gateway/beta-gateway-canary.yaml",
+      "rule": "msk-direct-broker-endpoint",
+      "fingerprint": "179d20e7e88000087ae437e4a9fd96c7a0b8a26a52ed04eed32f303ea1db0efd"
     },
     {
       "repo": "omnibase_infra",

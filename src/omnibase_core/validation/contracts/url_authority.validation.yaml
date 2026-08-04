@@ -93,11 +93,13 @@ validation:
 
     - rule_id: msk-direct-broker-endpoint
       description: >-
-        Rejects a direct MSK broker hostname (*.kafka.us-east-1.amazonaws.com) on the SASL_SSL/MSK-IAM
-        ports (9098/9096), or the raw SNI-passthrough bastion IP, in an on-prem-facing config/script file.
-        On-prem hosts must go through the gateway, never a direct MSK broker connection (OMN-15692, operator
-        ruling 2026-08-04). Unlike the other four rules, this one also scans non-.py files. Suppress with
-        # url-authority-ok: <reason>.
+        Rejects a direct MSK broker hostname (*.kafka.<region>.amazonaws.com, any AWS region) on its own
+        — no co-occurring port required, so split-key configs and non-9098/9096 ports (e.g. 9092/9094)
+        are equally caught — or the raw SNI-passthrough bastion IP, in an on-prem-facing config/script
+        file. On-prem hosts must go through the gateway, never a direct MSK broker connection (OMN-15692,
+        operator ruling 2026-08-04). Unlike the other four rules, this one also scans non-.py files, and
+        is NOT suppressible via # url-authority-ok: — the ruling states no exception path, so a self-authored
+        justification comment cannot waive it. Fix the reference instead.
       severity: error
       enabled: true
 

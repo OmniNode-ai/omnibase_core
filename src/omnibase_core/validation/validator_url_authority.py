@@ -35,13 +35,26 @@ non-Python on-prem-facing config/script files (see below):
 5. **msk-direct-broker-endpoint** (OMN-15692, operator ruling 2026-08-04:
    "nothing in either .200 or .201 should be contacting MSK directly,
    everything should be going through the gateway") — a literal MSK broker
-   hostname (``_MSK_BROKER_HOSTNAME`` — an ``*.kafka.us-east-1[.]amazonaws
-   [.]com``-shaped host) on the SASL_SSL/MSK-IAM ports (``_MSK_BROKER_PORT``
-   — 9098 or 9096), OR the raw SNI-passthrough bastion IP on its own
+   hostname (``_MSK_BROKER_HOSTNAME`` — an ``*.kafka.<region>[.]amazonaws
+   [.]com``-shaped host, any AWS region) appearing **anywhere** on a
+   non-comment line, OR the raw SNI-passthrough bastion IP on its own
    (``_MSK_BASTION_IP``), appearing in an on-prem-facing config/script file.
    (Deliberately not spelled out as a bare literal here — this docstring is
    itself scanned, and an unbroken literal would trip the very rule it
    documents; see the pattern constants for the exact strings.)
+
+   The hostname trigger is deliberately **not** gated on a co-occurring port
+   literal. An earlier revision required the SASL_SSL/MSK-IAM port (9098 or
+   9096) on the *same line* as the hostname; that missed the ordinary
+   split-key config shape (``MSK_HOST:``/``MSK_PORT:`` on separate lines —
+   the default shape for Docker Compose and ``.env`` files, not an edge
+   case), a hostname with no port literal at all, and any other broker port
+   (e.g. plaintext/TLS 9092/9094). The hostname literal alone is already an
+   unambiguous, single-purpose DNS name for one live AWS resource — its mere
+   presence in a non-comment, non-test line of a scanned config/script file
+   is sufficient evidence of a direct-MSK reference regardless of port or
+   which line the port (if any) appears on.
+
    Unlike rules 1-4, this rule also scans **non-Python** files
    (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/``.conf``/``.toml``/``.ini``
    in addition to ``.py`` — see ``_MSK_SCAN_SUFFIXES``), because the on-prem
@@ -50,6 +63,14 @@ non-Python on-prem-facing config/script files (see below):
    narrower in *match* scope than rules 1-4 are in *file* scope: only the two
    literal patterns above trigger it, so widening the scanned file set does
    not import rules 1-4's broader (and here, un-triaged) match surface.
+
+   **Not suppressible.** Rules 1-4 accept ``# url-authority-ok: <reason>`` as
+   a free-text escape hatch. Rule 5 mechanizes a hard operator ruling with no
+   stated exception path ("nothing ... should be contacting MSK directly"),
+   so a self-authored justification comment must not be able to waive it —
+   the same self-judgement-is-not-evidence reasoning CLAUDE.md rule 10 was
+   hardened around for `[skip-*]` tokens. ``scan_source`` enforces this by
+   checking the suppression annotation only for non-rule-5 matches.
 
 Ratchet (OMN-12818, mirrors OMN-12791 receipt-honesty gate): existing
 violations are grandfathered by content fingerprint (sha256 of {repo, path,
@@ -86,8 +107,11 @@ Usage Examples:
             --seed --repo omnibase_core --repo-root .
 
 Suppression:
-    Add ``# url-authority-ok: <reason>`` on the offending line.
+    Add ``# url-authority-ok: <reason>`` on the offending line (rules 1-4 only).
     Config-PATH env reads annotated with ``# contract-config-ok:`` are also exempt.
+    Rule 5 (msk-direct-broker-endpoint, OMN-15692) is NOT suppressible by either
+    annotation — it mechanizes a hard operator ruling with no stated exception
+    path; fix the reference, do not annotate around it.
 
 Migration debt tickets:
     - omnibase_core: OMN-12806
@@ -173,16 +197,18 @@ _LOCALHOST_LITERAL: Final[re.Pattern[str]] = re.compile(
 # 5. Direct MSK broker endpoint / bastion IP (OMN-15692, ruling 39: on-prem
 #    hosts must go through the gateway, never a direct MSK broker connection).
 #    Two independent triggers, either is sufficient:
-#      * an MSK broker hostname on the SASL_SSL/MSK-IAM port (9098 or 9096)
+#      * an MSK broker hostname, on its own — NOT gated on a co-occurring
+#        port literal (see the module docstring rule-5 section for why: a
+#        port-gate misses split-key configs, no-port hostnames, and any port
+#        other than 9098/9096). Any AWS region, not just us-east-1.
 #      * the raw SNI-passthrough bastion IP, on its own, regardless of port
 #        (the on-prem /etc/hosts and Docker `extra_hosts` overrides that this
 #        rule exists to catch map the hostname straight to this IP with no
 #        port literal at all).
 _MSK_BROKER_HOSTNAME: Final[re.Pattern[str]] = re.compile(
-    r"""[a-z0-9][a-z0-9.-]*\.kafka\.us-east-1\.amazonaws\.com""",
+    r"""[a-z0-9][a-z0-9.-]*\.kafka\.[a-z0-9-]+\.amazonaws\.com""",
     re.IGNORECASE,
 )
-_MSK_BROKER_PORT: Final[re.Pattern[str]] = re.compile(r""":(?:9098|9096)\b""")
 _MSK_BASTION_IP: Final[re.Pattern[str]] = re.compile(r"""100\.53\.215\.198""")
 
 RULE_MSK_DIRECT_BROKER: Final[str] = "msk-direct-broker-endpoint"
@@ -305,8 +331,13 @@ def _match_msk_rule(raw_line: str) -> str | None:
     literal (OMN-15692), else None.
 
     Two independent triggers, either is sufficient:
-      * an MSK broker hostname co-occurring with the SASL_SSL/MSK-IAM port
-        (9098 or 9096) on the same line
+      * an MSK broker hostname, on its own — NOT gated on a co-occurring
+        port literal. A port-gate misses the ordinary split-key config shape
+        (hostname and port declared on separate lines/keys — the default
+        Docker Compose / .env shape, not an edge case), a hostname with no
+        port literal anywhere, and any broker port other than 9098/9096
+        (e.g. 9092/9094). The hostname alone is an unambiguous single-purpose
+        DNS literal for one live AWS resource, so its presence is sufficient.
       * the raw bastion IP on its own (the host-level and container-level
         overrides this rule targets map hostname -> bare IP with no port
         literal at all, e.g. Docker Compose ``extra_hosts``)
@@ -316,7 +347,7 @@ def _match_msk_rule(raw_line: str) -> str | None:
     """
     if _MSK_BASTION_IP.search(raw_line):
         return RULE_MSK_DIRECT_BROKER
-    if _MSK_BROKER_HOSTNAME.search(raw_line) and _MSK_BROKER_PORT.search(raw_line):
+    if _MSK_BROKER_HOSTNAME.search(raw_line):
         return RULE_MSK_DIRECT_BROKER
     return None
 
@@ -331,7 +362,9 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
 
     Test files and authority files are skipped.  Lines carrying
     ``# url-authority-ok:`` or (for env reads) ``# contract-config-ok:`` are
-    suppressed.  Returns at most one violation per line.
+    suppressed for rules 1-4.  Rule 5 (msk-direct-broker-endpoint) is NOT
+    suppressible by either annotation — see the module docstring and
+    ``RULE_MSK_DIRECT_BROKER``.  Returns at most one violation per line.
 
     Rules 1-4 (public-https-literal, env-url-read, url-const-assignment,
     localhost-literal) only apply to ``.py`` sources — their patterns are
@@ -360,8 +393,6 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
         # comments also start with '#', so this applies uniformly.
         if not stripped or stripped.startswith(("#", '"""', "'''")):
             continue
-        if _SUPPRESS_ANNOTATION in raw_line:
-            continue
 
         rule = _match_rule(raw_line, stripped) if is_python else None
         if rule == RULE_ENV_URL_READ and _CONFIG_PATH_ANNOTATION in raw_line:
@@ -370,6 +401,13 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
         if rule is None:
             rule = _match_msk_rule(raw_line)
         if rule is None:
+            continue
+
+        # Suppression applies to rules 1-4 only. Rule 5 mechanizes a hard
+        # operator ruling with no exception path (OMN-15692) — a free-text
+        # justification comment must not be able to waive it (see module
+        # docstring "Not suppressible" note).
+        if rule != RULE_MSK_DIRECT_BROKER and _SUPPRESS_ANNOTATION in raw_line:
             continue
 
         snippet = stripped[:200]

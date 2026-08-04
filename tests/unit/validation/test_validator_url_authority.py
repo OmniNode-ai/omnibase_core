@@ -392,24 +392,75 @@ class TestMskDirectBrokerEndpoint:
         assert len(vs) == 1
         assert vs[0].rule == RULE_MSK_DIRECT_BROKER
 
-    # -- GREEN: negative controls — must NOT fire ---------------------------
+    # -- RED: the evasion classes a hostname/port-gated rule missed --------
+    # (verifier round #2, 2026-08-04): the hostname trigger is deliberately
+    # NOT gated on a co-occurring port literal. These four cases were the
+    # cited evasions of the prior (port-gated) implementation; they must now
+    # all detect.
 
-    def test_hostname_without_msk_port_not_detected(self) -> None:
-        # Hostname alone, no 9098/9096 port and no bastion IP on the line —
-        # AC(e) scopes the hostname trigger to "on :9098/:9096".
+    def test_hostname_with_arbitrary_port_detected(self) -> None:
+        # Hostname present, port is neither 9098 nor 9096 — still MSK.
         src = f'BOOTSTRAP = "{_MSK_HOSTNAME_LITERAL}:9999"\n'
         vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_hostname_with_no_port_at_all_detected(self) -> None:
+        # Hostname on its own, no port literal anywhere on the line.
+        src = f'MSK_HOST: "{_MSK_HOSTNAME_LITERAL}"\n'
+        vs = scan_source("r", "gateway/config.yaml", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_hostname_on_broker_tls_port_9094_detected(self) -> None:
+        # MSK TLS port (not SASL_SSL/MSK-IAM 9098/9096) — equally direct.
+        src = f'BOOTSTRAP = "{_MSK_HOSTNAME_LITERAL}:9094"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_split_key_host_port_config_shape_detected(self) -> None:
+        # The default Docker Compose / .env shape: host and port declared as
+        # separate keys on separate lines, not one hostname:port literal.
+        src = f'MSK_HOST: "{_MSK_HOSTNAME_LITERAL}"\nMSK_PORT: "9098"\n'
+        vs = scan_source("r", "gateway/config.yaml", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+        assert vs[0].line == 1  # fires on the MSK_HOST line itself
+
+    def test_other_aws_region_hostname_detected(self) -> None:
+        # A different AWS region's kafka MSK hostname is equally "contacting
+        # MSK directly" under the ruling — not scoped to us-east-1.
+        src = 'BOOTSTRAP = "b-1.someothercluster.kafka.us-west-2.amazonaws.com:9098"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_suppression_annotation_does_not_clear_msk_rule(self) -> None:
+        # Rule 5 has no free-text escape hatch — a self-authored justification
+        # comment must not waive a hard operator ruling (OMN-15692).
+        src = (
+            f'    - "{_MSK_HOSTNAME_LITERAL}:{_MSK_BASTION_IP_LITERAL}"  '
+            "# url-authority-ok: needed for now\n"
+        )
+        vs = scan_source("r", "docker-compose.gateway.yml", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_other_rules_remain_suppressible(self) -> None:
+        # Non-regression: the suppression carve-out is rule-5-scoped only —
+        # rules 1-4 must still honor # url-authority-ok:.
+        src = (
+            'url = "https://api.example-service.com/v1"  '
+            "# url-authority-ok: legacy, tracked\n"
+        )
+        vs = scan_source("r", "src/pkg/a.py", src)
         assert vs == []
+
+    # -- GREEN: negative controls — must NOT fire ---------------------------
 
     def test_unrelated_ip_not_detected(self) -> None:
         src = 'gateway_ip = "10.40.139.135"\n'
-        vs = scan_source("r", "gateway/config.env", src)
-        assert vs == []
-
-    def test_unrelated_kafka_hostname_not_detected(self) -> None:
-        # A *different* AWS region's kafka MSK hostname is out of this rule's
-        # scope (the ticket is specifically us-east-1).
-        src = 'BOOTSTRAP = "b-1.someothercluster.kafka.us-west-2.amazonaws.com:9098"\n'
         vs = scan_source("r", "gateway/config.env", src)
         assert vs == []
 
@@ -428,14 +479,6 @@ class TestMskDirectBrokerEndpoint:
             '      - "8080:80"\n'
         )
         vs = scan_source("r", "docker-compose.yml", src)
-        assert vs == []
-
-    def test_suppression_annotation_clears_msk_rule(self) -> None:
-        src = (
-            f'    - "{_MSK_HOSTNAME_LITERAL}:{_MSK_BASTION_IP_LITERAL}"  '
-            "# url-authority-ok: OMN-15534 tracked residual\n"
-        )
-        vs = scan_source("r", "docker-compose.gateway.yml", src)
         assert vs == []
 
     def test_comment_line_skipped(self) -> None:
