@@ -470,6 +470,145 @@ class TestPassPaths:
 
 
 # ---------------------------------------------------------------------------
+# OMN-15664 AC5 — evidence_artifact supersession dialect parity
+# ---------------------------------------------------------------------------
+
+
+class TestEvidenceArtifactSupersession:
+    """validate_pr_receipts honors evidence_artifact the same way eligibility
+    and contract_compliance_check do (OMN-15664 AC5 / OMN-15413 AC6 regression:
+    OCC#5975)."""
+
+    def test_disclosed_skip_supersession_excuses_superseded_receipt(
+        self, tmp_path: Path
+    ) -> None:
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _write_contract(
+            contracts_dir,
+            "OMN-3030",
+            dod_evidence=[
+                {
+                    "id": "dod-001",
+                    "description": "real evidence",
+                    "checks": [{"check_type": "command", "check_value": "echo ok"}],
+                },
+                {
+                    "id": "dod-002-always-true",
+                    "description": "always-true, later found false",
+                    "checks": [{"check_type": "command", "check_value": "true"}],
+                },
+                {
+                    "id": "dod-002-disclosed-skip",
+                    "description": "honest disclosure: mechanically unprovable",
+                    "checks": [],
+                    "status": "skipped",
+                    "evidence_artifact": "supersedes_dod_evidence:dod-002-always-true",
+                },
+            ],
+        )
+        _write_receipt(receipts_dir, "OMN-3030", "dod-001", "command")
+        # No receipt for dod-002-always-true anywhere — it must not be required.
+        result = validate_pr_receipts(
+            pr_body=_pr_body("OMN-3030"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+        )
+        assert result.passed, result.message
+        checked_ids = {c.evidence_item_id for c in result.checks}
+        assert "dod-002-always-true" not in checked_ids
+        assert "dod-002-disclosed-skip" not in checked_ids
+
+    def test_undisclosed_empty_checks_supersession_fails_closed(
+        self, tmp_path: Path
+    ) -> None:
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        _write_contract(
+            contracts_dir,
+            "OMN-3031",
+            dod_evidence=[
+                {
+                    "id": "dod-001",
+                    "description": "real evidence",
+                    "checks": [{"check_type": "command", "check_value": "echo ok"}],
+                },
+                {
+                    "id": "dod-002-always-true",
+                    "description": "always-true, later found false",
+                    "checks": [{"check_type": "command", "check_value": "true"}],
+                },
+                {
+                    "id": "dod-002-placeholder",
+                    "description": "no explicit skipped status",
+                    "checks": [],
+                    "evidence_artifact": "supersedes_dod_evidence:dod-002-always-true",
+                },
+            ],
+        )
+        _write_receipt(receipts_dir, "OMN-3031", "dod-001", "command")
+        result = validate_pr_receipts(
+            pr_body=_pr_body("OMN-3031"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+        )
+        assert not result.passed
+        failed = [c for c in result.checks if not c.passed]
+        assert any(c.evidence_item_id == "dod-002-always-true" for c in failed)
+
+    @pytest.mark.parametrize(
+        ("checks_value", "include_checks"),
+        [
+            ([{}], True),
+            (None, False),
+            (None, True),
+        ],
+    )
+    def test_malformed_disclosed_skip_supersession_fails_closed(
+        self,
+        tmp_path: Path,
+        checks_value: object,
+        include_checks: bool,
+    ) -> None:
+        contracts_dir = tmp_path / "contracts"
+        receipts_dir = tmp_path / "receipts"
+        superseding_item: dict[str, Any] = {
+            "id": "dod-002-malformed-skip",
+            "description": "malformed skipped supersession",
+            "status": "skipped",
+            "evidence_artifact": "supersedes_dod_evidence:dod-002-always-true",
+        }
+        if include_checks:
+            superseding_item["checks"] = checks_value
+        _write_contract(
+            contracts_dir,
+            "OMN-3032",
+            dod_evidence=[
+                {
+                    "id": "dod-001",
+                    "description": "real evidence",
+                    "checks": [{"check_type": "command", "check_value": "echo ok"}],
+                },
+                {
+                    "id": "dod-002-always-true",
+                    "description": "always-true, later found false",
+                    "checks": [{"check_type": "command", "check_value": "true"}],
+                },
+                superseding_item,
+            ],
+        )
+        _write_receipt(receipts_dir, "OMN-3032", "dod-001", "command")
+        result = validate_pr_receipts(
+            pr_body=_pr_body("OMN-3032"),
+            contracts_dir=contracts_dir,
+            receipts_dir=receipts_dir,
+        )
+        assert not result.passed
+        failed = [c for c in result.checks if not c.passed]
+        assert any(c.evidence_item_id == "dod-002-always-true" for c in failed)
+
+
+# ---------------------------------------------------------------------------
 # parse_evidence_source
 # ---------------------------------------------------------------------------
 

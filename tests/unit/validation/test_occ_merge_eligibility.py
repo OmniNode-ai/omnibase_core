@@ -551,3 +551,204 @@ def test_batched_stale_binding_output_is_replay_stable(tmp_path: Path) -> None:
 
     assert first.to_json() == second.to_json()
     assert "stale_receipt_bindings" in first.to_json()
+
+
+def _write_contract_dict(root: Path, contract: dict[str, object]) -> str:
+    text = yaml.safe_dump(contract, sort_keys=True)
+    (root / "contracts").mkdir(parents=True, exist_ok=True)
+    (root / "contracts" / f"{TICKET}.yaml").write_text(text, encoding="utf-8")
+    return _contract_hash(text)
+
+
+@pytest.mark.unit
+def test_disclosed_skip_supersession_exempts_superseded_receipt(
+    tmp_path: Path,
+) -> None:
+    """OMN-15664 AC5 / OMN-15413 AC6 regression.
+
+    A superseded item's original checks stay in the contract (append-only)
+    and would otherwise require an active receipt forever, even after a
+    later item honestly declares the superseded item's evidence
+    unprovable (``status: skipped``, no ``checks``) via
+    ``evidence_artifact: supersedes_dod_evidence:<id>``. That superseded
+    item's own receipt requirement must be excused -- there is no PASS
+    receipt for it anywhere in this fixture, and eligibility must still be
+    True because another, unrelated dod entry (dod-001) carries the
+    PR-bound PASS receipt.
+    """
+    contract = {
+        "ticket_id": TICKET,
+        "title": "disclosed-skip supersession",
+        "dod_evidence": [
+            {
+                "id": "dod-001",
+                "checks": [{"check_type": "command", "check_value": "a"}],
+            },
+            {
+                "id": "dod-002-always-true",
+                "checks": [{"check_type": "command", "check_value": "b"}],
+            },
+            {
+                "id": "dod-002-disclosed-skip",
+                "checks": [],
+                "status": "skipped",
+                "evidence_artifact": "supersedes_dod_evidence:dod-002-always-true",
+            },
+        ],
+    }
+    contract_hash = _write_contract_dict(tmp_path, contract)
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="dod-001",
+        contract_sha256=contract_hash,
+    )
+    # No receipt at all for dod-002-always-true or dod-002-disclosed-skip.
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is True
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+
+
+@pytest.mark.unit
+def test_undisclosed_empty_checks_supersession_fails_closed(tmp_path: Path) -> None:
+    """The exemption requires an EXPLICIT status: skipped declaration.
+
+    A superseding item with empty checks and no "skipped" status (e.g. left
+    at the schema default "pending") must NOT excuse the item it claims to
+    supersede -- fail closed, the original receipt requirement stands. This
+    is the guard against a bare placeholder entry silently laundering an
+    unprovable requirement out of the gate.
+    """
+    contract = {
+        "ticket_id": TICKET,
+        "title": "undisclosed empty-checks supersession",
+        "dod_evidence": [
+            {
+                "id": "dod-001",
+                "checks": [{"check_type": "command", "check_value": "a"}],
+            },
+            {
+                "id": "dod-002-always-true",
+                "checks": [{"check_type": "command", "check_value": "b"}],
+            },
+            {
+                "id": "dod-002-placeholder",
+                "checks": [],
+                "evidence_artifact": "supersedes_dod_evidence:dod-002-always-true",
+            },
+        ],
+    }
+    contract_hash = _write_contract_dict(tmp_path, contract)
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="dod-001",
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_RECEIPT
+    assert f"{TICKET}:dod-002-always-true:command" in result.missing_or_nonpass_receipts
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("checks_value", "include_checks"),
+    [
+        ([{}], True),
+        (None, False),
+        (None, True),
+    ],
+)
+def test_malformed_disclosed_skip_supersession_fails_closed(
+    tmp_path: Path,
+    checks_value: object,
+    include_checks: bool,
+) -> None:
+    """Skipped supersessions only excuse targets with checks exactly ``[]``.
+
+    ``checks: [{}]`` is non-emittable, while omitted and null checks have no
+    replacement receipt key. All three must leave the original receipt
+    requirement intact.
+    """
+    superseding_item: dict[str, object] = {
+        "id": "dod-002-malformed-skip",
+        "status": "skipped",
+        "evidence_artifact": "supersedes_dod_evidence:dod-002-always-true",
+    }
+    if include_checks:
+        superseding_item["checks"] = checks_value
+    contract = {
+        "ticket_id": TICKET,
+        "title": "malformed disclosed-skip supersession",
+        "dod_evidence": [
+            {
+                "id": "dod-001",
+                "checks": [{"check_type": "command", "check_value": "a"}],
+            },
+            {
+                "id": "dod-002-always-true",
+                "checks": [{"check_type": "command", "check_value": "b"}],
+            },
+            superseding_item,
+        ],
+    }
+    contract_hash = _write_contract_dict(tmp_path, contract)
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="dod-001",
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_RECEIPT
+    assert f"{TICKET}:dod-002-always-true:command" in result.missing_or_nonpass_receipts
+
+
+@pytest.mark.unit
+def test_checked_replacement_supersession_still_requires_its_own_receipt(
+    tmp_path: Path,
+) -> None:
+    """A supersession with real checks re-points the requirement, not removes it.
+
+    dod-002-old is honestly superseded by dod-002-new (which carries its own
+    checks), so dod-002-old's receipt is excused -- but dod-002-new is a
+    normal dod entry and independently needs its own PASS receipt. With no
+    receipt for dod-002-new at all, eligibility is ineligible on
+    dod-002-new's key, never dod-002-old's.
+    """
+    contract = {
+        "ticket_id": TICKET,
+        "title": "checked replacement supersession",
+        "dod_evidence": [
+            {
+                "id": "dod-001",
+                "checks": [{"check_type": "command", "check_value": "a"}],
+            },
+            {
+                "id": "dod-002-old",
+                "checks": [{"check_type": "command", "check_value": "b-old"}],
+            },
+            {
+                "id": "dod-002-new",
+                "checks": [{"check_type": "command", "check_value": "b-new"}],
+                "evidence_artifact": "supersedes_dod_evidence:dod-002-old",
+            },
+        ],
+    }
+    contract_hash = _write_contract_dict(tmp_path, contract)
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="dod-001",
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_RECEIPT
+    assert result.missing_or_nonpass_receipts == (f"{TICKET}:dod-002-new:command",)

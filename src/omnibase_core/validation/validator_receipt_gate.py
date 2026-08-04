@@ -747,6 +747,88 @@ def _iter_dod_evidence(contract_data: object) -> list[tuple[str, str, str]]:
     return triples
 
 
+_SUPERSEDES_PREFIX = "supersedes_dod_evidence:"
+
+
+def _supersedes_marker(value: object) -> str | None:
+    """Parse a dod_evidence item's ``evidence_artifact`` supersession marker.
+
+    Byte-identical parsing to
+    ``onex_change_control.contract_compliance_check._supersedes_marker`` —
+    the receipt-facing gates (this module, and
+    ``validator_occ_merge_eligibility`` which imports
+    ``_honestly_superseded_dod_ids`` from here) must speak the same
+    supersession dialect as the compliance gate (OMN-15664 AC5).
+    """
+    if not isinstance(value, str):
+        return None
+    if not value.startswith(_SUPERSEDES_PREFIX):
+        return None
+    target = value[len(_SUPERSEDES_PREFIX) :].strip()
+    return target or None
+
+
+def _honestly_superseded_dod_ids(dod_evidence: object) -> set[str]:
+    """Return dod_evidence ids whose OWN receipt requirement is excused.
+
+    OMN-15664 AC5: ``contract_compliance_check`` already honors the
+    contract-level ``evidence_artifact: supersedes_dod_evidence:<id>`` marker
+    (it stops re-running a superseded item's checks and reports it WARN
+    ``superseded`` instead of BLOCK). The receipt-facing gates that consume
+    ``_iter_dod_evidence`` previously did not consult that marker at all —
+    they walked every dod_evidence item's checks independently, so a
+    superseded item's original receipt stayed a hard requirement even after
+    the contract declared it superseded. That forced a false choice between
+    preserving a known-false PASS receipt to stay eligible, or tombstoning it
+    honestly and going permanently red (the OMN-15413 AC6 incident:
+    OCC#5975).
+
+    Exemption is granted for a superseded id ONLY when the superseding item
+    is itself honest about why, so this cannot become a silent bypass:
+
+    - the superseding item carries its own non-empty ``checks`` — it is
+      independently required (via the normal per-triple loop) to bind its
+      own PASS receipt, so no requirement is actually removed, only
+      re-pointed; or
+    - the superseding item explicitly declares ``status: "skipped"`` with an
+      EMPTY ``checks`` list — a disclosed, mechanically unprovable claim,
+      never a silent placeholder.
+
+    Any other shape (empty checks without an explicit ``skipped`` status)
+    does NOT exempt the target id: fail closed, the original receipt
+    requirement stands unchanged.
+
+    Mirrors the append-only ordering rule in
+    ``contract_compliance_check._superseded_dod_ids``: the target id must
+    already have been seen earlier in the list before its supersession
+    marker counts, so a contract cannot "supersede" an item that has not yet
+    been declared.
+    """
+    if not isinstance(dod_evidence, list):
+        return set()
+    seen: set[str] = set()
+    superseded: set[str] = set()
+    for item in dod_evidence:
+        if not isinstance(item, dict):
+            continue
+        item_id = item.get("id")
+        target = _supersedes_marker(item.get("evidence_artifact"))
+        if target is not None and target in seen:
+            checks = item.get("checks")
+            has_receipt_bound_check = isinstance(checks, list) and any(
+                isinstance(check, dict)
+                and isinstance(check.get("check_type"), str)
+                and isinstance(check.get("check_value"), str)
+                for check in checks
+            )
+            is_disclosed_skip = item.get("status") == "skipped" and checks == []
+            if has_receipt_bound_check or is_disclosed_skip:
+                superseded.add(target)
+        if isinstance(item_id, str):
+            seen.add(item_id)
+    return superseded
+
+
 def _check_adversarial_invariants_raw(raw: object, receipt_path: Path) -> str | None:
     """Pre-schema guard for the adversarial fields (OMN-9788).
 
@@ -1422,6 +1504,11 @@ def _check_ticket(
     if not triples:
         return _fail(f"contract {contract_path} has no dod_evidence items")
 
+    dod_evidence_raw = (
+        contract_data.get("dod_evidence", []) if isinstance(contract_data, dict) else []
+    )
+    honestly_superseded = _honestly_superseded_dod_ids(dod_evidence_raw)
+
     return [
         _check_one_receipt(
             ticket_id,
@@ -1434,6 +1521,11 @@ def _check_ticket(
             current_pr_number=current_pr_number,
         )
         for item_id, check_type, _check_value in triples
+        # OMN-15664 AC5: an honestly-superseded item's own receipt
+        # requirement is excused here too (see _honestly_superseded_dod_ids
+        # docstring) — same dialect as occ-preflight/eligibility and
+        # contract_compliance_check.
+        if item_id not in honestly_superseded
     ]
 
 
