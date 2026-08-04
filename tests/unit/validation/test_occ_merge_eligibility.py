@@ -654,6 +654,62 @@ def test_undisclosed_empty_checks_supersession_fails_closed(tmp_path: Path) -> N
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    ("checks_value", "include_checks"),
+    [
+        ([{}], True),
+        (None, False),
+        (None, True),
+    ],
+)
+def test_malformed_disclosed_skip_supersession_fails_closed(
+    tmp_path: Path,
+    checks_value: object,
+    include_checks: bool,
+) -> None:
+    """Skipped supersessions only excuse targets with checks exactly ``[]``.
+
+    ``checks: [{}]`` is non-emittable, while omitted and null checks have no
+    replacement receipt key. All three must leave the original receipt
+    requirement intact.
+    """
+    superseding_item: dict[str, object] = {
+        "id": "dod-002-malformed-skip",
+        "status": "skipped",
+        "evidence_artifact": "supersedes_dod_evidence:dod-002-always-true",
+    }
+    if include_checks:
+        superseding_item["checks"] = checks_value
+    contract = {
+        "ticket_id": TICKET,
+        "title": "malformed disclosed-skip supersession",
+        "dod_evidence": [
+            {
+                "id": "dod-001",
+                "checks": [{"check_type": "command", "check_value": "a"}],
+            },
+            {
+                "id": "dod-002-always-true",
+                "checks": [{"check_type": "command", "check_value": "b"}],
+            },
+            superseding_item,
+        ],
+    }
+    contract_hash = _write_contract_dict(tmp_path, contract)
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="dod-001",
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_RECEIPT
+    assert f"{TICKET}:dod-002-always-true:command" in result.missing_or_nonpass_receipts
+
+
+@pytest.mark.unit
 def test_checked_replacement_supersession_still_requires_its_own_receipt(
     tmp_path: Path,
 ) -> None:

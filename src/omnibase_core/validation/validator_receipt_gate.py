@@ -814,10 +814,15 @@ def _honestly_superseded_dod_ids(dod_evidence: object) -> set[str]:
         item_id = item.get("id")
         target = _supersedes_marker(item.get("evidence_artifact"))
         if target is not None and target in seen:
-            checks = item.get("checks", [])
-            has_checks = isinstance(checks, list) and len(checks) > 0
-            is_disclosed_skip = item.get("status") == "skipped" and not has_checks
-            if has_checks or is_disclosed_skip:
+            checks = item.get("checks")
+            has_receipt_bound_check = isinstance(checks, list) and any(
+                isinstance(check, dict)
+                and isinstance(check.get("check_type"), str)
+                and isinstance(check.get("check_value"), str)
+                for check in checks
+            )
+            is_disclosed_skip = item.get("status") == "skipped" and checks == []
+            if has_receipt_bound_check or is_disclosed_skip:
                 superseded.add(target)
         if isinstance(item_id, str):
             seen.add(item_id)
