@@ -1380,14 +1380,20 @@ repos:
       # Ratchet: NEW fingerprints fail; existing violations are grandfathered.
       # Baseline is burn-down only. Migration debt: OMN-12806 (omnibase_core).
       # Suppress with: # url-authority-ok: <reason>
+      #
+      # File scope covers .py (rules 1-4 + rule 5) plus yaml/yml/sh/env/cfg/
+      # conf/toml/ini (rule 5, msk-direct-broker-endpoint, only — OMN-15692).
+      # Kept as an explicit `files` regex rather than pre-commit `types` tags
+      # so the exact suffix set matches _MSK_SCAN_SUFFIXES in the validator
+      # itself (single source of truth for "which files this gate touches").
       - id: check-url-authority
         name: URL Authority Gate (OMN-12818)
         entry: uv run python -m omnibase_core.validation.validator_url_authority
         args: [--repo, omnibase_core, --repo-root, .]
         language: system
-        types: [python]
+        files: \.(py|ya?ml|sh|env|cfg|conf|toml|ini)$
         pass_filenames: true
-        exclude: ^(tests/|archived/|archive/).*\.py$
+        exclude: ^(tests/|archived/|archive/).*\.(py|ya?ml|sh|env|cfg|conf|toml|ini)$
         stages: [pre-commit]
 
       # Backend Secret-Ref Discipline Gate (OMN-13305, ported from OMN-12971).

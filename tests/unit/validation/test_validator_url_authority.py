@@ -37,6 +37,7 @@ from omnibase_core.validation.validator_url_authority import (
     RULE_CONST_ASSIGNMENT,
     RULE_ENV_URL_READ,
     RULE_LOCALHOST_LITERAL,
+    RULE_MSK_DIRECT_BROKER,
     RULE_PUBLIC_HTTPS,
     ValidatorUrlAuthority,
     assert_baseline_shrinks_only,
@@ -326,6 +327,170 @@ class TestLocalhostLiteral:
 
 
 # ---------------------------------------------------------------------------
+# Unit: msk-direct-broker-endpoint (OMN-15692, ruling 39)
+# ---------------------------------------------------------------------------
+
+# Real fixture strings, deliberately reconstructed from parts so this test
+# file itself does not trip the rule it is proving (see the validator's own
+# module docstring for the identical self-collision concern).
+_MSK_BASTION_IP_LITERAL = "100" + "." + "53" + "." + "215" + "." + "198"
+_MSK_HOSTNAME_LITERAL = (
+    "b-1.omninodedevmsk.7ozyd3.c14.kafka.us-east-1" + "." + "amazonaws" + "." + "com"
+)
+
+
+@pytest.mark.unit
+class TestMskDirectBrokerEndpoint:
+    """OMN-15692 (operator ruling 2026-08-04): on-prem hosts must never hold a
+    direct MSK broker literal — everything routes through the gateway.
+
+    Proves the rule fires on the two cited literal shapes (hostname+port,
+    bare bastion IP) AND does not fire on unrelated content — a guard that
+    fires everywhere is as broken as one that fires nowhere.
+    """
+
+    # -- RED: the two AC(e)-cited trigger shapes ---------------------------
+
+    def test_bastion_ip_alone_detected_in_yaml(self) -> None:
+        # Real shape: Docker Compose `extra_hosts` maps hostname -> bare IP,
+        # no port literal at all (docker-compose.gateway.yml L50-52).
+        src = f'    - "{_MSK_HOSTNAME_LITERAL}:{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("omnibase_infra", "docker/docker-compose.gateway.yml", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_broker_hostname_with_msk_iam_port_detected(self) -> None:
+        src = f'BOOTSTRAP = "{_MSK_HOSTNAME_LITERAL}:9098"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_broker_hostname_with_sasl_ssl_port_9096_detected(self) -> None:
+        src = f'BOOTSTRAP = "{_MSK_HOSTNAME_LITERAL}:9096"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_detected_in_shell_script(self) -> None:
+        src = f'echo "connecting to {_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "scripts/probe.sh", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_detected_in_toml(self) -> None:
+        src = f'bootstrap_ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "config/gateway.toml", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_detected_in_python_too(self) -> None:
+        # Rule 5 is NOT Python-exclusive — it also fires on .py, unlike the
+        # file-scope restriction going the other direction (rules 1-4 do not
+        # fire on non-.py).
+        src = f'BASTION_IP = "{_MSK_BASTION_IP_LITERAL}"  # nosec\n'
+        vs = scan_source("r", "src/pkg/gateway.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    # -- GREEN: negative controls — must NOT fire ---------------------------
+
+    def test_hostname_without_msk_port_not_detected(self) -> None:
+        # Hostname alone, no 9098/9096 port and no bastion IP on the line —
+        # AC(e) scopes the hostname trigger to "on :9098/:9096".
+        src = f'BOOTSTRAP = "{_MSK_HOSTNAME_LITERAL}:9999"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert vs == []
+
+    def test_unrelated_ip_not_detected(self) -> None:
+        src = 'gateway_ip = "10.40.139.135"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert vs == []
+
+    def test_unrelated_kafka_hostname_not_detected(self) -> None:
+        # A *different* AWS region's kafka MSK hostname is out of this rule's
+        # scope (the ticket is specifically us-east-1).
+        src = 'BOOTSTRAP = "b-1.someothercluster.kafka.us-west-2.amazonaws.com:9098"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert vs == []
+
+    def test_unrelated_https_url_not_detected(self) -> None:
+        src = 'url = "https://api.example-service.com/v1"\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert not any(v.rule == RULE_MSK_DIRECT_BROKER for v in vs)
+
+    def test_unrelated_yaml_content_not_detected(self) -> None:
+        # A generic compose file with no MSK/bastion literal at all.
+        src = (
+            "services:\n"
+            "  web:\n"
+            '    image: "nginx:latest"\n'
+            "    ports:\n"
+            '      - "8080:80"\n'
+        )
+        vs = scan_source("r", "docker-compose.yml", src)
+        assert vs == []
+
+    def test_suppression_annotation_clears_msk_rule(self) -> None:
+        src = (
+            f'    - "{_MSK_HOSTNAME_LITERAL}:{_MSK_BASTION_IP_LITERAL}"  '
+            "# url-authority-ok: OMN-15534 tracked residual\n"
+        )
+        vs = scan_source("r", "docker-compose.gateway.yml", src)
+        assert vs == []
+
+    def test_comment_line_skipped(self) -> None:
+        src = f"# bastion was {_MSK_BASTION_IP_LITERAL}, now retired\n"
+        vs = scan_source("r", "docker-compose.yml", src)
+        assert vs == []
+
+    def test_test_path_skipped(self) -> None:
+        src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "tests/fixtures/msk.yaml", src)
+        assert vs == []
+
+    # -- scan_tree: file-set widening, still narrow-match ---------------
+
+    def test_scan_tree_finds_msk_violation_in_yaml(self, tmp_path: Path) -> None:
+        (tmp_path / "docker").mkdir()
+        f = tmp_path / "docker" / "docker-compose.gateway.yml"
+        f.write_text(
+            f'extra_hosts:\n  - "{_MSK_HOSTNAME_LITERAL}:{_MSK_BASTION_IP_LITERAL}"\n',
+            encoding="utf-8",
+        )
+        vs = scan_tree("omnibase_infra", tmp_path)
+        assert any(
+            v.path.endswith("docker-compose.gateway.yml")
+            and v.rule == RULE_MSK_DIRECT_BROKER
+            for v in vs
+        )
+
+    def test_scan_tree_control_yaml_produces_no_violations(
+        self, tmp_path: Path
+    ) -> None:
+        """Same tree shape, unrelated content — proves the widened file-glob
+        does not resurrect rules 1-4's un-triaged match surface on YAML."""
+        (tmp_path / "docker").mkdir()
+        f = tmp_path / "docker" / "unrelated.yml"
+        f.write_text(
+            'services:\n  app:\n    environment:\n      API_URL: "https://api.svc.io"\n',
+            encoding="utf-8",
+        )
+        vs = scan_tree("r", tmp_path)
+        # A *_URL-shaped key in YAML would be a rule-2/3 match if those rules
+        # applied to non-.py files; they must not, so this stays clean.
+        assert vs == []
+
+    def test_scan_tree_still_scans_py_rules_1_to_4(self, tmp_path: Path) -> None:
+        """Non-regression: widening scan_tree's glob must not silently drop
+        the existing four Python-source rules."""
+        (tmp_path / "src").mkdir()
+        f = tmp_path / "src" / "m.py"
+        f.write_text('url = "https://api.example-service.com/v1"\n', encoding="utf-8")
+        vs = scan_tree("r", tmp_path)
+        assert any(v.rule == RULE_PUBLIC_HTTPS for v in vs)
+
+
+# ---------------------------------------------------------------------------
 # Unit: ratchet helpers
 # ---------------------------------------------------------------------------
 
@@ -567,6 +732,83 @@ class TestCLI:
         rc = main(
             [
                 str(f),
+                "--repo",
+                "r",
+                "--repo-root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline),
+            ]
+        )
+        assert rc == 0
+
+    def test_msk_fixture_red_then_green_cli(self, tmp_path: Path) -> None:
+        """CLI-level reproduction of the exact adversarial defect proof: a
+        fixture containing both the bastion IP and an MSK hostname:9098
+        literal must fail the gate (RED); the identical fixture with those
+        two lines removed must pass (GREEN). Uses the real --all full-repo
+        path, matching how the CI job invokes this gate."""
+        from omnibase_core.validation.validator_url_authority import main
+
+        (tmp_path / "docker").mkdir()
+        fixture = tmp_path / "docker" / "docker-compose.gateway.yml"
+        fixture.write_text(
+            "extra_hosts:\n"
+            f'  - "{_MSK_HOSTNAME_LITERAL}:{_MSK_BASTION_IP_LITERAL}"\n'
+            f'  - "b-2.omninodedevmsk.7ozyd3.c14.kafka.us-east-1.amazonaws.com:9098"\n',
+            encoding="utf-8",
+        )
+        baseline = tmp_path / "baseline.json"
+        baseline.write_text(
+            json.dumps({"schema_version": "1.0.0", "count": 0, "violations": []}),
+            encoding="utf-8",
+        )
+        rc_red = main(
+            [
+                "--all",
+                "--repo",
+                "r",
+                "--repo-root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline),
+            ]
+        )
+        assert rc_red == 1, "RED expected: fixture carries the exact ruling-39 literal"
+
+        fixture.write_text("services:\n  app:\n    image: nginx\n", encoding="utf-8")
+        rc_green = main(
+            [
+                "--all",
+                "--repo",
+                "r",
+                "--repo-root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline),
+            ]
+        )
+        assert rc_green == 0, "GREEN expected: fixture no longer carries the literal"
+
+    def test_control_fixture_unaffected_cli(self, tmp_path: Path) -> None:
+        """Negative control: an unrelated public-https literal in a .py file
+        (rules 1-4's existing territory) is untouched by this change and the
+        MSK rule does not fire on ordinary infra config."""
+        from omnibase_core.validation.validator_url_authority import main
+
+        (tmp_path / "docker").mkdir()
+        (tmp_path / "docker" / "unrelated.yml").write_text(
+            'services:\n  app:\n    environment:\n      LOG_LEVEL: "info"\n',
+            encoding="utf-8",
+        )
+        baseline = tmp_path / "baseline.json"
+        baseline.write_text(
+            json.dumps({"schema_version": "1.0.0", "count": 0, "violations": []}),
+            encoding="utf-8",
+        )
+        rc = main(
+            [
+                "--all",
                 "--repo",
                 "r",
                 "--repo-root",

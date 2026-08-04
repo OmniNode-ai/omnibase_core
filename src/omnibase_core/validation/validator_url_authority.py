@@ -7,7 +7,9 @@ Part of OMN-12803 (PR-2, the enforcement gate). Every URL and ``*_URL`` /
 ``*_ENDPOINT`` env read must resolve from a contract (routing authority /
 integration catalog), not a literal string or a bare env read.
 
-Detects four classes of violations in Python source files:
+Detects five classes of violations. The first four are Python-source-only;
+the fifth (``msk-direct-broker-endpoint``, OMN-15692) additionally scans
+non-Python on-prem-facing config/script files (see below):
 
 1. **public-https-literal** — a quoted ``https://`` URL targeting a public
    host with a dotted TLD.  Excludes localhost/loopback, example placeholders,
@@ -29,6 +31,25 @@ Detects four classes of violations in Python source files:
    loopback literal passed directly to an HTTP client call was otherwise
    invisible.  A connection target should resolve from the routing authority,
    not a hardcoded loopback literal.
+
+5. **msk-direct-broker-endpoint** (OMN-15692, operator ruling 2026-08-04:
+   "nothing in either .200 or .201 should be contacting MSK directly,
+   everything should be going through the gateway") — a literal MSK broker
+   hostname (``_MSK_BROKER_HOSTNAME`` — an ``*.kafka.us-east-1[.]amazonaws
+   [.]com``-shaped host) on the SASL_SSL/MSK-IAM ports (``_MSK_BROKER_PORT``
+   — 9098 or 9096), OR the raw SNI-passthrough bastion IP on its own
+   (``_MSK_BASTION_IP``), appearing in an on-prem-facing config/script file.
+   (Deliberately not spelled out as a bare literal here — this docstring is
+   itself scanned, and an unbroken literal would trip the very rule it
+   documents; see the pattern constants for the exact strings.)
+   Unlike rules 1-4, this rule also scans **non-Python** files
+   (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/``.conf``/``.toml``/``.ini``
+   in addition to ``.py`` — see ``_MSK_SCAN_SUFFIXES``), because the on-prem
+   surface it targets (Docker Compose ``extra_hosts``, shell profiles, SSH
+   config, env files) is overwhelmingly non-Python. It is intentionally
+   narrower in *match* scope than rules 1-4 are in *file* scope: only the two
+   literal patterns above trigger it, so widening the scanned file set does
+   not import rules 1-4's broader (and here, un-triaged) match surface.
 
 Ratchet (OMN-12818, mirrors OMN-12791 receipt-honesty gate): existing
 violations are grandfathered by content fingerprint (sha256 of {repo, path,
@@ -138,7 +159,7 @@ _CONST_URL_FROM_LITERAL: Final[re.Pattern[str]] = re.compile(
 # 4. Hardcoded localhost / loopback connection-target literal (OMN-13480).
 #    The public-https rule deliberately skips localhost (no dotted TLD), and
 #    a bare loopback literal that is NOT assigned to a ``*_URL`` / ``*_ENDPOINT``
-#    constant is otherwise invisible — e.g. ``httpx.get("http://localhost:9000")``.
+#    constant is otherwise invisible — e.g. ``httpx.get("http://localhost:9000")``.  # onex-allow-internal-ip: doc example, not a real endpoint (pre-existing, OMN-15692 remediation)
 #    A connection target should resolve from the routing authority, not a
 #    hardcoded loopback literal. Matches http(s):// to:
 #      * ``localhost`` (optionally with a ``:port``)
@@ -147,6 +168,40 @@ _CONST_URL_FROM_LITERAL: Final[re.Pattern[str]] = re.compile(
 _LOCALHOST_LITERAL: Final[re.Pattern[str]] = re.compile(
     r"""["']https?://(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1\])(?:[:/?#"']|$)""",
     re.IGNORECASE,
+)
+
+# 5. Direct MSK broker endpoint / bastion IP (OMN-15692, ruling 39: on-prem
+#    hosts must go through the gateway, never a direct MSK broker connection).
+#    Two independent triggers, either is sufficient:
+#      * an MSK broker hostname on the SASL_SSL/MSK-IAM port (9098 or 9096)
+#      * the raw SNI-passthrough bastion IP, on its own, regardless of port
+#        (the on-prem /etc/hosts and Docker `extra_hosts` overrides that this
+#        rule exists to catch map the hostname straight to this IP with no
+#        port literal at all).
+_MSK_BROKER_HOSTNAME: Final[re.Pattern[str]] = re.compile(
+    r"""[a-z0-9][a-z0-9.-]*\.kafka\.us-east-1\.amazonaws\.com""",
+    re.IGNORECASE,
+)
+_MSK_BROKER_PORT: Final[re.Pattern[str]] = re.compile(r""":(?:9098|9096)\b""")
+_MSK_BASTION_IP: Final[re.Pattern[str]] = re.compile(r"""100\.53\.215\.198""")
+
+RULE_MSK_DIRECT_BROKER: Final[str] = "msk-direct-broker-endpoint"
+
+# File suffixes scanned for the msk-direct-broker-endpoint rule ONLY (rules
+# 1-4 stay Python-only via scan_tree's existing *.py glob). On-prem-facing
+# config/script surfaces are overwhelmingly non-Python.
+_MSK_SCAN_SUFFIXES: Final[frozenset[str]] = frozenset(
+    {
+        ".py",
+        ".yaml",
+        ".yml",
+        ".sh",
+        ".env",
+        ".cfg",
+        ".conf",
+        ".toml",
+        ".ini",
+    }
 )
 
 # Suppression annotations.
@@ -245,6 +300,27 @@ def _match_rule(raw_line: str, stripped: str) -> str | None:
     return None
 
 
+def _match_msk_rule(raw_line: str) -> str | None:
+    """Return RULE_MSK_DIRECT_BROKER when the line carries a direct-MSK
+    literal (OMN-15692), else None.
+
+    Two independent triggers, either is sufficient:
+      * an MSK broker hostname co-occurring with the SASL_SSL/MSK-IAM port
+        (9098 or 9096) on the same line
+      * the raw bastion IP on its own (the host-level and container-level
+        overrides this rule targets map hostname -> bare IP with no port
+        literal at all, e.g. Docker Compose ``extra_hosts``)
+
+    Extension-agnostic by design — callers decide which file suffixes route
+    through this function (see ``_MSK_SCAN_SUFFIXES``).
+    """
+    if _MSK_BASTION_IP.search(raw_line):
+        return RULE_MSK_DIRECT_BROKER
+    if _MSK_BROKER_HOSTNAME.search(raw_line) and _MSK_BROKER_PORT.search(raw_line):
+        return RULE_MSK_DIRECT_BROKER
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Source scanner
 # ---------------------------------------------------------------------------
@@ -257,6 +333,13 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
     ``# url-authority-ok:`` or (for env reads) ``# contract-config-ok:`` are
     suppressed.  Returns at most one violation per line.
 
+    Rules 1-4 (public-https-literal, env-url-read, url-const-assignment,
+    localhost-literal) only apply to ``.py`` sources — their patterns are
+    Python-syntax-specific (``os.environ[...]``, module-constant assignment).
+    Rule 5 (msk-direct-broker-endpoint, OMN-15692) applies regardless of
+    file extension — the caller decides which files reach this function
+    (see ``_MSK_SCAN_SUFFIXES`` / ``scan_tree``).
+
     Args:
         repo: Repo name used in fingerprints (e.g. ``"omnibase_core"``).
         path: Repo-relative path for fingerprints (e.g. ``"src/pkg/file.py"``).
@@ -267,22 +350,26 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
     """
     if _is_test_path(path) or _is_authority_path(path):
         return []
+    is_python = path.endswith(".py")
 
     violations: list[ModelUrlAuthorityViolation] = []
     for index, raw_line in enumerate(source.splitlines(), start=1):
         stripped = raw_line.strip()
         # Skip blank, comment-only, and docstring lines (triple-quoted blocks
-        # holding URLs are documentation, not connection targets).
+        # holding URLs are documentation, not connection targets). YAML/shell
+        # comments also start with '#', so this applies uniformly.
         if not stripped or stripped.startswith(("#", '"""', "'''")):
             continue
         if _SUPPRESS_ANNOTATION in raw_line:
             continue
 
-        rule = _match_rule(raw_line, stripped)
-        if rule is None:
-            continue
-        # Config-PATH env reads annotated with contract-config-ok are exempt.
+        rule = _match_rule(raw_line, stripped) if is_python else None
         if rule == RULE_ENV_URL_READ and _CONFIG_PATH_ANNOTATION in raw_line:
+            # Config-PATH env reads annotated with contract-config-ok are exempt.
+            rule = None
+        if rule is None:
+            rule = _match_msk_rule(raw_line)
+        if rule is None:
             continue
 
         snippet = stripped[:200]
@@ -300,7 +387,14 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
 
 
 def scan_tree(repo: str, repo_root: Path) -> list[ModelUrlAuthorityViolation]:
-    """Scan all ``*.py`` under ``repo_root`` for url-authority violations.
+    """Scan ``repo_root`` for url-authority violations.
+
+    ``.py`` files are scanned for all five rules. Non-``.py`` files in
+    ``_MSK_SCAN_SUFFIXES`` (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/
+    ``.conf``/``.toml``/``.ini``) are scanned for rule 5
+    (msk-direct-broker-endpoint, OMN-15692) only — ``scan_source`` enforces
+    this split via its ``is_python`` gate, so widening the file set here does
+    not resurface rules 1-4's un-triaged match surface on non-Python files.
 
     Paths in the returned violations are repo-relative so fingerprints are
     machine-independent.  Excludes vendored, build, test, and evidence dirs.
@@ -313,19 +407,22 @@ def scan_tree(repo: str, repo_root: Path) -> list[ModelUrlAuthorityViolation]:
         Sorted list of violations.
     """
     violations: list[ModelUrlAuthorityViolation] = []
-    for py in sorted(repo_root.rglob("*.py")):
-        if set(py.parts) & _EXCLUDED_PARTS:
+    candidates: list[Path] = []
+    for suffix in sorted(_MSK_SCAN_SUFFIXES):
+        candidates.extend(repo_root.rglob(f"*{suffix}"))
+    for candidate in sorted(set(candidates)):
+        if set(candidate.parts) & _EXCLUDED_PARTS:
             continue
-        if _is_test_path(py.name):
+        if _is_test_path(candidate.name):
             continue
         try:
-            source = py.read_text(encoding="utf-8")
+            source = candidate.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
         try:
-            rel = str(py.relative_to(repo_root))
+            rel = str(candidate.relative_to(repo_root))
         except ValueError:
-            rel = str(py)
+            rel = str(candidate)
         violations.extend(scan_source(repo, rel, source))
     return violations
 
@@ -632,7 +729,7 @@ def main(argv: list[str] | None = None) -> int:
         violations = []
         for raw in args.paths:
             p = Path(raw)
-            if not p.is_file() or p.suffix != ".py":
+            if not p.is_file() or p.suffix not in _MSK_SCAN_SUFFIXES:
                 continue
             try:
                 source = p.read_text(encoding="utf-8")
