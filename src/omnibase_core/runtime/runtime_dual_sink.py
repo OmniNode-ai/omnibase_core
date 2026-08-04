@@ -58,6 +58,8 @@ import base64
 from collections.abc import Mapping, Sequence
 from typing import Protocol
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_delivery_failure_evidence import (
     ModelDeliveryFailureEvidence,
 )
@@ -211,6 +213,16 @@ def build_terminal_disposition_request(
         source_offset=context.offset,
         primary_dlq_topic=primary_dlq_topic,
         quarantine_topic=quarantine_topic,
+        # DOCUMENTED COLLAPSE (CodeRabbit, minor): a present-but-empty key
+        # (b"") and an absent key (None) both encode to "". The merged
+        # OMN-15667 ``ModelQuarantineWirePayload.source_key_b64`` is a
+        # REQUIRED ``str``, so widening this to ``str | None`` here would
+        # break field-by-field seam parity with an accepted parent model.
+        # Consequence is placement-only, never identity: the DLQ/quarantine
+        # copy of an empty-key source record is published with key=None and
+        # so loses deterministic partition placement. Dedupe is unaffected —
+        # it keys on the four-field source tuple carried IN the payload, not
+        # on the Kafka key.
         source_key_b64=base64.b64encode(source_key or b"").decode("ascii"),
         source_value_b64=base64.b64encode(source_value).decode("ascii"),
         source_headers_b64=_encode_headers(source_headers),
@@ -344,9 +356,51 @@ async def execute_terminal_disposition_once(
     receipt, never to two divergent terminal outcomes: the sink payload is a
     deterministic projection of the same four-field source identity, so a
     downstream quarantine consumer dedupes it on that tuple.
+
+    ``store`` is an injected durable-persistence dependency, so both calls can
+    raise a raw backend exception (a driver timeout, a connection reset). Those
+    are wrapped in ``ModelOnexError`` rather than propagated untyped: an ONEX
+    runtime-execution failure must surface as ``ModelOnexError`` (repo error
+    convention), and a caller distinguishing "the disposition is not durable"
+    from "an arbitrary driver blew up" cannot do so against an untyped
+    exception. A ``save`` failure AFTER a sink acknowledged leaves the record
+    uncommitted, so it redelivers and republishes — the same at-least-once
+    ambiguity window described above, never a silent commit.
     """
-    if (existing := await store.load(context)) is not None:
+    try:
+        existing = await store.load(context)
+    except ModelOnexError:
+        raise
+    except Exception as exc:  # boundary-ok: an injected durable store can raise ANY backend exception; it is re-raised as a typed ModelOnexError, never swallowed and never converted into a commit signal.
+        raise ModelOnexError(
+            message=(
+                "execute_terminal_disposition_once: terminal-disposition store "
+                f"load FAILED for source identity topic={context.topic!r} "
+                f"partition={context.partition} offset={context.offset} "
+                f"envelope_id={context.envelope_id} — refusing to treat an "
+                f"unreadable store as 'no prior disposition': {exc}"
+            ),
+            error_code=EnumCoreErrorCode.INVALID_STATE,
+        ) from exc
+    if existing is not None:
         return existing
+
     receipt = await resolve_terminal_disposition(request=request, publish=publish)
-    await store.save(context, receipt)
+
+    try:
+        await store.save(context, receipt)
+    except ModelOnexError:
+        raise
+    except Exception as exc:  # boundary-ok: same reason as the load above; the sink is already durable, but an unrecorded receipt must NOT license a commit.
+        raise ModelOnexError(
+            message=(
+                "execute_terminal_disposition_once: terminal-disposition store "
+                f"save FAILED for source identity topic={context.topic!r} "
+                f"partition={context.partition} offset={context.offset} "
+                f"envelope_id={context.envelope_id} — a sink acknowledged but "
+                f"the receipt is NOT durable, so the source offset must not be "
+                f"committed: {exc}"
+            ),
+            error_code=EnumCoreErrorCode.INVALID_STATE,
+        ) from exc
     return receipt

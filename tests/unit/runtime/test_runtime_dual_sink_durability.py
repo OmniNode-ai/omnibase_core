@@ -39,6 +39,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_delivery_failure_evidence import (
     ModelDeliveryFailureEvidence,
 )
@@ -728,3 +729,113 @@ class TestRuntimeDispatchDualSinkJoin:
         await dispatch.run_once()
         assert adapter.contexts == []
         assert sink.calls == []
+
+
+# --- CodeRabbit-found regressions (PR #1546 review) --------------------------
+
+
+class StoreBoom(RuntimeError):
+    """Raw backend failure from an injected durable disposition store."""
+
+
+@dataclass
+class ExplodingStore:
+    """Durable store whose backend raises raw, untyped exceptions."""
+
+    fail_on: str
+
+    async def load(
+        self, context: ModelDeliveryContext
+    ) -> ModelTerminalDispositionReceipt | None:
+        if self.fail_on == "load":
+            raise StoreBoom("backend connection reset during load")
+        return None
+
+    async def save(
+        self, context: ModelDeliveryContext, receipt: ModelTerminalDispositionReceipt
+    ) -> None:
+        if self.fail_on == "save":
+            raise StoreBoom("backend timeout during save")
+
+
+class TestStoreFailuresAreTypedAndNonCommittable:
+    """A raw store exception must surface as ModelOnexError, never untyped."""
+
+    @pytest.mark.parametrize("fail_on", ["load", "save"])
+    async def test_store_failure_is_wrapped_in_model_onex_error(
+        self, fail_on: str
+    ) -> None:
+        sink = _sink_for(SINK_SCENARIOS[0])
+        with pytest.raises(ModelOnexError) as excinfo:
+            await execute_terminal_disposition_once(
+                context=_context(),
+                request=_request(),
+                publish=sink.publish,
+                store=ExplodingStore(fail_on=fail_on),  # type: ignore[arg-type]
+            )
+        assert not isinstance(excinfo.value, DualPublishFailureError)
+        assert fail_on in str(excinfo.value)
+        # the authoritative source identity is named in the typed error
+        assert str(SOURCE_VALUE_ENVELOPE_ID) in str(excinfo.value)
+
+    async def test_store_load_failure_never_publishes(self) -> None:
+        """An unreadable store must not be treated as 'no prior disposition'."""
+        sink = _sink_for(SINK_SCENARIOS[0])
+        with pytest.raises(ModelOnexError):
+            await execute_terminal_disposition_once(
+                context=_context(),
+                request=_request(),
+                publish=sink.publish,
+                store=ExplodingStore(fail_on="load"),  # type: ignore[arg-type]
+            )
+        assert sink.calls == []
+
+
+class ExplodingAdapter:
+    """Terminal-disposition adapter that fails with something OTHER than
+    DualPublishFailureError (the store-I/O class)."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def execute_once(
+        self,
+        context: ModelDeliveryContext,
+        request: ModelTerminalDispositionRequest,
+        /,
+    ) -> ModelTerminalDispositionReceipt:
+        self.calls += 1
+        raise StoreBoom("durable store unavailable")
+
+
+class TestUnexpectedAdapterFailureDoesNotAbortThePollCycle:
+    """run_once must survive an unexpected adapter failure: the failing record
+    stays uncommitted, but earlier successes and later partitions are unaffected."""
+
+    async def test_unexpected_adapter_failure_leaves_record_uncommitted(
+        self, broker: InMemoryBroker, producer: InMemoryTransport
+    ) -> None:
+        adapter = ExplodingAdapter()
+        consumer = InMemoryTransport(broker=broker, group="g", topics=[IN_TOPIC])
+        dispatch = RuntimeDispatch(
+            consumer=consumer,
+            producer=producer,
+            routing_map={IN_TOPIC: _route()},
+            max_retries=0,
+            dlq_topic_resolver=lambda _topic: PRIMARY_DLQ_TOPIC,
+            terminal_disposition_adapter=adapter,  # type: ignore[arg-type]
+            quarantine_topic_resolver=lambda _topic: QUARANTINE_TOPIC,
+        )
+        await consumer.start()
+        await _seed(producer, envelope_id=SOURCE_VALUE_ENVELOPE_ID)
+
+        # MUST NOT raise out of run_once — that would abort the whole poll cycle.
+        assert await dispatch.run_once() == 1
+        assert adapter.calls == 1
+
+        # not committed: a restart redelivers the SAME source record
+        restart = InMemoryTransport(broker=broker, group="g", topics=[IN_TOPIC])
+        await restart.start()
+        assert [m.offset for m in await restart.poll(max_messages=8, timeout_ms=0)] == [
+            0
+        ]

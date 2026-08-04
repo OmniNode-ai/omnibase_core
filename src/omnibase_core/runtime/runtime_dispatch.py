@@ -632,6 +632,17 @@ class RuntimeDispatch:
                 message.offset,
             )
             return False
+        except Exception:  # fallback-ok: an UNEXPECTED terminal-adapter failure (e.g. a durable disposition-store I/O error, which resolve_terminal_disposition never converts to DualPublishFailureError) is SURFACED (logged) and converted to "do not commit" for THIS record only. _terminalize is called from run_once OUTSIDE _dispatch_one's guard, so re-raising would escape the poll loop and skip the commit/nack for every already-succeeded offset in this partition prefix AND every later partition group — strictly worse than redelivering one record. CancelledError is BaseException and stays uncaught.
+            logger.exception(
+                "RuntimeDispatch: terminal-disposition adapter FAILED UNEXPECTEDLY "
+                "topic=%s partition=%d offset=%d — the source offset is NOT "
+                "committed and the record will be reprocessed; the rest of this "
+                "poll cycle continues.",
+                message.topic,
+                message.partition,
+                message.offset,
+            )
+            return False
         return True
 
     async def _send_to_dlq(self, message: _TransportMessageLike) -> None:
