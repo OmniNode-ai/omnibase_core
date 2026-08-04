@@ -41,7 +41,15 @@ dependencies = [
     "dependency-injector>=4.48.3,<5.0.0",
     "deepdiff>=8.0.0,<10.0.0",
     "click>=8.3.1,<9.0.0",
-    "cryptography>=46.0.3,<50.0.0",
+    # OMN-15688 (2026-08-04): floor raised to 50.0.0 to clear two HIGH CVEs that
+    # Trivy flags on the omninode-runtime image at cryptography 48.0.1 --
+    # CVE-2026-69247 (PKCS#7 EnvelopedData decryption exposes a Bleichenbacher
+    # oracle through distinguishable errors, fixed 50.0.0) and CVE-2026-69249
+    # (duplicate self-signed intermediates cause exponential path-building,
+    # fixed 49.0.0). The previous <50.0.0 ceiling made the fixed release
+    # unreachable, blocking every runtime candidate rebuild (omnibase_infra
+    # build-workspace-candidate-runtime.yml run 30878868464).
+    "cryptography>=50.0.0,<51.0.0",
     "jsonschema>=4.25.1,<5.0.0",
     "httpx>=0.27.0,<1.0.0",
     "blake3>=1.0.8,<2.0.0",
