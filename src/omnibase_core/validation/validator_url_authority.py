@@ -56,13 +56,18 @@ non-Python on-prem-facing config/script files (see below):
    which line the port (if any) appears on.
 
    Unlike rules 1-4, this rule also scans **non-Python** files
-   (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/``.conf``/``.toml``/``.ini``
-   in addition to ``.py`` — see ``_MSK_SCAN_SUFFIXES``), because the on-prem
-   surface it targets (Docker Compose ``extra_hosts``, shell profiles, SSH
-   config, env files) is overwhelmingly non-Python. It is intentionally
-   narrower in *match* scope than rules 1-4 are in *file* scope: only the two
-   literal patterns above trigger it, so widening the scanned file set does
-   not import rules 1-4's broader (and here, un-triaged) match surface.
+   (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/``.conf``/``.toml``/``.ini``/
+   ``.json``/``.tf`` in addition to ``.py`` — see ``_MSK_SCAN_SUFFIXES`` —
+   plus, by basename rather than suffix, the extensionless ``.env`` file
+   itself, the ``.env.<profile>`` family (``.env.local``, ``.env.production``,
+   ...), and ``Dockerfile``/``Dockerfile.<variant>`` — see
+   ``_is_msk_scannable``, which a pure suffix check cannot select), because
+   the on-prem surface it targets (Docker Compose ``extra_hosts``, shell
+   profiles, SSH config, env files, Terraform, Dockerfiles) is overwhelmingly
+   non-Python. It is intentionally narrower in *match* scope than rules 1-4
+   are in *file* scope: only the two literal patterns above trigger it, so
+   widening the scanned file set does not import rules 1-4's broader (and
+   here, un-triaged) match surface.
 
    **Not suppressible.** Rules 1-4 accept ``# url-authority-ok: <reason>`` as
    a free-text escape hatch. Rule 5 mechanizes a hard operator ruling with no
@@ -227,8 +232,39 @@ _MSK_SCAN_SUFFIXES: Final[frozenset[str]] = frozenset(
         ".conf",
         ".toml",
         ".ini",
+        ".json",
+        ".tf",
     }
 )
+
+# Basename-based selection for files a pure suffix check misses entirely
+# (OMN-15692 verifier round #3 — proven evasions):
+#   * ``.env`` itself has an EMPTY ``Path.suffix`` — pathlib treats a leading
+#     dot as part of the stem, not a suffix, so ``Path(".env").suffix ==
+#     ""``. A pure suffix filter silently drops it.
+#   * the ``.env.<profile>`` family (``.env.local``, ``.env.production``, ...)
+#     has a suffix equal to the PROFILE (``.local``, ``.production``), not
+#     ``.env`` — also invisible to a suffix check.
+#   * ``Dockerfile`` (and the ``Dockerfile.<variant>`` family, e.g.
+#     ``Dockerfile.gateway``) has no extension at all.
+_MSK_SCAN_EXACT_BASENAMES: Final[frozenset[str]] = frozenset({".env", "Dockerfile"})
+_MSK_SCAN_BASENAME_PREFIXES: Final[tuple[str, ...]] = (".env.", "Dockerfile.")
+
+
+def _is_msk_scannable(path: Path) -> bool:
+    """True when ``path`` is in-scope for the msk-direct-broker-endpoint
+    file-selection surface (rule 5 only — see module docstring). Suffix
+    membership covers the ordinary case; the basename checks close the
+    extensionless-dotfile / no-extension gaps a pure suffix filter cannot
+    see (OMN-15692 evasion fix — see ``_MSK_SCAN_EXACT_BASENAMES`` above).
+    """
+    if path.suffix in _MSK_SCAN_SUFFIXES:
+        return True
+    name = path.name
+    if name in _MSK_SCAN_EXACT_BASENAMES:
+        return True
+    return any(name.startswith(prefix) for prefix in _MSK_SCAN_BASENAME_PREFIXES)
+
 
 # Suppression annotations.
 _SUPPRESS_ANNOTATION: Final[str] = "# url-authority-ok:"
@@ -295,8 +331,36 @@ def _is_authority_path(path: str) -> bool:
 
 
 def _is_test_path(path: str) -> bool:
-    lowered = path.lower()
-    return "test" in lowered or "conftest" in lowered
+    """True when ``path`` is a real test file/directory — NOT merely a path
+    that happens to contain "test" as a bare substring (OMN-15692 verifier
+    round #3 evasion fix). A bare-substring check waived real, non-test
+    on-prem-facing files whose name coincidentally contains the four
+    characters "test": ``deploy/latest.yaml`` ("la-TEST-.yaml"),
+    ``docker/stability-test/**`` (an infra deployment LANE name, not test
+    code), and ``attestation.yaml`` ("at-TEST-ation.yaml") all evaded
+    detection entirely under the old check. Anchored to real test-path
+    segments only:
+      * a path component that IS (exactly, case-insensitively) ``test`` or
+        ``tests`` — e.g. ``tests/x.py``, ``some/test/y.yaml``.
+      * a basename that starts with ``test_`` (``test_foo.py``) or ends
+        with ``_test`` before its final extension (``foo_test.py``).
+      * the exact basename ``conftest.py``.
+    A hyphenated/compound segment such as ``stability-test`` does NOT match
+    — those are real deployment-lane paths (e.g. the ``stability-test``
+    runtime lane) that MUST stay in-scope for this gate.
+    """
+    norm = path.replace("\\", "/")
+    parts = [p for p in norm.split("/") if p]
+    if not parts:
+        return False
+    basename = parts[-1]
+    if basename == "conftest.py":
+        return True
+    if any(part.lower() in ("test", "tests") for part in parts[:-1]):
+        return True
+    stem = basename.rsplit(".", 1)[0] if "." in basename else basename
+    lowered_stem = stem.lower()
+    return lowered_stem.startswith("test_") or lowered_stem.endswith("_test")
 
 
 def _is_connection_target(raw_line: str) -> bool:
@@ -427,12 +491,16 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
 def scan_tree(repo: str, repo_root: Path) -> list[ModelUrlAuthorityViolation]:
     """Scan ``repo_root`` for url-authority violations.
 
-    ``.py`` files are scanned for all five rules. Non-``.py`` files in
-    ``_MSK_SCAN_SUFFIXES`` (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/
-    ``.conf``/``.toml``/``.ini``) are scanned for rule 5
-    (msk-direct-broker-endpoint, OMN-15692) only — ``scan_source`` enforces
-    this split via its ``is_python`` gate, so widening the file set here does
-    not resurface rules 1-4's un-triaged match surface on non-Python files.
+    ``.py`` files are scanned for all five rules. Non-``.py`` files selected
+    by ``_is_msk_scannable`` — suffix membership in ``_MSK_SCAN_SUFFIXES``
+    (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/``.conf``/``.toml``/
+    ``.ini``/``.json``/``.tf``) OR a basename match for the extensionless
+    ``.env``/``.env.<profile>``/``Dockerfile``/``Dockerfile.<variant>``
+    families (OMN-15692 evasion fix — a pure suffix glob cannot see these) —
+    are scanned for rule 5 (msk-direct-broker-endpoint, OMN-15692) only.
+    ``scan_source`` enforces the rules-1-4-vs-rule-5 split via its
+    ``is_python`` gate, so widening the file set here does not resurface
+    rules 1-4's un-triaged match surface on non-Python files.
 
     Paths in the returned violations are repo-relative so fingerprints are
     machine-independent.  Excludes vendored, build, test, and evidence dirs.
@@ -445,22 +513,22 @@ def scan_tree(repo: str, repo_root: Path) -> list[ModelUrlAuthorityViolation]:
         Sorted list of violations.
     """
     violations: list[ModelUrlAuthorityViolation] = []
-    candidates: list[Path] = []
-    for suffix in sorted(_MSK_SCAN_SUFFIXES):
-        candidates.extend(repo_root.rglob(f"*{suffix}"))
+    candidates: list[Path] = [
+        p for p in repo_root.rglob("*") if p.is_file() and _is_msk_scannable(p)
+    ]
     for candidate in sorted(set(candidates)):
         if set(candidate.parts) & _EXCLUDED_PARTS:
-            continue
-        if _is_test_path(candidate.name):
-            continue
-        try:
-            source = candidate.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
             continue
         try:
             rel = str(candidate.relative_to(repo_root))
         except ValueError:
             rel = str(candidate)
+        if _is_test_path(rel):
+            continue
+        try:
+            source = candidate.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
         violations.extend(scan_source(repo, rel, source))
     return violations
 
@@ -767,7 +835,7 @@ def main(argv: list[str] | None = None) -> int:
         violations = []
         for raw in args.paths:
             p = Path(raw)
-            if not p.is_file() or p.suffix not in _MSK_SCAN_SUFFIXES:
+            if not p.is_file() or not _is_msk_scannable(p):
                 continue
             try:
                 source = p.read_text(encoding="utf-8")

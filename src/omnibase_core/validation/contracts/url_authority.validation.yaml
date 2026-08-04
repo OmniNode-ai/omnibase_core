@@ -22,8 +22,9 @@ validation:
     - localhost-literal: hardcoded http(s):// loopback connection-target literals
     - msk-direct-broker-endpoint: direct MSK broker hostname:port or raw bastion-IP literal
       in an on-prem-facing config/script file (OMN-15692, operator ruling 2026-08-04).
-      Unlike the other four, this rule also scans non-.py files (yaml/yml/sh/env/cfg/
-      conf/toml/ini) — see target_patterns below.
+      Unlike the other four, this rule also scans non-.py files (yaml/yml/sh/env/
+      env.<profile>/cfg/conf/toml/ini/json/tf/Dockerfile[.variant]) — see target_patterns
+      below.
 
     Existing violations are grandfathered by content fingerprint (ratchet baseline).
     Only NEW fingerprints fail the gate. Baseline is burn-down only.
@@ -41,10 +42,15 @@ validation:
     - "**/*.yml"
     - "**/*.sh"
     - "**/*.env"
+    - "**/*.env.*"
     - "**/*.cfg"
     - "**/*.conf"
     - "**/*.toml"
     - "**/*.ini"
+    - "**/*.json"
+    - "**/*.tf"
+    - "**/Dockerfile"
+    - "**/Dockerfile.*"
 
   exclude_patterns:
     - "**/tests/**"

@@ -534,6 +534,186 @@ class TestMskDirectBrokerEndpoint:
 
 
 # ---------------------------------------------------------------------------
+# Unit: _is_test_path anchoring (OMN-15692 verifier round #3 evasion fix)
+# ---------------------------------------------------------------------------
+#
+# A bare "test" substring check waived real, non-test on-prem-facing files
+# whose name coincidentally contains the four characters "test": each of the
+# four cases below was PROVEN to evade the prior implementation.
+
+
+@pytest.mark.unit
+class TestIsTestPathAnchoring:
+    def test_deploy_latest_yaml_not_exempted(self) -> None:
+        # "la-TEST-.yaml" — bare substring match, not a test path.
+        src = f'BOOTSTRAP = "{_MSK_HOSTNAME_LITERAL}:9098"\n'
+        vs = scan_source("omnibase_infra", "deploy/latest.yaml", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_stability_test_lane_docker_compose_not_exempted(self) -> None:
+        # "stability-test" is a real deployment LANE name (see CLAUDE.md
+        # runtime lane map), not a test-code directory.
+        src = f'BOOTSTRAP = "{_MSK_HOSTNAME_LITERAL}:9098"\n'
+        vs = scan_source(
+            "omnibase_infra", "docker/stability-test/docker-compose.yml", src
+        )
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_stability_test_lane_env_not_exempted(self) -> None:
+        src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("omnibase_infra", "docker/stability-test/gateway.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_attestation_yaml_not_exempted(self) -> None:
+        # "at-TEST-ation.yaml" — bare substring match, not a test path.
+        src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("omnibase_infra", "attestation.yaml", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    # -- non-regression: real test paths must still be skipped -------------
+
+    def test_real_tests_dir_still_skipped(self) -> None:
+        src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "tests/fixtures/msk.yaml", src)
+        assert vs == []
+
+    def test_real_test_prefix_file_still_skipped(self) -> None:
+        src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "src/pkg/test_gateway.py", src)
+        assert vs == []
+
+    def test_real_test_suffix_file_still_skipped(self) -> None:
+        src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "src/pkg/gateway_test.py", src)
+        assert vs == []
+
+    def test_conftest_still_skipped(self) -> None:
+        src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "tests/conftest.py", src)
+        assert vs == []
+
+    # -- direct unit coverage of the helper itself --------------------------
+
+    def test_is_test_path_direct_true_cases(self) -> None:
+        from omnibase_core.validation.validator_url_authority import _is_test_path
+
+        assert _is_test_path("tests/test_foo.py")
+        assert _is_test_path("tests/fixtures/x.yaml")
+        assert _is_test_path("src/pkg/test_gateway.py")
+        assert _is_test_path("src/pkg/gateway_test.py")
+        assert _is_test_path("conftest.py")
+        assert _is_test_path("tests/conftest.py")
+
+    def test_is_test_path_direct_false_cases(self) -> None:
+        from omnibase_core.validation.validator_url_authority import _is_test_path
+
+        assert not _is_test_path("deploy/latest.yaml")
+        assert not _is_test_path("docker/stability-test/docker-compose.yml")
+        assert not _is_test_path("attestation.yaml")
+        assert not _is_test_path("src/pkg/a.py")
+
+
+# ---------------------------------------------------------------------------
+# Unit: MSK file-selection gaps (OMN-15692 verifier round #3 evasion fix)
+# ---------------------------------------------------------------------------
+#
+# Path.suffix returns "" for an extensionless dotfile (".env") and returns
+# the PROFILE for the ".env.<profile>" family — neither is caught by a pure
+# suffix check. "Dockerfile" has no extension at all. Each case below was
+# PROVEN to evade the prior _MSK_SCAN_SUFFIXES-only selection.
+
+
+@pytest.mark.unit
+class TestMskFileSelectionGaps:
+    def test_bare_dotenv_file_detected(self, tmp_path: Path) -> None:
+        f = tmp_path / ".env"
+        f.write_text(f'MSK_HOST="{_MSK_HOSTNAME_LITERAL}"\n', encoding="utf-8")
+        vs = scan_tree("r", tmp_path)
+        assert any(v.rule == RULE_MSK_DIRECT_BROKER for v in vs)
+
+    def test_env_profile_file_detected(self, tmp_path: Path) -> None:
+        f = tmp_path / ".env.production"
+        f.write_text(f'MSK_HOST="{_MSK_HOSTNAME_LITERAL}"\n', encoding="utf-8")
+        vs = scan_tree("r", tmp_path)
+        assert any(v.rule == RULE_MSK_DIRECT_BROKER for v in vs)
+
+    def test_dockerfile_bare_detected(self, tmp_path: Path) -> None:
+        f = tmp_path / "Dockerfile"
+        f.write_text(f"ENV MSK_HOST={_MSK_HOSTNAME_LITERAL}\n", encoding="utf-8")
+        vs = scan_tree("r", tmp_path)
+        assert any(v.rule == RULE_MSK_DIRECT_BROKER for v in vs)
+
+    def test_dockerfile_variant_detected(self, tmp_path: Path) -> None:
+        f = tmp_path / "Dockerfile.gateway"
+        f.write_text(f"ENV MSK_HOST={_MSK_HOSTNAME_LITERAL}\n", encoding="utf-8")
+        vs = scan_tree("r", tmp_path)
+        assert any(v.rule == RULE_MSK_DIRECT_BROKER for v in vs)
+
+    def test_json_file_detected(self, tmp_path: Path) -> None:
+        f = tmp_path / "config.json"
+        f.write_text(
+            f'{{"bootstrap": "{_MSK_HOSTNAME_LITERAL}:9098"}}\n', encoding="utf-8"
+        )
+        vs = scan_tree("r", tmp_path)
+        assert any(v.rule == RULE_MSK_DIRECT_BROKER for v in vs)
+
+    def test_terraform_file_detected(self, tmp_path: Path) -> None:
+        f = tmp_path / "main.tf"
+        f.write_text(f'bootstrap = "{_MSK_HOSTNAME_LITERAL}:9098"\n', encoding="utf-8")
+        vs = scan_tree("r", tmp_path)
+        assert any(v.rule == RULE_MSK_DIRECT_BROKER for v in vs)
+
+    def test_unrelated_extension_not_scannable(self) -> None:
+        from omnibase_core.validation.validator_url_authority import (
+            _is_msk_scannable,
+        )
+
+        assert not _is_msk_scannable(Path("readme.md"))
+        assert not _is_msk_scannable(Path("notes.txt"))
+
+    def test_is_msk_scannable_direct(self) -> None:
+        from omnibase_core.validation.validator_url_authority import (
+            _is_msk_scannable,
+        )
+
+        assert _is_msk_scannable(Path(".env"))
+        assert _is_msk_scannable(Path(".env.production"))
+        assert _is_msk_scannable(Path(".env.local"))
+        assert _is_msk_scannable(Path("Dockerfile"))
+        assert _is_msk_scannable(Path("Dockerfile.gateway"))
+        assert _is_msk_scannable(Path("config.json"))
+        assert _is_msk_scannable(Path("main.tf"))
+
+
+# ---------------------------------------------------------------------------
+# Unit: baseline must never grandfather the rule it exists to catch
+# (OMN-15692 verifier round #3 — baseline self-defeat)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestBaselineDoesNotGrandfatherMskRule:
+    def test_committed_baseline_has_no_msk_entries(self) -> None:
+        from omnibase_core.validation.validator_url_authority import (
+            _DEFAULT_BASELINE,
+        )
+
+        data = json.loads(_DEFAULT_BASELINE.read_text(encoding="utf-8"))
+        msk_entries = [
+            e for e in data["violations"] if e.get("rule") == RULE_MSK_DIRECT_BROKER
+        ]
+        assert msk_entries == [], (
+            "The committed baseline must not grandfather "
+            "msk-direct-broker-endpoint violations — doing so self-defeats "
+            f"the gate on exactly the cases it exists to catch: {msk_entries}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Unit: ratchet helpers
 # ---------------------------------------------------------------------------
 
@@ -861,6 +1041,49 @@ class TestCLI:
             ]
         )
         assert rc == 0
+
+    def test_dotenv_fixture_detected_via_staged_file_cli(self, tmp_path: Path) -> None:
+        """CLI-layer (pre-commit staged-file mode) proof, not just
+        scan_source: a real ``.env`` file passed as a positional arg — the
+        exact invocation shape pre-commit's ``pass_filenames: true`` uses —
+        must be scanned. ``Path(".env").suffix`` is EMPTY (OMN-15692
+        verifier round #3), so the CLI's own file-selection filter is the
+        thing under test here, independent of scan_source's correctness."""
+        from omnibase_core.validation.validator_url_authority import main
+
+        f = tmp_path / ".env"
+        f.write_text(f'MSK_HOST="{_MSK_HOSTNAME_LITERAL}"\n', encoding="utf-8")
+        baseline = tmp_path / "baseline.json"
+        baseline.write_text(
+            json.dumps({"schema_version": "1.0.0", "count": 0, "violations": []}),
+            encoding="utf-8",
+        )
+        rc_red = main(
+            [
+                str(f),
+                "--repo",
+                "r",
+                "--repo-root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline),
+            ]
+        )
+        assert rc_red == 1, "RED expected: staged .env fixture carries the MSK literal"
+
+        f.write_text('LOG_LEVEL="info"\n', encoding="utf-8")
+        rc_green = main(
+            [
+                str(f),
+                "--repo",
+                "r",
+                "--repo-root",
+                str(tmp_path),
+                "--baseline",
+                str(baseline),
+            ]
+        )
+        assert rc_green == 0, "GREEN expected: no MSK literal in the fixture"
 
     def test_seed_creates_baseline(self, tmp_path: Path) -> None:
         from omnibase_core.validation.validator_url_authority import main
