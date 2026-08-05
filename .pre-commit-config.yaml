@@ -1380,14 +1380,26 @@ repos:
       # Ratchet: NEW fingerprints fail; existing violations are grandfathered.
       # Baseline is burn-down only. Migration debt: OMN-12806 (omnibase_core).
       # Suppress with: # url-authority-ok: <reason>
+      #
+      # File scope covers .py (rules 1-4 + rule 5) plus yaml/yml/sh/env/cfg/
+      # conf/toml/ini/json/tf (named files with a real ".env" extension, e.g.
+      # gateway.env, match via this suffix group — NOT the basename group
+      # below), and (by basename, not suffix — a pure suffix regex cannot
+      # select these extensionless names) the bare .env file / .env.<profile>
+      # / Dockerfile / Dockerfile.<variant> families (rule 5,
+      # msk-direct-broker-endpoint, only — OMN-15692). Kept as an explicit
+      # `files` regex rather than pre-commit
+      # `types` tags so the covered set mirrors _MSK_SCAN_SUFFIXES +
+      # _is_msk_scannable in the validator itself (single source of truth
+      # for "which files this gate touches").
       - id: check-url-authority
         name: URL Authority Gate (OMN-12818)
         entry: uv run python -m omnibase_core.validation.validator_url_authority
         args: [--repo, omnibase_core, --repo-root, .]
         language: system
-        types: [python]
+        files: (^|/)Dockerfile(\.[^/]*)?$|(^|/)\.env(\.[^/]*)?$|\.(py|ya?ml|sh|env|cfg|conf|toml|ini|json|tf)$
         pass_filenames: true
-        exclude: ^(tests/|archived/|archive/).*\.py$
+        exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
       # Backend Secret-Ref Discipline Gate (OMN-13305, ported from OMN-12971).

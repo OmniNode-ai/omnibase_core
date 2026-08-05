@@ -7,7 +7,9 @@ Part of OMN-12803 (PR-2, the enforcement gate). Every URL and ``*_URL`` /
 ``*_ENDPOINT`` env read must resolve from a contract (routing authority /
 integration catalog), not a literal string or a bare env read.
 
-Detects four classes of violations in Python source files:
+Detects five classes of violations. The first four are Python-source-only;
+the fifth (``msk-direct-broker-endpoint``, OMN-15692) additionally scans
+non-Python on-prem-facing config/script files (see below):
 
 1. **public-https-literal** — a quoted ``https://`` URL targeting a public
    host with a dotted TLD.  Excludes localhost/loopback, example placeholders,
@@ -29,6 +31,51 @@ Detects four classes of violations in Python source files:
    loopback literal passed directly to an HTTP client call was otherwise
    invisible.  A connection target should resolve from the routing authority,
    not a hardcoded loopback literal.
+
+5. **msk-direct-broker-endpoint** (OMN-15692, operator ruling 2026-08-04:
+   "nothing in either .200 or .201 should be contacting MSK directly,
+   everything should be going through the gateway") — a literal MSK broker
+   hostname (``_MSK_BROKER_HOSTNAME`` — an ``*.kafka.<region>[.]amazonaws
+   [.]com``-shaped host, any AWS region) appearing **anywhere** on a
+   non-comment line, OR the raw SNI-passthrough bastion IP on its own
+   (``_MSK_BASTION_IP``), appearing in an on-prem-facing config/script file.
+   (Deliberately not spelled out as a bare literal here — this docstring is
+   itself scanned, and an unbroken literal would trip the very rule it
+   documents; see the pattern constants for the exact strings.)
+
+   The hostname trigger is deliberately **not** gated on a co-occurring port
+   literal. An earlier revision required the SASL_SSL/MSK-IAM port (9098 or
+   9096) on the *same line* as the hostname; that missed the ordinary
+   split-key config shape (``MSK_HOST:``/``MSK_PORT:`` on separate lines —
+   the default shape for Docker Compose and ``.env`` files, not an edge
+   case), a hostname with no port literal at all, and any other broker port
+   (e.g. plaintext/TLS 9092/9094). The hostname literal alone is already an
+   unambiguous, single-purpose DNS name for one live AWS resource — its mere
+   presence in a non-comment, non-test line of a scanned config/script file
+   is sufficient evidence of a direct-MSK reference regardless of port or
+   which line the port (if any) appears on.
+
+   Unlike rules 1-4, this rule also scans **non-Python** files
+   (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/``.conf``/``.toml``/``.ini``/
+   ``.json``/``.tf`` in addition to ``.py`` — see ``_MSK_SCAN_SUFFIXES`` —
+   plus, by basename rather than suffix, the extensionless ``.env`` file
+   itself, the ``.env.<profile>`` family (``.env.local``, ``.env.production``,
+   ...), and ``Dockerfile``/``Dockerfile.<variant>`` — see
+   ``_is_msk_scannable``, which a pure suffix check cannot select), because
+   the on-prem surface it targets (Docker Compose ``extra_hosts``, shell
+   profiles, SSH config, env files, Terraform, Dockerfiles) is overwhelmingly
+   non-Python. It is intentionally narrower in *match* scope than rules 1-4
+   are in *file* scope: only the two literal patterns above trigger it, so
+   widening the scanned file set does not import rules 1-4's broader (and
+   here, un-triaged) match surface.
+
+   **Not suppressible.** Rules 1-4 accept ``# url-authority-ok: <reason>`` as
+   a free-text escape hatch. Rule 5 mechanizes a hard operator ruling with no
+   stated exception path ("nothing ... should be contacting MSK directly"),
+   so a self-authored justification comment must not be able to waive it —
+   the same self-judgement-is-not-evidence reasoning CLAUDE.md rule 10 was
+   hardened around for `[skip-*]` tokens. ``scan_source`` enforces this by
+   checking the suppression annotation only for non-rule-5 matches.
 
 Ratchet (OMN-12818, mirrors OMN-12791 receipt-honesty gate): existing
 violations are grandfathered by content fingerprint (sha256 of {repo, path,
@@ -65,8 +112,11 @@ Usage Examples:
             --seed --repo omnibase_core --repo-root .
 
 Suppression:
-    Add ``# url-authority-ok: <reason>`` on the offending line.
+    Add ``# url-authority-ok: <reason>`` on the offending line (rules 1-4 only).
     Config-PATH env reads annotated with ``# contract-config-ok:`` are also exempt.
+    Rule 5 (msk-direct-broker-endpoint, OMN-15692) is NOT suppressible by either
+    annotation — it mechanizes a hard operator ruling with no stated exception
+    path; fix the reference, do not annotate around it.
 
 Migration debt tickets:
     - omnibase_core: OMN-12806
@@ -138,7 +188,7 @@ _CONST_URL_FROM_LITERAL: Final[re.Pattern[str]] = re.compile(
 # 4. Hardcoded localhost / loopback connection-target literal (OMN-13480).
 #    The public-https rule deliberately skips localhost (no dotted TLD), and
 #    a bare loopback literal that is NOT assigned to a ``*_URL`` / ``*_ENDPOINT``
-#    constant is otherwise invisible — e.g. ``httpx.get("http://localhost:9000")``.
+#    constant is otherwise invisible — e.g. ``httpx.get("http://localhost:9000")``.  # onex-allow-internal-ip: doc example, not a real endpoint (pre-existing, OMN-15692 remediation)
 #    A connection target should resolve from the routing authority, not a
 #    hardcoded loopback literal. Matches http(s):// to:
 #      * ``localhost`` (optionally with a ``:port``)
@@ -148,6 +198,80 @@ _LOCALHOST_LITERAL: Final[re.Pattern[str]] = re.compile(
     r"""["']https?://(?:localhost|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|0\.0\.0\.0|\[::1\])(?:[:/?#"']|$)""",
     re.IGNORECASE,
 )
+
+# 5. Direct MSK broker endpoint / bastion IP (OMN-15692, ruling 39: on-prem
+#    hosts must go through the gateway, never a direct MSK broker connection).
+#    Two independent triggers, either is sufficient:
+#      * an MSK broker hostname, on its own — NOT gated on a co-occurring
+#        port literal (see the module docstring rule-5 section for why: a
+#        port-gate misses split-key configs, no-port hostnames, and any port
+#        other than 9098/9096). Any AWS region, not just us-east-1.
+#      * the raw SNI-passthrough bastion IP, on its own, regardless of port
+#        (the on-prem /etc/hosts and Docker `extra_hosts` overrides that this
+#        rule exists to catch map the hostname straight to this IP with no
+#        port literal at all).
+#    Both patterns end with a negative-lookahead token boundary
+#    (`(?![a-z0-9.-])` / `(?![0-9])`) so a longer hostname/IP that merely
+#    contains the MSK endpoint as a substring — e.g.
+#    ``amazonaws.com.example`` or ``100.53.215.198.example`` — does not
+#    false-positive (CodeRabbit round-#3, defect: unbounded substring match).
+_MSK_BROKER_HOSTNAME: Final[re.Pattern[str]] = re.compile(
+    r"""[a-z0-9][a-z0-9.-]*\.kafka\.[a-z0-9-]+\.amazonaws\.com(?![a-z0-9.-])""",
+    re.IGNORECASE,
+)
+_MSK_BASTION_IP: Final[re.Pattern[str]] = re.compile(
+    r"""(?<![0-9.])100\.53\.215\.198(?![0-9.])"""
+)
+
+RULE_MSK_DIRECT_BROKER: Final[str] = "msk-direct-broker-endpoint"
+
+# File suffixes scanned for the msk-direct-broker-endpoint rule ONLY (rules
+# 1-4 stay Python-only via scan_tree's existing *.py glob). On-prem-facing
+# config/script surfaces are overwhelmingly non-Python.
+_MSK_SCAN_SUFFIXES: Final[frozenset[str]] = frozenset(
+    {
+        ".py",
+        ".yaml",
+        ".yml",
+        ".sh",
+        ".env",
+        ".cfg",
+        ".conf",
+        ".toml",
+        ".ini",
+        ".json",
+        ".tf",
+    }
+)
+
+# Basename-based selection for files a pure suffix check misses entirely
+# (OMN-15692 verifier round #3 — proven evasions):
+#   * ``.env`` itself has an EMPTY ``Path.suffix`` — pathlib treats a leading
+#     dot as part of the stem, not a suffix, so ``Path(".env").suffix ==
+#     ""``. A pure suffix filter silently drops it.
+#   * the ``.env.<profile>`` family (``.env.local``, ``.env.production``, ...)
+#     has a suffix equal to the PROFILE (``.local``, ``.production``), not
+#     ``.env`` — also invisible to a suffix check.
+#   * ``Dockerfile`` (and the ``Dockerfile.<variant>`` family, e.g.
+#     ``Dockerfile.gateway``) has no extension at all.
+_MSK_SCAN_EXACT_BASENAMES: Final[frozenset[str]] = frozenset({".env", "Dockerfile"})
+_MSK_SCAN_BASENAME_PREFIXES: Final[tuple[str, ...]] = (".env.", "Dockerfile.")
+
+
+def _is_msk_scannable(path: Path) -> bool:
+    """True when ``path`` is in-scope for the msk-direct-broker-endpoint
+    file-selection surface (rule 5 only — see module docstring). Suffix
+    membership covers the ordinary case; the basename checks close the
+    extensionless-dotfile / no-extension gaps a pure suffix filter cannot
+    see (OMN-15692 evasion fix — see ``_MSK_SCAN_EXACT_BASENAMES`` above).
+    """
+    if path.suffix in _MSK_SCAN_SUFFIXES:
+        return True
+    name = path.name
+    if name in _MSK_SCAN_EXACT_BASENAMES:
+        return True
+    return any(name.startswith(prefix) for prefix in _MSK_SCAN_BASENAME_PREFIXES)
+
 
 # Suppression annotations.
 _SUPPRESS_ANNOTATION: Final[str] = "# url-authority-ok:"
@@ -214,8 +338,36 @@ def _is_authority_path(path: str) -> bool:
 
 
 def _is_test_path(path: str) -> bool:
-    lowered = path.lower()
-    return "test" in lowered or "conftest" in lowered
+    """True when ``path`` is a real test file/directory — NOT merely a path
+    that happens to contain "test" as a bare substring (OMN-15692 verifier
+    round #3 evasion fix). A bare-substring check waived real, non-test
+    on-prem-facing files whose name coincidentally contains the four
+    characters "test": ``deploy/latest.yaml`` ("la-TEST-.yaml"),
+    ``docker/stability-test/**`` (an infra deployment LANE name, not test
+    code), and ``attestation.yaml`` ("at-TEST-ation.yaml") all evaded
+    detection entirely under the old check. Anchored to real test-path
+    segments only:
+      * a path component that IS (exactly, case-insensitively) ``test`` or
+        ``tests`` — e.g. ``tests/x.py``, ``some/test/y.yaml``.
+      * a basename that starts with ``test_`` (``test_foo.py``) or ends
+        with ``_test`` before its final extension (``foo_test.py``).
+      * the exact basename ``conftest.py``.
+    A hyphenated/compound segment such as ``stability-test`` does NOT match
+    — those are real deployment-lane paths (e.g. the ``stability-test``
+    runtime lane) that MUST stay in-scope for this gate.
+    """
+    norm = path.replace("\\", "/")
+    parts = [p for p in norm.split("/") if p]
+    if not parts:
+        return False
+    basename = parts[-1]
+    if basename == "conftest.py":
+        return True
+    if any(part.lower() in ("test", "tests") for part in parts[:-1]):
+        return True
+    stem = basename.rsplit(".", 1)[0] if "." in basename else basename
+    lowered_stem = stem.lower()
+    return lowered_stem.startswith("test_") or lowered_stem.endswith("_test")
 
 
 def _is_connection_target(raw_line: str) -> bool:
@@ -245,6 +397,32 @@ def _match_rule(raw_line: str, stripped: str) -> str | None:
     return None
 
 
+def _match_msk_rule(raw_line: str) -> str | None:
+    """Return RULE_MSK_DIRECT_BROKER when the line carries a direct-MSK
+    literal (OMN-15692), else None.
+
+    Two independent triggers, either is sufficient:
+      * an MSK broker hostname, on its own — NOT gated on a co-occurring
+        port literal. A port-gate misses the ordinary split-key config shape
+        (hostname and port declared on separate lines/keys — the default
+        Docker Compose / .env shape, not an edge case), a hostname with no
+        port literal anywhere, and any broker port other than 9098/9096
+        (e.g. 9092/9094). The hostname alone is an unambiguous single-purpose
+        DNS literal for one live AWS resource, so its presence is sufficient.
+      * the raw bastion IP on its own (the host-level and container-level
+        overrides this rule targets map hostname -> bare IP with no port
+        literal at all, e.g. Docker Compose ``extra_hosts``)
+
+    Extension-agnostic by design — callers decide which file suffixes route
+    through this function (see ``_MSK_SCAN_SUFFIXES``).
+    """
+    if _MSK_BASTION_IP.search(raw_line):
+        return RULE_MSK_DIRECT_BROKER
+    if _MSK_BROKER_HOSTNAME.search(raw_line):
+        return RULE_MSK_DIRECT_BROKER
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Source scanner
 # ---------------------------------------------------------------------------
@@ -255,7 +433,16 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
 
     Test files and authority files are skipped.  Lines carrying
     ``# url-authority-ok:`` or (for env reads) ``# contract-config-ok:`` are
-    suppressed.  Returns at most one violation per line.
+    suppressed for rules 1-4.  Rule 5 (msk-direct-broker-endpoint) is NOT
+    suppressible by either annotation — see the module docstring and
+    ``RULE_MSK_DIRECT_BROKER``.  Returns at most one violation per line.
+
+    Rules 1-4 (public-https-literal, env-url-read, url-const-assignment,
+    localhost-literal) only apply to ``.py`` sources — their patterns are
+    Python-syntax-specific (``os.environ[...]``, module-constant assignment).
+    Rule 5 (msk-direct-broker-endpoint, OMN-15692) applies regardless of
+    file extension — the caller decides which files reach this function
+    (see ``_MSK_SCAN_SUFFIXES`` / ``scan_tree``).
 
     Args:
         repo: Repo name used in fingerprints (e.g. ``"omnibase_core"``).
@@ -267,22 +454,78 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
     """
     if _is_test_path(path) or _is_authority_path(path):
         return []
+    is_python = path.endswith(".py")
+    # Line-comment conventions vary by file type (CodeRabbit round-#3
+    # finding): '#' is universal across every scanned suffix, but '.ini'/
+    # '.cfg' also use ';' and '.tf' also uses '//' plus '/* ... */' block
+    # comments. Rule 5 is non-suppressible, so a hostname/IP literal inside
+    # a documentation span in ANY of these must not become an unfixable
+    # gate failure.
+    is_ini_or_cfg = path.endswith((".ini", ".cfg"))
+    is_tf = path.endswith(".tf")
 
     violations: list[ModelUrlAuthorityViolation] = []
+    # Multi-line documentation-span state, carried across the loop:
+    #   * py_docstring_delim: the delimiter ('"""' or "'''") of a currently
+    #     OPEN Python triple-quoted docstring, or None when not inside one.
+    #   * in_tf_block_comment: True while inside an open Terraform /* ... */
+    #     block comment.
+    # A prior revision only recognized a docstring/comment by checking
+    # whether EACH line individually starts with '#'/'"""'/"'''" — so an
+    # interior line of a multi-line docstring (which starts with ordinary
+    # text, not a delimiter) was still scanned as code. Tracking open/close
+    # state here closes that gap.
+    py_docstring_delim: str | None = None
+    in_tf_block_comment = False
     for index, raw_line in enumerate(source.splitlines(), start=1):
         stripped = raw_line.strip()
-        # Skip blank, comment-only, and docstring lines (triple-quoted blocks
-        # holding URLs are documentation, not connection targets).
-        if not stripped or stripped.startswith(("#", '"""', "'''")):
-            continue
-        if _SUPPRESS_ANNOTATION in raw_line:
+
+        if py_docstring_delim is not None:
+            # Inside a multi-line Python docstring: this whole line is
+            # documentation, not code — skip it regardless of content, and
+            # check whether it closes the block.
+            if py_docstring_delim in stripped:
+                py_docstring_delim = None
             continue
 
-        rule = _match_rule(raw_line, stripped)
+        if in_tf_block_comment:
+            if "*/" in stripped:
+                in_tf_block_comment = False
+            continue
+
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            continue
+        if is_ini_or_cfg and stripped.startswith(";"):
+            continue
+        if is_tf and stripped.startswith("//"):
+            continue
+        if is_tf and stripped.startswith("/*"):
+            if "*/" not in stripped[2:]:
+                in_tf_block_comment = True
+            continue
+        if is_python and stripped.startswith(('"""', "'''")):
+            delim = stripped[:3]
+            if delim not in stripped[3:]:
+                # Opens here, does not close on this same line.
+                py_docstring_delim = delim
+            continue
+
+        rule = _match_rule(raw_line, stripped) if is_python else None
+        if rule == RULE_ENV_URL_READ and _CONFIG_PATH_ANNOTATION in raw_line:
+            # Config-PATH env reads annotated with contract-config-ok are exempt.
+            rule = None
+        if rule is None:
+            rule = _match_msk_rule(raw_line)
         if rule is None:
             continue
-        # Config-PATH env reads annotated with contract-config-ok are exempt.
-        if rule == RULE_ENV_URL_READ and _CONFIG_PATH_ANNOTATION in raw_line:
+
+        # Suppression applies to rules 1-4 only. Rule 5 mechanizes a hard
+        # operator ruling with no exception path (OMN-15692) — a free-text
+        # justification comment must not be able to waive it (see module
+        # docstring "Not suppressible" note).
+        if rule != RULE_MSK_DIRECT_BROKER and _SUPPRESS_ANNOTATION in raw_line:
             continue
 
         snippet = stripped[:200]
@@ -300,7 +543,18 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
 
 
 def scan_tree(repo: str, repo_root: Path) -> list[ModelUrlAuthorityViolation]:
-    """Scan all ``*.py`` under ``repo_root`` for url-authority violations.
+    """Scan ``repo_root`` for url-authority violations.
+
+    ``.py`` files are scanned for all five rules. Non-``.py`` files selected
+    by ``_is_msk_scannable`` — suffix membership in ``_MSK_SCAN_SUFFIXES``
+    (``.yaml``/``.yml``/``.sh``/``.env``/``.cfg``/``.conf``/``.toml``/
+    ``.ini``/``.json``/``.tf``) OR a basename match for the extensionless
+    ``.env``/``.env.<profile>``/``Dockerfile``/``Dockerfile.<variant>``
+    families (OMN-15692 evasion fix — a pure suffix glob cannot see these) —
+    are scanned for rule 5 (msk-direct-broker-endpoint, OMN-15692) only.
+    ``scan_source`` enforces the rules-1-4-vs-rule-5 split via its
+    ``is_python`` gate, so widening the file set here does not resurface
+    rules 1-4's un-triaged match surface on non-Python files.
 
     Paths in the returned violations are repo-relative so fingerprints are
     machine-independent.  Excludes vendored, build, test, and evidence dirs.
@@ -313,19 +567,22 @@ def scan_tree(repo: str, repo_root: Path) -> list[ModelUrlAuthorityViolation]:
         Sorted list of violations.
     """
     violations: list[ModelUrlAuthorityViolation] = []
-    for py in sorted(repo_root.rglob("*.py")):
-        if set(py.parts) & _EXCLUDED_PARTS:
-            continue
-        if _is_test_path(py.name):
+    candidates: list[Path] = [
+        p for p in repo_root.rglob("*") if p.is_file() and _is_msk_scannable(p)
+    ]
+    for candidate in sorted(set(candidates)):
+        if set(candidate.parts) & _EXCLUDED_PARTS:
             continue
         try:
-            source = py.read_text(encoding="utf-8")
+            rel = str(candidate.relative_to(repo_root))
+        except ValueError:
+            rel = str(candidate)
+        if _is_test_path(rel):
+            continue
+        try:
+            source = candidate.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):
             continue
-        try:
-            rel = str(py.relative_to(repo_root))
-        except ValueError:
-            rel = str(py)
         violations.extend(scan_source(repo, rel, source))
     return violations
 
@@ -632,7 +889,7 @@ def main(argv: list[str] | None = None) -> int:
         violations = []
         for raw in args.paths:
             p = Path(raw)
-            if not p.is_file() or p.suffix != ".py":
+            if not p.is_file() or not _is_msk_scannable(p):
                 continue
             try:
                 source = p.read_text(encoding="utf-8")

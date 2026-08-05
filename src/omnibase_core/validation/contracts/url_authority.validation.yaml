@@ -15,10 +15,16 @@ validation:
     Every URL and *_URL / *_ENDPOINT env read must resolve from a contract
     (routing authority / integration catalog), not a bare literal or env var.
 
-    Three rules:
+    Five rules:
     - public-https-literal: quoted https:// URLs to public hosts (connection targets only)
     - env-url-read: os.environ[*_URL] / os.environ.get(*_ENDPOINT) reads
     - url-const-assignment: module-constant assignments from os.environ or https:// literal
+    - localhost-literal: hardcoded http(s):// loopback connection-target literals
+    - msk-direct-broker-endpoint: direct MSK broker hostname:port or raw bastion-IP literal
+      in an on-prem-facing config/script file (OMN-15692, operator ruling 2026-08-04).
+      Unlike the other four, this rule also scans non-.py files (yaml/yml/sh/env/
+      env.<profile>/cfg/conf/toml/ini/json/tf/Dockerfile[.variant]) — see target_patterns
+      below.
 
     Existing violations are grandfathered by content fingerprint (ratchet baseline).
     Only NEW fingerprints fail the gate. Baseline is burn-down only.
@@ -32,6 +38,19 @@ validation:
 
   target_patterns:
     - "**/*.py"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.sh"
+    - "**/*.env"
+    - "**/*.env.*"
+    - "**/*.cfg"
+    - "**/*.conf"
+    - "**/*.toml"
+    - "**/*.ini"
+    - "**/*.json"
+    - "**/*.tf"
+    - "**/Dockerfile"
+    - "**/Dockerfile.*"
 
   exclude_patterns:
     - "**/tests/**"
@@ -75,6 +94,18 @@ validation:
         [::1]) that are not *_URL / *_ENDPOINT constants. The public-https rule skips localhost, so a
         bare loopback literal would otherwise bypass the gate (OMN-13480). Resolve from the routing authority.
         Suppress with # url-authority-ok: <reason>.
+      severity: error
+      enabled: true
+
+    - rule_id: msk-direct-broker-endpoint
+      description: >-
+        Rejects a direct MSK broker hostname (*.kafka.<region>.amazonaws.com, any AWS region) on its own
+        — no co-occurring port required, so split-key configs and non-9098/9096 ports (e.g. 9092/9094)
+        are equally caught — or the raw SNI-passthrough bastion IP, in an on-prem-facing config/script
+        file. On-prem hosts must go through the gateway, never a direct MSK broker connection (OMN-15692,
+        operator ruling 2026-08-04). Unlike the other four rules, this one also scans non-.py files, and
+        is NOT suppressible via # url-authority-ok: — the ruling states no exception path, so a self-authored
+        justification comment cannot waive it. Fix the reference instead.
       severity: error
       enabled: true
 

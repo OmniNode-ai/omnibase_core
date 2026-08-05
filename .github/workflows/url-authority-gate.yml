@@ -79,11 +79,13 @@ jobs:
               "src/omnibase_core/validation/baselines/url_authority_baseline.json"
           )
           head = json.loads(baseline.read_text())
-          head_repo = {
-              e["fingerprint"]
-              for e in head["violations"]
-              if e["repo"] == "omnibase_core"
-          }
+          # Baseline growth is checked across ALL repos recorded in this file,
+          # not just omnibase_core's own subset — the baseline is a single
+          # shared grandfather list for every repo the gate scans (including
+          # cross-repo entries such as omnibase_infra), and a repo-scoped
+          # filter here would let growth in any other repo's entries through
+          # unnoticed.
+          head_all = {e["fingerprint"] for e in head["violations"]}
           # Compare against the baseline on the PR base branch.
           base_ref = "origin/${{ github.base_ref || 'dev' }}"
           try:
@@ -91,11 +93,7 @@ jobs:
                   ["git", "show", f"{base_ref}:{baseline}"], text=True
               )
               prior = json.loads(prior_text)
-              prior_repo = {
-                  e["fingerprint"]
-                  for e in prior["violations"]
-                  if e["repo"] == "omnibase_core"
-              }
+              prior_all = {e["fingerprint"] for e in prior["violations"]}
           except subprocess.CalledProcessError:
               # Baseline file does not exist on the base branch — this is the
               # initial introduction of the baseline for this repo.  By definition
@@ -104,21 +102,24 @@ jobs:
               # caught by the gate step above.
               print(
                   "URL-AUTHORITY BASELINE OK (initial): "
-                  f"baseline file is new on this PR ({len(head_repo)} grandfathered "
+                  f"baseline file is new on this PR ({len(head_all)} grandfathered "
                   "fingerprints); no prior to compare against."
               )
               sys.exit(0)
-          grew = head_repo - prior_repo
+          grew = head_all - prior_all
           if grew:
               sys.stderr.write(
                   "URL-AUTHORITY BASELINE GREW: "
-                  f"{len(grew)} new fingerprint(s) added to the baseline. The baseline "
-                  "is burn-down only — fix the violation or annotate with "
-                  "# url-authority-ok:, never grow the baseline.\n"
+                  f"{len(grew)} new fingerprint(s) added to the baseline (any repo). "
+                  "The baseline is burn-down only — never grow it. For rules 1-4, "
+                  "fix the violation or annotate with # url-authority-ok: <reason>. "
+                  "For rule 5 (msk-direct-broker-endpoint) the entry MUST be removed "
+                  "— that rule is not suppressible, so annotating it never clears "
+                  "the growth.\n"
               )
               sys.exit(1)
           print(
               "URL-AUTHORITY BASELINE OK: "
-              f"omnibase_core subset {len(head_repo)} (<= prior {len(prior_repo)})."
+              f"{len(head_all)} total (<= prior {len(prior_all)})."
           )
           PY
