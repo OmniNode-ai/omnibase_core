@@ -436,6 +436,29 @@ class TestMskDirectBrokerEndpoint:
         assert len(vs) == 1
         assert vs[0].rule == RULE_MSK_DIRECT_BROKER
 
+    def test_hostname_substring_with_trailing_suffix_not_flagged(self) -> None:
+        # CodeRabbit round-#3: an unbounded substring match on the hostname
+        # pattern would false-positive on a longer, unrelated hostname that
+        # merely contains the MSK suffix as a prefix — e.g. a doc/example
+        # domain. The negative-lookahead token boundary must reject this.
+        src = 'EXAMPLE = "b-1.somecluster.kafka.us-east-1.amazonaws.com.example"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 0
+
+    def test_bastion_ip_substring_with_trailing_suffix_not_flagged(self) -> None:
+        # Same class for the bastion-IP literal: a longer IP-like token that
+        # merely starts with the bastion IP must not match.
+        src = f'HOST = "{_MSK_BASTION_IP_LITERAL}.5"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 0
+
+    def test_bastion_ip_substring_with_leading_prefix_not_flagged(self) -> None:
+        # And the symmetric leading-digit case (e.g. an IP that ends with the
+        # bastion IP's digits but is actually a longer, unrelated address).
+        src = f'HOST = "1.{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 0
+
     def test_suppression_annotation_does_not_clear_msk_rule(self) -> None:
         # Rule 5 has no free-text escape hatch — a self-authored justification
         # comment must not waive a hard operator ruling (OMN-15692).
@@ -490,6 +513,89 @@ class TestMskDirectBrokerEndpoint:
         src = f'ip = "{_MSK_BASTION_IP_LITERAL}"\n'
         vs = scan_source("r", "tests/fixtures/msk.yaml", src)
         assert vs == []
+
+    # -- multi-line documentation spans (CodeRabbit round-#3, major) -------
+
+    def test_interior_line_of_multiline_python_docstring_skipped(self) -> None:
+        # A prior revision only recognized a docstring by checking whether
+        # EACH line individually starts with '"""'/"'''" — an interior line
+        # (this one) starts with ordinary text, so it was still scanned.
+        src = (
+            '"""Example config.\n'
+            f"    Historically the bastion was {_MSK_BASTION_IP_LITERAL}.\n"
+            '"""\n'
+        )
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert vs == []
+
+    def test_single_quote_multiline_docstring_interior_skipped(self) -> None:
+        src = (
+            "'''Example config.\n"
+            f"    Historically the bastion was {_MSK_BASTION_IP_LITERAL}.\n"
+            "'''\n"
+        )
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert vs == []
+
+    def test_code_after_closed_docstring_still_scanned(self) -> None:
+        # Non-regression: once a docstring closes, subsequent lines are
+        # ordinary code again and must still be scanned.
+        src = f'"""Example config."""\nBASTION_IP = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "src/pkg/a.py", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_ini_semicolon_comment_skipped(self) -> None:
+        src = f"; bastion was {_MSK_BASTION_IP_LITERAL}, now retired\n"
+        vs = scan_source("r", "gateway/config.ini", src)
+        assert vs == []
+
+    def test_cfg_semicolon_comment_skipped(self) -> None:
+        src = f"; historical: {_MSK_HOSTNAME_LITERAL}\n"
+        vs = scan_source("r", "gateway/config.cfg", src)
+        assert vs == []
+
+    def test_ini_semicolon_does_not_suppress_other_file_types(self) -> None:
+        # Non-regression: ';' is only a comment marker for .ini/.cfg — a
+        # line starting with ';' in a .env file is NOT a comment and must
+        # still be scanned (defensive; '.env' files don't normally start
+        # lines with ';', but the gate must not silently over-suppress).
+        src = f';BASTION_IP="{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_tf_line_comment_skipped(self) -> None:
+        src = f"// bastion was {_MSK_BASTION_IP_LITERAL}, now retired\n"
+        vs = scan_source("r", "infra/gateway.tf", src)
+        assert vs == []
+
+    def test_tf_single_line_block_comment_skipped(self) -> None:
+        src = f"/* bastion was {_MSK_BASTION_IP_LITERAL} */\n"
+        vs = scan_source("r", "infra/gateway.tf", src)
+        assert vs == []
+
+    def test_tf_multiline_block_comment_interior_skipped(self) -> None:
+        src = (
+            "/* Example config.\n"
+            f"   Historically the bastion was {_MSK_BASTION_IP_LITERAL}.\n"
+            "*/\n"
+        )
+        vs = scan_source("r", "infra/gateway.tf", src)
+        assert vs == []
+
+    def test_tf_code_after_closed_block_comment_still_scanned(self) -> None:
+        src = f'/* doc */\nbastion_ip = "{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "infra/gateway.tf", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
+
+    def test_tf_slash_slash_does_not_suppress_other_file_types(self) -> None:
+        # Non-regression: '//' is only a comment marker for .tf.
+        src = f'// BASTION_IP="{_MSK_BASTION_IP_LITERAL}"\n'
+        vs = scan_source("r", "gateway/config.env", src)
+        assert len(vs) == 1
+        assert vs[0].rule == RULE_MSK_DIRECT_BROKER
 
     # -- scan_tree: file-set widening, still narrow-match ---------------
 

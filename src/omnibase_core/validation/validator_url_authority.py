@@ -210,11 +210,18 @@ _LOCALHOST_LITERAL: Final[re.Pattern[str]] = re.compile(
 #        (the on-prem /etc/hosts and Docker `extra_hosts` overrides that this
 #        rule exists to catch map the hostname straight to this IP with no
 #        port literal at all).
+#    Both patterns end with a negative-lookahead token boundary
+#    (`(?![a-z0-9.-])` / `(?![0-9])`) so a longer hostname/IP that merely
+#    contains the MSK endpoint as a substring — e.g.
+#    ``amazonaws.com.example`` or ``100.53.215.198.example`` — does not
+#    false-positive (CodeRabbit round-#3, defect: unbounded substring match).
 _MSK_BROKER_HOSTNAME: Final[re.Pattern[str]] = re.compile(
-    r"""[a-z0-9][a-z0-9.-]*\.kafka\.[a-z0-9-]+\.amazonaws\.com""",
+    r"""[a-z0-9][a-z0-9.-]*\.kafka\.[a-z0-9-]+\.amazonaws\.com(?![a-z0-9.-])""",
     re.IGNORECASE,
 )
-_MSK_BASTION_IP: Final[re.Pattern[str]] = re.compile(r"""100\.53\.215\.198""")
+_MSK_BASTION_IP: Final[re.Pattern[str]] = re.compile(
+    r"""(?<![0-9.])100\.53\.215\.198(?![0-9.])"""
+)
 
 RULE_MSK_DIRECT_BROKER: Final[str] = "msk-direct-broker-endpoint"
 
@@ -448,14 +455,61 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
     if _is_test_path(path) or _is_authority_path(path):
         return []
     is_python = path.endswith(".py")
+    # Line-comment conventions vary by file type (CodeRabbit round-#3
+    # finding): '#' is universal across every scanned suffix, but '.ini'/
+    # '.cfg' also use ';' and '.tf' also uses '//' plus '/* ... */' block
+    # comments. Rule 5 is non-suppressible, so a hostname/IP literal inside
+    # a documentation span in ANY of these must not become an unfixable
+    # gate failure.
+    is_ini_or_cfg = path.endswith((".ini", ".cfg"))
+    is_tf = path.endswith(".tf")
 
     violations: list[ModelUrlAuthorityViolation] = []
+    # Multi-line documentation-span state, carried across the loop:
+    #   * py_docstring_delim: the delimiter ('"""' or "'''") of a currently
+    #     OPEN Python triple-quoted docstring, or None when not inside one.
+    #   * in_tf_block_comment: True while inside an open Terraform /* ... */
+    #     block comment.
+    # A prior revision only recognized a docstring/comment by checking
+    # whether EACH line individually starts with '#'/'"""'/"'''" — so an
+    # interior line of a multi-line docstring (which starts with ordinary
+    # text, not a delimiter) was still scanned as code. Tracking open/close
+    # state here closes that gap.
+    py_docstring_delim: str | None = None
+    in_tf_block_comment = False
     for index, raw_line in enumerate(source.splitlines(), start=1):
         stripped = raw_line.strip()
-        # Skip blank, comment-only, and docstring lines (triple-quoted blocks
-        # holding URLs are documentation, not connection targets). YAML/shell
-        # comments also start with '#', so this applies uniformly.
-        if not stripped or stripped.startswith(("#", '"""', "'''")):
+
+        if py_docstring_delim is not None:
+            # Inside a multi-line Python docstring: this whole line is
+            # documentation, not code — skip it regardless of content, and
+            # check whether it closes the block.
+            if py_docstring_delim in stripped:
+                py_docstring_delim = None
+            continue
+
+        if in_tf_block_comment:
+            if "*/" in stripped:
+                in_tf_block_comment = False
+            continue
+
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            continue
+        if is_ini_or_cfg and stripped.startswith(";"):
+            continue
+        if is_tf and stripped.startswith("//"):
+            continue
+        if is_tf and stripped.startswith("/*"):
+            if "*/" not in stripped[2:]:
+                in_tf_block_comment = True
+            continue
+        if is_python and stripped.startswith(('"""', "'''")):
+            delim = stripped[:3]
+            if delim not in stripped[3:]:
+                # Opens here, does not close on this same line.
+                py_docstring_delim = delim
             continue
 
         rule = _match_rule(raw_line, stripped) if is_python else None
