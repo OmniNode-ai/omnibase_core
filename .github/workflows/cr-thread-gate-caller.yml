@@ -25,13 +25,31 @@ jobs:
       receipts-dir: drift/dod_receipts
 
   gate:
+    # OMN-15120/OMN-14864: no top-level `if:` here — the caller job MUST
+    # always invoke the reusable, or GitHub never creates the composed
+    # "gate / CodeRabbit Thread Check" check run at all (vector-3: a skipped
+    # `uses:` job produces zero check runs, unlike a skipped job *inside* a
+    # reusable, which still posts a "skipped" conclusion that branch
+    # protection treats as passing). This was the exact failure mode that
+    # left omnibase_core#1548 (a Dependabot PR) permanently missing this
+    # required context — see
+    # docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-contexts.md.
+    #
+    # The former dependabot-actor exemption is dropped outright: the reusable
+    # itself has no actor gate, so a Dependabot PR just gets its unresolved
+    # CodeRabbit thread count evaluated like any other PR (0 unresolved
+    # threads on a bot PR passes cleanly).
+    #
+    # The former non-PR `issue_comment` guard (skip when a comment lands on a
+    # bare issue, not a PR) moves into the `pr-number` computation below
+    # instead of a job-level `if:`: `github.event.issue.pull_request` is only
+    # truthy when the commented-on issue IS a PR, so a bare-issue comment now
+    # resolves pr-number to 0, and the reusable's own script already treats
+    # pr-number 0 as a graceful no-op success (same path used for
+    # merge_group).
     needs: occ-preflight
-    if: >-
-      github.event_name == 'merge_group' ||
-      ((github.event_name != 'issue_comment' || github.event.issue.pull_request != null) &&
-      github.actor != 'dependabot[bot]')
     uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
     with:
-      pr-number: ${{ format('{0}', github.event.pull_request.number || github.event.issue.number || 0) }}
+      pr-number: ${{ format('{0}', github.event.pull_request.number || (github.event.issue.pull_request && github.event.issue.number) || 0) }}
     secrets:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
