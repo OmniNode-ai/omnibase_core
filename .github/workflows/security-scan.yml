@@ -27,7 +27,21 @@ jobs:
       receipts-dir: drift/dod_receipts
 
   codeql:
+    # OMN-15120/OMN-14864 (fan-out finding from the required-checks.yaml
+    # manifest, pre-flagged there as "vector-5 (ungated needs cascade),
+    # pending triage in OMN-14864"): `needs: occ-preflight` without an
+    # `if: always()` override means this caller job is implicitly skipped
+    # whenever occ-preflight fails (the ordinary state of a fresh PR before
+    # its OCC companion is minted) — identical vector-3 shape to the
+    # "gate / CodeRabbit Thread Check" fix in this same PR, just triggered
+    # via needs-cascade instead of an explicit `if:`. CodeQL analysis doesn't
+    # depend on any occ-preflight output, so there is no correctness reason
+    # to couple its execution to that outcome. Matches the established
+    # convention every other required `needs: occ-preflight` caller in this
+    # repo already follows (deploy-gate.yml, pr-title-check.yml,
+    # required-check-skip-guard-caller.yml, call-receipt-gate.yml).
     needs: occ-preflight
+    if: always()
     name: CodeQL
     uses: OmniNode-ai/onex_change_control/.github/workflows/codeql-reusable.yml@main
     with:

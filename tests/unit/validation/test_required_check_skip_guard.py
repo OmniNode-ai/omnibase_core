@@ -158,3 +158,96 @@ def test_no_required_caller_job_has_ungated_top_level_if() -> None:
             )
 
     assert not violations, "\n".join(violations)
+
+
+def _is_bare_always(if_expr: str | None) -> bool:
+    """True when `if_expr` is exactly `always()`, bare or `${{ }}`-wrapped."""
+    normalized = (if_expr or "").strip()
+    if normalized.startswith("${{") and normalized.endswith("}}"):
+        normalized = normalized[3:-2].strip()
+    return normalized == "always()"
+
+
+def test_no_required_job_has_ungated_needs_cascade() -> None:
+    """Regression guard (OMN-15120/OMN-14864, second vector on the same tickets).
+
+    A required context's producing job — whether it IS the context (Shape A)
+    or is the CALLER job that wraps a reusable producing a composed context
+    (Shape B/C) — must never declare `needs:` without pairing it with
+    `if: always()`. GitHub's default behavior implicitly skips a job when any
+    job it `needs:` fails or is skipped, with NO explicit `if:` required to
+    trigger that skip. For a Shape A job this still produces a check run
+    (conclusion=skipped, which branch protection accepts) — but for a Shape
+    B/C CALLER job it reproduces the exact vector-3 failure from
+    test_no_required_caller_job_has_ungated_top_level_if above: the reusable
+    is never invoked, so the composed check run never exists at all, and the
+    required check is PENDING forever.
+
+    `occ-preflight` failing (the common `needs:` target across this repo's
+    required callers) is the ORDINARY state of any fresh non-exempt PR before
+    its OCC companion is minted — not Dependabot-specific. Two live instances
+    were found on this repair's own verification PR (omnibase_core#1549):
+
+    - `gate` in cr-thread-gate-caller.yml (CodeRabbit finding, confirmed via
+      check-run inspection: job 92915155222 showed the bare name "gate",
+      conclusion=skipped, no composed "gate / CodeRabbit Thread Check" run,
+      on a run where occ-preflight had failed).
+    - `codeql` in security-scan.yml, matching the manifest's own pre-existing
+      "vector-5 (ungated needs cascade)" note on the "CodeQL" gate, which
+      named this exact ticket pairing as the pending triage. This job
+      resolves Shape A on its OWN bare name ("CodeQL"), which a needs-skip
+      wouldn't itself endanger (a Shape A skip still posts a real
+      "skipped" check run) — but the job also has `uses:`, and the manifest
+      separately lists "CodeQL / CodeQL Analysis (python)" (the reusable's
+      OWN composed context) as REQUIRED too; that composed context can only
+      ever materialize if this job actually invokes the reusable.
+
+    Every other required `needs: occ-preflight` caller in this repo already
+    pairs it with `if: always()` (deploy-gate.yml, pr-title-check.yml,
+    required-check-skip-guard-caller.yml, call-receipt-gate.yml) — this test
+    makes that convention mechanically enforced instead of merely observed.
+
+    Scoped to jobs that themselves carry a `uses:` (invoke a reusable
+    workflow) — a plain local job (no `uses:`) that gets needs-cascade
+    skipped still posts its OWN check run with conclusion=skipped, which
+    satisfies branch protection directly; there is no reusable-invocation
+    boundary for the skip to hide behind, so no vector-3 danger exists for
+    it (e.g. ci.yml's `zone-filter`, omni-standards-compliance.yml's
+    `ecosystem-validation` — deliberately excluded, not oversights).
+    """
+    manifest = yaml.safe_load(MANIFEST_PATH.read_text(encoding="utf-8")) or {}
+    workflows = workflow_model.load_workflows(WORKFLOWS_DIR)
+
+    violations: list[str] = []
+    for gate in manifest.get("gates", []):
+        if gate.get("mode") != "REQUIRED":
+            continue
+        context = gate["name"]
+        try:
+            resolved = workflow_model.resolve_context_to_job(context, workflows)
+        except workflow_model.UnresolvedContext:
+            continue
+
+        job = resolved.workflow.jobs[resolved.job_id]
+        if job.uses is None:
+            # No reusable-invocation boundary — a needs-cascade skip here
+            # still produces this job's own "skipped" check run, which
+            # satisfies branch protection directly. Nothing to guard.
+            continue
+        needs = job.raw.get("needs")
+        if not needs:
+            continue
+        if _is_bare_always(job.if_expr):
+            continue
+
+        violations.append(
+            f"{context!r}: job '{job.job_id}' in {resolved.workflow.path.name} "
+            f"has `needs: {needs!r}` but `if: {job.if_expr!r}` is not "
+            "`always()` — GitHub's default implicit-skip-on-failed-need "
+            "behavior means this job (and, if it wraps a reusable via "
+            "`uses:`, the composed check-run under it) goes missing entirely "
+            "whenever any needed job fails or is skipped, with no explicit "
+            "conditional required to trigger it."
+        )
+
+    assert not violations, "\n".join(violations)
