@@ -44,16 +44,14 @@
 # should not publish, and any future base filtering must be IN-JOB with a
 # logged skip, never at the trigger.
 #
-# ADDITIVE / REJECTS NOTHING: this workflow never fails a PR's merge on its
-# own publish logic — publishing errors are a non-blocking red signal, not a
-# gate. NOTE this comment predates OMN-15120's fan-out finding that the
-# composed context "occ-companion-effect / Publish occ-companion-effect
-# command" IS a live required status check on omnibase_core `dev` branch
-# protection (see .github/required-checks.yaml); "not a required status
-# check" is therefore stale and must not be relied on. A fail-loud exit 1 on
-# the trusted runner (unreachable dev broker) is still a non-blocking red
-# signal there — the REQUIRED-ness comes from branch protection observing the
-# check run, not from the publisher's own exit code semantics.
+# ADDITIVE / CONFIGURES NO BRANCH PROTECTION: this workflow only publishes an
+# OCC companion-effect command; it does not itself configure repository branch
+# protection. The composed context "occ-companion-effect / Publish
+# occ-companion-effect command" IS a live required status check on
+# omnibase_core `dev` branch protection (see .github/required-checks.yaml), so
+# a publish-logic exit 1 on the trusted runner makes that required check fail
+# and blocks merging. The REQUIRED-ness comes from branch protection observing
+# the check run, not from the publisher configuring protection.
 #
 # PIN CHOICE (OMN-14939/E1 failure class): the reusable is pinned `@dev`
 # because that is the ref that resolves — the reusable exists only on
