@@ -173,7 +173,14 @@ kafka = ["aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0"]
 cache = ["redis>=5.0.0,<9.0.0"]
 metrics = ["prometheus-client>=0.21.0,<1.0.0"]
 sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
-full = ["omnibase-spi>=0.20.2", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0"]
+# OMN-15789: omnibase_core.event_bus.testing ships real pytest fixtures
+# (event_bus_substrate / fidelity_event_bus_substrate) so downstream repos
+# can import and extend them by name (see that package's module docstring).
+# Declared as its own extra rather than folded into a consumer's existing
+# dev dependencies -- pytest/pytest-asyncio become a real import-time
+# dependency of that one submodule, so the wheel metadata says so honestly.
+testing = ["pytest>=8.4.0", "pytest-asyncio>=1.3.0"]
+full = ["omnibase-spi>=0.20.2", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0", "pytest>=8.4.0", "pytest-asyncio>=1.3.0"]
 
 [dependency-groups]
 dev = [
