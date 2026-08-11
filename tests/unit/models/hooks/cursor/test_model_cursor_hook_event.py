@@ -41,7 +41,7 @@ class TestModelCursorHookEventAgentSource:
             "payload": ModelCursorHookEventPayload(),
         }
         kwargs.update(overrides)
-        return ModelCursorHookEvent(**kwargs)  # type: ignore[arg-type]
+        return ModelCursorHookEvent(**kwargs)  # type: ignore[arg-type]  # NOTE(OMN-14750): helper unpacks dict[str, object] test overrides; values are runtime-correct per-field
 
     def test_default_is_cursor(self) -> None:
         """Omitting agent_source defaults to CURSOR."""

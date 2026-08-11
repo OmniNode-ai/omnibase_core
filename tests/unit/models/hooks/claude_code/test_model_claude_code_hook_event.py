@@ -462,7 +462,7 @@ class TestModelClaudeCodeHookEventAgentSource:
             "payload": ModelClaudeCodeHookEventPayload(),
         }
         kwargs.update(overrides)
-        return ModelClaudeCodeHookEvent(**kwargs)  # type: ignore[arg-type]
+        return ModelClaudeCodeHookEvent(**kwargs)  # type: ignore[arg-type]  # NOTE(OMN-14750): helper unpacks dict[str, object] test overrides; values are runtime-correct per-field
 
     def test_default_is_claude(self) -> None:
         """Omitting agent_source defaults to CLAUDE (pre-backfill wire compat)."""
