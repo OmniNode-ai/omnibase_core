@@ -44,10 +44,14 @@
 # should not publish, and any future base filtering must be IN-JOB with a
 # logged skip, never at the trigger.
 #
-# ADDITIVE / REJECTS NOTHING: this workflow is NOT a required status check. It
-# publishes a command; it never fails a PR's merge. A fail-loud exit 1 on the
-# trusted runner (unreachable dev broker) is a non-blocking red signal, not a
-# merge gate.
+# ADDITIVE / CONFIGURES NO BRANCH PROTECTION: this workflow only publishes an
+# OCC companion-effect command; it does not itself configure repository branch
+# protection. The composed context "occ-companion-effect / Publish
+# occ-companion-effect command" IS a live required status check on
+# omnibase_core `dev` branch protection (see .github/required-checks.yaml), so
+# a publish-logic exit 1 on the trusted runner makes that required check fail
+# and blocks merging. The REQUIRED-ness comes from branch protection observing
+# the check run, not from the publisher configuring protection.
 #
 # PIN CHOICE (OMN-14939/E1 failure class): the reusable is pinned `@dev`
 # because that is the ref that resolves — the reusable exists only on
@@ -86,14 +90,24 @@ permissions:
 
 jobs:
   occ-companion-effect:
-    # Skip dependency bots and PRs with no OMN ticket token (same gate the
-    # reusable enforces defensively). Gating here means the reusable is not
-    # even invoked for non-OMN / bot PRs.
-    if: >-
-      github.actor != 'dependabot[bot]' &&
-      github.actor != 'renovate[bot]' &&
-      (contains(github.event.pull_request.title, 'OMN-') ||
-       contains(github.event.pull_request.head.ref, 'OMN-'))
+    # OMN-15120/OMN-14864: no top-level `if:` here — the caller job MUST
+    # always invoke the reusable, or GitHub never creates the composed
+    # "occ-companion-effect / Publish occ-companion-effect command" check run
+    # at all (vector-3: a skipped `uses:` job produces zero check runs, unlike
+    # a skipped job *inside* a reusable, which still posts a "skipped"
+    # conclusion that branch protection treats as passing). This was the
+    # exact failure mode that left omnibase_core#1548 (a Dependabot PR)
+    # permanently missing this required context — see
+    # docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-contexts.md.
+    #
+    # The dependency-bot / ticketless-PR exemption still applies — it now
+    # lives ONLY inside the reusable's own job-level `if:`
+    # (call-occ-companion-effect-reusable.yml `publish-occ-companion-effect`
+    # job, unchanged). That job-level skip still produces a real "skipped"
+    # check run under the composed context name, which branch protection
+    # accepts as passing, so nothing downstream loses the exemption — only
+    # the caller-level duplicate of the gate (which produced NO check run at
+    # all) is removed.
     uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev
     with:
       lane: dev
