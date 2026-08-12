@@ -27,20 +27,35 @@ STDLIB_ONLY_GUARD_COMMANDS = {
 
 DEPENDENCY_GUARD_PROFILES = {
     # job id: (sync command, measured timeout budget in minutes)
-    "mypy-validation-scripts": ("uv sync --frozen", 7),
-    "enum-governance": ("uv sync --frozen --no-dev", 7),
-    "contract-config-compliance": ("uv sync --frozen --no-dev", 7),
+    #
+    # OMN-15980: mypy-validation-scripts, enum-governance,
+    # contract-config-compliance, sdk-boundary-check, aislop-patterns,
+    # doc-content-scan, spdx-headers, no-new-os-environ,
+    # duplicate-registry-ids, and pull-request-workflow-ratchet raised
+    # 6/7 -> 20. These are the jobs directly evidenced hitting their OLD
+    # budget on the self-hosted omnibase-ci fleet under push-event load in
+    # two live runs 9 days apart (run 30860114454 / commit f87a02ac,
+    # 2026-08-03; run 31596723212 / commit c81db71e, 2026-08-12) — see the
+    # matching timeout-minutes comment on mypy-validation-scripts in
+    # .github/workflows/ci.yml for the full byte-cited rationale.
+    # breaking-schema-change, demo-path-topic-coherence,
+    # dispatch-surface-test-required, and no-noncanonical-lifecycle-classes
+    # were NOT observed cancelled in either run and are left at 7 —
+    # evidence-scoped, not a blanket bump of every job in this dict.
+    "mypy-validation-scripts": ("uv sync --frozen", 20),
+    "enum-governance": ("uv sync --frozen --no-dev", 20),
+    "contract-config-compliance": ("uv sync --frozen --no-dev", 20),
     "breaking-schema-change": ("uv sync --frozen --no-dev", 7),
-    "sdk-boundary-check": ("uv sync --frozen", 7),
+    "sdk-boundary-check": ("uv sync --frozen", 20),
     "demo-path-topic-coherence": ("uv sync --frozen --no-dev", 7),
     "dispatch-surface-test-required": ("uv sync --frozen --no-dev", 7),
-    "aislop-patterns": ("uv sync --frozen --no-dev", 7),
-    "doc-content-scan": ("uv sync --frozen --no-dev", 6),
-    "spdx-headers": ("uv sync --frozen --no-dev", 6),
-    "no-new-os-environ": ("uv sync --frozen --no-dev", 6),
-    "duplicate-registry-ids": ("uv sync --frozen", 7),
+    "aislop-patterns": ("uv sync --frozen --no-dev", 20),
+    "doc-content-scan": ("uv sync --frozen --no-dev", 20),
+    "spdx-headers": ("uv sync --frozen --no-dev", 20),
+    "no-new-os-environ": ("uv sync --frozen --no-dev", 20),
+    "duplicate-registry-ids": ("uv sync --frozen", 20),
     "no-noncanonical-lifecycle-classes": ("uv sync --frozen --no-dev", 7),
-    "pull-request-workflow-ratchet": ("uv sync --frozen --no-dev", 6),
+    "pull-request-workflow-ratchet": ("uv sync --frozen --no-dev", 20),
 }
 
 NO_DEV_WORKFLOW_EXECUTION_CONTRACT = "d7dfb006ec524bc384a900b284fc56cbf2a3d7d00a9e1709906ed4e5aebb0d8e"  # pragma: allowlist secret
@@ -55,7 +70,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "54ac4c9daa5992acfd905b46e1d994db0091303b779bc179da509a9ed9184f4e"  # pragma: allowlist secret
     ),
     "mypy-validation-scripts": (
-        "05cb980f356187d9a359d068b136553085243698d2286fe55e8800b68138d79d"  # pragma: allowlist secret
+        "2423622dc22413cc48dc86c623484359251b1046235dc61d3b8fd947512cd69e"  # pragma: allowlist secret
     ),
     "core-infra-boundary": (
         "403fa52e3d6f4b8954bc692c6ec40d133278cc00cc34807fa7552732866275ad"  # pragma: allowlist secret
@@ -67,10 +82,10 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "b633627655c01a98bcce39c4e998529c976659f10cdd70f1a5969772bf8444eb"  # pragma: allowlist secret
     ),
     "enum-governance": (
-        "b2e4c2e5fc424c462712c9b4d48aea0cb85af1c67d4000f556f4b6ddf56bc215"  # pragma: allowlist secret
+        "a46c3a30ecb40d58ad032a1920f24b93cef38716bccecd708e7a41014499727b"  # pragma: allowlist secret
     ),
     "contract-config-compliance": (
-        "83cd9a9099bc9f063e98b64bc03cb576290ebc545ae310ee7e41fbe73e29f95c"  # pragma: allowlist secret
+        "9395479aa043f2b166bcc63b7229c3328f28be83659e395d64a15c520f4f43f6"  # pragma: allowlist secret
     ),
     "breaking-schema-change": (
         "ee0658f793f00e8e6f179d913343d37504e128dcf73a459b075230adae4a64d8"  # pragma: allowlist secret
@@ -85,7 +100,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "ade3ee77ab47c64b1cfc44f135116eec3d290c7505a30e54d8093c27a56f59bb"  # pragma: allowlist secret
     ),
     "sdk-boundary-check": (
-        "75dc4af7bbf72d5b9cf033d906ebefa51b95bd43c2c89acac430e526e3af923e"  # pragma: allowlist secret
+        "6701fd3e6101f2107010ee2b6fc436acb2aaac73fb136e8ef237d41f0b7b70bb"  # pragma: allowlist secret
     ),
     "demo-path-topic-coherence": (
         "94bf6dfc92a03f6c281789316292e59c61ef6d7cd3aca07aae1f2e710d5da094"  # pragma: allowlist secret
@@ -100,25 +115,25 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "0c69ccc1414177fc6b8ce43a34990d8fbd3c63de3ad58a0dc0eb735cf95d8f1b"  # pragma: allowlist secret
     ),
     "aislop-patterns": (
-        "677edc4eb5c9e263658b04262fc5830a80a9888fbe03b365c76ceb8d58be8319"  # pragma: allowlist secret
+        "ccd7eef29e492fdd919b57e24dbecd266764613d65a6dd666f1625b3d209afa7"  # pragma: allowlist secret
     ),
     "doc-content-scan": (
-        "83527bb968e8fec272ecb192139b9d941fc8247ae70ec4dbd446a7a1adaddff4"  # pragma: allowlist secret
+        "1e8c24ae8e37648af73bfabb75575112632b8cd4ac169045d4ac8b5b9664e7cc"  # pragma: allowlist secret
     ),
     "spdx-headers": (
-        "5ba1941f8549116b224e51ea893864bae25febdbb0e0eafae8f5cf268d7613f0"  # pragma: allowlist secret
+        "a0d28fb716ae9560bc17be1d8f3631474ba82e00db2ad2b4490820fedcad8d8a"  # pragma: allowlist secret
     ),
     "no-new-os-environ": (
-        "486c2017dc4561d97747ff09d30819011a8aee9a1f30e844ff3b40ca97c2bcdf"  # pragma: allowlist secret
+        "9cc6299ee4ee8831d443d25614c7ca92e607a96237c9b7d9db378acd6853e4e6"  # pragma: allowlist secret
     ),
     "duplicate-registry-ids": (
-        "c457353e5aa56dda35a5d34b968e393024e84c3ac60a64bb964fbf52c304e691"  # pragma: allowlist secret
+        "6d4d2c5bb43d103924a336575a5022d17cedf8e086ceff477121255d52e71dca"  # pragma: allowlist secret
     ),
     "no-noncanonical-lifecycle-classes": (
         "5cae23b307954cd43c5e17198715700a045986a07bb3f5a2941c334936de6b5a"  # pragma: allowlist secret
     ),
     "pull-request-workflow-ratchet": (
-        "4e10b330674d98df5a7341802e88b8471ff2e4e675c510a37e745373e362e91b"  # pragma: allowlist secret
+        "dbd395aa65670ec4c9afff78899ba001ea011ac80d8daaf1867bdfa11bb85bdb"  # pragma: allowlist secret
     ),
 }
 

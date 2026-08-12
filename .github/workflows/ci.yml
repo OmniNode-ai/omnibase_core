@@ -139,7 +139,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -222,7 +225,34 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 7
+    # OMN-15980: timeout-minutes raised (was 5-10m depending on job) to a
+    # uniform 20m floor. Byte-cited evidence this whole class of standalone
+    # guard/validator jobs is starved, not slow: two live runs 9 days apart
+    # each show 10+ of these jobs' own elapsed time landing within ~10-90s of
+    # their OLD declared budget (e.g. this job: run 30860114454 / commit
+    # f87a02ac, 2026-08-03, job id 91841879447, ran 22:50:36Z->22:57:47Z =
+    # 7m11s against a 7m budget; run 31596723212 / commit c81db71e,
+    # 2026-08-12, ran 12:30:01Z->12:37:37Z = 7m36s against the same 7m
+    # budget), landing in two clean clusters that track each job's OWN
+    # declared timeout-minutes (a 6/7m cluster and a 10m cluster), not a
+    # single shared wall-clock cutoff — ruling out an external run-cancel and
+    # confirming each job independently exhausts its own per-job budget on
+    # the shared self-hosted omnibase-ci fleet under push-event load
+    # (pull_request events route to dedicated ubuntu-latest runners and stay
+    # green throughout). This starved the fail-closed CI Summary poller
+    # (scripts/ci/ci_summary_gate.py DEFAULT-DENY sweep: any present,
+    # completed, non-success/non-skipped job fails the required context),
+    # producing 0/8 green push-trigger runs on dev over 9+ days. 20m gives
+    # >=1.7x headroom over every measured cancellation in both runs
+    # (worst observed: hardcoded-topic-validator at 11m33s against a 10m
+    # budget). No check's pass/fail logic changed — every job must still
+    # exit 0; this only stops a passing/incomplete check being scored a
+    # violation because the runner fleet could not finish inside a
+    # mis-scoped budget. Precedent: onex_change_control OMN-15722 (same
+    # class, same fleet, Done) raised 5 guard jobs' budgets for the
+    # identical reason, then a follow-up uniformly floored EVERY
+    # ci-summary needs member at 45m for the same starvation pattern.
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -577,7 +607,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -668,7 +701,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 7
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -714,7 +750,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 7
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -961,7 +1000,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 7
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1224,7 +1266,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 7
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1279,7 +1324,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 6
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1335,7 +1383,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 6
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1389,7 +1440,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 6
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1432,7 +1486,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 7
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1481,7 +1538,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1538,7 +1598,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1583,7 +1646,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1643,7 +1709,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1692,7 +1761,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1733,7 +1805,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1815,7 +1890,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1982,7 +2060,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -2023,7 +2104,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -2065,7 +2149,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -2252,7 +2339,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -2424,7 +2514,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -2475,7 +2568,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 6
+    # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
+    # omnibase-ci fleet under push-event load, not slow/broken — full
+    # measured rationale on mypy-validation-scripts above).
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -2880,7 +2976,31 @@ jobs:
     # Self-hosted runners can slow sharply under memory pressure when the
     # duration cache is cold; keep the full-suite split timeout above the
     # observed 20-minute saturation boundary.
-    timeout-minutes: 35
+    #
+    # OMN-15980: 35->70. Byte-cited evidence a single-worker push-event split
+    # was STILL under-budgeted at 35m: run 31336460246 (commit c031bec0,
+    # 2026-08-09) job "Tests (Split 1/40)" (id 93304347621) ran 21:37:54Z ->
+    # 22:13:07Z (35m13s, hit the wall) with pytest still at 47-48% progress
+    # (last line before "##[error]The operation was canceled." was
+    # tests/validators/test_bypass_token_blocklist.py collection at [48%]) —
+    # ALL 40 splits in that run show the identical ~35m0-15s elapsed pattern,
+    # not one slow outlier. 9m of that 35m was checkout+setup (session started
+    # 21:37:54, "test session starts" logged 21:46:54), leaving ~26m of actual
+    # single-worker execution to reach 48%: extrapolated full-split runtime is
+    # ~9m setup + ~54m execution = ~63m. 70m gives real headroom over that
+    # measured rate without materially weakening the timeout as a real ceiling.
+    # This is a genuine push-only-path regression, not a flake: PYTEST_XDIST_WORKERS
+    # was changed 4->1 for trusted (non-pull_request) events by the OMN-15571
+    # capacity-repair PR (omnibase_core#1534, merged 2026-07-31) to eliminate
+    # xdist worker crashes, but that PR left this job's 35m budget unchanged —
+    # quartering per-shard throughput without re-deriving the budget it was
+    # tuned against. OMN-15571 acceptance criterion 4 ("profile the 35-minute
+    # unit matrix") remained open at the time of this fix; this timeout bump
+    # closes the immediate starvation without touching worker count, split
+    # count, or test selection (see test_trusted_full_matrix_uses_one_xdist_worker_per_shard
+    # in tests/unit/validation/test_ci_workflow_shape.py, which pins the
+    # single-worker decision as intentional and is left untouched here).
+    timeout-minutes: 70
     strategy:
       fail-fast: false
       matrix:
@@ -3413,7 +3533,11 @@ jobs:
     # concurrency group does NOT cancel-in-progress (only merge_group does), so
     # there is effectively no shorter PR cancel window than GitHub's job default.
     # This job timeout is only a hard backstop above the internal poll deadline.
-    timeout-minutes: 100
+    # OMN-15980: raised 100->140 alongside DEADLINE_MINUTES 90->130 below — the
+    # 90m deadline was too tight once test-parallel's own budget grew 35->70
+    # (self-hosted omnibase-ci fleet latency root-caused in OMN-15980; see that
+    # job's timeout-minutes comment and scripts/ci/detect_test_paths.py history).
+    timeout-minutes: 140
     steps:
       - name: Checkout (gate script)
         uses: actions/checkout@v7
@@ -3426,7 +3550,14 @@ jobs:
           RUN_ATTEMPT: ${{ github.run_attempt }}
           # Bounded poll window (minutes) — kept under the run-cancel window so
           # the required context always reaches a terminal state first.
-          DEADLINE_MINUTES: "90"
+          # OMN-15980: 90->130. test-parallel alone can now take up to 70m
+          # (raised from 35m; single-worker unit shards were measured completing
+          # only ~48% of their split in 35m on the contended self-hosted
+          # omnibase-ci fleet — see test-parallel's timeout-minutes comment).
+          # quality-gate's guard leaves can now take up to 20m each (raised from
+          # 6/7/10m for the same reason). 130m keeps comfortable headroom above
+          # quality-gate(~20) + detect-changes(~5) + test-parallel(~70) + margin.
+          DEADLINE_MINUTES: "130"
           POLL_INTERVAL_SECONDS: "45"
         run: |
           # GitHub invokes this step as `bash -e {0}`; disable errexit because the
