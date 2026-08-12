@@ -545,6 +545,72 @@ class TestRuleBKebabIdentifierOMN15940:
 
 
 # ---------------------------------------------------------------------------
+# OMN-15940 round-2 diagnosis — a 54-minute pre-push hang on this exact
+# commit prompted a ReDoS hypothesis against the widened `_DEFERRAL_RE`
+# boundaries (bare `\b` -> `(?<![\w-])`/`(?![\w-])`). Static structural
+# analysis (no nested/overlapping quantifiers — the only quantifier, `\s+`,
+# appears once per alternative, never nested inside another quantified
+# group) and empirical stress testing against adversarial inputs up to
+# 200,000 chars (long hyphen runs, long word-char runs, whitespace/'not'
+# repetition designed to maximize `\s+` backtracking) both disconfirmed
+# catastrophic backtracking — every probe matched or failed to match in
+# sub-3ms. The hang was independently root-caused to host contention plus
+# the pre-push governed selector's `--timeout-method=thread`, which cannot
+# interrupt CPU-bound/C-level work (tracked as its own P0; see ledger).
+#
+# This regression test pins the "disconfirmed" finding mechanically: it
+# reruns the same class of adversarial input under a hard wall-clock bound
+# so a FUTURE edit to `_DEFERRAL_RE` that reintroduces backtracking (e.g. a
+# nested quantifier or overlapping alternation under a shared quantifier)
+# fails this test long before it could reach a fail-closed pre-push gate.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestDeferralRegexBoundedTimeOMN15940:
+    """`_DEFERRAL_RE` must resolve every input in bounded time — guards
+    against catastrophic backtracking (ReDoS) being reintroduced.
+    """
+
+    @pytest.mark.parametrize(
+        "adversarial_input",
+        [
+            "-" * 200_000,
+            "a" * 200_000,
+            ("not " * 10_000) + "will be " * 10_000,
+            "-".join(["deferred"] * 20_000),
+            (" not will be" * 12_000),
+        ],
+        ids=[
+            "long_hyphen_run",
+            "long_wordchar_run",
+            "not_will_be_repetition",
+            "hyphen_joined_deferred_chain",
+            "alternating_not_will_be",
+        ],
+    )
+    def test_deferral_regex_resolves_adversarial_input_in_bounded_time(
+        self, adversarial_input: str
+    ) -> None:
+        import time
+
+        from omnibase_core.validation.validator_receipt_honesty import (
+            _DEFERRAL_RE,
+        )
+
+        start = time.monotonic()
+        _DEFERRAL_RE.search(adversarial_input)
+        elapsed = time.monotonic() - start
+        assert elapsed < 2.0, (
+            f"_DEFERRAL_RE took {elapsed:.3f}s on a {len(adversarial_input)}-char "
+            "adversarial input -- possible catastrophic backtracking "
+            "(ReDoS) reintroduced. Budget is 2.0s on a contended host; a "
+            "correct linear/near-linear pattern resolves this class in "
+            "single-digit milliseconds."
+        )
+
+
+# ---------------------------------------------------------------------------
 # Rule C — verifier == runner
 # ---------------------------------------------------------------------------
 
