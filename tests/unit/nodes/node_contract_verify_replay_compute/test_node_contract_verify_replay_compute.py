@@ -12,7 +12,8 @@ Tests cover:
 - Incorrect content hash yields content_digest_integrity fail
 - No package provided raises ModelOnexError
 - Non-existent package_path raises ModelOnexError
-- Tier 2 yields a "skip" result (not implemented yet)
+- Tier 2 yields a "skip" check and overall_status "skip" — never "pass" (OMN-15862)
+- Tier 2 on a bundle declaring required scenarios/invariants fails CLOSED
 - Signed report: report_digest is always populated
 - package_bytes mode works without filesystem access
 
@@ -424,25 +425,74 @@ def test_missing_scenario_zip_entry_fails(
 
 
 # =============================================================================
-# Tier 2 — deferred
+# Tier 2 — deferred, and SKIP must never aggregate into PASS (OMN-15862)
 # =============================================================================
 
 
-def test_tier2_yields_skip(
+def test_tier2_skip_never_aggregates_into_pass(
     verifier: NodeContractVerifyReplayCompute,
     simple_bundle_bytes: bytes,
 ) -> None:
-    """Tier 2 is not implemented — all checks are 'skip'."""
+    """Tier 2 is not implemented — the skip surfaces as SKIP, never as PASS.
+
+    Inverted under OMN-15862. The prior assertion (``overall_status == "pass"``)
+    encoded the fail-open defect directly: an unimplemented verification tier
+    reported the package as *verified*. A skipped check is an absence of
+    evidence, not evidence of correctness, so it must never be aggregated into
+    a PASS verdict.
+    """
     inp = ModelVerifyReplayInput(
         package_bytes=simple_bundle_bytes,
         tier=EnumVerifyTier.TIER2_SIMULATED,
     )
     report = verifier.handle(inp)
+
     assert report.tier == EnumVerifyTier.TIER2_SIMULATED
-    # Tier 2 not implemented → all checks skipped → overall pass (no failures)
-    assert report.overall_status == "pass"
     for check in report.checks:
         assert check.status == "skip"
+    assert report.overall_status != "pass"
+    assert report.overall_status == "skip"
+
+
+def test_tier2_skip_fails_closed_when_bundle_requires_replay(
+    verifier: NodeContractVerifyReplayCompute,
+    scenario_file: Path,
+) -> None:
+    """A bundle declaring required replay artifacts fails CLOSED on a tier-2 skip.
+
+    ``OncpBuilder.add_scenario()`` marks the scenario ``required=True``; a
+    required scenario can only be discharged by tier-2 simulated replay. Because
+    that tier is unimplemented, the package cannot be verified at the tier it
+    declares as required — that is a FAIL, not a SKIP (OMN-15862).
+    """
+    bundle = _build_simple_package(add_scenario=True, scenario_path=scenario_file)
+    inp = ModelVerifyReplayInput(
+        package_bytes=bundle,
+        tier=EnumVerifyTier.TIER2_SIMULATED,
+    )
+    report = verifier.handle(inp)
+
+    tier2_check = next(c for c in report.checks if c.check_name == "tier2_simulated")
+    assert tier2_check.status == "fail"
+    assert tier2_check.message is not None
+    assert report.overall_status == "fail"
+
+
+def test_tier2_skip_fails_closed_when_bundle_requires_invariants(
+    verifier: NodeContractVerifyReplayCompute,
+    invariant_file: Path,
+) -> None:
+    """Required invariant suites are tier-2 artifacts too — same fail-closed rule."""
+    bundle = _build_simple_package(add_invariant=True, invariant_path=invariant_file)
+    inp = ModelVerifyReplayInput(
+        package_bytes=bundle,
+        tier=EnumVerifyTier.TIER2_SIMULATED,
+    )
+    report = verifier.handle(inp)
+
+    tier2_check = next(c for c in report.checks if c.check_name == "tier2_simulated")
+    assert tier2_check.status == "fail"
+    assert report.overall_status == "fail"
 
 
 # =============================================================================
@@ -454,7 +504,11 @@ def test_skip_digest_check_option(
     verifier: NodeContractVerifyReplayCompute,
     simple_bundle_bytes: bytes,
 ) -> None:
-    """skip_digest_check=True marks content_digest_integrity as skip."""
+    """skip_digest_check=True marks content_digest_integrity as skip.
+
+    The run is not a PASS: opting out of digest integrity means the bundle's
+    contents were never checked, so the report must say SKIP (OMN-15862).
+    """
     inp = ModelVerifyReplayInput(
         package_bytes=simple_bundle_bytes,
         options=ModelVerifyOptions(skip_digest_check=True),
@@ -464,3 +518,5 @@ def test_skip_digest_check_option(
         c for c in report.checks if c.check_name == "content_digest_integrity"
     )
     assert digest_check.status == "skip"
+    assert report.overall_status != "pass"
+    assert report.overall_status == "skip"
