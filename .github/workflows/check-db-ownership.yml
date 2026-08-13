@@ -3,28 +3,32 @@
 
 name: Check DB Ownership
 
+# NOTE (enforce-everything gate audit): this job ("DB ownership CI twin (B1)")
+# is asserted by scripts/ci/ci_summary_gate.py's EXPECTED_EXTERNAL_CONTEXTS
+# (L4), so it MUST always produce a check-run — a job that is asserted can
+# never legitimately be silently absent because the touched paths didn't
+# match. The trigger is therefore unconditional; the "Determine whether
+# DB-ownership paths changed" step below is the in-job short-circuit that
+# replaces the old `on.pull_request.paths:` filter (the omnibase_infra
+# dispatch-parity-gate/deploy-gate pattern).
 on:
   push:
     branches: [main, develop, dev, "hotfix/**"]
-    paths:
-      - 'src/omnibase_core/models/contracts/model_db_ownership_metadata.py'
-      - 'src/omnibase_core/validation/db/validator_db_ownership.py'
-      - 'scripts/check_db_ownership.py'
-      - 'tests/unit/validation/db/test_db_ownership.py'
-      - '.github/workflows/check-db-ownership.yml'
   pull_request:
     branches: [main, develop, dev]
-    paths:
-      - 'src/omnibase_core/models/contracts/model_db_ownership_metadata.py'
-      - 'src/omnibase_core/validation/db/validator_db_ownership.py'
-      - 'scripts/check_db_ownership.py'
-      - 'tests/unit/validation/db/test_db_ownership.py'
-      - '.github/workflows/check-db-ownership.yml'
   workflow_dispatch:
 
 env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
+  # Relevant-paths set, kept in exact sync with the short-circuit step below
+  # AND the tests/unit/scripts/ci completeness test that pins this file.
+  DB_OWNERSHIP_RELEVANT_PATHS: >-
+    src/omnibase_core/models/contracts/model_db_ownership_metadata.py
+    src/omnibase_core/validation/db/validator_db_ownership.py
+    scripts/check_db_ownership.py
+    tests/unit/validation/db/test_db_ownership.py
+    .github/workflows/check-db-ownership.yml
 
 jobs:
   occ-preflight:
@@ -51,13 +55,43 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Determine whether DB-ownership paths changed
+        id: changed
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_full=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            git fetch --no-tags --depth=1 origin "$base" || true
+            git diff --name-only "$base"...HEAD > changed.txt
+          else
+            git diff --name-only HEAD~1 HEAD > changed.txt || echo "" > changed.txt
+          fi
+          echo "Changed files:"
+          cat changed.txt
+          run_full=false
+          for f in $DB_OWNERSHIP_RELEVANT_PATHS; do
+            if grep -qxF "$f" changed.txt; then
+              run_full=true
+              break
+            fi
+          done
+          echo "run_full=$run_full" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
+        if: steps.changed.outputs.run_full == 'true'
         uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
+        if: steps.changed.outputs.run_full == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           version: ${{ env.UV_VERSION }}
@@ -65,16 +99,19 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
+        if: steps.changed.outputs.run_full == 'true'
         run: uv sync --all-extras
 
       - name: Run DB ownership CI twin
+        if: steps.changed.outputs.run_full == 'true'
         run: uv run python scripts/check_db_ownership.py --verbose
 
       - name: Run DB ownership unit tests
+        if: steps.changed.outputs.run_full == 'true'
         run: uv run pytest tests/unit/validation/db/test_db_ownership.py -xvs
 
       - name: DB ownership summary
-        if: always()
+        if: always() && steps.changed.outputs.run_full == 'true'
         run: |
           echo "## DB Ownership CI Twin (OMN-2150)" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -84,3 +121,10 @@ jobs:
           echo "- Verifies owner_service matches expected value" >> "$GITHUB_STEP_SUMMARY"
           echo "- Validates Pydantic model roundtrip" >> "$GITHUB_STEP_SUMMARY"
           echo "- Detects wrong ownership and missing table" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Short-circuit summary (no relevant changes)
+        if: steps.changed.outputs.run_full != 'true'
+        run: |
+          echo "::notice::No changes to DB-ownership-relevant paths; check trivially passes (in-job short-circuit)."
+          echo "## DB Ownership CI Twin (OMN-2150)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Short-circuited: no changes to gated paths." >> "$GITHUB_STEP_SUMMARY"
