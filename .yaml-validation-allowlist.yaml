@@ -413,6 +413,19 @@ allowed_files:
     added: "2026-07-16"
     review: "2026-12-13"
 
+  - file: "src/omnibase_core/validation/validator_receipt_honesty.py"
+    reason: >-
+      Receipt-honesty CI gate (OMN-12791) file scanner. _scan_receipt_file walks arbitrary drift/dod_receipts/**/command.yaml
+      files on disk and must tolerate files that are not valid YAML or that fail ModelDodReceipt schema
+      validation (both are the structural receipt-gate's job to catch, not this honesty gate's) — it wraps
+      yaml.safe_load(fh) in a try/except (yaml.YAMLError, OSError) that returns None on failure, then
+      immediately hands the parsed dict to ModelDodReceipt.model_validate(raw) for the actual typed validation
+      (wrapped in its own try/except ValidationError/ValueError, also returning None). This is the exact
+      YAML-parse-before-Pydantic-validate pipeline shape this allowlist exists for (same pattern as validator_architecture.py
+      / validator_types.py above), not manual field-by-field validation bypassing Pydantic.
+    added: "2026-08-12"
+    review: "2026-12-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:

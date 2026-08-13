@@ -450,6 +450,167 @@ class TestRuleBColonGluedHedgeStillFailsOMN14410Round1:
 
 
 # ---------------------------------------------------------------------------
+# OMN-15940 — deferral check must not fire on a deferral word embedded in a
+# hyphenated identifier/branch-name VALUE (kebab-case token); must still fire
+# on genuine authored hedging, including hyphen-adjacent authored prose.
+# ---------------------------------------------------------------------------
+#
+# Live instance: OCC#6392 (companion for omninode_infra#881 / OMN-15937).
+# `drift/dod_receipts/OMN-15937/dod-OmniNode-ai-omninode_infra-pr-881/command.yaml`
+# probe_stdout is a verbatim `gh pr view ... headRefName` echo:
+#   {"headRefName":"jonah/omn-15937-cloud-redpanda-removal-acl-deferred",
+#    "number":881,"state":"OPEN"}
+# The word "deferred" is the tail of the branch-name value "acl-deferred" —
+# not an authored deferral claim. Pre-fix, `\bdeferred\b` matches it anyway
+# because a hyphen is a non-word character and therefore already satisfies
+# `\b`. This class reproduces the exact bug and pins the OMN-14410-style
+# fail-closed contract: hyphen-adjacency exempts, but only hyphen-adjacency —
+# every other delimiter (space, colon, em-dash) must keep failing.
+
+
+@pytest.mark.unit
+class TestRuleBKebabIdentifierOMN15940:
+    """probe_stdout/actual_output containing a deferral word as part of a
+    larger hyphen-joined identifier token (branch name, kebab-case id) must
+    not be misread as authored hedging prose.
+    """
+
+    def test_branch_name_tail_deferred_in_probe_stdout_passes_rule_b(self) -> None:
+        """PASS: verbatim `gh pr view` echo of a branch name ending in
+        "-deferred" must not trip PENDING_IN_PASS. Reproduces the OCC#6392
+        false-fail verbatim (OMN-15937).
+        """
+        receipt = _make_receipt(
+            probe_stdout=(
+                '{"headRefName":"jonah/omn-15937-cloud-redpanda-removal-acl-deferred",'
+                '"number":881,"state":"OPEN"}'
+            )
+        )
+        violations = check_receipt_honesty(receipt)
+        assert not any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            "Expected no PENDING_IN_PASS for a deferral word embedded in a "
+            f"hyphenated branch-name value, got: {violations}"
+        )
+
+    @pytest.mark.parametrize(
+        "kebab_text",
+        [
+            "release-pending-review",
+            "cleanup-todo-tracker",
+            "tbd-migration-plan",
+            "acl-deferred",
+        ],
+    )
+    def test_deferral_word_inside_kebab_token_passes_rule_b(
+        self, kebab_text: str
+    ) -> None:
+        """PASS: any deferral keyword embedded in a larger kebab-case
+        identifier token (either as prefix or suffix of the token) is not
+        authored narrative.
+        """
+        receipt = _make_receipt(
+            probe_stdout=f'{{"branch":"jonah/{kebab_text}-881","number":881}}'
+        )
+        violations = check_receipt_honesty(receipt)
+        assert not any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected no PENDING_IN_PASS for kebab-embedded {kebab_text!r}, "
+            f"got: {violations}"
+        )
+
+    def test_authored_hedge_with_leading_space_still_fails_rule_b(self) -> None:
+        """FAIL: the fix must not broaden past hyphen-adjacency — a genuine
+        authored hedge that merely sits next to unrelated hyphenated text
+        (but is not itself hyphen-joined) must still trip PENDING_IN_PASS.
+        """
+        receipt = _make_receipt(
+            probe_stdout="pre-flight check: deferred until manual review"
+        )
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected PENDING_IN_PASS for authored 'deferred until manual "
+            f"review' hedge (space-delimited, not kebab-joined), got: {violations}"
+        )
+
+    def test_authored_todo_still_fails_when_not_kebab_joined(self) -> None:
+        """FAIL: bare authored TODO (space-delimited) must still trip
+        PENDING_IN_PASS — guards against over-broadening the exclusion.
+        """
+        receipt = _make_receipt(
+            probe_stdout="ok", actual_output="TODO manually verify this output"
+        )
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected PENDING_IN_PASS for authored TODO prose, got: {violations}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# OMN-15940 round-2 diagnosis — a 54-minute pre-push hang on this exact
+# commit prompted a ReDoS hypothesis against the widened `_DEFERRAL_RE`
+# boundaries (bare `\b` -> `(?<![\w-])`/`(?![\w-])`). Static structural
+# analysis (no nested/overlapping quantifiers — the only quantifier, `\s+`,
+# appears once per alternative, never nested inside another quantified
+# group) and empirical stress testing against adversarial inputs up to
+# 200,000 chars (long hyphen runs, long word-char runs, whitespace/'not'
+# repetition designed to maximize `\s+` backtracking) both disconfirmed
+# catastrophic backtracking — every probe matched or failed to match in
+# sub-3ms. The hang was independently root-caused to host contention plus
+# the pre-push governed selector's `--timeout-method=thread`, which cannot
+# interrupt CPU-bound/C-level work (tracked as its own P0; see ledger).
+#
+# This regression test pins the "disconfirmed" finding mechanically: it
+# reruns the same class of adversarial input under a hard wall-clock bound
+# so a FUTURE edit to `_DEFERRAL_RE` that reintroduces backtracking (e.g. a
+# nested quantifier or overlapping alternation under a shared quantifier)
+# fails this test long before it could reach a fail-closed pre-push gate.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestDeferralRegexBoundedTimeOMN15940:
+    """`_DEFERRAL_RE` must resolve every input in bounded time — guards
+    against catastrophic backtracking (ReDoS) being reintroduced.
+    """
+
+    @pytest.mark.parametrize(
+        "adversarial_input",
+        [
+            "-" * 200_000,
+            "a" * 200_000,
+            ("not " * 10_000) + "will be " * 10_000,
+            "-".join(["deferred"] * 20_000),
+            (" not will be" * 12_000),
+        ],
+        ids=[
+            "long_hyphen_run",
+            "long_wordchar_run",
+            "not_will_be_repetition",
+            "hyphen_joined_deferred_chain",
+            "alternating_not_will_be",
+        ],
+    )
+    def test_deferral_regex_resolves_adversarial_input_in_bounded_time(
+        self, adversarial_input: str
+    ) -> None:
+        import time
+
+        from omnibase_core.validation.validator_receipt_honesty import (
+            _DEFERRAL_RE,
+        )
+
+        start = time.monotonic()
+        _DEFERRAL_RE.search(adversarial_input)
+        elapsed = time.monotonic() - start
+        assert elapsed < 2.0, (
+            f"_DEFERRAL_RE took {elapsed:.3f}s on a {len(adversarial_input)}-char "
+            "adversarial input -- possible catastrophic backtracking "
+            "(ReDoS) reintroduced. Budget is 2.0s on a contended host; a "
+            "correct linear/near-linear pattern resolves this class in "
+            "single-digit milliseconds."
+        )
+
+
+# ---------------------------------------------------------------------------
 # Rule C — verifier == runner
 # ---------------------------------------------------------------------------
 

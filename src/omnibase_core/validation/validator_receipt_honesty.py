@@ -169,8 +169,32 @@ def _check_rule_a(receipt: ModelDodReceipt) -> HonestyViolation | None:
 # rule (a false positive costs a rewording), but a colon-glued authored
 # hedge can no longer buy a silent false-PASS (a false negative ships a
 # lie).
+#
+# Kebab-case-identifier exclusion (OMN-15940, round 2): a bare ``\b`` treats
+# a hyphen as a word boundary, so a deferral keyword embedded in a larger
+# hyphen-joined identifier VALUE — e.g. a ``gh pr view ... headRefName`` echo
+# of a branch name like ``jonah/omn-15937-cloud-redpanda-removal-acl-deferred``
+# — already satisfied the old boundary and tripped the rule even though the
+# word is not an authored claim, only the tail of a kebab-case token. Live
+# instance: OCC#6392 (companion for omninode_infra#881 / OMN-15937) false-
+# failed on exactly this shape.
+#
+# The boundaries below are widened from ``\b`` to ``(?<![\w-])``/``(?![\w-])``
+# so a match immediately adjacent to a hyphen on EITHER side — the kebab-case-
+# token shape — is excluded the same way the JSON-key shape above is: it is
+# captured identifier/API-output text, not authored narrative. This is a
+# narrower exclusion than the JSON-key one and applies only at hyphen
+# adjacency; every other delimiter (space, colon, em-dash, start/end of
+# string) is unaffected and keeps failing, per the same fail-CLOSED posture
+# as the JSON-key exclusion: a hyphen-joined authored hedge (unnatural
+# English, e.g. ``deferred-until-review``) could in principle dodge the rule
+# by adopting kebab-case, but a bare hyphenated identifier — the actual
+# false-positive class hit twice now (OMN-14410 for JSON keys, OMN-15940 for
+# branch-name values) — no longer costs a rewording of an honest receipt.
 _DEFERRAL_RE = re.compile(
-    r"\b(?:PENDING|TBD|TODO|not\s+implemented|not\s+yet|will\s+be|deferred)\b"
+    r"(?<![\w-])"
+    r"(?:PENDING|TBD|TODO|not\s+implemented|not\s+yet|will\s+be|deferred)"
+    r"(?![\w-])"
     r'(?!"\s*:)',
     re.IGNORECASE,
 )
