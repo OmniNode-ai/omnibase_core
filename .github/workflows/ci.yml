@@ -3379,6 +3379,31 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
+    # enforce-everything gate audit (latent fail-open, OMN-14863 skip-vector
+    # guard): this job's DoD check_values are PR-scoped
+    # (github.event.pull_request.number), which `merge_group` and `push` never
+    # populate. The empty-PR_NUMBER branch (below) used to `exit 0` -- a
+    # vacuous SUCCESS that never actually ran a single check_value, while
+    # GATE_JOBS/STRICT_SUCCESS_JOBS (scripts/ci/ci_summary_gate.py) still
+    # counted it as a provable pass. Not currently exploited (no live dev
+    # merge queue), but it would silently vacate this gate the instant
+    # merge_group is enabled, with zero further code change.
+    #
+    # The `if:` deliberately keeps admitting all three events rather than
+    # narrowing to `pull_request` only: this job's context ("Contract
+    # Compliance Check") is a GATE_JOBS entry whose completeness anchor
+    # accepts a `skipped` conclusion as GOOD. A job-level `if:` that can
+    # evaluate false makes GitHub post that job as `skipped` -- which would
+    # make merge_group/push silently SATISFY the gate via the skip path
+    # instead of the vacuous-exit-0 path, exactly the skip-vector class the
+    # `reject-required-check-skip-vector` pre-commit hook (OMN-14863) exists
+    # to catch (confirmed live: it rejected an earlier draft of this fix that
+    # narrowed the `if:`). Keeping `if:` unconditional means the job always
+    # runs to completion; the fix is entirely in the step below, which now
+    # `exit 1`s instead of `exit 0` on merge_group/push -- a `failure`
+    # conclusion is caught by the default-deny sweep regardless of GATE_JOBS/
+    # STRICT_SUCCESS_JOBS membership, so this fails closed without ever
+    # relying on an `if:`-driven skip.
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v7
@@ -3448,8 +3473,14 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${PR_NUMBER:-}" ]; then
-            echo "::notice::No PR number (event=${{ github.event_name }}); DoD check_values are PR-scoped. Skipping."
-            exit 0
+            # enforce-everything gate audit (fail-closed, not fail-open): this
+            # job now only runs `if: github.event_name == 'pull_request'`
+            # (see the job-level `if:` above), which always populates
+            # PR_NUMBER. Reaching this branch means that invariant broke some
+            # other way -- fail closed (exit 1), never vacuously pass a DoD
+            # check that did not actually run a single check_value.
+            echo "::error::No PR number (event=${{ github.event_name }}); DoD check_values are PR-scoped and this job should only run on pull_request. Failing closed."
+            exit 1
           fi
           uv run python scripts/ci/run_contract_compliance_check.py \
             --pr "$PR_NUMBER" \
@@ -3527,6 +3558,7 @@ jobs:
     if: always()
     permissions:
       actions: read
+      checks: read
       contents: read
     # Deadline (below) is comfortably under any run-cancellation window so the
     # required context ALWAYS posts a terminal state first. On pull_request the
@@ -3548,6 +3580,15 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          # L4 EXPECTED_EXTERNAL_CONTEXTS (scripts/ci/ci_summary_gate.py) live in
+          # OTHER workflow files, so they are resolved against
+          # commits/{sha}/check-runs rather than this run's own job list.
+          # Required-status-check evaluation (and therefore the check-runs a
+          # sibling PR-triggered workflow posts) is keyed on the PR's actual
+          # HEAD commit, NOT ci.yml's own synthetic pull_request merge-ref SHA
+          # (github.sha) — fall back to github.sha for non-pull_request events
+          # (push/merge_group/workflow_dispatch), where the two coincide.
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           # Bounded poll window (minutes) — kept under the run-cancel window so
           # the required context always reaches a terminal state first.
           # OMN-15980: 90->130. test-parallel alone can now take up to 70m
@@ -3569,14 +3610,23 @@ jobs:
           attempt=0
           while true; do
             attempt=$((attempt + 1))
+            fetch_ok=true
             if ! gh api --paginate \
                 "repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs?filter=all&per_page=100" \
                 --jq '.jobs[]' | jq -s '.' > jobs.json; then
+              fetch_ok=false
+            fi
+            if $fetch_ok && ! gh api --paginate \
+                "repos/${GH_REPO}/commits/${COMMIT_SHA}/check-runs?per_page=100" \
+                --jq '.check_runs[]' | jq -s '.' > external_check_runs.json; then
+              fetch_ok=false
+            fi
+            if ! $fetch_ok; then
               echo "gh api fetch failed (attempt ${attempt}); retrying after ${POLL_INTERVAL_SECONDS}s"
               sleep "${POLL_INTERVAL_SECONDS}"
               continue
             fi
-            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}"
+            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json
             rc=$?
             case "${rc}" in
               0) echo "::notice::CI Summary = SUCCESS (all gating jobs provably passed)"; exit 0 ;;
@@ -3586,7 +3636,7 @@ jobs:
             esac
             if [ "$(date +%s)" -ge "${deadline}" ]; then
               echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached with gating jobs still pending — failing closed"
-              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --report-only || true
+              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --report-only || true
               exit 1
             fi
             sleep "${POLL_INTERVAL_SECONDS}"
