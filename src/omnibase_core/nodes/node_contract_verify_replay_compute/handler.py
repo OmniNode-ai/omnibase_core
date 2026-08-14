@@ -30,6 +30,14 @@ verification report.
 8. ``content_digest_integrity`` — if ``options.skip_digest_check`` is False,
    all content hashes in the manifest are verified.
 
+**Status aggregation (OMN-15862)**: per-check results aggregate with
+``FAIL > SKIP > PASS`` precedence. A skipped check is an absence of evidence and
+never contributes to a PASS verdict, so a run containing any skip reports
+``overall_status == "skip"``. Tier 2 (simulated replay) is still unimplemented:
+it reports SKIP for packages with no required replay artifacts, and fails CLOSED
+(FAIL) for packages whose manifest declares required scenarios or invariant
+suites, since those can only be discharged by tier 2.
+
 **Signing**: The report is serialised to canonical JSON, then its SHA-256 digest
 is computed. If ``~/.onex/verifier.key`` exists (ed25519 private key in PEM
 format) the digest is signed and the base64-encoded signature is embedded.
@@ -117,7 +125,9 @@ class NodeContractVerifyReplayCompute:
 
         Returns:
             A :class:`~omnibase_core.models.contract_verify_replay.model_verify_replay_output.ModelVerifyReplayOutput`
-            with ``overall_status`` set to ``"pass"``, ``"fail"``, or ``"error"``.
+            with ``overall_status`` set to ``"pass"``, ``"fail"``, ``"skip"``,
+            or ``"error"``. ``"skip"`` means no check failed but at least one
+            did not run — the package is NOT verified.
 
         Raises:
             ModelOnexError: If neither ``package_path`` nor ``package_bytes``
@@ -156,20 +166,12 @@ class NodeContractVerifyReplayCompute:
                 options=inp.options,
             )
         else:
-            # Tier 2 is deferred (OMN-2759 scope: tier1_static only).
-            checks = [
-                ModelVerifyCheckResult(
-                    check_name="tier2_simulated",
-                    status=EnumCheckStatus.SKIP,
-                    message="Tier 2 simulated replay is not implemented yet.",
-                )
-            ]
+            # Tier 2 executable replay is not implemented (OMN-2759 scope:
+            # tier1_static only). It reports SKIP — or FAIL when the package
+            # declares replay artifacts as required. See _tier2_result().
+            checks = [self._tier2_result(manifest)]
 
-        # Determine overall status.
-        if any(c.status == EnumCheckStatus.FAIL for c in checks):
-            overall = EnumOverallStatus.FAIL
-        else:
-            overall = EnumOverallStatus.PASS
+        overall = self._aggregate_overall_status(checks)
 
         # Build report (without digest/sig fields first so we can hash it).
         report_dict = self._build_report_dict(
@@ -199,6 +201,89 @@ class NodeContractVerifyReplayCompute:
             generated_at=datetime.now(tz=UTC),
             report_digest=report_digest,
             signature=signature,
+        )
+
+    # =========================================================================
+    # Status aggregation (OMN-15862)
+    # =========================================================================
+
+    @staticmethod
+    def _aggregate_overall_status(
+        checks: list[ModelVerifyCheckResult],
+    ) -> EnumOverallStatus:
+        """Aggregate per-check results with FAIL > SKIP > PASS precedence.
+
+        A SKIP is an absence of evidence, not evidence of correctness, so it
+        must never be aggregated into a PASS. Before OMN-15862 this method's
+        inline predecessor treated "no FAIL" as PASS, which reported a run
+        where nothing executed — including the hardcoded tier-2 skip — as a
+        verified package.
+
+        Args:
+            checks: All per-check results produced by this run.
+
+        Returns:
+            ``FAIL`` if any check failed; else ``SKIP`` if any check was
+            skipped; else ``PASS``.
+        """
+        if any(c.status == EnumCheckStatus.FAIL for c in checks):
+            return EnumOverallStatus.FAIL
+        if any(c.status == EnumCheckStatus.SKIP for c in checks):
+            return EnumOverallStatus.SKIP
+        return EnumOverallStatus.PASS
+
+    @staticmethod
+    def _declares_required_replay_artifacts(manifest: ModelOncpManifest) -> bool:
+        """Whether the package declares artifacts only tier 2 can discharge.
+
+        Scenarios and invariant suites are executed by tier-2 simulated replay.
+        A manifest entry marked ``required=True`` is the package asserting that
+        the artifact *must* pass for the package to be considered verified.
+
+        Args:
+            manifest: Parsed manifest from the bundle.
+
+        Returns:
+            True if any scenario or invariant entry is marked required.
+        """
+        return any(s.required for s in manifest.scenarios) or any(
+            i.required for i in manifest.invariants
+        )
+
+    def _tier2_result(self, manifest: ModelOncpManifest) -> ModelVerifyCheckResult:
+        """Build the tier-2 check result for the unimplemented replay tier.
+
+        Fails CLOSED when the package declares required scenarios/invariants:
+        such a package cannot be verified at the tier it itself declares as
+        required, and reporting that as a skip understates the gap. Packages
+        with no required replay artifacts report SKIP, which
+        :meth:`_aggregate_overall_status` keeps out of PASS.
+
+        Args:
+            manifest: Parsed manifest from the bundle.
+
+        Returns:
+            A FAIL result for packages requiring replay, else a SKIP result.
+        """
+        if self._declares_required_replay_artifacts(manifest):
+            return ModelVerifyCheckResult(
+                check_name="tier2_simulated",
+                status=EnumCheckStatus.FAIL,
+                message=(
+                    "Tier 2 simulated replay is not implemented, but this package "
+                    "declares required scenarios and/or invariant suites that only "
+                    "tier 2 can execute. Failing closed: the package cannot be "
+                    "verified at the tier it declares as required."
+                ),
+            )
+        return ModelVerifyCheckResult(
+            check_name="tier2_simulated",
+            status=EnumCheckStatus.SKIP,
+            message=(
+                "Tier 2 simulated replay is not implemented yet. This check did not "
+                "run, so it is an absence of evidence — it does not contribute to a "
+                "pass verdict."
+            ),
         )
 
     # =========================================================================

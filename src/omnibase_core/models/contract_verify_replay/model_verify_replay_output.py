@@ -40,9 +40,12 @@ class ModelVerifyReplayOutput(BaseModel):
         package_id: Package identifier from the bundle manifest.
         package_version: Package version from the bundle manifest.
         checks: Ordered list of per-check results.
-        overall_status: Aggregated outcome. ``"pass"`` iff all required checks
-            passed; ``"fail"`` if any check failed; ``"error"`` if the
-            verification run itself raised an unexpected exception.
+        overall_status: Aggregated outcome, with ``FAIL > SKIP > PASS``
+            precedence. ``"fail"`` if any check failed; else ``"skip"`` if any
+            check did not run; ``"pass"`` only when every check ran and passed;
+            ``"error"`` if the verification run itself raised an unexpected
+            exception. A ``"skip"`` report is NOT a verified package — never
+            treat it as a pass (OMN-15862).
         generated_at: UTC timestamp when the report was produced.
         report_digest: ``sha256:<hex>`` digest of the serialised report content
             (excluding this field and ``signature``). Used to verify the
