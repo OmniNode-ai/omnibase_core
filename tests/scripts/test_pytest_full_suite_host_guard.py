@@ -48,6 +48,23 @@ import pytest_full_suite_host_guard as guard  # type: ignore[import-not-found]
 
 _GUARANTEED_NON_MATCHING_HOSTNAME = "definitely-not-the-200-host-omn15977"
 
+# The guard fail-opens under CI env and honors the override env var. The
+# behavioral subprocess tests inherit this process's environment, so on a CI
+# runner (CI=true / GITHUB_ACTIONS=true) an un-stripped inherit would bypass
+# the guard and invert the refusal assertions. Strip them; tests that need one
+# (e.g. the CI-bypass pin) re-add it explicitly via env_overrides.
+_ENV_VARS_THAT_BYPASS_THE_GUARD = (
+    "CI",
+    "GITHUB_ACTIONS",
+    "PREPUSH_ALLOW_LOCAL_FULL_SUITE",
+)
+
+
+def _guard_neutral_env() -> dict[str, str]:
+    return {
+        k: v for k, v in os.environ.items() if k not in _ENV_VARS_THAT_BYPASS_THE_GUARD
+    }
+
 
 # =============================================================================
 # 1. Pure decision-function unit tests
@@ -235,7 +252,7 @@ def _write_synthetic_project(tmp_path: Path) -> Path:
 def _run_pytest(
     project: Path, *extra_args: str, env_overrides: dict[str, str]
 ) -> subprocess.CompletedProcess[str]:
-    env = dict(os.environ)
+    env = _guard_neutral_env()
     env.update(env_overrides)
     return subprocess.run(
         [sys.executable, "-m", "pytest", "tests", *extra_args],
@@ -296,7 +313,7 @@ def test_direct_invocation_allowed_with_narrow_target_on_non_200_host(
     (project / "tests" / "sub" / "test_y.py").write_text(
         "def test_y():\n    assert True\n", encoding="utf-8"
     )
-    env = dict(os.environ)
+    env = _guard_neutral_env()
     env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/sub"],
