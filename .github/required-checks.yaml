@@ -168,12 +168,21 @@ gates:
     producer_kind: local
     workflow: cr-thread-gate-caller.yml
     job_path: ["gate", "gate"]
-    skip_semantics: neutral_ok
-    rationale: "Caller job 'gate' has an ungated `if:` (github.actor != 'dependabot[bot]', among other
-      clauses) — vector-3. Same dependabot-actor exemption shape already ratified neutral_ok in omniclaude's
-      manifest for this identical reusable workflow (cr-thread-gate.yml). github.actor is not spoofable;
-      not yet human-ratified for omnibase_core specifically. skip_semantics: neutral_ok pending triage
-      in OMN-14864."
+    skip_semantics: never
+    rationale: "OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
+      contexts.md): the caller job 'gate' previously had an ungated `if:` (github.actor != 'dependabot[bot]',
+      among other clauses) — vector-3, a skipped caller job produces NO check run at all, which permanently
+      wedged this required context on Dependabot PRs (live case: omnibase_core#1548). The `if:` is now
+      removed entirely; the caller always invokes the reusable, and the former non-PR issue_comment guard
+      moved into the pr-number input (resolves to 0, which the reusable already no-ops on). A SECOND,
+      independently-discovered instance of the same vector-3 shape was found live on this repair's own
+      verification PR (omnibase_core#1549, CodeRabbit finding + confirmed via check-run inspection): `needs:
+      occ-preflight` with no `if: always()` also implicitly skips this caller job (and therefore the composed
+      context) whenever occ-preflight fails -- the ordinary state of ANY fresh non-exempt PR before its
+      OCC companion is minted, not Dependabot-specific. Fixed by adding `if: always()`, matching the convention
+      every other required `needs: occ-preflight` caller in this repo already follows. The reusable (cr-thread-gate.yml)
+      carries no job-level `if:` of its own, so this context now always completes success/failure — never
+      skipped — hence skip_semantics: never."
 
   - name: "pr-title / check-title"
     mode: REQUIRED
@@ -639,12 +648,18 @@ gates:
     producer_kind: local
     workflow: security-scan.yml
     job_path: ["codeql"]
-    skip_semantics: neutral_ok
-    rationale: "OMN-15120 fan-out finding: job 'codeql' in security-scan.yml has `needs: occ-preflight`
-      with no `if:` that provably runs regardless of the needs result -- vector-5 (ungated needs cascade,
-      OMN-15057). Same shape already ratified neutral_ok elsewhere in this manifest (e.g. 'Contract Compliance
-      Check', 'Ecosystem Integration Validation' below). skip_semantics: neutral_ok pending triage in
-      OMN-14864."
+    skip_semantics: never
+    rationale: "OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
+      contexts.md): job 'codeql' in security-scan.yml had `needs: occ-preflight` with no `if:` that provably
+      runs regardless of the needs result -- vector-5 (ungated needs cascade, OMN-15057), the triage this
+      row was pending. GitHub's default implicit-skip-on-failed-need behavior meant this caller job (and,
+      before it could invoke the reusable, the composed 'CodeQL / CodeQL Analysis (python)' context below)
+      went missing entirely whenever occ-preflight failed -- the ordinary state of any fresh non-exempt
+      PR before its OCC companion is minted, not merely a Dependabot case. Fixed by adding `if: always()`,
+      matching the convention every other required `needs: occ-preflight` caller in this repo already
+      follows. This bare job-name row ('codeql' job's own name override, `name: CodeQL`) resolves via
+      Shape A (direct job-name match, not a caller/callee composition per resolve_context_to_job) -- skip_semantics:
+      never is accurate post-fix since no conditional survives on this job."
 
   - name: "CodeQL / CodeQL Analysis (python)"
     mode: REQUIRED
@@ -660,9 +675,13 @@ gates:
       so 'CodeQL / CodeQL Analysis (python)' is structurally UNRESOLVED to the static resolver. Not a
       skip-vector finding -- a resolver limitation, same class as the pre-existing 'Integration Tests
       (Split N/4)' matrix rows below. producer_kind: matrix with skip_semantics: matrix_unresolvable documents
-      the static resolver exception already used for templated/composed required contexts. See the sibling
-      'CodeQL' row above for the actual checkable vector-5 finding on the same caller job. Tracked as
-      a follow-up in OMN-14864 (resolver enhancement: match on display name as well as job_id)."
+      the static resolver exception already used for templated/composed required contexts. The sibling
+      'CodeQL' row above documented the actual checkable vector-5 finding on the same caller job (`needs:
+      occ-preflight` with no `if: always()`) -- FIXED in the OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-contexts.md):
+      this composed context could never have materialized while occ-preflight failed, since the caller
+      job producing it was implicitly needs-skipped first. Still tracked as a follow-up in OMN-14864:
+      resolver enhancement to match on display name as well as job_id, so this row can be mechanically
+      checked instead of relying on the sibling row's checkable proxy."
 
   - name: "Ecosystem Integration Validation"
     mode: REQUIRED
@@ -706,15 +725,22 @@ gates:
     caller_job: occ-companion-effect
     cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev"
     skip_semantics: neutral_ok
-    rationale: "OMN-15120 fan-out finding: caller job 'occ-companion-effect' has a job-level `if: github.actor
+    rationale: "OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
+      contexts.md): the caller job 'occ-companion-effect' previously had its own job-level `if: github.actor
       != 'dependabot[bot]' && github.actor != 'renovate[bot]' && (contains(...OMN-...))` -- vector-3 (ungated
-      caller if referencing github.actor / github.event.*). Same dependabot/renovate-actor exemption shape
-      already ratified neutral_ok elsewhere in this manifest family (e.g. omniclaude's cr-thread-gate.yml
-      precedent cited in 'gate / CodeRabbit Thread Check' above). github.actor is not spoofable; not yet
-      human-ratified for this specific workflow. skip_semantics: neutral_ok pending triage in OMN-14864.
-      Additive/non-blocking by design per this workflow's own header comment (OMN-14990) -- it publishes
-      a command and never fails a PR's merge on its own, but the composed context is a live required status
-      check regardless."
+      caller if). A skipped CALLER job never invokes the reusable at all, so no check run under this composed
+      context is ever created -- permanently PENDING, not a neutral skip. This was the live cause of omnibase_core#1548
+      (Dependabot) never materializing this context. Fix: the caller `if:` is removed entirely so the
+      reusable is always invoked. The identical actor/ticket exemption still exists, but now ONLY inside
+      the reusable's own job-level `if:` (omniclaude call-occ-companion-effect-reusable.yml, job `publish-occ-companion-effect`)
+      -- a job-level skip *inside* an invoked reusable still produces a real check run with conclusion=skipped
+      under this exact composed name, which GitHub branch protection accepts as passing. skip_semantics:
+      neutral_ok is accurate here (not `never`): this context legitimately terminates skipped for Dependabot/Renovate/ticketless
+      PRs by design, and always produces a check run when it does. Cross-repo remainder (not required
+      for correctness, tracked as a possible follow-up): the omniclaude reusable could additionally convert
+      its job-level `if:` into an in-script early-exit success so no producer ever reports a bare 'skipped'
+      conclusion; not implemented here since a job-level skip on the callee already satisfies branch protection
+      and requires no cross-repo change to close the OMN-14864/OMN-15120 defect."
 
   - name: "occ-preflight / eligibility"
     mode: REQUIRED

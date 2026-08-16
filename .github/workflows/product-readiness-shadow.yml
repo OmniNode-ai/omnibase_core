@@ -22,20 +22,27 @@
 #   2. This workflow NEVER references or triggers `call-occ-preflight.yml` and so
 #      mints NO OCC request. The authoritative OCC path is untouched and still
 #      runs from its own workflow exactly as before.
-#   3. NON-REQUIRED (unchanged by WS4 step 1). The dev branch-protection required
-#      contexts (CI Summary, verify / verify, contract-validation, deploy-gate,
-#      etc.) are untouched — this workflow's `product-readiness / evaluate` and
-#      `product-readiness-shadow / reason-graph` contexts stay NON-required and
-#      cannot wedge a merge. As of OMN-14709 (WS4 step 1) the reason-graph job is
-#      ENFORCING: it exits NON-ZERO (RED conclusion) when the elected ROOT is a
-#      genuine PRODUCT defect (PRODUCT_FAILED — lint/typecheck/tests/coverage
-#      red), while non-product roots (RUNNER_INFRA / EVIDENCE_MISSING /
-#      GITHUB_API_OUTAGE / POLICY_HELD / DEPLOY_TRIGGER_FAILED) and a green head
-#      stay exit 0. Because the context remains NON-required, a red shadow REPORTS
-#      product-red parity but still cannot block merges. `product-readiness /
-#      evaluate` remains report_only (always green). Adding EITHER context to
-#      required_status_checks (or removing `occ-preflight` from any authoritative
-#      product jobs) is a separate operator-gated step; do NOT do it here.
+#   3. CORRECTED (enforce-everything gate audit, 2026-08): this comment
+#      previously claimed `product-readiness / evaluate`, `reason-graph`,
+#      `lint (shadow)`, `typecheck (shadow)`, and `tests+coverage (shadow)`
+#      "stay NON-required and cannot wedge a merge." That is FALSE against
+#      live branch protection today — `gh api
+#      repos/OmniNode-ai/omnibase_core/branches/dev/protection/required_status_checks`
+#      shows all five already directly required on `dev`. Whatever WS4-step-2
+#      cutover step was supposed to gate that promotion either already ran or
+#      was bypassed; either way, an engineer trusting this comment to mean
+#      "this cannot block my PR" would be wrong. The reason-graph job's
+#      ENFORCING behavior described below (exit NON-ZERO on a genuine
+#      PRODUCT_FAILED root) is therefore LOAD-BEARING, not report-only — do
+#      not weaken it under the belief that the context is non-required.
+#      `product-readiness / evaluate` itself remains report_only (always exit
+#      0) by design; being a required context that always passes is
+#      over-enforcement noise, not a gating risk, and is out of scope for this
+#      audit to remove (that is a separate operator decision, not a defect).
+#      If a future engineer intends the shadow/reason-graph contexts to be
+#      genuinely optional, removing them from required_status_checks is a
+#      separate OPERATOR-APPLY branch-protection change — do NOT do it here,
+#      and do NOT re-introduce this comment's original false claim.
 #
 # During the shadow window, the `product-readiness / evaluate` verdict is
 # compared against the OLD authoritative `CI Summary` outcome across live PR
