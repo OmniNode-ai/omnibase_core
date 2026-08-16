@@ -3,26 +3,31 @@
 
 name: Check LLM Refs Drift
 
+# NOTE (enforce-everything gate audit): this job ("LLM refs drift check
+# (OMN-11932)") is asserted by scripts/ci/ci_summary_gate.py's
+# EXPECTED_EXTERNAL_CONTEXTS (L4), so it MUST always produce a check-run — a
+# job that is asserted can never legitimately be silently absent because the
+# touched paths didn't match. The trigger is therefore unconditional; the
+# "Determine whether LLM-refs paths changed" step below is the in-job
+# short-circuit that replaces the old `on.pull_request.paths:` filter (the
+# omnibase_infra dispatch-parity-gate/deploy-gate pattern).
 on:
   push:
     branches: [main, develop, dev, "hotfix/**"]
-    paths:
-      - 'src/omnibase_core/constants/constants_llm_refs.py'
-      - 'scripts/generate_llm_refs.py'
-      - 'tests/unit/constants/test_constants_llm_refs.py'
-      - '.github/workflows/check-llm-refs-drift.yml'
   pull_request:
     branches: [main, develop, dev]
-    paths:
-      - 'src/omnibase_core/constants/constants_llm_refs.py'
-      - 'scripts/generate_llm_refs.py'
-      - 'tests/unit/constants/test_constants_llm_refs.py'
-      - '.github/workflows/check-llm-refs-drift.yml'
   workflow_dispatch:
 
 env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
+  # Relevant-paths set, kept in exact sync with the short-circuit step below
+  # AND the tests/unit/scripts/ci completeness test that pins this file.
+  LLM_REFS_RELEVANT_PATHS: >-
+    src/omnibase_core/constants/constants_llm_refs.py
+    scripts/generate_llm_refs.py
+    tests/unit/constants/test_constants_llm_refs.py
+    .github/workflows/check-llm-refs-drift.yml
 
 jobs:
   occ-preflight:
@@ -50,10 +55,39 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v7
         with:
-          # Check out the full repo so OMNI_HOME sub-path resolution works
-          fetch-depth: 1
+          # fetch-depth 0 so the short-circuit step below can diff against the
+          # PR base; OMNI_HOME sub-path resolution only needs the worktree,
+          # not a shallow clone specifically.
+          fetch-depth: 0
+
+      - name: Determine whether LLM-refs paths changed
+        id: changed
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_full=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            git fetch --no-tags --depth=1 origin "$base" || true
+            git diff --name-only "$base"...HEAD > changed.txt
+          else
+            git diff --name-only HEAD~1 HEAD > changed.txt || echo "" > changed.txt
+          fi
+          echo "Changed files:"
+          cat changed.txt
+          run_full=false
+          for f in $LLM_REFS_RELEVANT_PATHS; do
+            if grep -qxF "$f" changed.txt; then
+              run_full=true
+              break
+            fi
+          done
+          echo "run_full=$run_full" >> "$GITHUB_OUTPUT"
 
       - name: Checkout omnibase_infra for llm_endpoints.yaml
+        if: steps.changed.outputs.run_full == 'true'
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_infra
@@ -62,6 +96,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout omnimarket for model_registry_v1.yaml
+        if: steps.changed.outputs.run_full == 'true'
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnimarket
@@ -70,11 +105,13 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
+        if: steps.changed.outputs.run_full == 'true'
         uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
+        if: steps.changed.outputs.run_full == 'true'
         uses: astral-sh/setup-uv@v7
         with:
           version: ${{ env.UV_VERSION }}
@@ -82,9 +119,11 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
+        if: steps.changed.outputs.run_full == 'true'
         run: uv sync --all-extras
 
       - name: Set OMNI_HOME for CI
+        if: steps.changed.outputs.run_full == 'true'
         run: |
           mkdir -p _omni_home
           ln -s "$PWD/_omnibase_infra" "_omni_home/omnibase_infra"
@@ -92,7 +131,14 @@ jobs:
           echo "OMNI_HOME=$PWD/_omni_home" >> "$GITHUB_ENV"
 
       - name: Check drift in constants_llm_refs.py
+        if: steps.changed.outputs.run_full == 'true'
         run: uv run python scripts/generate_llm_refs.py --check
 
       - name: Run LLM refs unit tests
+        if: steps.changed.outputs.run_full == 'true'
         run: uv run pytest tests/unit/constants/test_constants_llm_refs.py -xvs
+
+      - name: Short-circuit summary (no relevant changes)
+        if: steps.changed.outputs.run_full != 'true'
+        run: |
+          echo "::notice::No changes to LLM-refs-relevant paths; check trivially passes (in-job short-circuit)."

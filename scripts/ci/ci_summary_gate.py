@@ -103,6 +103,37 @@ SOFT_ALLOWLIST: frozenset[str] = frozenset(
     }
 )
 
+# L4: EXPECTED_EXTERNAL_CONTEXTS (enforce-everything gate audit, four-layer
+# doctrine). Every job so far (GATE_JOBS / STRICT_SUCCESS_JOBS /
+# SPEC_REQUIRED_VALIDATOR_JOBS / SOFT_ALLOWLIST) lives INSIDE ci.yml's own
+# workflow run and is visible to the poller via
+# ``actions/runs/{run_id}/jobs``. Two validators live in SEPARATE workflow
+# files and were therefore structurally invisible to this gate before this
+# entry existed — a red run of either could never turn "CI Summary" red:
+#
+#   - "DB ownership CI twin (B1)"        -> .github/workflows/check-db-ownership.yml
+#   - "LLM refs drift check (OMN-11932)" -> .github/workflows/check-llm-refs-drift.yml
+#
+# Both workflow files previously gated their `pull_request` trigger behind an
+# `on.pull_request.paths:` filter, so before asserting them here their
+# triggers were converted to always-fire + an in-job short-circuit (the
+# omnibase_infra dispatch-parity-gate/deploy-gate pattern) — a job that is
+# asserted must ALWAYS produce a check-run, never silently omit one because
+# the touched paths didn't match.
+#
+# These are resolved against ``commits/{sha}/check-runs`` (NOT the in-run
+# jobs endpoint — a different workflow file is a different Actions run) and
+# are STRICT: present + completed + conclusion == 'success' only. Unlike
+# GATE_JOBS, 'skipped' is NOT accepted here — after the always-fire
+# conversion, a GitHub-level skip on one of these two check-runs would itself
+# be anomalous un-enforcement (the in-job short-circuit means a
+# no-relevant-changes PR still completes with a 'success' conclusion, never a
+# workflow-level 'skipped').
+EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
+    "DB ownership CI twin (B1)",
+    "LLM refs drift check (OMN-11932)",
+)
+
 # Spec-required validator covering jobs (OMN-14127 load-bearing property).
 #
 # These are the ci.yml jobs the operator-locked rollup-coverage spec
@@ -230,6 +261,68 @@ def dedup_latest(
     return latest
 
 
+def _external_check_states(
+    check_runs: list[dict[str, object]],
+) -> dict[str, JobState]:
+    """Collapse ``commits/{sha}/check-runs`` rows to one entry per check-run name.
+
+    That endpoint has no ``run_attempt`` field like the Actions jobs endpoint —
+    a rerun instead POSTs a new check-run row under the same name. Rows are
+    kept by latest ``started_at`` (lexicographic ISO-8601 compare; ties keep
+    array order, last wins) so a stale failed rerun can never outrank a fresh
+    success, mirroring the run-attempt dedup used for in-run jobs above.
+    """
+
+    best: dict[str, tuple[str, JobState]] = {}
+    for raw in check_runs:
+        name = str(raw.get("name") or "")
+        if not name:
+            continue
+        conclusion = raw.get("conclusion")
+        started_at = str(raw.get("started_at") or "")
+        state = JobState(
+            name=name,
+            status=str(raw.get("status") or ""),
+            conclusion=None if conclusion is None else str(conclusion),
+            run_attempt=1,
+        )
+        prev = best.get(name)
+        if prev is None or started_at >= prev[0]:
+            best[name] = (started_at, state)
+    return {name: state for name, (_started_at, state) in best.items()}
+
+
+def evaluate_external(
+    check_runs: list[dict[str, object]],
+    *,
+    expected: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
+) -> tuple[list[str], list[str]]:
+    """Return ``(failures, missing_or_pending)`` for L4 EXPECTED_EXTERNAL_CONTEXTS.
+
+    STRICT success-only, mirroring :data:`STRICT_SUCCESS_JOBS`: each name in
+    ``expected`` must be present with ``status == 'completed'`` and
+    ``conclusion == 'success'``. Absent, still-running, skipped, failed, and
+    cancelled are never a silent pass — absent/still-running is
+    missing-or-pending (poll again, fail-closed at the caller's deadline);
+    everything else present+completed+not-success is an immediate failure.
+    """
+
+    latest = _external_check_states(check_runs)
+    failures = sorted(
+        name
+        for name in expected
+        if (st := latest.get(name)) is not None
+        and st.status == "completed"
+        and st.conclusion != "success"
+    )
+    missing_or_pending = sorted(
+        name
+        for name in expected
+        if name not in latest or latest[name].status != "completed"
+    )
+    return failures, missing_or_pending
+
+
 def evaluate(
     jobs: list[dict[str, object]],
     *,
@@ -238,6 +331,8 @@ def evaluate(
     gate_jobs: tuple[str, ...] = GATE_JOBS,
     allowlist: frozenset[str] = SOFT_ALLOWLIST,
     required_validator_jobs: tuple[str, ...] = SPEC_REQUIRED_VALIDATOR_JOBS,
+    external_check_runs: list[dict[str, object]] | None = None,
+    external_contexts: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
 ) -> tuple[int, str]:
     """Return ``(exit_code, human_report)`` for the current job snapshot."""
 
@@ -298,30 +393,14 @@ def evaluate(
         if (latest.get(g) is None or latest[g].status != "completed")
     ]
 
-    if sweep_failures or validator_not_success:
-        return EXIT_FAILURE, _report(
-            "FAILURE",
-            latest,
-            gate_jobs,
-            required_validator_jobs,
-            sweep_failures,
-            validator_not_success,
-            gate_missing_or_pending,
-            validator_missing_or_pending,
-        )
-    if gate_missing_or_pending or validator_missing_or_pending:
-        return EXIT_PENDING, _report(
-            "PENDING",
-            latest,
-            gate_jobs,
-            required_validator_jobs,
-            sweep_failures,
-            validator_not_success,
-            gate_missing_or_pending,
-            validator_missing_or_pending,
-        )
-    return EXIT_SUCCESS, _report(
-        "SUCCESS",
+    # (4) L4 EXPECTED_EXTERNAL_CONTEXTS: validators living in a DIFFERENT
+    #     workflow file, resolved against commits/{sha}/check-runs rather than
+    #     this run's job list. See EXPECTED_EXTERNAL_CONTEXTS docstring above.
+    external_failures, external_missing_or_pending = evaluate_external(
+        external_check_runs or [], expected=external_contexts
+    )
+
+    args = (
         latest,
         gate_jobs,
         required_validator_jobs,
@@ -329,7 +408,20 @@ def evaluate(
         validator_not_success,
         gate_missing_or_pending,
         validator_missing_or_pending,
+        external_contexts,
+        external_failures,
+        external_missing_or_pending,
     )
+
+    if sweep_failures or validator_not_success or external_failures:
+        return EXIT_FAILURE, _report("FAILURE", *args)
+    if (
+        gate_missing_or_pending
+        or validator_missing_or_pending
+        or external_missing_or_pending
+    ):
+        return EXIT_PENDING, _report("PENDING", *args)
+    return EXIT_SUCCESS, _report("SUCCESS", *args)
 
 
 def _report(
@@ -341,7 +433,12 @@ def _report(
     validator_not_success: list[str],
     gate_missing_or_pending: list[str],
     validator_missing_or_pending: list[str],
+    external_contexts: tuple[str, ...] = (),
+    external_failures: list[str] | None = None,
+    external_missing_or_pending: list[str] | None = None,
 ) -> str:
+    external_failures = external_failures or []
+    external_missing_or_pending = external_missing_or_pending or []
     lines = [f"CI Summary verdict: {verdict}", f"  jobs observed: {len(latest)}"]
     lines.append("  aggregate gates:")
     for g in gate_jobs:
@@ -359,6 +456,17 @@ def _report(
             if st is None
             else f"    - {v}: {st.status}/{st.conclusion}"
         )
+    if external_contexts:
+        lines.append(
+            "  L4 external contexts (other workflow files, must be completed + success):"
+        )
+        for name in external_contexts:
+            if name in external_failures:
+                lines.append(f"    - {name}: <present, not success>")
+            elif name in external_missing_or_pending:
+                lines.append(f"    - {name}: <absent or pending>")
+            else:
+                lines.append(f"    - {name}: success")
     if sweep_failures:
         lines.append(f"  default-deny sweep failures: {', '.join(sweep_failures)}")
     if validator_not_success:
@@ -372,6 +480,16 @@ def _report(
         lines.append(
             "  spec-required validators missing/pending: "
             + ", ".join(validator_missing_or_pending)
+        )
+    if external_failures:
+        lines.append(
+            "  L4 external contexts not success (coverage gap): "
+            + ", ".join(external_failures)
+        )
+    if external_missing_or_pending:
+        lines.append(
+            "  L4 external contexts missing/pending: "
+            + ", ".join(external_missing_or_pending)
         )
     return "\n".join(lines)
 
@@ -393,6 +511,27 @@ def _load_jobs(path: str | None) -> list[dict[str, object]]:
     return jobs
 
 
+def _load_check_runs(path: str | None) -> list[dict[str, object]]:
+    """Load L4 external check-run rows (``commits/{sha}/check-runs`` shape)."""
+    if path is None:
+        return []
+    with open(path, encoding="utf-8") as handle:
+        raw = handle.read()
+    if not raw.strip():
+        return []
+    data = json.loads(raw)
+    # Accept either the raw endpoint object ({"check_runs": [...]}) or a bare array.
+    if isinstance(data, dict):
+        check_runs = data.get("check_runs", [])
+    else:
+        check_runs = data
+    if not isinstance(check_runs, list):
+        raise ValueError(
+            "check-runs payload must be a list or an object with a 'check_runs' array"
+        )
+    return check_runs
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -412,10 +551,20 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Evaluate only rows for this GitHub Actions run_attempt.",
     )
+    parser.add_argument(
+        "--external-check-runs-file",
+        default=None,
+        help="Path to the commits/{sha}/check-runs JSON for L4 "
+        "EXPECTED_EXTERNAL_CONTEXTS (default: none supplied -> treated as "
+        "all-missing, i.e. PENDING until supplied).",
+    )
     args = parser.parse_args(argv)
 
     jobs = _load_jobs(args.jobs_file)
-    code, report = evaluate(jobs, run_attempt=args.run_attempt)
+    external_check_runs = _load_check_runs(args.external_check_runs_file)
+    code, report = evaluate(
+        jobs, run_attempt=args.run_attempt, external_check_runs=external_check_runs
+    )
     print(report)  # noqa: T201 — CLI verdict report to stdout for the poll loop
     if args.report_only:
         return EXIT_SUCCESS
