@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.hooks.cursor.enum_cursor_hook_event_type import (
     EnumCursorHookEventType,
 )
+from omnibase_core.enums.hooks.enum_agent_source import EnumAgentSource
 from omnibase_core.models.hooks.cursor.model_cursor_hook_event_payload import (
     ModelCursorHookEventPayload,
 )
@@ -39,6 +40,7 @@ class ModelCursorHookEvent(BaseModel):
         correlation_id: Optional ID for distributed tracing across services.
         timestamp_utc: When the event occurred (timezone-aware UTC).
         payload: Event-specific data as a ModelCursorHookEventPayload.
+        agent_source: Originating dispatcher frontend; defaults to CURSOR.
 
     Example:
         >>> from datetime import UTC, datetime
@@ -72,14 +74,27 @@ class ModelCursorHookEvent(BaseModel):
     payload: ModelCursorHookEventPayload = Field(
         description="Event-specific data as a payload model"
     )
-    agent_source: str = Field(
-        default="cursor",
+    agent_source: EnumAgentSource = Field(
+        default=EnumAgentSource.CURSOR,
         description=(
-            "Originating dispatcher frontend; always 'cursor' for this model. "
+            "Originating dispatcher frontend; defaults to 'cursor' for this model. "
             "Propagated as provenance onto downstream events so Cursor and Claude "
             "intents remain distinguishable on shared topics."
         ),
     )
+
+    @field_validator("agent_source", mode="before")
+    @classmethod
+    def coerce_agent_source(cls, v: object) -> object:
+        """Coerce bare strings case-insensitively to EnumAgentSource.
+
+        str-accepting per the OMN-14750/OMN-14751 seam plan: producers that
+        still send plain strings must keep working until the B3 read-mapping
+        lands; the acceptance is dropped in a follow-up on the same epic.
+        """
+        if isinstance(v, str) and not isinstance(v, EnumAgentSource):
+            return v.lower()
+        return v
 
     @field_validator("timestamp_utc")
     @classmethod

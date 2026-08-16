@@ -19,6 +19,7 @@ from pydantic import ValidationError
 from omnibase_core.enums.hooks.claude_code.enum_claude_code_hook_event_type import (
     EnumClaudeCodeHookEventType,
 )
+from omnibase_core.enums.hooks.enum_agent_source import EnumAgentSource
 from omnibase_core.models.hooks.claude_code.model_claude_code_hook_event import (
     ModelClaudeCodeHookEvent,
 )
@@ -447,3 +448,55 @@ class TestModelClaudeCodeHookEventIntegration:
 
             assert event.event_type == event_type
             assert event_type.value in event.session_id
+
+
+@pytest.mark.unit
+class TestModelClaudeCodeHookEventAgentSource:
+    """Test the agent_source provenance field (OMN-14750 backfill)."""
+
+    def _event(self, **overrides: object) -> ModelClaudeCodeHookEvent:
+        kwargs: dict[str, object] = {
+            "event_type": EnumClaudeCodeHookEventType.USER_PROMPT_SUBMIT,
+            "session_id": "session-abc123",
+            "timestamp_utc": datetime.now(UTC),
+            "payload": ModelClaudeCodeHookEventPayload(),
+        }
+        kwargs.update(overrides)
+        return ModelClaudeCodeHookEvent(**kwargs)  # type: ignore[arg-type]  # NOTE(OMN-14750): helper unpacks dict[str, object] test overrides; values are runtime-correct per-field
+
+    def test_default_is_claude(self) -> None:
+        """Omitting agent_source defaults to CLAUDE (pre-backfill wire compat)."""
+        assert self._event().agent_source is EnumAgentSource.CLAUDE
+
+    def test_accepts_enum_member(self) -> None:
+        """Explicit enum members are accepted as-is."""
+        event = self._event(agent_source=EnumAgentSource.CURSOR)
+        assert event.agent_source is EnumAgentSource.CURSOR
+
+    def test_accepts_bare_string(self) -> None:
+        """Bare strings coerce to the enum (str-accepting seam, OMN-14750)."""
+        assert self._event(agent_source="claude").agent_source is (
+            EnumAgentSource.CLAUDE
+        )
+
+    def test_accepts_string_case_insensitively(self) -> None:
+        """Mixed-case strings coerce via the before-validator."""
+        assert self._event(agent_source="CLAUDE").agent_source is (
+            EnumAgentSource.CLAUDE
+        )
+
+    def test_rejects_unknown_source(self) -> None:
+        """Unknown dispatcher names fail validation."""
+        with pytest.raises(ValidationError):
+            self._event(agent_source="copilot")
+
+    def test_wire_serialization_is_plain_string(self) -> None:
+        """JSON wire shape carries the bare value, unchanged from a str field."""
+        wire = json.loads(self._event().model_dump_json())
+        assert wire["agent_source"] == "claude"
+
+    def test_wire_round_trip(self) -> None:
+        """A serialized event re-validates with the enum reconstructed."""
+        wire = json.loads(self._event().model_dump_json())
+        event = ModelClaudeCodeHookEvent.model_validate(wire)
+        assert event.agent_source is EnumAgentSource.CLAUDE
