@@ -39,6 +39,7 @@ from pydantic import (
 
 from omnibase_core.enums.enum_contract_completeness import EnumContractCompleteness
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_proof_class import EnumProofClass
 from omnibase_core.enums.ticket import (
     PHASE_ALLOWED_ACTIONS,
     EnumTicketAction,
@@ -188,6 +189,25 @@ class ModelTicketContract(BaseModel):
     contract_completeness: EnumContractCompleteness = Field(
         default=EnumContractCompleteness.STUB,
         description="Completeness level of this contract",
+    )
+
+    # Proof class (OMN-15911, seam-completion of the OMN-13977 doctrine field).
+    # None default — additive, backward-compatible: every existing on-disk
+    # contract YAML that omits this key keeps loading unchanged. Mirrors the
+    # omnimarket DurableEvidenceGate consumer's seam exactly: that gate reads
+    # ``contract.get("proof_class")`` off a RAW yaml-loaded dict (never through
+    # this Pydantic model) and branches on the literal string "receipt-bound"
+    # (services/receipt_bound_evidence.py, RECEIPT_BOUND_PROOF_CLASS). This
+    # field accepts the same literal strings for the full six-value doctrine
+    # set rather than a bare ``str``, so a typo'd/invented proof class is
+    # rejected at authoring time instead of silently accepted.
+    proof_class: EnumProofClass | None = Field(
+        default=None,
+        description=(
+            "Which surface proves this ticket's completion claim: "
+            "code-only | receipt-bound | deployed | live-readback | "
+            "replay-proven | prod-proven. None when not yet declared."
+        ),
     )
 
     # =========================================================================

@@ -406,3 +406,123 @@ def test_on_disk_yaml_sample_loads() -> None:
     assert contract.emergency_bypass.enabled is False
     assert len(contract.dod_evidence) == 5
     assert contract.dod_evidence[0].id == "dod-001"
+
+
+# ============================================================================
+# T7 — proof_class field (OMN-15911, seam-completion of OMN-13977 doctrine)
+# ============================================================================
+#
+# omnimarket's node_dod_verify DurableEvidenceGate (services/receipt_bound_evidence.py,
+# `is_receipt_bound_contract`) already reads a top-level `proof_class` key off the
+# RAW yaml-loaded contract dict and branches Check 2 of the gate on the literal
+# string "receipt-bound" — but ModelTicketContract (extra="forbid") has never
+# declared the field, so authoring a contract that uses it fails schema
+# validation (`validate-yaml`, wired as both a pre-commit hook and a CI job in
+# onex_change_control) before it can ever reach the gate. This is the schema-side
+# half of the seam the consumer already implements; see OMN-15911 DoD item 1.
+
+
+@pytest.mark.unit
+def test_proof_class_field_accepted() -> None:
+    """ModelTicketContract accepts proof_class as a declared field, not an extra.
+
+    Mirrors the consumer's seam exactly (omnimarket
+    services/receipt_bound_evidence.py, RECEIPT_BOUND_PROOF_CLASS =
+    "receipt-bound"): the field must accept the plain string "receipt-bound"
+    and round-trip it losslessly, since the gate reads
+    ``contract.get("proof_class")`` off a raw yaml.safe_load dict, never through
+    this Pydantic model. None (unset) must remain the default so every existing
+    on-disk contract YAML that omits the field keeps loading unchanged.
+    """
+    from omnibase_core.enums.enum_proof_class import EnumProofClass
+
+    contract = ModelTicketContract(
+        ticket_id="OMN-15911",
+        title="proof_class field test",
+        proof_class="receipt-bound",
+    )
+
+    declared_fields = ModelTicketContract.model_fields
+    assert "proof_class" in declared_fields, (
+        "proof_class must be a declared field, not stored in model_extra"
+    )
+    assert isinstance(contract.proof_class, EnumProofClass), (
+        f"proof_class must coerce to EnumProofClass, got {type(contract.proof_class)}"
+    )
+    assert contract.proof_class == EnumProofClass.RECEIPT_BOUND
+    # The exact literal string the consumer compares against (RECEIPT_BOUND_PROOF_CLASS).
+    assert contract.proof_class.value == "receipt-bound"
+
+    # Default is None — existing contracts that omit proof_class keep loading.
+    default_contract = ModelTicketContract(ticket_id="OMN-TEST", title="no proof_class")
+    assert default_contract.proof_class is None
+
+
+@pytest.mark.unit
+def test_proof_class_rejects_value_outside_doctrine_set() -> None:
+    """proof_class rejects any string outside the OMN-13977 six-value doctrine.
+
+    Team-lead ruling (OMN-15956 session): "if the consumer compares against
+    specific strings, prefer that constrained set over bare str." The doctrine
+    vocabulary (root CLAUDE.md "Proof capacity" rule) is the full accepted set,
+    not just the one value ("receipt-bound") the gate currently branches on —
+    a bare `str` field would silently accept typos/invented classes.
+    """
+    with pytest.raises(ValidationError):
+        ModelTicketContract(
+            ticket_id="OMN-TEST",
+            title="invalid proof_class",
+            proof_class="not-a-real-proof-class",
+        )
+
+
+@pytest.mark.unit
+def test_proof_class_accepts_full_doctrine_set() -> None:
+    """Every one of the six OMN-13977 doctrine values round-trips cleanly."""
+    from omnibase_core.enums.enum_proof_class import EnumProofClass
+
+    doctrine_values = [
+        "code-only",
+        "receipt-bound",
+        "deployed",
+        "live-readback",
+        "replay-proven",
+        "prod-proven",
+    ]
+    for value in doctrine_values:
+        contract = ModelTicketContract(
+            ticket_id="OMN-TEST", title="doctrine sweep", proof_class=value
+        )
+        assert contract.proof_class == EnumProofClass(value)
+        assert contract.proof_class.value == value
+
+
+@pytest.mark.unit
+def test_proof_class_yaml_round_trip_matches_gate_consumer_shape() -> None:
+    """YAML round-trip: parsed proof_class equals the raw-dict shape the gate reads.
+
+    This is the cross-boundary half, in-process: `from_yaml` (Pydantic path,
+    what `validate-yaml` runs) and a plain `yaml.safe_load` (the raw-dict path
+    `omnimarket.node_dod_verify.services.evidence_collector.collect()` and
+    `receipt_bound_evidence.is_receipt_bound_contract()` actually use) must
+    agree on the exact string value for the same YAML bytes — no far-side mock,
+    both are the real parsers.
+    """
+    import yaml
+
+    contract_yaml = textwrap.dedent(
+        """
+        ticket_id: "OMN-15911"
+        title: "proof_class round-trip"
+        proof_class: "receipt-bound"
+        """
+    )
+
+    # Path 1: the raw dict the gate's is_receipt_bound_contract() consumes.
+    raw = yaml.safe_load(contract_yaml)
+    assert raw.get("proof_class") == "receipt-bound"
+
+    # Path 2: the strict Pydantic model validate-yaml enforces.
+    contract = ModelTicketContract.from_yaml(contract_yaml)
+    assert contract.proof_class is not None
+    assert contract.proof_class.value == raw.get("proof_class")
