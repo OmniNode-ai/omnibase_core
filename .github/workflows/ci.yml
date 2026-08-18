@@ -8,6 +8,11 @@ on:
     branches: [main, dev, "hotfix/**"]
   pull_request:
     branches: [main, dev]
+    # OMN-16215: default types (opened/synchronize/reopened) don't retrigger
+    # on a draft->ready flip. `ready_for_review` ensures undrafting a dev PR
+    # fires a full CI evaluation against the current head without requiring a
+    # new push -- see test-parallel's/tests-integration's `if:` below.
+    types: [opened, synchronize, reopened, ready_for_review]
   merge_group:
     branches: [main, dev]
   workflow_dispatch:
@@ -2972,7 +2977,24 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
+    # OMN-16215: draft-state CI admission gate (org-wide fan-out of the
+    # onex_change_control#6686 mechanism, OMN-16214/OMN-15731). This is the
+    # single most expensive job in ci.yml (up to 40 self-hosted-or-ubuntu-latest
+    # shards, up to 70m each) so it is the highest-leverage gate target on this
+    # repo -- unlike OCC's one monolithic pre-commit job, core fans quality
+    # checks out into ~50 single-shard leaf jobs under quality-gate that already
+    # run on cheap ubuntu-latest for pull_request events; those are left
+    # ungated here (see the PR body for the full scoping table). The
+    # `base_ref != 'dev'` arm preserves the dev->main promotion-boundary
+    # guarantee (root CLAUDE.md rule #4) exactly as OMN-15731 did for OCC: a
+    # main-targeting PR always runs this unconditionally, draft or not. No
+    # `ci:ready`-style label fallback is needed -- core has no existing label
+    # pilot for this job (verified against the live workflow file before
+    # building), so this is a pure draft-state gate, not a dual-accept one.
+    if: >-
+      always() && needs.quality-gate.result == 'success' &&
+      needs.zone-filter.outputs.docs_only != 'true' &&
+      (github.event_name != 'pull_request' || github.base_ref != 'dev' || !github.event.pull_request.draft)
     # Self-hosted runners can slow sharply under memory pressure when the
     # duration cache is cold; keep the full-suite split timeout above the
     # observed 20-minute saturation boundary.
@@ -3204,7 +3226,15 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 30
-    if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
+    # OMN-16215: draft-state CI admission gate, mirroring test-parallel's gate
+    # immediately above (same rationale: the 4-split integration matrix is the
+    # second-most-expensive job in this file; see that job's comment for the
+    # full scoping rationale). Same main-boundary carve-out, same no-label-arm
+    # decision.
+    if: >-
+      always() && needs.quality-gate.result == 'success' &&
+      needs.zone-filter.outputs.docs_only != 'true' &&
+      (github.event_name != 'pull_request' || github.base_ref != 'dev' || !github.event.pull_request.draft)
     strategy:
       fail-fast: false
       matrix:
