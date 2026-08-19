@@ -1198,3 +1198,142 @@ def test_classify_result_plain_object_without_failure_markers_is_completed() -> 
         value: int = 1
 
     assert RuntimeLocal._classify_result(_Ok()) == EnumWorkflowResult.COMPLETED
+
+
+# ---------------------------------------------------------------------------
+# OMN-15449: workflow_result.json identity anchor.
+#
+# ``workflow_result.json`` lives at a FIXED path shared by every RuntimeLocal
+# invocation against the same ``state_root``. A caller (receipt_mode.py in
+# omnibase_infra) that reads it back after ``run()`` returns has no way to
+# tell whether the content it sees is THIS run's own output or a different
+# run's (a concurrent invocation against the same state_root, or a leftover
+# from a run whose write path was skipped) — that ambiguity is the mechanism
+# behind a reported class of false-Done receipt (a green, fully-verified
+# table that belongs to a different ticket than the one requested, while the
+# run's own capture log correctly names what it actually resolved).
+#
+# These two tests cover the WRITER side of the fix: (1) the stamped
+# ``run_id`` a caller can join against, and (2) the one ``run_async`` exit
+# path that used to return without writing state at all, leaving a stale
+# predecessor file in place for the next reader to (mis)trust.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_write_state_stamps_run_id_for_caller_identity_join(
+    tmp_path: Path,
+) -> None:
+    """``workflow_result.json`` carries this run's own ``run_id`` (OMN-15449).
+
+    A caller that passes its own ``run_id`` into the constructor must see
+    that SAME value echoed back in the written file — the join key a reader
+    needs to verify the file it is about to trust actually belongs to the
+    run it just executed, not a concurrent or leftover one.
+    """
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_compute_handler_contract(contract_path, "_InitExecuteLifecycleHandler")
+    caller_run_id = _uuid_module.uuid4()
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=5,
+        run_id=caller_run_id,
+    )
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.COMPLETED
+    assert runtime.run_id == caller_run_id
+    workflow_data = json.loads((state_root / "workflow_result.json").read_text())
+    assert workflow_data["run_id"] == str(caller_run_id)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_write_state_mints_run_id_when_caller_supplies_none(
+    tmp_path: Path,
+) -> None:
+    """A caller with no run_id of its own still gets a stamped, valid UUID."""
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_compute_handler_contract(contract_path, "_InitExecuteLifecycleHandler")
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=5,
+    )
+    await runtime.run_async()
+
+    workflow_data = json.loads((state_root / "workflow_result.json").read_text())
+    # Raises ValueError if not a valid UUID string — the assertion IS the parse.
+    assert _uuid_module.UUID(str(workflow_data["run_id"])) == runtime.run_id
+
+
+def _write_no_terminal_event_no_handler_contract(target: Path) -> None:
+    """A contract with neither ``terminal_event`` nor any handler spec.
+
+    Hits the one ``run_async`` exit branch that returns FAILED without any
+    dispatch at all — the specific gap this ticket closes.
+    """
+    target.write_text(
+        yaml.safe_dump({"workflow_id": "omn-15449-no-handler-no-terminal"}),
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_no_terminal_event_no_handler_spec_still_writes_state(
+    tmp_path: Path,
+) -> None:
+    """The 'nothing to dispatch' exit path must not leave a stale file in place.
+
+    BEFORE OMN-15449: this branch returned ``FAILED`` without calling
+    ``_write_state()`` at all. If a PREVIOUS run against the same
+    ``state_root`` had left a workflow_result.json behind, a caller reading
+    the file back after THIS run would see that unrelated previous run's
+    content with no signal that it does not belong to this run — the reader
+    could not tell "no write happened" from "a stale file is sitting here"
+    without this fix. Writing this run's own (failed) state, including its
+    own run_id, closes that gap directly, independent of the reader-side
+    identity check in omnibase_infra.
+    """
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_no_terminal_event_no_handler_contract(contract_path)
+
+    # Seed a stale file from a "previous run" with a DIFFERENT run_id, exactly
+    # the shape a caller must never mistake for this run's own output.
+    state_root.mkdir(parents=True)
+    stale_run_id = _uuid_module.uuid4()
+    (state_root / "workflow_result.json").write_text(
+        json.dumps(
+            {
+                "result": "completed",
+                "exit_code": 0,
+                "workflow": "unrelated-previous-run",
+                "run_id": str(stale_run_id),
+                "handler_result": {"ticket_id": "OMN-UNRELATED"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=5,
+    )
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.FAILED
+    assert runtime.exit_code != 0
+    workflow_data = json.loads((state_root / "workflow_result.json").read_text())
+    assert workflow_data["run_id"] == str(runtime.run_id)
+    assert workflow_data["run_id"] != str(stale_run_id)
+    assert workflow_data["result"] == EnumWorkflowResult.FAILED.value
+    assert "handler_result" not in workflow_data
