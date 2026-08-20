@@ -31,8 +31,17 @@ jobs:
     # needs the self-hosted runner; it moves to a GitHub-hosted runner whose
     # egress clears the deadline (AC2).
     runs-on: ubuntu-latest
+    # OMN-16286: job-level override (job-level permissions REPLACE, not add
+    # to, the workflow-level block above) so this job can additionally read
+    # the release commit's merged PR + body via `gh` to resolve real cascade
+    # evidence below.
+    permissions:
+      contents: write
+      pull-requests: read
     outputs:
       version: ${{ steps.tag.outputs.tag }}
+      ticket: ${{ steps.release_evidence.outputs.ticket }}
+      evidence_source: ${{ steps.release_evidence.outputs.evidence_source }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -98,6 +107,45 @@ jobs:
           else
             echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           fi
+
+      # OMN-16286: the Dependency Cascade job below opens a bump PR in every
+      # downstream repo. Those PRs previously carried no ticket and no
+      # Evidence-Source, so Receipt-Gate / occ-preflight hard-failed on every
+      # single one (no cascade PR could land anywhere without manual
+      # intervention). Rather than fabricate new evidence or add a bot
+      # exemption (both explicitly rejected -- OMN-16286), re-thread the SAME
+      # real Evidence-Ticket/Evidence-Source pair that already closed the
+      # release's own merged PR: that evidence is what actually proved this
+      # released code, and the cascade PRs are honestly downstream of it. Fail
+      # loud rather than open unlandable cascade PRs again when the tagged
+      # commit has no resolvable merged PR or evidence pair.
+      - name: Resolve release ticket + evidence (OMN-16286)
+        id: release_evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          head_sha="$(git rev-parse HEAD)"
+
+          pr_number="$(gh api "repos/${{ github.repository }}/commits/${head_sha}/pulls" --jq '.[0].number // empty' 2>/dev/null || true)"
+          if [ -z "$pr_number" ]; then
+            echo "::error::OMN-16286: could not resolve a merged PR for release commit ${head_sha}. The dependency cascade requires a real Evidence-Ticket/Evidence-Source pair sourced from the release's own merged PR; a tag with no associated PR cannot cascade honestly."
+            exit 1
+          fi
+
+          pr_body="$(gh pr view "$pr_number" --repo "${{ github.repository }}" --json body --jq '.body' 2>/dev/null || true)"
+
+          ticket="$(printf '%s' "$pr_body" | grep -oiE '^Evidence-Ticket:[[:space:]]*OMN-[0-9]+' | head -1 | grep -oiE 'OMN-[0-9]+' | tr '[:lower:]' '[:upper:]' || true)"
+          evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//; s/[[:space:]]+$//' || true)"
+
+          if [ -z "$ticket" ] || [ -z "$evidence_source" ]; then
+            echo "::error::OMN-16286: release PR #${pr_number} (commit ${head_sha}) is missing a resolvable Evidence-Ticket/Evidence-Source pair (ticket='${ticket:-<none>}', evidence_source='${evidence_source:-<none>}'). Fix the release PR's evidence trailer, or release from a properly evidenced commit, before the dependency cascade can open honest downstream PRs."
+            exit 1
+          fi
+
+          echo "ticket=${ticket}" >> "$GITHUB_OUTPUT"
+          echo "evidence_source=${evidence_source}" >> "$GITHUB_OUTPUT"
+          echo "::notice::OMN-16286: resolved cascade evidence from PR #${pr_number} -- ticket=${ticket} evidence_source=${evidence_source}"
 
       # OMN-15603 (AC4): preserve the built artifacts BEFORE publishing. Run
       # 30674223657 ended with total_count=0 artifacts, so the only way to
@@ -203,6 +251,8 @@ jobs:
     with:
       package: omnibase_core
       version: ${{ needs.release.outputs.version }}
+      ticket: ${{ needs.release.outputs.ticket }}
+      evidence_source: ${{ needs.release.outputs.evidence_source }}
     secrets:
       cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}
 

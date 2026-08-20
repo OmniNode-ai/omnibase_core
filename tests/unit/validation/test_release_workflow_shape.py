@@ -766,7 +766,21 @@ def test_dependency_cascade_still_runs_off_the_release_output() -> None:
 
     assert cascade["needs"] == "release"
     assert "./.github/workflows/dependency-cascade.yml" in str(cascade["uses"])
-    assert _release_job()["outputs"] == {"version": "${{ steps.tag.outputs.tag }}"}
+    # OMN-16286: `release` also resolves + exposes the real Evidence-Ticket /
+    # Evidence-Source pair that closed the release's own merged PR, so the
+    # cascade job can thread honest evidence into every downstream bump PR
+    # instead of opening one Receipt-Gate can never pass.
+    assert _release_job()["outputs"] == {
+        "version": "${{ steps.tag.outputs.tag }}",
+        "ticket": "${{ steps.release_evidence.outputs.ticket }}",
+        "evidence_source": "${{ steps.release_evidence.outputs.evidence_source }}",
+    }
+    cascade_with = _as_mapping(cascade["with"], "the `dependency-cascade` job `with:`")
+    assert cascade_with["ticket"] == "${{ needs.release.outputs.ticket }}"
+    assert (
+        cascade_with["evidence_source"]
+        == "${{ needs.release.outputs.evidence_source }}"
+    )
 
 
 # --------------------------------------------------------------------------

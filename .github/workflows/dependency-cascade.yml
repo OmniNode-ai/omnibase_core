@@ -31,6 +31,26 @@ on:
         description: 'Released version tag (e.g. v0.11.0)'
         required: true
         type: string
+      ticket:
+        description: >-
+          OMN ticket that closed the release being cascaded (OMN-16286).
+          Threaded verbatim into the PR title/branch/body of every downstream
+          bump PR this workflow opens so Receipt-Gate's identity binding
+          (title <-> branch <-> Evidence-Ticket) resolves honestly. Must be
+          the SAME ticket paired with `evidence_source` below.
+        required: true
+        type: string
+      evidence_source:
+        description: >-
+          Evidence-Source value (OCC#<n> or a merged OCC commit SHA) that
+          already proved the released package version (OMN-16286). Re-cited
+          verbatim as this PR's own `Evidence-Source:` line -- a cascade PR
+          carries no new testing of its own beyond this repo's CI against the
+          new lockfile, so it honestly reuses the evidence that proved the
+          release rather than fabricating new evidence or claiming an
+          exemption.
+        required: true
+        type: string
     secrets:
       cross-repo-pat:
         description: >-
@@ -47,6 +67,14 @@ on:
         type: string
       version:
         description: 'Released version tag (e.g. v0.11.0)'
+        required: true
+        type: string
+      ticket:
+        description: 'OMN ticket that closed the release being cascaded (OMN-16286), e.g. OMN-15449.'
+        required: true
+        type: string
+      evidence_source:
+        description: 'Evidence-Source that already proved the release (OMN-16286), e.g. OCC#6695.'
         required: true
         type: string
 
@@ -140,17 +168,54 @@ jobs:
           VERSION="${{ inputs.version }}"
           VERSION="${VERSION#v}"
           PACKAGE="${{ inputs.package }}"
+          TICKET="${{ inputs.ticket }}"
           # Use hyphenated package name for the branch (PyPI convention)
           PKG_HYPHEN="${PACKAGE//_/-}"
-          BRANCH="automation/bump-${PKG_HYPHEN}-${VERSION}"
+          # OMN-16286: the branch name must itself carry the ticket token --
+          # Receipt-Gate's identity binding checks title, branch, and
+          # Evidence-Ticket all reference the same OMN-<n> (case-insensitive,
+          # token-bounded match).
+          TICKET_SLUG="$(printf '%s' "$TICKET" | tr '[:upper:]' '[:lower:]')"
+          BRANCH="automation/bump-${PKG_HYPHEN}-${VERSION}-${TICKET_SLUG}"
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "pkg_hyphen=$PKG_HYPHEN" >> $GITHUB_OUTPUT
+
+      # OMN-16286 (ports omnibase_infra's own OMN-15604 AC4 guard verbatim --
+      # single source of truth stays in omnibase_infra; this sparse-checks-out
+      # only the one script into a side directory so it does not disturb the
+      # downstream repo's own checkout above).
+      - name: Checkout omnibase_infra dep-provenance script
+        if: steps.token_check.outputs.has_token == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_infra
+          path: _dep_provenance_gate
+          sparse-checkout: |
+            scripts/check_dep_provenance.py
+          sparse-checkout-cone-mode: false
 
       - name: Create branch and upgrade lockfile
         if: steps.token_check.outputs.has_token == 'true'
         run: |
           git checkout -b "${{ steps.vars.outputs.branch }}"
+
+          # OMN-16286 / OMN-15604 AC4: `uv lock --upgrade-package` cannot move
+          # a [tool.uv.sources] git pin -- uv always prefers an explicit
+          # source override over registry resolution, so re-locking against
+          # the SAME override typically re-resolves to a byte-identical
+          # uv.lock. Left unchecked, the SKIP branch below would misreport
+          # that as "already on latest" when this repo is actually still
+          # stuck on the git pin (this is exactly what produced omniintelligence
+          # PR #827's untrustworthy ~54% full-file uv.lock rewrite). Fail loud
+          # and explicit BEFORE attempting the (guaranteed no-op / suspicious)
+          # lock, instead of after.
+          if ! python3 "${GITHUB_WORKSPACE}/_dep_provenance_gate/scripts/check_dep_provenance.py" \
+            --pyproject pyproject.toml \
+            --check-movable "${{ steps.vars.outputs.pkg_hyphen }}"; then
+            echo "::error::Dependency cascade cannot move ${{ steps.vars.outputs.pkg_hyphen }} in ${{ matrix.repo }} -- it is pinned via a [tool.uv.sources] git override. 'uv lock --upgrade-package' will silently re-resolve against the SAME override and report no lockfile change, masking a no-op cascade (OMN-15604). Remove the [tool.uv.sources] override for ${{ steps.vars.outputs.pkg_hyphen }} in ${{ matrix.repo }}'s pyproject.toml first, then re-run this cascade."
+            exit 1
+          fi
 
           # Upgrade the package in the lockfile
           uv lock --upgrade-package "${{ inputs.package }}"
@@ -164,12 +229,42 @@ jobs:
             echo "Lockfile updated with new ${{ inputs.package }} version"
           fi
 
+      # OMN-16286: keep an exact pyproject.toml pin (`==X.Y.Z`) in sync with
+      # the lockfile the step above just bumped. A downstream repo that pins
+      # exactly (e.g. omnibase_infra's `omnibase-core==0.46.8`) otherwise ends
+      # up with a lockfile and a pin that silently disagree the moment this
+      # cascade lands (observed live on infra#2805). A repo with a
+      # range/no pin is untouched -- the regex only matches an exact pin for
+      # this package.
+      - name: Update pyproject.toml pin
+        if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false'
+        env:
+          BUMP_PACKAGE: ${{ inputs.package }}
+        run: |
+          PKG_HYPHEN="${BUMP_PACKAGE//_/-}"
+          RESOLVED="${{ steps.vars.outputs.version }}"
+          export PKG_HYPHEN RESOLVED
+          echo "Pinned version for ${PKG_HYPHEN}: ${RESOLVED}"
+
+          python3 - <<'PYEOF'
+          import re, os
+          pkg = os.environ["PKG_HYPHEN"]
+          version = os.environ["RESOLVED"]
+          content = open("pyproject.toml").read()
+          updated = re.sub(
+              r'"' + re.escape(pkg) + r'==[0-9]+\.[0-9]+\.[0-9]+"',
+              f'"{pkg}=={version}"',
+              content,
+          )
+          open("pyproject.toml", "w").write(updated)
+          PYEOF
+
       - name: Commit and push
         if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add uv.lock
+          git add uv.lock pyproject.toml
           git commit -m "chore(deps): bump ${{ inputs.package }} to ${{ steps.vars.outputs.version }}
 
           Automated dependency cascade from ${{ github.repository }} release ${{ inputs.version }}.
@@ -197,14 +292,26 @@ jobs:
 
           gh pr create \
             --repo "OmniNode-ai/${{ matrix.repo }}" \
-            --title "chore(deps): bump ${{ steps.vars.outputs.pkg_hyphen }} to ${{ steps.vars.outputs.version }}" \
+            --title "chore(deps): bump ${{ steps.vars.outputs.pkg_hyphen }} to ${{ steps.vars.outputs.version }} (${{ inputs.ticket }})" \
             --body "$(cat <<'PREOF'
           ## Summary
 
           Automated dependency bump triggered by a new release of `${{ inputs.package }}` (${{ inputs.version }}).
 
           - Updates `uv.lock` via `uv lock --upgrade-package ${{ inputs.package }}`
-          - No source code changes -- lockfile only
+          - Updates `pyproject.toml` exact pin (`==X.Y.Z`) to match, when this repo pins that exactly
+          - No other source code changes
+
+          ## Cascade provenance (OMN-16286)
+
+          This PR carries no dedicated testing of its own beyond this repo's own
+          CI running against the new lockfile. Its cited evidence below is the
+          upstream release's own Evidence-Ticket/Evidence-Source pair, which
+          already proved the released package version -- reused honestly rather
+          than fabricated or exempted:
+
+          - Source repo: `OmniNode-ai/${{ inputs.package }}`
+          - Released version: `${{ inputs.version }}`
 
           ## Triggered by
 
@@ -214,10 +321,13 @@ jobs:
 
           - [ ] CI passes (lockfile resolution is valid)
           - [ ] Downstream tests pass with the new dependency version
+
+          Evidence-Ticket: ${{ inputs.ticket }}
+          Evidence-Source: ${{ inputs.evidence_source }}
           PREOF
           )" \
             --head "${{ steps.vars.outputs.branch }}" \
-            --base main
+            --base dev
 
       - name: Skip summary
         if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'true'
