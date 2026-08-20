@@ -96,17 +96,25 @@ allowlisted_workflows:
 # the sanctioned default is retire-one, not waive.
 waivers:
   - workflow_file: validator-no-unguarded-git-subprocess.yml
-    ticket: OMN-14891
-    expires: "2026-08-19"
+    ticket: OMN-16280
+    expires: "2026-08-27"
     justification: >-
-      Load-bearing git-environment-isolation gate blocking a twice-observed (2026-07-20 OMN-14891, 2026-07-21
-      OMN-14863) repo-corruption class: git hook-exported GIT_DIR/GIT_WORK_TREE/GIT_INDEX_FILE override
-      cwd=/-C in test subprocesses and mutate the REAL shared canonical clone. The gate needs its own
-      unique check context ("no-unguarded-git-subprocess") ahead of the branch-protection required flip
-      tracked in .github/required-checks.yaml (ADVISORY until 2 independent green dev runs). Waived rather
-      than budget-bumped so the count lock stays flat; the slot regularizes when the OMN-14877 decorative-validator
-      drain frees allowlist slots (this file then takes a freed slot or migrates into ci.yml and the waiver
-      is removed).
+      RENEWAL (OMN-16280) of the original OMN-14891 waiver, which expired 2026-08-19T00:00Z and fail-closed
+      every PR into dev (WAIVER_EXPIRED -> Pull-Request Workflow Ratchet -> CI Summary, a directly required
+      dev context) until this fix. Verified live at renewal time that the "take a freed OMN-14877 slot"
+      path this waiver originally pointed to does NOT hold: budget=31 == len(allowlisted_workflows)=31,
+      zero slack, zero STALE/NOT_PR_TRIGGERED entries (confirmed by running validator_pull_request_workflow_ratchet
+      directly) -- OMN-14877's drain dropped budget 49->31 exactly matching its 18 retired files, consuming
+      its own freed capacity rather than reserving a slot here. Opening a slot requires actively retiring
+      or migrating an existing allowlisted workflow in the same PR, comparable-or-greater effort to migrating
+      this workflow itself -- too large for tonight's urgent unblock during runner congestion (controller
+      ruling, OMN-16280). The underlying gate remains load-bearing and unchanged: git-environment-isolation
+      blocking the twice-observed (2026-07-20 OMN-14891, 2026-07-21 OMN-14863) repo-corruption class (hook-exported
+      GIT_DIR/GIT_WORK_TREE/ GIT_INDEX_FILE override cwd=/-C in test subprocesses, mutating the real shared
+      canonical clone). Short 7-day expiry (not another month) deliberately forces real closure rather
+      than silent drift: OMN-16281 tracks the permanent fix (migrate into ci.yml, or retire-and-swap a
+      freed slot) and this waiver MUST NOT be renewed a third time -- a still-open OMN-16281 close to
+      2026-08-27 needs an explicit operator call, not an auto-renew.
     retires: >-
       The recurring manual post-incident .git/config + index forensics-and-repair step for hook-context
       test corruption, and the per-file hand-fix pattern of OMN-14744 that demonstrably did not hold.
@@ -134,3 +142,5 @@ metadata:
     - OMN-14350  # non-canonical lifecycle-class ratchet (the count-only-down precedent)
     - OMN-14430  # standalone-validator debt registry (validator-*.yml subset; C7 generalizes)
     - OMN-14877  # fast-follow: migrate the 18 decorative validators (drains this budget)
+    - OMN-16280  # urgent unblock: renewed the expired validator-no-unguarded-git-subprocess.yml waiver
+    - OMN-16281  # permanent closure follow-through for that waiver -- do not renew a third time
