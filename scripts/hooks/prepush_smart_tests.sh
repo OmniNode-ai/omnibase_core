@@ -286,7 +286,12 @@ RC=0
 # picks the nearest ini to the invocation args, not pyproject.toml, and the
 # two do NOT merge. Passing these on the command line here means the
 # per-test timeout applies regardless of which ini file pytest resolves.
-PREPUSH_TIMEOUT_FLAGS="-n4 --dist=loadgroup --timeout=60 --timeout-method=thread"
+# OMN-15977: signal method, not thread -- thread-based timeout cannot kill a
+# CPU-bound pure-Python loop holding the GIL (the watcher thread never gets
+# scheduled), which is exactly the failure mode that produced two
+# 46min/53min unkillable local runaways on 2026-08-12. Signal delivers
+# SIGALRM at the next bytecode boundary regardless of GIL contention.
+PREPUSH_TIMEOUT_FLAGS="-n4 --dist=loadgroup --timeout=60 --timeout-method=signal"
 
 # SINGLE SOURCE OF TRUTH for "what the heavy run is" (OMN-15408): the
 # fail-closed escalation runs exactly this target, and `selection_is_whole_suite`
