@@ -95,29 +95,19 @@ allowlisted_workflows:
 # net-negative rule). A past-expiry waiver fails the gate. Empty at baseline —
 # the sanctioned default is retire-one, not waive.
 waivers:
-  - workflow_file: validator-no-unguarded-git-subprocess.yml
-    ticket: OMN-16280
-    expires: "2026-08-27"
-    justification: >-
-      RENEWAL (OMN-16280) of the original OMN-14891 waiver, which expired 2026-08-19T00:00Z and fail-closed
-      every PR into dev (WAIVER_EXPIRED -> Pull-Request Workflow Ratchet -> CI Summary, a directly required
-      dev context) until this fix. Verified live at renewal time that the "take a freed OMN-14877 slot"
-      path this waiver originally pointed to does NOT hold: budget=31 == len(allowlisted_workflows)=31,
-      zero slack, zero STALE/NOT_PR_TRIGGERED entries (confirmed by running validator_pull_request_workflow_ratchet
-      directly) -- OMN-14877's drain dropped budget 49->31 exactly matching its 18 retired files, consuming
-      its own freed capacity rather than reserving a slot here. Opening a slot requires actively retiring
-      or migrating an existing allowlisted workflow in the same PR, comparable-or-greater effort to migrating
-      this workflow itself -- too large for tonight's urgent unblock during runner congestion (controller
-      ruling, OMN-16280). The underlying gate remains load-bearing and unchanged: git-environment-isolation
-      blocking the twice-observed (2026-07-20 OMN-14891, 2026-07-21 OMN-14863) repo-corruption class (hook-exported
-      GIT_DIR/GIT_WORK_TREE/ GIT_INDEX_FILE override cwd=/-C in test subprocesses, mutating the real shared
-      canonical clone). Short 7-day expiry (not another month) deliberately forces real closure rather
-      than silent drift: OMN-16281 tracks the permanent fix (migrate into ci.yml, or retire-and-swap a
-      freed slot) and this waiver MUST NOT be renewed a third time -- a still-open OMN-16281 close to
-      2026-08-27 needs an explicit operator call, not an auto-renew.
-    retires: >-
-      The recurring manual post-incident .git/config + index forensics-and-repair step for hook-context
-      test corruption, and the per-file hand-fix pattern of OMN-14744 that demonstrably did not hold.
+  # validator-no-unguarded-git-subprocess.yml waiver (OMN-14891 original,
+  # OMN-16280 renewal) PERMANENTLY CLOSED by OMN-16281: the workflow was
+  # migrated into ci.yml as the `no-unguarded-git-subprocess` job (Option 1,
+  # the OMN-14877 migration pattern). Budget stays flat at 31 -- ci.yml was
+  # already an allowlisted_workflows entry, so no new slot was needed. The
+  # standalone file is retired to workflow_dispatch-only. The
+  # "no-unguarded-git-subprocess" required-context row stays in
+  # .github/required-checks.yaml, repointed to `workflow: ci.yml` -- the
+  # ci.yml job keeps the byte-identical job name, so the same directly-
+  # required dev branch-protection context fires from ci.yml instead, with
+  # zero branch-protection mutation. See
+  # architecture-handshakes/standalone-validator-debt.yaml
+  # (migrated_into_ci_yml).
   - workflow_file: call-occ-companion-effect.yml
     ticket: OMN-14990
     expires: "2026-08-23"

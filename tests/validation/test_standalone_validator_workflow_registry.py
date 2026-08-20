@@ -53,10 +53,12 @@ def test_decorative_debt_is_the_reported_count(tmp_path: Path) -> None:
     this number — update the constant in the same PR as the migration."""
     manifest = yaml.safe_load(DEBT_MANIFEST_PATH.read_text(encoding="utf-8"))
     # OMN-14877 (2026-07-21): the 18 remaining decorative validators were
-    # batch-migrated into ci.yml and reclassified to migrated_into_ci_yml. The
-    # one remaining advisory entry is OMN-14891's git-env-isolation validator
-    # from current dev.
-    assert len(manifest["decorative_debt"]) == 1
+    # batch-migrated into ci.yml and reclassified to migrated_into_ci_yml.
+    # OMN-16281 (2026-08-20): the last remaining entry, OMN-14891's
+    # git-env-isolation validator, was migrated into ci.yml too. This bucket
+    # is now empty; a future decorative standalone validator raises this back
+    # above zero and is expected to update this constant in the same PR.
+    assert len(manifest["decorative_debt"]) == 0
 
 
 def test_planted_undeclared_standalone_validator_is_detected(tmp_path: Path) -> None:
