@@ -52,7 +52,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from scripts.ci.test_selection_closure import TEST_UNIT_PREFIX
@@ -632,3 +634,265 @@ def test_guard_allows_a_genuinely_narrow_selection_on_a_local_host(
         "expected the narrow selection's own path to be handed to pytest; "
         f"stdout: {result.stdout!r}"
     )
+
+
+# =============================================================================
+# OMN-16295: live-load host selection
+# =============================================================================
+# The guard above answers "is this host the right one by IDENTITY". OMN-16295
+# adds a second question -- "does the right host have CAPACITY right now" --
+# answered by `host_load_ratio()` / `host_is_fit()` and consulted inside
+# `guard_full_suite_host()` before it returns 0 for a known-good host. See
+# docs/runbooks/200-build-lane-execution-pattern.md and
+# omnibase_infra/docker/docker-compose.gate-runner.yml for the second
+# execution target this selects between.
+
+_LOAD_HELPERS_RE = re.compile(
+    r"^_prepush_timeout_cmd\(\) \{.*?^host_is_fit\(\) \{.*?^\}",
+    re.DOTALL | re.MULTILINE,
+)
+
+
+def _extract_load_helpers_source() -> str:
+    """Extract-and-execute the real `PREPUSH_LOAD_THRESHOLD` default,
+    `host_load_ratio` / `host_is_fit` / `_prepush_timeout_cmd` bash functions,
+    and their shared `_PREPUSH_LOAD_PROBE_PY` constant from the shipped hook
+    -- never a Python re-implementation, for the same reason
+    `_extract_predicate_source` above extracts `selection_is_whole_suite`
+    rather than re-implementing it. The threshold default must travel with
+    the functions: `host_is_fit` reads `$PREPUSH_LOAD_THRESHOLD` directly, and
+    an unset value silently awk-coerces to 0 (every positive ratio reads as
+    "over threshold"), which would falsely fail the fit-path tests below."""
+    script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
+    threshold_match = re.search(
+        r'^PREPUSH_LOAD_THRESHOLD="\$\{PREPUSH_LOAD_THRESHOLD:-[^}]*\}"$',
+        script_text,
+        re.MULTILINE,
+    )
+    assert threshold_match is not None, (
+        f"expected a PREPUSH_LOAD_THRESHOLD default assignment in {HOOK_SCRIPT}"
+    )
+    py_match = re.search(
+        r"^_PREPUSH_LOAD_PROBE_PY='.*?'$", script_text, re.DOTALL | re.MULTILINE
+    )
+    assert py_match is not None, f"expected _PREPUSH_LOAD_PROBE_PY in {HOOK_SCRIPT}"
+    fn_match = _LOAD_HELPERS_RE.search(script_text)
+    assert fn_match is not None, (
+        f"expected _prepush_timeout_cmd/host_load_ratio/host_is_fit in {HOOK_SCRIPT}"
+    )
+    return f"{threshold_match.group(0)}\n{py_match.group(0)}\n{fn_match.group(0)}\n"
+
+
+def test_host_load_helpers_are_defined() -> None:
+    script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
+    for name in ("host_load_ratio()", "host_is_fit()", "_prepush_timeout_cmd()"):
+        assert name in script_text, f"expected {name} defined in {HOOK_SCRIPT}"
+
+
+def _run_load_helper(
+    *args: str, env_extra: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
+    script = f'{_extract_load_helpers_source()}\n"$@"\n'
+    env = dict(os.environ)
+    env.update(env_extra or {})
+    return subprocess.run(
+        ["bash", "-c", script, "load-helper-test", *args],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+        env=env,
+    )
+
+
+def test_host_is_fit_true_under_threshold() -> None:
+    result = _run_load_helper(
+        "host_is_fit", "", env_extra={"PREPUSH_LOAD_OVERRIDE_LOCAL": "5 24"}
+    )
+    assert result.returncode == 0, f"expected fit (rc=0): {result!r}"
+
+
+def test_host_is_fit_false_over_threshold() -> None:
+    result = _run_load_helper(
+        "host_is_fit", "", env_extra={"PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24"}
+    )
+    assert result.returncode == 1, f"expected over-threshold (rc=1): {result!r}"
+
+
+def test_host_is_fit_distinguishes_unreachable_from_over_threshold() -> None:
+    """rc=2 (could not check) must never collapse into rc=1 (measured, over
+    threshold) -- callers give a different remediation message for each."""
+    result = _run_load_helper(
+        "host_is_fit",
+        "definitely-unroutable.invalid",
+        env_extra={"PREPUSH_LOAD_OVERRIDE_LOCAL": ""},
+    )
+    assert result.returncode == 2, (
+        f"expected unreachable (rc=2) for an unresolvable remote target with "
+        f"no override and no real network dependency assumed: {result!r}"
+    )
+
+
+def test_host_load_ratio_computes_from_the_override_not_a_hardcoded_value() -> None:
+    """Anti-vacuous-test pin: two different override pairs must produce two
+    different measured ratios, proving the arithmetic actually runs against
+    the input rather than returning a constant."""
+    low = _run_load_helper(
+        "host_load_ratio", "", env_extra={"PREPUSH_LOAD_OVERRIDE_LOCAL": "2 24"}
+    )
+    high = _run_load_helper(
+        "host_load_ratio", "", env_extra={"PREPUSH_LOAD_OVERRIDE_LOCAL": "48 24"}
+    )
+    assert low.returncode == 0 and high.returncode == 0, (low, high)
+    assert low.stdout.strip() != high.stdout.strip()
+    assert low.stdout.split()[-1] == "0.083"
+    assert high.stdout.split()[-1] == "2.000"
+
+
+def _run_hook_forcing_full_suite(
+    *, env_extra: dict[str, str]
+) -> subprocess.CompletedProcess[str]:
+    """Run the REAL hook with the full-suite escalation forced
+    (`PREPUSH_FULL_SUITE=1`) and the REAL governed selector (a fast, real `uv
+    run` invocation) -- but with a stub `uv` that intercepts only the eventual
+    `pytest` invocation, so the (potentially minutes-long) real test run never
+    happens while every decision up to and including `guard_full_suite_host`
+    is exercised for real."""
+    real_uv = shutil.which("uv")
+    assert real_uv is not None, "expected uv on PATH to run this test"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        stub_bin = Path(tmp) / "stub-bin"
+        stub_bin.mkdir(parents=True, exist_ok=True)
+        uv_stub = stub_bin / "uv"
+        uv_stub.write_text(
+            "#!/usr/bin/env bash\n"
+            'case "$*" in\n'
+            "  *pytest*)\n"
+            '    echo "STUB-PYTEST-INVOKED $*"\n'
+            "    exit 0\n"
+            "    ;;\n"
+            "esac\n"
+            f'exec "{real_uv}" "$@"\n',
+            encoding="utf-8",
+        )
+        uv_stub.chmod(0o755)
+
+        env = dict(os.environ)
+        env["PATH"] = f"{stub_bin}{os.pathsep}{env['PATH']}"
+        env["PREPUSH_FULL_SUITE"] = "1"
+        env["PREPUSH_BASE_REF"] = "HEAD"
+        for leaky in ("PREPUSH_ALLOW_LOCAL_FULL_SUITE",):
+            env.pop(leaky, None)
+        env.update(env_extra)
+
+        return subprocess.run(
+            ["bash", str(HOOK_SCRIPT)],
+            cwd=REPO_ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+
+
+def test_guard_refuses_known_good_host_that_is_over_the_load_threshold() -> None:
+    """The core OMN-16295 behavior: identity match is no longer sufficient.
+
+    PREPUSH_LOAD_OVERRIDE_REMOTE is set (to an arbitrary fit value) so the
+    "other host" probe never makes a real network call -- this test is only
+    about the SELF-host refusal, not about which remediation phrasing the
+    other-host probe produces (that's covered by the two tests below)."""
+    result = _run_hook_forcing_full_suite(
+        env_extra={
+            "PREPUSH_200_HOSTNAME": _real_short_hostname(),
+            "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
+            "PREPUSH_LOAD_OVERRIDE_REMOTE": "3 32",
+        },
+    )
+    assert result.returncode != 0, (
+        f"expected refusal on an over-threshold known-good host: {result!r}"
+    )
+    assert "at/over the" in result.stderr and "x-core threshold" in result.stderr, (
+        f"expected the capacity-refusal message, got stderr={result.stderr!r}"
+    )
+    assert "STUB-PYTEST-INVOKED" not in result.stdout, (
+        "the guard must refuse BEFORE pytest is ever invoked"
+    )
+
+
+def test_guard_allows_known_good_host_that_is_under_the_load_threshold() -> None:
+    result = _run_hook_forcing_full_suite(
+        env_extra={
+            "PREPUSH_200_HOSTNAME": _real_short_hostname(),
+            "PREPUSH_LOAD_OVERRIDE_LOCAL": "2 24",
+        },
+    )
+    assert result.returncode == 0, f"expected success on a fit known host: {result!r}"
+    assert "STUB-PYTEST-INVOKED" in result.stdout, (
+        f"expected the run to reach pytest: {result!r}"
+    )
+
+
+def test_guard_allows_the_201_gate_runner_identity_when_fit() -> None:
+    """The .201 gate-runner is a valid execution host by identity, not just
+    `.200` -- this is the routing half of OMN-16295."""
+    result = _run_hook_forcing_full_suite(
+        env_extra={
+            "PREPUSH_201_GATE_RUNNER_HOSTNAME": _real_short_hostname(),
+            "PREPUSH_200_HOSTNAME": "definitely-not-this-host",
+            "PREPUSH_LOAD_OVERRIDE_LOCAL": "2 24",
+        },
+    )
+    assert result.returncode == 0, (
+        f"expected success when this host matches the .201 gate-runner "
+        f"identity and is fit: {result!r}"
+    )
+    assert "STUB-PYTEST-INVOKED" in result.stdout, result
+
+
+def test_guard_override_still_works_under_load() -> None:
+    """PREPUSH_ALLOW_LOCAL_FULL_SUITE must still force through the NEW
+    capacity check, exactly as it already does for the identity check --
+    same escape hatch, same visible degraded-evidence warning."""
+    result = _run_hook_forcing_full_suite(
+        env_extra={
+            "PREPUSH_200_HOSTNAME": _real_short_hostname(),
+            "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
+            "PREPUSH_ALLOW_LOCAL_FULL_SUITE": "1",
+        },
+    )
+    assert result.returncode == 0, result
+    assert "DEGRADED-CAPACITY OVERRIDE" in result.stderr, result.stderr
+    assert "STUB-PYTEST-INVOKED" in result.stdout, result
+
+
+def test_guard_refusal_names_a_fit_alternate_host() -> None:
+    result = _run_hook_forcing_full_suite(
+        env_extra={
+            "PREPUSH_200_HOSTNAME": _real_short_hostname(),
+            "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
+            "PREPUSH_LOAD_OVERRIDE_REMOTE": "3 32",
+        },
+    )
+    assert result.returncode != 0, result
+    assert "HAS capacity -- route there instead" in result.stderr, result.stderr
+
+
+def test_guard_refusal_names_both_hosts_saturated() -> None:
+    result = _run_hook_forcing_full_suite(
+        env_extra={
+            "PREPUSH_200_HOSTNAME": _real_short_hostname(),
+            "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
+            "PREPUSH_LOAD_OVERRIDE_REMOTE": "40 32",
+        },
+    )
+    assert result.returncode != 0, result
+    assert "is ALSO at/over the load threshold" in result.stderr, result.stderr
+
+
+def _real_short_hostname() -> str:
+    return subprocess.run(
+        ["hostname", "-s"], capture_output=True, text=True, check=True
+    ).stdout.strip()
