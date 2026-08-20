@@ -190,6 +190,25 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, 'rc') }}
 
+      # OMN-16289: main = the last release. Once a release publishes
+      # successfully, fast-forward main to the released tag's commit SHA.
+      # This is a non-force push of an already-proven dev SHA (release
+      # tags are cut from dev; dev CI + this job already validated it).
+      # Promotion PRs to main are retired -- main protection now empties
+      # required_status_checks on main and restricts pushes to this job's
+      # automation identity, so no separate token/secret is needed: the
+      # same GITHUB_TOKEN persisted by actions/checkout@v7 above already
+      # authenticates this push.
+      - name: Sync main to release tag
+        if: ${{ !contains(steps.tag.outputs.tag, 'rc') }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          TAG_SHA=$(git rev-list -n 1 "$TAG")
+          echo "Resolved tag $TAG -> commit $TAG_SHA"
+          git push origin "${TAG_SHA}:refs/heads/main"
+          echo "main fast-forwarded to $TAG_SHA ($TAG)"
+
   # ---------------------------------------------------------------------------
   # Post-release: open dependency bump PRs in downstream repos (OMN-5109)
   # ---------------------------------------------------------------------------
