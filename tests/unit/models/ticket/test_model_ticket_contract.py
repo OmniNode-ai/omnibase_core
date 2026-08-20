@@ -26,12 +26,18 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.enums.ticket.enum_definition_format import EnumDefinitionFormat
+from omnibase_core.enums.ticket.enum_interface_kind import EnumInterfaceKind
+from omnibase_core.enums.ticket.enum_interface_surface import EnumInterfaceSurface
+from omnibase_core.enums.ticket.enum_mock_strategy import EnumMockStrategy
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.ticket import (
     Action,
     ClarifyingQuestion,
     Gate,
     GateKind,
+    InterfaceConsumed,
+    InterfaceProvided,
     Phase,
     Requirement,
     Status,
@@ -39,6 +45,7 @@ from omnibase_core.models.ticket import (
     VerificationKind,
     VerificationStep,
 )
+from omnibase_core.models.ticket.model_ticket_contract import _MAX_LIST_ITEMS
 
 # =============================================================================
 # Fixtures
@@ -1169,6 +1176,148 @@ class TestEdgeCases:
 
         with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
             TicketContract.model_validate(data)
+
+
+# =============================================================================
+# List-length caps (OMN-16266)
+# =============================================================================
+#
+# `requirements` had no `max_length` cap, unlike its sibling list fields
+# (`interfaces_touched`, `evidence_requirements`, `dod_evidence`) — a real
+# customer-exposure gap, not hygiene: node_test_generator_compute embeds a
+# full JSON copy of the contract plus per-requirement generated boilerplate
+# (~4x amplification) into its published result, and the Kafka broker's real
+# message.max.bytes is far below what client config implies (OMN-16267). An
+# unbounded `requirements` list can produce a result the broker rejects,
+# silently stranding the customer's workflow with no error surfaced to the
+# caller. Auditing this model while in here found FIVE further list fields
+# with the identical gap (`questions`, `verification_steps`, `gates`,
+# `interfaces_provided`, `interfaces_consumed`) — none carry any comment or
+# rationale suggesting deliberate unboundedness, so all six are capped here
+# to the same `_MAX_LIST_ITEMS` convention the sibling fields already use.
+
+
+def _requirement(n: int = 0) -> Requirement:
+    return Requirement(
+        id=f"r{n}",
+        statement="Implement feature X",
+        rationale="Business need",
+        acceptance=["Given/When/Then criteria"],
+    )
+
+
+def _clarifying_question(n: int = 0) -> ClarifyingQuestion:
+    return ClarifyingQuestion(id=f"q{n}", text="Q", category="scope")
+
+
+def _verification_step(n: int = 0) -> VerificationStep:
+    return VerificationStep(id=f"v{n}", kind=VerificationKind.UNIT_TESTS)
+
+
+def _gate(n: int = 0) -> Gate:
+    return Gate(
+        id=f"g{n}",
+        kind=GateKind.HUMAN_APPROVAL,
+        description="Approval",
+        required=True,
+        status=Status.PENDING,
+    )
+
+
+def _interface_provided(n: int = 0) -> InterfaceProvided:
+    return InterfaceProvided(
+        id=f"ip{n}",
+        name="ProtocolX",
+        kind=EnumInterfaceKind.PROTOCOL,
+        surface=EnumInterfaceSurface.PUBLIC_API,
+        definition_format=EnumDefinitionFormat.PYTHON,
+        definition="class ProtocolX: ...",
+    )
+
+
+def _interface_consumed(n: int = 0) -> InterfaceConsumed:
+    return InterfaceConsumed(
+        id=f"ic{n}",
+        name="ProtocolY",
+        kind=EnumInterfaceKind.PROTOCOL,
+        mock_strategy=EnumMockStrategy.PROTOCOL_STUB,
+    )
+
+
+@pytest.mark.unit
+class TestListLengthCaps:
+    """Every list field on TicketContract enforces max_length=_MAX_LIST_ITEMS."""
+
+    @pytest.mark.parametrize(
+        ("field_name", "item_factory"),
+        [
+            ("questions", _clarifying_question),
+            ("requirements", _requirement),
+            ("verification_steps", _verification_step),
+            ("gates", _gate),
+            ("interfaces_provided", _interface_provided),
+            ("interfaces_consumed", _interface_consumed),
+        ],
+    )
+    def test_at_cap_is_accepted(self, field_name, item_factory):
+        """Exactly _MAX_LIST_ITEMS items is valid — the cap is inclusive."""
+        items = [item_factory() for _ in range(_MAX_LIST_ITEMS)]
+        contract = TicketContract(
+            ticket_id="OMN-CAP",
+            title="At Cap",
+            **{field_name: items},
+        )
+        assert len(getattr(contract, field_name)) == _MAX_LIST_ITEMS
+
+    @pytest.mark.parametrize(
+        ("field_name", "item_factory"),
+        [
+            ("questions", _clarifying_question),
+            ("requirements", _requirement),
+            ("verification_steps", _verification_step),
+            ("gates", _gate),
+            ("interfaces_provided", _interface_provided),
+            ("interfaces_consumed", _interface_consumed),
+        ],
+    )
+    def test_over_cap_is_rejected(self, field_name, item_factory):
+        """_MAX_LIST_ITEMS + 1 items is rejected — this is the RED case that
+        proves the cap exists and is enforced, not merely declared."""
+        items = [item_factory() for _ in range(_MAX_LIST_ITEMS + 1)]
+        with pytest.raises(ValidationError, match="at most"):
+            TicketContract(
+                ticket_id="OMN-OVER-CAP",
+                title="Over Cap",
+                **{field_name: items},
+            )
+
+    def test_requirements_cap_matches_sibling_fields(self):
+        """OMN-16266: requirements uses the SAME constant as its already-capped
+        siblings, not an independently-chosen value that could drift."""
+        contract_fields = TicketContract.model_fields
+        capped_siblings = (
+            "interfaces_touched",
+            "evidence_requirements",
+            "dod_evidence",
+            "requirements",
+            "questions",
+            "verification_steps",
+            "gates",
+            "interfaces_provided",
+            "interfaces_consumed",
+        )
+        max_lengths = {
+            name: next(
+                (
+                    m.max_length
+                    for m in contract_fields[name].metadata
+                    if hasattr(m, "max_length")
+                ),
+                None,
+            )
+            for name in capped_siblings
+        }
+        assert all(v == _MAX_LIST_ITEMS for v in max_lengths.values()), max_lengths
 
 
 # =============================================================================
