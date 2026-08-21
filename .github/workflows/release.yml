@@ -302,7 +302,11 @@ jobs:
       ticket: ${{ needs.release.outputs.ticket }}
       evidence_source: ${{ needs.release.outputs.evidence_source }}
     secrets:
-      cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}
+      # OMN-16373: CROSS_REPO_PAT retired — pass the onexbot-occ-writer App
+      # credentials through so dependency-cascade.yml can mint its own
+      # per-repo installation token.
+      onexbot-occ-app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+      onexbot-occ-private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
 
   # ---------------------------------------------------------------------------
   # OMN-15603 (AC4): a failed release used to be silent about its own wreckage
