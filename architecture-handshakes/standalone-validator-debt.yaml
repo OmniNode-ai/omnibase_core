@@ -104,6 +104,16 @@ migrated_into_ci_yml:
     ci_job_key: release-identity-validator
   - workflow_file: validator-todo-marker.yml
     ci_job_key: todo-marker-validator
+  # OMN-16281 (permanent closure of the OMN-16280 waiver renewal): unlike the
+  # 18 OMN-14877 entries above (all confirmed decorative), this context
+  # ("no-unguarded-git-subprocess") IS a live dev branch-protection
+  # required_status_checks context. It stays a directly-required context after
+  # this migration -- the ci.yml job keeps the identical job name, so the same
+  # required context now fires from ci.yml instead of the retired standalone
+  # workflow. No branch-protection mutation was made or needed (see
+  # .github/required-checks.yaml's row for this context, `workflow: ci.yml`).
+  - workflow_file: validator-no-unguarded-git-subprocess.yml
+    ci_job_key: no-unguarded-git-subprocess
 
 # TRACKED DEBT (OMN-14430 fast-follow, ticket OMN-14430): confirmed decorative
 # — no merge gate blocks on any of these today; pre-commit (if installed, if not
@@ -112,17 +122,13 @@ migrated_into_ci_yml:
 # gate count this ticket asked to be reported.
 #
 # EMPTIED 2026-07-21 (OMN-14877): all 18 remaining decorative validators were
-# batch-migrated into ci.yml (see migrated_into_ci_yml above). The only
-# remaining advisory entry is the OMN-14891 git-env-isolation gate from current
-# dev, which has a unique context and is not yet a required_status_checks
-# context.
-decorative_debt:
-  # OMN-14891 git-env-isolation gate: unique context, ADVISORY today (NOT in
-  # required_status_checks — verified 2026-07-22 via the gh api command above).
-  # Moves to natively_required_contexts when the required flip tracked in
-  # .github/required-checks.yaml lands (after 2 independent green dev runs).
-  - workflow_file: validator-no-unguarded-git-subprocess.yml
-    context: no-unguarded-git-subprocess
+# batch-migrated into ci.yml (see migrated_into_ci_yml above).
+#
+# EMPTIED AGAIN 2026-08-20 (OMN-16281): the one remaining entry (OMN-14891
+# git-env-isolation gate) was migrated into ci.yml too — see migrated_into_ci_yml
+# above. This bucket is intentionally empty; it is not dead code, the next
+# decorative standalone validator discovered lands here.
+decorative_debt: []
 
 metadata:
   generated_by: "OMN-14430 audit, 2026-07-20"
