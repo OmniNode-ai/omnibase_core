@@ -981,6 +981,7 @@ jobs:
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: OmniNode-ai
           repositories: onex_change_control
+          permission-contents: write
 
       - name: Checkout onex_change_control standards
         uses: actions/checkout@v7
@@ -3340,6 +3341,7 @@ jobs:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: OmniNode-ai
+          permission-contents: write
 
       - name: Run integration tests (split ${{ matrix.split }}/4)
         env:
@@ -3528,6 +3530,7 @@ jobs:
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: OmniNode-ai
           repositories: onex_change_control
+          permission-contents: write
       - name: Checkout onex_change_control
         uses: actions/checkout@v7
         with:
@@ -3666,6 +3669,7 @@ jobs:
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: OmniNode-ai
           repositories: onex_change_control
+          permission-contents: write
       - name: Export GH_TOKEN
         run: echo "GH_TOKEN=${{ steps.app-token.outputs.token || github.token }}" >> "$GITHUB_ENV"
       - name: Require cited OCC evidence to be merged/durable before product merge

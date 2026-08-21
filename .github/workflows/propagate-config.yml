@@ -114,6 +114,8 @@ jobs:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: OmniNode-ai
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Run propagator
         env:

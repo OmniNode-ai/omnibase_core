@@ -116,6 +116,8 @@ jobs:
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: OmniNode-ai
           repositories: ${{ matrix.repo }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Checkout downstream (${{ matrix.repo }})
         uses: actions/checkout@v7

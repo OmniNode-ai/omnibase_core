@@ -163,6 +163,8 @@ jobs:
           private-key: ${{ secrets.onexbot-occ-private-key }}
           owner: OmniNode-ai
           repositories: ${{ matrix.repo }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Checkout downstream repo
         if: steps.token_check.outputs.has_token == 'true'
