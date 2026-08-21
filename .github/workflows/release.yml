@@ -31,8 +31,17 @@ jobs:
     # needs the self-hosted runner; it moves to a GitHub-hosted runner whose
     # egress clears the deadline (AC2).
     runs-on: ubuntu-latest
+    # OMN-16286: job-level override (job-level permissions REPLACE, not add
+    # to, the workflow-level block above) so this job can additionally read
+    # the release commit's merged PR + body via `gh` to resolve real cascade
+    # evidence below.
+    permissions:
+      contents: write
+      pull-requests: read
     outputs:
       version: ${{ steps.tag.outputs.tag }}
+      ticket: ${{ steps.release_evidence.outputs.ticket }}
+      evidence_source: ${{ steps.release_evidence.outputs.evidence_source }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,9 +55,11 @@ jobs:
           test -z "$(git ls-files --others --exclude-standard)"
 
       - name: Validate tag matches pyproject.toml version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
+            TAG="$RELEASE_TAG"
           else
             TAG="${GITHUB_REF_NAME}"
           fi
@@ -92,12 +103,76 @@ jobs:
 
       - name: Set release tag
         id: tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+            # A newline in the dispatch input would forge extra GITHUB_OUTPUT
+            # entries, so constrain it to the tag charset before writing it.
+            case "$RELEASE_TAG" in
+              ''|*[!A-Za-z0-9.+_-]*)
+                echo "::error::release tag contains unsupported characters"
+                exit 1
+                ;;
+            esac
+            echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
             echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           fi
+
+      # OMN-16286: the Dependency Cascade job below opens a bump PR in every
+      # downstream repo. Those PRs previously carried no ticket and no
+      # Evidence-Source, so Receipt-Gate / occ-preflight hard-failed on every
+      # single one (no cascade PR could land anywhere without manual
+      # intervention). Rather than fabricate new evidence or add a bot
+      # exemption (both explicitly rejected -- OMN-16286), re-thread the SAME
+      # real Evidence-Ticket/Evidence-Source pair that already closed the
+      # release's own merged PR: that evidence is what actually proved this
+      # released code, and the cascade PRs are honestly downstream of it. Fail
+      # loud rather than open unlandable cascade PRs again when the tagged
+      # commit has no resolvable merged PR or evidence pair.
+      - name: Resolve release ticket + evidence (OMN-16286)
+        id: release_evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          head_sha="$(git rev-parse HEAD)"
+
+          # OMN-16286 (CodeRabbit finding): /commits/{sha}/pulls returns EVERY
+          # PR associated with this commit, not just the merged one -- GitHub
+          # includes open PRs too when the commit isn't yet on the default
+          # branch, and the endpoint documents no ordering guarantee. Selecting
+          # a bare .[0] risked propagating evidence from an open, unreviewed PR
+          # instead of the merged release PR that actually proved this code.
+          # Filter to state=="closed" && mergedAt != null explicitly and fail
+          # loud if none qualifies.
+          pr_number="$(gh api "repos/${{ github.repository }}/commits/${head_sha}/pulls" \
+            --jq '[.[] | select(.state == "closed" and .merged_at != null)][0].number // empty' 2>/dev/null || true)"
+          if [ -z "$pr_number" ]; then
+            echo "::error::OMN-16286: could not resolve a MERGED PR for release commit ${head_sha}. The dependency cascade requires a real Evidence-Ticket/Evidence-Source pair sourced from the release's own merged PR; a tag with no associated merged PR (only open/unmerged ones, or none at all) cannot cascade honestly."
+            exit 1
+          fi
+
+          pr_state="$(gh pr view "$pr_number" --repo "${{ github.repository }}" --json state --jq '.state' 2>/dev/null || true)"
+          if [ "$pr_state" != "MERGED" ]; then
+            echo "::error::OMN-16286: PR #${pr_number} (commit ${head_sha}) resolved to state='${pr_state:-<unknown>}', not MERGED. Refusing to propagate evidence from a non-merged PR."
+            exit 1
+          fi
+
+          pr_body="$(gh pr view "$pr_number" --repo "${{ github.repository }}" --json body --jq '.body' 2>/dev/null || true)"
+
+          ticket="$(printf '%s' "$pr_body" | grep -oiE '^Evidence-Ticket:[[:space:]]*OMN-[0-9]+' | head -1 | grep -oiE 'OMN-[0-9]+' | tr '[:lower:]' '[:upper:]' || true)"
+          evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//; s/[[:space:]]+$//' || true)"
+
+          if [ -z "$ticket" ] || [ -z "$evidence_source" ]; then
+            echo "::error::OMN-16286: release PR #${pr_number} (commit ${head_sha}) is missing a resolvable Evidence-Ticket/Evidence-Source pair (ticket='${ticket:-<none>}', evidence_source='${evidence_source:-<none>}'). Fix the release PR's evidence trailer, or release from a properly evidenced commit, before the dependency cascade can open honest downstream PRs."
+            exit 1
+          fi
+
+          echo "ticket=${ticket}" >> "$GITHUB_OUTPUT"
+          echo "evidence_source=${evidence_source}" >> "$GITHUB_OUTPUT"
+          echo "::notice::OMN-16286: resolved cascade evidence from PR #${pr_number} -- ticket=${ticket} evidence_source=${evidence_source}"
 
       # OMN-15603 (AC4): preserve the built artifacts BEFORE publishing. Run
       # 30674223657 ended with total_count=0 artifacts, so the only way to
@@ -190,6 +265,27 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, 'rc') }}
 
+      # OMN-16289: main = the last release. Once a release publishes
+      # successfully, fast-forward main to the released tag's commit SHA.
+      # This is a non-force push of an already-proven dev SHA (release
+      # tags are cut from dev; dev CI + this job already validated it).
+      # Promotion PRs to main are retired -- main protection now empties
+      # required_status_checks on main and restricts pushes to this job's
+      # automation identity, so no separate token/secret is needed: the
+      # same GITHUB_TOKEN persisted by actions/checkout@v7 above already
+      # authenticates this push.
+      - name: Sync main to release tag
+        if: ${{ !contains(steps.tag.outputs.tag, 'rc') }}
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          TAG_SHA=$(git rev-list -n 1 "$TAG")
+          echo "Resolved tag $TAG -> commit $TAG_SHA"
+          git push origin "${TAG_SHA}:refs/heads/main"
+          echo "main fast-forwarded to $TAG_SHA ($TAG)"
+
   # ---------------------------------------------------------------------------
   # Post-release: open dependency bump PRs in downstream repos (OMN-5109)
   # ---------------------------------------------------------------------------
@@ -203,6 +299,8 @@ jobs:
     with:
       package: omnibase_core
       version: ${{ needs.release.outputs.version }}
+      ticket: ${{ needs.release.outputs.ticket }}
+      evidence_source: ${{ needs.release.outputs.evidence_source }}
     secrets:
       cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}
 

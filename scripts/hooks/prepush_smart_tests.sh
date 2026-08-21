@@ -63,8 +63,111 @@ die() {
 # "harden" this into a hard block later -- the failure mode this guard exists
 # to prevent is a stalled/contended local machine, not an untrusted push.
 PREPUSH_200_HOSTNAME="${PREPUSH_200_HOSTNAME:-stickybeatz-studio}"
+
+# =============================================================================
+# Live-load host selection (OMN-16295)
+# =============================================================================
+# Extends the host-IDENTITY guard below with a CAPACITY dimension: `.200`
+# being the right host by IDENTITY does not mean it has headroom. Measured
+# 2026-08-20: `.200` load average 32-34 against 24 cores (and, live during
+# this same investigation, 56/24 -- 2.3x oversubscribed) driving an 89-93
+# minute full-suite run with orphaned pytest processes left behind. Same
+# failure class as the 2026-07-24 incident described below, recurring under
+# concurrent-session load. OMN-16295 adds a second execution target -- a
+# hard-capped gate-runner container on `.201`
+# (docker/docker-compose.gate-runner.yml in omnibase_infra), selected ONLY
+# when `.200` is over threshold, never the default.
+#
+# FAIL-CLOSED, unlike the host-IDENTITY guard's fail-open posture below --
+# deliberately different, not inconsistent. An unresolvable HOSTNAME is
+# ambiguous evidence about WHERE we are (fail open: don't lock a developer out
+# of their own repo on a shaky read). An unresolvable LOAD reading is a
+# failure to prove EITHER candidate host has capacity, and proceeding anyway
+# on that silence is exactly how the 2026-07-24 / 2026-08-20 incidents
+# happened -- assumed headroom that was not there. "Neither host reachable"
+# refuses; it does not skip the check.
+PREPUSH_201_GATE_RUNNER_HOSTNAME="${PREPUSH_201_GATE_RUNNER_HOSTNAME:-gate-runner-201}"
+PREPUSH_200_SSH_TARGET="${PREPUSH_200_SSH_TARGET:-jonah@stickybeatz-studio.tail75df5e.ts.net}"  # onex-allow-internal-ip OMN-16295 reason="pre-push guard needs the real host target to probe live load"
+PREPUSH_201_SSH_TARGET="${PREPUSH_201_SSH_TARGET:-jonah@192.168.86.201}"  # onex-allow-internal-ip OMN-16295 reason="pre-push guard needs the real host target to probe live load" # fallback-ok: real .201 host target, not a dev/local placeholder
+# load1/cores at or under this ratio counts as "fit". 1.0 == "not
+# oversubscribed" (a standard load-average heuristic); correctly reads the
+# observed-fit `.201` snapshot (~0.4x, 2026-08-20) as fit and both observed
+# `.200` snapshots above (1.33x and 2.3x) as over threshold.
+PREPUSH_LOAD_THRESHOLD="${PREPUSH_LOAD_THRESHOLD:-1.0}"
+
+# Cross-platform (Linux `.201` / macOS `.200`) load probe: os.getloadavg()[0]
+# and os.cpu_count() are both POSIX-portable via the stdlib, which sidesteps
+# needing separate /proc/loadavg-vs-sysctl branches (and their escaping) in
+# both the local AND the remote-via-ssh cases below. No quote characters
+# appear in this snippet -- it is embedded inside a single-quoted remote
+# command string in the ssh branch, so it must stay that way.
+_PREPUSH_LOAD_PROBE_PY='import os,sys
+n=os.cpu_count() or 0
+sys.exit(1) if n<=0 else print(os.getloadavg()[0], n)'
+
+# Prefer GNU coreutils timeout(1); fall back to gtimeout(1) (Homebrew name on
+# macOS); fall back to no wrapper at all (ssh -o ConnectTimeout already bounds
+# the connection phase, and the remote command is a single fast python3 -c).
+_prepush_timeout_cmd() {
+  if command -v timeout > /dev/null 2>&1; then
+    printf 'timeout'
+  elif command -v gtimeout > /dev/null 2>&1; then
+    printf 'gtimeout'
+  fi
+}
+
+# host_load_ratio TARGET -- prints "<load1> <nproc> <ratio>" and returns 0, or
+# prints nothing and returns 1 on any read/parse/timeout failure. TARGET is
+# empty for "read this host directly" or an ssh(1) target string for a
+# bounded remote read. Deterministic, network-free overrides for tests (each a
+# "<load1> <nproc>" pair -- the ratio is still computed from it, never
+# hardcoded):
+#   PREPUSH_LOAD_OVERRIDE_LOCAL   overrides the direct (TARGET="") read
+#   PREPUSH_LOAD_OVERRIDE_REMOTE  overrides every ssh-target read
+host_load_ratio() {
+  local target="$1" raw load1 ncpu timeout_cmd
+  if [ -z "$target" ]; then
+    if [ -n "${PREPUSH_LOAD_OVERRIDE_LOCAL:-}" ]; then
+      raw="$PREPUSH_LOAD_OVERRIDE_LOCAL"
+    else
+      raw="$(python3 -c "$_PREPUSH_LOAD_PROBE_PY" 2> /dev/null)" || return 1
+    fi
+  else
+    if [ -n "${PREPUSH_LOAD_OVERRIDE_REMOTE:-}" ]; then
+      raw="$PREPUSH_LOAD_OVERRIDE_REMOTE"
+    else
+      timeout_cmd="$(_prepush_timeout_cmd)"
+      if [ -n "$timeout_cmd" ]; then
+        raw="$("$timeout_cmd" 6 ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+          "$target" "python3 -c '${_PREPUSH_LOAD_PROBE_PY}'" 2> /dev/null)" || return 1
+      else
+        raw="$(ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+          "$target" "python3 -c '${_PREPUSH_LOAD_PROBE_PY}'" 2> /dev/null)" || return 1
+      fi
+    fi
+  fi
+  [ -n "$raw" ] || return 1
+  # shellcheck disable=SC2086
+  set -- $raw
+  load1="${1:-}"
+  ncpu="${2:-}"
+  [ -n "$load1" ] && [ -n "$ncpu" ] && [ "$ncpu" != "0" ] || return 1
+  awk -v l="$load1" -v n="$ncpu" 'BEGIN { if (n + 0 <= 0) exit 1; printf "%s %s %.3f\n", l, n, (l / n) }'
+}
+
+# host_is_fit TARGET -- 0 if measured load1/nproc is at/under
+# PREPUSH_LOAD_THRESHOLD, 1 if over threshold, 2 if the read itself failed
+# (unreachable/unresolvable). Callers must not conflate 1 and 2 anywhere the
+# difference is user-visible ("over capacity" vs "could not check").
+host_is_fit() {
+  local target="$1" ratio
+  ratio="$(host_load_ratio "$target" | awk '{print $3}')" || return 2
+  [ -n "$ratio" ] || return 2
+  awk -v r="$ratio" -v thr="$PREPUSH_LOAD_THRESHOLD" 'BEGIN { exit !(r <= thr + 0) }'
+}
+
 guard_full_suite_host() {
-  local host lc_host lc_target heavy_what
+  local host lc_host lc_target lc_201 heavy_what
   # OMN-15408: the caller names WHICH heavyweight run is being guarded, so the
   # refusal names the real cause. Default preserves the OMN-15059 wording for
   # the flag-driven escalation call sites, which pass no argument.
@@ -76,8 +179,34 @@ guard_full_suite_host() {
   fi
   lc_host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
   lc_target="$(printf '%s' "$PREPUSH_200_HOSTNAME" | tr '[:upper:]' '[:lower:]')"
-  if [ "$lc_host" = "$lc_target" ]; then
-    return 0
+  lc_201="$(printf '%s' "$PREPUSH_201_GATE_RUNNER_HOSTNAME" | tr '[:upper:]' '[:lower:]')"
+  if [ "$lc_host" = "$lc_target" ] || [ "$lc_host" = "$lc_201" ]; then
+    # OMN-16295: identity alone is not enough -- this known-good host must
+    # also have capacity right now.
+    if host_is_fit ""; then
+      return 0
+    fi
+    if [ -n "${PREPUSH_ALLOW_LOCAL_FULL_SUITE:-}" ]; then
+      log "WARNING: DEGRADED-CAPACITY OVERRIDE IN EFFECT (PREPUSH_ALLOW_LOCAL_FULL_SUITE set) -- running ${heavy_what} on '${host}' at/over the ${PREPUSH_LOAD_THRESHOLD}x-core load threshold. Treat any evidence from this run as WEAKER than a fit-host-run gate."
+      return 0
+    fi
+    local other_target other_label other_rc other_note
+    if [ "$lc_host" = "$lc_target" ]; then
+      other_target="$PREPUSH_201_SSH_TARGET"
+      other_label="the .201 gate-runner (${PREPUSH_201_GATE_RUNNER_HOSTNAME})"
+    else
+      other_target="$PREPUSH_200_SSH_TARGET"
+      other_label=".200 (${PREPUSH_200_HOSTNAME})"
+    fi
+    other_rc=0
+    host_is_fit "$other_target" || other_rc=$?
+    case "$other_rc" in
+      0) other_note="${other_label} currently HAS capacity -- route there instead" ;;
+      2) other_note="${other_label} could not be reached to check capacity" ;;
+      *) other_note="${other_label} is ALSO at/over the load threshold" ;;
+    esac
+    die "${heavy_what} triggered on '${host}' (the designated host by identity), but its load is at/over the ${PREPUSH_LOAD_THRESHOLD}x-core threshold" \
+        "${other_note}. See docs/runbooks/200-build-lane-execution-pattern.md for the .201 gate-runner recipe, or set PREPUSH_ALLOW_LOCAL_FULL_SUITE=1 to run here anyway (degraded evidence -- do not use as a routine bypass)"
   fi
   if [ -n "${PREPUSH_ALLOW_LOCAL_FULL_SUITE:-}" ]; then
     log "WARNING: DEGRADED-HOST OVERRIDE IN EFFECT (PREPUSH_ALLOW_LOCAL_FULL_SUITE set) -- running ${heavy_what} on '${host}', NOT the designated .200 host ('${PREPUSH_200_HOSTNAME}'). This host has weaker isolation/headroom than .200; treat any evidence from this run as WEAKER than a .200-run gate. See docs/runbooks/200-build-lane-execution-pattern.md."
@@ -286,7 +415,12 @@ RC=0
 # picks the nearest ini to the invocation args, not pyproject.toml, and the
 # two do NOT merge. Passing these on the command line here means the
 # per-test timeout applies regardless of which ini file pytest resolves.
-PREPUSH_TIMEOUT_FLAGS="-n4 --dist=loadgroup --timeout=60 --timeout-method=thread"
+# OMN-15977: signal method, not thread -- thread-based timeout cannot kill a
+# CPU-bound pure-Python loop holding the GIL (the watcher thread never gets
+# scheduled), which is exactly the failure mode that produced two
+# 46min/53min unkillable local runaways on 2026-08-12. Signal delivers
+# SIGALRM at the next bytecode boundary regardless of GIL contention.
+PREPUSH_TIMEOUT_FLAGS="-n4 --dist=loadgroup --timeout=60 --timeout-method=signal"
 
 # SINGLE SOURCE OF TRUTH for "what the heavy run is" (OMN-15408): the
 # fail-closed escalation runs exactly this target, and `selection_is_whole_suite`

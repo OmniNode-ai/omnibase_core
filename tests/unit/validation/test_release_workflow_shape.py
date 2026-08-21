@@ -766,7 +766,52 @@ def test_dependency_cascade_still_runs_off_the_release_output() -> None:
 
     assert cascade["needs"] == "release"
     assert "./.github/workflows/dependency-cascade.yml" in str(cascade["uses"])
-    assert _release_job()["outputs"] == {"version": "${{ steps.tag.outputs.tag }}"}
+    # OMN-16286: `release` also resolves + exposes the real Evidence-Ticket /
+    # Evidence-Source pair that closed the release's own merged PR, so the
+    # cascade job can thread honest evidence into every downstream bump PR
+    # instead of opening one Receipt-Gate can never pass.
+    assert _release_job()["outputs"] == {
+        "version": "${{ steps.tag.outputs.tag }}",
+        "ticket": "${{ steps.release_evidence.outputs.ticket }}",
+        "evidence_source": "${{ steps.release_evidence.outputs.evidence_source }}",
+    }
+    cascade_with = _as_mapping(cascade["with"], "the `dependency-cascade` job `with:`")
+    assert cascade_with["ticket"] == "${{ needs.release.outputs.ticket }}"
+    assert (
+        cascade_with["evidence_source"]
+        == "${{ needs.release.outputs.evidence_source }}"
+    )
+
+
+def test_release_evidence_only_accepts_a_merged_pr() -> None:
+    """CodeRabbit finding (OMN-16286): ``/commits/{sha}/pulls`` returns every
+    PR associated with a commit, not just the merged one -- GitHub includes
+    open PRs too when the commit is not yet on the default branch, and the
+    endpoint documents no ordering guarantee. Selecting a bare ``.[0]`` risks
+    propagating Evidence-Ticket/Evidence-Source from an open, unreviewed PR
+    instead of the merged release PR that actually proved the code. The
+    resolution step must filter to a genuinely merged PR (both at the list
+    stage and via an explicit state re-check) and fail loud otherwise.
+    """
+    script = _step("Resolve release ticket + evidence (OMN-16286)")["run"]
+    assert isinstance(script, str)
+
+    # List-stage filter: closed AND merged_at set, not a bare .[0].
+    assert 'select(.state == "closed" and .merged_at != null)' in script, script
+    assert "][0].number" in script or "[0].number" in script, script
+    assert ".[0].number // empty" not in script, (
+        "must not select the first associated PR unconditionally -- that "
+        f"can be an open, unmerged PR: {script}"
+    )
+
+    # Explicit re-check: even a closed+merged_at-filtered PR is re-verified
+    # via a live `gh pr view --json state` before its body is trusted.
+    assert "--json state --jq" in script, script
+    assert 'pr_state" != "MERGED"' in script, script
+    assert script.count("exit 1") >= 2, (
+        "both the no-PR-found and the not-actually-merged paths must fail "
+        f"loud: {script}"
+    )
 
 
 # --------------------------------------------------------------------------

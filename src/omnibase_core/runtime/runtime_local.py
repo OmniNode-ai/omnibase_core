@@ -257,6 +257,9 @@ class RuntimeLocal:
         state_root: Root directory for disk state (default ``.onex_state``).
         backend_overrides: Optional backend key-value overrides.
         timeout: Maximum execution time in seconds (default 300).
+        run_id: Identity anchor stamped into ``workflow_result.json`` (OMN-15449).
+            Defaults to a freshly minted UUID when the caller has no run_id of
+            its own to propagate.
     """
 
     def __init__(
@@ -267,12 +270,20 @@ class RuntimeLocal:
         backend_overrides: dict[str, str] | None = None,
         input_path: Path | None = None,
         timeout: int = 300,
+        run_id: uuid.UUID | None = None,
     ) -> None:
         self.workflow_path = workflow_path
         self.state_root = state_root
         self.backend_overrides = backend_overrides or {}
         self.input_path = input_path
         self.timeout = timeout
+        # OMN-15449: identity anchor stamped into workflow_result.json so a
+        # caller reading that FIXED, non-run-scoped path back can verify the
+        # content it sees is THIS run's own output rather than a different
+        # (concurrent, or leftover-from-a-skipped-write) run's. Callers that
+        # need the join (e.g. receipt_mode.py) pass their own run_id; callers
+        # that don't care mint one so the field is always present.
+        self.run_id: uuid.UUID = run_id if run_id is not None else uuid.uuid4()
 
         self._contract: RawWorkflowMap = {}
         self._result: EnumWorkflowResult = EnumWorkflowResult.TIMEOUT
@@ -1708,7 +1719,15 @@ class RuntimeLocal:
                     "and no handler spec found (need handler_routing.default_handler "
                     "or handler.module/class)."
                 )
-                return EnumWorkflowResult.FAILED
+                self._result = EnumWorkflowResult.FAILED
+                # OMN-15449: this path used to return without writing state,
+                # leaving whatever a PREVIOUS run against the same state_root
+                # had written in place for the next reader to find. Writing
+                # this run's own (failed) state — including its run_id — means
+                # a caller reading workflow_result.json back sees THIS run's
+                # outcome, never a leftover one.
+                self._write_state()
+                return self._result
 
         terminal_topic_name = str(terminal_topic)
         logger.info(
@@ -1962,6 +1981,14 @@ class RuntimeLocal:
             "result": self._result.value,
             "exit_code": self.exit_code,
             "workflow": str(self.workflow_path),
+            # OMN-15449: identity anchor. workflow_result.json is a FIXED path
+            # shared by every RuntimeLocal invocation against the same
+            # state_root — a concurrent invocation (or a stale leftover from a
+            # run whose write path was skipped) can otherwise be read back as
+            # if it were this run's own output. run_id lets a caller (e.g.
+            # receipt_mode.py) verify the file it reads actually belongs to
+            # the run it just executed before trusting its content.
+            "run_id": str(self.run_id),
         }
         if self._terminal_payload is not None:
             data["terminal_payload"] = self._terminal_payload

@@ -2597,6 +2597,91 @@ jobs:
         run: |
           .venv/bin/python -m omnibase_core.validation.validator_pull_request_workflow_ratchet --repo-root .
 
+  # Migrated from validator-no-unguarded-git-subprocess.yml (OMN-16281, permanent
+  # closure of the OMN-16280 waiver — do not renew a third time). Same OMN-14877
+  # migration shape: unconditional job under the required "CI Summary" default-deny
+  # sweep, no `needs:` (a cross-job dependency can skip the gate on an unrelated
+  # failure — OMN-14666/14668 lesson), standalone workflow retired to
+  # workflow_dispatch-only. Unlike the OMN-14877 batch, this validator's context
+  # ("no-unguarded-git-subprocess") IS a directly-required dev branch-protection
+  # context — preserved (not dropped) by keeping the job's `name:` byte-identical
+  # to the retired workflow's job name, so the same required context now fires
+  # from ci.yml instead. This intentionally avoids any live branch-protection
+  # mutation (no agent may mutate live branch protection — see
+  # tests/unit/scripts/ci/fixtures/required_status_checks_snapshot.json's _meta);
+  # .github/required-checks.yaml's row for this context was repointed to
+  # `workflow: ci.yml` rather than removed, same pattern as its other direct-job
+  # rows (e.g. "CI Summary", "Zone Filter").
+  #
+  # THE DEFECT THIS GATES (OMN-14891): git exports GIT_DIR / GIT_WORK_TREE /
+  # GIT_INDEX_FILE / GIT_COMMON_DIR into the environment of every hook it runs,
+  # and those variables OVERRIDE both `cwd=` and `git -C`. So when pytest runs as
+  # a subprocess of the repo's own pre-push hook, a fixture doing
+  # `subprocess.run(["git", "init"], cwd=tmp_path)` re-initialises the REAL
+  # invoking worktree instead of tmp_path. Observed twice, log-proven (2026-07-20
+  # OMN-14891, 2026-07-21 OMN-14863) — corrupted the shared canonical clone's
+  # .git/config and index across concurrent sessions.
+  no-unguarded-git-subprocess:
+    # name deliberately matches the job id EXACTLY (not a display-friendly
+    # Title Case, unlike the decorative OMN-14877 migrations above/below) --
+    # this context is a live dev branch-protection required_status_checks
+    # entry, and GitHub resolves a required-check context to a job's `name:`
+    # (falling back to job id when unset). Keeping the string byte-identical
+    # to the retired standalone workflow's job name is what lets ci.yml
+    # satisfy the SAME required context without any branch-protection edit
+    # (see .github/required-checks.yaml's "no-unguarded-git-subprocess" row).
+    name: no-unguarded-git-subprocess
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      # The regression test shells out to git, so CI needs an identity for the
+      # decoy repos it creates in tmp_path.
+      - name: Configure git identity for fixture repos
+        run: |
+          git config --global user.email "ci@omninode.ai"
+          git config --global user.name "OmniNode CI"
+
+      - name: Run no-unguarded-git-subprocess unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_no_unguarded_git_subprocess.py \
+            -v
+
+      - name: Run git-environment isolation regression
+        run: |
+          uv run pytest \
+            tests/unit/test_git_env_isolation.py \
+            -v
+
+      - name: Self-scan omnibase_core tests/
+        run: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess tests/
+
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------

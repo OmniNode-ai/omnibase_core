@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.46.9"
+version = "0.46.10"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -511,7 +511,17 @@ addopts = [
     "--tb=short",
     "-n4",  # Limit parallel workers to prevent OOM (was: auto)
     "--timeout=60",  # Prevent hanging tests (60s per test)
-    "--timeout-method=thread",  # Use thread-based timeout for better compatibility
+    # OMN-15977: signal-based timeout, NOT thread-based. pytest-timeout's
+    # thread method spawns a watcher thread that fires SIGKILL-equivalent only
+    # when the GIL is released -- a CPU-bound pure-Python loop holding the GIL
+    # continuously (e.g. a runaway regex/compute path) never yields, so the
+    # watcher thread never gets scheduled and the "timeout" never fires. This
+    # was the unkillable-CPU config behind two 2026-08-12 runaways (46min,
+    # 53min) that a health-tick had to SIGKILL manually. Signal method
+    # delivers SIGALRM, which interrupts at the next Python bytecode boundary
+    # regardless of GIL contention -- it can actually kill a CPU-bound loop.
+    "--timeout-method=signal",
+
     "--dist=loadgroup",  # Group tests by @pytest.mark.xdist_group for better control
     "--reruns=2",  # Auto-retry failed tests twice (handles flaky tests)
     "--reruns-delay=1",  # 1 second delay between reruns

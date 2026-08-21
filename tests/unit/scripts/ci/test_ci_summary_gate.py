@@ -645,9 +645,6 @@ DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("validator-no-plugin-daemon-classes.yml", "no-plugin-daemon-classes"): (
         "no-plugin-daemon-classes",
     ),
-    ("validator-no-unguarded-git-subprocess.yml", "no-unguarded-git-subprocess"): (
-        "no-unguarded-git-subprocess",
-    ),
     ("validator-runtime-profiles.yml", "runtime-profiles"): ("runtime-profiles",),
     ("check-handshake.yml", "check-handshake"): ("Check architecture handshake",),
     ("canonical-inference-gate.yml", "canonical-inference-gate"): (

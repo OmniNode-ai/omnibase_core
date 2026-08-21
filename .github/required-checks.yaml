@@ -61,7 +61,9 @@
 # check-skip-vectors`) are confirmed now live-REQUIRED on dev and flipped to
 # `mode: REQUIRED` (+ `branch: dev`) accordingly, per this file's own
 # schema-v3 ordering rule (mode change lands with the branch-protection
-# observation, same PR).
+# observation, same PR). `no-unguarded-git-subprocess`'s `workflow:` was later
+# repointed to `ci.yml` by OMN-16281 (see note below) -- the row and its
+# `mode: REQUIRED` stay unchanged, only the producing workflow file moved.
 #
 # Post-reconcile verification: see PR body for reconcile_manifest_vs_live.py
 # and validate_no_required_check_skip_vectors.py output for both branches.
@@ -73,6 +75,21 @@
 # `job_path` len 1 = Shape A (direct job); len 2 = Shape B/C
 # ([caller_job_id, reusable_job_id]) per the design spec's context->job
 # resolution algorithm (OMN-14854 ticket, spec section 1).
+#
+# 2026-08-20 (OMN-16281): the "no-unguarded-git-subprocess" REQUIRED row's
+# `workflow:` was repointed from the retired standalone file
+# (validator-no-unguarded-git-subprocess.yml, now workflow_dispatch-only) to
+# `ci.yml`, whose new unconditional job keeps the IDENTICAL job id/context
+# string "no-unguarded-git-subprocess". Unlike the OMN-14877 batch (all
+# confirmed decorative, no row here at all), this context IS a live dev
+# branch-protection required_status_checks entry, so the row is kept -- not
+# deleted -- deliberately to avoid any live branch-protection mutation: the
+# same context name now simply gets produced by ci.yml instead of the retired
+# workflow, so branch protection needs zero edits (no-agent-mutates-live-
+# branch-protection stays satisfied; see
+# tests/unit/scripts/ci/fixtures/required_status_checks_snapshot.json's _meta).
+# This matches the `workflow: ci.yml` shape already used by other direct-job
+# required rows in this file (e.g. "CI Summary", "Zone Filter").
 
 schema_version: 3
 classification: toolchain
@@ -632,15 +649,18 @@ gates:
     mode: REQUIRED
     branch: dev
     producer_kind: local
-    workflow: validator-no-unguarded-git-subprocess.yml
+    workflow: ci.yml
     job_path: ["no-unguarded-git-subprocess"]
     skip_semantics: never
     rationale: "OMN-14891: blocks reintroduction of git shell-outs in tests/ that inherit GIT_DIR / GIT_WORK_TREE
       / GIT_INDEX_FILE / GIT_COMMON_DIR from a git hook (those OVERRIDE cwd= and -C, so a tmp_path fixture
       under the pre-push hook mutates the REAL invoking worktree -- observed twice, incl. 6707 phantom
-      staged deletions on the shared canonical clone). Runs unconditionally on every PR but is NOT YET
-      in required_status_checks; per the schema-v3 ordering rule the branch-protection flip and the mode
-      change to REQUIRED land together in a follow-up, after 2 independent green runs on dev."
+      staged deletions on the shared canonical clone). OMN-16281 (permanent closure of the OMN-16280 waiver
+      renewal): migrated from its own standalone workflow (validator-no-unguarded-git-subprocess.yml,
+      now workflow_dispatch-only) into an unconditional job in ci.yml with the IDENTICAL job id, so the
+      required context keeps firing under the same name from a different, already-allowlisted producer
+      workflow -- zero live branch-protection mutation needed (no-agent-mutates-live-branch-protection
+      stays satisfied)."
 
   - name: "CodeQL"
     mode: REQUIRED
