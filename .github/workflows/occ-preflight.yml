@@ -59,7 +59,19 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 10
+    # OMN-16322: was 10. A cold self-hosted runner spends ~2m38s in "Set up job"
+    # (image pull) and ~4m05s checking out omnibase_compat before the eligibility
+    # check even starts, so the job lands at ~9-10m wall and trips the timeout
+    # DURING results upload -- after every step, including "Complete job", has
+    # already succeeded. GitHub stamps a timed-out job `cancelled`, and both
+    # CI Summary and GitHub's own required-check semantics fail closed on
+    # `cancelled`, so a job that logged "OCC eligibility: PASS" still blocks the
+    # PR. Measured on the sibling inlined copy (onex_change_control#6714):
+    # attempt 1 = 10m35s cancelled, attempt 2 = 10m25s cancelled (cancel arrived
+    # at exactly T+600s), attempt 3 on a warm runner = 1m44s success. 15m covers
+    # the observed 647-840s cold tail with headroom; it does not mask a hang,
+    # because the work itself completes in ~104s warm.
+    timeout-minutes: 15
     # I2: Disable GHA cache so merge_group re-fires fully.
     # A stale PASS from a prior PR-open run cannot satisfy the gate on a new merge_group event.
     env:
