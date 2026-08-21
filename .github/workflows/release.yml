@@ -55,9 +55,11 @@ jobs:
           test -z "$(git ls-files --others --exclude-standard)"
 
       - name: Validate tag matches pyproject.toml version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
+            TAG="$RELEASE_TAG"
           else
             TAG="${GITHUB_REF_NAME}"
           fi
@@ -101,9 +103,19 @@ jobs:
 
       - name: Set release tag
         id: tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+            # A newline in the dispatch input would forge extra GITHUB_OUTPUT
+            # entries, so constrain it to the tag charset before writing it.
+            case "$RELEASE_TAG" in
+              ''|*[!A-Za-z0-9.+_-]*)
+                echo "::error::release tag contains unsupported characters"
+                exit 1
+                ;;
+            esac
+            echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           else
             echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
           fi
@@ -264,9 +276,11 @@ jobs:
       # authenticates this push.
       - name: Sync main to release tag
         if: ${{ !contains(steps.tag.outputs.tag, 'rc') }}
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -euo pipefail
-          TAG="${{ steps.tag.outputs.tag }}"
+          TAG="$RELEASE_TAG"
           TAG_SHA=$(git rev-list -n 1 "$TAG")
           echo "Resolved tag $TAG -> commit $TAG_SHA"
           git push origin "${TAG_SHA}:refs/heads/main"
