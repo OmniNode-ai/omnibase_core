@@ -969,11 +969,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
+      # onexbot-occ-writer App installation token (org secrets
+      # ONEXBOT_OCC_APP_ID / ONEXBOT_OCC_PRIVATE_KEY), scoped to the one
+      # sibling repo this job reads.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          repositories: onex_change_control
+          permission-contents: write
+
       - name: Checkout onex_change_control standards
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/onex_change_control
-          token: ${{ secrets.CROSS_REPO_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           path: onex_change_control
           sparse-checkout: |
             standards/
@@ -2597,6 +2611,91 @@ jobs:
         run: |
           .venv/bin/python -m omnibase_core.validation.validator_pull_request_workflow_ratchet --repo-root .
 
+  # Migrated from validator-no-unguarded-git-subprocess.yml (OMN-16281, permanent
+  # closure of the OMN-16280 waiver — do not renew a third time). Same OMN-14877
+  # migration shape: unconditional job under the required "CI Summary" default-deny
+  # sweep, no `needs:` (a cross-job dependency can skip the gate on an unrelated
+  # failure — OMN-14666/14668 lesson), standalone workflow retired to
+  # workflow_dispatch-only. Unlike the OMN-14877 batch, this validator's context
+  # ("no-unguarded-git-subprocess") IS a directly-required dev branch-protection
+  # context — preserved (not dropped) by keeping the job's `name:` byte-identical
+  # to the retired workflow's job name, so the same required context now fires
+  # from ci.yml instead. This intentionally avoids any live branch-protection
+  # mutation (no agent may mutate live branch protection — see
+  # tests/unit/scripts/ci/fixtures/required_status_checks_snapshot.json's _meta);
+  # .github/required-checks.yaml's row for this context was repointed to
+  # `workflow: ci.yml` rather than removed, same pattern as its other direct-job
+  # rows (e.g. "CI Summary", "Zone Filter").
+  #
+  # THE DEFECT THIS GATES (OMN-14891): git exports GIT_DIR / GIT_WORK_TREE /
+  # GIT_INDEX_FILE / GIT_COMMON_DIR into the environment of every hook it runs,
+  # and those variables OVERRIDE both `cwd=` and `git -C`. So when pytest runs as
+  # a subprocess of the repo's own pre-push hook, a fixture doing
+  # `subprocess.run(["git", "init"], cwd=tmp_path)` re-initialises the REAL
+  # invoking worktree instead of tmp_path. Observed twice, log-proven (2026-07-20
+  # OMN-14891, 2026-07-21 OMN-14863) — corrupted the shared canonical clone's
+  # .git/config and index across concurrent sessions.
+  no-unguarded-git-subprocess:
+    # name deliberately matches the job id EXACTLY (not a display-friendly
+    # Title Case, unlike the decorative OMN-14877 migrations above/below) --
+    # this context is a live dev branch-protection required_status_checks
+    # entry, and GitHub resolves a required-check context to a job's `name:`
+    # (falling back to job id when unset). Keeping the string byte-identical
+    # to the retired standalone workflow's job name is what lets ci.yml
+    # satisfy the SAME required context without any branch-protection edit
+    # (see .github/required-checks.yaml's "no-unguarded-git-subprocess" row).
+    name: no-unguarded-git-subprocess
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      # The regression test shells out to git, so CI needs an identity for the
+      # decoy repos it creates in tmp_path.
+      - name: Configure git identity for fixture repos
+        run: |
+          git config --global user.email "ci@omninode.ai"
+          git config --global user.name "OmniNode CI"
+
+      - name: Run no-unguarded-git-subprocess unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validators/test_no_unguarded_git_subprocess.py \
+            -v
+
+      - name: Run git-environment isolation regression
+        run: |
+          uv run pytest \
+            tests/unit/test_git_env_isolation.py \
+            -v
+
+      - name: Self-scan omnibase_core tests/
+        run: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess tests/
+
   # ---------------------------------------------------------------------------
   # Phase 1.5 - Quality Gate (aggregates all Phase 1 quality checks)
   # ---------------------------------------------------------------------------
@@ -3231,9 +3330,22 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
+      # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
+      # onexbot-occ-writer App installation token (org secrets
+      # ONEXBOT_OCC_APP_ID / ONEXBOT_OCC_PRIVATE_KEY) for the sibling-repo
+      # reads this test split may need.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          permission-contents: write
+
       - name: Run integration tests (split ${{ matrix.split }}/4)
         env:
-          GH_TOKEN: ${{ secrets.CROSS_REPO_PAT || github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
         run: |
           uv run pytest tests/integration/ \
             --splits 4 --group ${{ matrix.split }} \
@@ -3407,6 +3519,18 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v7
+      # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
+      # onexbot-occ-writer App installation token, scoped to the one
+      # sibling repo this job reads.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          repositories: onex_change_control
+          permission-contents: write
       - name: Checkout onex_change_control
         uses: actions/checkout@v7
         with:
@@ -3420,7 +3544,7 @@ jobs:
           # Re-pinned to OCC dev HEAD at the time of this change.
           ref: 91f5b69104366c2d86e4bb21de67c3c497702111
           path: onex_change_control
-          token: ${{ secrets.CROSS_REPO_PAT || github.token }}
+          token: ${{ steps.app-token.outputs.token || github.token }}
 
       - uses: astral-sh/setup-uv@v7
         with:
@@ -3523,7 +3647,6 @@ jobs:
       contents: read
       pull-requests: read
     env:
-      GH_TOKEN: ${{ secrets.CROSS_REPO_PAT || github.token }}
       GH_REPO: ${{ github.repository }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
@@ -3534,6 +3657,21 @@ jobs:
     steps:
       - name: Checkout (gate script)
         uses: actions/checkout@v7
+      # OMN-16373: CROSS_REPO_PAT retirement. Mint a short-lived
+      # onexbot-occ-writer App token and export it as GH_TOKEN — job-level
+      # `env:` is resolved before any step runs, so it cannot reference a
+      # step output directly. `|| github.token` fallback kept for resilience.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          repositories: onex_change_control
+          permission-contents: write
+      - name: Export GH_TOKEN
+        run: echo "GH_TOKEN=${{ steps.app-token.outputs.token || github.token }}" >> "$GITHUB_ENV"
       - name: Require cited OCC evidence to be merged/durable before product merge
         run: python3 scripts/ci/check_occ_companion_merged.py
 

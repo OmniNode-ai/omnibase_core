@@ -234,30 +234,47 @@ class ModelTicketContract(BaseModel):
 
     # Clarifying questions
     questions: list[ModelClarifyingQuestion] = Field(
-        default_factory=list, description="Clarifying questions for requirements"
+        default_factory=list,
+        description="Clarifying questions for requirements",
+        max_length=_MAX_LIST_ITEMS,
     )
 
     # Requirements specification
+    # OMN-16266: unbounded list on a contract that gets embedded wholesale
+    # (node_test_generator_compute copies a full JSON snapshot into its
+    # generated output's CONTRACT_MANIFEST plus per-requirement boilerplate,
+    # ~4x amplification) and published to Kafka, whose broker enforces a real
+    # message.max.bytes far below what client config implies (OMN-16267).
+    # Capped to match the DoS-prevention convention already applied to this
+    # model's sibling list fields (see _MAX_LIST_ITEMS above).
     requirements: list[ModelRequirement] = Field(
-        default_factory=list, description="Requirements derived from ticket"
+        default_factory=list,
+        description="Requirements derived from ticket",
+        max_length=_MAX_LIST_ITEMS,
     )
 
     # Verification and gates
     verification_steps: list[ModelVerificationStep] = Field(
-        default_factory=list, description="Verification steps to run"
+        default_factory=list,
+        description="Verification steps to run",
+        max_length=_MAX_LIST_ITEMS,
     )
     gates: list[ModelGate] = Field(
-        default_factory=list, description="Approval gates required"
+        default_factory=list,
+        description="Approval gates required",
+        max_length=_MAX_LIST_ITEMS,
     )
 
     # Interface contracts for parallel development
     interfaces_provided: list[ModelInterfaceProvided] = Field(
         default_factory=list,
         description="Interfaces this ticket provides to other tickets",
+        max_length=_MAX_LIST_ITEMS,
     )
     interfaces_consumed: list[ModelInterfaceConsumed] = Field(
         default_factory=list,
         description="Interfaces this ticket consumes (may be mocked)",
+        max_length=_MAX_LIST_ITEMS,
     )
 
     # Fingerprinting and timestamps

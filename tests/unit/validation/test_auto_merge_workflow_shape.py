@@ -27,36 +27,45 @@ def _step(name: str) -> dict[str, object]:
     raise AssertionError(f"{name!r} step not found in auto-merge.yml")
 
 
-def test_auto_merge_uses_python_313() -> None:
-    step = _step("Set up Python 3.13")
-    assert step["with"]["python-version"] == "3.13"
+def _job() -> dict[str, object]:
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    return data["jobs"]["auto-merge"]
 
 
-def test_auto_merge_pins_occ_before_preflight() -> None:
-    resolve_step = _step("Resolve OCC main SHA")
-    checkout_step = _step("Check out OCC evidence snapshot")
+def test_auto_merge_job_requires_occ_preflight_success() -> None:
+    # OMN-16288: the auto-merge job trusts the already-required
+    # "occ-preflight / eligibility" check's conclusion (resolved from the PR
+    # body's Evidence-Source pin by the shared occ-preflight.yml reusable --
+    # the same pattern omnibase_infra/omnimarket use) instead of re-resolving
+    # OCC eligibility itself. It must not run any step before that gate is
+    # satisfied.
+    job = _job()
 
-    assert "git/ref/heads/main" in resolve_step["run"]
-    assert checkout_step["with"]["ref"] == "${{ steps.occ_ref.outputs.sha }}"
+    assert "occ-preflight" in job["needs"]
+    assert "needs.occ-preflight.result == 'success'" in job["if"]
 
 
-def test_auto_merge_runs_occ_preflight_before_mutating_pr() -> None:
+def test_auto_merge_does_not_re_resolve_occ_against_heads_main() -> None:
+    # Regression guard for OMN-16288: this job previously re-resolved OCC
+    # eligibility by fetching onex_change_control@heads/main and re-running
+    # validator_occ_merge_eligibility against that checkout. Nothing promotes
+    # OCC's own contracts dev->main (OMN-15067), so OCC main is thousands of
+    # commits stale and that duplicate check failed permanently
+    # (eligible:false/missing_contract, e.g. OMN-16280 / run 32359138410) --
+    # it never gated arming (the job-level needs/if above already did), it
+    # only ever broke it. It must not come back.
     names = [step.get("name") for step in _steps()]
 
-    assert names.index("OCC auto-merge preflight") < names.index("Enable auto-merge")
-    assert names.index("OCC auto-merge preflight") < names.index(
-        "Enqueue armed PR and verify it entered the queue"
-    )
+    assert "Resolve OCC main SHA" not in names
+    assert "Check out OCC evidence snapshot" not in names
+    assert "OCC auto-merge preflight" not in names
+    assert "Set up Python 3.13" not in names
 
-
-def test_auto_merge_preflight_uses_single_pr_snapshot() -> None:
-    script = _step("OCC auto-merge preflight")["run"]
-
-    assert "gh pr view" in script
-    assert "--json body,title,headRefName,commits" in script
-    assert "omnibase_core.validation.validator_occ_merge_eligibility" in script
-    assert "--occ-commit-sha" in script
-    assert "--pr-body-file /tmp/pr_body.txt" in script
+    for step in _steps():
+        run = step.get("run", "")
+        if isinstance(run, str):
+            assert "onex_change_control/git/ref/heads/main" not in run
+            assert "validator_occ_merge_eligibility" not in run
 
 
 def test_enable_auto_merge_arms_bare_auto_not_squash() -> None:

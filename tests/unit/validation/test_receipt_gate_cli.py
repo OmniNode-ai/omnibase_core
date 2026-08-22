@@ -161,3 +161,155 @@ def test_cli_enforces_post_cutoff_contract_sha256(
 
     assert exit_code == 1
     assert "contract_sha256" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# OMN-16140 cross-boundary seam test.
+#
+# SEAM: the receipt-gate caller workflow
+# (onex_change_control/.github/workflows/call-receipt-gate.yml) reads each
+# commit message on the PR head into /tmp/pr_commit_texts.txt and passes them
+# to this CLI as one repeated `--pr-commit-text <message>` flag per commit.
+# The CLI parses them into `args.pr_commit_texts` (list[str] | None), coerces
+# to a tuple, and hands them to `validate_pr_receipts(pr_commit_texts=...)`,
+# which forwards them to `_verify_ticket_identity(commit_texts=...)` as the
+# alternative satisfaction path for axis-2 identity binding.
+#
+# Field-by-field seam definition:
+#   workflow arg    : --pr-commit-text            (repeated, one per commit)
+#   argparse dest   : pr_commit_texts             (action="append", default None)
+#   gate kwarg      : pr_commit_texts: tuple[str, ...]
+#   identity kwarg  : commit_texts: tuple[str, ...]
+#
+# These tests drive that whole path through `main(argv)` with the literal flag
+# strings the workflow emits — deliberately NOT two independent unit suites on
+# either side of the boundary, which is the failure mode where both halves are
+# individually green and the seam is a runtime no-op.
+# ---------------------------------------------------------------------------
+
+
+def _seam_write_contract(contracts_dir: Path, ticket_id: str) -> None:
+    contracts_dir.mkdir(parents=True, exist_ok=True)
+    (contracts_dir / f"{ticket_id}.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": "1.0.0",
+                "ticket_id": ticket_id,
+                "summary": "seam fixture",
+                "dod_evidence": [
+                    {
+                        "id": "dod-001",
+                        "description": "seam check",
+                        "checks": [{"check_type": "command", "check_value": "echo ok"}],
+                    }
+                ],
+            }
+        )
+    )
+
+
+def _seam_write_receipt(receipts_dir: Path, ticket_id: str) -> None:
+    p = receipts_dir / ticket_id / "dod-001" / "command.yaml"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": "1.0.0",
+                "ticket_id": ticket_id,
+                "evidence_item_id": "dod-001",
+                "check_type": "command",
+                "check_value": "echo ok",
+                "status": "PASS",
+                "run_timestamp": datetime.now(tz=UTC).isoformat(),
+                "commit_sha": "a1b2c3d4e5f6",  # pragma: allowlist secret
+                "runner": "worker-A",
+                "verifier": "foreground-claude-X",
+                "probe_command": "echo ok",
+                "probe_stdout": "ok\n",
+            }
+        )
+    )
+
+
+def _seam_argv(contracts: Path, receipts: Path, ticket: str) -> list[str]:
+    """The exact flag shape the caller workflow emits, minus commit texts."""
+    return [
+        "--pr-body",
+        f"Closes {ticket}\n\nEvidence-Source: abc1234\nEvidence-Ticket: {ticket}",
+        "--pr-title",
+        f"build({ticket}): retroactively ticketed change",
+        "--contracts-dir",
+        str(contracts),
+        "--receipts-dir",
+        str(receipts),
+        # Branch predates the ticket and cannot reference it — the live shape of
+        # omnibase_infra#2766 and onex_change_control#6500.
+        "--branch-name",
+        "jonah/omn-forwarder-delegation-worker",
+    ]
+
+
+def test_seam_commit_text_flags_reach_identity_binding(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Driving the real CLI argv with --pr-commit-text must satisfy axis 2.
+
+    This is the seam assertion: if the flag stops being parsed, stops being
+    forwarded, or the receiving kwarg is renamed on either side, this fails.
+    """
+    contracts = tmp_path / "contracts"
+    receipts = tmp_path / "receipts"
+    _seam_write_contract(contracts, "OMN-10420")
+    _seam_write_receipt(receipts, "OMN-10420")
+
+    exit_code = validator_receipt_gate_cli.main(
+        [
+            *_seam_argv(contracts, receipts, "OMN-10420"),
+            "--pr-commit-text",
+            "chore: unrelated first commit",
+            "--pr-commit-text",
+            "bind evidence to OMN-10420 after retroactive filing",
+        ]
+    )
+
+    assert exit_code == 0, capsys.readouterr().out
+
+
+def test_seam_without_commit_text_flags_still_fails_axis_2(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Negative control for the seam: the identical invocation WITHOUT the
+    commit-text flags must still fail, proving the flags are load-bearing and
+    the positive case above is not passing for some unrelated reason."""
+    contracts = tmp_path / "contracts"
+    receipts = tmp_path / "receipts"
+    _seam_write_contract(contracts, "OMN-10420")
+    _seam_write_receipt(receipts, "OMN-10420")
+
+    exit_code = validator_receipt_gate_cli.main(
+        _seam_argv(contracts, receipts, "OMN-10420")
+    )
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "IDENTITY BINDING FAILED" in out
+    assert "commit message" in out.lower()
+
+
+def test_seam_commit_text_flag_is_optional_for_existing_callers(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Interlock guard: this CLI change must land BEFORE the workflow starts
+    passing the flag, so a caller that does not yet pass it has to keep working
+    with axis-2 behaviour byte-identical to before."""
+    contracts = tmp_path / "contracts"
+    receipts = tmp_path / "receipts"
+    _seam_write_contract(contracts, "OMN-10420")
+    _seam_write_receipt(receipts, "OMN-10420")
+
+    argv = _seam_argv(contracts, receipts, "OMN-10420")
+    argv[argv.index("--branch-name") + 1] = "jonah/omn-10420-correctly-named-branch"
+
+    exit_code = validator_receipt_gate_cli.main(argv)
+
+    assert exit_code == 0, capsys.readouterr().out

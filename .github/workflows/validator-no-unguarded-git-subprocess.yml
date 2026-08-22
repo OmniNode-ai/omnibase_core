@@ -3,15 +3,18 @@
 ---
 # No Unguarded Git Subprocess — test git-environment isolation gate [OMN-14891]
 #
-# Canonical CI gate for `omnibase_core.validators.no_unguarded_git_subprocess`.
-# Required status check context (once flipped): "no-unguarded-git-subprocess".
-#
-# The job id/name is deliberately unique ("no-unguarded-git-subprocess"), NOT the
-# shared "validate" used by some of core's other validator workflows. GitHub
-# surfaces the check-run context as the bare job name, so a shared name collides
-# across unrelated workflows and cannot be made a required status check without
-# forcing all of them. This mirrors validator-no-plugin-daemon-classes.yml
-# (OMN-13309 / OMN-13284).
+# MIGRATED INTO ci.yml (OMN-16281, permanent closure of the OMN-16280 waiver
+# renewal): this workflow used to trigger on push/pull_request, giving it its
+# OWN github.run_id and putting it inside the pull-request-workflow-budget
+# allowlist (the thing that needed a waiver). Its validate steps now run
+# UNCONDITIONALLY inside ci.yml — an already-allowlisted workflow, so no
+# waiver or new budget slot is needed — and its embedded occ-preflight caller
+# no longer fires on PRs. The ci.yml job keeps the job name byte-identical
+# ("no-unguarded-git-subprocess"), so the SAME directly-required dev
+# branch-protection context now fires from ci.yml instead: no live
+# branch-protection mutation was made or needed (see
+# .github/required-checks.yaml's row for this context, `workflow: ci.yml`).
+# This file is retained workflow_dispatch-only for manual/ad-hoc invocation.
 #
 # THE DEFECT THIS GATES
 # ---------------------
@@ -34,25 +37,16 @@
 # Rationale (Operating Rule #5, "enforcement not detection"): OMN-14744 fixed one
 # file in omnibase_infra by hand and the class recurred in a different repo across
 # five different files. The systemic remedy is the session-level os.environ scrub
-# in tests/conftest.py; this workflow is what stops the shape being reintroduced.
-# A pre-commit-only check is advisory — it does not block a PR that bypassed local
-# hooks.
+# in tests/conftest.py; this gate is what stops the shape being reintroduced.
 #
 # Related: OMN-14892 (index corruption under the same full-suite run),
-#          OMN-14744 (the per-file precedent that did not hold).
-#
-# This workflow runs:
-#   1. unit pytest for the validator (incl. its live self-scan of tests/)
-#   2. pytest for the git-environment isolation regression (the RED-proven pair)
-#   3. a standalone self-scan of the tests/ tree; must exit 0
+#          OMN-14744 (the per-file precedent that did not hold),
+#          OMN-16280 (the waiver renewal this migration permanently closes).
 
 name: No Unguarded Git Subprocess
 
 on:
-  push:
-    branches: [main, develop, dev, "hotfix/**"]
-  pull_request:
-    branches: [main, develop, dev]
+  workflow_dispatch: {}
 
 env:
   PYTHON_VERSION: "3.12"
@@ -63,31 +57,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
-
-  no-unguarded-git-subprocess:
-    needs: occ-preflight
-    if: always()
-    name: no-unguarded-git-subprocess
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+  # Job id/name deliberately NOT "no-unguarded-git-subprocess" (CodeRabbit
+  # finding on this migration PR): that exact name now belongs to ci.yml's
+  # job, and per GitHub's own branch-protection guidance, identical job
+  # names across workflow files make a required-status-check context
+  # ambiguous. This workflow is workflow_dispatch-only (never fires on
+  # pull_request, so it structurally cannot race ci.yml's job on a live PR
+  # check-run today), but a distinct name removes even the manual-dispatch
+  # edge case at zero cost.
+  manual-no-unguarded-git-subprocess:
+    name: manual-no-unguarded-git-subprocess
     runs-on: >-
       ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
       }}
     timeout-minutes: 10
 
     steps:
       - name: Checkout omnibase_core
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v7
