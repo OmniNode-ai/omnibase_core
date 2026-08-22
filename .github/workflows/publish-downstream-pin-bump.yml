@@ -7,7 +7,8 @@
 # sweep and any future on-demand replays).
 #
 # For each repo declared in docs/downstream-repos.yaml with pin_sites:
-#   1. Checkout the downstream repo with CROSS_REPO_PAT.
+#   1. Checkout the downstream repo with a minted onexbot-occ-writer App
+#      token (OMN-16373; CROSS_REPO_PAT retired).
 #   2. Run scripts/pin_bump.py to rewrite every pin_site to the new SHA.
 #   3. Commit + push a bot/bump-omnibase-core-pin-<shortsha> branch.
 #   4. Open a PR titled "chore(ci): bump omnibase_core pin to <shortsha> [bot]".
@@ -104,11 +105,25 @@ jobs:
         with:
           path: omnibase_core
 
+      # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
+      # onexbot-occ-writer App installation token, reused for the checkout,
+      # push, and PR-open steps below.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          repositories: ${{ matrix.repo }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Checkout downstream (${{ matrix.repo }})
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/${{ matrix.repo }}
-          token: ${{ secrets.CROSS_REPO_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           path: downstream
           fetch-depth: 0
 
@@ -144,7 +159,7 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         working-directory: downstream
         env:
-          GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           SHORT="${NEW_SHA:0:12}"
           BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
@@ -159,7 +174,7 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         working-directory: downstream
         env:
-          GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           SHORT="${NEW_SHA:0:12}"
           BRANCH="bot/bump-omnibase-core-pin-${SHORT}"

@@ -52,12 +52,16 @@ on:
         required: true
         type: string
     secrets:
-      cross-repo-pat:
-        description: >-
-          PAT with repo scope for cross-repo operations. Must be a classic PAT
-          with `repo` scope or a fine-grained PAT with Contents: read+write on
-          all downstream OmniNode-ai repos. When absent, checkout and PR
-          creation steps are skipped with a warning.
+      # OMN-16373: CROSS_REPO_PAT retired. The caller now passes through the
+      # onexbot-occ-writer GitHub App credentials (org secrets
+      # ONEXBOT_OCC_APP_ID / ONEXBOT_OCC_PRIVATE_KEY); this workflow mints a
+      # short-lived installation token per downstream repo instead of using
+      # a long-lived PAT.
+      onexbot-occ-app-id:
+        description: "onexbot-occ-writer GitHub App id (org secret ONEXBOT_OCC_APP_ID)"
+        required: false
+      onexbot-occ-private-key:
+        description: "onexbot-occ-writer GitHub App private key (org secret ONEXBOT_OCC_PRIVATE_KEY)"
         required: false
   workflow_dispatch:
     inputs:
@@ -134,25 +138,40 @@ jobs:
       matrix:
         repo: ${{ fromJson(needs.compute-matrix.outputs.repos) }}
     steps:
-      - name: Check CROSS_REPO_PAT is configured
+      - name: Check onexbot-occ-writer App credentials are configured
         id: token_check
         env:
-          CROSS_REPO_PAT: ${{ secrets.cross-repo-pat || secrets.CROSS_REPO_PAT }}
+          APP_ID: ${{ secrets.onexbot-occ-app-id }}
+          APP_PRIVATE_KEY: ${{ secrets.onexbot-occ-private-key }}
         run: |
-          if [ -z "$CROSS_REPO_PAT" ]; then
-            echo "::warning::CROSS_REPO_PAT secret is not set. Skipping dependency bump for ${{ matrix.repo }}." \
-              "Set a PAT with 'repo' scope as the CROSS_REPO_PAT repository secret to enable automated dependency cascades."
+          if [ -z "$APP_ID" ] || [ -z "$APP_PRIVATE_KEY" ]; then
+            echo "::warning::ONEXBOT_OCC_APP_ID / ONEXBOT_OCC_PRIVATE_KEY are not configured. Skipping dependency bump for ${{ matrix.repo }}." \
+              "Provision the onexbot-occ-writer App org secrets to enable automated dependency cascades."
             echo "has_token=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_token=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # OMN-16373: mint a short-lived onexbot-occ-writer App installation
+      # token, scoped to the one downstream repo this matrix leg touches.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        if: steps.token_check.outputs.has_token == 'true'
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.onexbot-occ-app-id }}
+          private-key: ${{ secrets.onexbot-occ-private-key }}
+          owner: OmniNode-ai
+          repositories: ${{ matrix.repo }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Checkout downstream repo
         if: steps.token_check.outputs.has_token == 'true'
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/${{ matrix.repo }}
-          token: ${{ secrets.cross-repo-pat || secrets.CROSS_REPO_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 1
 
       - name: Set up uv
@@ -338,7 +357,7 @@ jobs:
       - name: Open pull request
         if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false'
         env:
-          GH_TOKEN: ${{ secrets.cross-repo-pat || secrets.CROSS_REPO_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO_NAME: ${{ matrix.repo }}
           BRANCH: ${{ steps.vars.outputs.branch }}
         run: |
