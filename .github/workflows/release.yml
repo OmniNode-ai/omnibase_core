@@ -265,25 +265,43 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, 'rc') }}
 
+      # OMN-16343: main protection restricts pushes to a specific push
+      # identity; the workflow GITHUB_TOKEN cannot be authorized in that
+      # allowlist (proven live: GH006 on the plain-GITHUB_TOKEN push,
+      # 2026-08-21). Mint a short-lived installation token for the
+      # org-owned app onexbot-occ-writer and push with that identity
+      # instead. App credentials come from org secrets ONEXBOT_OCC_APP_ID
+      # / ONEXBOT_OCC_PRIVATE_KEY.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        if: ${{ !contains(steps.tag.outputs.tag, 'rc') }}
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+
       # OMN-16289: main = the last release. Once a release publishes
       # successfully, fast-forward main to the released tag's commit SHA.
       # This is a non-force push of an already-proven dev SHA (release
       # tags are cut from dev; dev CI + this job already validated it).
       # Promotion PRs to main are retired -- main protection now empties
-      # required_status_checks on main and restricts pushes to this job's
-      # automation identity, so no separate token/secret is needed: the
-      # same GITHUB_TOKEN persisted by actions/checkout@v7 above already
-      # authenticates this push.
+      # required_status_checks on main and restricts pushes to the
+      # onexbot-occ-writer app identity (OMN-16343), so the push
+      # authenticates with the app token minted above rather than the
+      # workflow GITHUB_TOKEN.
       - name: Sync main to release tag
         if: ${{ !contains(steps.tag.outputs.tag, 'rc') }}
         env:
           RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           TAG="$RELEASE_TAG"
           TAG_SHA=$(git rev-list -n 1 "$TAG")
           echo "Resolved tag $TAG -> commit $TAG_SHA"
-          git push origin "${TAG_SHA}:refs/heads/main"
+          git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" "${TAG_SHA}:refs/heads/main"
           echo "main fast-forwarded to $TAG_SHA ($TAG)"
 
   # ---------------------------------------------------------------------------
@@ -302,7 +320,11 @@ jobs:
       ticket: ${{ needs.release.outputs.ticket }}
       evidence_source: ${{ needs.release.outputs.evidence_source }}
     secrets:
-      cross-repo-pat: ${{ secrets.CROSS_REPO_PAT }}
+      # OMN-16373: CROSS_REPO_PAT retired — pass the onexbot-occ-writer App
+      # credentials through so dependency-cascade.yml can mint its own
+      # per-repo installation token.
+      onexbot-occ-app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+      onexbot-occ-private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
 
   # ---------------------------------------------------------------------------
   # OMN-15603 (AC4): a failed release used to be silent about its own wreckage
