@@ -525,3 +525,164 @@ class TestDualTicketBranchBinding:
 
         assert not result.passed
         assert "branch" in result.message.lower()
+
+
+@pytest.mark.unit
+class TestCommitMessageIdentityBinding:
+    """Axis-2 satisfaction via commit message (OMN-16140).
+
+    A branch name is fixed at creation time, so a ticket filed *after* the
+    branch existed can never be referenced by it — renaming the branch closes
+    the PR (OMN-14768 F-11), and the only other remedy was opening a
+    replacement PR and relinking its OCC evidence. That cost was paid three
+    times (omnimarket#2065, omnibase_infra#2766, onex_change_control#6500).
+
+    Axis 2 therefore accepts a reference from the branch name *or* from any
+    commit message on the PR — a commit can be added to an open PR, so the
+    binding is satisfiable retroactively. This mirrors the sibling validator
+    ``validator_occ_merge_eligibility._ticket_bound_to_pr``, which already
+    treats commit text as a binding axis alongside title and branch.
+
+    Anti-forgery is unchanged: branch name, PR title, and commit messages are
+    all author-controlled strings in the same trust class, so axis 2 was never
+    the load-bearing control. The unforgeable binding is the OCC eligibility
+    self-bind (a receipt must name this PR's number or one of its commit SHAs)
+    plus the Receipt Honesty Gate's unconditional contract_sha256 check.
+    """
+
+    def test_commit_message_satisfies_axis_2_when_branch_predates_ticket(
+        self, tmp_path: Path
+    ) -> None:
+        """The retroactive-ticket case: branch cannot reference the ticket, a
+        commit message does, every other axis agrees → PASS."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc1234\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            # Branch predates the ticket and cannot reference it.
+            branch_name="jonah/omn-forwarder-delegation-worker",
+            pr_commit_texts=("bind evidence to OMN-10420 after retroactive filing",),
+        )
+
+        assert result.passed, (
+            "a commit message referencing the Evidence-Ticket must satisfy "
+            f"axis 2 when the branch cannot; got: {result.message!r}"
+        )
+
+    def test_branch_still_satisfies_axis_2_without_commit_texts(
+        self, tmp_path: Path
+    ) -> None:
+        """The branch axis remains the primary path and is unchanged."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc1234\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-10420-ticket-identity-binding",
+            pr_commit_texts=(),
+        )
+
+        assert result.passed, result.message
+
+    def test_unrelated_commit_messages_do_not_satisfy_axis_2(
+        self, tmp_path: Path
+    ) -> None:
+        """Commit text referencing a DIFFERENT ticket must not bind. This is the
+        axis-2 protection the widening must not dissolve."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc1234\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-9999-completely-different-ticket",
+            pr_commit_texts=(
+                "chore: tidy imports",
+                "fix(OMN-9999): unrelated ticket entirely",
+            ),
+        )
+
+        assert not result.passed
+        assert "branch" in result.message.lower()
+
+    def test_commit_message_partial_ticket_match_does_not_satisfy_axis_2(
+        self, tmp_path: Path
+    ) -> None:
+        """Exact-token discipline applies to commit text exactly as it does to
+        the branch name — a numeric superstring must not bind."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc1234\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-9999-different",
+            pr_commit_texts=("fix(OMN-104201): numeric superstring, not this ticket",),
+        )
+
+        assert not result.passed
+        assert "branch" in result.message.lower()
+
+    def test_axis_2_failure_message_names_both_satisfaction_paths(
+        self, tmp_path: Path
+    ) -> None:
+        """An operator hitting this failure must be told the retroactive remedy
+        exists; otherwise they pay the replacement-PR cost again."""
+        contracts = tmp_path / "contracts"
+        receipts = tmp_path / "receipts"
+        _write_contract(contracts, "OMN-10420")
+        _write_receipt(receipts, "OMN-10420")
+
+        result = validate_pr_receipts(
+            pr_body=(
+                "Closes OMN-10420\n\n"
+                "Evidence-Source: abc1234\n"
+                "Evidence-Ticket: OMN-10420"
+            ),
+            pr_title="feat(OMN-10420): ticket identity binding",
+            contracts_dir=contracts,
+            receipts_dir=receipts,
+            branch_name="jonah/omn-9999-different",
+            pr_commit_texts=(),
+        )
+
+        assert not result.passed
+        assert "commit message" in result.message.lower(), (
+            "axis-2 failure must name the commit-message path as the "
+            f"retroactive remedy; got: {result.message!r}"
+        )

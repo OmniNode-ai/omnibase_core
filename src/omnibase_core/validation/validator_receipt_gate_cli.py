@@ -124,6 +124,19 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--pr-commit-text",
+        action="append",
+        default=None,
+        dest="pr_commit_texts",
+        help=(
+            "OMN-16140: a commit message on the PR head. Repeatable, one flag per "
+            "commit. Axis-2 identity binding accepts a ticket reference from any of "
+            "these as an alternative to the branch name, so a ticket filed after the "
+            "branch already existed can bind without a branch rename or replacement "
+            "PR. Optional: when omitted, axis 2 is branch-name-only, exactly as before."
+        ),
+    )
+    parser.add_argument(
         "--target-branch",
         default=None,
         help=(
@@ -182,6 +195,7 @@ def main(argv: list[str] | None = None) -> int:
         target_branch=args.target_branch,
         receipt_gate_policy_mode=args.receipt_gate_policy_mode,
         occ_source_kind=args.occ_source_kind,
+        pr_commit_texts=tuple(args.pr_commit_texts or ()),
     )
 
     if result.friction_logged:
