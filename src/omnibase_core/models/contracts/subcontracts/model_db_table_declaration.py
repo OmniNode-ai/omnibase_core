@@ -3,11 +3,21 @@
 
 """DB table declaration model for contract-first projection nodes."""
 
+import warnings
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["ModelDbTableDeclaration"]
+
+# OMN-16415: see model_deployment_topology_database_migration_ledger.py for the
+# full rationale -- `schema` is the correct SQL-domain field name; the warning
+# is suppressed narrowly by message pattern, not renamed.
+warnings.filterwarnings(
+    "ignore",
+    message=r'Field name "schema" in ".*" shadows an attribute in parent "BaseModel"',
+    category=UserWarning,
+)
 
 
 class ModelDbTableDeclaration(BaseModel):

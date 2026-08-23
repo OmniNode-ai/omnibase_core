@@ -3,6 +3,8 @@
 
 """Tests for typed application-database deployment topology contracts."""
 
+import subprocess
+import sys
 from typing import Any
 
 import pytest
@@ -296,3 +298,38 @@ def test_database_resource_is_frozen() -> None:
 
     with pytest.raises(ValidationError):
         topology.databases["application"].physical_name = "other"  # type: ignore[misc]
+
+
+def test_schema_field_shadow_warning_suppressed_on_fresh_import() -> None:
+    """OMN-16415: importing these three models must not emit the pydantic
+    ``schema`` field-shadow ``UserWarning`` -- that warning, printed to the
+    gateway-forwarder healthcheck's stdout on every invocation, was noise
+    surfacing on the container's Docker health log. A fresh subprocess is
+    required because the warning fires once at class-definition time, and the
+    pytest process has already imported (and cached) these modules by the time
+    this test runs.
+    """
+    script = (
+        "import warnings\n"
+        "with warnings.catch_warnings(record=True) as caught:\n"
+        "    warnings.simplefilter('always')\n"
+        "    from omnibase_core.models.core.model_deployment_topology_database_migration_ledger import (\n"
+        "        ModelDeploymentTopologyDatabaseMigrationLedger,\n"
+        "    )\n"
+        "    from omnibase_core.models.core.model_deployment_topology_database_grant import (\n"
+        "        ModelDeploymentTopologyDatabaseGrant,\n"
+        "    )\n"
+        "    from omnibase_core.models.contracts.subcontracts.model_db_table_declaration import (\n"
+        "        ModelDbTableDeclaration,\n"
+        "    )\n"
+        "shadow = [w for w in caught if 'shadows an attribute' in str(w.message)]\n"
+        "assert not shadow, [str(w.message) for w in shadow]\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
