@@ -38,11 +38,26 @@ on:
 
 jobs:
   validate-docs:
+    # OMNI_RUNNER_SELECTOR_V1 (OMN-16413): `uv sync` here resolves packages from
+    # the internal-only PyPI mirror, which `ubuntu-latest` cannot reach (it is
+    # not on the tailnet). The prior selector routed ALL pull_request events to
+    # ubuntu-latest, so any PR that changed uv.lock (a GH Actions cache miss)
+    # failed deterministically with a DNS error, even for trusted same-repo PRs
+    # (e.g. onex_change_control#6850/#6823) — confirmed on 3 consecutive reruns.
+    # This mirrors the OMN-15699 fork-aware selector already used by
+    # deploy-gate-reusable.yml / main-target-guard.yml: only an ACTUAL fork PR
+    # (head repo != base repo) is routed to the public ubuntu-latest runner;
+    # every same-repo pull_request (including bot-authored dependency-bump
+    # branches, which are always same-repo, never forks) gets the
+    # tailnet-connected self-hosted omnibase-ci fleet, identical to push /
+    # merge_group / workflow_dispatch. This does NOT widen the trust boundary:
+    # untrusted fork code still never reaches the self-hosted fleet.
     runs-on: >-
       ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
       }}
     env:
       CHECK_EXTERNAL: ${{ inputs.check-external }}
