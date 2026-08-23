@@ -81,8 +81,8 @@ def _ruling(**overrides: object) -> ModelWorkRulingRecorded:
 @pytest.mark.parametrize(
     "factory",
     [
-        lambda: _session_actor(),
-        lambda: _node_actor(),
+        _session_actor,
+        _node_actor,
         lambda: ModelPrRef(
             repo="omnibase_core",
             number=1559,

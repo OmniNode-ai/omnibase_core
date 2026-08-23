@@ -13,7 +13,7 @@ from __future__ import annotations
 import uuid
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_actor_kind import EnumActorKind
 from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
@@ -53,6 +53,13 @@ class ModelNodeActor(ModelEventPayloadBase):
         ...,
         description="This invocation. Distinguishes concurrent runs of one node.",
     )
+
+    @field_validator("node_id")
+    @classmethod
+    def _reject_blank(cls, raw: str) -> str:
+        if not raw.strip():
+            raise ValueError("must not be blank or whitespace-only")
+        return raw
 
     @property
     def actor_key(self) -> str:

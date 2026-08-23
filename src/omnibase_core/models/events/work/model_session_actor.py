@@ -8,7 +8,7 @@ from __future__ import annotations
 import uuid
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_actor_kind import EnumActorKind
 from omnibase_core.models.events.model_event_payload_base import ModelEventPayloadBase
@@ -40,6 +40,13 @@ class ModelSessionActor(ModelEventPayloadBase):
         max_length=64,
         description="Role the lane was dispatched as, e.g. 'build-lane'.",
     )
+
+    @field_validator("session_handle", "agent_kind")
+    @classmethod
+    def _reject_blank(cls, raw: str) -> str:
+        if not raw.strip():
+            raise ValueError("must not be blank or whitespace-only")
+        return raw
 
     @property
     def actor_key(self) -> str:

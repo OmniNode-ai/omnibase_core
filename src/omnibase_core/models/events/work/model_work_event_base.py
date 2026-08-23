@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Mapping
-from datetime import datetime
 from types import MappingProxyType
 
 from pydantic import AwareDatetime, Field, field_validator, model_validator
@@ -97,11 +96,11 @@ class ModelWorkEventBase(ModelEventPayloadBase):
             raise ValueError("summary must not be blank or whitespace-only")
         return raw
 
-    @field_validator("emitted_at")
+    @field_validator("ticket_id")
     @classmethod
-    def _reject_naive_emitted_at(cls, raw: datetime) -> datetime:
-        if raw.tzinfo is None:
-            raise ValueError("emitted_at must be timezone-aware")
+    def _reject_blank_ticket_id(cls, raw: str | None) -> str | None:
+        if raw is not None and not raw.strip():
+            raise ValueError("ticket_id must not be blank or whitespace-only")
         return raw
 
     @model_validator(mode="after")
@@ -116,6 +115,7 @@ class ModelWorkEventBase(ModelEventPayloadBase):
         derived = self.actor.actor_key
         if not self.actor_key:
             object.__setattr__(self, "actor_key", derived)
+            self.__pydantic_fields_set__.add("actor_key")
             return self
         if self.actor_key != derived:
             raise ValueError(
