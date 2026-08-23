@@ -209,8 +209,15 @@ def validate_occ_merge_eligibility(
             # OMN-13888 (scope 3): resolve the supersession chain first. A
             # tombstone invalidates the key (no active receipt); a replacement
             # re-binds it to a net-new receipt without editing the base file.
+            # OMN-16432: current_pr_number scopes resolution to the record
+            # that explicitly targets this consumer when a shared key is
+            # bound to several downstream PRs.
             supersession = resolve_supersession(
-                snapshot.receipts_dir, ticket_id, evidence_item_id, check_type
+                snapshot.receipts_dir,
+                ticket_id,
+                evidence_item_id,
+                check_type,
+                current_pr_number=snapshot.pr_number,
             )
             if supersession is not None:
                 if supersession.error is not None:

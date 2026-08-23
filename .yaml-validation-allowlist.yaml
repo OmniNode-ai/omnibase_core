@@ -426,6 +426,18 @@ allowed_files:
     added: "2026-08-12"
     review: "2026-12-13"
 
+  - file: "src/omnibase_core/validation/validator_receipt_supersession.py"
+    reason: >-
+      DoD receipt supersession-chain resolver (OMN-13888 scope 3 / OMN-16432). _load_supersede_record
+      reads one drift/dod_receipts/<TICKET>/<ITEM>/<CHECK>.supersede.<SUFFIX>.yaml record on disk and
+      must tolerate files that are not valid YAML (yaml.safe_load wrapped in try/except (yaml.YAMLError,
+      OSError), returning an error string rather than raising) before immediately handing the parsed dict
+      to ModelReceiptSupersession.model_validate(raw) for the actual typed validation a few lines later
+      — the exact YAML-parse-before-Pydantic-validate pipeline shape this allowlist exists for, same pattern
+      as validator_receipt_honesty.py above.
+    added: "2026-08-23"
+    review: "2026-12-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
