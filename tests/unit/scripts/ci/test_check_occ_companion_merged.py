@@ -224,21 +224,51 @@ class TestBodyAndScopeVerdicts:
         assert verdict.code == EXIT_PASS
 
 
+# Every runner-provided default ``main`` reads. On a dev *push* run the suite
+# inherits GITHUB_EVENT_NAME=push, a non-gating event, so an entrypoint test
+# that leaves --event-name to the default evaluates to PASS (0) instead of the
+# PENDING/FAIL it asserts -- the OMN-16347 (omnibase_core) / OMN-16327
+# (omnibase_infra) dev-baseline failures. The verdict under test must not
+# depend on which CI event happens to be running the test suite.
+RUNNER_ENV_DEFAULTS: tuple[str, ...] = (
+    "GH_REPO",
+    "PR_NUMBER",
+    "GITHUB_EVENT_NAME",
+    "MERGE_GROUP_HEAD_REF",
+    "OCC_REPO",
+    "DEADLINE_SECONDS",
+    "POLL_INTERVAL_SECONDS",
+)
+
+
+def _open_companion_fetcher() -> FakeFetcher:
+    return FakeFetcher(
+        prs={
+            (PRODUCT_REPO, "77"): _product_pr("Evidence-Source: OCC#5032"),
+            (OCC_REPO, "5032"): {"state": "OPEN", "mergeCommit": None},
+        }
+    )
+
+
 class TestMainEntrypoint:
-    def test_once_mode_returns_pending_exit_code(self, monkeypatch) -> None:
+    @pytest.fixture(autouse=True)
+    def _hermetic_runner_environment(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        for var in RUNNER_ENV_DEFAULTS:
+            monkeypatch.delenv(var, raising=False)
+
+    def test_once_mode_returns_pending_exit_code(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         # --once with an OPEN companion must surface PENDING (2), not PASS.
         import scripts.ci.check_occ_companion_merged as mod
 
-        fetcher = FakeFetcher(
-            prs={
-                (PRODUCT_REPO, "77"): _product_pr("Evidence-Source: OCC#5032"),
-                (OCC_REPO, "5032"): {"state": "OPEN", "mergeCommit": None},
-            }
-        )
+        fetcher = _open_companion_fetcher()
         monkeypatch.setattr(mod, "GhFetcher", lambda: fetcher)
         rc = main(
             [
                 "--once",
+                "--event-name",
+                "pull_request",
                 "--repo",
                 PRODUCT_REPO,
                 "--pr-number",
@@ -249,18 +279,17 @@ class TestMainEntrypoint:
         )
         assert rc == EXIT_PENDING
 
-    def test_deadline_converts_pending_to_fail(self, monkeypatch) -> None:
+    def test_deadline_converts_pending_to_fail(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         import scripts.ci.check_occ_companion_merged as mod
 
-        fetcher = FakeFetcher(
-            prs={
-                (PRODUCT_REPO, "77"): _product_pr("Evidence-Source: OCC#5032"),
-                (OCC_REPO, "5032"): {"state": "OPEN", "mergeCommit": None},
-            }
-        )
+        fetcher = _open_companion_fetcher()
         monkeypatch.setattr(mod, "GhFetcher", lambda: fetcher)
         rc = main(
             [
+                "--event-name",
+                "pull_request",
                 "--repo",
                 PRODUCT_REPO,
                 "--pr-number",
@@ -274,3 +303,53 @@ class TestMainEntrypoint:
             ]
         )
         assert rc == EXIT_FAIL
+
+    def test_explicit_event_name_wins_over_the_runner_environment(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The exact ambient state of a dev push run: GITHUB_EVENT_NAME=push. An
+        # explicit --event-name must still evaluate the gate, not skip it.
+        import scripts.ci.check_occ_companion_merged as mod
+
+        monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
+        fetcher = _open_companion_fetcher()
+        monkeypatch.setattr(mod, "GhFetcher", lambda: fetcher)
+        rc = main(
+            [
+                "--once",
+                "--event-name",
+                "pull_request",
+                "--repo",
+                PRODUCT_REPO,
+                "--pr-number",
+                "77",
+                "--occ-repo",
+                OCC_REPO,
+            ]
+        )
+        assert rc == EXIT_PENDING
+
+    def test_event_name_defaults_from_the_runner_environment(
+        self, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        # Pins the behaviour that produced the dev-baseline failures, so the
+        # env dependency is documented rather than rediscovered: with no
+        # --event-name the runner's GITHUB_EVENT_NAME decides applicability.
+        import scripts.ci.check_occ_companion_merged as mod
+
+        monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
+        fetcher = _open_companion_fetcher()
+        monkeypatch.setattr(mod, "GhFetcher", lambda: fetcher)
+        rc = main(
+            [
+                "--once",
+                "--repo",
+                PRODUCT_REPO,
+                "--pr-number",
+                "77",
+                "--occ-repo",
+                OCC_REPO,
+            ]
+        )
+        assert rc == EXIT_PASS
+        assert "not a merge-gating event" in capsys.readouterr().out
