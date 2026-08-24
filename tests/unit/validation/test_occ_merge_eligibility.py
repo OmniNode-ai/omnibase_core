@@ -752,3 +752,303 @@ def test_checked_replacement_supersession_still_requires_its_own_receipt(
     assert result.eligible is False
     assert result.reason is EnumOccEligibilityReason.MISSING_RECEIPT
     assert result.missing_or_nonpass_receipts == (f"{TICKET}:dod-002-new:command",)
+
+
+# --- OMN-16353: missing-self-bind-only case emits an actionable reason ---------
+#
+# A hand-authored OCC companion that creates or extends a contract needs a
+# receipt binding the ticket to the OCC PR ITSELF (`occ-self-bind-pr-<N>`).
+# Omitting it used to surface as a generic `pr_ticket_mismatch` whose JSON
+# reported every receipt as found and valid — actively misleading (three
+# occurrences in one 2026-08-21 session: OCC#6819, #6820, #6675). When the
+# ONLY defect is the missing self-bind (contracts resolve, receipts PASS,
+# hashes valid, no receipt binds to THIS OCC-repo PR), the gate must emit
+# `missing_occ_self_bind` plus the exact YAML entry and receipt path to write.
+# The verdict itself is unchanged: ineligible before, ineligible after.
+
+
+def _occ_snapshot(
+    root: Path, *, repo: str = "onex_change_control"
+) -> ModelOccEligibilityInput:
+    """Snapshot for a PR on the OCC evidence repo itself."""
+    return ModelOccEligibilityInput(
+        repo=repo,
+        pr_number=123,
+        pr_title=f"docs({TICKET}): OCC evidence companion",
+        pr_body=f"Closes: {TICKET}",
+        pr_branch=f"jonah/{TICKET.lower()}-companion",
+        pr_commit_shas=(PR_SHA,),
+        pr_commit_texts=(f"docs({TICKET}): add contract + receipts",),
+        occ_commit_sha="b" * 40,
+        contracts_dir=root / "contracts",
+        receipts_dir=root / "receipts",
+    )
+
+
+@pytest.mark.unit
+def test_missing_self_bind_only_emits_actionable_reason_on_occ_repo(
+    tmp_path: Path,
+) -> None:
+    """The missing-self-bind-only case gets its own reason + exact remedy.
+
+    Everything verifies (contract resolves, receipt is PASS and hash-bound);
+    the ONLY defect is that the receipt binds a foreign PR, not this OCC PR.
+    Pre-fix this returned the generic terminal ``pr_ticket_mismatch``.
+    """
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,  # the product PR, not this OCC PR
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_OCC_SELF_BIND
+    # the receipt is still reported as resolved — nothing is "missing"
+    assert result.receipt_ids == (f"{TICKET}:dod-001:command",)
+    assert result.missing_or_nonpass_receipts == ()
+    assert result.stale_receipt_bindings == ()
+    # remediation payload: exact entry id, contract file, receipt path,
+    # pr_number, and the OMN-13888 hash-recompute reminder
+    assert "occ-self-bind-pr-123" in result.detail
+    assert f"contracts/{TICKET}.yaml" in result.detail
+    assert (
+        f"drift/dod_receipts/{TICKET}/occ-self-bind-pr-123/command.yaml"
+        in result.detail
+    )
+    assert "pr_number: 123" in result.detail
+    assert "contract_sha256" in result.detail
+    assert "contract_entry_sha256" in result.detail
+    assert "OMN-13888" in result.detail
+
+
+@pytest.mark.unit
+def test_missing_self_bind_reason_accepts_org_qualified_occ_repo(
+    tmp_path: Path,
+) -> None:
+    """A caller passing the org-qualified repo name gets the same reason."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(
+        _occ_snapshot(tmp_path, repo="OmniNode-ai/onex_change_control")
+    )
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_OCC_SELF_BIND
+
+
+@pytest.mark.unit
+def test_unbound_receipt_on_product_repo_keeps_pr_ticket_mismatch(
+    tmp_path: Path,
+) -> None:
+    """Product-repo behavior is byte-identical: the self-bind remedy is an
+    OCC-companion concept, so a product PR keeps the generic terminal reason."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.PR_TICKET_MISMATCH
+    assert "no PASS receipt for one or more tickets binds to PR #123" in result.detail
+    assert "occ-self-bind" not in result.detail
+
+
+@pytest.mark.unit
+def test_missing_self_bind_does_not_absorb_missing_receipt(tmp_path: Path) -> None:
+    """A genuinely missing receipt on the OCC repo stays MISSING_RECEIPT."""
+    _write_contract(tmp_path)
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_RECEIPT
+
+
+@pytest.mark.unit
+def test_missing_self_bind_does_not_absorb_nonpass_receipt(tmp_path: Path) -> None:
+    """A FAIL receipt on the OCC repo stays NONPASS_RECEIPT."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path, status=EnumReceiptStatus.FAIL, contract_sha256=contract_hash
+    )
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.NONPASS_RECEIPT
+
+
+@pytest.mark.unit
+def test_missing_self_bind_does_not_absorb_stale_binding(tmp_path: Path) -> None:
+    """A stale contract hash on the OCC repo stays CONTRACT_HASH_MISMATCH."""
+    _write_contract(tmp_path)
+    _write_receipt(tmp_path, contract_sha256=STALE_HASH)
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+
+
+@pytest.mark.unit
+def test_missing_self_bind_does_not_absorb_missing_contract(tmp_path: Path) -> None:
+    """A missing contract on the OCC repo stays MISSING_CONTRACT."""
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_CONTRACT
+
+
+@pytest.mark.unit
+def test_missing_self_bind_does_not_absorb_unbound_ticket_text(
+    tmp_path: Path,
+) -> None:
+    """The EARLY pr_ticket_mismatch (ticket cited but not bound through PR
+    title/branch/commit/Evidence-Ticket) is a different defect and keeps its
+    reason even on the OCC repo."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(tmp_path, contract_sha256=contract_hash)
+    snapshot = ModelOccEligibilityInput(
+        repo="onex_change_control",
+        pr_number=123,
+        pr_title="docs: evidence companion without ticket token",
+        pr_body=f"Closes: {TICKET}",
+        pr_branch="jonah/no-ticket-here",
+        pr_commit_shas=(PR_SHA,),
+        pr_commit_texts=("docs: unrelated commit",),
+        occ_commit_sha="b" * 40,
+        contracts_dir=tmp_path / "contracts",
+        receipts_dir=tmp_path / "receipts",
+    )
+
+    result = validate_occ_merge_eligibility(snapshot)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.PR_TICKET_MISMATCH
+    assert "cited but not bound" in result.detail
+
+
+@pytest.mark.unit
+def test_missing_self_bind_names_every_unbound_ticket(tmp_path: Path) -> None:
+    """With N unbound tickets, the remediation names each one (no serial
+    one-per-CI-round drip)."""
+    second_ticket = "OMN-10485"
+    first_hash = _write_contract(tmp_path)
+    second_hash = _write_contract(tmp_path, ticket_id=second_ticket)
+    _write_receipt(
+        tmp_path, pr_number=999, commit_sha="c" * 40, contract_sha256=first_hash
+    )
+    _write_receipt(
+        tmp_path,
+        ticket_id=second_ticket,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=second_hash,
+    )
+    snapshot = ModelOccEligibilityInput(
+        repo="onex_change_control",
+        pr_number=123,
+        pr_title=f"docs({TICKET}): companion",
+        pr_body=f"Closes: {TICKET}\nCloses: {second_ticket}",
+        pr_branch=f"jonah/{TICKET.lower()}-companion",
+        pr_commit_shas=(PR_SHA,),
+        pr_commit_texts=(
+            f"docs({TICKET}): contract",
+            f"docs({second_ticket}): contract",
+        ),
+        occ_commit_sha="b" * 40,
+        contracts_dir=tmp_path / "contracts",
+        receipts_dir=tmp_path / "receipts",
+    )
+
+    result = validate_occ_merge_eligibility(snapshot)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_OCC_SELF_BIND
+    assert f"contracts/{TICKET}.yaml" in result.detail
+    assert f"contracts/{second_ticket}.yaml" in result.detail
+    assert f"drift/dod_receipts/{second_ticket}/occ-self-bind-pr-123" in result.detail
+
+
+@pytest.mark.unit
+def test_missing_self_bind_only_names_the_unbound_ticket(tmp_path: Path) -> None:
+    """A ticket whose receipt DOES bind this PR is not named in the remedy."""
+    second_ticket = "OMN-10485"
+    first_hash = _write_contract(tmp_path)
+    second_hash = _write_contract(tmp_path, ticket_id=second_ticket)
+    # first ticket binds this PR; second binds only the foreign product PR
+    _write_receipt(tmp_path, pr_number=123, contract_sha256=first_hash)
+    _write_receipt(
+        tmp_path,
+        ticket_id=second_ticket,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=second_hash,
+    )
+    snapshot = ModelOccEligibilityInput(
+        repo="onex_change_control",
+        pr_number=123,
+        pr_title=f"docs({TICKET}): companion",
+        pr_body=f"Closes: {TICKET}\nCloses: {second_ticket}",
+        pr_branch=f"jonah/{TICKET.lower()}-companion",
+        pr_commit_shas=(PR_SHA,),
+        pr_commit_texts=(
+            f"docs({TICKET}): contract",
+            f"docs({second_ticket}): contract",
+        ),
+        occ_commit_sha="b" * 40,
+        contracts_dir=tmp_path / "contracts",
+        receipts_dir=tmp_path / "receipts",
+    )
+
+    result = validate_occ_merge_eligibility(snapshot)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.MISSING_OCC_SELF_BIND
+    assert f"drift/dod_receipts/{second_ticket}/occ-self-bind-pr-123" in result.detail
+    assert f"drift/dod_receipts/{TICKET}/" not in result.detail
+
+
+@pytest.mark.unit
+def test_occ_repo_with_self_bind_receipt_stays_eligible(tmp_path: Path) -> None:
+    """A properly self-bound OCC companion is eligible — verdicts unchanged."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(tmp_path, pr_number=123, contract_sha256=contract_hash)
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is True
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+
+
+@pytest.mark.unit
+def test_missing_self_bind_output_is_replay_stable(tmp_path: Path) -> None:
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+    snapshot = _occ_snapshot(tmp_path)
+
+    first = validate_occ_merge_eligibility(snapshot)
+    second = validate_occ_merge_eligibility(snapshot)
+
+    assert first.to_json() == second.to_json()
+    assert '"reason":"missing_occ_self_bind"' in first.to_json()

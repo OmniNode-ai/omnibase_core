@@ -44,6 +44,53 @@ EVIDENCE_TICKET_PATTERN = re.compile(
 )
 TICKET_TOKEN_PATTERN = re.compile(r"(?<![A-Z0-9])OMN-(\d+)(?![A-Z0-9])", re.IGNORECASE)
 
+# OMN-16353: the OCC evidence repo, where a PR under evaluation is itself the
+# companion carrying contracts/receipts and must self-bind via an
+# `occ-self-bind-pr-<N>` entry. Callers pass either the short repo name (the
+# CI workflows pass `REPO_SHORT`) or the org-qualified form.
+_OCC_REPO_NAME = "onex_change_control"
+
+
+def _is_occ_repo(repo: str) -> bool:
+    return repo.strip().rstrip("/").rsplit("/", maxsplit=1)[-1] == _OCC_REPO_NAME
+
+
+def _self_bind_remediation(ticket_id: str, pr_number: int) -> str:
+    """Exact remedy for an OCC companion missing its self-bind (OMN-16353).
+
+    Emitted only when everything else verifies: contracts resolve, receipts
+    are PASS and hash-bound — the sole defect is that no receipt carries
+    ``pr_number == <this OCC PR>``. Names the precise YAML entry and receipt
+    path so the convention is taught at the moment of failure instead of
+    costing a full CI round-trip of re-diagnosis.
+    """
+    entry_id = f"occ-self-bind-pr-{pr_number}"
+    return (
+        f"OCC evidence for {ticket_id} verifies (receipts PASS, hashes bound), "
+        f"but no receipt binds to this OCC PR (#{pr_number}). "
+        f"Add a self-bind entry to contracts/{ticket_id}.yaml:\n"
+        "\n"
+        f'  - id: "{entry_id}"\n'
+        "    description: >-\n"
+        f"      OCC self-binding receipt for PR #{pr_number}, the in-repo evidence PR\n"
+        f"      carrying this contract. Binds {ticket_id} to the OCC PR by pr_number\n"
+        "      so eligibility can resolve a PASS receipt for the evidence PR itself.\n"
+        '    source: "manual"\n'
+        '    status: "verified"\n'
+        "    checks:\n"
+        '      - check_type: "command"\n'
+        "        check_value: >-\n"
+        f"          gh pr view {pr_number} --repo OmniNode-ai/{_OCC_REPO_NAME} "
+        "--json number,state,headRefName\n"
+        "\n"
+        "then write a PASS receipt at "
+        f"drift/dod_receipts/{ticket_id}/{entry_id}/command.yaml with "
+        f"pr_number: {pr_number}. Recompute contract_sha256 on the EXISTING "
+        f"receipts for {ticket_id} — the whole-file hash moves when the contract "
+        "gains an entry; per-entry contract_entry_sha256 values do not "
+        "(OMN-13888)."
+    )
+
 
 def _sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -383,6 +430,26 @@ def validate_occ_merge_eligibility(
         if ticket_id not in tickets_with_pr_bound_receipt
     )
     if unbound_tickets:
+        if _is_occ_repo(snapshot.repo):
+            # OMN-16353: reaching this branch means every contract resolved and
+            # every required receipt is PASS and hash-bound — the ONLY defect is
+            # that no receipt binds to THIS PR. On the OCC repo itself that is
+            # the hand-authored-companion omission of the self-bind entry
+            # (three occurrences in one 2026-08-21 session: OCC#6819, #6820,
+            # #6675). The verdict is unchanged (ineligible either way);
+            # only the reason and remediation differ — advisory-to-actionable.
+            return ModelOccEligibilityResult(
+                eligible=False,
+                reason=EnumOccEligibilityReason.MISSING_OCC_SELF_BIND,
+                ticket_ids=ticket_ids,
+                occ_commit_sha=snapshot.occ_commit_sha,
+                contract_hashes=contract_hashes,
+                receipt_ids=tuple(sorted(receipt_ids)),
+                detail="\n\n".join(
+                    _self_bind_remediation(ticket_id, snapshot.pr_number)
+                    for ticket_id in unbound_tickets
+                ),
+            )
         return ModelOccEligibilityResult(
             eligible=False,
             reason=EnumOccEligibilityReason.PR_TICKET_MISMATCH,
