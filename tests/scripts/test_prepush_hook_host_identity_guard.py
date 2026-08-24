@@ -100,14 +100,21 @@ def test_guard_is_called_before_every_full_suite_pytest_invocation() -> None:
         )
 
 
-def test_guard_fails_open_when_hostname_cannot_be_determined() -> None:
+def test_guard_fails_closed_when_hostname_cannot_be_determined() -> None:
+    """OMN-16489 defect 3 inverted this pin: the empty-hostname branch used to
+    WARN and return 0 (fail-open), letting the heavy escalation proceed on a
+    host that could not be identified. It now refuses with remediation. The
+    behavioral proof lives in test_prepush_hook_recursion_and_env_guard.py."""
     script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
     assert 'if [ -z "$host" ]; then' in script_text, (
         "expected the guard to check for an unresolvable hostname"
     )
-    assert "this guard is a routing optimization, not a security gate" in script_text, (
-        "expected the fail-open comment explaining why an unresolvable host "
-        "must not block the push"
+    assert "could not determine the local hostname" in script_text, (
+        "expected the empty-hostname branch to die with a remediation message "
+        "(fail-closed, OMN-16489)"
+    )
+    assert "proceeding locally (fail-open" not in script_text, (
+        "the empty-hostname branch must not fail open (OMN-16489)"
     )
 
 
@@ -141,6 +148,9 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
     # _run_hook_forcing_full_suite below; this call site builds its own env
     # inline and had been missed.
     env.pop("PREPUSH_ALLOW_LOCAL_FULL_SUITE", None)
+    # OMN-16489: this test deliberately exercises FIRST-entry behavior, so the
+    # recursion sentinel an outer hook run exports must not leak in.
+    env.pop("ONEX_PREPUSH_HOOK_ACTIVE", None)
     result = subprocess.run(
         ["bash", str(HOOK_SCRIPT)],
         cwd=REPO_ROOT,
@@ -316,6 +326,9 @@ def _run_hook_with_stubbed_selection(
         "ENABLE_SMART_TESTS",
         "PREPUSH_ADJACENCY",
         "PREPUSH_PYTEST_ARGS",
+        # OMN-16489: this harness exercises FIRST-entry behavior, so the
+        # recursion sentinel an outer hook run exports must not leak in.
+        "ONEX_PREPUSH_HOOK_ACTIVE",
     ):
         env.pop(leaky, None)
 
@@ -792,7 +805,12 @@ def _run_hook_forcing_full_suite(
         env["PATH"] = f"{stub_bin}{os.pathsep}{env['PATH']}"
         env["PREPUSH_FULL_SUITE"] = "1"
         env["PREPUSH_BASE_REF"] = "HEAD"
-        for leaky in ("PREPUSH_ALLOW_LOCAL_FULL_SUITE",):
+        for leaky in (
+            "PREPUSH_ALLOW_LOCAL_FULL_SUITE",
+            # OMN-16489: this harness exercises FIRST-entry behavior, so the
+            # recursion sentinel an outer hook run exports must not leak in.
+            "ONEX_PREPUSH_HOOK_ACTIVE",
+        ):
             env.pop(leaky, None)
         env.update(env_extra)
 
