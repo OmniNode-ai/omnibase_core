@@ -980,8 +980,15 @@ def _check_one_receipt(
     # OMN-13888 (scope 3): resolve the supersession chain before loading the
     # base file. A tombstone means the key has no active receipt (fail as
     # missing); a replacement re-binds the key without editing the base file.
+    # OMN-16432: current_pr_number scopes resolution to the record that
+    # explicitly targets this consumer when a shared key is bound to several
+    # downstream PRs (see validator_receipt_supersession module docstring).
     supersession = resolve_supersession(
-        receipts_dir, ticket_id, evidence_item_id, check_type
+        receipts_dir,
+        ticket_id,
+        evidence_item_id,
+        check_type,
+        current_pr_number=current_pr_number,
     )
     receipt: ModelDodReceipt
     if supersession is not None:
