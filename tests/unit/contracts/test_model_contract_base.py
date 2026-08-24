@@ -578,3 +578,181 @@ class TestModelContractBaseConfig:
         contract = SampleContractModel(**self.minimal_valid_data)
         assert isinstance(contract.config, ModelContractConfig)
         assert contract.config.model_extra == {}
+
+
+@pytest.mark.unit
+class TestEnvironmentDependencyConvention:
+    """Committed contracts declare env deps as `type: environment` (OMN-16452).
+
+    The dependency dicts exercised here are copied from live, committed
+    contracts so the test tracks the real corpus shape rather than an
+    invented one:
+
+    - ``omnibase_infra`` ``node_db_error_linear_effect/contract.yaml`` uses
+      ``type: "environment"`` + ``env_var: "LINEAR_API_KEY"``.
+    - ``omniclaude`` ``node_channel_slack_adapter/contract.yaml`` uses
+      ``type: environment`` + ``key: SLACK_BOT_TOKEN`` (no ``env_var``).
+    """
+
+    def setup_method(self):
+        self.minimal_valid_data = {
+            "name": "test_contract",
+            "contract_version": ModelSemVer(major=1, minor=0, patch=0),
+            "description": "Test contract",
+            "node_type": EnumNodeType.COMPUTE_GENERIC,
+            "input_model": "omnibase_core.models.test.TestInput",
+            "output_model": "omnibase_core.models.test.TestOutput",
+        }
+
+    # ---- enum member ------------------------------------------------
+
+    def test_enum_has_environment_member(self):
+        assert EnumDependencyType.ENVIRONMENT.value == "environment"
+
+    # ---- ModelDependency field --------------------------------------
+
+    def test_model_dependency_carries_env_var(self):
+        dependency = ModelDependency(
+            name="linear_api_key",
+            dependency_type=EnumDependencyType.ENVIRONMENT,
+            env_var="LINEAR_API_KEY",
+            required=True,
+            description="Linear API key for GraphQL mutations",
+        )
+        assert dependency.env_var == "LINEAR_API_KEY"
+
+    def test_env_var_defaults_to_none(self):
+        dependency = ModelDependency(
+            name="slack_bot_token",
+            dependency_type=EnumDependencyType.ENVIRONMENT,
+        )
+        assert dependency.env_var is None
+
+    def test_environment_dependency_matches_onex_patterns(self):
+        dependency = ModelDependency(
+            name="linear_api_key",
+            dependency_type=EnumDependencyType.ENVIRONMENT,
+            env_var="LINEAR_API_KEY",
+        )
+        assert dependency.matches_onex_patterns() is True
+
+    # ---- dict -> ModelDependency conversion --------------------------
+
+    def test_committed_env_var_shape_round_trips(self):
+        """The omnibase_infra `env_var` shape converts and validates."""
+        data = {
+            **self.minimal_valid_data,
+            "dependencies": [
+                {
+                    "name": "linear_api_key",
+                    "type": "environment",
+                    "env_var": "LINEAR_API_KEY",
+                    "description": "Linear API key for GraphQL mutations",
+                    "required": True,
+                },
+            ],
+        }
+
+        contract = SampleContractModel(**data)
+
+        dependency = contract.dependencies[0]
+        assert dependency.name == "linear_api_key"
+        assert dependency.dependency_type == EnumDependencyType.ENVIRONMENT
+        assert dependency.env_var == "LINEAR_API_KEY"
+        assert dependency.required is True
+        assert dependency.matches_onex_patterns() is True
+
+    def test_committed_key_shape_constructs_without_env_var(self):
+        """The omniclaude `key:` shape has no env_var but must still load."""
+        data = {
+            **self.minimal_valid_data,
+            "dependencies": [
+                {
+                    "name": "slack_bot_token",
+                    "type": "environment",
+                    "key": "SLACK_BOT_TOKEN",
+                    "required": True,
+                    "description": "Slack bot OAuth token",
+                },
+            ],
+        }
+
+        contract = SampleContractModel(**data)
+
+        dependency = contract.dependencies[0]
+        assert dependency.dependency_type == EnumDependencyType.ENVIRONMENT
+        assert dependency.env_var is None
+
+    def test_bare_environment_dependency_constructs(self):
+        """`type: environment` with neither env_var nor key must not raise."""
+        data = {
+            **self.minimal_valid_data,
+            "dependencies": [{"name": "some_env_dep", "type": "environment"}],
+        }
+
+        contract = SampleContractModel(**data)
+
+        assert contract.dependencies[0].dependency_type == (
+            EnumDependencyType.ENVIRONMENT
+        )
+        assert contract.dependencies[0].env_var is None
+
+    # ---- blast-radius guards ----------------------------------------
+
+    @pytest.mark.parametrize(
+        "freeform_type",
+        [
+            "handler",
+            "library",
+            "node",
+            "config",
+            "ModelONEXContainer",
+            "external_service",
+        ],
+    )
+    def test_non_member_type_values_keep_protocol_default(self, freeform_type):
+        """`type:` is freeform across the corpus.
+
+        Values that do not name an EnumDependencyType member must retain the
+        legacy EnumDependencyType.PROTOCOL default and must NOT raise -- ~180
+        committed dependency entries rely on that.
+        """
+        converted = SampleContractModel._batch_convert_dict_dependencies(
+            [(0, {"name": "some_dependency", "type": freeform_type})],
+        )
+
+        assert len(converted) == 1
+        assert converted[0].dependency_type == EnumDependencyType.PROTOCOL
+
+    def test_freeform_type_dependency_still_loads_in_contract(self):
+        """End-to-end guard for a non-member `type:` value."""
+        data = {
+            **self.minimal_valid_data,
+            "dependencies": [
+                {
+                    "name": "ProtocolEventBus",
+                    "module": "omnibase_core.protocol.protocol_event_bus",
+                    "type": "handler",
+                },
+            ],
+        }
+
+        contract = SampleContractModel(**data)
+
+        assert contract.dependencies[0].dependency_type == (EnumDependencyType.PROTOCOL)
+
+    def test_explicit_dependency_type_wins_over_type_alias(self):
+        converted = SampleContractModel._batch_convert_dict_dependencies(
+            [
+                (
+                    0,
+                    {
+                        "name": "some_service",
+                        "dependency_type": "service",
+                        "type": "environment",
+                    },
+                ),
+            ],
+        )
+
+        assert converted[0].dependency_type == EnumDependencyType.SERVICE

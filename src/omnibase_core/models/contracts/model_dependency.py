@@ -73,12 +73,21 @@ class ModelDependency(BaseModel):
         description="Human-readable dependency description",
     )
 
+    env_var: str | None = Field(
+        default=None,
+        description=(
+            "Environment variable name supplying this dependency "
+            "(e.g., 'LINEAR_API_KEY'); set on ENVIRONMENT dependencies"
+        ),
+    )
+
     # Type mapping for automatic classification
     _TYPE_PATTERNS: ClassVar[dict[str, EnumDependencyType]] = {
         "protocol": EnumDependencyType.PROTOCOL,
         "service": EnumDependencyType.SERVICE,
         "module": EnumDependencyType.MODULE,
         "external": EnumDependencyType.EXTERNAL,
+        "environment": EnumDependencyType.ENVIRONMENT,
     }
 
     # Compiled regex patterns for performance optimization (Phase 3L performance fix)

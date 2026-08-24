@@ -72,6 +72,14 @@ from omnibase_core.types import (
     TypedDictPublishedEventEntry,
 )
 
+# Values that EnumDependencyType actually models. Derived from the enum so a new
+# member is picked up automatically. Used to decide whether a contract's freeform
+# ``type:`` key may be read as a ``dependency_type`` alias -- see
+# ``_batch_convert_dict_dependencies``.
+_DEPENDENCY_TYPE_MEMBER_VALUES: frozenset[str] = frozenset(
+    member.value for member in EnumDependencyType
+)
+
 
 class ModelContractBase(BaseModel, ABC):
     """
@@ -624,10 +632,26 @@ class ModelContractBase(BaseModel, ABC):
                     if item_dict.get("module") is not None
                     else None
                 )
-                dependency_type = item_dict.get(
-                    "dependency_type",
-                    EnumDependencyType.PROTOCOL,
-                )
+                # Contracts in the wild spell this key ``type:``, not
+                # ``dependency_type:``. ``type:`` is freeform, though: alongside
+                # real EnumDependencyType values ("protocol", "service",
+                # "environment") the corpus carries values the enum does not
+                # model ("handler", "library", "node", class names, ...).
+                # So ``type:`` is honoured ONLY when it names an enum member;
+                # every other value keeps the historical PROTOCOL default rather
+                # than turning ~180 committed dependency entries into hard
+                # contract-load failures.
+                if "dependency_type" in item_dict:
+                    dependency_type = item_dict["dependency_type"]
+                else:
+                    type_alias = item_dict.get("type")
+                    dependency_type = (
+                        type_alias
+                        if isinstance(type_alias, str)
+                        and type_alias in _DEPENDENCY_TYPE_MEMBER_VALUES
+                        else EnumDependencyType.PROTOCOL
+                    )
+
                 if isinstance(dependency_type, str):
                     dependency_type = EnumDependencyType(dependency_type)
                 elif not isinstance(dependency_type, EnumDependencyType):
@@ -644,6 +668,11 @@ class ModelContractBase(BaseModel, ABC):
                     if item_dict.get("description") is not None
                     else None
                 )
+                env_var = (
+                    str(item_dict["env_var"])
+                    if item_dict.get("env_var") is not None
+                    else None
+                )
 
                 result_deps.append(
                     ModelDependency(
@@ -653,6 +682,7 @@ class ModelContractBase(BaseModel, ABC):
                         version=version,
                         required=required,
                         description=description,
+                        env_var=env_var,
                     ),
                 )
             except (AttributeError, KeyError, TypeError, ValueError) as e:
