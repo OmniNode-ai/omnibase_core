@@ -95,6 +95,27 @@ def test_every_pytest_invocation_has_bounded_timeout_and_parallelism() -> None:
         )
 
 
+def test_timeout_method_is_signal_not_thread() -> None:
+    """OMN-15977 Hole 3: --timeout-method=thread cannot kill a CPU-bound
+    pure-Python loop holding the GIL -- the watcher thread that would fire
+    the kill never gets scheduled while the GIL is held continuously. This
+    was the unkillable-CPU config behind two 2026-08-12 runaways (46min,
+    53min local pre-push full-suite escalations) that required a manual
+    SIGKILL from a health-tick to stop. Signal method delivers SIGALRM, which
+    interrupts at the next Python bytecode boundary regardless of GIL
+    contention, and can actually kill that failure mode."""
+    script_text = _HOOK_SCRIPT.read_text(encoding="utf-8")
+    timeout_flags = _resolve_shell_var(script_text, "PREPUSH_TIMEOUT_FLAGS")
+    assert "--timeout-method=thread" not in timeout_flags, (
+        "PREPUSH_TIMEOUT_FLAGS must not use --timeout-method=thread (cannot "
+        f"kill a CPU-bound runaway); got: {timeout_flags!r}"
+    )
+    assert "--timeout-method=signal" in timeout_flags, (
+        "expected PREPUSH_TIMEOUT_FLAGS to set --timeout-method=signal; got: "
+        f"{timeout_flags!r}"
+    )
+
+
 def test_bounded_timeout_flags_defined_once_and_reused() -> None:
     """The hook should define the timeout flags once and reuse them, not
     hand-duplicate the flag string per invocation (drift risk)."""

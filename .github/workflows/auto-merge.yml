@@ -155,66 +155,26 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-
-      - name: Resolve OCC main SHA
-        id: occ_ref
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          sha="$(gh api repos/OmniNode-ai/onex_change_control/git/ref/heads/main --jq '.object.sha')"
-          if ! printf '%s' "$sha" | grep -Eq '^[0-9a-f]{40}$'; then
-            echo "::error::could not resolve immutable onex_change_control/main SHA"
-            exit 1
-          fi
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-
-      - name: Check out OCC evidence snapshot
-        uses: actions/checkout@v7
-        with:
-          repository: OmniNode-ai/onex_change_control
-          path: .onex_change_control
-          ref: ${{ steps.occ_ref.outputs.sha }}
-          fetch-depth: 1
-
-      - name: OCC auto-merge preflight
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          PR: ${{ needs.pre-check.outputs.pr }}
-        run: |
-          set -euo pipefail
-          pr_json="$(gh pr view "$PR" --repo "$GH_REPO" --json body,title,headRefName,commits)"
-          printf '%s' "$pr_json" | jq -r '.body // ""' > /tmp/pr_body.txt
-          PR_TITLE="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
-          PR_BRANCH="$(printf '%s' "$pr_json" | jq -r '.headRefName // ""')"
-
-          commit_args=()
-          while IFS= read -r sha; do
-            [ -n "$sha" ] && commit_args+=(--pr-commit-sha "$sha")
-          done < <(printf '%s' "$pr_json" | jq -r '.commits[]?.oid // empty')
-          while IFS= read -r text; do
-            [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
-          done < <(printf '%s' "$pr_json" | jq -r '.commits[]? | ((.messageHeadline // "") + " " + (.messageBody // "" | gsub("\r?\n"; " ")))')
-
-          PYTHONPATH=src uv run python -m omnibase_core.validation.validator_occ_merge_eligibility \
-            --repo "${GH_REPO##*/}" \
-            --pr-number "$PR" \
-            --pr-title "$PR_TITLE" \
-            --pr-body-file /tmp/pr_body.txt \
-            --pr-branch "$PR_BRANCH" \
-            --occ-commit-sha "${{ steps.occ_ref.outputs.sha }}" \
-            --contracts-dir ".onex_change_control/contracts" \
-            --receipts-dir ".onex_change_control/drift/dod_receipts" \
-            "${commit_args[@]}" \
-            | tee /tmp/occ_auto_merge_preflight.json
+      # OMN-16288: this job previously re-resolved OCC eligibility here by
+      # fetching onex_change_control@heads/main and re-running
+      # validator_occ_merge_eligibility against that checkout. Nothing
+      # promotes OCC's own contracts dev->main (Tier-1 excluded from
+      # nightly-promote per OMN-15067), so OCC main is thousands of commits
+      # stale and that step failed permanently with eligible:false /
+      # missing_contract for every recently-minted ticket contract (e.g.
+      # OMN-16280, run 32359138410) -- it never once passed once main drifted
+      # this far, and it never gated arming: the `auto-merge` job here already
+      # requires `needs.occ-preflight.result == 'success'` (line 148 `if:`),
+      # and that occ-preflight job (line 69) calls the SAME reusable
+      # (occ-preflight.yml) that resolves OCC state from the PR body's
+      # Evidence-Source pin -- the pattern omnibase_infra and omnimarket's
+      # call-occ-preflight.yml already use, and the one context that is a
+      # required status check here ("occ-preflight / eligibility"). The
+      # heads/main re-check was a pure, broken duplicate of an
+      # already-required, already-passed check; this job now simply trusts
+      # that check's conclusion via the existing `needs:`/`if:` gate above
+      # instead of re-running its own resolution. The Python/uv setup steps
+      # that only existed to run that duplicate check are removed with it.
 
       - name: Enable auto-merge
         env:

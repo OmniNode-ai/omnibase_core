@@ -980,8 +980,15 @@ def _check_one_receipt(
     # OMN-13888 (scope 3): resolve the supersession chain before loading the
     # base file. A tombstone means the key has no active receipt (fail as
     # missing); a replacement re-binds the key without editing the base file.
+    # OMN-16432: current_pr_number scopes resolution to the record that
+    # explicitly targets this consumer when a shared key is bound to several
+    # downstream PRs (see validator_receipt_supersession module docstring).
     supersession = resolve_supersession(
-        receipts_dir, ticket_id, evidence_item_id, check_type
+        receipts_dir,
+        ticket_id,
+        evidence_item_id,
+        check_type,
+        current_pr_number=current_pr_number,
     )
     receipt: ModelDodReceipt
     if supersession is not None:
@@ -1284,6 +1291,7 @@ def _verify_ticket_identity(
     branch_name: str | None,
     contracts_dir: Path,
     receipts_dir: Path,
+    commit_texts: tuple[str, ...] = (),
 ) -> str | None:
     """Verify that the Evidence-Ticket is consistent across all four identity axes.
 
@@ -1291,7 +1299,8 @@ def _verify_ticket_identity(
     ticket as the PR.  Checks (in order):
 
     1. PR title contains Evidence-Ticket (case-insensitive).
-    2. Branch name contains Evidence-Ticket (case-insensitive).
+    2. Branch name **or any commit message on the PR** contains Evidence-Ticket
+       (case-insensitive).
     3. ``contracts/<ticket-id>.yaml`` exists and its ``ticket_id`` field matches.
     4. Every receipt under ``drift/dod_receipts/<ticket-id>/`` has a ``ticket_id``
        field that matches.
@@ -1302,6 +1311,8 @@ def _verify_ticket_identity(
         branch_name: Git branch name; checked for case-insensitive ticket reference.
         contracts_dir: Directory containing contract YAML files.
         receipts_dir: Root of the receipt tree.
+        commit_texts: Commit messages on the PR head. Axis 2 accepts a reference
+            from any of these as an alternative to the branch name (OMN-16140).
 
     Returns:
         ``None`` when all axes are consistent.  Otherwise an operator-facing failure
@@ -1321,31 +1332,53 @@ def _verify_ticket_identity(
                 "The PR title must contain the same ticket cited in Evidence-Ticket."
             )
 
-    # Axis 2: Branch name.
+    # Axis 2: Branch name, or any commit message on the PR.
+    def _references_ticket(text: str) -> bool:
+        text_upper = text.upper()
+        if exact_ticket_pattern.search(text_upper) is not None:
+            return True
+        # Dual-ticket branch convention (OMN-13395): a branch addressing
+        # multiple tickets encodes them as one ``omn-<n>(-<n>)*`` cluster
+        # (e.g. ``jonah/omn-13234-13362-...``). The exact-token pattern above
+        # only matches a literal ``OMN-<n>``, so a trailing id in such a
+        # cluster (preceded by ``-``, not ``OMN-``) never matches. Test the
+        # Evidence-Ticket's number for membership in each cluster's run.
+        ticket_number = re.search(r"(\d+)$", ticket_upper)
+        if ticket_number is None:
+            return False
+        target = ticket_number.group(1)
+        return any(
+            target in cluster.split("-")
+            for cluster in DUAL_TICKET_BRANCH_CLUSTER_PATTERN.findall(text_upper)
+        )
+
     if branch_name is not None:
-        branch_upper = branch_name.upper()
-        branch_matches = exact_ticket_pattern.search(branch_upper) is not None
-        if not branch_matches:
-            # Dual-ticket branch convention (OMN-13395): a branch addressing
-            # multiple tickets encodes them as one ``omn-<n>(-<n>)*`` cluster
-            # (e.g. ``jonah/omn-13234-13362-...``). The exact-token pattern above
-            # only matches a literal ``OMN-<n>``, so a trailing id in such a
-            # cluster (preceded by ``-``, not ``OMN-``) never matches. Test the
-            # Evidence-Ticket's number for membership in each cluster's run.
-            ticket_number = re.search(r"(\d+)$", ticket_upper)
-            if ticket_number is not None:
-                target = ticket_number.group(1)
-                branch_matches = any(
-                    target in cluster.split("-")
-                    for cluster in DUAL_TICKET_BRANCH_CLUSTER_PATTERN.findall(
-                        branch_upper
-                    )
-                )
-        if not branch_matches:
+        # OMN-16140: a branch name is fixed at creation time, so a ticket filed
+        # AFTER the branch existed can never be referenced by it — renaming the
+        # branch closes the PR (OMN-14768 F-11), leaving only the
+        # replacement-PR-plus-OCC-relink cycle, a cost paid three times
+        # (omnimarket#2065, omnibase_infra#2766, onex_change_control#6500).
+        # A commit message CAN be added to an open PR, so accepting one here
+        # makes axis 2 satisfiable retroactively without dissolving it. This
+        # mirrors ``validator_occ_merge_eligibility._ticket_bound_to_pr``, which
+        # already treats commit text as a binding axis alongside title and
+        # branch. Anti-forgery is unchanged: branch name, PR title, and commit
+        # messages are all author-controlled strings in the same trust class, so
+        # axis 2 was never the load-bearing control — that is the OCC
+        # eligibility self-bind (a receipt must name this PR's number or one of
+        # its commit SHAs) plus the Receipt Honesty Gate's unconditional
+        # contract_sha256 check, neither of which this touches.
+        if not _references_ticket(branch_name) and not any(
+            _references_ticket(text) for text in commit_texts
+        ):
             return (
-                f"IDENTITY BINDING FAILED: branch name does not reference {evidence_ticket}. "
-                f"branch={branch_name!r}, Evidence-Ticket={evidence_ticket!r}. "
-                "The branch must be named for the same ticket cited in Evidence-Ticket."
+                f"IDENTITY BINDING FAILED: neither the branch name nor any commit "
+                f"message references {evidence_ticket}. "
+                f"branch={branch_name!r}, Evidence-Ticket={evidence_ticket!r}, "
+                f"commit messages checked={len(commit_texts)}. "
+                "Name the branch for the ticket cited in Evidence-Ticket, or — when "
+                "the ticket was filed after the branch already existed — add a commit "
+                "to this PR whose commit message references that ticket."
             )
 
     # Axis 3: Contract ticket_id field.
@@ -1544,6 +1577,7 @@ def validate_pr_receipts(
     target_branch: str | None = None,
     receipt_gate_policy_mode: str = "legacy",
     occ_source_kind: str | None = None,
+    pr_commit_texts: tuple[str, ...] = (),
 ) -> ModelReceiptGateResult:
     """Run the receipt-gate against a PR's body + the repo's contracts + receipts.
 
@@ -1571,6 +1605,10 @@ def validate_pr_receipts(
             a value and ``Evidence-Source`` is present, the gate fails.
         branch_name: Git branch name for axis-2 identity binding.
         target_branch: PR base branch. Used by branch-aware dev/main policy.
+        pr_commit_texts: Commit messages on the PR head. Axis-2 identity binding
+            accepts a ticket reference from any of these as an alternative to the
+            branch name, so a ticket filed after the branch already existed can
+            still bind without a branch rename or replacement PR (OMN-16140).
         receipt_gate_policy_mode: ``legacy`` keeps current behavior. ``main-release``
             additionally requires main-targeted PRs to be promotion or hotfix paths
             backed by merged OCC evidence. ``dev-preflight`` intentionally preserves
@@ -1753,6 +1791,7 @@ def validate_pr_receipts(
             branch_name=identity_branch_name,
             contracts_dir=contracts_dir,
             receipts_dir=receipts_dir,
+            commit_texts=pr_commit_texts,
         )
         if identity_failure is not None:
             return ModelReceiptGateResult(passed=False, message=identity_failure)

@@ -8,7 +8,8 @@
 #
 # For each target declared in .github/propagation-targets.yaml under the
 # selected propagation name, the bot:
-#   1. Clones the target repo with CROSS_REPO_PAT.
+#   1. Clones the target repo with a minted onexbot-occ-writer App token
+#      (OMN-16373; CROSS_REPO_PAT retired).
 #   2. Appends the declared hook block to the target file (skips if already
 #      present — idempotent).
 #   3. Commits to a bot/propagate-<name>-<tag> branch and opens a PR.
@@ -102,9 +103,23 @@ jobs:
             echo "tag=manual-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
           fi
 
+      # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
+      # onexbot-occ-writer App installation token (org secrets
+      # ONEXBOT_OCC_APP_ID / ONEXBOT_OCC_PRIVATE_KEY) for the cross-repo
+      # clone + commit + PR-open this script performs on each target.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Run propagator
         env:
-          GITHUB_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PROPAGATION_NAME: ${{ steps.name.outputs.name }}
           PROPAGATION_RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: bash scripts/propagate-config.sh

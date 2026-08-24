@@ -3,11 +3,26 @@
 
 """Checksum-aware migration-ledger declaration for a deployment database."""
 
+import warnings
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = ["ModelDeploymentTopologyDatabaseMigrationLedger"]
 
 _SQL_IDENTIFIER_PATTERN = r"^[a-z_][a-z0-9_]*$"
+
+# OMN-16415: `schema` is the correct SQL-domain field name here (a database
+# schema reference); pydantic v2 still emits a UserWarning at class-definition
+# time because the name shadows BaseModel's deprecated `.schema()` classmethod.
+# Renaming would ripple into every deployment-topology YAML contract that
+# declares `schema:` across consuming repos for zero behavioral benefit, so the
+# warning is suppressed narrowly by message pattern at its emission point
+# (class definition) instead of a blanket ignore.
+warnings.filterwarnings(
+    "ignore",
+    message=r'Field name "schema" in ".*" shadows an attribute in parent "BaseModel"',
+    category=UserWarning,
+)
 
 
 class ModelDeploymentTopologyDatabaseMigrationLedger(BaseModel):

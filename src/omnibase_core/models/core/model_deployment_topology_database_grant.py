@@ -4,6 +4,7 @@
 """Explicit workload-principal grant in a deployment database topology."""
 
 import re
+import warnings
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -15,6 +16,15 @@ from omnibase_core.enums.enum_database_privilege import EnumDatabasePrivilege
 __all__ = ["ModelDeploymentTopologyDatabaseGrant"]
 
 _SQL_IDENTIFIER_PATTERN = r"^[a-z_][a-z0-9_]*$"
+
+# OMN-16415: see model_deployment_topology_database_migration_ledger.py for the
+# full rationale -- `schema` is the correct SQL-domain field name; the warning
+# is suppressed narrowly by message pattern, not renamed.
+warnings.filterwarnings(
+    "ignore",
+    message=r'Field name "schema" in ".*" shadows an attribute in parent "BaseModel"',
+    category=UserWarning,
+)
 _SQL_IDENTIFIER = re.compile(_SQL_IDENTIFIER_PATTERN)
 
 _ALLOWED_PRIVILEGES: dict[

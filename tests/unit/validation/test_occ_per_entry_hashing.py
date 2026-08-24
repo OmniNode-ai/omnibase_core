@@ -356,7 +356,11 @@ def test_both_bindings_absent_hard_fails(tmp_path: Path) -> None:
 
 
 def _supersession_dict(
-    *, item_id: str, tombstone: bool, replacement: dict | None
+    *,
+    item_id: str,
+    tombstone: bool,
+    replacement: dict | None,
+    created_at: datetime | None = None,
 ) -> dict:
     data = {
         "schema_version": "1.0.0",
@@ -366,7 +370,7 @@ def _supersession_dict(
         "supersedes": f"drift/dod_receipts/{TICKET}/{item_id}/command.yaml",
         "reason": "rebind to the actually-merged PR",
         "superseder": "closeout-agent",
-        "created_at": datetime(2026, 6, 2, 12, 0, tzinfo=UTC),
+        "created_at": created_at or datetime(2026, 6, 2, 12, 0, tzinfo=UTC),
         "tombstone": tombstone,
     }
     if replacement is not None:
@@ -475,6 +479,205 @@ def test_highest_nnnn_untombstones(tmp_path: Path) -> None:
     assert resolution.tombstoned is False
     assert resolution.receipt is not None
     assert resolution.receipt.pr_number == 303
+
+
+# --------------------------------------------------------------------------- #
+# OMN-16432 — target-aware resolution (shared evidence_item_id, multiple
+# consumers, two competing suffix-numbering conventions)
+# --------------------------------------------------------------------------- #
+
+
+def _write_shared_key_base(
+    tmp_path: Path, item_id: str = "occ-self-bind-pr-6838"
+) -> Path:
+    key_dir = tmp_path / "receipts" / TICKET / item_id
+    key_dir.mkdir(parents=True, exist_ok=True)
+    (key_dir / "command.yaml").write_text("placeholder: true\n", encoding="utf-8")
+    return key_dir
+
+
+def _write_shared_supersede(
+    key_dir: Path,
+    *,
+    suffix: str,
+    item_id: str,
+    pr_number: int,
+    created_at: datetime,
+) -> None:
+    replacement = _receipt_dict(
+        item_id=item_id,
+        pr_number=pr_number,
+        commit_sha=f"{pr_number:040x}"[:40],
+        contract_entry_sha256="sha256:" + "0" * 64,
+    )
+    (key_dir / f"command.supersede.{suffix}.yaml").write_text(
+        yaml.safe_dump(
+            _supersession_dict(
+                item_id=item_id,
+                tombstone=False,
+                replacement=replacement,
+                created_at=created_at,
+            ),
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.unit
+def test_target_aware_resolution_reproduces_omn_16322_collision(
+    tmp_path: Path,
+) -> None:
+    """Reproduces the live OMN-16322 occ-self-bind-pr-6838 collision: one
+    shared evidence_item_id superseded by two competing numbering
+    conventions (downstream-consumer-PR-number vs OCC-repair-PR-own-number).
+    The numerically-highest suffix (6940, the repair PR's own number) must
+    NOT shadow the records that explicitly target the two product consumers.
+    """
+    item_id = "occ-self-bind-pr-6838"
+    key_dir = _write_shared_key_base(tmp_path, item_id)
+    # Consumer PR #2010 (omniclaude), numbered by its own PR number.
+    _write_shared_supersede(
+        key_dir,
+        suffix="2010",
+        item_id=item_id,
+        pr_number=2010,
+        created_at=datetime(2026, 8, 23, 20, 11, 25, tzinfo=UTC),
+    )
+    # Consumer PR #2836 (omnibase_infra), same convention.
+    _write_shared_supersede(
+        key_dir,
+        suffix="2836",
+        item_id=item_id,
+        pr_number=2836,
+        created_at=datetime(2026, 8, 23, 20, 11, 25, tzinfo=UTC),
+    )
+    # OCC repair PR #6934 rebinds the anchor to itself, numbered by ITS OWN
+    # PR number — a different, competing convention.
+    _write_shared_supersede(
+        key_dir,
+        suffix="6934",
+        item_id=item_id,
+        pr_number=6934,
+        created_at=datetime(2026, 8, 23, 20, 20, 0, tzinfo=UTC),
+    )
+    # OCC repair PR #6940 does the same, numerically highest of all five.
+    _write_shared_supersede(
+        key_dir,
+        suffix="6940",
+        item_id=item_id,
+        pr_number=6940,
+        created_at=datetime(2026, 8, 23, 23, 18, 0, tzinfo=UTC),
+    )
+
+    # Each consumer resolves to ITS OWN record, not the numerically-highest
+    # (6940) one that shadowed everything pre-fix.
+    for consumer_pr in (2010, 2836, 6934, 6940):
+        resolution = resolve_supersession(
+            tmp_path / "receipts",
+            TICKET,
+            item_id,
+            "command",
+            current_pr_number=consumer_pr,
+        )
+        assert resolution is not None
+        assert resolution.error is None, resolution.error
+        assert resolution.receipt is not None
+        assert resolution.receipt.pr_number == consumer_pr, (
+            f"consumer #{consumer_pr} resolved to pr_number="
+            f"{resolution.receipt.pr_number} instead of itself"
+        )
+
+    # A caller with NO PR context (the pre-OMN-16432 call shape) keeps the
+    # exact legacy behavior: numerically-highest suffix wins.
+    legacy = resolve_supersession(tmp_path / "receipts", TICKET, item_id, "command")
+    assert legacy is not None
+    assert legacy.receipt is not None
+    assert legacy.receipt.pr_number == 6940
+
+
+@pytest.mark.unit
+def test_target_aware_resolution_honors_non_numeric_suffix_correction(
+    tmp_path: Path,
+) -> None:
+    """The live collision also included a non-numeric-suffix correction
+    (command.supersede.2010-head.yaml) that the old digit-only regex silently
+    dropped from consideration. It must now be visible and, being the latest
+    record targeting PR #2010, must win over the earlier same-PR record.
+    """
+    item_id = "occ-self-bind-pr-6838"
+    key_dir = _write_shared_key_base(tmp_path, item_id)
+    _write_shared_supersede(
+        key_dir,
+        suffix="2010",
+        item_id=item_id,
+        pr_number=2010,
+        created_at=datetime(2026, 8, 23, 20, 11, 25, tzinfo=UTC),
+    )
+    # Non-numeric suffix, same consumer, LATER correction.
+    refreshed = _receipt_dict(
+        item_id=item_id,
+        pr_number=2010,
+        commit_sha="f" * 40,
+        contract_entry_sha256="sha256:" + "0" * 64,
+    )
+    (key_dir / "command.supersede.2010-head.yaml").write_text(
+        yaml.safe_dump(
+            _supersession_dict(
+                item_id=item_id,
+                tombstone=False,
+                replacement=refreshed,
+                created_at=datetime(2026, 8, 23, 22, 38, 0, tzinfo=UTC),
+            ),
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    resolution = resolve_supersession(
+        tmp_path / "receipts", TICKET, item_id, "command", current_pr_number=2010
+    )
+    assert resolution is not None
+    assert resolution.error is None, resolution.error
+    assert resolution.receipt is not None
+    assert resolution.receipt.commit_sha == "f" * 40
+
+
+@pytest.mark.unit
+def test_target_aware_resolution_tombstone_applies_to_every_consumer(
+    tmp_path: Path,
+) -> None:
+    """A tombstone on a shared key invalidates it for every consumer, not
+    just the one that happened to file it — key-wide invalidation semantics
+    are preserved by the new per-target resolution tier.
+    """
+    item_id = "occ-self-bind-pr-6838"
+    key_dir = _write_shared_key_base(tmp_path, item_id)
+    _write_shared_supersede(
+        key_dir,
+        suffix="2010",
+        item_id=item_id,
+        pr_number=2010,
+        created_at=datetime(2026, 8, 23, 20, 11, 25, tzinfo=UTC),
+    )
+    (key_dir / "command.supersede.9999.yaml").write_text(
+        yaml.safe_dump(
+            _supersession_dict(
+                item_id=item_id,
+                tombstone=True,
+                replacement=None,
+                created_at=datetime(2026, 8, 23, 21, 0, 0, tzinfo=UTC),
+            ),
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+
+    resolution = resolve_supersession(
+        tmp_path / "receipts", TICKET, item_id, "command", current_pr_number=2010
+    )
+    assert resolution is not None
+    assert resolution.tombstoned is True
 
 
 # --------------------------------------------------------------------------- #
