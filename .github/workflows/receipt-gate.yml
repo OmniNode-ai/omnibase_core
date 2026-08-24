@@ -459,13 +459,24 @@ jobs:
           ref: main
           fetch-depth: 1
 
+      # OMN-16432: pinned to the exact omnibase_core merge SHA that fixed
+      # resolve_supersession() picking the numerically-highest .supersede
+      # suffix with no awareness of which downstream consumer PR a shared
+      # evidence_item_id's record targets (the OMN-16322 occ-self-bind-pr-6838
+      # collision). omnibase_core main is release-synced and does NOT carry
+      # this fix yet, so `ref: main` cannot be used until the next release
+      # cuts. Repoint to `main` once a release >= the tag containing
+      # 37bd85194b96 ships (same pattern as OMN-16413's docs-validate.yml
+      # pin, one layer deeper: this checkout supplies the validator SOURCE,
+      # not the calling workflow's own YAML, so pinning callers' `uses:` to a
+      # SHA alone would not have propagated a Python source-level fix).
       - name: Check out omnibase_core (for receipt-gate deps)
         if: "steps.bot_exempt.outputs.exempt != 'true' && ! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_core
           path: .receipt-gate-deps/omnibase_core
-          ref: main
+          ref: 37bd85194b96c5a476ae2e2c0ef79235955fb748
           fetch-depth: 1
 
       - name: Install omnibase_core
