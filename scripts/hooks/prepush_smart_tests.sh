@@ -44,6 +44,27 @@ die() {
 }
 
 # =============================================================================
+# Recursion guard (OMN-16489, F-01)
+# =============================================================================
+# This hook spawns pytest, and the spawned suite contains tests that exec THIS
+# script again (tests/scripts/test_prepush_hook_host_identity_guard.py and
+# siblings). OMN-16425 proved one leaked override var turns that re-entry into
+# a recursive full-suite launcher (~9h03m lost across 5 failed ~1h45m runs;
+# friction report F-01) — and its fix covered the test sites, not the hook.
+# The env scrub at the pytest invocations below closes the override-
+# inheritance vector; this sentinel closes the re-entry class itself: a nested
+# invocation refuses fail-closed before the selector resolves or any pytest
+# spawns. The sentinel deliberately survives the override scrub — children
+# must inherit it for this guard to hold. A test that intends to exercise this
+# script's FIRST-entry behavior must strip ONEX_PREPUSH_HOOK_ACTIVE from the
+# subprocess env it constructs.
+if [ -n "${ONEX_PREPUSH_HOOK_ACTIVE:-}" ]; then
+  die "nested invocation refused: this hook is already active in an ancestor process (ONEX_PREPUSH_HOOK_ACTIVE=${ONEX_PREPUSH_HOOK_ACTIVE}, this pid $$)" \
+      "a pre-push hook run must never be spawned from inside another pre-push hook run (OMN-16425 recursion class). If a test means to exercise first-entry behavior, construct the subprocess env explicitly and strip ONEX_PREPUSH_HOOK_ACTIVE"
+fi
+export ONEX_PREPUSH_HOOK_ACTIVE="$$"
+
+# =============================================================================
 # .200-default host guard for the heavy (full-suite) escalation (OMN-15059)
 # =============================================================================
 # CLAUDE.md documents that pushes / heavy gate runs default to the `.200`
@@ -57,11 +78,14 @@ die() {
 # escalation), never on the fast impacted-subset path -- gating every push
 # would get this hook disabled within a week, which is worse than no guard.
 #
-# This is a ROUTING OPTIMIZATION, not a security control: if host identity
-# cannot be determined, FAIL OPEN (let the push proceed on this host) rather
-# than lock a developer out of their own repo on an ambiguous read. Do not
-# "harden" this into a hard block later -- the failure mode this guard exists
-# to prevent is a stalled/contended local machine, not an untrusted push.
+# An UNRESOLVABLE hostname fails CLOSED (OMN-16489 defect 3, redesign plan
+# 2026-08-24 §4 S0 item 3 / C2 — supersedes the earlier fail-open note here).
+# Heavy runs are routed BY host identity; a host that cannot be identified
+# cannot be routed, and proceeding on that silence is the same assumed-
+# headroom failure class as the load-probe incidents below. The refusal is
+# cheap (<1s, before any pytest) and names its remediation, consistent with
+# this hook's fail-loud doctrine: a gate that cannot run must be
+# indistinguishable from a failing gate.
 PREPUSH_200_HOSTNAME="${PREPUSH_200_HOSTNAME:-stickybeatz-studio}"
 
 # =============================================================================
@@ -174,8 +198,9 @@ guard_full_suite_host() {
   heavy_what="${1:-heavy fail-closed full-suite escalation}"
   host="$(hostname -s 2>/dev/null || true)"
   if [ -z "$host" ]; then
-    log "WARNING: could not determine local hostname -- unable to verify this is the .200 build host; proceeding locally (fail-open: this guard is a routing optimization, not a security gate)."
-    return 0
+    # Fail CLOSED (OMN-16489): see the routing note above PREPUSH_200_HOSTNAME.
+    die "could not determine the local hostname while deciding where ${heavy_what} may run" \
+        "heavy gate runs are routed by host identity (OMN-15059) and an unidentifiable host cannot be routed. Fix 'hostname -s' (macOS: 'sudo scutil --set HostName <name>'; Linux: 'hostnamectl set-hostname <name>'), or run the push from a designated gate host (.200 '${PREPUSH_200_HOSTNAME}' or the .201 gate-runner '${PREPUSH_201_GATE_RUNNER_HOSTNAME}')"
   fi
   lc_host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
   lc_target="$(printf '%s' "$PREPUSH_200_HOSTNAME" | tr '[:upper:]' '[:lower:]')"
@@ -444,11 +469,39 @@ SELECTOR_WHOLE_TREE_SENTINEL="tests/unit/"
 # what each one is.
 HEAVY_SELECTION_TARGETS="${FULL_SUITE_TARGET} ${SELECTOR_WHOLE_TREE_SENTINEL}"
 
+# =============================================================================
+# Override-inheritance sanitization (OMN-16489, F-04)
+# =============================================================================
+# PREPUSH_* overrides (and ENABLE_SMART_TESTS) are honored at THIS hook's
+# entry only. They must never inherit into the pytest subprocess tree: a test
+# down there that re-invokes this script would receive the OUTER push's bypass
+# grants -- the exact mechanism that turned one sanctioned override into a
+# recursive 44k-test full-suite launcher (friction report F-01/F-04, ~9h03m).
+# Called inside the subshell wrapping each pytest invocation, after the
+# command's own knobs have been captured into non-PREPUSH names, so the parent
+# hook's variables are untouched. Only EXPORTED names can inherit, so only
+# those are scrubbed. ONEX_PREPUSH_HOOK_ACTIVE deliberately survives -- the
+# recursion guard above depends on children inheriting it. This stops
+# inheritance ONLY; override semantics at hook entry are unchanged (the
+# override-mechanism redesign is OMN-16480, review-gated).
+scrub_prepush_override_env() {
+  local v
+  for v in $(compgen -A export PREPUSH_ || true); do
+    unset "$v" || true
+  done
+  unset ENABLE_SMART_TESTS || true
+}
+
 if [ "$IS_FULL" = "True" ] || [ "$IS_FULL" = "true" ]; then
   guard_full_suite_host
   log "running FULL suite (fail-closed escalation): uv run pytest ${FULL_SUITE_TARGET} --ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
-  # shellcheck disable=SC2086
-  uv run pytest "${FULL_SUITE_TARGET}" --ignore=tests/integration --tb=short ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-} || RC=$?
+  (
+    _pytest_timeout_flags="${PREPUSH_TIMEOUT_FLAGS}"
+    _pytest_extra_args="${PREPUSH_PYTEST_ARGS:-}"
+    scrub_prepush_override_env
+    # shellcheck disable=SC2086
+    exec uv run pytest "${FULL_SUITE_TARGET}" --ignore=tests/integration --tb=short ${_pytest_timeout_flags} ${_pytest_extra_args}
+  ) || RC=$?
 elif [ "${#PATHS[@]}" -gt 0 ]; then
   # OMN-15408: guard on the SELECTED WORK, not the is_full_suite flag. A
   # selection that covers a whole heavy target is the heavy run under another
@@ -457,8 +510,13 @@ elif [ "${#PATHS[@]}" -gt 0 ]; then
     guard_full_suite_host "whole-suite-equivalent impacted selection (is_full_suite=${IS_FULL}, selected paths [ ${PATHS_STR}] cover an entire heavyweight target [ ${HEAVY_SELECTION_TARGETS} ])"
   fi
   log "running impacted subset: uv run pytest ${PATHS_STR}--ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
-  # shellcheck disable=SC2086
-  uv run pytest "${PATHS[@]}" --ignore=tests/integration --tb=short ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-} || RC=$?
+  (
+    _pytest_timeout_flags="${PREPUSH_TIMEOUT_FLAGS}"
+    _pytest_extra_args="${PREPUSH_PYTEST_ARGS:-}"
+    scrub_prepush_override_env
+    # shellcheck disable=SC2086
+    exec uv run pytest "${PATHS[@]}" --ignore=tests/integration --tb=short ${_pytest_timeout_flags} ${_pytest_extra_args}
+  ) || RC=$?
 else
   log "no impacted unit tests mapped for this push (no source/test change contributed a target); nothing to run."
 fi

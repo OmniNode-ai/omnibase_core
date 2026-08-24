@@ -33,12 +33,14 @@ _HOOK_SCRIPT = (
 
 def _pytest_invocation_lines(script_text: str) -> list[str]:
     """Return only the lines that actually EXECUTE pytest -- i.e. start with
-    ``uv run pytest`` -- excluding ``log "... uv run pytest ..."`` lines that
-    merely mention the invocation for human-readable output."""
+    ``uv run pytest`` or ``exec uv run pytest`` (OMN-16489 wraps each
+    invocation in a scrubbed subshell that ``exec``s pytest) -- excluding
+    ``log "... uv run pytest ..."`` lines that merely mention the invocation
+    for human-readable output."""
     return [
         line
         for line in script_text.splitlines()
-        if line.strip().startswith("uv run pytest")
+        if line.strip().startswith(("uv run pytest", "exec uv run pytest"))
     ]
 
 
@@ -75,10 +77,18 @@ def test_every_pytest_invocation_has_bounded_timeout_and_parallelism() -> None:
         f"found {len(invocation_lines)}: {invocation_lines!r}"
     )
 
+    timeout_flags = _resolve_shell_var(script_text, "PREPUSH_TIMEOUT_FLAGS")
+    # OMN-16489: each invocation runs inside a scrubbed subshell that captures
+    # the flags into a non-PREPUSH name BEFORE the scrub, so the executed line
+    # references ${_pytest_timeout_flags}. Pin that capture so the resolution
+    # below stays honest -- if the capture disappears, the flags are gone too.
+    assert '_pytest_timeout_flags="${PREPUSH_TIMEOUT_FLAGS}"' in script_text, (
+        "expected each pytest subshell to capture PREPUSH_TIMEOUT_FLAGS into "
+        "_pytest_timeout_flags before scrub_prepush_override_env (OMN-16489)"
+    )
     resolved_vars = {
-        "PREPUSH_TIMEOUT_FLAGS": _resolve_shell_var(
-            script_text, "PREPUSH_TIMEOUT_FLAGS"
-        )
+        "PREPUSH_TIMEOUT_FLAGS": timeout_flags,
+        "_pytest_timeout_flags": timeout_flags,
     }
 
     for line in invocation_lines:
