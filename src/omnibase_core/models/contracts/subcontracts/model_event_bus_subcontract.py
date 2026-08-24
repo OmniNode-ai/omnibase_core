@@ -220,6 +220,12 @@ class ModelEventBusSubcontract(BaseModel):
         description="Topic suffixes this node subscribes to. Format: onex.{kind}.{producer}.{event-name}.v{n}",
     )
 
+    dlq_topics: list[str] = Field(
+        default_factory=list,
+        description="Dead-letter topic suffixes for inbound messages that cannot be "
+        "routed to any handler. Read by the auto-wiring layer.",
+    )
+
     # Extension path for future schema_ref support
     publish_topic_metadata: dict[str, ModelTopicMeta] | None = Field(
         default=None,
@@ -237,7 +243,7 @@ class ModelEventBusSubcontract(BaseModel):
         description="Request-response pattern configuration for RPC-style Kafka communication",
     )
 
-    @field_validator("publish_topics", "subscribe_topics", mode="after")
+    @field_validator("publish_topics", "subscribe_topics", "dlq_topics", mode="after")
     @classmethod
     def validate_topic_suffixes(cls, topics: list[str]) -> list[str]:
         """Validate each topic suffix against ONEX naming convention."""

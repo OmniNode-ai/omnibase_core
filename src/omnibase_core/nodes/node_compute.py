@@ -519,33 +519,9 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase, MixinHandlerRouting):
         # Extract computation_type directly from algorithm.algorithm_type.
         computation_type: str = contract.algorithm.algorithm_type
 
-        # Extract metadata (normalize None to empty dict)
-        # Type matches ModelComputeInput.metadata field
-        metadata = getattr(contract, "metadata", None) or {}
-
-        # Extract optional execution settings from metadata
-        cache_enabled = metadata.get("cache_enabled", True)
-        parallel_enabled = metadata.get("parallel_enabled", False)
-
-        # Log warning if parallel_enabled but data is not parallelizable
-        if parallel_enabled and not self._supports_parallel_execution(
-            ModelComputeInput(
-                data=input_data,
-                computation_type=computation_type,
-            )
-        ):
-            emit_log_event(
-                LogLevel.WARNING,
-                "Parallel execution requested but data is not parallelizable, using sequential execution",
-                {"node_id": str(self.node_id), "computation_type": computation_type},
-            )
-
         return ModelComputeInput(
             data=input_data,
             computation_type=computation_type,
-            metadata=metadata,
-            cache_enabled=cache_enabled,
-            parallel_enabled=parallel_enabled,
         )
 
     def register_computation(

@@ -53,6 +53,12 @@ from omnibase_core.models.contracts.model_contract_config import ModelContractCo
 from omnibase_core.models.contracts.model_contract_feature_flag import (
     ModelContractFeatureFlag,
 )
+from omnibase_core.models.contracts.model_contract_intent_consumption import (
+    ModelContractIntentConsumption,
+)
+from omnibase_core.models.contracts.model_contract_mcp_config import (
+    ModelContractMcpConfig,
+)
 from omnibase_core.models.contracts.model_dod_evidence import ModelDodEvidence
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
@@ -61,6 +67,9 @@ from omnibase_core.models.contracts.model_performance_requirements import (
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 from omnibase_core.models.contracts.subcontracts.model_contract_behavior_spec import (
     ModelContractBehaviorSpec,
+)
+from omnibase_core.models.contracts.subcontracts.model_event_bus_subcontract import (
+    ModelEventBusSubcontract,
 )
 from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
     ModelProtocolDependency,
@@ -318,6 +327,28 @@ class ModelContractBase(BaseModel, ABC):
     # ONEX Infrastructure Extension Fields (OMN-1588)
     # These fields enable contract-level event routing and handler configuration
     # without requiring downstream repos to strip fields before validation.
+
+    # Top-level YAML sections the runtime reads from every node contract
+    # (OMN-16451). A section is declared here only when a runtime reader
+    # exists for it; sections nothing consumes are rejected by extra="forbid".
+    event_bus: ModelEventBusSubcontract | None = Field(
+        default=None,
+        description="Event-bus subscriptions, publications, and dead-letter topics. "
+        "Read by the runtime host to wire Kafka consumers and by auto-wiring "
+        "for DLQ routing.",
+    )
+
+    mcp: ModelContractMcpConfig | None = Field(
+        default=None,
+        description="MCP tool exposure. Read by the MCP adapter when scanning "
+        "contracts for AI-invocable tools.",
+    )
+
+    intent_consumption: ModelContractIntentConsumption | None = Field(
+        default=None,
+        description="Intent-type to effect-node routing. Read by the intent "
+        "routing loader when wiring intent executors.",
+    )
 
     handler_routing: "ModelHandlerRoutingSubcontract | None" = Field(
         default=None,
