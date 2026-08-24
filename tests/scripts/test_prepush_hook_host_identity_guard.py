@@ -131,6 +131,16 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
     env["PREPUSH_FULL_SUITE"] = "1"
     env["PREPUSH_BASE_REF"] = "HEAD"
     env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
+    # OMN-16425: PREPUSH_ALLOW_LOCAL_FULL_SUITE leaking in from the outer
+    # process's ambient env (e.g. an operator's own degraded-host `git push`
+    # override) defeats this test's own assertion -- the hook takes the
+    # "DEGRADED-HOST OVERRIDE IN EFFECT" branch instead of refusing, and
+    # actually runs the real full suite as a subprocess of this already-
+    # running one (observed live: recursive full-suite spawns roughly every
+    # 1-2 minutes until the machine starved). Same stripping already used by
+    # _run_hook_forcing_full_suite below; this call site builds its own env
+    # inline and had been missed.
+    env.pop("PREPUSH_ALLOW_LOCAL_FULL_SUITE", None)
     result = subprocess.run(
         ["bash", str(HOOK_SCRIPT)],
         cwd=REPO_ROOT,
