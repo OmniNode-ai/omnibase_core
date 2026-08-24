@@ -548,7 +548,7 @@ The enums package contains 100+ enum definitions. Key enums for the public API:
 |------|------|---------|
 | `EnumInjectionScope` | `enum_injection_scope.py` | `GLOBAL`, `TRANSIENT`, `SCOPED` |
 | `EnumServiceLifecycle` | `enum_service_lifecycle.py` | Service lifecycle states |
-| `EnumDependencyType` | `enum_dependency_type.py` | `REQUIRED`, `OPTIONAL`, `PREFERRED` |
+| `EnumDependencyType` | `enum_dependency_type.py` | `PROTOCOL`, `SERVICE`, `MODULE`, `EXTERNAL`, `ENVIRONMENT` |
 
 ### Execution Enums (exported from `omnibase_core.nodes`)
 

@@ -20,3 +20,4 @@ class EnumDependencyType(UtilStrValueHelper, str, Enum):
     SERVICE = "service"
     MODULE = "module"
     EXTERNAL = "external"
+    ENVIRONMENT = "environment"

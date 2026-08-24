@@ -188,6 +188,29 @@ validation_rules:
   max_input_size_bytes: 1048576
 ```
 
+### Dependency classification (`dependency_type` / `type`)
+
+A dependency entry is classified by `dependency_type`, whose values are the
+`EnumDependencyType` members: `protocol`, `service`, `module`, `external`,
+`environment`.
+
+Contracts in practice spell this key `type:`, so `type:` is accepted as an alias
+**only when its value names an `EnumDependencyType` member**. `type:` is otherwise
+freeform in the corpus (`handler`, `library`, `node`, class names, ...); those
+values are not classification and fall back to the `protocol` default rather than
+failing the contract load.
+
+Environment dependencies declare the variable that supplies them via `env_var`:
+
+```yaml
+dependencies:
+  - name: linear_api_key
+    type: environment
+    env_var: LINEAR_API_KEY
+    required: true
+    description: Linear API key for GraphQL mutations
+```
+
 ---
 
 ## Contract Models
