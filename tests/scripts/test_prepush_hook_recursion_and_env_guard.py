@@ -78,12 +78,12 @@ SENTINEL=${ONEX_PREPUSH_HOOK_ACTIVE:-UNSET}"
     exit 0
     ;;
 esac
-shift
-if [ "$1" = "python" ]; then
-  shift
-  exec python3 "$@"
-fi
-exec "$@"
+# The hook makes exactly two kinds of `uv` calls (the selector and pytest),
+# both modeled above. Anything else reaching this stub is a harness gap, not
+# something to run for real -- refuse loudly instead of delegating to whatever
+# interpreter happens to be on PATH.
+echo "STUB-UV-UNMODELED-INVOCATION $args" >&2
+exit 97
 """
 
 
