@@ -49,10 +49,22 @@ TICKET_TOKEN_PATTERN = re.compile(r"(?<![A-Z0-9])OMN-(\d+)(?![A-Z0-9])", re.IGNO
 # `occ-self-bind-pr-<N>` entry. Callers pass either the short repo name (the
 # CI workflows pass `REPO_SHORT`) or the org-qualified form.
 _OCC_REPO_NAME = "onex_change_control"
+_OCC_REPO_ORG = "OmniNode-ai"
+_OCC_REPO_QUALIFIED = f"{_OCC_REPO_ORG}/{_OCC_REPO_NAME}"
 
 
 def _is_occ_repo(repo: str) -> bool:
-    return repo.strip().rstrip("/").rsplit("/", maxsplit=1)[-1] == _OCC_REPO_NAME
+    """True only for the canonical OCC repo — bare name or exact org/name.
+
+    Matches the short name (``onex_change_control``, what CI passes as
+    ``REPO_SHORT``) or the exact canonical org-qualified name
+    (``OmniNode-ai/onex_change_control``). Deliberately NOT a bare suffix
+    match: a differently-owned repo that merely shares the short name (e.g.
+    a fork under another org) must not be classified as the OCC evidence
+    repo (CodeRabbit finding on OMN-16353's initial diff).
+    """
+    normalized = repo.strip().rstrip("/")
+    return normalized in (_OCC_REPO_NAME, _OCC_REPO_QUALIFIED)
 
 
 def _self_bind_remediation(ticket_id: str, pr_number: int) -> str:
@@ -80,7 +92,7 @@ def _self_bind_remediation(ticket_id: str, pr_number: int) -> str:
         "    checks:\n"
         '      - check_type: "command"\n'
         "        check_value: >-\n"
-        f"          gh pr view {pr_number} --repo OmniNode-ai/{_OCC_REPO_NAME} "
+        f"          gh pr view {pr_number} --repo {_OCC_REPO_QUALIFIED} "
         "--json number,state,headRefName\n"
         "\n"
         "then write a PASS receipt at "

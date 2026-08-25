@@ -847,6 +847,36 @@ def test_missing_self_bind_reason_accepts_org_qualified_occ_repo(
 
 
 @pytest.mark.unit
+def test_missing_self_bind_reason_rejects_same_name_other_org_repo(
+    tmp_path: Path,
+) -> None:
+    """A repo that merely shares the short name under a DIFFERENT org is not
+    the canonical OCC repo — it must NOT get OCC self-bind remediation.
+
+    CodeRabbit finding on OMN-16353's initial diff: matching on the bare
+    suffix (``rsplit("/")[-1] == "onex_change_control"``) would misclassify
+    ``other-org/onex_change_control`` as the OCC evidence repo. Only the bare
+    short name or the exact canonical ``OmniNode-ai/onex_change_control`` may
+    resolve to MISSING_OCC_SELF_BIND.
+    """
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+
+    result = validate_occ_merge_eligibility(
+        _occ_snapshot(tmp_path, repo="other-org/onex_change_control")
+    )
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.PR_TICKET_MISMATCH
+    assert "occ-self-bind" not in result.detail
+
+
+@pytest.mark.unit
 def test_unbound_receipt_on_product_repo_keeps_pr_ticket_mismatch(
     tmp_path: Path,
 ) -> None:
