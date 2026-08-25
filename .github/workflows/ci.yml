@@ -3187,7 +3187,7 @@ jobs:
             --group ${{ matrix.split }} \
             -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
-            --timeout-method=thread \
+            --timeout-method=signal \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
 
@@ -3211,7 +3211,7 @@ jobs:
             --durations-path .test_durations \
             -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
-            --timeout-method=thread \
+            --timeout-method=signal \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
 
