@@ -3691,8 +3691,34 @@ jobs:
       # onexbot-occ-writer App token and export it as GH_TOKEN — job-level
       # `env:` is resolved before any step runs, so it cannot reference a
       # step output directly. `|| github.token` fallback kept for resilience.
+      #
+      # OMN-16552: GitHub Actions does not expose repository secrets to a
+      # pull_request run authored by Dependabot (secret-exfiltration
+      # protection), so on a Dependabot PR ONEXBOT_OCC_APP_ID/PRIVATE_KEY
+      # resolve empty and this mint hard-fails BEFORE the Python script's own
+      # DEPENDENCY_BOT_AUTHORS exemption ever runs — the job never reaches
+      # "Require cited OCC evidence...". Skip minting only when the author is
+      # a known dependency-bot login AND the title has a deps-bump prefix
+      # (both, not either, mirroring — but stricter than — the OR the
+      # pr-title-check-reusable.yml exemption uses, so a human cannot dress a
+      # PR as a bump to dodge evidence enforcement). The job itself stays
+      # unconditional (no job-level `if:`) so CI Summary's
+      # skip/cancel-fails-closed STRICT_SUCCESS_JOBS semantics hold; only
+      # this one step is skipped. "Export GH_TOKEN" already falls back to
+      # `github.token` when app-token has no output, and the script's author
+      # exemption needs only same-repo `gh pr view` access — no cross-repo
+      # onex_change_control read — so the default token is sufficient here.
       - name: Mint onexbot-occ-writer app token
         id: app-token
+        if: >-
+          !(
+            contains(fromJSON('["dependabot[bot]","github-actions[bot]"]'), github.event.pull_request.user.login) &&
+            (
+              startsWith(github.event.pull_request.title, 'chore(deps') ||
+              startsWith(github.event.pull_request.title, 'build(deps') ||
+              startsWith(github.event.pull_request.title, 'Bump ')
+            )
+          )
         uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
