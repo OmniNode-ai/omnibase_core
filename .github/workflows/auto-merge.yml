@@ -183,17 +183,38 @@ jobs:
           PR: ${{ needs.pre-check.outputs.pr }}
         run: |
           set -euo pipefail
-          # OMN-13138/13214: dev is queue-controlled — the merge method is set by
-          # the merge queue, so passing an explicit --squash is rejected ("The
-          # merge strategy for dev is set by the merge queue") and the PR is NEVER
-          # enqueued (sits CLEAN + auto-merge armed forever). Use bare --auto and
-          # let the queue pick the method.
-          # OMN-13214: arming alone does not enqueue — the explicit enqueue +
-          # verify step below closes that gap. Do NOT exit here on success.
+          # OMN-13138/13214: on a queue-controlled branch the merge method is
+          # set by the merge queue, so passing an explicit --squash is
+          # rejected ("The merge strategy for dev is set by the merge queue")
+          # and the PR is NEVER enqueued (sits CLEAN + auto-merge armed
+          # forever). Try bare --auto first so that regime keeps working if a
+          # queue returns.
+          #
+          # OMN-16507: dev is NOT currently queue-controlled (registry-wide
+          # verify 2026-08-24, omni_home/CLAUDE.md), and gh's CLI refuses a
+          # method-less --auto when run non-interactively even on a
+          # squash-only repo ("--merge, --rebase, or --squash required when
+          # not running interactively") — this failed on every PR (e.g.
+          # omnibase_core#1588, OMN-16347). Retry with --squash (the repo's
+          # one enabled method, verified squash-only) only on that specific
+          # gh-CLI-side error, so the queue-controlled branch above is
+          # untouched if a queue reappears. Arming alone does not enqueue —
+          # the explicit enqueue + verify step below closes that gap. Do NOT
+          # exit here on success.
           if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto 2>&1); then
             echo "auto-merge enabled: $output"
           elif echo "$output" | grep -qiE "already enqueued|already queued|auto-merge already enabled"; then
             echo "auto-merge not newly enabled (expected): $output"
+          elif echo "$output" | grep -qiE "required when not running interactively"; then
+            echo "bare --auto rejected (no active merge queue): $output"
+            if output=$(gh pr merge "$PR" --repo "$GH_REPO" --auto --squash 2>&1); then
+              echo "auto-merge enabled (squash): $output"
+            elif echo "$output" | grep -qiE "already enqueued|already queued|auto-merge already enabled"; then
+              echo "auto-merge not newly enabled (expected): $output"
+            else
+              echo "auto-merge failed: $output"
+              exit 1
+            fi
           else
             echo "auto-merge failed: $output"
             exit 1
