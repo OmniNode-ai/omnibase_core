@@ -306,7 +306,46 @@ def test_check_dep_provenance_movable_guard_runs_before_uv_lock() -> None:
     assert "--check-movable" in guard_script, guard_script
 
     lock_script = _step_run("Upgrade lockfile")
-    assert 'uv lock --upgrade-package "$BUMP_PACKAGE"' in lock_script, lock_script
+    assert "uv lock" in lock_script, lock_script
+    assert '--upgrade-package "$BUMP_PACKAGE"' in lock_script, lock_script
+
+
+@pytest.mark.unit
+def test_upgrade_lockfile_step_sanitizes_uv_env_omn16517() -> None:
+    """OMN-16517 (cloud-ci-offload-plan.md Stage 1, S1-2): the ONLY
+    `uv lock` invocation in this workflow must run in a sanitized
+    environment. Per uv's documented precedence, an ambient `UV_INDEX` env
+    var on the runner always outranks a repo-level index pin -- this is the
+    exact channel the 2026-08-23 mirror-leak incident (OMN-16162) used to
+    bake 783 private-mirror `source.registry` lines into
+    onex_change_control/uv.lock. `--index` (the ADDITIONAL-index flag) does
+    NOT sanitize anything and must never be used in place of
+    `--default-index`.
+    """
+    job = _job_body()
+    steps = job["steps"]
+    assert isinstance(steps, list)
+    lockfile_step = next(
+        s for s in steps if isinstance(s, dict) and s.get("name") == "Upgrade lockfile"
+    )
+
+    env = lockfile_step.get("env")
+    assert isinstance(env, dict), lockfile_step
+    for var in ("UV_INDEX", "UV_DEFAULT_INDEX", "UV_INDEX_URL", "UV_EXTRA_INDEX_URL"):
+        assert var in env, (
+            f"Upgrade lockfile step env is missing {var} -- an ambient "
+            f"runner-level {var} would leak into the committed lockfile "
+            "unsanitized (OMN-16162 regression class)"
+        )
+        assert env[var] == "", f"{var} must be cleared to empty, got {env[var]!r}"
+
+    lock_script = _step_run("Upgrade lockfile")
+    assert "uv lock --no-config" in lock_script, lock_script
+    assert "--default-index https://pypi.org/simple" in lock_script, lock_script
+    assert " --index " not in f" {lock_script} ", (
+        "must use --default-index, never the ADDITIONAL-index --index flag "
+        f"(sanitizes nothing): {lock_script}"
+    )
 
 
 @pytest.mark.unit
