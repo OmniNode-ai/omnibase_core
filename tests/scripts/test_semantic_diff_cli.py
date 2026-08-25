@@ -12,6 +12,7 @@ import sys
 import tempfile
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 import pytest
 
@@ -377,12 +378,66 @@ def test_git_files_at_warns_instead_of_silently_emptying_the_whole_report(
     for var in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
         monkeypatch.delenv(var, raising=False)
 
-    # Not a git repository, so cat-file cannot start: a real process-level
-    # failure, not a simulated one.
+    # Not a git repository, so no git process can resolve anything: a real
+    # process-level failure, not a simulated one.
     sources = module._git_files_at(tmp_path, [("HEAD", "one.py")])
 
     assert sources == {}
-    assert "git cat-file failed" in capsys.readouterr().err
+    assert "failed; emitting empty advisory report" in capsys.readouterr().err
+
+
+@pytest.mark.unit
+def test_git_files_at_needs_no_cat_file_switch_newer_than_the_runner_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The batched read must work on the git 2.34.1 the self-hosted runners ship.
+
+    The OMN-15431 batching passed ``cat-file --batch -z`` to NUL-frame its
+    requests. That switch does not exist on git 2.34.1, so on every dev push
+    run ``cat-file`` exited 129 with ``error: unknown switch `z'``, every blob
+    resolved to "", and ``_compute_report`` reported "no semantic changes" for
+    genuinely non-empty diffs (OMN-16347: five failures in this module, one of
+    them a false negative in a change-analysis surface). Developer machines run
+    a newer git, so the plain suite cannot see this; the fake below refuses the
+    NUL-framing switches exactly as the runner's git does, and the read must
+    still succeed -- newline-bearing path included, since that path is the
+    whole reason ``-z`` was reached for.
+    """
+    module = _load_cli_module()
+
+    weird_rel = "we\nird.py"
+    after = "AFTER = 2\n"
+    (tmp_path / weird_rel).write_text("WEIRD = 1\n", encoding="utf-8")
+    (tmp_path / "after.py").write_text(after, encoding="utf-8")
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "seed", "--no-gpg-sign")
+
+    real_run = subprocess.run
+    cat_file_calls: list[list[str]] = []
+
+    def git_2_34_run(
+        argv: list[str], **kwargs: Any
+    ) -> subprocess.CompletedProcess[bytes]:
+        if argv[:2] == ["git", "cat-file"]:
+            cat_file_calls.append(argv)
+            if {"-z", "-Z", "--batch-command"} & set(argv):
+                return subprocess.CompletedProcess(
+                    argv, 129, b"", b"error: unknown switch `z'\n"
+                )
+        return real_run(argv, **kwargs)
+
+    monkeypatch.setattr(module.subprocess, "run", git_2_34_run)
+
+    sources = module._git_files_at(
+        tmp_path,
+        [("HEAD", weird_rel), ("HEAD", "absent.py"), ("HEAD", "after.py")],
+    )
+
+    assert cat_file_calls, "the batched read no longer reads blobs through cat-file"
+    assert sources[("HEAD", weird_rel)] == "WEIRD = 1\n"
+    assert sources[("HEAD", "absent.py")] == ""
+    assert sources[("HEAD", "after.py")] == after
 
 
 @pytest.mark.unit

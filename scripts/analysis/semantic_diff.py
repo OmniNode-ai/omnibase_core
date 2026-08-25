@@ -120,99 +120,156 @@ def _decode_blob(raw: bytes) -> str:
     )
 
 
-def _absent_response_length(out: bytes, pos: int, request: bytes) -> int | None:
-    """Length of the "not resolvable" response at ``pos``, or None if it is a blob.
+def _warn_batch_read_failed(command: str, request_count: int, stderr: bytes) -> None:
+    """Degrade LOUDLY when a batch git process fails.
 
-    ``git cat-file --batch`` answers an unresolvable name by echoing the request
-    back verbatim plus a status word. Matching that echo against the request we
-    actually sent is the only framing-independent way to consume the response:
-    the echo carries whatever bytes the path carried, newlines included, so
-    scanning for the next LF splits it and loses the FOLLOWING blob.
+    Every blob resolving to "" makes compute_diff report "no semantic changes"
+    for the WHOLE diff, which reads identically to a genuinely clean diff; the
+    per-file ``git show`` shape the batching replaced could only ever lose one
+    file at a time.
     """
-    for status in (b" missing\n", b" ambiguous\n"):
-        if out.startswith(request + status, pos):
-            return len(request) + len(status)
-    return None
+    print(  # noqa: T201
+        f"warning: git {command} failed; emitting empty advisory report for "
+        f"all {request_count} requested blobs: "
+        f"{stderr.decode('utf-8', errors='replace').strip()}",
+        file=sys.stderr,
+    )
 
 
-def _git_files_at(
-    repo_root: Path, requests: list[tuple[str, str]]
-) -> dict[tuple[str, str], str]:
-    """Read every requested ``<ref>:<path>`` blob in ONE git process.
+def _git_blob_oids_at(repo_root: Path, ref: str) -> dict[str, str] | None:
+    """Map every blob path in ``ref``'s tree to its object id (None on failure).
 
-    The previous shape spawned two ``git show`` processes per changed file, so a
-    1,000-file diff paid ~2,000 process spawns and that dominated CLI runtime --
-    enough, under the parallel test gate, to push the run past its per-test
-    timeout. ``git cat-file --batch`` answers the whole set from a single
-    process. Missing blobs yield "", matching the previous per-file behaviour.
-    See OMN-15431.
-
-    Requests are NUL-delimited (``-z``), not newline-delimited: git permits a
-    newline inside a path, and a newline-framed request stream would split such
-    a path into two requests and desynchronise every response after it --
-    silently corrupting the content of unrelated files. The per-file ``git
-    show`` shape this replaced had no such coupling, so ``-z`` is what keeps the
-    batching behaviour-preserving.
-
-    ``-z`` frames stdin ONLY; git's stdout stays LF-framed on every git version
-    this repo supports (``-Z``, which also frames stdout, needs git >= 2.42 and
-    the fleet runs 2.39). So responses are NOT scanned for the next LF -- an
-    absent blob is answered by echoing the request VERBATIM followed by
-    " missing", which re-injects the embedded newline and would burn one
-    response slot per line. Each response is instead matched against the exact
-    request that produced it, which is framing-independent. This is not an
-    exotic case: :func:`_compute_report` asks for every changed path at BOTH
-    base and head, so every added or deleted file is a missing-blob request.
+    ``git ls-tree -r -z`` has framed its output with NUL since git 1.x, and a
+    NUL-framed listing carries a path VERBATIM -- newline included -- so this is
+    how a newline-bearing path is resolved without ever putting that path on a
+    newline-framed request stream (see :func:`_git_files_at`).
     """
-    if not requests:
-        return {}
-
-    payload = b"".join(f"{ref}:{rel}\0".encode() for ref, rel in requests)
     result = subprocess.run(
-        ["git", "cat-file", "--batch", "-z"],
+        ["git", "ls-tree", "-r", "-z", ref],
+        cwd=repo_root,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        _warn_batch_read_failed("ls-tree", 1, result.stderr)
+        return None
+
+    oids: dict[str, str] = {}
+    # Each entry is "<mode> <type> <oid>\t<path>" terminated by NUL.
+    for entry in result.stdout.split(b"\0"):
+        if not entry:
+            continue
+        meta, _, path = entry.partition(b"\t")
+        fields = meta.split(b" ")
+        if len(fields) != 3 or fields[1] != b"blob":
+            continue
+        oids[path.decode("utf-8", errors="surrogateescape")] = fields[2].decode("ascii")
+    return oids
+
+
+def _git_blobs(repo_root: Path, oids: list[str]) -> dict[str, str] | None:
+    """Read every listed blob in ONE ``git cat-file --batch`` process (None on failure).
+
+    Requests are object ids, so the newline-framed request stream that plain
+    ``--batch`` has accepted since git 1.5 is safe: an oid is 40 hex characters
+    and can never contain the framing byte. The response header for a resolved
+    object is ``<oid> <type> <size>`` on its own LF-terminated line, followed by
+    ``<size>`` payload bytes and one trailing LF.
+    """
+    payload = "".join(f"{oid}\n" for oid in oids).encode("ascii")
+    result = subprocess.run(
+        ["git", "cat-file", "--batch"],
         cwd=repo_root,
         input=payload,
         capture_output=True,
         check=False,
     )
     if result.returncode != 0:
-        # Degrade loudly. Every blob resolving to "" makes compute_diff report
-        # "no semantic changes" for the WHOLE diff, which reads identically to
-        # a genuinely clean diff; the per-file shape this replaced could only
-        # ever lose one file at a time.
-        print(  # noqa: T201
-            "warning: git cat-file failed; emitting empty advisory report for "
-            f"all {len(requests)} requested blobs: "
-            f"{result.stderr.decode('utf-8', errors='replace').strip()}",
-            file=sys.stderr,
-        )
-        return {}
+        _warn_batch_read_failed("cat-file", len(oids), result.stderr)
+        return None
 
     out = result.stdout
-    sources: dict[tuple[str, str], str] = {}
+    blobs: dict[str, str] = {}
     pos = 0
-    for key in requests:
-        ref, rel = key
-        absent_len = _absent_response_length(out, pos, f"{ref}:{rel}".encode())
-        if absent_len is not None:
-            sources[key] = ""
-            pos += absent_len
-            continue
+    for oid in oids:
         end_of_header = out.find(b"\n", pos)
         if end_of_header == -1:
             break
-        header = out[pos:end_of_header]
+        fields = out[pos:end_of_header].split(b" ")
         pos = end_of_header + 1
-        # Success is "<oid> <type> <size>"; absence was handled above.
-        fields = header.split(b" ")
-        try:
-            size = int(fields[2])
-        except (IndexError, ValueError):
-            sources[key] = ""
+        if len(fields) != 3 or not fields[2].isdigit():
+            # "<oid> missing" cannot happen for an oid ls-tree just listed, but
+            # it must never desynchronise the stream if it does.
+            blobs[oid] = ""
             continue
-        sources[key] = _decode_blob(out[pos : pos + size])
+        size = int(fields[2])
+        blobs[oid] = _decode_blob(out[pos : pos + size])
         pos += size + 1  # blob payload plus its trailing newline
 
+    unanswered = [oid for oid in oids if oid not in blobs]
+    if unanswered:
+        _warn_batch_read_failed(
+            "cat-file",
+            len(unanswered),
+            b"batch stream ended before every requested object was answered",
+        )
+        return None
+    return blobs
+
+
+def _git_files_at(
+    repo_root: Path, requests: list[tuple[str, str]]
+) -> dict[tuple[str, str], str]:
+    """Read every requested ``<ref>:<path>`` blob with a fixed number of git processes.
+
+    The original shape spawned two ``git show`` processes per changed file, so a
+    1,000-file diff paid ~2,000 process spawns and that dominated CLI runtime --
+    enough, under the parallel test gate, to push the run past its per-test
+    timeout (OMN-15431). This shape spends one ``git ls-tree`` per distinct ref
+    plus one ``git cat-file --batch`` for all blobs, regardless of file count.
+    Missing blobs yield "", matching the original per-file behaviour.
+
+    Why paths are resolved through ``ls-tree`` instead of being sent to
+    ``cat-file`` as ``<ref>:<path>`` requests: git permits a newline inside a
+    path, and a newline-framed request stream would split such a path into two
+    requests and desynchronise every response after it -- silently corrupting
+    the content of unrelated files. The NUL-framed request switches that would
+    avoid this (``cat-file -z`` / ``-Z``) do NOT exist on the git 2.34.1 that
+    the self-hosted runner fleet ships: the OMN-15431 batching used ``-z`` and
+    every ``cat-file`` call died there with ``error: unknown switch 'z'``,
+    which resolved EVERY blob to "" and made the CLI report "no semantic
+    changes" for genuinely non-empty diffs (OMN-16347). ``ls-tree -r -z`` and
+    plain ``cat-file --batch`` fed object ids are available on every git this
+    repo runs against, so nothing here depends on the runner's git version.
+    """
+    if not requests:
+        return {}
+
+    oids_by_ref: dict[str, dict[str, str]] = {}
+    for ref in dict.fromkeys(ref for ref, _ in requests):
+        listing = _git_blob_oids_at(repo_root, ref)
+        if listing is None:
+            return {}
+        oids_by_ref[ref] = listing
+
+    wanted: dict[tuple[str, str], str] = {}
+    for ref, rel in requests:
+        oid = oids_by_ref[ref].get(rel)
+        if oid is not None:
+            wanted[(ref, rel)] = oid
+
+    # A path absent at a ref is not an error: _compute_report asks for every
+    # changed path at BOTH base and head, so every added or deleted file is
+    # absent at one of them.
+    sources: dict[tuple[str, str], str] = dict.fromkeys(requests, "")
+    if not wanted:
+        return sources
+
+    blobs = _git_blobs(repo_root, list(dict.fromkeys(wanted.values())))
+    if blobs is None:
+        return {}
+    for key, oid in wanted.items():
+        sources[key] = blobs[oid]
     return sources
 
 
