@@ -3550,11 +3550,16 @@ jobs:
     # `reject-required-check-skip-vector` pre-commit hook (OMN-14863) exists
     # to catch (confirmed live: it rejected an earlier draft of this fix that
     # narrowed the `if:`). Keeping `if:` unconditional means the job always
-    # runs to completion; the fix is entirely in the step below, which now
-    # `exit 1`s instead of `exit 0` on merge_group/push -- a `failure`
-    # conclusion is caught by the default-deny sweep regardless of GATE_JOBS/
-    # STRICT_SUCCESS_JOBS membership, so this fails closed without ever
-    # relying on an `if:`-driven skip.
+    # runs to completion; the step below fails closed (`exit 1`, caught by
+    # the default-deny sweep regardless of GATE_JOBS/STRICT_SUCCESS_JOBS
+    # membership) whenever it cannot resolve a PR number to validate against
+    # -- never an `if:`-driven skip. OMN-16346: on `push` that used to be
+    # EVERY event (permanently reddening dev's post-merge signal, since push
+    # never populates github.event.pull_request.number); the step now
+    # resolves the merge commit's originating PR via the associated-PR API
+    # first and only falls through to fail-closed if that resolution itself
+    # comes up empty. `merge_group` is unchanged (still fails closed) -- no
+    # live dev merge queue exercises it today.
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v7
@@ -3673,14 +3678,43 @@ jobs:
         working-directory: onex_change_control
         run: |
           set -euo pipefail
+          # OMN-16346: the job-level `if:` above deliberately admits
+          # pull_request, merge_group, AND push (it cannot be narrowed to
+          # pull_request -- see that comment), so this branch is NOT an
+          # invariant-broke escape hatch, it is the normal path on every dev
+          # push. Prior text here claimed the job "now only runs on
+          # pull_request" and unconditionally exited 1; that made
+          # push-event runs (i.e. every post-merge dev commit) fail closed
+          # by construction, permanently reddening dev's post-merge signal
+          # (OMN-16013 / OMN-16055 / OMN-16346).
+          #
+          # Push-path fix: resolve the PR that produced this push's commit
+          # and validate against IT, instead of failing blind. GitHub
+          # associates a squash-merge commit with its originating PR (the
+          # documented "List pull requests associated with a commit" API),
+          # so for the ordinary squash-merge-to-dev case this evaluates the
+          # exact same check_values the PR's own pull_request run already
+          # evaluated -- not a vacuous pass, not a skip, and not a second
+          # independent judgment that could disagree with the PR verdict.
+          if [ -z "${PR_NUMBER:-}" ] && [ "${{ github.event_name }}" = "push" ]; then
+            RESOLVED_PR="$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+              --jq '[.[] | select(.merged_at != null)] | sort_by(.merged_at) | last | .number // empty' \
+              2>/dev/null || true)"
+            if [ -n "$RESOLVED_PR" ]; then
+              echo "::notice::event=push, no PR in event payload -- resolved merged PR #${RESOLVED_PR} from commit ${{ github.sha }} via the associated-PR API"
+              PR_NUMBER="$RESOLVED_PR"
+            fi
+          fi
           if [ -z "${PR_NUMBER:-}" ]; then
-            # enforce-everything gate audit (fail-closed, not fail-open): this
-            # job now only runs `if: github.event_name == 'pull_request'`
-            # (see the job-level `if:` above), which always populates
-            # PR_NUMBER. Reaching this branch means that invariant broke some
-            # other way -- fail closed (exit 1), never vacuously pass a DoD
-            # check that did not actually run a single check_value.
-            echo "::error::No PR number (event=${{ github.event_name }}); DoD check_values are PR-scoped and this job should only run on pull_request. Failing closed."
+            # Still unresolved: a pull_request run missing PR_NUMBER (the
+            # invariant above broke some other way), a merge_group run (no
+            # live dev merge queue today; this repo has no merge_group
+            # associated-PR resolution yet -- see OMN-16346 follow-up if one
+            # is ever enabled), or a push whose commit genuinely has no
+            # associated PR (direct push, rebase merge, force push). Fail
+            # closed (exit 1), never vacuously pass a DoD check that did not
+            # actually run a single check_value.
+            echo "::error::No PR number (event=${{ github.event_name }}); DoD check_values are PR-scoped and could not be resolved for this event. Failing closed."
             exit 1
           fi
           uv run python scripts/ci/run_contract_compliance_check.py \
