@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# KB Doc Gate — thin caller. OMN-16589.
+# Blocks new/regrown non-KB markdown docs, evaluated against the PR diff.
+# Validator lives in omniclaude (mirrors deploy-gate.yml's thin-caller pattern).
+#
+# Pilot wiring (P1): transition mode, NOT a required status check yet. The
+# required-check flip is explicit follow-up scope once this repo and
+# omnimarket both run green on real PRs — see OMN-16589 AC.
+
+name: KB Doc Gate
+
+on:
+  pull_request:
+    branches: [dev]
+
+jobs:
+  kb-doc-gate:
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@main
+    with:
+      mode: transition
