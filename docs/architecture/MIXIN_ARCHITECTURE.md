@@ -524,8 +524,6 @@ MRO principle for wrappers: `ModelService* → MixinNodeService → Node<Type> �
 
 Use wrappers unless you need a specialized composition; if so, inherit directly from `Node<Type>` and add mixins, keeping node type first and mixins ordered by dependency.
 
-> See also: `src/omnibase_core/models/nodes/node_services/README.md` for end-to-end examples and migration guidance.
-
 ---
 
 **Next Steps**:

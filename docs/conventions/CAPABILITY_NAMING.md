@@ -348,7 +348,7 @@ dep = ModelCapabilityDependency(
 
 - **Naming Conventions**: `docs/conventions/NAMING_CONVENTIONS.md` - General ONEX naming patterns
 - **ModelCapabilityDependency**: `src/omnibase_core/models/capabilities/model_capability_dependency.py` - Implementation reference
-- **ModelRequirementSet**: `src/omnibase_core/models/capabilities/model_requirement_set.py` - Requirement constraints
+- **ModelRequirementSet**: `src/omnibase_core/models/capabilities/model_capability_requirement_set.py` - Requirement constraints
 - **Pydantic Best Practices**: `docs/conventions/PYDANTIC_BEST_PRACTICES.md`
 
 ---

@@ -280,7 +280,7 @@ Add to `.pre-commit-config.yaml`:
 ## Related Documentation
 
 - **Contract Stability Spec**: `docs/architecture/CONTRACT_STABILITY_SPEC.md`
-- **Hash Registry**: `src/omnibase_core/contracts/hash_registry.py`
+- **Hash Registry**: `src/omnibase_core/contracts/contract_hash_registry.py`
 - **Security Validators**: `scripts/validation/README.md`
 - **ONEX Architecture**: `docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md`
 

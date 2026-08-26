@@ -317,7 +317,7 @@ While this script is designed for local development, it can be integrated into C
 
 - **[PARALLEL_TESTING.md](PARALLEL_TESTING.md)** - Detailed parallel testing architecture, resource management, and troubleshooting
 - Project root `CLAUDE.md` - Poetry usage requirements
-- `.github/workflows/test.yml` - CI test configuration and matrix strategy
+- `.github/workflows/ci.yml` - CI test configuration and matrix strategy
 - `scripts/run-coverage-parallel.sh` - Parallel coverage script implementation
 
 ## Maintenance

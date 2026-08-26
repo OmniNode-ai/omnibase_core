@@ -228,7 +228,7 @@ uv run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_c
 
 ### CI Integration
 
-Add to `.github/workflows/test.yml`:
+Add to `.github/workflows/ci.yml`:
 
 ```yaml
 - name: Check Node Purity

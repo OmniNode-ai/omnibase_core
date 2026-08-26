@@ -187,7 +187,7 @@ Trigger alerts when:
 gh run view <run-id>
 
 # List all runs for comparison
-gh run list --workflow=test.yml --limit 10
+gh run list --workflow=ci.yml --limit 10
 ```
 
 **Questions to Answer**:
@@ -295,7 +295,7 @@ slowest durations:
 **Command**:
 ```
 # List recent runs with durations
-gh run list --workflow=test.yml --json databaseId,conclusion,createdAt,updatedAt --limit 20
+gh run list --workflow=ci.yml --json databaseId,conclusion,createdAt,updatedAt --limit 20
 
 # View specific run
 gh run view <run-id> --log | grep "split-12"
@@ -391,7 +391,7 @@ uv run pytest tests/ --splits=20 --group=12 --durations=20
 curl https://www.githubstatus.com/api/v2/status.json
 
 # Compare multiple recent runs
-gh run list --workflow=test.yml --limit 5
+gh run list --workflow=ci.yml --limit 5
 ```
 
 **Resolution**:
@@ -525,7 +525,7 @@ brew install gh  # macOS
 gh auth login
 
 # View latest CI run
-gh run list --workflow=test.yml --limit 1
+gh run list --workflow=ci.yml --limit 1
 
 # View specific run details
 gh run view <run-id>
@@ -577,7 +577,7 @@ The following is an example monitoring script you can create locally. It is not 
 RUNS=10
 echo "Analyzing last $RUNS CI runs..."
 
-gh run list --workflow=test.yml --limit $RUNS --json databaseId,createdAt,conclusion | \
+gh run list --workflow=ci.yml --limit $RUNS --json databaseId,createdAt,conclusion | \
   jq -r '.[] | "\(.databaseId) \(.createdAt) \(.conclusion)"' | \
   while read run_id created_at conclusion; do
     echo "Run: $run_id ($conclusion) - $created_at"
@@ -639,7 +639,7 @@ if __name__ == "__main__":
 1. **Export Data**:
    ```bash
    # Export last 30 runs to CSV
-   gh run list --workflow=test.yml --limit 30 --json databaseId,createdAt,updatedAt,conclusion > ci_history.json
+   gh run list --workflow=ci.yml --limit 30 --json databaseId,createdAt,updatedAt,conclusion > ci_history.json
    ```
 
 2. **Calculate Metrics**:
@@ -724,7 +724,7 @@ if __name__ == "__main__":
 - [ ] Check test distribution: `pytest --collect-only --splits=20 --group=X`
 - [ ] Profile slow tests: `pytest --durations=20 --splits=20 --group=X`
 - [ ] Review resource usage in GitHub Actions logs
-- [ ] Compare with historical data: `gh run list --workflow=test.yml --limit 10`
+- [ ] Compare with historical data: `gh run list --workflow=ci.yml --limit 10`
 - [ ] Document root cause and resolution
 - [ ] Update baselines if needed
 
@@ -732,7 +732,7 @@ if __name__ == "__main__":
 
 ```
 # View latest CI run
-gh run view $(gh run list --workflow=test.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+gh run view $(gh run list --workflow=ci.yml --limit 1 --json databaseId --jq '.[0].databaseId')
 
 # Run slow split locally with profiling
 uv run pytest tests/ --splits=20 --group=12 --durations=20
@@ -748,7 +748,7 @@ gh run watch
 - **[CLAUDE.md](../../CLAUDE.md)** - Development standards and CI configuration
 - **[PARALLEL_TESTING.md](../testing/PARALLEL_TESTING.md)** - Parallel testing configuration
 - **[DEPRECATION_WARNINGS.md](DEPRECATION_WARNINGS.md)** - Deprecation warning configuration (historical, v0.5.0 migration completed)
-- **GitHub Actions Workflow**: [`.github/workflows/test.yml`](../../.github/workflows/ci.yml)
+- **GitHub Actions Workflow**: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
 - **GitHub CLI Docs**: https://cli.github.com/manual/
 
 ---

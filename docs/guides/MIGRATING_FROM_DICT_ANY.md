@@ -717,7 +717,7 @@ error = ModelErrorDetails.from_dict(original.copy())
 
 ## Additional Resources
 
-- **ModelErrorDetails**: `src/omnibase_core/models/services/model_error_details.py`
+- **ModelErrorDetails**: `src/omnibase_core/models/core/model_error_details.py`
 - **ModelEffectOperationConfig**: `src/omnibase_core/models/operations/model_effect_operation_config.py`
 - **ModelSchemaValue**: `src/omnibase_core/models/common/model_schema_value.py`
 - **Error Handling Guide**: `docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md`

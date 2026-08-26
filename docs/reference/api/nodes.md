@@ -176,8 +176,6 @@ class WorkflowOrchestratorNode(NodeOrchestrator):
 
 ## Service Wrapper Classes
 
-> Tip: For comprehensive guidance and examples, see `src/omnibase_core/models/nodes/node_services/README.md`.
-
 ### ModelServiceCompute
 
 **Location**: `omnibase_core.nodes.node_service_compute`

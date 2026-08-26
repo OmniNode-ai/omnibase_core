@@ -733,7 +733,7 @@ Integration tests are included in the standard CI pipeline alongside unit tests:
 
 ### CI Configuration
 
-From `.github/workflows/test.yml`:
+From `.github/workflows/ci.yml`:
 
 ```yaml
 - name: Run Tests (Split ${{ matrix.split }})
