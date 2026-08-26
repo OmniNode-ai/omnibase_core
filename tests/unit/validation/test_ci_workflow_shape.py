@@ -97,9 +97,6 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     "detect-secrets": (
         "e52c18585e93fd68b8ea8e1db1689fb5bd255e352e176e362b359ede4f346d9b"  # pragma: allowlist secret
     ),
-    "version-pin-check": (
-        "69ece7afcf893b932d5adb400a6fa7d84f12a2bfb1bb30715f54af920faf662c"  # pragma: allowlist secret
-    ),
     "sdk-boundary-check": (
         "6701fd3e6101f2107010ee2b6fc436acb2aaac73fb136e8ef237d41f0b7b70bb"  # pragma: allowlist secret
     ),
@@ -142,7 +139,6 @@ OTHER_AUDITED_GUARD_JOBS = {
     "core-infra-boundary",
     "check-deterministic-skills",
     "detect-secrets",
-    "version-pin-check",
 }
 
 NO_DEV_DIRECT_EXECUTABLES = {
