@@ -687,6 +687,11 @@ from omnibase_core.cli.cli_port_openclaw import cli_port_openclaw
 
 cli.add_command(cli_port_openclaw)
 
+# Register run command (local in-process runtime harness, no infrastructure)
+from omnibase_core.cli.cli_run import run
+
+cli.add_command(run)
+
 # Register run-node command (Kafka-based remote node execution)
 from omnibase_core.cli.cli_run_node import run_node
 
