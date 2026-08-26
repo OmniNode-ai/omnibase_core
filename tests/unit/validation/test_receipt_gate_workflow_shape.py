@@ -206,6 +206,17 @@ def test_workflow_passes_branch_policy_context_to_cli() -> None:
     assert "--occ-source-kind" in script
 
 
+def test_workflow_passes_pr_commit_texts_to_receipt_gate_cli() -> None:
+    """Receipt Gate must use commit text as an identity-binding fallback."""
+    step = _workflow_step("Run Receipt-Gate")
+    script = step["run"]
+
+    assert "commit_args=()" in script
+    assert "done < /tmp/pr_commit_texts.txt" in script
+    assert '--pr-commit-text "$text"' in script
+    assert '"${commit_args[@]}"' in script
+
+
 def test_workflow_distinguishes_open_and_merged_occ_sources() -> None:
     """Main-release policy depends on whether OCC evidence is merged or PR-head."""
     step = _workflow_step("Resolve Evidence-Source")

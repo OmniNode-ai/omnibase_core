@@ -790,6 +790,7 @@ jobs:
       - name: Run Receipt-Gate
         if: steps.bot_exempt.outputs.exempt != 'true'
         run: |
+          set -euo pipefail
           PR_BODY="$(cat /tmp/pr_body.txt)"
           PR_TITLE="$(cat /tmp/pr_title.txt)"
           PR_BRANCH="$(cat /tmp/pr_branch.txt 2>/dev/null || true)"
