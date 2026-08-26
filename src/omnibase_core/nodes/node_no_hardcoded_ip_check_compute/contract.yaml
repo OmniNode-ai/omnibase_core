@@ -16,12 +16,11 @@ node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 
 description: >
-  Line-scans a set of explicit (path, source) pairs for hardcoded internal IP address
-  literals (192.168.x.x, 10.x.x.x, 172.16-31.x.x, optionally http(s)-prefixed and
-  port-suffixed), and returns an OMN-2362 ValidationReport with a per-violation finding
-  reproducing the arch-no-hardcoded-ip CI gate's flagged-line text byte-for-byte. A line
-  carrying the # onex-allow-internal-ip suppression marker is exempt. Pure — no filesystem
-  access, no clock, no global state. #magic___^_^___line
+  Line-scans a set of explicit (path, source) pairs for hardcoded internal IP address literals (192.168.x.x,
+  10.x.x.x, 172.16-31.x.x, optionally http(s)-prefixed and port-suffixed), and returns an OMN-2362 ValidationReport
+  with a per-violation finding reproducing the arch-no-hardcoded-ip CI gate's flagged-line text byte-for-byte.
+  A line carrying the # onex-allow-internal-ip suppression marker is exempt. Pure — no filesystem access,
+  no clock, no global state. #magic___^_^___line
 input_model: omnibase_core.models.nodes.no_hardcoded_ip_check.model_no_hardcoded_ip_check_input.ModelNoHardcodedIpCheckInput
 output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
 

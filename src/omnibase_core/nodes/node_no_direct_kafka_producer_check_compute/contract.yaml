@@ -17,12 +17,11 @@ node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 
 description: >
-  AST-scans a set of explicit (path, source) pairs for direct Kafka producer client usage
-  (AIOKafkaProducer, KafkaProducer, confluent_kafka, aiokafka via import, bare-name usage, or
-  attribute access), skipping files whose path is part of the shared publisher layer, and
-  returns an OMN-2362 ValidationReport with a per-violation finding reproducing the
-  arch-no-direct-kafka-producer CI gate's message text byte-for-byte. Pure — no filesystem
-  access, no clock, no global state. #magic___^_^___line
+  AST-scans a set of explicit (path, source) pairs for direct Kafka producer client usage (AIOKafkaProducer,
+  KafkaProducer, confluent_kafka, aiokafka via import, bare-name usage, or attribute access), skipping
+  files whose path is part of the shared publisher layer, and returns an OMN-2362 ValidationReport with
+  a per-violation finding reproducing the arch-no-direct-kafka-producer CI gate's message text byte-for-byte.
+  Pure — no filesystem access, no clock, no global state. #magic___^_^___line
 input_model: omnibase_core.models.nodes.no_direct_kafka_producer_check.model_no_direct_kafka_producer_check_input.ModelNoDirectKafkaProducerCheckInput
 output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
 
