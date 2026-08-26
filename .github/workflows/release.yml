@@ -275,7 +275,7 @@ jobs:
       - name: Mint onexbot-occ-writer app token
         id: app-token
         if: ${{ !contains(steps.tag.outputs.tag, 'rc') }}
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
