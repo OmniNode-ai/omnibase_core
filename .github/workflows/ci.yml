@@ -137,6 +137,14 @@ jobs:
   # Pyright complements mypy (in lint job) - catches different type error categories
   pyright:
     name: Pyright Type Checking
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -193,6 +201,14 @@ jobs:
   # Quick check (~5 min) ensures __all__ exports are valid before expensive test splits
   exports-validation:
     name: Exports Validation
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -438,6 +454,14 @@ jobs:
   # intra-core sub-package layering. Blocking gate (wired into quality-gate).
   lint-imports:
     name: Import Layering Oracle
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -554,6 +578,14 @@ jobs:
   # node` (or a Kafka publish) and surfaces `SkillRoutingError`. Blocking gate.
   check-deterministic-skills:
     name: Deterministic Skill Routing
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -605,6 +637,14 @@ jobs:
   # Rationale: Doc link validation is independent of code correctness
   docs-validation:
     name: Documentation Validation
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -656,6 +696,14 @@ jobs:
   # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
   node-purity-check:
     name: Node Purity Check
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -748,6 +796,14 @@ jobs:
   # Contract-config compliance validator (OMN-10688)
   contract-config-compliance:
     name: Contract-Config Compliance (OMN-10688)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -798,6 +854,14 @@ jobs:
   # Breaking-schema-change validator (OMN-12621)
   breaking-schema-change:
     name: Breaking-Schema-Change (OMN-12621)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -843,6 +907,14 @@ jobs:
   # Rejects os.getenv/os.environ.get with localhost fallback defaults in src/ and scripts/.
   no-env-fallbacks:
     name: Reject localhost/env fallbacks (OMN-7227)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -869,6 +941,14 @@ jobs:
   # Uses detect-secrets-hook for proper baseline comparison (handles type+hash equality)
   detect-secrets:
     name: Detect Secrets
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -1013,6 +1093,14 @@ jobs:
   # [project.dependencies] (they belong in [project.optional-dependencies]).
   sdk-boundary-check:
     name: SDK Boundary Guard
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
@@ -1091,6 +1179,14 @@ jobs:
   # widget topics without producers, hand-authored topic literals.
   demo-path-topic-coherence:
     name: Demo-Path Topic Coherence (OMN-12777)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -1143,6 +1239,14 @@ jobs:
   # Dispatch-surface real-dispatch-test gate (OMN-12960)
   dispatch-surface-test-required:
     name: Dispatch-Surface Test Required (OMN-12960)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -2484,6 +2588,14 @@ jobs:
   # fails when an allowlisted FQN no longer exists (count-only-down discipline).
   no-noncanonical-lifecycle-classes:
     name: Non-Canonical Lifecycle-Class Ratchet (OMN-14350)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -2526,6 +2638,14 @@ jobs:
   # frozen baseline count down (it may never grow).
   pydantic-extra-forbid:
     name: Pydantic extra="forbid" Ratchet (OMN-14515)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -2580,6 +2700,14 @@ jobs:
   # would itself add to the very surface this ratchet governs.
   pull-request-workflow-ratchet:
     name: Pull-Request Workflow Ratchet (OMN-14907)
+    needs: [zone-filter]
+    # OMN-16625: docs-only diffs skip this leaf (NOT one of the 10
+    # SPEC_REQUIRED_VALIDATOR_JOBS in scripts/ci/ci_summary_gate.py, so this
+    # is safe to gate). quality-gate re-derives docs_only itself from
+    # needs.zone-filter.outputs.docs_only before accepting a `skipped`
+    # conclusion here as passing -- mirrors tests-gate's existing
+    # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
+    if: always() && needs.zone-filter.outputs.docs_only != 'true'
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -2733,7 +2861,13 @@ jobs:
     # tests-gate reports PASSED on zero tests run. ci-summary's independent
     # GATE_JOBS entry ("Contract Compliance Check", scripts/ci/ci_summary_gate.py)
     # keeps this job required and merge-blocking without that cascade.
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers]
+    #
+    # OMN-16625: zone-filter added as a need (read for its `docs_only` output
+    # only, exactly like tests-gate reads it -- never for its `.result`). This
+    # job itself stays `if: always()` so it is never a skip-vector; the step
+    # below re-derives docs_only itself before ever admitting a `skipped` leaf
+    # as passing, mirroring tests-gate's per-upstream skip policy (OMN-15315).
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers, zone-filter]
     if: always()
 
     steps:
@@ -2741,6 +2875,8 @@ jobs:
         run: |
           echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          docs_only="${{ needs.zone-filter.outputs.docs_only }}"
 
           lint="${{ needs.lint.result }}"
           pyright="${{ needs.pyright.result }}"
@@ -2768,6 +2904,8 @@ jobs:
           extra_forbid="${{ needs.pydantic-extra-forbid.result }}"
           pr_workflow_ratchet="${{ needs.pull-request-workflow-ratchet.result }}"
           spdx_headers="${{ needs.spdx-headers.result }}"
+
+          echo "| zone-filter docs_only | ${docs_only:-(unset)} |" >> $GITHUB_STEP_SUMMARY
 
           # Report each check
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
@@ -2799,43 +2937,89 @@ jobs:
           echo "| Pull-Request Workflow Ratchet (OMN-14907) | $pr_workflow_ratchet |" >> $GITHUB_STEP_SUMMARY
           echo "| SPDX Headers (OMN-13576) | $spdx_headers |" >> $GITHUB_STEP_SUMMARY
 
-          # Gate logic: all must pass
-          if [[ "$lint" == "success" ]] && \
-             [[ "$pyright" == "success" ]] && \
-             [[ "$exports" == "success" ]] && \
-             [[ "$mypy_scripts" == "success" ]] && \
-             [[ "$core_infra" == "success" ]] && \
-             [[ "$lint_imports" == "success" ]] && \
-             [[ "$det_skills" == "success" ]] && \
-             [[ "$docs" == "success" ]] && \
-             [[ "$purity" == "success" ]] && \
-             [[ "$enum_gov" == "success" ]] && \
-             [[ "$secrets" == "success" ]] && \
-             [[ "$sdk_boundary" == "success" ]] && \
-             [[ "$contract_config" == "success" ]] && \
-             [[ "$breaking_schema" == "success" ]] && \
-             [[ "$no_env_fallbacks" == "success" ]] && \
-             [[ "$demo_path_gate" == "success" ]] && \
-             [[ "$dispatch_surface" == "success" ]] && \
-             [[ "$naming" == "success" ]] && \
-             [[ "$pydantic" == "success" ]] && \
-             [[ "$aislop" == "success" ]] && \
-             [[ "$doc_content" == "success" ]] && \
-             [[ "$no_new_os_environ" == "success" ]] && \
-             [[ "$noncanonical_classes" == "success" ]] && \
-             [[ "$extra_forbid" == "success" ]] && \
-             [[ "$pr_workflow_ratchet" == "success" ]] && \
-             [[ "$spdx_headers" == "success" ]]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
+          # OMN-16625: gate logic split in two tiers.
+          #
+          # TIER 1 -- STRICT (spec-required validators, validator-requirements.yaml
+          # model_b_rollup_enforcement / SPEC_REQUIRED_VALIDATOR_JOBS in
+          # scripts/ci/ci_summary_gate.py). These 10 run UNCONDITIONALLY in ci.yml
+          # (no docs_only `if:` was added to them) and must be EXACTLY `success`
+          # on every diff, including a docs-only one -- doc-content-scan is "the
+          # length validator" the operator's docs-only-CI ruling explicitly keeps
+          # running; a `skipped` here is never legitimate.
+          for check in \
+            "lint=$lint" \
+            "mypy_scripts=$mypy_scripts" \
+            "core_infra=$core_infra" \
+            "enum_gov=$enum_gov" \
+            "naming=$naming" \
+            "pydantic=$pydantic" \
+            "aislop=$aislop" \
+            "doc_content=$doc_content" \
+            "no_new_os_environ=$no_new_os_environ" \
+            "spdx_headers=$spdx_headers"; do
+            NAME="${check%%=*}"
+            RESULT="${check#*=}"
+            if [[ "$RESULT" != "success" ]]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
+              echo "::error::$NAME (spec-required validator) did not pass (result: $RESULT) -- this check is never allowed to skip, docs-only diff or not."
+              exit 1
+            fi
+          done
+
+          # TIER 2 -- SKIP-TOLERANT (the 16 leaves gated on docs_only in this PR).
+          # Admits a `skipped` result ONLY when zone-filter's own docs_only output
+          # (re-derived here, never trusted from a leaf's raw `.result`) says
+          # 'true' -- exactly tests-gate's existing per-upstream skip policy for
+          # test-parallel/tests-integration (OMN-15315), applied to Phase 1.
+          for check in \
+            "pyright=$pyright" \
+            "exports=$exports" \
+            "lint_imports=$lint_imports" \
+            "det_skills=$det_skills" \
+            "docs=$docs" \
+            "purity=$purity" \
+            "secrets=$secrets" \
+            "sdk_boundary=$sdk_boundary" \
+            "contract_config=$contract_config" \
+            "breaking_schema=$breaking_schema" \
+            "no_env_fallbacks=$no_env_fallbacks" \
+            "demo_path_gate=$demo_path_gate" \
+            "dispatch_surface=$dispatch_surface" \
+            "noncanonical_classes=$noncanonical_classes" \
+            "extra_forbid=$extra_forbid" \
+            "pr_workflow_ratchet=$pr_workflow_ratchet"; do
+            NAME="${check%%=*}"
+            RESULT="${check#*=}"
+            case "$RESULT" in
+              success)
+                : ;;
+              skipped)
+                if [[ "$docs_only" != "true" ]]; then
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
+                  echo "::error::$NAME was SKIPPED on a non-docs-only change (zone-filter docs_only='${docs_only:-unset}') -- the absence of a validator result is not a passing one."
+                  exit 1
+                fi
+                ;;
+              *)
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
+                echo "::error::$NAME returned unrecognised result '$RESULT' -- failing closed."
+                exit 1
+                ;;
+            esac
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "$docs_only" == "true" ]]; then
+            echo "**Quality Gate: PASSED** (docs-only diff -- heavy leaf validators short-circuited to skipped; spec-required validators + doc-content-scan ran for real)" >> $GITHUB_STEP_SUMMARY
+            echo "Quality gate passed: docs-only diff, non-spec-required leaves short-circuited."
+          else
             echo "**Quality Gate: PASSED**" >> $GITHUB_STEP_SUMMARY
             echo "All quality checks passed."
-            exit 0
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
-            echo "Quality gate failed. See individual check results above."
-            exit 1
           fi
+          exit 0
 
   # ---------------------------------------------------------------------------
   # Phase 1.6a - Zone Filter (OMN-10356, reusable in OMN-10400)
@@ -2843,10 +3027,21 @@ jobs:
   # Runs the caller branch's classifier inline. The reusable workflow added in
   # this PR cannot be called by required CI until it exists on main, because
   # GitHub cannot materialize jobs for a new local workflow_call target.
+  #
+  # OMN-16625: detached from `needs: [quality-gate]`. This job used to run
+  # AFTER quality-gate's ~26 leaf validators finished -- too late to gate
+  # those leaves themselves on docs_only, only useful for the Phase 2 test
+  # matrix that already depended on quality-gate succeeding anyway. Zero
+  # `needs` here means docs_only is known immediately, in parallel with
+  # quality-gate's leaves, which is what lets those leaves gate on it too.
+  # Every downstream consumer (detect-changes, test-parallel,
+  # tests-integration) already independently re-checks
+  # `needs.quality-gate.result == 'success'` in its own `if:`, so this
+  # detachment changes nothing about when the Phase 2 test matrix runs --
+  # only how early docs_only becomes available to Phase 1.
   zone-filter:
     name: Zone Filter (docs-only check)
-    needs: [quality-gate]
-    if: always() && needs.quality-gate.result == 'success'
+    if: always()
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
