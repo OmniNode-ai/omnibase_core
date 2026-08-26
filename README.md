@@ -4,9 +4,11 @@
 core models, validation tooling, and the canonical architecture vocabulary used
 by downstream OmniNode repos.
 
-[![CI](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/ci.yml/badge.svg)](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/ci.yml)
+[![CI](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/ci.yml/badge.svg?event=pull_request&branch=dev)](https://github.com/OmniNode-ai/omnibase_core/actions/workflows/ci.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **Badge note:** this tracks the PR-triggered `ci.yml` run (`event=pull_request`), not the push-triggered run on `dev`. The push/schedule-triggered run is permanently red by design: its Contract Compliance Check job fails closed on every non-PR event because its DoD checks are PR-scoped and correctly refuse to vacuously pass outside PR context. That is an intentional, documented tradeoff, not a regression — see the `contract-compliance` job comment in `.github/workflows/ci.yml` for the rationale.
 
 ## Who Uses It
 
