@@ -12,7 +12,10 @@ class ModelCliUserConfigCredentials(BaseModel):
     """Credential placeholders bootstrapped for a new install."""
 
     model_config = ConfigDict(
-        extra="forbid", populate_by_name=True, from_attributes=True
+        extra="forbid",
+        populate_by_name=True,
+        from_attributes=True,
+        frozen=True,
     )
 
     linear_api_key: str = Field(

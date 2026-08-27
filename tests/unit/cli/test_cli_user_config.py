@@ -189,6 +189,20 @@ class TestLegacyConfigMigration:
         with pytest.raises(ModelOnexError, match="kafka"):
             normalize_user_config({"version": 1, "mode": "local", "kafka": "nope"})
 
+    def test_empty_section_header_fills_that_sections_defaults(self) -> None:
+        """``logging:`` with no children parses to None — fill defaults, never refuse.
+
+        A user who comments out every key under a section leaves a bare header.
+        That is a valid file carrying no values, so it must migrate like any
+        other legacy shape instead of aborting ``config init --force``,
+        ``refresh-credentials`` and ``bootstrap apply``.
+        """
+        normalized, migrated = normalize_user_config(
+            yaml.safe_load("version: 1\nmode: local\nlogging:\n")
+        )
+        assert normalized["logging"] == default_user_config()["logging"]
+        assert migrated is True
+
     def test_unknown_mode_is_rejected(self) -> None:
         with pytest.raises(ModelOnexError, match="mode"):
             normalize_user_config({"version": 1, "mode": "interstellar"})

@@ -12,7 +12,10 @@ class ModelCliUserConfigPaths(BaseModel):
     """On-disk locations ONEX reads and writes for this user."""
 
     model_config = ConfigDict(
-        extra="forbid", populate_by_name=True, from_attributes=True
+        extra="forbid",
+        populate_by_name=True,
+        from_attributes=True,
+        frozen=True,
     )
 
     state_dir: str = Field(

@@ -193,6 +193,12 @@ def normalize_user_config(
         if name not in raw:
             continue
         section = raw[name]
+        if section is None:
+            # A section header with no children (``logging:``) parses to None.
+            # It carries no values, so fill that section's defaults instead of
+            # refusing the whole file.
+            payload[name] = {}
+            continue
         if not isinstance(section, Mapping):
             raise ModelOnexError(
                 f"'{name}' must be a mapping in ~/.onex/config.yaml, "
