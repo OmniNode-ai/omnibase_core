@@ -689,6 +689,15 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "audit, structurally cannot be a merge gate (same class as "
         "auto-tag-on-merge)."
     ),
+    ("kb-doc-gate.yml", "kb-doc-gate"): (
+        "thin uses: caller of omniclaude's kb-doc-gate-reusable.yml (OMN-16589 "
+        "pilot, transition mode) -- self-declared non-required per the "
+        "pull-request-workflow-budget.yaml waiver on this same workflow file; "
+        "NOT added to EXPECTED_EXTERNAL_CONTEXTS, since that would make this "
+        "poller treat it as de facto required, contradicting the pilot's "
+        "explicit not-required-yet scope. The fleet-wide required-check flip "
+        "is tracked separately once the pilot proves green."
+    ),
 }
 
 
