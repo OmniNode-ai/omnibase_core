@@ -9,9 +9,16 @@ command on the core in-memory bus, pumps it through the registered handlers to a
 terminal event, materializes a SQLite projection row, and prints a JSON evidence
 packet (runtime SHA + correlation ID + bus impl + projection backend + exit code).
 
-Entry point::
+Entry points::
 
+    onex run delegation --prompt "hello"
     python -m omnibase_core.runtime.harness.harness_cli delegation --prompt "hello"
+
+``onex run`` (:mod:`omnibase_core.cli.cli_run`) is the packaged surface and the one
+to document; the ``python -m`` module path is a thin argparse shim retained for
+existing scripted callers. Both parse their own flags and then hand off to
+:func:`run_harness_workflow`, which is the single implementation of the run — there
+is no second copy of this logic to drift.
 """
 
 from __future__ import annotations
@@ -43,6 +50,14 @@ from omnibase_core.runtime.harness.harness_inference_fixture import (
 from omnibase_core.runtime.harness.harness_projection_store_sqlite import (
     SqliteProjectionStore,
 )
+
+# The workflows the harness can run, each with the default prompt used when the
+# caller supplies none. Both entry points read this map, so the accepted workflow
+# names and their defaults cannot drift apart.
+WORKFLOW_DEFAULT_PROMPTS: dict[str, str] = {
+    "delegation": "summarize the local-first runtime re-convergence",
+    "sea": "generate a COMPUTE node that uppercases its input",
+}
 
 
 async def run_workflow(
@@ -107,18 +122,25 @@ def build_evidence_packet(
     }
 
 
-def _build_adapter(args: argparse.Namespace) -> ProtocolHarnessInferenceAdapter:
-    if args.inference == "curl":
-        if not args.endpoint:
+def build_inference_adapter(
+    *,
+    inference: str,
+    fixture_completion: str | None,
+    endpoint: str | None,
+    model: str,
+) -> ProtocolHarnessInferenceAdapter:
+    """Select the inference adapter for a run, refusing under-specified combinations."""
+    if inference == "curl":
+        if not endpoint:
             raise ModelOnexError(
                 message="--endpoint is required when --inference=curl",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
-        return CurlSubprocessInferenceAdapter(endpoint=args.endpoint, model=args.model)
+        return CurlSubprocessInferenceAdapter(endpoint=endpoint, model=model)
     # fixture replays a completion recorded from a real model call. There is no
     # prompt-echo default: a run with no real or recorded inference must FAIL,
     # never report success on nothing (OMN-13496).
-    if not args.fixture_completion or not args.fixture_completion.strip():
+    if not fixture_completion or not fixture_completion.strip():
         raise ModelOnexError(
             message=(
                 "--fixture-completion is required when --inference=fixture; it must "
@@ -128,33 +150,81 @@ def _build_adapter(args: argparse.Namespace) -> ProtocolHarnessInferenceAdapter:
             ),
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
-    return RecordedFixtureInferenceAdapter(completion=args.fixture_completion)
+    return RecordedFixtureInferenceAdapter(completion=fixture_completion)
 
 
-def _run(args: argparse.Namespace) -> int:
-    correlation_id = UUID(args.correlation_id) if args.correlation_id else uuid4()
-    adapter = _build_adapter(args)
-    store = SqliteProjectionStore(path=args.sqlite_path)
+def run_harness_workflow(
+    *,
+    workflow: str,
+    prompt: str | None = None,
+    correlation_id: str | None = None,
+    task_type: str = "harness",
+    max_tokens: int = 512,
+    inference: str = "fixture",
+    fixture_completion: str | None = None,
+    endpoint: str | None = None,
+    model: str = "recorded-fixture",
+    sqlite_path: str = ":memory:",
+    runtime_sha: str = "unknown",
+) -> int:
+    """Run one harness workflow, print its evidence packet, and return the exit code.
+
+    This is the single implementation behind both entry points: the packaged
+    ``onex run`` click command and the ``python -m ...harness_cli`` argparse shim.
+    Each of those only parses flags; all behavior lives here.
+
+    Args:
+        workflow: Workflow to run; a key of :data:`WORKFLOW_DEFAULT_PROMPTS`.
+        prompt: Prompt to send. ``None`` selects the workflow's default prompt.
+        correlation_id: Correlation UUID as a string. ``None`` mints a fresh one.
+        task_type: Task-type tag recorded on the command.
+        max_tokens: Token ceiling passed to the inference adapter.
+        inference: ``"fixture"`` to replay a recorded completion, ``"curl"`` for a
+            live model over the LAN.
+        fixture_completion: Recorded completion to replay; required for fixture runs.
+        endpoint: Inference endpoint; required for curl runs.
+        model: Model identifier recorded in the projection payload.
+        sqlite_path: Projection DB path; ``":memory:"`` for an ephemeral store.
+        runtime_sha: Runtime SHA stamped into the evidence packet.
+
+    Returns:
+        The harness result's process exit code.
+
+    Raises:
+        ModelOnexError: If the inference options are under-specified.
+        ValueError: If ``correlation_id`` is not a well-formed UUID.
+    """
+    resolved_prompt = (
+        prompt if prompt is not None else WORKFLOW_DEFAULT_PROMPTS[workflow]
+    )
+    resolved_correlation_id = UUID(correlation_id) if correlation_id else uuid4()
+    adapter = build_inference_adapter(
+        inference=inference,
+        fixture_completion=fixture_completion,
+        endpoint=endpoint,
+        model=model,
+    )
+    store = SqliteProjectionStore(path=sqlite_path)
     try:
         result, projection = asyncio.run(
             run_workflow(
-                workflow=args.workflow,
-                prompt=args.prompt,
-                correlation_id=correlation_id,
-                task_type=args.task_type,
-                max_tokens=args.max_tokens,
+                workflow=workflow,
+                prompt=resolved_prompt,
+                correlation_id=resolved_correlation_id,
+                task_type=task_type,
+                max_tokens=max_tokens,
                 adapter=adapter,
                 store=store,
             )
         )
         packet = build_evidence_packet(
-            workflow=args.workflow,
+            workflow=workflow,
             result=result,
             projection=projection,
             adapter=adapter,
             store=store,
             bus_impl="EventBusInmemory",
-            runtime_sha=args.runtime_sha,
+            runtime_sha=runtime_sha,
         )
         # print-ok: CLI emits the evidence packet to stdout (the durable proof artifact)
         print(json.dumps(packet, default=str, indent=2), flush=True)
@@ -166,15 +236,19 @@ def _run(args: argparse.Namespace) -> int:
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="harness",
-        description="Core-resident infra-free local runtime harness (OMN-13420).",
+        description=(
+            "Core-resident infra-free local runtime harness (OMN-13420). "
+            "`onex run` is the packaged equivalent of this command."
+        ),
     )
     sub = parser.add_subparsers(dest="workflow", required=True)
-    for workflow, default_prompt in (
-        ("delegation", "summarize the local-first runtime re-convergence"),
-        ("sea", "generate a COMPUTE node that uppercases its input"),
-    ):
+    for workflow, default_prompt in WORKFLOW_DEFAULT_PROMPTS.items():
         sp = sub.add_parser(workflow, help=f"Run the {workflow} workflow in-process.")
-        sp.add_argument("--prompt", default=default_prompt)
+        sp.add_argument(
+            "--prompt",
+            default=None,
+            help=f"Prompt to send. Default: {default_prompt!r}",
+        )
         sp.add_argument("--correlation-id", default=None, dest="correlation_id")
         sp.add_argument("--task-type", default="harness", dest="task_type")
         sp.add_argument("--max-tokens", type=int, default=512, dest="max_tokens")
@@ -210,13 +284,36 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Returns a process exit code."""
+    """``python -m`` entry point: parse argv, then defer to the shared callable.
+
+    Kept as a thin shim so existing scripted callers keep working. ``onex run`` is
+    the packaged surface; both land on :func:`run_harness_workflow`.
+    """
     args = _parser().parse_args(argv)
-    return _run(args)
+    return run_harness_workflow(
+        workflow=args.workflow,
+        prompt=args.prompt,
+        correlation_id=args.correlation_id,
+        task_type=args.task_type,
+        max_tokens=args.max_tokens,
+        inference=args.inference,
+        fixture_completion=args.fixture_completion,
+        endpoint=args.endpoint,
+        model=args.model,
+        sqlite_path=args.sqlite_path,
+        runtime_sha=args.runtime_sha,
+    )
 
 
 if __name__ == "__main__":
     sys.exit(main())
 
 
-__all__ = ["build_evidence_packet", "main", "run_workflow"]
+__all__ = [
+    "WORKFLOW_DEFAULT_PROMPTS",
+    "build_evidence_packet",
+    "build_inference_adapter",
+    "main",
+    "run_harness_workflow",
+    "run_workflow",
+]

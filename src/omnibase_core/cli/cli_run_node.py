@@ -345,6 +345,10 @@ def publish_and_poll(
 def run_node(node_id: str, input_json: str, timeout: int) -> None:
     """Execute a remote ONEX node via Kafka.
 
+    Remote counterpart of `onex run` (which runs a workflow locally, in-process with
+    no infrastructure): this command requires a reachable Kafka broker and a runtime
+    consuming the node's topics.
+
     Resolves NODE_ID via the packaged contract.yaml, publishes a command envelope
     to the node's primary subscribe topic, and polls its declared terminal_event.
     Exits non-zero on failure or timeout, emitting a SkillRoutingError JSON
