@@ -43,11 +43,18 @@ def importable_src() -> Iterator[list[str]]:
     """
     added: list[str] = []
     original_path = list(sys.path)
-    original_modules = set(sys.modules)
+    original_modules = dict(sys.modules)
     yield added
     sys.path[:] = original_path
-    for name in set(sys.modules) - original_modules:
+    for name in set(sys.modules) - set(original_modules):
         del sys.modules[name]
+    # Put the pre-existing entries back verbatim. The purge above only removes
+    # names the scaffold run itself introduced, so this restore is a no-op in
+    # the common case -- but it makes the fixture provably incapable of leaking
+    # an OMN-14944-class eviction even if a scaffold import displaces an
+    # already-cached module, and it is the explicit restore the OMN-14985
+    # ratchet (test_no_unrestored_del_sys_modules_in_tests) requires to see.
+    sys.modules.update(original_modules)
 
 
 def _scaffold(
