@@ -115,7 +115,7 @@ class TestLegacyConfigMigration:
         "version: 1\n"
         "mode: local\n"
         "credentials:\n"
-        '  LINEAR_API_KEY: "lin_api_secret"\n'
+        '  LINEAR_API_KEY: "lin_api_secret"\n'  # pragma: allowlist secret
         '  INFISICAL_TOKEN: ""\n'
         "paths:\n"
         "  state_dir: ~/.onex/state\n"
@@ -158,7 +158,10 @@ class TestLegacyConfigMigration:
             + "aws:\n  secret_name: my-secret\n  region: us-west-2\n"
         )
         normalized, _ = normalize_user_config(raw)
-        assert normalized["aws"] == {"secret_name": "my-secret", "region": "us-west-2"}
+        assert normalized["aws"] == {
+            "secret_name": "my-secret",  # pragma: allowlist secret
+            "region": "us-west-2",
+        }
 
     def test_unknown_keys_inside_managed_sections_are_preserved(self) -> None:
         raw = yaml.safe_load(self.LEGACY_USER)
@@ -179,6 +182,20 @@ class TestLegacyConfigMigration:
     def test_non_mapping_section_is_rejected_with_a_clear_message(self) -> None:
         with pytest.raises(ModelOnexError, match="kafka"):
             normalize_user_config({"version": 1, "mode": "local", "kafka": "nope"})
+
+    def test_empty_section_header_fills_that_sections_defaults(self) -> None:
+        """``logging:`` with no children parses to None — fill defaults, never refuse.
+
+        A user who comments out every key under a section leaves a bare header.
+        That is a valid file carrying no values, so it must migrate like any
+        other legacy shape instead of aborting ``config init --force``,
+        ``refresh-credentials`` and ``bootstrap apply``.
+        """
+        normalized, migrated = normalize_user_config(
+            yaml.safe_load("version: 1\nmode: local\nlogging:\n")
+        )
+        assert normalized["logging"] == default_user_config()["logging"]
+        assert migrated is True
 
     def test_unknown_mode_is_rejected(self) -> None:
         with pytest.raises(ModelOnexError, match="mode"):

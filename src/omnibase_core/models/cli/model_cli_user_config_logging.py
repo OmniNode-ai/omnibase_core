@@ -12,7 +12,10 @@ class ModelCliUserConfigLogging(BaseModel):
     """Local logging settings."""
 
     model_config = ConfigDict(
-        extra="forbid", populate_by_name=True, from_attributes=True
+        extra="forbid",
+        populate_by_name=True,
+        from_attributes=True,
+        frozen=True,
     )
 
     level: str = Field(default="INFO", description="Root log level")
