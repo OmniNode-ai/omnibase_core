@@ -821,9 +821,6 @@ jobs:
           fi
 
           commit_args=()
-          while IFS= read -r sha; do
-            [ -n "$sha" ] && commit_args+=(--pr-commit-sha "$sha")
-          done < /tmp/pr_commit_shas.txt
           while IFS= read -r text; do
             [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
           done < /tmp/pr_commit_texts.txt
