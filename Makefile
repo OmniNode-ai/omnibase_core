@@ -3,7 +3,7 @@
 #
 # Makefile for omnibase_core
 #
-# Targets match CI exactly (see .github/workflows/test.yml) with intentional
+# Targets match CI exactly (see .github/workflows/ci.yml) with intentional
 # differences documented below:
 # 1. `uv run python` is used here for consistency; CI invokes `python3` directly
 #    (e.g. validate-doc-links.py). This is a potential correctness risk: `python3`
@@ -12,7 +12,7 @@
 #    TODO(OMN-2335): align CI to use uv run python for consistency
 # 2. transport import check always runs full scan here; CI uses --changed-files on
 #    feature branches (conservative local default catches more violations pre-push).
-# 3. `enum-governance` runs as a separate parallel CI job in test.yml but is included
+# 3. `enum-governance` runs as a separate parallel CI job in ci.yml but is included
 #    sequentially here in ci-fast (via `uv run python -m omnibase_core.validation.checker_enum_governance`).
 # All Python commands use `uv run` — never direct python/pip.
 # `detect-secrets` is installed via `make install` as a one-time setup step.
