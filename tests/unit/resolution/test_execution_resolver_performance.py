@@ -679,12 +679,22 @@ class TestExecutionResolverDeterminismPerformance:
         variance = sum((d - mean_duration) ** 2 for d in durations) / len(durations)
         std_dev = variance**0.5
 
-        # Verify performance consistency
-        # Allow for some variance due to system load
-        assert std_dev < mean_duration * 0.5, (
-            f"High variance in resolution times: mean={mean_duration * 1000:.2f}ms, "
-            f"std_dev={std_dev * 1000:.2f}ms"
-        )
+        # OMN-16297: this used to assert `std_dev < mean_duration * 0.5`. A
+        # dispersion RATIO over sub-millisecond durations (mean is ~0.4ms here)
+        # measures OS scheduler noise on the host, not the resolver, so it
+        # failed on a busy gate host while the resolver itself was fine -- most
+        # recently refusing an omnibase_core push whose other 44,115 tests all
+        # passed. The determinism this test is named for is already asserted
+        # unconditionally above (`results[i] == results[0]`), and is unaffected
+        # by host load. What remains worth pinning is an absolute upper bound
+        # that catches a real algorithmic regression, which is the same idiom
+        # every other perf test in this file uses (`assert duration < 1.0`).
+        for i, duration in enumerate(durations):
+            assert duration < 1.0, (
+                f"Resolution run {i} took {duration * 1000:.2f}ms, over the 1s "
+                f"budget (mean={mean_duration * 1000:.2f}ms, "
+                f"std_dev={std_dev * 1000:.2f}ms)"
+            )
 
         # Log performance metrics
         print(

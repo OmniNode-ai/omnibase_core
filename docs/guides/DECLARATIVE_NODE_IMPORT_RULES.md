@@ -494,7 +494,7 @@ The purity linter runs automatically on every pre-push. The script internally di
 The linter runs in CI via GitHub Actions:
 
 ```yaml
-# .github/workflows/test.yml (excerpt)
+# .github/workflows/ci.yml (excerpt)
 - name: Run purity linter
   run: uv run python scripts/check_node_purity.py --verbose
 ```

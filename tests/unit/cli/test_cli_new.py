@@ -297,10 +297,13 @@ def test_onex_new_node_stubs_have_descriptive_errors(tmp_path: Path) -> None:
     )
     assert "TODO(OMN-XXXX)" in node_content
 
-    # Handler should have descriptive NotImplementedError
+    # OMN-16679: the handler is the executable surface — it must RUN as
+    # generated, so it returns an empty response instead of raising. The TODO
+    # marks where real logic goes.
     handler_content = (node_dir / "handlers" / "handler_my_widget.py").read_text()
-    assert "NotImplementedError" in handler_content
-    assert "not yet implemented" in handler_content
+    assert "NotImplementedError" not in handler_content
+    assert "TODO(OMN-XXXX)" in handler_content
+    assert "return MyWidgetOutput()" in handler_content
 
     # Models should be clean (no NotImplementedError)
     models_content = (node_dir / "models" / "models_my_widget.py").read_text()

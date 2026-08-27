@@ -1788,6 +1788,14 @@ repos:
       - id: no-untracked-todos
         stages: [pre-commit]
 
+  # KB doc gate (OMN-16589) — blocks new/regrown non-KB markdown docs.
+  # Pinned to the omniclaude dev commit that merged the exported hook
+  # (OmniNode-ai/omniclaude#2047, merged 2026-08-26).
+  - repo: https://github.com/OmniNode-ai/omniclaude
+    rev: 82a3394c1af183d8aed36fdb7b0fee011d39372a  # pragma: allowlist secret
+    hooks:
+      - id: kb-doc-gate
+
   # Demo-path topic coherence gate (OMN-12777)
   # Scoped to demo-path contracts (metadata.demo_path: true).
   # Fails on: orphan producers/consumers, publish/subscribe byte-mismatch,

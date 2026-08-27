@@ -168,7 +168,7 @@ The script automatically detects CPU count and warns if configuration is too agg
 ### CI Execution Model (Horizontal Scaling)
 
 ```
-# .github/workflows/test.yml
+# .github/workflows/ci.yml
 strategy:
   matrix:
     split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
@@ -526,7 +526,7 @@ done
 ## Related Documentation
 
 - [COVERAGE.md](COVERAGE.md) - Coverage testing overview and usage
-- `.github/workflows/test.yml` - CI test configuration
+- `.github/workflows/ci.yml` - CI test configuration
 - `scripts/run-coverage-parallel.sh` - Parallel coverage script
 
 ## Summary

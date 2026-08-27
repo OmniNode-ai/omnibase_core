@@ -222,7 +222,7 @@ Fingerprints appear in:
 
 ### Location
 
-`src/omnibase_core/contracts/hash_registry.py`
+`src/omnibase_core/contracts/contract_hash_registry.py`
 
 ### API
 

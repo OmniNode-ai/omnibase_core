@@ -2,6 +2,12 @@
 
 # Performance Benchmark CI Integration Guide
 
+**Status**: ⚠️ Proposal — NOT YET IMPLEMENTED. `tests/performance/` exists and its
+tests run as part of the ordinary `test-parallel` job in `.github/workflows/ci.yml`,
+but there is no dedicated `performance-benchmarks` job, threshold-enforcement gate,
+regression-detection step, or historical tracking dashboard in live CI. Everything
+below describing those as active is aspirational design, not current behavior.
+
 **Purpose**: Comprehensive guide for integrating performance benchmarks into CI pipeline with threshold enforcement and regression detection
 
 **Last Updated**: 2026-02-14
@@ -67,7 +73,7 @@ tests/
 
 ### CI Configuration
 
-**Current Configuration** (.github/workflows/test.yml):
+**Current Configuration** (.github/workflows/ci.yml):
 
 ```yaml
 # Performance benchmarks run as part of test-parallel job
@@ -146,7 +152,7 @@ class TestModelReducerOutputPerformance:
 **Configuration**:
 
 ```yaml
-# Add to .github/workflows/test.yml after test-parallel job
+# Add to .github/workflows/ci.yml after test-parallel job
 performance-benchmarks:
   name: Performance Benchmarks
   needs: [lint, pyright, exports-validation]  # Phase 1 dependencies
@@ -587,7 +593,7 @@ addopts = [
 **Configuration**:
 
 ```yaml
-# Add to .github/workflows/test.yml performance-benchmarks job
+# Add to .github/workflows/ci.yml performance-benchmarks job
 - name: Extract performance metrics
   if: always()
   run: |
@@ -903,7 +909,7 @@ def test_memory_usage(self) -> None:
 **Status**: Not yet implemented (originally proposed Q4 2025)
 
 **Deliverables**:
-- Dedicated `performance-benchmarks` job in test.yml
+- Dedicated `performance-benchmarks` job in ci.yml
 - Separate artifact upload for performance results
 - Performance summary in GitHub Actions summary
 

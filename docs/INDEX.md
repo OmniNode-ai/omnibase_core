@@ -335,6 +335,7 @@ src/omnibase_core/
 ├── errors/                 # Error handling (ModelOnexError)
 ├── event_bus/              # In-memory event bus (registered in onex.backends)
 ├── factories/              # Contract and profile factories
+├── feature_flags/          # Feature-flag catalog + registry
 ├── gate/                   # OmniGate config loader, diff hash, receipt canonical
 ├── infrastructure/         # Base node classes
 ├── integrations/           # External integrations

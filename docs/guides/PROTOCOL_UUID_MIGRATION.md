@@ -349,7 +349,7 @@ def upgrade():
 
 The following method signatures have changed to use UUID types:
 
-#### ServiceRegistry (`container/service_registry.py`)
+#### ServiceRegistry (`container/container_service_registry.py`)
 
 | Method | Parameter | Before | After |
 |--------|-----------|--------|-------|

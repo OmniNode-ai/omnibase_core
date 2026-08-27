@@ -863,7 +863,7 @@ open htmlcov/index.html
 
 #### GitHub Actions Configuration
 
-See `.github/workflows/test.yml` for complete configuration. Key features:
+See `.github/workflows/ci.yml` for complete configuration. Key features:
 
 - **Poetry 2.2.1**: Latest stable Poetry version
 - **Python 3.12**: Minimum supported version

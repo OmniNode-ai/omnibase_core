@@ -980,7 +980,7 @@ jobs:
       # sibling repo this job reads.
       - name: Mint onexbot-occ-writer app token
         id: app-token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
@@ -3366,7 +3366,16 @@ jobs:
       # reads this test split may need.
       - name: Mint onexbot-occ-writer app token
         id: app-token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        if: >-
+          !(
+            contains(fromJSON('["dependabot[bot]","github-actions[bot]"]'), github.event.pull_request.user.login) &&
+            (
+              startsWith(github.event.pull_request.title, 'chore(deps') ||
+              startsWith(github.event.pull_request.title, 'build(deps') ||
+              startsWith(github.event.pull_request.title, 'Bump ')
+            )
+          )
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
@@ -3549,12 +3558,46 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
     steps:
       - uses: actions/checkout@v7
+      - name: Classify dependency-bot workflow-only PR
+        id: dep-scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          echo "exempt=false" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            exit 0
+          fi
+          gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only > /tmp/pr-files.txt
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          author = os.environ["PR_AUTHOR"]
+          title = os.environ["PR_TITLE"]
+          files = [
+              line.strip()
+              for line in Path("/tmp/pr-files.txt").read_text().splitlines()
+              if line.strip()
+          ]
+          dependency_author = author in {"dependabot[bot]", "github-actions[bot]"}
+          dependency_title = title.startswith(("chore(deps", "build(deps", "Bump "))
+          workflow_only = bool(files) and all(path.startswith(".github/workflows/") for path in files)
+          if dependency_author and dependency_title and workflow_only:
+              with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as out:
+                  out.write("exempt=true\n")
+          PY
       # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
       # onexbot-occ-writer App installation token, scoped to the one
       # sibling repo this job reads.
       - name: Mint onexbot-occ-writer app token
         id: app-token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        if: steps.dep-scope.outputs.exempt != 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
@@ -3562,6 +3605,7 @@ jobs:
           repositories: onex_change_control
           permission-contents: write
       - name: Checkout onex_change_control
+        if: steps.dep-scope.outputs.exempt != 'true'
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/onex_change_control
@@ -3577,10 +3621,12 @@ jobs:
           token: ${{ steps.app-token.outputs.token || github.token }}
 
       - uses: astral-sh/setup-uv@v7
+        if: steps.dep-scope.outputs.exempt != 'true'
         with:
           enable-cache: false
 
       - name: Install onex_change_control
+        if: steps.dep-scope.outputs.exempt != 'true'
         working-directory: onex_change_control
         run: |
           set -euo pipefail
@@ -3623,6 +3669,7 @@ jobs:
       # needs; ci-summary's independent GATE_JOBS entry keeps this required and
       # merge-blocking without the cascade.
       - name: Run DoD contract compliance against the product tree (OMN-14887)
+        if: steps.dep-scope.outputs.exempt != 'true'
         working-directory: onex_change_control
         run: |
           set -euo pipefail
@@ -3645,6 +3692,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Record dependency-bot workflow-only contract compliance decision
+        if: steps.dep-scope.outputs.exempt == 'true'
+        run: |
+          set -euo pipefail
+          echo "Dependency-bot PR changes only workflow files; no product contract DoD check_values apply." >> "$GITHUB_STEP_SUMMARY"
 
   occ-companion-merged:
     name: OCC Companion Merged Gate (OMN-15214)
@@ -3691,9 +3743,35 @@ jobs:
       # onexbot-occ-writer App token and export it as GH_TOKEN — job-level
       # `env:` is resolved before any step runs, so it cannot reference a
       # step output directly. `|| github.token` fallback kept for resilience.
+      #
+      # OMN-16552: GitHub Actions does not expose repository secrets to a
+      # pull_request run authored by Dependabot (secret-exfiltration
+      # protection), so on a Dependabot PR ONEXBOT_OCC_APP_ID/PRIVATE_KEY
+      # resolve empty and this mint hard-fails BEFORE the Python script's own
+      # DEPENDENCY_BOT_AUTHORS exemption ever runs — the job never reaches
+      # "Require cited OCC evidence...". Skip minting only when the author is
+      # a known dependency-bot login AND the title has a deps-bump prefix
+      # (both, not either, mirroring — but stricter than — the OR the
+      # pr-title-check-reusable.yml exemption uses, so a human cannot dress a
+      # PR as a bump to dodge evidence enforcement). The job itself stays
+      # unconditional (no job-level `if:`) so CI Summary's
+      # skip/cancel-fails-closed STRICT_SUCCESS_JOBS semantics hold; only
+      # this one step is skipped. "Export GH_TOKEN" already falls back to
+      # `github.token` when app-token has no output, and the script's author
+      # exemption needs only same-repo `gh pr view` access — no cross-repo
+      # onex_change_control read — so the default token is sufficient here.
       - name: Mint onexbot-occ-writer app token
         id: app-token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        if: >-
+          !(
+            contains(fromJSON('["dependabot[bot]","github-actions[bot]"]'), github.event.pull_request.user.login) &&
+            (
+              startsWith(github.event.pull_request.title, 'chore(deps') ||
+              startsWith(github.event.pull_request.title, 'build(deps') ||
+              startsWith(github.event.pull_request.title, 'Bump ')
+            )
+          )
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}

@@ -157,7 +157,7 @@ jobs:
       - name: Mint onexbot-occ-writer app token
         id: app-token
         if: steps.token_check.outputs.has_token == 'true'
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           app-id: ${{ secrets.onexbot-occ-app-id }}
           private-key: ${{ secrets.onexbot-occ-private-key }}
@@ -315,17 +315,53 @@ jobs:
           open("pyproject.toml", "w").write(updated)
           PYEOF
 
+      # OMN-16517 (docs/plans/2026-08-23-cloud-ci-offload-plan.md Stage 1):
+      # sanitized generator environment. This step previously ran `uv lock`
+      # with NO UV_* env sanitization at all -- on 2026-08-23 a bot-generated
+      # `uv lock` on this exact code path baked 783 `source = { registry =
+      # ... }` lines into onex_change_control/uv.lock pointing at the
+      # Tailscale-only devpi mirror omninode-pc.tail75df5e.ts.net:3141
+      # (OMN-16162), breaking `uv sync --locked` on every runner without
+      # tailnet access. Per uv's own documented precedence
+      # (docs.astral.sh/uv/concepts/configuration-files/: "settings provided
+      # via environment variables take precedence over persistent
+      # configuration"; docs.astral.sh/uv/concepts/indexes/: the default
+      # index is "always treated as lowest priority"), an ambient `UV_INDEX`
+      # env var on the runner always outranks a repo-level index pin --
+      # which is exactly why S1-3's pyproject.toml pin (onex_change_control)
+      # is a DIFFERENT, narrower defense (runner-level *user* config only)
+      # and cannot substitute for sanitizing this step's own environment.
+      #
+      # Deliberately NOT `--index` (the ADDITIONAL-index flag -- it adds a
+      # higher-priority index and sanitizes nothing) -- `--default-index`
+      # pins the actual default/lowest-priority index this step resolves
+      # against.
       - name: Upgrade lockfile
         if: steps.token_check.outputs.has_token == 'true'
         env:
           BUMP_PACKAGE: ${{ steps.vars.outputs.package }}
           REPO_NAME: ${{ matrix.repo }}
+          # Explicitly cleared so no ambient runner-level mirror config
+          # (env var OR user/project uv.toml, once --no-config is also
+          # passed below) can leak into a lock this workflow commits.
+          UV_INDEX: ""
+          UV_DEFAULT_INDEX: ""
+          UV_INDEX_URL: ""
+          UV_EXTRA_INDEX_URL: ""
         run: |
           # Upgrade the package in the lockfile. pyproject.toml's exact pin
           # (if any) was already brought forward by the previous step, so
           # this can now actually resolve to the new version instead of
           # being capped by a stale `==` requirement.
-          uv lock --upgrade-package "$BUMP_PACKAGE"
+          #
+          # --no-config: ignore any ambient uv.toml (user- or
+          # workspace-level) on the runner -- the sanitized env vars above
+          # only clear the ENV channel, not a config-file channel.
+          # --default-index: pin the actual public index this resolution
+          # uses, rather than relying on uv's built-in default (which
+          # --no-config does not change, but which this makes explicit and
+          # future-proof against a workflow-level default changing).
+          uv lock --no-config --default-index https://pypi.org/simple --upgrade-package "$BUMP_PACKAGE"
 
           # Check if anything changed in either file -- a pin-only bump with
           # no lockfile delta (or vice versa) is still a real change to land.

@@ -1011,7 +1011,7 @@ class TestPerformanceRegression:
 ### CI Configuration
 
 ```yaml
-# .github/workflows/test.yml
+# .github/workflows/ci.yml
 - name: Run Performance Tests
   run: |
     uv run pytest tests/performance/ \
