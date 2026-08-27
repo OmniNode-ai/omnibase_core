@@ -157,6 +157,23 @@ waivers:
       The manual, implementer-adjacent OCC evidence-companion authoring step for every omnibase_core PR
       (Codex hand-authoring every companion because the born path could never fire -- no call-occ-autobind.yml
       or call-occ-companion-effect.yml existed in this repo before this ticket). #magic___^_^___line
+  - workflow_file: kb-doc-gate.yml
+    ticket: OMN-16589
+    expires: "2026-09-25"
+    justification: >-
+      Pilot wiring (P1) of the org-wide KB doc gate per operator direction (2026-08-26): a hook that stops
+      new markdown docs from being created in non-KB repos, plus a stub-size cap on edits to existing
+      pointer stubs (strict mode). Thin `uses:` caller of an omniclaude-hosted reusable (kb-doc-gate-reusable.yml)
+      -- own concurrency, no interaction with ci.yml's job graph. NOT a required status check yet: this
+      is the transition-mode pilot (omnibase_core + omnimarket) proving green on real PRs before any required-check
+      flip, per OMN-16589's AC. Waived rather than budget-bumped so the count lock stays flat; once the
+      pilot is proven and the gate is adopted fleet-wide, the natural closure is folding this caller into
+      ci.yml as a job (OMN-16281 pattern), the same structural migration already proven for the call-occ-companion-effect.yml
+      waiver above.
+    retires: >-
+      The status quo where a new or regrown non-KB-canonical markdown doc in this repo had zero mechanical
+      prevention -- human code review was the only backstop against re-growing content that the Wave-1/Wave-2
+      KB migration already moved to the knowledge-base repo.
 metadata:
   generated_by: "C7 / OMN-14907, 2026-07-21"
   baseline_ref: "origin/dev@d09128fc"
@@ -169,3 +186,4 @@ metadata:
     - OMN-16281  # permanent closure follow-through for that waiver -- do not renew a third time
     - OMN-14990  # origin ticket for the call-occ-companion-effect.yml waiver
     - OMN-16359  # bounded renewal + structural-closure ticket for the call-occ-companion-effect.yml waiver -- do not renew a third time
+    - OMN-16589  # kb-doc-gate.yml waiver -- P1 pilot wiring of the org-wide KB doc gate

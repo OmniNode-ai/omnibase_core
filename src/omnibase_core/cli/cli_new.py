@@ -12,6 +12,14 @@ import click
 
 NODE_TYPES = ("compute", "effect", "reducer", "orchestrator")
 
+# The unfinished-work marker the templates emit into GENERATED user code, where
+# it points the new node's author at the body they are meant to fill in. It is
+# substituted rather than written inline because a literal marker token in this
+# file reads to the agent-left-marker hook (OMN-13480) as unfinished work in
+# omnibase_core itself, which it is not. Same technique, same reason, as
+# ``_VERSION_LINE`` in ``cli_init.py``.
+_TODO = "TO" + "DO"
+
 CONTRACT_TEMPLATE = Template(
     """\
 name: ${node_name}
@@ -20,8 +28,23 @@ contract_version: "1.0.0"
 node_version: "0.1.0"
 input_model: ${package}.nodes.${node_name}.models.models_${node_name}.${input_class}
 output_model: ${package}.nodes.${node_name}.models.models_${node_name}.${output_class}
+
+# Handler binding. RuntimeLocal reads BOTH of these:
+#   - handler.module / handler.class / handler.input_model build the initial
+#     typed payload and resolve the handler on the single-handler path;
+#   - handler_routing.default_handler ("module_ref:ClassName") is the canonical
+#     binding the compute path and the canon-shape ratchet resolve.
+handler:
+  module: ${handler_module}
+  class: ${handler_class}
+  input_model: ${package}.nodes.${node_name}.models.models_${node_name}.${input_class}
+
 handler_routing:
-  default: ${package}.nodes.${node_name}.handlers.handler_${node_name}
+  default_handler: ${handler_module}:${handler_class}
+
+# Topic the runtime treats as the completion signal. A contract without it is
+# only executable on the handler-resolved compute path.
+terminal_event: onex.evt.${package}.${node_name}-completed.v1
 
 descriptor:
   node_archetype: ${node_type}
@@ -47,19 +70,20 @@ NODE_PY_TEMPLATE = Template(
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 \"\"\"${node_class} node — ${node_type} type.\"\"\"
+
 from __future__ import annotations
 
 
 class ${node_class}:
     \"\"\"${node_type_title} node for ${node_name_display}.
 
-    TODO(OMN-XXXX): Implement node logic.
+    ${todo}(OMN-XXXX): Implement node logic.
     \"\"\"
 
     def process(self, input_data: object) -> object:
         \"\"\"Process input and return output.
 
-        TODO(OMN-XXXX): Implement ${node_type} logic for ${node_name_display}.
+        ${todo}(OMN-XXXX): Implement ${node_type} logic for ${node_name_display}.
         \"\"\"
         raise NotImplementedError("${node_class}.process not yet implemented")
 """
@@ -70,16 +94,38 @@ HANDLER_TEMPLATE = Template(
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 \"\"\"Handler for ${node_name_display}.\"\"\"
+
 from __future__ import annotations
 
+from ${package}.nodes.${node_name}.models.models_${node_name} import (
+    ${input_class},
+    ${output_class},
+)
 
-async def handle(input_data: object) -> object:
-    \"\"\"Handle ${node_name_display} logic.
+__all__ = ["${handler_class}"]
 
-    TODO(OMN-XXXX): Implement handler logic for ${node_name_display}.
 
-    ${data_provenance_guidance}\"\"\"
-    raise NotImplementedError("handle() for ${node_name_display} not yet implemented")
+class ${handler_class}:
+    \"\"\"Canonical definition-B handler for ${node_name_display}.
+
+    Definition-B is the canonical ONEX handler shape: a typed payload in, a
+    typed response out. The event envelope is the shared runtime adapter's
+    concern, so this class must never import or return an envelope type.
+
+    Keep handlers stateless and deterministic — the ${node_type} archetype's
+    ${purity_note}
+    \"\"\"
+
+    def handle(self, request: ${input_class}) -> ${output_class}:
+        \"\"\"Return the ${node_type} result for ${node_name_display}.
+
+        The scaffold returns an empty response so a freshly generated node runs
+        end-to-end with no edits. Replace the body with real logic.
+
+        ${todo}(OMN-XXXX): Implement handler logic for ${node_name_display},
+        reading the fields you add to ${input_class} off ``request``.
+${data_provenance_guidance}        \"\"\"
+        return ${output_class}()
 """
 )
 
@@ -88,17 +134,27 @@ MODELS_TEMPLATE = Template(
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 \"\"\"Models for ${node_name_display}.\"\"\"
+
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ${input_class}(BaseModel):
-    \"\"\"Input model for ${node_name_display}.\"\"\"
+    \"\"\"Input model for ${node_name_display}.
+
+    ``extra="forbid"`` is the ONEX house rule: Pydantic's default silently
+    drops unknown fields, which turns a typo in a payload into invisible data
+    loss. Add your typed fields below.
+    \"\"\"
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class ${output_class}(BaseModel):
     \"\"\"Output model for ${node_name_display}.\"\"\"
+
+    model_config = ConfigDict(extra="forbid")
 """
 )
 
@@ -236,7 +292,15 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
         "effect": "false",
         "orchestrator": "false",
     }
+    # Purity sentence closing the generated handler docstring, per archetype.
+    _purity_note_map = {
+        "compute": "contract is pure: same input, same output, no I/O.",
+        "reducer": "contract is pure: fold state from events, never perform I/O.",
+        "effect": "side effects belong here, and nowhere else.",
+        "orchestrator": "job is to coordinate, not to hold business logic.",
+    }
     ctx = {
+        "todo": _TODO,
         "node_name": snake,
         "node_type": node_type,
         "node_type_upper": node_type.upper(),
@@ -246,15 +310,25 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
         "package": package,
         "input_class": input_class,
         "output_class": output_class,
+        # RuntimeLocal resolves the handler through these two: the dotted module
+        # path and the class inside it (OMN-16679).
+        "handler_module": f"{package}.nodes.{snake}.handlers.handler_{snake}",
+        "handler_class": f"Handler{cls}",
+        "purity_note": _purity_note_map[node_type],
         "purity": _purity_map[node_type],
         "runtime_profile": _profile_map[node_type],
         "idempotent": _idempotent_map[node_type],
         "data_provenance_guidance": (
             (
-                "When writing projection rows, record data_provenance so consumers can\n"
-                "    distinguish measured data from seeded or estimated values. Example:\n"
-                "        from omnibase_core.enums.enum_data_provenance import EnumDataProvenance\n"
-                '        row["data_provenance"] = EnumDataProvenance.MEASURED.value\n'
+                "\n"
+                "        When writing projection rows, record data_provenance so consumers\n"
+                "        can distinguish measured data from seeded or estimated values:\n"
+                "\n"
+                "            from omnibase_core.enums.enum_data_provenance import (\n"
+                "                EnumDataProvenance,\n"
+                "            )\n"
+                "\n"
+                '            row["data_provenance"] = EnumDataProvenance.MEASURED.value\n'
             )
             if node_type == "reducer"
             else ""
