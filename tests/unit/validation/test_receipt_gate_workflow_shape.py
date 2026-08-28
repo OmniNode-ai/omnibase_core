@@ -249,3 +249,15 @@ def test_workflow_runs_occ_eligibility_before_legacy_receipt_gate() -> None:
     assert "omnibase_core.validation.validator_occ_merge_eligibility" in script
     assert "--occ-commit-sha" in script
     assert "--pr-body-file /tmp/pr_body.txt" in script
+
+
+def test_workflow_passes_supported_pr_commit_snapshot_to_receipt_gate_cli() -> None:
+    """The final receipt gate must receive only the commit evidence its CLI accepts."""
+    script = _workflow_step("Run Receipt-Gate")["run"]
+
+    assert "commit_args=()" in script
+    assert "--pr-commit-text" in script
+    assert "--pr-commit-sha" not in script
+    assert "done < /tmp/pr_commit_shas.txt" not in script
+    assert "done < /tmp/pr_commit_texts.txt" in script
+    assert '"${commit_args[@]}"' in script

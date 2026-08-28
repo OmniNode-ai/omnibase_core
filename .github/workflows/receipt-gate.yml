@@ -820,6 +820,11 @@ jobs:
             PR_OPENED_AT_ARG="--pr-opened-at $PR_OPENED_AT"
           fi
 
+          commit_args=()
+          while IFS= read -r text; do
+            [ -n "$text" ] && commit_args+=(--pr-commit-text "$text")
+          done < /tmp/pr_commit_texts.txt
+
           # shellcheck disable=SC2086
           "$RECEIPT_GATE_PY" -m omnibase_core.validation.validator_receipt_gate_cli \
             --pr-body "$PR_BODY" \
@@ -834,4 +839,5 @@ jobs:
             $ALLOWLIST_ARG \
             $PR_AUTHOR_ARG \
             $PR_NUMBER_ARG \
-            $PR_OPENED_AT_ARG
+            $PR_OPENED_AT_ARG \
+            "${commit_args[@]}"
