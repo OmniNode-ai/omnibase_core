@@ -519,8 +519,14 @@ def action():
         checker = GenericPatternChecker("test.py")
         checker.visit(tree)
 
-        # Should detect all generic function names
-        assert len(checker.issues) >= 11
+        # Should detect all generic function names. `handle` is in this
+        # sample but is deliberately exempt (OMN-16680): it is the canonical
+        # ONEX definition-B handler entry point, not a lazily-named function.
+        flagged = {
+            issue.split("'")[1] for issue in checker.issues if "too generic" in issue
+        }
+        assert "handle" not in flagged
+        assert len(checker.issues) >= 10
         assert all("too generic" in issue.lower() for issue in checker.issues)
 
     def test_checker_detects_functions_with_too_many_parameters(self) -> None:

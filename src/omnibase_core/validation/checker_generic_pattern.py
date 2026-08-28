@@ -28,10 +28,19 @@ class GenericPatternChecker(ast.NodeVisitor):
         """Check function patterns."""
         func_name = node.name
 
-        # Check for overly generic function names
+        # Check for overly generic function names.
+        #
+        # OMN-16680: `handle` is deliberately NOT on this list. It is not a
+        # lazily-named function — it is the canonical ONEX definition-B handler
+        # entry point, `handle(request: ModelX) -> ModelY`, mandated by the
+        # canonical architecture and mechanically enforced by the OMN-14355
+        # canon-shape ratchet. Every conforming ONEX handler is required to be
+        # called `handle`, in this repo (see
+        # `nodes/node_test_selector_compute/handler.py`) and in every consumer
+        # project the `onex new node` scaffold generates. Flagging it told users
+        # to rename the one method they are contractually forbidden to rename.
         generic_names = [
             "process",
-            "handle",
             "execute",
             "run",
             "do",
