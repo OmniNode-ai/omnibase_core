@@ -23,6 +23,6 @@ jobs:
     # carry it yet (promotion deferred by policy), so @main fails with
     # "reusable workflow not found" on every PR. Advance this pin via a
     # normal PR when the gate is updated or main promotion lands.
-    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@82a3394c1af183d8aed36fdb7b0fee011d39372a
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@96dd18962cc7b02f9ae7beb43c13a1ed9df7b559
     with:
       mode: transition

@@ -28,6 +28,20 @@
 # These files provide foundational YAML parsing utilities that sit BEFORE Pydantic validation
 # in the architecture. They need raw YAML access to prepare data for model validation.
 allowed_files:
+  - file: "src/omnibase_core/cli/cli_user_config.py"
+    reason: >-
+      Single raw-YAML entry point for the user-local config file ~/.onex/config.yaml (OMN-16037), in parse_user_config_text.
+      The file is user-editable and deliberately carries sections ONEX does not model — the aws: block
+      written by onex refresh-credentials, plus hand-added keys inside managed sections — which must survive
+      every rewrite, so no single Pydantic model can validate the whole document. This module parses the
+      raw mapping; the managed subset (version/mode/credentials/paths/kafka/logging) is then validated
+      through ModelCliUserConfig in normalize_user_config, which merges the validated sections back over
+      the raw mapping. Parsing therefore sits BEFORE Pydantic by construction. All four CLI writers (config
+      init, init --user-config, refresh-credentials, bootstrap apply) route through this module so exactly
+      one call site exists.
+    added: "2026-08-26"
+    review: "2026-12-13"
+
   - file: "src/omnibase_core/validation/validator_canonical_inference.py"
     reason: >-
       Canonical-inference gate structural agent-invocation carve-out (OMN-13249). To tell an agent-invocation

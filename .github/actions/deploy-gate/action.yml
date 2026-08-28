@@ -1,3 +1,4 @@
+---
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
@@ -12,10 +13,8 @@
 
 name: Deploy Gate Validator
 description: >
-  Validates that PRs touching runtime paths cite a ticket with deploy DoD evidence.
-  Canonical implementation: OMN-9685. Centralised: OMN-9734 (DGM-Phase6).
-  Relocated to omnibase_core: OMN-14277.
-
+  Validates that PRs touching runtime paths cite a ticket with deploy DoD evidence. Canonical implementation:
+  OMN-9685. Centralised: OMN-9734 (DGM-Phase6). Relocated to omnibase_core: OMN-14277. #magic___^_^___line
 inputs:
   pr-number:
     description: PR number to validate
@@ -25,9 +24,8 @@ inputs:
     required: true
   contracts-dir:
     description: >
-      Path to directory containing OMN-XXXX.yaml ticket contracts.
-      Canonical source is onex_change_control (OMN-11423); the reusable
-      workflow checks out OCC and passes _occ/contracts here.
+      Path to directory containing OMN-XXXX.yaml ticket contracts. Canonical source is onex_change_control
+      (OMN-11423); the reusable workflow checks out OCC and passes _occ/contracts here.
     required: false
     default: _occ/contracts
 

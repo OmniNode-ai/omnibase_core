@@ -191,7 +191,7 @@ class TestBootstrapApplyCommand:
 
         runner = CliRunner()
         with patch(
-            "omnibase_core.cli.cli_bootstrap._config_path",
+            "omnibase_core.cli.cli_bootstrap.user_config_path",
             return_value=config_file,
         ):
             result = runner.invoke(cli, ["bootstrap", "apply"], input=config_content)
@@ -203,7 +203,7 @@ class TestBootstrapApplyCommand:
         config_file = tmp_path / ".onex" / "config.yaml"
         runner = CliRunner()
         with patch(
-            "omnibase_core.cli.cli_bootstrap._config_path",
+            "omnibase_core.cli.cli_bootstrap.user_config_path",
             return_value=config_file,
         ):
             result = runner.invoke(cli, ["bootstrap", "apply"], input="key: value\n")
@@ -214,7 +214,7 @@ class TestBootstrapApplyCommand:
         config_file = tmp_path / ".onex" / "config.yaml"
         runner = CliRunner()
         with patch(
-            "omnibase_core.cli.cli_bootstrap._config_path",
+            "omnibase_core.cli.cli_bootstrap.user_config_path",
             return_value=config_file,
         ):
             result = runner.invoke(cli, ["bootstrap", "apply"], input="")
@@ -225,13 +225,10 @@ class TestConfigInitCommand:
     """Tests for onex config init."""
 
     def test_config_init_scaffolds_config_yaml(self, tmp_path: Path) -> None:
-        config_file = tmp_path / ".onex" / "config.yaml"
+        onex_home = tmp_path / ".onex"
+        config_file = onex_home / "config.yaml"
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_config._config_path",
-            return_value=config_file,
-        ):
-            result = runner.invoke(cli, ["config", "init"])
+        result = runner.invoke(cli, ["config", "init", "--onex-home", str(onex_home)])
         assert result.exit_code == 0
         assert config_file.exists()
         content = config_file.read_text()
@@ -239,84 +236,87 @@ class TestConfigInitCommand:
         assert "bootstrap_servers" in content
 
     def test_config_init_does_not_overwrite_existing(self, tmp_path: Path) -> None:
-        config_file = tmp_path / ".onex" / "config.yaml"
+        onex_home = tmp_path / ".onex"
+        config_file = onex_home / "config.yaml"
         config_file.parent.mkdir(parents=True)
         config_file.write_text("existing: config\n")
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_config._config_path",
-            return_value=config_file,
-        ):
-            result = runner.invoke(cli, ["config", "init"])
+        result = runner.invoke(cli, ["config", "init", "--onex-home", str(onex_home)])
         assert result.exit_code != 0
         assert "already exists" in result.output.lower()
         assert config_file.read_text() == "existing: config\n"
 
-    def test_config_init_force_overwrites(self, tmp_path: Path) -> None:
-        config_file = tmp_path / ".onex" / "config.yaml"
+    def test_config_init_force_migrates_preserving_unmanaged_keys(
+        self, tmp_path: Path
+    ) -> None:
+        """--force fills in the managed schema without dropping user content.
+
+        OMN-16037: --force used to blow the file away and rewrite defaults,
+        which destroyed credentials and the `aws:` block written by
+        `onex refresh-credentials`.
+        """
+        onex_home = tmp_path / ".onex"
+        config_file = onex_home / "config.yaml"
         config_file.parent.mkdir(parents=True)
         config_file.write_text("existing: config\n")
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_config._config_path",
-            return_value=config_file,
-        ):
-            result = runner.invoke(cli, ["config", "init", "--force"])
+        result = runner.invoke(
+            cli, ["config", "init", "--force", "--onex-home", str(onex_home)]
+        )
         assert result.exit_code == 0
-        assert "kafka" in config_file.read_text()
+        content = config_file.read_text()
+        assert "kafka" in content
+        assert "existing: config" in content
 
 
 class TestConfigGetCommand:
     """Tests for onex config get <key>."""
 
     def test_config_get_existing_key(self, tmp_path: Path) -> None:
-        config_file = tmp_path / ".onex" / "config.yaml"
+        onex_home = tmp_path / ".onex"
+        config_file = onex_home / "config.yaml"
         config_file.parent.mkdir(parents=True)
         config_file.write_text(
             "kafka:\n  bootstrap_servers: localhost:19092\nmode: standalone\n"
         )
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_config._config_path",
-            return_value=config_file,
-        ):
-            result = runner.invoke(cli, ["config", "get", "mode"])
+        result = runner.invoke(
+            cli, ["config", "get", "mode", "--onex-home", str(onex_home)]
+        )
         assert result.exit_code == 0
+        # `get` is read-only: it reports what is on disk, legacy value included.
         assert "standalone" in result.output
 
     def test_config_get_nested_key(self, tmp_path: Path) -> None:
-        config_file = tmp_path / ".onex" / "config.yaml"
+        onex_home = tmp_path / ".onex"
+        config_file = onex_home / "config.yaml"
         config_file.parent.mkdir(parents=True)
         config_file.write_text("kafka:\n  bootstrap_servers: localhost:19092\n")
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_config._config_path",
-            return_value=config_file,
-        ):
-            result = runner.invoke(cli, ["config", "get", "kafka.bootstrap_servers"])
+        result = runner.invoke(
+            cli,
+            ["config", "get", "kafka.bootstrap_servers", "--onex-home", str(onex_home)],
+        )
         assert result.exit_code == 0
         assert "localhost:19092" in result.output
 
     def test_config_get_missing_key_fails(self, tmp_path: Path) -> None:
-        config_file = tmp_path / ".onex" / "config.yaml"
+        onex_home = tmp_path / ".onex"
+        config_file = onex_home / "config.yaml"
         config_file.parent.mkdir(parents=True)
         config_file.write_text("kafka:\n  bootstrap_servers: localhost:19092\n")
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_config._config_path",
-            return_value=config_file,
-        ):
-            result = runner.invoke(cli, ["config", "get", "nonexistent"])
+        result = runner.invoke(
+            cli, ["config", "get", "nonexistent", "--onex-home", str(onex_home)]
+        )
         assert result.exit_code != 0
 
     def test_config_get_no_config_file_fails(self, tmp_path: Path) -> None:
-        config_file = tmp_path / ".onex" / "config.yaml"
+        onex_home = tmp_path / ".onex"
         runner = CliRunner()
-        with patch(
-            "omnibase_core.cli.cli_config._config_path",
-            return_value=config_file,
-        ):
-            result = runner.invoke(cli, ["config", "get", "mode"])
+        result = runner.invoke(
+            cli, ["config", "get", "mode", "--onex-home", str(onex_home)]
+        )
         assert result.exit_code != 0
         assert (
             "not found" in result.output.lower()
@@ -337,7 +337,7 @@ class TestRefreshCredentialsCommand:
         config_file = tmp_path / ".onex" / "config.yaml"
         runner = CliRunner()
         with patch(
-            "omnibase_core.cli.cli_refresh_credentials._config_path",
+            "omnibase_core.cli.cli_refresh_credentials.user_config_path",
             return_value=config_file,
         ):
             result = runner.invoke(cli, ["refresh-credentials"])
@@ -349,7 +349,7 @@ class TestRefreshCredentialsCommand:
         config_file.write_text("kafka:\n  bootstrap_servers: localhost:19092\n")
         runner = CliRunner()
         with patch(
-            "omnibase_core.cli.cli_refresh_credentials._config_path",
+            "omnibase_core.cli.cli_refresh_credentials.user_config_path",
             return_value=config_file,
         ):
             result = runner.invoke(cli, ["refresh-credentials"])
@@ -367,7 +367,7 @@ class TestRefreshCredentialsCommand:
         runner = CliRunner()
         with (
             patch(
-                "omnibase_core.cli.cli_refresh_credentials._config_path",
+                "omnibase_core.cli.cli_refresh_credentials.user_config_path",
                 return_value=config_file,
             ),
             patch(

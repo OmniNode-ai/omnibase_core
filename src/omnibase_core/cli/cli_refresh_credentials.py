@@ -7,14 +7,17 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
 
 import click
-import yaml
 
-
-def _config_path() -> Path:
-    return Path.home() / ".onex" / "config.yaml"
+from omnibase_core.cli.cli_user_config import (
+    normalize_user_config,
+    read_user_config,
+    user_config_path,
+    write_user_config,
+)
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 def _fetch_aws_secrets(secret_name: str, region: str) -> dict[str, str]:
@@ -42,7 +45,7 @@ def refresh_credentials() -> None:
     fetches the secret from AWS Secrets Manager, and updates the config
     file with the retrieved values.
     """
-    config_file = _config_path()
+    config_file = user_config_path()
 
     if not config_file.exists():
         click.echo(
@@ -52,10 +55,12 @@ def refresh_credentials() -> None:
         )
         sys.exit(1)
 
-    with open(config_file) as f:
-        config = yaml.safe_load(
-            f
-        )  # yaml-ok: user config file, no internal Pydantic model for free-form AWS config
+    try:
+        config = read_user_config(config_file)
+    except ModelOnexError as exc:
+        # boundary-ok: CLI surface — report an unreadable config, do not rewrite it.
+        click.echo(f"Error: {config_file} is not readable: {exc}", err=True)
+        sys.exit(1)
 
     if not config or "aws" not in config:
         click.echo(
@@ -66,11 +71,18 @@ def refresh_credentials() -> None:
         sys.exit(1)
 
     aws_config = config["aws"]
+    if not isinstance(aws_config, dict):
+        click.echo("Error: 'aws' section must be a mapping in config", err=True)
+        sys.exit(1)
+
     secret_name = aws_config.get("secret_name")
     region = aws_config.get("region", "us-east-1")
 
-    if not secret_name:
+    if not secret_name or not isinstance(secret_name, str):
         click.echo("Error: aws.secret_name not set in config", err=True)
+        sys.exit(1)
+    if not isinstance(region, str):
+        click.echo("Error: aws.region must be a string in config", err=True)
         sys.exit(1)
 
     try:
@@ -86,14 +98,29 @@ def refresh_credentials() -> None:
     updated_keys = []
     for secret_key, config_path in key_map.items():
         if secret_key in secrets:
-            section = config
+            section: SerializedDict = config
             for part in config_path[:-1]:
-                section = section.setdefault(part, {})
+                nested = section.setdefault(part, {})
+                if not isinstance(nested, dict):
+                    click.echo(
+                        f"Error: '{part}' section must be a mapping in config", err=True
+                    )
+                    sys.exit(1)
+                section = nested
             section[config_path[-1]] = secrets[secret_key]
             updated_keys.append(secret_key)
 
-    with open(config_file, "w") as f:
-        yaml.dump(config, f, default_flow_style=False)
+    # Normalize on write so a refresh against a legacy file lands on the current
+    # schema instead of re-persisting the old shape (OMN-16037). The `aws:`
+    # section is unmanaged and is preserved verbatim by the merge.
+    try:
+        normalized, _ = normalize_user_config(config)
+    except ModelOnexError as exc:
+        # boundary-ok: CLI surface — refuse to rewrite a file we cannot parse.
+        click.echo(f"Error: {config_file} cannot be migrated: {exc}", err=True)
+        sys.exit(1)
+
+    write_user_config(config_file, normalized)
 
     if updated_keys:
         click.echo(f"Credentials updated: {', '.join(updated_keys)}")

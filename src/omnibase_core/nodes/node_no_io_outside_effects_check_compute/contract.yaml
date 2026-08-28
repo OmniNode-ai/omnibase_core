@@ -22,11 +22,12 @@ description: >
   Keys off each node's declared archetype (top-level node_type and descriptor.node_archetype in its contract.yaml)
   and AST-scans the .py modules co-located with a NON-EFFECT contract for forbidden I/O surfaces: database-driver
   imports (sqlite3/aiosqlite/psycopg/psycopg2/asyncpg/sqlalchemy), network/HTTP clients (httpx/requests/aiohttp/
-  urllib3/socket/urllib.request), subprocess execution, git invocation, Linear API access, filesystem writes
-  (open write-mode, os/shutil mutators, pathlib.Path write methods), and direct event-bus / infra-adapter
-  instantiation. Returns an OMN-2362 ValidationReport with a per-violation FAIL finding — only EFFECT nodes may
-  perform I/O; everything else must be pure. Call sites carrying a # io-ok annotation are suppressed; unparseable
-  contract YAML or Python yields an ERROR finding. Pure — no filesystem access, no clock, no global state. #magic___^_^___line
+  urllib3/socket/urllib.request), subprocess execution, git invocation, Linear API access, filesystem
+  writes (open write-mode, os/shutil mutators, pathlib.Path write methods), and direct event-bus / infra-adapter
+  instantiation. Returns an OMN-2362 ValidationReport with a per-violation FAIL finding — only EFFECT
+  nodes may perform I/O; everything else must be pure. Call sites carrying a # io-ok annotation are suppressed;
+  unparseable contract YAML or Python yields an ERROR finding. Pure — no filesystem access, no clock,
+  no global state. #magic___^_^___line
 input_model: omnibase_core.models.nodes.no_io_outside_effects_check.model_no_io_outside_effects_check_input.ModelNoIoOutsideEffectsCheckInput
 output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
 
