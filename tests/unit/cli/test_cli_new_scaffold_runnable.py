@@ -166,7 +166,7 @@ def test_scaffolded_contract_binds_handler_in_module_ref_class_form(
     assert handler_block["class"] == class_name
     assert (
         handler_block["input_model"]
-        == "binding_proj.nodes.parser_node.models.models_parser_node.ParserNodeInput"
+        == "binding_proj.nodes.parser_node.models.model_parser_node_input.ModelParserNodeInput"
     ), "the runtime builds its initial payload from handler.input_model"
 
 
@@ -181,7 +181,10 @@ def test_scaffolded_handler_is_canonical_definition_b(tmp_path: Path) -> None:
     handler = (contract.parent / "handlers" / "handler_widget_node.py").read_text()
 
     assert "class HandlerWidgetNode:" in handler
-    assert "def handle(self, request: WidgetNodeInput) -> WidgetNodeOutput:" in handler
+    assert (
+        "def handle(self, request: ModelWidgetNodeInput) -> ModelWidgetNodeOutput:"
+        in handler
+    )
     assert "ModelEventEnvelope" not in handler
     assert "ModelHandlerOutput" not in handler
     assert "NotImplementedError" not in handler, (
@@ -206,7 +209,9 @@ def test_scaffolded_node_payload_is_the_typed_input_model(
 
     from importlib import import_module
 
-    models = import_module("payload_proj.nodes.typed_node.models.models_typed_node")
+    models = import_module(
+        "payload_proj.nodes.typed_node.models.model_typed_node_input"
+    )
     handler_mod = import_module(
         "payload_proj.nodes.typed_node.handlers.handler_typed_node"
     )
@@ -226,4 +231,4 @@ def test_scaffolded_node_payload_is_the_typed_input_model(
         handler_mod.HandlerTypedNode.handle = original_handle  # type: ignore[method-assign]
 
     assert len(seen) == 1
-    assert isinstance(seen[0], models.TypedNodeInput)
+    assert isinstance(seen[0], models.ModelTypedNodeInput)

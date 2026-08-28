@@ -389,18 +389,25 @@ def process(data):
         assert len(checker.issues) > 0
         assert any("too generic" in issue for issue in checker.issues)
 
-    def test_generic_function_name_handle(self):
-        """Test detection of generic function name 'handle'."""
+    def test_handle_is_exempt_as_the_canonical_handler_entry_point(self):
+        """OMN-16680: `handle` must NOT be reported as a generic name.
+
+        `handle(request: ModelX) -> ModelY` is the canonical ONEX definition-B
+        handler signature, mandated by the canonical architecture and enforced
+        by the OMN-14355 canon-shape ratchet. Every conforming handler — in this
+        repo and in every project `onex new node` scaffolds — is required to name
+        that method `handle`, so flagging it told users to rename the one method
+        they are contractually forbidden to rename.
+        """
         code = """
-def handle(event):
+def handle(request):
     pass
 """
         tree = ast.parse(code)
         checker = GenericPatternChecker("test.py")
         checker.visit(tree)
 
-        assert len(checker.issues) > 0
-        assert any("too generic" in issue for issue in checker.issues)
+        assert checker.issues == []
 
     def test_generic_function_name_execute(self):
         """Test detection of generic function name 'execute'."""

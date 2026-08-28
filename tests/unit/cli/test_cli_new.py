@@ -59,7 +59,8 @@ def test_onex_new_node_creates_structure(tmp_path: Path) -> None:
     assert (node_dir / "contract.yaml").exists()
     assert (node_dir / "node_my_crawler_effect.py").exists()
     assert (node_dir / "handlers" / "handler_my_crawler.py").exists()
-    assert (node_dir / "models" / "models_my_crawler.py").exists()
+    assert (node_dir / "models" / "model_my_crawler_input.py").exists()
+    assert (node_dir / "models" / "model_my_crawler_output.py").exists()
     assert (node_dir / "__init__.py").exists()
     assert (node_dir / "handlers" / "__init__.py").exists()
     assert (node_dir / "models" / "__init__.py").exists()
@@ -143,10 +144,17 @@ def test_onex_new_node_contract_content(tmp_path: Path) -> None:
         project / "src" / "pkg" / "nodes" / "data_parser" / "contract.yaml"
     ).read_text()
     assert "name: data_parser" in contract
-    assert "node_type: COMPUTE" in contract
-    assert "pkg.nodes.data_parser.models.models_data_parser.DataParserInput" in contract
+    # OMN-16680: EnumNodeType's archetype members are <ARCHETYPE>_GENERIC.
+    # The bare word fails ModelYamlContract.validate_node_type in EITHER
+    # case, because that lookup upper-cases the input before matching.
+    assert "node_type: COMPUTE_GENERIC" in contract
     assert (
-        "pkg.nodes.data_parser.models.models_data_parser.DataParserOutput" in contract
+        "pkg.nodes.data_parser.models.model_data_parser_input.ModelDataParserInput"
+        in contract
+    )
+    assert (
+        "pkg.nodes.data_parser.models.model_data_parser_output.ModelDataParserOutput"
+        in contract
     )
     assert "pkg.nodes.data_parser.handlers.handler_data_parser" in contract
 
@@ -291,8 +299,11 @@ def test_onex_new_node_stubs_have_descriptive_errors(tmp_path: Path) -> None:
 
     # Node file should have descriptive NotImplementedError
     node_content = (node_dir / "node_my_widget_effect.py").read_text()
+    # OMN-16680: the node shell's method is named for its archetype
+    # ("apply_effect" here); a bare `process` is rejected by the `patterns`
+    # validator as generic terminology.
     assert (
-        'NotImplementedError("NodeMyWidget.process not yet implemented")'
+        'NotImplementedError("NodeMyWidget.apply_effect not yet implemented")'
         in node_content
     )
     assert "TODO(OMN-XXXX)" in node_content
@@ -303,10 +314,16 @@ def test_onex_new_node_stubs_have_descriptive_errors(tmp_path: Path) -> None:
     handler_content = (node_dir / "handlers" / "handler_my_widget.py").read_text()
     assert "NotImplementedError" not in handler_content
     assert "TODO(OMN-XXXX)" in handler_content
-    assert "return MyWidgetOutput()" in handler_content
+    assert "return ModelMyWidgetOutput()" in handler_content
 
     # Models should be clean (no NotImplementedError)
-    models_content = (node_dir / "models" / "models_my_widget.py").read_text()
-    assert "NotImplementedError" not in models_content
-    assert "MyWidgetInput" in models_content
-    assert "MyWidgetOutput" in models_content
+    input_content = (node_dir / "models" / "model_my_widget_input.py").read_text()
+    output_content = (node_dir / "models" / "model_my_widget_output.py").read_text()
+    assert "NotImplementedError" not in input_content
+    assert "NotImplementedError" not in output_content
+    assert "ModelMyWidgetInput" in input_content
+    assert "ModelMyWidgetOutput" in output_content
+    # OMN-16680: one model per file — the input module must not also carry the
+    # output model, which is what the `architecture` validator hard-failed on.
+    assert "ModelMyWidgetOutput" not in input_content
+    assert "ModelMyWidgetInput" not in output_content

@@ -20,14 +20,33 @@ NODE_TYPES = ("compute", "effect", "reducer", "orchestrator")
 # ``_VERSION_LINE`` in ``cli_init.py``.
 _TODO = "TO" + "DO"
 
+# OMN-16680 — two fields here are shaped by what `onex validate` actually
+# accepts, and both were wrong before:
+#
+#   node_type  is resolved through EnumNodeType by
+#              ModelYamlContract.validate_node_type, which matches by NAME OR
+#              VALUE *case-insensitively* (it upper-cases the input first). So
+#              the bare archetype word fails in EITHER case — neither "compute"
+#              nor "COMPUTE" is a member. The generic archetype members are
+#              <ARCHETYPE>_GENERIC. The readable archetype still travels in
+#              descriptor.node_archetype.
+#   *_version  are ModelSemVer, which takes only the structured mapping form;
+#              its docstring calls string literals like "1.0.0" deprecated and
+#              ModelYamlContract rejects one outright. Every in-repo contract
+#              already uses the mapping form.
 CONTRACT_TEMPLATE = Template(
     """\
 name: ${node_name}
-node_type: ${node_type_upper}
-contract_version: "1.0.0"
-node_version: "0.1.0"
-input_model: ${package}.nodes.${node_name}.models.models_${node_name}.${input_class}
-output_model: ${package}.nodes.${node_name}.models.models_${node_name}.${output_class}
+
+# Archetype as EnumNodeType names it. The friendly name is descriptor.node_archetype.
+node_type: ${node_type_enum}
+
+# Versions are structured semver, not strings.
+contract_version: {major: 1, minor: 0, patch: 0}
+node_version: {major: 0, minor: 1, patch: 0}
+
+input_model: ${package}.nodes.${node_name}.models.model_${node_name}_input.${input_class}
+output_model: ${package}.nodes.${node_name}.models.model_${node_name}_output.${output_class}
 
 # Handler binding. RuntimeLocal reads BOTH of these:
 #   - handler.module / handler.class / handler.input_model build the initial
@@ -37,7 +56,7 @@ output_model: ${package}.nodes.${node_name}.models.models_${node_name}.${output_
 handler:
   module: ${handler_module}
   class: ${handler_class}
-  input_model: ${package}.nodes.${node_name}.models.models_${node_name}.${input_class}
+  input_model: ${package}.nodes.${node_name}.models.model_${node_name}_input.${input_class}
 
 handler_routing:
   default_handler: ${handler_module}:${handler_class}
@@ -80,12 +99,15 @@ class ${node_class}:
     ${todo}(OMN-XXXX): Implement node logic.
     \"\"\"
 
-    def process(self, input_data: object) -> object:
-        \"\"\"Process input and return output.
+    def ${node_method}(self, input_data: object) -> object:
+        \"\"\"Run the ${node_type} step for ${node_name_display}.
+
+        Named for the archetype rather than a bare ``process``: ``onex validate``
+        rejects ``process``/``run``/``execute`` as generic terminology.
 
         ${todo}(OMN-XXXX): Implement ${node_type} logic for ${node_name_display}.
         \"\"\"
-        raise NotImplementedError("${node_class}.process not yet implemented")
+        raise NotImplementedError("${node_class}.${node_method} not yet implemented")
 """
 )
 
@@ -97,8 +119,10 @@ HANDLER_TEMPLATE = Template(
 
 from __future__ import annotations
 
-from ${package}.nodes.${node_name}.models.models_${node_name} import (
+from ${package}.nodes.${node_name}.models.model_${node_name}_input import (
     ${input_class},
+)
+from ${package}.nodes.${node_name}.models.model_${node_name}_output import (
     ${output_class},
 )
 
@@ -129,15 +153,22 @@ ${data_provenance_guidance}        \"\"\"
 """
 )
 
-MODELS_TEMPLATE = Template(
+# OMN-16680: input and output live in SEPARATE modules. ONEX is a
+# one-model-per-file architecture and `onex validate`'s `architecture`
+# validator hard-fails two BaseModel subclasses in one file. The enclosing
+# DIRECTORY (`models/`) is unchanged, which is the granularity
+# omnibase_core/CLAUDE.md -> External SDK Surface pins as stable.
+MODEL_INPUT_TEMPLATE = Template(
     """\
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-\"\"\"Models for ${node_name_display}.\"\"\"
+\"\"\"Input model for ${node_name_display}.\"\"\"
 
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
+
+__all__ = ["${input_class}"]
 
 
 class ${input_class}(BaseModel):
@@ -149,10 +180,28 @@ class ${input_class}(BaseModel):
     \"\"\"
 
     model_config = ConfigDict(extra="forbid")
+"""
+)
+
+MODEL_OUTPUT_TEMPLATE = Template(
+    """\
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+\"\"\"Output model for ${node_name_display}.\"\"\"
+
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict
+
+__all__ = ["${output_class}"]
 
 
 class ${output_class}(BaseModel):
-    \"\"\"Output model for ${node_name_display}.\"\"\"
+    \"\"\"Output model for ${node_name_display}.
+
+    ``extra="forbid"`` for the same reason as the input model: an unknown field
+    on a response is a contract mismatch, not something to drop silently.
+    \"\"\"
 
     model_config = ConfigDict(extra="forbid")
 """
@@ -262,8 +311,13 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
 
     snake = _to_snake(node_name)
     cls = _to_class(node_name)
-    input_class = f"{cls}Input"
-    output_class = f"{cls}Output"
+    # OMN-16680: the `Model` prefix is the ONEX naming convention for Pydantic
+    # BaseModel classes (omnibase_core/CLAUDE.md), it is what OMN-16679's
+    # AC2 already specified for the generated handler signature
+    # (`handle(request: ModelXInput) -> ModelXOutput`), and the `patterns`
+    # validator enforces it.
+    input_class = f"Model{cls}Input"
+    output_class = f"Model{cls}Output"
 
     node_dir = project_root / "src" / package / "nodes" / snake
     if node_dir.exists():
@@ -299,12 +353,24 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
         "effect": "side effects belong here, and nowhere else.",
         "orchestrator": "job is to coordinate, not to hold business logic.",
     }
+    # The node shell's entry-point method, per archetype. A bare `process`
+    # (and `run`, `execute`, ...) is rejected by the `patterns` validator as
+    # generic terminology; these read as the archetype's own verb (OMN-16680).
+    _node_method_map = {
+        "compute": "compute",
+        "reducer": "reduce_state",
+        "effect": "apply_effect",
+        "orchestrator": "orchestrate",
+    }
     ctx = {
         "todo": _TODO,
         "node_name": snake,
         "node_type": node_type,
-        "node_type_upper": node_type.upper(),
+        # EnumNodeType's generic archetype members (OMN-16680); see the comment
+        # on CONTRACT_TEMPLATE's node_type field.
+        "node_type_enum": f"{node_type.upper()}_GENERIC",
         "node_type_title": node_type.title(),
+        "node_method": _node_method_map[node_type],
         "node_class": f"Node{cls}",
         "node_name_display": node_name,
         "package": package,
@@ -353,10 +419,16 @@ def new_node(node_name: str, node_type: str, project_root: Path | None) -> None:
     models_dir = node_dir / "models"
     models_dir.mkdir()
     (models_dir / "__init__.py").write_text("")
-    (models_dir / f"models_{snake}.py").write_text(MODELS_TEMPLATE.substitute(ctx))
+    (models_dir / f"model_{snake}_input.py").write_text(
+        MODEL_INPUT_TEMPLATE.substitute(ctx)
+    )
+    (models_dir / f"model_{snake}_output.py").write_text(
+        MODEL_OUTPUT_TEMPLATE.substitute(ctx)
+    )
 
     click.echo(f"Created {node_type} node '{node_name}' at {node_dir}")
     click.echo("  contract.yaml")
     click.echo(f"  node_{snake}_{node_type}.py")
     click.echo(f"  handlers/handler_{snake}.py")
-    click.echo(f"  models/models_{snake}.py")
+    click.echo(f"  models/model_{snake}_input.py")
+    click.echo(f"  models/model_{snake}_output.py")
