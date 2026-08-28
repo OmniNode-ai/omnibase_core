@@ -38,6 +38,11 @@ EXPECTED_EXPORTS: tuple[str, ...] = (
     "ModelRendererCapabilityContract",
     # Versioned design-token contract (OMN-13389)
     "ModelRendererThemeContract",
+    # Theme instance + catalog layer (OMN-16882 — Phase C1)
+    "ModelThemeInstance",
+    "ModelThemeCatalogEntry",
+    "ModelThemeCatalog",
+    "ModelThemeActivation",
     # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
     "ModelReviewPacket",
     "ModelOmniStudioEvidenceBundle",

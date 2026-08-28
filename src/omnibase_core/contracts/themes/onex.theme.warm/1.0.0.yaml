@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+theme_id: onex.theme.warm
+schema_version:
+  major: 1
+  minor: 0
+  patch: 0
+  prerelease: null
+  build: null
+instance_revision:
+  major: 1
+  minor: 0
+  patch: 0
+  prerelease: null
+  build: null
+summary: 'Warm dark theme: stone surfaces and an amber accent, for long-session operator consoles where
+  the indigo accent reads cold.'
+tokens:
+  theme_id: onex.theme.warm
+  contract_version:
+    major: 1
+    minor: 0
+    patch: 0
+    prerelease: null
+    build: null
+  color_background_primary: '#1c1917'
+  color_background_secondary: '#292524'
+  color_background_elevated: '#44403c'
+  color_text_primary: '#fafaf9'
+  color_text_secondary: '#d6d3d1'
+  color_text_disabled: '#78716c'
+  color_accent_primary: '#ea580c'
+  color_accent_secondary: '#fb923c'
+  color_status_success: '#84cc16'
+  color_status_warning: '#f59e0b'
+  color_status_error: '#ef4444'
+  color_status_info: '#22d3ee'
+  color_border_default: '#44403c'
+  color_border_strong: '#57534e'
+  spacing_xs: 0.25rem
+  spacing_sm: 0.5rem
+  spacing_md: 1rem
+  spacing_lg: 1.5rem
+  spacing_xl: 2rem
+  font_family_base: '''Inter'', system-ui, sans-serif'
+  font_size_sm: 0.875rem
+  font_size_md: 1rem
+  font_size_lg: 1.125rem
+  font_weight_normal: '400'
+  font_weight_bold: '700'
+  border_radius_sm: 0.25rem
+  border_radius_md: 0.5rem
+  border_radius_lg: 1rem

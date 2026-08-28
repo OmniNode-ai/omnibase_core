@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+theme_id: onex.theme.light
+schema_version:
+  major: 1
+  minor: 0
+  patch: 0
+  prerelease: null
+  build: null
+instance_revision:
+  major: 1
+  minor: 0
+  patch: 0
+  prerelease: null
+  build: null
+summary: 'Default light theme: neutral slate surfaces, indigo accent, WCAG-AA contrast for body text on
+  every declared surface.'
+tokens:
+  theme_id: onex.theme.light
+  contract_version:
+    major: 1
+    minor: 0
+    patch: 0
+    prerelease: null
+    build: null
+  color_background_primary: '#ffffff'
+  color_background_secondary: '#f8fafc'
+  color_background_elevated: '#ffffff'
+  color_text_primary: '#0f172a'
+  color_text_secondary: '#475569'
+  color_text_disabled: '#94a3b8'
+  color_accent_primary: '#4f46e5'
+  color_accent_secondary: '#6366f1'
+  color_status_success: '#15803d'
+  color_status_warning: '#b45309'
+  color_status_error: '#b91c1c'
+  color_status_info: '#0369a1'
+  color_border_default: '#e2e8f0'
+  color_border_strong: '#cbd5e1'
+  spacing_xs: 0.25rem
+  spacing_sm: 0.5rem
+  spacing_md: 1rem
+  spacing_lg: 1.5rem
+  spacing_xl: 2rem
+  font_family_base: '''Inter'', system-ui, sans-serif'
+  font_size_sm: 0.875rem
+  font_size_md: 1rem
+  font_size_lg: 1.125rem
+  font_weight_normal: '400'
+  font_weight_bold: '700'
+  border_radius_sm: 0.25rem
+  border_radius_md: 0.5rem
+  border_radius_lg: 1rem
