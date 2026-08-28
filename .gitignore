@@ -349,10 +349,41 @@ build/
 *.egg-info/
 # === end onex-managed: python ===
 
-# Consumer-graph cache, its single-flight lock, and any interrupted temp file.
-# Derived build artifacts keyed to the local HEAD SHA -- never committed. Scoped
-# to these names, not all of .onex_state/, which holds tracked evidence
-# (OMN-15431).
-.onex_state/consumer-graph.json
-.onex_state/consumer-graph.lock
-.onex_state/consumer-graph.json.*.tmp
+# -----------------------------------------------------------------------------
+# .onex_state/ -- disposable by default, two named durable subtrees (OMN-15989)
+# -----------------------------------------------------------------------------
+# THE RULE (write it down once, so no one adjudicates it per file again):
+#
+#   Inside a repo checkout, `.onex_state/` is DISPOSABLE. The only durable
+#   content is what lives under the two subtrees named below --
+#   `.onex_state/evidence/` and `.onex_state/friction/` -- which are committed
+#   and stay visible to `git status`.
+#
+# Everything else under `.onex_state/` is regenerable from a command or is a
+# per-run log/lock/scratch file: the consumer-graph cache and its single-flight
+# lock (OMN-15431), push logs and exit codes, prepush-waiter scripts and their
+# output, node run state, and lane scratch that leaked into the worktree root.
+#
+# State that must OUTLIVE the checkout does not belong in a checkout at all.
+# It lives outside every worktree at `$OMNI_HOME/.onex_state/` -- lane scratch,
+# ledger locks, claim/run state (see `omnibase_infra/scripts/lane_scratch.py`,
+# whose root resolves to `$OMNI_HOME/.onex_state/lane_scratch` for exactly this
+# reason). Nothing here can reach it, so worktree teardown cannot take it.
+#
+# WHY: an untracked generated artifact left a landed, 0-ahead/0-behind worktree
+# dirty, and a dirty worktree escalates teardown into a per-incident
+# owner-approval gate. Six omnibase_core worktrees were blocked this way at the
+# time of writing, none of them by real work. One standing rule replaces an
+# unbounded series of identical manual decisions.
+#
+# SHAPE: ignore the top level (`/*`), then re-include the durable subtrees. The
+# `/*` form is deliberate -- ignoring `.onex_state/` outright would exclude the
+# directory itself, and git cannot re-include a path whose parent directory is
+# excluded, so the negations below would be dead.
+#
+# The rule is asserted by tests/validation/test_onex_state_disposable_gitignore.py,
+# which names both sides of the line and carries a negative control proving this
+# block never widens over src/ or tests/.
+.onex_state/*
+!.onex_state/evidence/
+!.onex_state/friction/
