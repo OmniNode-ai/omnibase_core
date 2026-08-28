@@ -36,6 +36,10 @@ from omnibase_core.models.dashboard import (
     ModelRendererCapabilityContract,
     ModelRendererThemeContract,
     ModelReviewPacket,
+    ModelThemeActivation,
+    ModelThemeCatalog,
+    ModelThemeCatalogEntry,
+    ModelThemeInstance,
     ModelWidgetEnvelope,
     ModelWidgetProvenance,
 )
@@ -67,8 +71,13 @@ MODELS: dict[str, type[BaseModel]] = {
     "ModelPermissionContract": ModelPermissionContract,
     "ModelEvidenceRequirementContract": ModelEvidenceRequirementContract,
     "ModelRendererCapabilityContract": ModelRendererCapabilityContract,
-    # Versioned design-token contract (OMN-13389)
+    # Versioned design-token contract (OMN-13389) + the instance/catalog
+    # layer that gives a token VALUE somewhere to live (OMN-16882, Phase C1)
     "ModelRendererThemeContract": ModelRendererThemeContract,
+    "ModelThemeInstance": ModelThemeInstance,
+    "ModelThemeCatalogEntry": ModelThemeCatalogEntry,
+    "ModelThemeCatalog": ModelThemeCatalog,
+    "ModelThemeActivation": ModelThemeActivation,
     # One versioned widget envelope — the unit Plane 1 distributes; carries the
     # config half ModelComponentContract never had (OMN-16883, Phase C2)
     "ModelWidgetEnvelope": ModelWidgetEnvelope,

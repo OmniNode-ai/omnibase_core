@@ -38,6 +38,11 @@ EXPECTED_EXPORTS: tuple[str, ...] = (
     "ModelRendererCapabilityContract",
     # Versioned design-token contract (OMN-13389)
     "ModelRendererThemeContract",
+    # Theme instance + catalog layer (OMN-16882 — Phase C1)
+    "ModelThemeInstance",
+    "ModelThemeCatalogEntry",
+    "ModelThemeCatalog",
+    "ModelThemeActivation",
     # One versioned widget envelope (OMN-16883 — Phase C2)
     "ModelWidgetEnvelope",
     "ModelWidgetProvenance",

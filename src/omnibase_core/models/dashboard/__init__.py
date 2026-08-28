@@ -97,6 +97,12 @@ from omnibase_core.models.dashboard.model_status_item_config import (
 from omnibase_core.models.dashboard.model_table_column_config import (
     ModelTableColumnConfig,
 )
+from omnibase_core.models.dashboard.model_theme_activation import ModelThemeActivation
+from omnibase_core.models.dashboard.model_theme_catalog import ModelThemeCatalog
+from omnibase_core.models.dashboard.model_theme_catalog_entry import (
+    ModelThemeCatalogEntry,
+)
+from omnibase_core.models.dashboard.model_theme_instance import ModelThemeInstance
 from omnibase_core.models.dashboard.model_widget_config_chart import (
     ModelWidgetConfigChart,
 )
@@ -122,6 +128,11 @@ from omnibase_core.models.dashboard.model_widget_provenance import (
 )
 
 __all__: tuple[str, ...] = (
+    # Theme contract, instances, and catalog (OMN-13389 / OMN-16882)
+    "ModelThemeActivation",
+    "ModelThemeCatalog",
+    "ModelThemeCatalogEntry",
+    "ModelThemeInstance",
     # Dashboard Configuration
     "ModelDashboardConfig",
     "ModelDashboardLayoutConfig",
