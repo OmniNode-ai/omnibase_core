@@ -185,12 +185,20 @@ def validate(
             },
         )
 
+    # OMN-16680: declared OUTSIDE the try because `ctx.exit()` must be called
+    # outside it. `ctx.exit()` signals completion by raising
+    # `click.exceptions.Exit`, which subclasses RuntimeError and was therefore
+    # caught by the `except Exception` catch-all below and re-raised as
+    # `ClickException("Unexpected error: EnumCLIExitCode.SUCCESS")`. That made
+    # exit code 1 the only reachable outcome of `onex validate` on ANY input,
+    # including a fully clean tree.
+    overall_success = True
+
     try:
         # Import validation suite lazily to avoid circular imports
         from omnibase_core.validation.validator_cli import ServiceValidationSuite
 
         suite = ServiceValidationSuite()
-        overall_success = True
 
         for directory in directories:
             if not quiet:
@@ -214,8 +222,6 @@ def validate(
             else:
                 click.echo(click.style("Validation failures detected.", fg="red"))
 
-        ctx.exit(EnumCLIExitCode.SUCCESS if overall_success else EnumCLIExitCode.ERROR)
-
     except ModelOnexError as e:
         emit_log_event_sync(
             EnumLogLevel.ERROR,
@@ -236,6 +242,8 @@ def validate(
             {"error": str(e), "type": type(e).__name__},
         )
         raise click.ClickException(f"Unexpected error: {e}") from e
+
+    ctx.exit(EnumCLIExitCode.SUCCESS if overall_success else EnumCLIExitCode.ERROR)
 
 
 def _display_validation_result(

@@ -652,10 +652,17 @@ class TestCliEdgeCases:
 
         runner = CliRunner()
 
-        # Mock the validation suite to raise a ModelOnexError
-        # Note: ServiceValidationSuite is imported lazily inside the validate function
+        # Mock the validation suite to raise a ModelOnexError.
+        # OMN-16680: patch the name `validate` actually imports
+        # (`validator_cli.ServiceValidationSuite`), NOT the defining module.
+        # `validator_cli` re-exports the class by value at import time, so
+        # patching `service_validation_suite.ServiceValidationSuite` rebinds a
+        # name nothing reads and the mock never takes effect. That made this
+        # test pass for the wrong reason: the real suite ran clean, and the exit
+        # code was non-zero only because `ctx.exit()`'s `click.exceptions.Exit`
+        # was being swallowed by the command's catch-all. It asserted the bug.
         with patch(
-            "omnibase_core.services.service_validation_suite.ServiceValidationSuite"
+            "omnibase_core.validation.validator_cli.ServiceValidationSuite"
         ) as mock_suite_class:
             mock_suite = MagicMock()
             mock_suite.run_all_validations.side_effect = ModelOnexError(
@@ -677,10 +684,11 @@ class TestCliEdgeCases:
         """Test that unexpected errors are properly handled in validate."""
         runner = CliRunner()
 
-        # Mock the validation suite to raise an unexpected error
-        # Note: ServiceValidationSuite is imported lazily inside the validate function
+        # Mock the validation suite to raise an unexpected error.
+        # OMN-16680: see test_validate_with_onex_error — patch the re-exported
+        # name in `validator_cli`, which is what `validate` imports.
         with patch(
-            "omnibase_core.services.service_validation_suite.ServiceValidationSuite"
+            "omnibase_core.validation.validator_cli.ServiceValidationSuite"
         ) as mock_suite_class:
             mock_suite = MagicMock()
             mock_suite.run_all_validations.side_effect = RuntimeError(
