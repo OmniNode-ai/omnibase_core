@@ -36,6 +36,8 @@ from omnibase_core.models.dashboard import (
     ModelRendererCapabilityContract,
     ModelRendererThemeContract,
     ModelReviewPacket,
+    ModelWidgetEnvelope,
+    ModelWidgetProvenance,
 )
 from omnibase_core.models.notifications import ModelStateTransitionNotification
 from omnibase_core.models.projectors import (
@@ -67,6 +69,10 @@ MODELS: dict[str, type[BaseModel]] = {
     "ModelRendererCapabilityContract": ModelRendererCapabilityContract,
     # Versioned design-token contract (OMN-13389)
     "ModelRendererThemeContract": ModelRendererThemeContract,
+    # One versioned widget envelope — the unit Plane 1 distributes; carries the
+    # config half ModelComponentContract never had (OMN-16883, Phase C2)
+    "ModelWidgetEnvelope": ModelWidgetEnvelope,
+    "ModelWidgetProvenance": ModelWidgetProvenance,
     # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
     "ModelReviewPacket": ModelReviewPacket,
     "ModelOmniStudioEvidenceBundle": ModelOmniStudioEvidenceBundle,
