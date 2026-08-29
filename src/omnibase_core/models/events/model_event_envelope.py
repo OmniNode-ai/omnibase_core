@@ -516,6 +516,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "source_tool": self.source_tool,
             "target_tool": self.target_tool,
             "event_type": self.event_type,
+            "tenant_id": self.tenant_id,
             "payload_type": self.payload_type,
             "payload_schema_version": (
                 str(self.payload_schema_version)

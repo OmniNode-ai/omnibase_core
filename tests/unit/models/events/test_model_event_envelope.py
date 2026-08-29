@@ -1305,6 +1305,7 @@ class TestEnvelopeCarriesTenantDimension:
 
         assert envelope.tenant_id == "beta-business-proof"
         assert envelope.model_dump()["tenant_id"] == "beta-business-proof"
+        assert envelope.to_dict_lazy()["tenant_id"] == "beta-business-proof"
 
     def test_tenant_survives_a_json_round_trip(self) -> None:
         """A dimension that does not survive the wire is not recorded at all."""
@@ -1326,6 +1327,7 @@ class TestEnvelopeCarriesTenantDimension:
         )
 
         assert envelope.tenant_id is None
+        assert envelope.to_dict_lazy()["tenant_id"] is None
 
     def test_an_unknown_field_errors_instead_of_being_swallowed(self) -> None:
         """Carry-or-error: the failure mode that hid this must be impossible.
