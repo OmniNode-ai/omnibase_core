@@ -1,5 +1,24 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
+## v0.47.0 (2026-08-29)
+
+### Breaking Changes
+- bump omnibase_core to v0.47.0 — `ModelWidgetConfigStatusGrid.status_colors` is **removed** (#1612). The field carried a `Mapping[str, str]` of raw hex colours in the config's own default, which is the decision the theme contract exists to make; it is replaced by `severity_roles: tuple[ModelSeverityRole, ...]` naming theme tokens, and colours now resolve through the active theme instance. The model is `extra="forbid"`, so any caller still passing `status_colors=` raises. Minor bump per pre-1.0 semver convention for a breaking public-API deletion.
+
+### Features
+- feat theme instances + theme catalog — `ModelThemeInstance`, `ModelThemeCatalog`, `ModelThemeCatalogEntry`, `ModelThemeActivation`, `util_theme_catalog`, and the `onex.theme.{light,dark,warm}` 1.0.0 theme contracts (#1608)
+- feat one versioned widget envelope — `ModelWidgetEnvelope`, `ModelWidgetProvenance`, `util_widget_envelope` (#1610)
+- feat semantic severity for StatusGrid — `EnumStatusSeverity`, `EnumStatusSecondaryKind`, `ModelSeverityRole` + `DEFAULT_SEVERITY_ROLES`, `ModelSeverityVerdict`, `ModelStatusSecondary` (#1612)
+- feat the transport envelope carries the tenant dimension — an OPTIONAL `tenant` field on `ModelEventEnvelope` (additive; the model stays `extra="forbid"`) (#1611)
+- feat `onex user-config` CLI surface + `ModelCliUserConfig` family, unifying the `~/.onex/config.yaml` schema across all CLI writers (#1604)
+
+### Changes
+- chore make `.onex_state` disposable-by-default with two named durable subtrees (#1609)
+- fix make a freshly scaffolded ONEX project pass `onex validate` (#1607)
+- fix pass commits into the receipt-gate workflow (#1605)
+- fix retry Enable Auto-Merge with `--squash` when no queue is active (#1606)
+- chore add omninode_infra to the dependency-cascade downstream matrix (#1613)
+
 ## v0.46.0 (2026-06-25)
 
 ### Breaking Changes
