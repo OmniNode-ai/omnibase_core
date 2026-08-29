@@ -3613,8 +3613,17 @@ jobs:
       }}
     # zone-filter is in `needs:` so this gate can re-evaluate the SAME
     # precondition the test jobs are gated on (OMN-15315). It is read for its
-    # `docs_only` output only, never for its `.result`.
-    needs: [test-parallel, tests-integration, zone-filter]
+    # `docs_only` output only, never for its `.result`. quality-gate is ALSO
+    # in `needs:` (OMN-16625, CodeRabbit finding on PR#1618): since OMN-16625
+    # detached zone-filter from `needs: [quality-gate]` so `docs_only` is
+    # known in parallel with quality-gate's leaves instead of after them,
+    # `docs_only` is now computed from the diff's file paths alone and no
+    # longer implies quality-gate succeeded — a genuinely docs-only diff can
+    # still fail quality-gate (e.g. a real doc-content-scan violation), which
+    # skips test-parallel/tests-integration via their own `quality-gate ==
+    # success` precondition. Without this, that skip would be indistinguishable
+    # from a legitimate docs-only skip and this gate would wrongly pass.
+    needs: [test-parallel, tests-integration, zone-filter, quality-gate]
     if: always()
 
     steps:
@@ -3626,12 +3635,14 @@ jobs:
           parallel="${{ needs.test-parallel.result }}"
           integration="${{ needs.tests-integration.result }}"
           docs_only="${{ needs.zone-filter.outputs.docs_only }}"
+          quality="${{ needs.quality-gate.result }}"
 
           echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
           echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Parallel Tests (dynamic splits) | $parallel |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Integration Tests (4 splits) | $integration |" >> "$GITHUB_STEP_SUMMARY"
           echo "| zone-filter docs_only | ${docs_only:-(unset)} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| quality-gate | $quality |" >> "$GITHUB_STEP_SUMMARY"
 
           # OMN-15315 (OMN-15304 vector 6 — result triage). The previous pass
           # condition admitted `success` OR `skipped` for both upstreams, so a
@@ -3650,13 +3661,14 @@ jobs:
           # because the vector-6 analyzer scans this whole `run:` blob for
           # result tokens and a comment would register as an untriaged
           # upstream), so exactly ONE of their skips is legitimate — a
-          # docs-only PR. This
-          # gate re-evaluates that precondition itself and admits `skipped` only
-          # when `docs_only == 'true'`. A skip caused by a non-success
-          # `quality-gate` is NOT admitted: tests that never ran because quality
-          # failed are absent tests, and this gate must say so. `zone-filter`
-          # itself is gated on `quality-gate` succeeding, so if quality fails,
-          # `docs_only` is empty and this gate fails closed on that path too.
+          # docs-only PR whose quality-gate ALSO succeeded. This gate
+          # re-evaluates that full precondition itself (OMN-16625: docs_only
+          # AND quality-gate success, not docs_only alone — see the `needs:`
+          # comment above for why quality-gate's own success can no longer be
+          # inferred from docs_only being set) and admits `skipped` only when
+          # both hold. A skip caused by a non-success `quality-gate` is NOT
+          # admitted: tests that never ran because quality failed are absent
+          # tests, and this gate must say so.
           #
           # The gate stops at the first offending upstream; the per-upstream
           # results are already written to the job summary above.
@@ -3670,12 +3682,12 @@ jobs:
                 echo "$NAME: success"
                 ;;
               skipped)
-                if [ "$docs_only" != "true" ]; then
+                if [ "$docs_only" != "true" ] || [ "$quality" != "success" ]; then
                   echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
-                  echo "::error::$NAME was SKIPPED on a non-docs-only change (zone-filter docs_only='${docs_only:-unset}') — the absence of a test result is not a passing one."
+                  echo "::error::$NAME was SKIPPED but the docs-only precondition does not hold (zone-filter docs_only='${docs_only:-unset}', quality-gate result='${quality:-unset}') — the absence of a test result is not a passing one."
                   exit 1
                 fi
-                echo "$NAME: skipped (docs-only change — declared precondition not met)"
+                echo "$NAME: skipped (docs-only change, quality-gate succeeded — declared precondition met)"
                 ;;
               failure|cancelled)
                 echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
