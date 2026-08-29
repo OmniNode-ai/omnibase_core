@@ -24,8 +24,10 @@ import pytest
 
 from scripts.ci.detect_test_paths import (
     CI_CONTRACT_TEST_ROOT,
+    _count_test_files,
     ci_contract_test_paths,
     compute_selection,
+    is_test_file_name,
     unnarrowable_test_paths,
 )
 from scripts.ci.test_selection_closure import compute_closure_selection
@@ -309,3 +311,28 @@ def test_source_only_diff_is_byte_for_byte_the_pre_existing_closure_path() -> No
 
     assert selection.is_full_suite is False
     assert selection.selected_paths == expected
+
+
+def test_split_count_counts_every_configured_test_filename_pattern(
+    tmp_path: Path,
+) -> None:
+    """Volume counting honours ALL of ``TEST_FILE_PATTERNS``, not just half.
+
+    ``_contains_collectable_test`` admits a directory on either pattern, so a
+    directory can be SELECTED on the strength of ``*_test.py`` files. If the
+    volume counter only globbed ``test_*.py`` it would not count the files that
+    justified the selection, undercount the volume, and emit too few matrix
+    splits — a selection whose own proof is invisible to its sizing.
+
+    Asserted against the counter directly so the invariant holds regardless of
+    which patterns happen to be populated in the live tree today.
+    """
+    suite = tmp_path / "tests" / "suite"
+    suite.mkdir(parents=True)
+    (suite / "test_prefix_style.py").write_text("def test_a() -> None: ...\n")
+    (suite / "suffix_style_test.py").write_text("def test_b() -> None: ...\n")
+    (suite / "helper.py").write_text("VALUE = 1\n")
+
+    assert _count_test_files(["tests/suite/"], tmp_path) == 2
+    assert is_test_file_name("suffix_style_test.py") is True
+    assert is_test_file_name("helper.py") is False

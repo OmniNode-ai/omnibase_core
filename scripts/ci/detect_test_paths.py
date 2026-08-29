@@ -557,18 +557,29 @@ def _volume_split_count(selected_paths: list[str], repo_root: Path | None) -> in
 
 
 def _count_test_files(selected_paths: list[str], repo_root: Path) -> int:
-    """Count ``test_*.py`` files a selection covers.
+    """Count the collectable test files a selection covers.
 
     ``selected_paths`` entries are either a directory (module-grain sentinel,
     e.g. ``tests/unit/`` or ``tests/unit/cli/`` — walked recursively) or an
     individual test FILE (OMN-14921 file-grain closure output, e.g.
     ``tests/unit/cli/test_foo.py`` — counted directly, no walk needed).
+
+    Directory walks count every name :func:`is_test_file_name` accepts — i.e.
+    the whole of ``TEST_FILE_PATTERNS``, which mirrors pytest's ``python_files``
+    — not just the ``test_*.py`` half. Counting only one pattern here while
+    ``_contains_collectable_test`` admits both would let a directory be SELECTED
+    on the strength of files this function then does not count, undercounting
+    the volume and emitting too few matrix splits (OMN-16917 review finding).
     """
     total = 0
     for rel in selected_paths:
         target = repo_root / rel
         if target.is_dir():
-            total += sum(1 for _ in target.rglob("test_*.py"))
+            total += sum(
+                1
+                for candidate in target.rglob("*.py")
+                if is_test_file_name(candidate.name)
+            )
         elif target.is_file():
             total += 1
     return total
