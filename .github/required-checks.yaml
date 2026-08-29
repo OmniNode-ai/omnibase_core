@@ -314,10 +314,12 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["zone-filter"]
-    skip_semantics: neutral_ok
-    rationale: "Job 'zone-filter' has a job-level `if: always() && needs.quality-gate.result == 'success'`
-      — vector-2 (ungated job-level if referencing needs.*). A skipped zone-filter counts as passing under
-      branch protection. skip_semantics: neutral_ok pending triage in OMN-14864."
+    skip_semantics: never
+    rationale: "OMN-16625: 'zone-filter' detached from `needs: [quality-gate]` and its job-level `if:`
+      simplified to `always()` -- it must now be the FIRST job to compute docs_only (in parallel with
+      quality-gate's leaves) so those leaves can gate on it too. `if: always()` is provably ALWAYS_TRUE_FOR_PR,
+      closing the vector-2 finding this row previously carried a neutral_ok override for (OMN-14864);
+      skip_semantics reverted to never since a skip is no longer even reachable."
 
   - name: "Contract Compliance Check"
     mode: REQUIRED
@@ -406,8 +408,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["sdk-boundary-check"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'sdk-boundary-check' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'sdk-boundary-check'
+      counts as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate
+      independently re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as
+      passing (mirrors the Zone Filter row's own precedent above, and tests-gate's proven per-upstream
+      skip policy, OMN-15315)."
 
   - name: "Detect Secrets"
     mode: REQUIRED
@@ -415,8 +422,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["detect-secrets"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'detect-secrets' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'detect-secrets'
+      counts as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate
+      independently re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as
+      passing (mirrors the Zone Filter row's own precedent above, and tests-gate's proven per-upstream
+      skip policy, OMN-15315)."
 
   - name: "Reject localhost/env fallbacks (OMN-7227)"
     mode: REQUIRED
@@ -424,8 +436,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["no-env-fallbacks"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'no-env-fallbacks' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'no-env-fallbacks'
+      counts as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate
+      independently re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as
+      passing (mirrors the Zone Filter row's own precedent above, and tests-gate's proven per-upstream
+      skip policy, OMN-15315)."
 
   - name: "Exports Validation"
     mode: REQUIRED
@@ -433,8 +450,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["exports-validation"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'exports-validation' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'exports-validation'
+      counts as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate
+      independently re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as
+      passing (mirrors the Zone Filter row's own precedent above, and tests-gate's proven per-upstream
+      skip policy, OMN-15315)."
 
   - name: "Pyright Type Checking"
     mode: REQUIRED
@@ -442,8 +464,12 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["pyright"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'pyright' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'pyright' counts
+      as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate independently
+      re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as passing (mirrors
+      the Zone Filter row's own precedent above, and tests-gate's proven per-upstream skip policy, OMN-15315)."
 
   - name: "Code Quality"
     mode: REQUIRED
@@ -478,8 +504,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["check-deterministic-skills"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'check-deterministic-skills' (vector-2 -- ungated job-level if referencing needs.*). A skipped
+      'check-deterministic-skills' counts as passing under branch protection, but this is a deliberate,
+      re-derived skip: quality-gate independently re-reads needs.zone-filter.outputs.docs_only before
+      ever treating a skipped leaf as passing (mirrors the Zone Filter row's own precedent above, and
+      tests-gate's proven per-upstream skip policy, OMN-15315)."
 
   - name: "Documentation Validation"
     mode: REQUIRED
@@ -487,8 +518,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["docs-validation"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'docs-validation' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'docs-validation'
+      counts as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate
+      independently re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as
+      passing (mirrors the Zone Filter row's own precedent above, and tests-gate's proven per-upstream
+      skip policy, OMN-15315)."
 
   - name: "Node Purity Check"
     mode: REQUIRED
@@ -496,8 +532,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["node-purity-check"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'node-purity-check' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'node-purity-check'
+      counts as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate
+      independently re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as
+      passing (mirrors the Zone Filter row's own precedent above, and tests-gate's proven per-upstream
+      skip policy, OMN-15315)."
 
   - name: "Enum Governance Check"
     mode: REQUIRED
@@ -514,8 +555,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["contract-config-compliance"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'contract-config-compliance' (vector-2 -- ungated job-level if referencing needs.*). A skipped
+      'contract-config-compliance' counts as passing under branch protection, but this is a deliberate,
+      re-derived skip: quality-gate independently re-reads needs.zone-filter.outputs.docs_only before
+      ever treating a skipped leaf as passing (mirrors the Zone Filter row's own precedent above, and
+      tests-gate's proven per-upstream skip policy, OMN-15315)."
 
   - name: "Breaking-Schema-Change (OMN-12621)"
     mode: REQUIRED
@@ -523,8 +569,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["breaking-schema-change"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'breaking-schema-change' (vector-2 -- ungated job-level if referencing needs.*). A skipped 'breaking-schema-change'
+      counts as passing under branch protection, but this is a deliberate, re-derived skip: quality-gate
+      independently re-reads needs.zone-filter.outputs.docs_only before ever treating a skipped leaf as
+      passing (mirrors the Zone Filter row's own precedent above, and tests-gate's proven per-upstream
+      skip policy, OMN-15315)."
 
   - name: "Demo-Path Topic Coherence (OMN-12777)"
     mode: REQUIRED
@@ -532,8 +583,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["demo-path-topic-coherence"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'demo-path-topic-coherence' (vector-2 -- ungated job-level if referencing needs.*). A skipped
+      'demo-path-topic-coherence' counts as passing under branch protection, but this is a deliberate,
+      re-derived skip: quality-gate independently re-reads needs.zone-filter.outputs.docs_only before
+      ever treating a skipped leaf as passing (mirrors the Zone Filter row's own precedent above, and
+      tests-gate's proven per-upstream skip policy, OMN-15315)."
 
   - name: "Dispatch-Surface Test Required (OMN-12960)"
     mode: REQUIRED
@@ -541,8 +597,13 @@ gates:
     producer_kind: local
     workflow: ci.yml
     job_path: ["dispatch-surface-test-required"]
-    skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    skip_semantics: neutral_ok
+    rationale: "OMN-16625: job-level `if: always() && needs.zone-filter.outputs.docs_only != 'true'` added
+      to 'dispatch-surface-test-required' (vector-2 -- ungated job-level if referencing needs.*). A skipped
+      'dispatch-surface-test-required' counts as passing under branch protection, but this is a deliberate,
+      re-derived skip: quality-gate independently re-reads needs.zone-filter.outputs.docs_only before
+      ever treating a skipped leaf as passing (mirrors the Zone Filter row's own precedent above, and
+      tests-gate's proven per-upstream skip policy, OMN-15315)."
 
   - name: "Quality Gate"
     mode: REQUIRED
@@ -551,7 +612,11 @@ gates:
     workflow: ci.yml
     job_path: ["quality-gate"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-16625's two-tier
+      docs_only short-circuit inlines the literal `${{ needs.<job>.result }}` expression in each aggregator
+      for-loop's item list (tests-gate's proven shape) rather than routing through a preamble-assigned
+      shell variable, so the vector-6 analyzer proves the triage fail-closed on its own -- no result_triage
+      waiver needed."
 
   - name: "Tests Gate"
     mode: REQUIRED

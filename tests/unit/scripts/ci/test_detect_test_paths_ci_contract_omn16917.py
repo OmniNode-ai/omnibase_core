@@ -127,7 +127,17 @@ def test_omn16625_diff_selects_the_ci_contract_class_not_the_unit_tree() -> None
 
 
 def test_omn16625_diff_selects_its_own_touched_test_modules_at_file_grain() -> None:
-    """The OMN-16745 grain lesson: a touched test module narrows to ITSELF."""
+    """The OMN-16745 grain lesson: a touched test module narrows to ITSELF.
+
+    The real OMN-16625 test module reads `.github/workflows/ci.yml` and
+    `.github/required-checks.yaml` off disk (it asserts the quality-gate's
+    docs-only short circuit against those manifests), so once it lands it is
+    ALSO a member of the derived CI-contract class -- membership in the two
+    sets is not exclusive. What OMN-16745 actually guarantees, and what this
+    test proves, is narrower: a touched test module is always selected by
+    name, whether or not it independently qualifies for the derived class,
+    and it is never widened to its containing directory.
+    """
     selection = compute_selection(
         changed_files=OMN_16625_DIFF,
         adjacency_path=ADJ,
@@ -135,12 +145,10 @@ def test_omn16625_diff_selects_its_own_touched_test_modules_at_file_grain() -> N
         repo_root=REPO_ROOT,
     )
 
-    # This module carries no `.github` literal, so it is NOT in the derived
-    # class — it is selected purely because the diff touches it.
     touched = (
         "tests/unit/validation/test_quality_gate_docs_only_short_circuit_omn16625.py"
     )
-    assert touched not in ci_contract_test_paths(REPO_ROOT)
+    assert touched in ci_contract_test_paths(REPO_ROOT)
     assert touched in selection.selected_paths
     # ...and it is NOT widened to its containing directory.
     assert "tests/unit/validation/" not in selection.selected_paths

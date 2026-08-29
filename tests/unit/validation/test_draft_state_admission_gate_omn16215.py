@@ -23,13 +23,20 @@ push/merge_group only). The two jobs gated here (`test-parallel`,
 out to up to 40 shards at up to 70m each, `tests-integration` to 4 shards at
 up to 30m each -- together the overwhelming majority of this workflow's
 runner-minutes and wall-clock, regardless of which runner pool serves them.
-The ~50 quality-gate leaves are left ungated: each is a single-shard job
-completing in a few minutes, each is already required at STRICT (not
-skip-tolerant) success via `SPEC_REQUIRED_VALIDATOR_JOBS` in
-`scripts/ci/ci_summary_gate.py`, and touching 50 independent `if:` clauses
-individually for comparatively small marginal savings is a large blast-radius
-change this ticket's scoping guidance ("minimal always-on set") argues
-against.
+The ~50 quality-gate leaves are left ungated BY THIS TICKET (OMN-16215):
+each is a single-shard job completing in a few minutes, each was already
+required at STRICT (not skip-tolerant) success, and touching 50 independent
+`if:` clauses individually for comparatively small marginal savings was a
+large blast-radius change this ticket's scoping guidance ("minimal always-on
+set") argued against for the DRAFT-state gate specifically.
+
+Update (OMN-16625): a separate, later ticket DID subsequently gate 16 of
+these leaves -- but on `docs_only`, not on draft state, and via the
+tests-gate-style skip-tolerant re-deriving pattern, not a bare `if:`. The
+`_UNGATED_QUALITY_GATE_LEAF_SAMPLE` assertions below only pin the absence of
+"draft" in each leaf's `if:` condition, so they remain true and unchanged --
+this note exists so a reader doesn't conclude from the sample name that these
+jobs still have no `if:` at all.
 
 Fail-closed proof is structural, not new code: `test-parallel`/
 `tests-integration` feed `Tests Gate` (`tests-gate` job), whose existing

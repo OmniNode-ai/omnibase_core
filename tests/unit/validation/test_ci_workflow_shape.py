@@ -68,7 +68,7 @@ NO_DEV_WORKFLOW_EXECUTION_CONTRACT = "d7dfb006ec524bc384a900b284fc56cbf2a3d7d00a
 # diff first; this deliberately avoids another partial execution-surface list.
 AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     "exports-validation": (
-        "54ac4c9daa5992acfd905b46e1d994db0091303b779bc179da509a9ed9184f4e"  # pragma: allowlist secret
+        "992688f96b514d884eed9932a5f3676ebc4c1fb2c633e626a7eb5c9fa6348c75"  # pragma: allowlist secret
     ),
     "mypy-validation-scripts": (
         "2423622dc22413cc48dc86c623484359251b1046235dc61d3b8fd947512cd69e"  # pragma: allowlist secret
@@ -77,34 +77,34 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "403fa52e3d6f4b8954bc692c6ec40d133278cc00cc34807fa7552732866275ad"  # pragma: allowlist secret
     ),
     "check-deterministic-skills": (
-        "8f0e02654254289640c6298ed043de77e3b3ce203421c8e1e4f229a9afd2e717"  # pragma: allowlist secret
+        "e9092b6a2e64c9dcc5d1d89ac7171a0e84547dbd1dfc4c962660c522fba99e7a"  # pragma: allowlist secret
     ),
     "node-purity-check": (
-        "b633627655c01a98bcce39c4e998529c976659f10cdd70f1a5969772bf8444eb"  # pragma: allowlist secret
+        "11a091eb4a9382801797ca89fef8090e43385b5b1c991949d7b4ed13afef3b06"  # pragma: allowlist secret
     ),
     "enum-governance": (
         "a46c3a30ecb40d58ad032a1920f24b93cef38716bccecd708e7a41014499727b"  # pragma: allowlist secret
     ),
     "contract-config-compliance": (
-        "9395479aa043f2b166bcc63b7229c3328f28be83659e395d64a15c520f4f43f6"  # pragma: allowlist secret
+        "e37fad25fe594d66ccb0bd113e5be34a418301a06121500936ad8d8eb11e677c"  # pragma: allowlist secret
     ),
     "breaking-schema-change": (
-        "ee0658f793f00e8e6f179d913343d37504e128dcf73a459b075230adae4a64d8"  # pragma: allowlist secret
+        "9409004bc80f756cb90e51d387dc888fd3a2f62b70d45ea0d87bb32dcbc68389"  # pragma: allowlist secret
     ),
     "no-env-fallbacks": (
-        "a0f24383df3a8974b1615035d4df05eb67924a1cda40d9c7a7f85379d816a475"  # pragma: allowlist secret
+        "e6ee4cb21d27caaba2d3a0514683f4df9ab448d588e7ce107f1c610f4c928cb7"  # pragma: allowlist secret
     ),
     "detect-secrets": (
-        "e52c18585e93fd68b8ea8e1db1689fb5bd255e352e176e362b359ede4f346d9b"  # pragma: allowlist secret
+        "4c87091b2cd5322878766b784d30158edbbd607fb304ea416df805067a0eb0c2"  # pragma: allowlist secret
     ),
     "sdk-boundary-check": (
-        "6701fd3e6101f2107010ee2b6fc436acb2aaac73fb136e8ef237d41f0b7b70bb"  # pragma: allowlist secret
+        "30800b3a56c20e4c0d8b0365b17cb847f6c8149264aa03a8fe8e254136fc6cba"  # pragma: allowlist secret
     ),
     "demo-path-topic-coherence": (
-        "94bf6dfc92a03f6c281789316292e59c61ef6d7cd3aca07aae1f2e710d5da094"  # pragma: allowlist secret
+        "8ff2f91d5081d541f624c2e55562b05dd1945d6c0a6913a26c5099b4dd455e72"  # pragma: allowlist secret
     ),
     "dispatch-surface-test-required": (
-        "7f292453c6e38618c81f8e39e6361183e936ed6fbcdf9823b3a4b6cb1d1fcd81"  # pragma: allowlist secret
+        "6392730ab2e8a48efa83053c3dbb571a4f52c271e188b8e038a8be31535bedc4"  # pragma: allowlist secret
     ),
     "naming-conventions": (
         "4c018ad075660fc1c8d68c65c84c00b5c7bcd82ba4a70267baa7f6e2ce377aa7"  # pragma: allowlist secret
@@ -128,10 +128,10 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "6d4d2c5bb43d103924a336575a5022d17cedf8e086ceff477121255d52e71dca"  # pragma: allowlist secret
     ),
     "no-noncanonical-lifecycle-classes": (
-        "5cae23b307954cd43c5e17198715700a045986a07bb3f5a2941c334936de6b5a"  # pragma: allowlist secret
+        "1b72b1142f9e17cff1a1299435b989685423de14563cf081fbb9f6323f929264"  # pragma: allowlist secret
     ),
     "pull-request-workflow-ratchet": (
-        "dbd395aa65670ec4c9afff78899ba001ea011ac80d8daaf1867bdfa11bb85bdb"  # pragma: allowlist secret
+        "fe67a135dbeae73e46d4908920ba75b4419cb4ccd181b4d4c12d559f5f216a1f"  # pragma: allowlist secret
     ),
 }
 
