@@ -84,26 +84,45 @@ def _write_contract(root: Path, items: list[dict[str, Any]]) -> str:
     return f"sha256:{hashlib.sha256(text.encode()).hexdigest()}"
 
 
+def _write_ticket_contract(
+    root: Path, ticket_id: str, items: list[dict[str, Any]]
+) -> str:
+    text = yaml.safe_dump(
+        {
+            "ticket_id": ticket_id,
+            "title": f"{ticket_id} contract",
+            "dod_evidence": items,
+        },
+        sort_keys=True,
+    )
+    (root / "contracts").mkdir(parents=True, exist_ok=True)
+    (root / "contracts" / f"{ticket_id}.yaml").write_text(text, encoding="utf-8")
+    return f"sha256:{hashlib.sha256(text.encode()).hexdigest()}"
+
+
 def _write_receipt(
     root: Path,
     *,
+    ticket_id: str = TICKET,
     evidence_item_id: str,
     check_type: str,
     check_value: str,
     status: EnumReceiptStatus,
     contract_sha256: str,
+    commit_sha: str = PR_SHA,
+    pr_number: int = PR_NUMBER,
 ) -> Path:
     """Write a receipt at the path eligibility resolves: ``<item>/<check_type>.yaml``."""
     executed = status is not EnumReceiptStatus.PENDING
     receipt: dict[str, Any] = {
         "schema_version": "1.0.0",
-        "ticket_id": TICKET,
+        "ticket_id": ticket_id,
         "evidence_item_id": evidence_item_id,
         "check_type": check_type,
         "check_value": check_value,
         "status": status.value,
         "run_timestamp": datetime(2026, 8, 29, 11, 0, tzinfo=UTC),
-        "commit_sha": PR_SHA,
+        "commit_sha": commit_sha,
         # Distinct identities: `verifier == runner` downgrades PASS to ADVISORY
         # (ModelDodReceipt rule 1) and would make the PASS control below fail
         # for a reason that has nothing to do with this ticket.
@@ -115,10 +134,10 @@ def _write_receipt(
         # Writing a fake "1 passed" here would defeat the point of the fixture.
         "probe_stdout": "" if not executed else "1 passed in 0.12s\n",
         "exit_code": None if not executed else 0,
-        "pr_number": PR_NUMBER,
+        "pr_number": pr_number,
         "contract_sha256": contract_sha256,
     }
-    path = root / "receipts" / TICKET / evidence_item_id / f"{check_type}.yaml"
+    path = root / "receipts" / ticket_id / evidence_item_id / f"{check_type}.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(receipt, sort_keys=True), encoding="utf-8")
     return path
@@ -133,6 +152,21 @@ def _snapshot(root: Path) -> ModelOccEligibilityInput:
         pr_branch=f"jonah/{TICKET.lower()}-occ-receipt-runner",
         pr_commit_shas=(PR_SHA,),
         pr_commit_texts=(f"feat({TICKET}): runner",),
+        occ_commit_sha="c" * 40,
+        contracts_dir=root / "contracts",
+        receipts_dir=root / "receipts",
+    )
+
+
+def _snapshot_for_tickets(root: Path, *ticket_ids: str) -> ModelOccEligibilityInput:
+    return ModelOccEligibilityInput(
+        repo="omnimarket",
+        pr_number=PR_NUMBER,
+        pr_title=" ".join(f"feat({ticket_id}): runner" for ticket_id in ticket_ids),
+        pr_body="\n".join(f"Closes: {ticket_id}" for ticket_id in ticket_ids),
+        pr_branch="jonah/multi-ticket-occ-receipt-runner",
+        pr_commit_shas=(PR_SHA,),
+        pr_commit_texts=tuple(f"feat({ticket_id}): runner" for ticket_id in ticket_ids),
         occ_commit_sha="c" * 40,
         contracts_dir=root / "contracts",
         receipts_dir=root / "receipts",
@@ -201,6 +235,45 @@ def test_awaiting_runner_still_surfaces_the_receipt_key(tmp_path: Path) -> None:
     assert result.missing_or_nonpass_receipts == (
         f"{TICKET}:{BEHAVIOR_ITEM}:test_passes",
     )
+
+
+@pytest.mark.unit
+def test_unbound_ticket_outranks_awaiting_runner(tmp_path: Path) -> None:
+    """A bound pending receipt cannot hide another ticket with no PR-bound proof."""
+    other_ticket = "OMN-16860"
+    other_item = "dod-other-bound-proof"
+    contract_hash = _write_contract(
+        tmp_path, [_item(BEHAVIOR_ITEM, "test_passes", BEHAVIOR_CHECK)]
+    )
+    other_contract_hash = _write_ticket_contract(
+        tmp_path, other_ticket, [_item(other_item, "test_passes", "uv run pytest -q")]
+    )
+    _write_receipt(
+        tmp_path,
+        evidence_item_id=BEHAVIOR_ITEM,
+        check_type="test_passes",
+        check_value=BEHAVIOR_CHECK,
+        status=EnumReceiptStatus.PENDING,
+        contract_sha256=contract_hash,
+    )
+    _write_receipt(
+        tmp_path,
+        ticket_id=other_ticket,
+        evidence_item_id=other_item,
+        check_type="test_passes",
+        check_value="uv run pytest -q",
+        status=EnumReceiptStatus.PASS,
+        contract_sha256=other_contract_hash,
+        commit_sha="4" * 40,
+        pr_number=9999,
+    )
+
+    result = validate_occ_merge_eligibility(
+        _snapshot_for_tickets(tmp_path, TICKET, other_ticket)
+    )
+
+    assert result.reason is EnumOccEligibilityReason.PR_TICKET_MISMATCH
+    assert other_ticket in result.detail
 
 
 @pytest.mark.unit

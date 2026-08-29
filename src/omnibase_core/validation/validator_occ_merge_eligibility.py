@@ -435,6 +435,7 @@ def validate_occ_merge_eligibility(
                 if (
                     receipt.status is EnumReceiptStatus.PENDING
                     and check_type in RUNNER_COVERED_CHECK_TYPES
+                    and is_bound
                 ):
                     awaiting_runner_receipts.append(receipt_key)
                 else:
@@ -483,44 +484,6 @@ def validate_occ_merge_eligibility(
             ),
             detail="one or more receipts are missing or non-PASS",
         )
-    # OMN-16859 — DELIBERATELY AFTER the missing/non-PASS return above.
-    #
-    # That ordering IS the safety property, and it is why this is a legibility
-    # split rather than a carve-out: a genuinely absent receipt or a receipt
-    # that ran and FAILED is reported as such and reaches its own return first.
-    # This branch can only be taken when every other declared receipt resolved
-    # PASS and the sole outstanding item is an honestly-PENDING one on a check
-    # type a product-repo runner executes. Moving this block above that one
-    # would let "not yet run" mask "ran and failed"; do not reorder.
-    #
-    # The verdict is unchanged from before this ticket (`eligible=False`), and
-    # the key is still surfaced in `missing_or_nonpass_receipts` so CI logs and
-    # downstream tooling that read that field do not go blind on the new reason.
-    if awaiting_runner_receipts:
-        return ModelOccEligibilityResult(
-            eligible=False,
-            reason=EnumOccEligibilityReason.AWAITING_RUNNER_RECEIPT,
-            ticket_ids=ticket_ids,
-            occ_commit_sha=snapshot.occ_commit_sha,
-            contract_hashes=contract_hashes,
-            receipt_ids=tuple(sorted(receipt_ids)),
-            missing_or_nonpass_receipts=tuple(sorted(awaiting_runner_receipts)),
-            detail=(
-                f"{len(awaiting_runner_receipts)} receipt(s) are honestly PENDING "
-                "on a check type the OCC producers cannot execute (they run in "
-                "the .201 effects runtime with no product checkout): "
-                f"{', '.join(sorted(awaiting_runner_receipts))}. This is NOT a "
-                "missing receipt and NOT a failed check — the probe was "
-                "allocated and has not run yet. The product repo's OCC receipt "
-                "runner executes the declared check at PR head and appends a "
-                "superseding receipt to this companion's branch; preflight then "
-                "re-evaluates. Do NOT hand-author a receipt to clear this: "
-                "check the product PR's OCC receipt runner job first, and fix "
-                "it if it did not run. Merge stays blocked until a real "
-                "executed PASS supersedes the PENDING receipt "
-                f"(runner-covered check types: {', '.join(sorted(RUNNER_COVERED_CHECK_TYPES))})."
-            ),
-        )
     unbound_tickets = tuple(
         ticket_id
         for ticket_id in ticket_ids
@@ -561,6 +524,45 @@ def validate_occ_merge_eligibility(
             ),
         )
 
+    # OMN-16859 — DELIBERATELY AFTER the missing/non-PASS and unbound-ticket
+    # returns above.
+    #
+    # That ordering IS the safety property, and it is why this is a legibility
+    # split rather than a carve-out: a genuinely absent receipt or a receipt
+    # that ran and FAILED is reported as such and reaches its own return first.
+    # This branch can only be taken when every other declared receipt resolved
+    # PASS and the sole outstanding item is an honestly-PENDING one on a check
+    # type a product-repo runner executes. Moving this block above that one
+    # would let "not yet run" mask "ran and failed"; do not reorder.
+    #
+    # The verdict is unchanged from before this ticket (`eligible=False`), and
+    # the key is still surfaced in `missing_or_nonpass_receipts` so CI logs and
+    # downstream tooling that read that field do not go blind on the new reason.
+    if awaiting_runner_receipts:
+        return ModelOccEligibilityResult(
+            eligible=False,
+            reason=EnumOccEligibilityReason.AWAITING_RUNNER_RECEIPT,
+            ticket_ids=ticket_ids,
+            occ_commit_sha=snapshot.occ_commit_sha,
+            contract_hashes=contract_hashes,
+            receipt_ids=tuple(sorted(receipt_ids)),
+            missing_or_nonpass_receipts=tuple(sorted(awaiting_runner_receipts)),
+            detail=(
+                f"{len(awaiting_runner_receipts)} receipt(s) are honestly PENDING "
+                "on a check type the OCC producers cannot execute (they run in "
+                "the .201 effects runtime with no product checkout): "
+                f"{', '.join(sorted(awaiting_runner_receipts))}. This is NOT a "
+                "missing receipt and NOT a failed check — the probe was "
+                "allocated and has not run yet. The product repo's OCC receipt "
+                "runner executes the declared check at PR head and appends a "
+                "superseding receipt to this companion's branch; preflight then "
+                "re-evaluates. Do NOT hand-author a receipt to clear this: "
+                "check the product PR's OCC receipt runner job first, and fix "
+                "it if it did not run. Merge stays blocked until a real "
+                "executed PASS supersedes the PENDING receipt "
+                f"(runner-covered check types: {', '.join(sorted(RUNNER_COVERED_CHECK_TYPES))})."
+            ),
+        )
     return ModelOccEligibilityResult(
         eligible=True,
         reason=EnumOccEligibilityReason.ELIGIBLE,
