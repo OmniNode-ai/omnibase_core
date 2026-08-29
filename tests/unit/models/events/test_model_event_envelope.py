@@ -1278,3 +1278,74 @@ class TestModelEventEnvelopeEventTyping:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+# ---------------------------------------------------------------------------
+# OMN-16831 item 1 (operator ruling 2026-08-28, option D): the transport
+# envelope must be able to carry the tenant DIMENSION, and must never silently
+# discard an attribution a producer tried to record.
+#
+# Before this change ModelEventEnvelope declared 20 fields, none of them a
+# tenant, and left `extra` undeclared -- so Pydantic's "ignore" default applied
+# and `ModelEventEnvelope(payload=..., tenant_id='acme')` raised nothing and
+# stored nothing. The dimension could not be recorded even voluntarily, which
+# is strictly worse than optional. The event log is immutable: an event written
+# without its tenant can never have one added later.
+# ---------------------------------------------------------------------------
+
+
+class TestEnvelopeCarriesTenantDimension:
+    """The dimension has a home, and silence about it is impossible."""
+
+    def test_supplied_tenant_is_carried_not_discarded(self) -> None:
+        envelope = ModelEventEnvelope[SimplePayload](
+            payload=SimplePayload(message="m", value=1),
+            tenant_id="beta-business-proof",
+        )
+
+        assert envelope.tenant_id == "beta-business-proof"
+        assert envelope.model_dump()["tenant_id"] == "beta-business-proof"
+        assert envelope.to_dict_lazy()["tenant_id"] == "beta-business-proof"
+
+    def test_tenant_survives_a_json_round_trip(self) -> None:
+        """A dimension that does not survive the wire is not recorded at all."""
+        envelope = ModelEventEnvelope[SimplePayload](
+            payload=SimplePayload(message="m", value=1),
+            tenant_id="beta-business-proof",
+        )
+
+        restored = ModelEventEnvelope[SimplePayload].model_validate_json(
+            envelope.model_dump_json()
+        )
+
+        assert restored.tenant_id == "beta-business-proof"
+
+    def test_omitting_the_tenant_records_an_explicit_absence(self) -> None:
+        """Absent attribution reads as absent -- it is never invented here."""
+        envelope = ModelEventEnvelope[SimplePayload](
+            payload=SimplePayload(message="m", value=1),
+        )
+
+        assert envelope.tenant_id is None
+        assert envelope.to_dict_lazy()["tenant_id"] is None
+
+    def test_an_unknown_field_errors_instead_of_being_swallowed(self) -> None:
+        """Carry-or-error: the failure mode that hid this must be impossible.
+
+        A producer that misspells the attribution key, or targets a field this
+        envelope does not have, must be told. Silently dropping it is how a
+        write path can believe it recorded a tenant while recording nothing.
+        """
+        with pytest.raises(ValidationError):
+            ModelEventEnvelope[SimplePayload](
+                payload=SimplePayload(message="m", value=1),
+                tenant_slug="beta-business-proof",
+            )
+
+    def test_a_blank_tenant_is_rejected_rather_than_stored(self) -> None:
+        """An empty string is not an attribution; it is a silent none."""
+        with pytest.raises(ValidationError):
+            ModelEventEnvelope[SimplePayload](
+                payload=SimplePayload(message="m", value=1),
+                tenant_id="   ",
+            )

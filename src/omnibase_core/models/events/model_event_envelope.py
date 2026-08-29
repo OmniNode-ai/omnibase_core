@@ -18,7 +18,7 @@ from typing import cast
 from uuid import UUID, uuid4
 
 # Third-party imports (alphabetized)
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Local imports (alphabetized)
 from omnibase_core.decorators import allow_dict_any
@@ -75,10 +75,22 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         trace_id: Optional distributed trace identifier
         span_id: Optional trace span identifier
 
+        # Tenancy
+        tenant_id: Tenant this event belongs to, recorded at write time
+
         # ONEX Compliance
         onex_version: ONEX standard version
         envelope_version: Envelope schema version
     """
+
+    # OMN-16831 (operator ruling 2026-08-28, option D): `extra` was previously
+    # undeclared, so Pydantic's "ignore" default applied and any field this
+    # envelope did not declare was silently discarded. That is how a producer
+    # could believe it had attributed an event and record nothing at all --
+    # `ModelEventEnvelope(payload=..., tenant_id='acme')` raised nothing and
+    # stored nothing. Carry-or-error: what this model declares is carried,
+    # everything else is refused out loud.
+    model_config = ConfigDict(extra="forbid")
 
     payload: T = Field(default=..., description="The wrapped event payload")
     envelope_id: UUID = Field(
@@ -138,10 +150,58 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     span_id: UUID | None = Field(
         default=None, description="Trace span identifier (e.g., OpenTelemetry span ID)"
     )
+    # OMN-16831 / OMN-16804: the tenant DIMENSION -- which tenant this event
+    # belongs to, recorded by the producer at write time.
+    #
+    # This is ATTRIBUTION, never AUTHORIZATION. A value here is a claim the
+    # producer made; it proves nothing about entitlement and must never be
+    # promoted into an isolation context. The projection tenant authority
+    # (omnibase_infra) verifies this claim when a verified capability is
+    # bound; it never sources or invents one.
+    #
+    # Optional because not every event family has a tenant in scope -- node
+    # registration, heartbeats and consumer-health events are platform facts.
+    # `None` therefore means "explicitly no tenant recorded", and because
+    # `extra="forbid"` above makes a mistyped or unknown attribution key an
+    # error rather than a silent drop, an absent tenant is now a statement
+    # rather than an accident.
+    #
+    # Representation is a DNS-safe slug today, matching the platform's only
+    # tenant producer (`stamp_verified_tenant_slug`, OMN-14367). Converging on
+    # the gateway's canonical UUID is deliberately deferred to OMN-16804 item
+    # 5: with the dimension recorded in a stable representation, changing that
+    # representation is a migration, which is the class of thing that can be
+    # deferred. The dimension is not.
+    tenant_id: str | None = Field(  # string-id-ok: named tenant slug, not a UUID
+        default=None,
+        description=(
+            "Tenant this event belongs to, recorded at write time. "
+            "Attribution only -- never proof of entitlement."
+        ),
+    )
     onex_version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="ONEX standard version",
     )
+
+    @field_validator("tenant_id")
+    @classmethod
+    def _tenant_id_is_recorded_or_absent(cls, value: str | None) -> str | None:
+        """Reject a blank tenant: it reads as recorded but attributes nothing.
+
+        ``""`` and ``"   "`` are the shape that looks like attribution to a
+        writer and is indistinguishable from none to a reader. A producer that
+        has no tenant must say so by omitting the field.
+        """
+        if value is None:
+            return None
+        if not value.strip():
+            raise ValueError(
+                "tenant_id must be a real tenant identifier or omitted entirely; "
+                "a blank value records an attribution that attributes nothing"
+            )
+        return value
+
     envelope_version: ModelSemVer = Field(
         default_factory=lambda: ModelSemVer(major=2, minor=1, patch=0),
         description="Envelope schema version",
@@ -456,6 +516,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "source_tool": self.source_tool,
             "target_tool": self.target_tool,
             "event_type": self.event_type,
+            "tenant_id": self.tenant_id,
             "payload_type": self.payload_type,
             "payload_schema_version": (
                 str(self.payload_schema_version)
