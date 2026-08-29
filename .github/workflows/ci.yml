@@ -2946,25 +2946,45 @@ jobs:
           # on every diff, including a docs-only one -- doc-content-scan is "the
           # length validator" the operator's docs-only-CI ruling explicitly keeps
           # running; a `skipped` here is never legitimate.
+          #
+          # The `${{ needs.<job>.result }}` expressions are inlined directly in
+          # the for-loop list (not the preamble-assigned `$lint`-style vars used
+          # for the summary table above) -- this is deliberate, not cosmetic:
+          # the OMN-15304 vector-6 skip-guard's aggregator-loop recognizer keys
+          # on the literal GHA expression appearing in the loop's own item list
+          # (`_rebind_aggregator_loop`, mirroring tests-gate's proven shape
+          # below). A loop fed through an already-bound shell variable is
+          # invisible to that recognizer and reports TRIAGE_UNVERIFIABLE even
+          # though the case statement is functionally fail-closed.
           for check in \
-            "lint=$lint" \
-            "mypy_scripts=$mypy_scripts" \
-            "core_infra=$core_infra" \
-            "enum_gov=$enum_gov" \
-            "naming=$naming" \
-            "pydantic=$pydantic" \
-            "aislop=$aislop" \
-            "doc_content=$doc_content" \
-            "no_new_os_environ=$no_new_os_environ" \
-            "spdx_headers=$spdx_headers"; do
+            "lint=${{ needs.lint.result }}" \
+            "mypy_scripts=${{ needs.mypy-validation-scripts.result }}" \
+            "core_infra=${{ needs.core-infra-boundary.result }}" \
+            "enum_gov=${{ needs.enum-governance.result }}" \
+            "naming=${{ needs.naming-conventions.result }}" \
+            "pydantic=${{ needs.pydantic-patterns.result }}" \
+            "aislop=${{ needs.aislop-patterns.result }}" \
+            "doc_content=${{ needs.doc-content-scan.result }}" \
+            "no_new_os_environ=${{ needs.no-new-os-environ.result }}" \
+            "spdx_headers=${{ needs.spdx-headers.result }}"; do
             NAME="${check%%=*}"
             RESULT="${check#*=}"
-            if [[ "$RESULT" != "success" ]]; then
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
-              echo "::error::$NAME (spec-required validator) did not pass (result: $RESULT) -- this check is never allowed to skip, docs-only diff or not."
-              exit 1
-            fi
+            case "$RESULT" in
+              success)
+                : ;;
+              failure|cancelled|skipped)
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
+                echo "::error::$NAME (spec-required validator) did not pass (result: $RESULT) -- this check is never allowed to skip, docs-only diff or not."
+                exit 1
+                ;;
+              *)
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "**Quality Gate: FAILED**" >> $GITHUB_STEP_SUMMARY
+                echo "::error::$NAME returned unrecognised result '$RESULT' -- failing closed."
+                exit 1
+                ;;
+            esac
           done
 
           # TIER 2 -- SKIP-TOLERANT (the 16 leaves gated on docs_only in this PR).
@@ -2972,23 +2992,26 @@ jobs:
           # (re-derived here, never trusted from a leaf's raw `.result`) says
           # 'true' -- exactly tests-gate's existing per-upstream skip policy for
           # test-parallel/tests-integration (OMN-15315), applied to Phase 1.
+          #
+          # Literal `${{ needs.<job>.result }}` expressions inlined here for the
+          # same OMN-15304 vector-6 recognizer reason as TIER 1 above.
           for check in \
-            "pyright=$pyright" \
-            "exports=$exports" \
-            "lint_imports=$lint_imports" \
-            "det_skills=$det_skills" \
-            "docs=$docs" \
-            "purity=$purity" \
-            "secrets=$secrets" \
-            "sdk_boundary=$sdk_boundary" \
-            "contract_config=$contract_config" \
-            "breaking_schema=$breaking_schema" \
-            "no_env_fallbacks=$no_env_fallbacks" \
-            "demo_path_gate=$demo_path_gate" \
-            "dispatch_surface=$dispatch_surface" \
-            "noncanonical_classes=$noncanonical_classes" \
-            "extra_forbid=$extra_forbid" \
-            "pr_workflow_ratchet=$pr_workflow_ratchet"; do
+            "pyright=${{ needs.pyright.result }}" \
+            "exports=${{ needs.exports-validation.result }}" \
+            "lint_imports=${{ needs.lint-imports.result }}" \
+            "det_skills=${{ needs.check-deterministic-skills.result }}" \
+            "docs=${{ needs.docs-validation.result }}" \
+            "purity=${{ needs.node-purity-check.result }}" \
+            "secrets=${{ needs.detect-secrets.result }}" \
+            "sdk_boundary=${{ needs.sdk-boundary-check.result }}" \
+            "contract_config=${{ needs.contract-config-compliance.result }}" \
+            "breaking_schema=${{ needs.breaking-schema-change.result }}" \
+            "no_env_fallbacks=${{ needs.no-env-fallbacks.result }}" \
+            "demo_path_gate=${{ needs.demo-path-topic-coherence.result }}" \
+            "dispatch_surface=${{ needs.dispatch-surface-test-required.result }}" \
+            "noncanonical_classes=${{ needs.no-noncanonical-lifecycle-classes.result }}" \
+            "extra_forbid=${{ needs.pydantic-extra-forbid.result }}" \
+            "pr_workflow_ratchet=${{ needs.pull-request-workflow-ratchet.result }}"; do
             NAME="${check%%=*}"
             RESULT="${check#*=}"
             case "$RESULT" in

@@ -612,7 +612,11 @@ gates:
     workflow: ci.yml
     job_path: ["quality-gate"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-16625's two-tier
+      docs_only short-circuit inlines the literal `${{ needs.<job>.result }}` expression in each aggregator
+      for-loop's item list (tests-gate's proven shape) rather than routing through a preamble-assigned
+      shell variable, so the vector-6 analyzer proves the triage fail-closed on its own -- no result_triage
+      waiver needed."
 
   - name: "Tests Gate"
     mode: REQUIRED
