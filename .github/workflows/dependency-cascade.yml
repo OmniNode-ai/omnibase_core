@@ -8,7 +8,7 @@
 # to pick up the new version.
 #
 # Downstream mapping:
-#   omnibase_core  -> omnibase_infra, omniintelligence, omnimemory, omniclaude, onex_change_control
+#   omnibase_core  -> omnibase_infra, omniintelligence, omnimemory, omniclaude, onex_change_control, omninode_infra
 #   omnibase_spi   -> omnibase_infra, omniintelligence, omnimemory, omniclaude
 #   omnibase_infra -> omniintelligence, omnimemory, omniclaude
 #
@@ -105,7 +105,7 @@ jobs:
 
           case "$PACKAGE" in
             omnibase_core)
-              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude", "onex_change_control"]'
+              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude", "onex_change_control", "omninode_infra"]'
               ;;
             omnibase_spi)
               REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude"]'
