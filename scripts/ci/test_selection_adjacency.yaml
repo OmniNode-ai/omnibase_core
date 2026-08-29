@@ -48,10 +48,22 @@ thresholds:
 #     requires-python), not on a bare `version` bump, entry-point registration,
 #     lint-only [tool.ruff.*] edit, or metadata edit. Fail-closed:
 #     unparseable/unavailable TOML still escalates.
-#   * .github/workflows/ — removed to align with omnibase_infra (which omits it).
-#     A workflow-only change carries zero test-code delta, is exercised by the PR's
-#     own CI run, and is backstopped by the unconditional merge_group -> main full
-#     suite (root CLAUDE.md Rule #4).
+#   * .github/ — removed to align with omnibase_infra (which omits it), so a
+#     workflow change does not force the distributed full suite.
+#     CORRECTED (OMN-16917): the old rationale here — "a workflow-only change
+#     carries zero test-code delta" — was wrong in the direction that matters.
+#     A workflow edit carries zero test-code delta but it CAN break the
+#     ENFORCEMENT of tests, which is worse and invisible: OMN-15541 is the live
+#     proof, where ci.yml hardcoded a pytest root the selector and pyproject did
+#     not name and full-suite escalation itself collected ZERO of the top-level
+#     tests/ tree. Per the OMN-16745 ruling (omnibase_infra#2988,
+#     docs/reference/selector-workflow-diff-ruling.md), .github/** non-.md paths
+#     are now classified CONTENT-AWARE in detect_test_paths.py step 5c: they
+#     select the CI-contract class (`ci_contract_test_paths` — tests/ci/ plus the
+#     tests/unit/ modules that read .github/** off disk), plus any test module
+#     the diff itself touches, at file grain. The class may never be empty; an
+#     empty or unenumerable class escalates. Absence from this list is therefore
+#     NOT "no proof required" — the proof was substituted, not removed.
 #
 # scripts/ci/ NARROWED to the SELECTOR'S OWN FILES ONLY (OMN-14910, CI-C1 #1).
 # OMN-14081 kept the whole `scripts/ci/` directory here as a "conservative — it
