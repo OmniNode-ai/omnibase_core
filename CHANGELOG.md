@@ -4,12 +4,19 @@
 
 ### Breaking Changes
 - bump omnibase_core to v0.47.0 — `ModelWidgetConfigStatusGrid.status_colors` is **removed** (#1612). The field carried a `Mapping[str, str]` of raw hex colours in the config's own default, which is the decision the theme contract exists to make; it is replaced by `severity_roles: tuple[ModelSeverityRole, ...]` naming theme tokens, and colours now resolve through the active theme instance. The model is `extra="forbid"`, so any caller still passing `status_colors=` raises. Minor bump per pre-1.0 semver convention for a breaking public-API deletion.
+- **`ModelEventEnvelope` now declares `extra="forbid"` (#1611).** `extra` was previously **undeclared** on this model, so Pydantic's `"ignore"` default applied and any undeclared keyword was silently discarded at construction. Constructing the envelope with a keyword it does not declare now raises `ValidationError ... [type=extra_forbidden]` instead. This half of #1611 is **not additive** and is the reason v0.47.0 is a breaking release for envelope producers, independent of the `status_colors` deletion above.
+
+  **Who this breaks:** any producer passing a keyword `ModelEventEnvelope` does not declare. The declared set is `payload`, `envelope_id`, `envelope_timestamp`, `correlation_id`, `source_tool`, `target_tool`, `metadata`, `security_context`, `event_type`, `payload_type`, `payload_schema_version`, `priority`, `timeout_seconds`, `retry_count`, `request_id`, `trace_id`, `span_id`, `tenant_id`, `onex_version`, `envelope_version`.
+
+  **Migration:** producer identity belongs in the long-declared `source_tool` field — `source=` was never a field on this model and was being dropped on every call before 0.47.0. Rename `source=` to `source_tool=`. There is no `source_version` field; the envelope's version fields are `onex_version`, `envelope_version`, and `payload_schema_version`. Measured blast radius on the first consumer to resolve 0.47.0 (omnibase_infra): 11 production call sites and 138 failing tests, all one signature.
+
+  **Why it is correct anyway:** silently discarding a producer's attribution is the failure class #1611 was opened to close, and `extra="forbid"` is mandatory on every model in this repo (enforced by `omnibase_core.validators.pydantic_extra_forbid`). 0.47.0 does not create the data loss — it converts a silent loss into a loud failure.
 
 ### Features
 - feat theme instances + theme catalog — `ModelThemeInstance`, `ModelThemeCatalog`, `ModelThemeCatalogEntry`, `ModelThemeActivation`, `util_theme_catalog`, and the `onex.theme.{light,dark,warm}` 1.0.0 theme contracts (#1608)
 - feat one versioned widget envelope — `ModelWidgetEnvelope`, `ModelWidgetProvenance`, `util_widget_envelope` (#1610)
 - feat semantic severity for StatusGrid — `EnumStatusSeverity`, `EnumStatusSecondaryKind`, `ModelSeverityRole` + `DEFAULT_SEVERITY_ROLES`, `ModelSeverityVerdict`, `ModelStatusSecondary` (#1612)
-- feat the transport envelope carries the tenant dimension — an OPTIONAL `tenant` field on `ModelEventEnvelope` (additive; the model stays `extra="forbid"`) (#1611)
+- feat the transport envelope carries the tenant dimension — an OPTIONAL `tenant_id` field on `ModelEventEnvelope`, attribution only, never proof of entitlement (#1611). This half is additive. The same PR's `extra="forbid"` declaration is **not** — see Breaking Changes above.
 - feat `onex user-config` CLI surface + `ModelCliUserConfig` family, unifying the `~/.onex/config.yaml` schema across all CLI writers (#1604)
 
 ### Changes
