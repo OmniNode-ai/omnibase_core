@@ -54,6 +54,9 @@ class ModelWidgetProvenance(BaseModel):
             "from. Abbreviated revisions are rejected: they name a prefix, not "
             "a commit."
         ),
+        min_length=40,
+        max_length=40,
+        pattern=WIDGET_SOURCE_REVISION_PATTERN.pattern,
     )
 
     @field_validator("source_revision")
@@ -64,7 +67,7 @@ class ModelWidgetProvenance(BaseModel):
         Raises:
             ValueError: If ``value`` is not 40 lowercase hex characters.
         """
-        if not WIDGET_SOURCE_REVISION_PATTERN.match(value):
+        if not WIDGET_SOURCE_REVISION_PATTERN.fullmatch(value):
             raise ValueError(
                 f"source_revision must be a full 40-character lowercase git "
                 f"object id, got '{value}'"

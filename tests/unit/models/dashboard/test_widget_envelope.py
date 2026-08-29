@@ -174,6 +174,23 @@ class TestProvenanceIsVerifiable:
                 source_revision=_SOURCE_REVISION[:7],
             )
 
+    def test_source_revision_with_trailing_newline_is_rejected(self) -> None:
+        with pytest.raises(ValidationError, match="source_revision"):
+            ModelWidgetProvenance(
+                pack_namespace="onex.packs.platform",
+                pack_name="system-health",
+                pack_version=ModelSemVer(major=0, minor=4, patch=1),
+                source_revision=f"{_SOURCE_REVISION}\n",
+            )
+
+    def test_source_revision_schema_exposes_exact_hex_constraints(self) -> None:
+        schema = ModelWidgetProvenance.model_json_schema()
+        source_revision = schema["properties"]["source_revision"]
+
+        assert source_revision["minLength"] == 40
+        assert source_revision["maxLength"] == 40
+        assert source_revision["pattern"] == r"^[0-9a-f]{40}$"
+
     def test_provenance_is_required_on_the_envelope(self) -> None:
         payload = _envelope().model_dump(mode="json")
         del payload["provenance"]
@@ -276,10 +293,15 @@ class TestGateGC3:
         assert result.returncode == 0, result.stderr
 
         combined = json.loads(output.read_text())
-        envelope_schema = combined["$defs"]["ModelWidgetEnvelope"]
+        envelope_schema = {**combined, "$ref": "#/$defs/ModelWidgetEnvelope"}
+        provenance_schema = {**combined, "$ref": "#/$defs/ModelWidgetProvenance"}
         discovered: dict[str, Any] = json.loads(_envelope().model_dump_json())
 
         jsonschema.validate(instance=discovered, schema=envelope_schema)
+        jsonschema.validate(
+            instance=discovered["provenance"],
+            schema=provenance_schema,
+        )
 
         # …and the consumer can then parse it into typed objects and check the seal.
         parsed = ModelWidgetEnvelope.model_validate(discovered)
@@ -302,7 +324,7 @@ class TestGateGC3:
             check=True,
         )
         combined = json.loads(output.read_text())
-        envelope_schema = combined["$defs"]["ModelWidgetEnvelope"]
+        envelope_schema = {**combined, "$ref": "#/$defs/ModelWidgetEnvelope"}
         discovered: dict[str, Any] = json.loads(_envelope().model_dump_json())
         discovered["config"]["config_kind"] = "sparkline"
 
