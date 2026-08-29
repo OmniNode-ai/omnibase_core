@@ -70,10 +70,19 @@ def test_test_infrastructure_change_escalates_to_full_suite() -> None:
 
 def test_workflow_only_change_no_longer_escalates() -> None:
     # OMN-14081: .github/workflows/ was removed from test_infrastructure_paths to
-    # align with omnibase_infra. A workflow-only change carries zero test-code delta,
-    # is exercised on the PR's own CI run, and is backstopped by the unconditional
-    # merge_group -> main full suite (root CLAUDE.md Rule #4). It now falls to the
-    # conservative tests/unit/ fallback instead of forcing the distributed full suite.
+    # align with omnibase_infra, so a workflow-only change no longer forces the
+    # distributed full suite.
+    #
+    # OMN-16917 (applying the OMN-16745 ruling, omnibase_infra#2988): it no
+    # longer takes the conservative tests/unit/ fallback either. That fallback
+    # was cost without proof — no test under tests/unit/ that never reads
+    # .github/** has an outcome a workflow YAML edit can change, and the
+    # resulting selection was whole-suite-equivalent (split_count=39) while
+    # carrying is_full_suite=False. A workflow-only diff now selects the
+    # CI-contract class: the tests that read .github/** off disk and assert its
+    # contents. This is a SUBSTITUTION of proof, never a removal — the class may
+    # never be empty (the OMN-15541 fail-OPEN counterexample), which
+    # test_detect_test_paths_ci_contract_omn16917.py asserts directly.
     selection = compute_selection(
         changed_files=[".github/workflows/receipt-gate.yml"],
         adjacency_path=ADJ,
@@ -81,7 +90,13 @@ def test_workflow_only_change_no_longer_escalates() -> None:
     )
     assert selection.is_full_suite is False
     assert selection.full_suite_reason is None
-    assert selection.selected_paths == _narrowed("tests/unit/")
+    assert selection.selected_paths != []
+    assert "tests/unit/" not in selection.selected_paths
+    assert "tests/ci/" in selection.selected_paths
+    assert (
+        "tests/unit/validation/test_receipt_gate_workflow_shape.py"
+        in selection.selected_paths
+    )
 
 
 def test_required_checks_manifest_uses_focused_guard_test() -> None:
@@ -718,14 +733,29 @@ def test_mixed_docs_and_code_does_not_take_the_exemption() -> None:
 def test_github_precommit_hooks_are_not_docs_exempt(non_doc_only: list[str]) -> None:
     # core has workflow-shape unit tests (test_occ_preflight_workflow_shape.py,
     # test_receipt_gate_workflow_shape.py) whose outcome depends on these files, so
-    # they must run the conservative fallback, NOT the empty docs-only selection.
+    # they must never take the empty docs-only selection.
+    #
+    # OMN-16917: the SHAPE of the non-empty answer now differs by class.
+    # `.github/**` resolves to the CI-contract class (the tests that read those
+    # files off disk) — a substitution of proof, not a removal.
+    # `.pre-commit-config.yaml` and `scripts/hooks/` are deliberately unchanged:
+    # they remain unresolvable to the import graph and still fail closed to the
+    # conservative tests/unit/ fallback.
     selection = compute_selection(
         changed_files=non_doc_only,
         adjacency_path=ADJ,
         ref_name="pr-branch",
     )
     assert selection.is_full_suite is False
-    assert selection.selected_paths == _narrowed("tests/unit/")
+    assert selection.selected_paths != []
+    if non_doc_only[0].startswith(".github/"):
+        assert "tests/unit/" not in selection.selected_paths
+        assert (
+            "tests/unit/validation/test_receipt_gate_workflow_shape.py"
+            in selection.selected_paths
+        )
+    else:
+        assert selection.selected_paths == _narrowed("tests/unit/")
 
 
 def test_docs_only_does_not_suppress_shared_module_escalation() -> None:

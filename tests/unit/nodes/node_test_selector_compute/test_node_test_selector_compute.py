@@ -382,3 +382,51 @@ def test_parity_mixins_change_produces_multiple_splits_on_real_tree(
     assert sel.is_full_suite is False
     assert sel.split_count >= 1
     assert sel.matrix == list(range(1, sel.split_count + 1))
+
+
+# =============================================================================
+# OMN-16917: a NAMED, asserted divergence — the `.github/**` CI-contract class
+# =============================================================================
+
+
+def test_github_ci_contract_class_is_oracle_only_named_divergence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The CI-contract class (OMN-16917) lives in the oracle ONLY, on purpose.
+
+    ``scripts/ci/detect_test_paths.py`` is the sole selector CI (`ci.yml`) and
+    the pre-push hook invoke, so it is where the OMN-16745 ruling was applied:
+    a ``.github/**`` diff selects the CI-contract class rather than escalating
+    to the whole ``tests/unit/`` tree.
+
+    The pure node cannot reproduce that yet. Its EFFECT boundary
+    (``runtime_test_selector.py``) does not compute a closure at all — the
+    pre-existing, documented OMN-14921 fast-follow gap (``closure_selected_files
+    = None``) — and the class additionally needs the closure computed over the
+    diff's NON-``.github`` residual, which is a second injected input the
+    request contract does not carry. Porting it is a change to the node's
+    pure/EFFECT contract, deliberately not folded into a governed-selector fix.
+
+    This test exists so the divergence is a NAMED, asserted fact rather than a
+    silent one: it fails the moment either surface moves, so the node cannot be
+    promoted into CI while still escalating this class.
+    """
+    changed = [".github/workflows/receipt-gate.yml"]
+    monkeypatch.setattr(detect, "REPO_ROOT", REPO_ROOT)
+
+    oracle = compute_selection(
+        changed_files=changed, adjacency_path=ADJ, ref_name="pr-branch"
+    )
+    node = _node_selection(changed, "pr-branch", REPO_ROOT)
+
+    # Oracle: the CI-contract class, narrow.
+    assert "tests/unit/" not in oracle.selected_paths
+    assert "tests/ci/" in oracle.selected_paths
+    assert (
+        "tests/unit/validation/test_receipt_gate_workflow_shape.py"
+        in oracle.selected_paths
+    )
+
+    # Node: still the fail-closed whole-tree answer. Wrong, but never fail-OPEN.
+    assert node.selected_paths == _narrowed("tests/unit/")
+    assert node.model_dump_json() != oracle.model_dump_json()

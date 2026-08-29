@@ -145,6 +145,44 @@ SEPARATELY_GATED_TEST_ROOTS = frozenset({"integration"})  # own unconditional jo
 # than silently dropping a newly-collectable family from the narrowed path.
 TEST_FILE_PATTERNS = ("test_*.py", "*_test.py")
 
+# --- CI-contract test class for `.github/**` diffs (OMN-16917) --------------
+# Applies the OMN-16745 ruling — written up in omnibase_infra
+# `docs/reference/selector-workflow-diff-ruling.md`, landed as
+# omnibase_infra#2988 (95fb95837) — to THIS repo's selector, which is a
+# different design (the OMN-14921 import-graph closure, not infra's static
+# reverse-dependency map) and was not touched by that PR.
+#
+# The ruling: for a `.github/**` diff the necessary and sufficient proof is the
+# CI-contract class — the tests that read `.github/**` off disk and assert its
+# contents — plus any test module the diff itself touches. The unit suite is
+# neither necessary nor sufficient: no test under `tests/unit/` that never reads
+# `.github/**` has an outcome a workflow YAML edit can change, so escalating to
+# it is cost without proof.
+#
+# What it cost here, measured live: the real OMN-16625 diff in this repo
+# (.github/required-checks.yaml + .github/workflows/ci.yml + three
+# tests/unit/validation modules) resolved to `split_count=39` with
+# `selected_paths` containing the whole `tests/unit/` tree (1,478 collectable
+# files). `.github/**` is unresolvable to `resolve_changed_src_modules`, and any
+# unresolvable path fails the WHOLE selection closed to the `["tests/unit/"]`
+# sentinel — a whole-suite-equivalent selection carrying `is_full_suite=False`,
+# exactly the shape the pre-push hook's OMN-15408 `selection_is_whole_suite`
+# predicate routes into the OMN-15059 / OMN-16295 host-load guard. That is how
+# OMN-16346 and OMN-16625 got stranded in omnibase_infra.
+#
+# The class may never select NOTHING (OMN-15541): a workflow edit breaks the
+# ENFORCEMENT of tests rather than the tests themselves — there, `ci.yml`
+# hardcoded a pytest root the selector and pyproject did not name, so full-suite
+# escalation itself collected ZERO of the top-level `tests/` tree and no Python
+# test failed to say so. An empty or unenumerable class therefore escalates.
+#
+# The membership is DERIVED from the tree, never hand-listed — the same posture
+# as `unnarrowable_test_paths` above: a new workflow-shape test joins the class
+# the day it lands, with nobody having to remember a list.
+CI_CONTRACT_TEST_ROOT = "tests/ci/"
+CI_CONTRACT_MARKER = ".github"
+GITHUB_DIR_PREFIX = ".github/"
+
 
 def is_test_file_name(name: str) -> bool:
     """True when pytest would collect a file with this name (``python_files``)."""
@@ -201,6 +239,63 @@ def unnarrowable_test_paths(repo_root: Path) -> list[str]:
 def _with_unnarrowable(selected: list[str], unnarrowable: list[str]) -> list[str]:
     """Union a narrowed selection with the always-run paths, order-stable."""
     return [*selected, *[path for path in unnarrowable if path not in selected]]
+
+
+def _dedup(paths: list[str]) -> list[str]:
+    """Order-stable de-duplication."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for path in paths:
+        if path not in seen:
+            seen.add(path)
+            out.append(path)
+    return out
+
+
+def ci_contract_test_paths(repo_root: Path) -> list[str]:
+    """The CI-contract class: tests whose outcome depends on ``.github/**``.
+
+    Two positively-evidenced sources, both derived from the tree (see the block
+    comment on :data:`CI_CONTRACT_TEST_ROOT`):
+
+    * ``tests/ci/`` — the positively-named CI-contract root, included whenever
+      it holds at least one collectable test.
+    * every collectable test module under ``tests/unit/`` whose source
+      references ``.github`` — i.e. reads the workflow / required-check files
+      off disk and asserts their contents. These are the only ``tests/unit/``
+      modules a ``.github/**`` edit can change the outcome of, and the closure
+      cannot find them because the edge is a filesystem read, not an import.
+
+    A candidate that cannot be read is KEPT, not dropped: the class never
+    shrinks on an unproven negative. ``OSError`` propagates when the tree itself
+    cannot be enumerated — the caller escalates rather than emit a class it
+    cannot prove is complete.
+
+    Returns ``[]`` only when this tree genuinely holds no CI-contract proof; the
+    caller must then escalate (OMN-15541 — the class may never select nothing).
+    """
+    paths: list[str] = []
+
+    ci_root = repo_root / CI_CONTRACT_TEST_ROOT.rstrip("/")
+    if ci_root.is_dir() and _contains_collectable_test(ci_root):
+        paths.append(CI_CONTRACT_TEST_ROOT)
+
+    unit_root = repo_root / TEST_UNIT_PREFIX.rstrip("/")
+    if unit_root.is_dir():
+        for dirpath, _dirs, files in os.walk(unit_root, onerror=_raise_walk_error):
+            for name in sorted(files):
+                if not is_test_file_name(name):
+                    continue
+                candidate = Path(dirpath) / name
+                try:
+                    source = candidate.read_text(encoding="utf-8")
+                except (OSError, ValueError):  # boundary-ok: unreadable → keep
+                    paths.append(candidate.relative_to(repo_root).as_posix())
+                    continue
+                if CI_CONTRACT_MARKER in source:
+                    paths.append(candidate.relative_to(repo_root).as_posix())
+
+    return sorted(set(paths))
 
 
 def compute_selection(
@@ -311,6 +406,68 @@ def compute_selection(
     # reconciliations.
     if changed_files and set(changed_files) == {REQUIRED_CHECKS_MANIFEST_PATH}:
         selected = _with_unnarrowable([REQUIRED_CHECKS_MANIFEST_TEST], unnarrowable)
+        split_count = _split_count_for(selected, repo_root=closure_root)
+        return ModelTestSelection(
+            selected_paths=selected,
+            split_count=split_count,
+            is_full_suite=False,
+            full_suite_reason=None,
+            matrix=list(range(1, split_count + 1)),
+        )
+
+    # 5c. CI-contract classification for `.github/**` diffs (OMN-16917, applying
+    # the OMN-16745 ruling — see the block comment on CI_CONTRACT_TEST_ROOT).
+    # Placed AFTER every escalation above, so a `.github/**` edit paired with a
+    # shared module (step 3), a dependency-bearing pyproject.toml or any
+    # `test_infrastructure_paths` entry including the selector itself (step 2),
+    # or >= 8 changed modules (step 4) still escalates on that path's own rules.
+    # `.md` under `.github/` stays documentation and is handled by step 5.
+    github_ci_files = [
+        path
+        for path in changed_files
+        if path.startswith(GITHUB_DIR_PREFIX) and not _is_docs_only_path(path)
+    ]
+    if github_ci_files:
+        try:
+            ci_contract = ci_contract_test_paths(closure_root)
+        except OSError:
+            return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
+        if not ci_contract:
+            # OMN-15541: the class may never select NOTHING. With no CI-contract
+            # proof resolvable in this tree there is no substitute for the
+            # escalation, so take it rather than narrow on absence of evidence.
+            return _full_suite(EnumFullSuiteReason.TEST_INFRASTRUCTURE)
+
+        residual = [path for path in changed_files if path not in set(github_ci_files)]
+        # A directly-touched unit-test module narrows to ITSELF, at file grain —
+        # strictly narrower than the containing directory the closure's
+        # forced-keep would emit, and strictly covering the changed module
+        # (the OMN-16745 grain lesson). A non-collectable file under tests/unit/
+        # (a helper, a conftest) is NOT narrowable this way and falls through to
+        # the closure below, which still forces its directory.
+        touched_tests = [
+            path
+            for path in residual
+            if path.startswith(TEST_UNIT_PREFIX) and is_test_file_name(Path(path).name)
+        ]
+        # Documentation is positively inert (step 5's own premise), so it is not
+        # a closure input. Everything else still goes through the closure and
+        # still fails closed there to the ["tests/unit/"] sentinel.
+        closure_inputs = [
+            path
+            for path in residual
+            if path not in set(touched_tests) and not _is_docs_only_path(path)
+        ]
+        closure_files: list[str] = []
+        if closure_inputs:
+            closure_files = list(
+                compute_closure_selection(
+                    closure_inputs, repo_root=closure_root
+                ).selected_files
+            )
+        selected = _with_unnarrowable(
+            _dedup([*closure_files, *touched_tests, *ci_contract]), unnarrowable
+        )
         split_count = _split_count_for(selected, repo_root=closure_root)
         return ModelTestSelection(
             selected_paths=selected,

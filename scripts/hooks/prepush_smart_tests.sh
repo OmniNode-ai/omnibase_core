@@ -25,6 +25,24 @@
 # remediation message and a non-zero exit. It never degrades to a green skip -- a
 # gate that cannot run must be indistinguishable from a failing gate.
 #
+# CI-CONTRACT CLASS for `.github/**` diffs (OMN-16917, applying the OMN-16745
+# ruling -- omnibase_infra#2988, docs/reference/selector-workflow-diff-ruling.md).
+# A `.github/**` diff used to be unresolvable to the import graph, which failed
+# the WHOLE selection closed to the `["tests/unit/"]` sentinel: a
+# whole-suite-equivalent selection (split_count=39, 1,478 files) carrying
+# `is_full_suite=false`, which the OMN-15408 predicate below then correctly
+# routed into the OMN-15059 host-load guard. That escalation proved nothing --
+# no test under tests/unit/ that never reads `.github/**` has an outcome a
+# workflow YAML edit can change -- while consuming exactly the capacity the
+# guard refuses pushes over. It is how OMN-16346 / OMN-16625 got stranded.
+# The selector now resolves those paths to the CI-contract class instead: the
+# tests that read `.github/**` off disk and assert its contents, plus any test
+# module the diff itself touches. This is a SUBSTITUTION of proof, not a
+# removal: the class may never select nothing (OMN-15541 -- a workflow edit can
+# turn full-suite escalation itself fail-OPEN), and an empty or unenumerable
+# class escalates. No env override, no allowlist to zero tests, no bypass token;
+# the vars below are untouched and can still only make this hook run MORE tests.
+#
 # Env overrides (all optional):
 #   PREPUSH_BASE_REF     git ref to diff against            (default: origin/dev)
 #   PREPUSH_ADJACENCY    adjacency yaml path            (default: selector built-in)
