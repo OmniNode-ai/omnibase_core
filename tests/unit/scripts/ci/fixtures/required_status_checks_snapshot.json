@@ -1,9 +1,9 @@
 {
   "_meta": {
     "source": "gh api repos/OmniNode-ai/omnibase_core/branches/dev/protection/required_status_checks",
-    "captured_at": "2026-08-13T00:00:00Z",
-    "captured_for": "enforce-everything CI gate audit (omnibase_core priority 7)",
-    "note": "Read-only snapshot for test pinning. No agent may mutate live branch protection; refresh this file by re-running the gh api call above and pasting the result when a maintainer changes required_status_checks."
+    "captured_at": "2026-08-29T13:23:13Z",
+    "captured_for": "OMN-16933 refresh: 'gate / CodeRabbit Thread Check' was removed from live branch protection under the 2026-08-29 operator ruling to remove CodeRabbit completely. No other context was added or removed (37 -> 36).",
+    "note": "Read-only snapshot for test pinning. Refresh this file by re-running the gh api call above and pasting the result when a maintainer changes required_status_checks. Branch protection is mutated only under an explicit operator ruling, never on agent initiative."
   },
   "branch": "dev",
   "contexts": [
@@ -16,7 +16,6 @@
     "Canonical Inference Gate",
     "No Faked Boundary Gate",
     "reason-graph",
-    "gate / CodeRabbit Thread Check",
     "pr-title / check-title",
     "no-plugin-daemon-classes",
     "receipt-honesty",

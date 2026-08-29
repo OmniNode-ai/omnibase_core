@@ -604,7 +604,6 @@ EXTERNAL_CONTEXT_FILES: frozenset[str] = frozenset(
 # test_direct_required_job_contexts_are_all_still_live re-checks every one.
 DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("contract-validation.yml", "contract-validation"): ("contract-validation",),
-    ("cr-thread-gate-caller.yml", "gate"): ("gate / CodeRabbit Thread Check",),
     ("dep-provenance-gate.yml", "dep-provenance-gate"): ("Dep Provenance Gate",),
     ("deploy-gate.yml", "deploy-gate"): ("deploy-gate / deploy-gate",),
     ("main-target-guard.yml", "main-target-guard"): ("main-target-guard",),

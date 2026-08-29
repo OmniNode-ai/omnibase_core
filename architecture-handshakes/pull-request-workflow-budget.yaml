@@ -51,7 +51,7 @@ schema_version: 1
 # Count lock. MUST equal len(allowlisted_workflows). Frozen a second time as
 # EXPECTED_BUDGET in the test suite. Intended to move DOWN only.
 # baseline captured 2026-07-21 at origin/dev@d09128fc.
-budget: 31
+budget: 30
 
 # Every live `.github/workflows/*.yml` that triggers on pull_request /
 # pull_request_target as of the baseline. This is the frozen ratchet floor: a new
@@ -68,7 +68,6 @@ allowlisted_workflows:
   - check-llm-refs-drift.yml
   - ci.yml
   - contract-validation.yml
-  - cr-thread-gate-caller.yml
   - dep-provenance-gate.yml
   - deploy-gate.yml
   - main-target-guard.yml

@@ -7,8 +7,8 @@
 # receipts at the canonical path `<receipts-dir>/<OMN-XXXX>/<item-id>/<check-type>.yaml`.
 # A missing or failing receipt blocks merge.
 #
-# Called by per-repo workflows via `workflow_call` (see cr-thread-gate.yml
-# pattern for precedent). Required status-check name: `receipt-gate / verify`.
+# Called by per-repo workflows via `workflow_call`. Required status-check
+# name: `receipt-gate / verify`.
 #
 # Inputs:
 #   contracts-dir:  path to ticket contract YAMLs, relative to the

@@ -6,7 +6,7 @@
 # for manual enrollment.
 #
 # OMN-7786: Re-trigger on review and check_suite events so the workflow
-# re-attempts auto-merge after CodeRabbit review finishes and branch
+# re-attempts auto-merge after review finishes and branch
 # protection gates clear. Silent continue-on-error removed; "already
 # enqueued" races are tolerated but real failures surface.
 #
