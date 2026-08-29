@@ -40,5 +40,11 @@ class EnumOccEligibilityReason(StrEnum):
     # wrong remedy (hand-author a receipt) on 2026-08-28 alone.
     AWAITING_RUNNER_RECEIPT = "awaiting_runner_receipt"
 
+    def legacy_external_value(self) -> str:
+        """Return the v0.46-compatible reason value for exhaustive consumers."""
+        if self is EnumOccEligibilityReason.AWAITING_RUNNER_RECEIPT:
+            return EnumOccEligibilityReason.NONPASS_RECEIPT.value
+        return self.value
+
 
 __all__ = ["EnumOccEligibilityReason"]

@@ -204,6 +204,25 @@ def test_awaiting_runner_still_surfaces_the_receipt_key(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_awaiting_runner_has_legacy_nonpass_reason_value(tmp_path: Path) -> None:
+    """Older exhaustive consumers can keep their NONPASS_RECEIPT branch.
+
+    The emitted reason remains specific for new consumers, while compatibility
+    callers that have not yet added a dedicated branch can fail closed exactly
+    as they did before OMN-16859.
+    """
+    _only_pending_behavior_proof(tmp_path)
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.reason is EnumOccEligibilityReason.AWAITING_RUNNER_RECEIPT
+    assert (
+        result.reason.legacy_external_value()
+        == EnumOccEligibilityReason.NONPASS_RECEIPT.value
+    )
+
+
+@pytest.mark.unit
 def test_awaiting_runner_detail_names_the_remedy(tmp_path: Path) -> None:
     """The detail must say what will clear it, since that is the whole point.
 
