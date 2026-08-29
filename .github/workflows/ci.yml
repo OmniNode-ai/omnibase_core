@@ -2947,7 +2947,7 @@ jobs:
           # length validator" the operator's docs-only-CI ruling explicitly keeps
           # running; a `skipped` here is never legitimate.
           #
-          # The `${{ needs.<job>.result }}` expressions are inlined directly in
+          # The `needs.<job>.result` GHA expressions are inlined directly in
           # the for-loop list (not the preamble-assigned `$lint`-style vars used
           # for the summary table above) -- this is deliberate, not cosmetic:
           # the OMN-15304 vector-6 skip-guard's aggregator-loop recognizer keys
@@ -2993,7 +2993,7 @@ jobs:
           # 'true' -- exactly tests-gate's existing per-upstream skip policy for
           # test-parallel/tests-integration (OMN-15315), applied to Phase 1.
           #
-          # Literal `${{ needs.<job>.result }}` expressions inlined here for the
+          # Literal `needs.<job>.result` GHA expressions inlined here for the
           # same OMN-15304 vector-6 recognizer reason as TIER 1 above.
           for check in \
             "pyright=${{ needs.pyright.result }}" \
