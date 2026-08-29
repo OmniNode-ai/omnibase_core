@@ -556,7 +556,15 @@ class TestContractComplianceFailClosed:
         text = CI_YML.read_text(encoding="utf-8")
         marker = 'if [ -z "${PR_NUMBER:-}" ]; then'
         idx = text.index(marker)
-        branch = text[idx : idx + 400].split("\n          fi", 1)[0]
+        # OMN-16346: bound the branch by its own terminator only. This used to
+        # slice a fixed `text[idx : idx + 400]` window first, which silently
+        # made the pin depend on how many COMMENT characters happen to sit
+        # between the `if` and the `exit 1` -- adding an explanatory comment
+        # inside the branch pushed `exit 1` past offset 400 and failed this
+        # test while the fail-closed property it guards was fully intact. The
+        # `\n          fi` split already bounds the branch exactly, so the
+        # character cap was never load-bearing, only brittle.
+        branch = text[idx:].split("\n          fi", 1)[0]
         assert "exit 1" in branch, branch
         assert "exit 0" not in branch, branch
 
