@@ -24,6 +24,11 @@ EXPECTED_EXPORTS: tuple[str, ...] = (
     "ModelWidgetConfigMetricCard",
     "ModelStatusItemConfig",
     "ModelWidgetConfigStatusGrid",
+    # Semantic severity for StatusGrid (OMN-16884 — Phase C3)
+    "DEFAULT_SEVERITY_ROLES",
+    "ModelSeverityRole",
+    "ModelSeverityVerdict",
+    "ModelStatusSecondary",
     "ModelEventFilter",
     "ModelWidgetConfigEventFeed",
     # UI Contract Primitives (OMN-13130 — Phase 0)

@@ -493,6 +493,8 @@ EnumValidationSeverity: type[EnumSeverity] = EnumSeverity
 EnumViolationSeverity: type[EnumSeverity] = EnumSeverity
 
 # Step type enum (workflow step types)
+from .enum_status_secondary_kind import EnumStatusSecondaryKind
+from .enum_status_severity import EnumStatusSeverity
 from .enum_step_type import EnumStepType
 
 # Subject type enums (OMN-1237)
@@ -871,6 +873,8 @@ __all__ = [
     # Dashboard domain (OMN-1284)
     "EnumDashboardStatus",
     "EnumDashboardTheme",
+    "EnumStatusSecondaryKind",
+    "EnumStatusSeverity",
     "EnumWidgetType",
     # Dashboard widget type (registry-driven dashboard Part 1 - OMN-9207)
     "EnumDashboardWidgetType",
