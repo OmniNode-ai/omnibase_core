@@ -6,10 +6,11 @@
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums import EnumWidgetType
+from omnibase_core.enums import EnumStatusSeverity, EnumWidgetType
 from omnibase_core.models.dashboard import (
     ModelChartAxisConfig,
     ModelChartSeriesConfig,
+    ModelSeverityVerdict,
     ModelStatusItemConfig,
     ModelTableColumnConfig,
     ModelWidgetConfigChart,
@@ -18,6 +19,7 @@ from omnibase_core.models.dashboard import (
     ModelWidgetConfigStatusGrid,
     ModelWidgetConfigTable,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 @pytest.mark.unit
@@ -164,91 +166,6 @@ class TestModelChartSeriesConfigColorValidation:
 
 
 @pytest.mark.unit
-class TestModelWidgetConfigStatusGridColorValidation:
-    """Tests for ModelWidgetConfigStatusGrid status_colors validation."""
-
-    def test_default_colors_valid(self) -> None:
-        """Test that default status_colors are valid."""
-        config = ModelWidgetConfigStatusGrid()
-        assert "healthy" in config.status_colors
-        assert config.status_colors["healthy"] == "#22c55e"
-
-    def test_custom_valid_colors(self) -> None:
-        """Test custom valid hex colors."""
-        custom_colors = {
-            "ok": "#00FF00",
-            "warn": "#FFFF00",
-            "fail": "#FF0000",
-        }
-        config = ModelWidgetConfigStatusGrid(status_colors=custom_colors)
-        assert config.status_colors == custom_colors
-
-    def test_custom_valid_colors_3_digit(self) -> None:
-        """Test custom valid 3-digit hex colors."""
-        custom_colors = {
-            "ok": "#0F0",
-            "warn": "#FF0",
-            "fail": "#F00",
-        }
-        config = ModelWidgetConfigStatusGrid(status_colors=custom_colors)
-        assert config.status_colors == custom_colors
-
-    def test_custom_valid_colors_with_alpha(self) -> None:
-        """Test custom valid hex colors with alpha."""
-        custom_colors = {
-            "ok": "#00FF00FF",
-            "warn": "#FFFF00AA",
-        }
-        config = ModelWidgetConfigStatusGrid(status_colors=custom_colors)
-        assert config.status_colors == custom_colors
-
-    def test_invalid_color_missing_hash(self) -> None:
-        """Test that color without # is invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWidgetConfigStatusGrid(
-                status_colors={"ok": "00FF00"}  # Missing #
-            )
-        # Check for value_error type from our custom color validator
-        errors = exc_info.value.errors()
-        assert any(e["type"] == "value_error" for e in errors)
-
-    def test_invalid_color_wrong_length(self) -> None:
-        """Test that color with wrong length is invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWidgetConfigStatusGrid(
-                status_colors={"ok": "#FF000"}  # 5 digits - invalid length
-            )
-        # Check for value_error type from our custom color validator
-        errors = exc_info.value.errors()
-        assert any(e["type"] == "value_error" for e in errors)
-
-    def test_invalid_color_non_hex_chars(self) -> None:
-        """Test that non-hex characters are invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWidgetConfigStatusGrid(
-                status_colors={"ok": "#GGGGGG"}  # Invalid chars
-            )
-        # Check for value_error type from our custom color validator
-        errors = exc_info.value.errors()
-        assert any(e["type"] == "value_error" for e in errors)
-
-    def test_invalid_color_value_raises_value_error(self) -> None:
-        """Test that invalid color value in status_colors raises ValidationError with value_error type."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWidgetConfigStatusGrid(
-                status_colors={"ok": "#00FF00", "fail": "invalid"}
-            )
-        # Check for value_error type from our custom color validator
-        errors = exc_info.value.errors()
-        assert any(e["type"] == "value_error" for e in errors)
-
-    def test_empty_dict_valid(self) -> None:
-        """Test that empty status_colors dict is valid."""
-        config = ModelWidgetConfigStatusGrid(status_colors={})
-        assert config.status_colors == {}
-
-
-@pytest.mark.unit
 class TestModelTableColumnConfigWidthValidation:
     """Tests for ModelTableColumnConfig width minimum constraint."""
 
@@ -328,7 +245,19 @@ class TestModelValidationsRoundtrip:
         """Test ModelWidgetConfigStatusGrid roundtrip serialization."""
         config = ModelWidgetConfigStatusGrid(
             columns=4,
-            status_colors={"up": "#00FF00", "down": "#FF0000"},
+            items=(
+                ModelStatusItemConfig(
+                    key="up",
+                    label="Uptime",
+                    verdict=ModelSeverityVerdict(
+                        severity=EnumStatusSeverity.NOMINAL,
+                        status_value="HEALTHY",
+                        policy_id="onex.policy.uptime",
+                        policy_version=ModelSemVer(major=1, minor=0, patch=0),
+                        policy_digest="sha256:" + "3" * 64,
+                    ),
+                ),
+            ),
         )
         data = config.model_dump()
         restored = ModelWidgetConfigStatusGrid.model_validate(data)
@@ -516,7 +445,17 @@ class TestStringMinLengthConstraints:
 
     def test_status_item_valid_fields(self) -> None:
         """Test that non-empty key and label are valid."""
-        config = ModelStatusItemConfig(key="a", label="b")
+        config = ModelStatusItemConfig(
+            key="a",
+            label="b",
+            verdict=ModelSeverityVerdict(
+                severity=EnumStatusSeverity.NOMINAL,
+                status_value="HEALTHY",
+                policy_id="onex.policy.uptime",
+                policy_version=ModelSemVer(major=1, minor=0, patch=0),
+                policy_digest="sha256:" + "4" * 64,
+            ),
+        )
         assert config.key == "a"
         assert config.label == "b"
 

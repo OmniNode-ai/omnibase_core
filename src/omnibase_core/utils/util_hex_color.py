@@ -219,7 +219,14 @@ def validate_hex_color_mapping(
     """Validate all color values in a mapping.
 
     This is a convenience function for use in Pydantic field validators
-    where colors are stored in a mapping (e.g., status_colors).
+    where colors are stored in a mapping.
+
+    Note:
+        It has no production caller since OMN-16884 removed
+        ``ModelWidgetConfigStatusGrid.status_colors``: a widget config carrying
+        presentation colours violates the theme contract, so severities now
+        resolve through theme token names instead. Kept as a general validator
+        for surfaces that legitimately accept an author-supplied colour.
 
     Args:
         mapping: A mapping of keys to hex color values.
@@ -234,9 +241,9 @@ def validate_hex_color_mapping(
     Example:
         In a Pydantic model::
 
-            @field_validator("status_colors")
+            @field_validator("palette")
             @classmethod
             def check_colors(cls, v: Mapping[str, str]) -> Mapping[str, str]:
-                return validate_hex_color_mapping(v, "status")
+                return validate_hex_color_mapping(v, "palette")
     """
     return UtilHexColorValidator.validate_mapping(mapping, key_context)

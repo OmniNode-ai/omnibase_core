@@ -91,9 +91,15 @@ from omnibase_core.models.dashboard.model_renderer_theme_contract import (
     ModelRendererThemeContract,
 )
 from omnibase_core.models.dashboard.model_review_packet import ModelReviewPacket
+from omnibase_core.models.dashboard.model_severity_role import (
+    DEFAULT_SEVERITY_ROLES,
+    ModelSeverityRole,
+)
+from omnibase_core.models.dashboard.model_severity_verdict import ModelSeverityVerdict
 from omnibase_core.models.dashboard.model_status_item_config import (
     ModelStatusItemConfig,
 )
+from omnibase_core.models.dashboard.model_status_secondary import ModelStatusSecondary
 from omnibase_core.models.dashboard.model_table_column_config import (
     ModelTableColumnConfig,
 )
@@ -148,9 +154,13 @@ __all__: tuple[str, ...] = (
     # Metric Card Widget
     "ModelMetricThreshold",
     "ModelWidgetConfigMetricCard",
-    # Status Grid Widget
+    # Status Grid Widget + semantic severity (OMN-16884 — Phase C3)
     "ModelStatusItemConfig",
     "ModelWidgetConfigStatusGrid",
+    "DEFAULT_SEVERITY_ROLES",
+    "ModelSeverityRole",
+    "ModelSeverityVerdict",
+    "ModelStatusSecondary",
     # Event Feed Widget
     "ModelEventFilter",
     "ModelWidgetConfigEventFeed",
