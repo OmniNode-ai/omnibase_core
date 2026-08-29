@@ -52,7 +52,8 @@ from omnibase_core.utils.util_widget_envelope import (
 )
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
-_SOURCE_REVISION = "b7d3f0a1c9e24a6f8b1d5c3e7a9f2b4d6c8e0a13"
+# A synthetic 40-hex git object id used as provenance test data, not a credential.
+_SOURCE_REVISION = "0" * 40
 
 
 def _component(
