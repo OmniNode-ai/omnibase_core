@@ -9,6 +9,7 @@ import json as _json
 import os
 import socket
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -730,44 +731,117 @@ from omnibase_core.cli.cli_hooks import hooks_group
 
 cli.add_command(hooks_group)
 
-# Load CLI extension groups registered by other packages via the onex.cli entry-point group.
-# Each entry point must expose a click.Group or click.Command.
-# This enables infra packages (e.g. omnibase_infra) to contribute subcommands
-# (e.g. `onex kafka`) without creating circular imports in omnibase_core.
+# --------------------------------------------------------------------------
+# onex.cli extension discovery (OMN-16967)
+# --------------------------------------------------------------------------
+#
+# Packages contribute subcommands by advertising them in the ``onex.cli``
+# entry-point group; installing the package is what makes its command exist.
+# That is the registration contract for every CLI surface that lives outside
+# this repo (``onex kafka`` from omnibase_infra, ``onex market`` and
+# ``onex cloud`` from omnimarket), and it is what lets those repos add commands
+# without a circular import back into omnibase_core.
+#
+# THIS LOADER FAILS LOUD, AND THAT IS THE POINT (2026-08-29 operator ruling).
+# It previously logged a warning and skipped on every failure mode below. A
+# skipped registration is invisible: the CLI starts fine, the command is simply
+# absent, and the log line lands in a stream nobody reads during an install. The
+# operator named this drift class directly — features get built outside
+# entry-point registration *because nothing enforces the binding*. A malformed
+# registration is a packaging defect in an installed distribution, so it is
+# raised at import time, where whoever installed the package is standing.
+#
+# Three malformed shapes, all fatal:
+#   * the target does not import / the attribute is missing;
+#   * the target is not a click.Command or click.Group;
+#   * the name is already taken (by a core command or by another distribution).
+#
+# The conflict case deserves its own note: click's ``add_command`` would let a
+# second registration silently REPLACE the first, and ``entry_points`` has no
+# defined ordering across distributions. Skipping and overwriting are both wrong
+# — one of the two commands would win nondeterministically, per machine. Naming
+# the collision is the only honest option.
 #
 # Security note: entry points are resolved from pip-installed packages, whose
 # trust boundary is the Python environment itself. Loading is limited to the
 # installed package set — no arbitrary code is executed from untrusted sources.
-import logging as _logging
+from importlib.metadata import EntryPoint
 from importlib.metadata import entry_points as _entry_points
 
-_extension_log = _logging.getLogger(__name__)
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
-for _ep in _entry_points(group="onex.cli"):
-    try:
-        _cmd = _ep.load()
-        # boundary-ok: entry points are provided by pip-installed packages.
-        if isinstance(_cmd, (click.Command, click.Group)):
-            if _ep.name in cli.commands:
-                _extension_log.warning(
-                    "onex.cli extension %r conflicts with an existing command, skipping",
-                    _ep.name,
-                )
-            else:
-                cli.add_command(_cmd, _ep.name)
-        else:
-            _extension_log.warning(
-                "onex.cli extension %r is not a click.Command or click.Group (got %s), skipping",
-                _ep.name,
-                type(_cmd).__name__,
-            )
-    except (ImportError, ModuleNotFoundError, AttributeError, TypeError) as _ext_err:
-        # Narrow catch: expected failure modes when loading a broken/missing extension.
-        # RuntimeError and other unexpected exceptions are NOT caught — they propagate
-        # and remain visible rather than being silently swallowed.
-        _extension_log.warning(
-            "onex.cli extension %r failed to load: %s", _ep.name, _ext_err
+_CLI_EXTENSION_GROUP = "onex.cli"
+
+
+def load_cli_extensions(
+    group: click.Group,
+    extension_points: Iterable[EntryPoint],
+) -> list[str]:
+    """Attach every advertised ``onex.cli`` extension to ``group``, or raise.
+
+    Args:
+        group: The root CLI the extensions are attached to.
+        extension_points: The entry points to load, normally the live
+            ``onex.cli`` group. Injected so the failure modes are testable
+            without installing a broken distribution.
+
+    Returns:
+        The names attached, in the order they were processed.
+
+    Raises:
+        ModelOnexError: If any entry point fails to load, resolves to something
+            that is not a click command, or claims a name that is already
+            registered. Never partial-and-silent: a command that was advertised
+            and did not arrive is reported, not skipped.
+    """
+    attached: list[str] = []
+    for entry_point in extension_points:
+        origin = (
+            entry_point.dist.name
+            if entry_point.dist is not None
+            else "an unknown distribution"
         )
+        try:
+            command = entry_point.load()
+            # boundary-ok: entry points are provided by pip-installed packages.
+        except Exception as exc:
+            raise ModelOnexError(
+                f"the '{_CLI_EXTENSION_GROUP}' entry point "
+                f"'{entry_point.name}' (from {origin}) points at "
+                f"'{entry_point.value}', which failed to load: "
+                f"{type(exc).__name__}: {exc}. The command it advertises does "
+                f"not exist, so this is a packaging defect in {origin}, not a "
+                f"CLI fault.",
+                error_code=EnumCoreErrorCode.IMPORT_ERROR,
+            ) from exc
+
+        if not isinstance(command, (click.Command, click.Group)):
+            raise ModelOnexError(
+                f"the '{_CLI_EXTENSION_GROUP}' entry point "
+                f"'{entry_point.name}' (from {origin}) resolved to "
+                f"{type(command).__name__}, not a click.Command or click.Group. "
+                f"'{entry_point.value}' must name a click command object.",
+                error_code=EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED,
+            )
+
+        if entry_point.name in group.commands:
+            raise ModelOnexError(
+                f"the '{_CLI_EXTENSION_GROUP}' entry point "
+                f"'{entry_point.name}' (from {origin}) collides with a command "
+                f"that is already registered. Entry points have no defined "
+                f"order across distributions, so allowing this would make which "
+                f"'onex {entry_point.name}' runs depend on the machine. Rename "
+                f"one of them.",
+                error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
+            )
+
+        group.add_command(command, entry_point.name)
+        attached.append(entry_point.name)
+
+    return attached
+
+
+load_cli_extensions(cli, _entry_points(group=_CLI_EXTENSION_GROUP))
 
 if __name__ == "__main__":
     cli()
