@@ -21,7 +21,12 @@ __all__ = ["ModelStatusSecondary"]
 class ModelStatusSecondary(BaseModel):
     """A numeric secondary displayed alongside a tile's status."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+        allow_inf_nan=False,
+    )
 
     kind: EnumStatusSecondaryKind = Field(
         ...,

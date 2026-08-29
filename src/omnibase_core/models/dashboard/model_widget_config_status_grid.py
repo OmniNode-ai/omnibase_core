@@ -136,6 +136,7 @@ class ModelWidgetConfigStatusGrid(BaseModel):
             if severity not in severities
         )
         if missing:
+            # error-ok: Pydantic model_validator enforces complete severity coverage
             raise ValueError(
                 f"severity_roles must cover every severity; missing: {missing}"
             )
@@ -145,6 +146,7 @@ class ModelWidgetConfigStatusGrid(BaseModel):
             if count > 1
         )
         if duplicated:
+            # error-ok: Pydantic model_validator enforces one role per severity
             raise ValueError(
                 f"severity_roles must declare each severity once; duplicated: "
                 f"{duplicated}"
@@ -155,6 +157,7 @@ class ModelWidgetConfigStatusGrid(BaseModel):
                 value for value, count in Counter(values).items() if count > 1
             )
             if repeats:
+                # error-ok: Pydantic model_validator rejects color-only severity roles
                 raise ValueError(
                     f"severity_roles must give each severity a distinct "
                     f"{attribute} so severity is never conveyed by colour "

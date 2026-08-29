@@ -67,6 +67,7 @@ class ModelSeverityRole(BaseModel):
                 ``ModelRendererThemeContract``.
         """
         if value not in ModelRendererThemeContract.model_fields:
+            # error-ok: Pydantic field_validator rejects undefined theme token names
             raise ValueError(
                 f"theme_color_token '{value}' is not a field of "
                 f"ModelRendererThemeContract; a severity role must resolve "

@@ -70,6 +70,7 @@ class ModelSeverityVerdict(BaseModel):
             ValueError: If ``value`` does not match the digest pattern.
         """
         if not SEVERITY_POLICY_DIGEST_PATTERN.match(value):
+            # error-ok: Pydantic field_validator rejects invalid policy digests
             raise ValueError(
                 f"policy_digest must match 'sha256:<64 hex chars>', got '{value}'"
             )

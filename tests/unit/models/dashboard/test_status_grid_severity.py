@@ -335,3 +335,12 @@ class TestNumericSecondary:
         )
 
         assert secondary.unit == "msg/min"
+
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+    def test_non_finite_values_are_rejected(self, value: float) -> None:
+        with pytest.raises(ValidationError):
+            ModelStatusSecondary(
+                kind=EnumStatusSecondaryKind.RATE,
+                value=value,
+                label="Arrivals",
+            )
