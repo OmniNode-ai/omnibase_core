@@ -43,6 +43,9 @@ EXPECTED_EXPORTS: tuple[str, ...] = (
     "ModelThemeCatalogEntry",
     "ModelThemeCatalog",
     "ModelThemeActivation",
+    # One versioned widget envelope (OMN-16883 — Phase C2)
+    "ModelWidgetEnvelope",
+    "ModelWidgetProvenance",
     # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
     "ModelReviewPacket",
     "ModelOmniStudioEvidenceBundle",

@@ -40,6 +40,8 @@ from omnibase_core.models.dashboard import (
     ModelThemeCatalog,
     ModelThemeCatalogEntry,
     ModelThemeInstance,
+    ModelWidgetEnvelope,
+    ModelWidgetProvenance,
 )
 from omnibase_core.models.notifications import ModelStateTransitionNotification
 from omnibase_core.models.projectors import (
@@ -76,10 +78,34 @@ MODELS: dict[str, type[BaseModel]] = {
     "ModelThemeCatalogEntry": ModelThemeCatalogEntry,
     "ModelThemeCatalog": ModelThemeCatalog,
     "ModelThemeActivation": ModelThemeActivation,
+    # One versioned widget envelope — the unit Plane 1 distributes; carries the
+    # config half ModelComponentContract never had (OMN-16883, Phase C2)
+    "ModelWidgetEnvelope": ModelWidgetEnvelope,
+    "ModelWidgetProvenance": ModelWidgetProvenance,
     # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
     "ModelReviewPacket": ModelReviewPacket,
     "ModelOmniStudioEvidenceBundle": ModelOmniStudioEvidenceBundle,
 }
+
+
+def _combined_defs() -> dict[str, object]:
+    """Build root-level definitions so nested ``#/$defs/...`` refs resolve."""
+    defs: dict[str, object] = {}
+    for name, model in MODELS.items():
+        schema = model.model_json_schema()
+        nested_defs = schema.pop("$defs", {})
+        if not isinstance(nested_defs, dict):
+            raise TypeError(f"{name} emitted non-object $defs")
+        for nested_name, nested_schema in nested_defs.items():
+            existing = defs.get(nested_name)
+            if existing is not None and existing != nested_schema:
+                raise ValueError(f"conflicting nested schema for {nested_name}")
+            defs[nested_name] = nested_schema
+        existing = defs.get(name)
+        if existing is not None and existing != schema:
+            raise ValueError(f"conflicting schema for {name}")
+        defs[name] = schema
+    return defs
 
 
 def main() -> int:
@@ -89,7 +115,7 @@ def main() -> int:
     output = Path(sys.argv[1])
     combined = {
         "$id": "https://omninode.ai/schemas/omnidash-v2.json",
-        "$defs": {name: model.model_json_schema() for name, model in MODELS.items()},
+        "$defs": _combined_defs(),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(combined, indent=2))

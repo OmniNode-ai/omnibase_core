@@ -122,6 +122,10 @@ from omnibase_core.models.dashboard.model_widget_definition import (
     ModelWidgetConfig,
     ModelWidgetDefinition,
 )
+from omnibase_core.models.dashboard.model_widget_envelope import ModelWidgetEnvelope
+from omnibase_core.models.dashboard.model_widget_provenance import (
+    ModelWidgetProvenance,
+)
 
 __all__: tuple[str, ...] = (
     # Theme contract, instances, and catalog (OMN-13389 / OMN-16882)
@@ -165,6 +169,10 @@ __all__: tuple[str, ...] = (
     "ModelRendererCapabilityContract",
     # Versioned design-token contract (OMN-13389)
     "ModelRendererThemeContract",
+    # One versioned widget envelope — the unit Plane 1 distributes
+    # (OMN-16883, Phase C2)
+    "ModelWidgetEnvelope",
+    "ModelWidgetProvenance",
     # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
     "ModelReviewPacket",
     "ModelOmniStudioEvidenceBundle",
