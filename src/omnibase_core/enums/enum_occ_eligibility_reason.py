@@ -31,11 +31,13 @@ class EnumOccEligibilityReason(StrEnum):
     # This is a LEGIBILITY split out of NONPASS_RECEIPT, never a relaxation:
     # the verdict stays `eligible=False`, and the gate reports it only when it
     # is the SOLE remaining blocker, so a genuinely missing or genuinely
-    # FAILING receipt still wins. It exists because the OCC producers run in
-    # the .201 effects runtime with no product checkout and structurally cannot
-    # execute a `test_passes` check, so "non-PASS" pointed four separate lanes
-    # at the wrong remedy (hand-author a receipt) on 2026-08-28 alone. The
-    # right remedy is: wait for the product-repo runner, or fix it.
+    # FAILING receipt still wins. Exhaustive consumers should treat unknown
+    # reasons as ineligible and may map this value to NONPASS_RECEIPT until
+    # they render the more specific "wait for or fix the product-repo runner"
+    # remedy. It exists because the OCC producers run in the .201 effects
+    # runtime with no product checkout and structurally cannot execute a
+    # `test_passes` check, so "non-PASS" pointed four separate lanes at the
+    # wrong remedy (hand-author a receipt) on 2026-08-28 alone.
     AWAITING_RUNNER_RECEIPT = "awaiting_runner_receipt"
 
 

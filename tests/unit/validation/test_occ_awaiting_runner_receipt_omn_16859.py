@@ -278,6 +278,10 @@ def test_a_genuine_missing_receipt_outranks_awaiting_runner(tmp_path: Path) -> N
 
     assert result.eligible is False
     assert result.reason is EnumOccEligibilityReason.MISSING_RECEIPT
+    assert result.missing_or_nonpass_receipts == (
+        f"{TICKET}:{BEHAVIOR_ITEM}:test_passes",
+        f"{TICKET}:dod-unwritten:command",
+    )
 
 
 @pytest.mark.unit
@@ -315,6 +319,10 @@ def test_a_genuine_failing_receipt_outranks_awaiting_runner(tmp_path: Path) -> N
 
     assert result.eligible is False
     assert result.reason is EnumOccEligibilityReason.NONPASS_RECEIPT
+    assert result.missing_or_nonpass_receipts == (
+        f"{TICKET}:{BEHAVIOR_ITEM}:test_passes",
+        f"{TICKET}:dod-ran-and-failed:command",
+    )
 
 
 @pytest.mark.unit

@@ -473,7 +473,13 @@ def validate_occ_merge_eligibility(
             contract_hashes=contract_hashes,
             receipt_ids=tuple(sorted(receipt_ids)),
             missing_or_nonpass_receipts=tuple(
-                sorted([*missing_receipts, *nonpass_receipts])
+                sorted(
+                    [
+                        *missing_receipts,
+                        *nonpass_receipts,
+                        *awaiting_runner_receipts,
+                    ]
+                )
             ),
             detail="one or more receipts are missing or non-PASS",
         )
