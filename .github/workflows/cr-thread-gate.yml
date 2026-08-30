@@ -36,17 +36,16 @@ on:
         default: ""
 
 jobs:
-  occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
-
+  # OMN-17146: the nested `occ-preflight` job is REMOVED. omnibase_core#1621
+  # (31e44e9db, 2026-08-30T02:41Z) converted cr-thread-gate-caller.yml from the
+  # remote reusable to this local fork; from that commit on, EVERY run of
+  # cr-thread-gate-caller.yml concluded `startup_failure` (dev and feature
+  # branches alike) — the composed check run was never created at all, which is
+  # the OMN-14856/OMN-15120 vector-3 wedge in its worst form. The caller already
+  # runs its own `occ-preflight` job and `gate` already `needs:` it, so this
+  # copy was redundant nesting (caller -> this fork -> occ-preflight). A no-op
+  # gate needs no preflight at all.
   gate:
-    needs: occ-preflight
     name: CodeRabbit Thread Check
     runs-on: >-
       ${{
