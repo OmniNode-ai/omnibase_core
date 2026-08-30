@@ -1,4 +1,15 @@
 name: CR Thread Gate
+# OMN-17146: NO-OP. CodeRabbit is being retired org-wide (OMN-16933).
+# This is a local fork of omniclaude's reusable (OMN-16389). It used to
+# sparse-check-out omniclaude's scripts/check-unresolved-threads.sh at
+# ref: dev; omniclaude#2069 (051f96da6, OMN-16933) deleted that script from
+# omniclaude dev, so the gate hard-failed on every omnibase_core PR.
+# Re-pointing at ref: main would reintroduce the CodeRabbit dependency the
+# retirement exists to remove; deleting the workflow would strand a required
+# context that can never report. So the job succeeds with a notice until
+# OMN-16933 removes the context and the caller.
+# The workflow_call interface and the job key/name are UNCHANGED so the
+# composed context "gate / CodeRabbit Thread Check" keeps reporting.
 # Reusable workflow — call via:
 #   uses: OmniNode-ai/omniclaude/.github/workflows/cr-thread-gate.yml@main
 # Required status check string: "gate / CodeRabbit Thread Check"
@@ -44,54 +55,16 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - name: Checkout omniclaude scripts
-        uses: actions/checkout@v7
-        with:
-          repository: OmniNode-ai/omniclaude
-          ref: dev
-          path: _external/omniclaude-cr-thread-gate
-          sparse-checkout: scripts/check-unresolved-threads.sh
-          sparse-checkout-cone-mode: false
-
-      - name: Resolve repo name
-        id: resolve-repo
+      - name: CodeRabbit retired — gate is a no-op
         run: |
-          REPO="${{ inputs.repo }}"
-          [ -z "$REPO" ] && REPO="${{ github.repository }}"
-          # Strip owner prefix if present (owner/repo -> repo)
-          echo "repo=${REPO##*/}" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve PR number
-        id: resolve-pr
-        run: |
-          PR="${{ inputs.pr-number }}"
-          if [ -z "$PR" ]; then
-            PR="${{ github.event.pull_request.number }}"
-          fi
-          if [ -z "$PR" ]; then
-            PR="${{ github.event.issue.number }}"
-          fi
-          echo "pr=$PR" >> "$GITHUB_OUTPUT"
-
-      - name: Check unresolved CodeRabbit threads
-        env:
-          GH_TOKEN: ${{ secrets.CROSS_REPO_PAT || secrets.github-token || secrets.GITHUB_TOKEN }}
-        run: |
-          PR="${{ steps.resolve-pr.outputs.pr }}"
-          if [ -z "$PR" ] || [ "$PR" = "0" ]; then
-            echo "No PR number — skipping (merge_group context)."
-            exit 0
-          fi
-          SCRIPT="_external/omniclaude-cr-thread-gate/scripts/check-unresolved-threads.sh"
-          test -f "$SCRIPT"
-          chmod +x "$SCRIPT"
-          COUNT=$(bash "$SCRIPT" \
-            "${{ github.repository_owner }}" \
-            "${{ steps.resolve-repo.outputs.repo }}" \
-            "$PR")
-          echo "Unresolved CodeRabbit threads: $COUNT"
-          if [ "$COUNT" -gt 0 ]; then
-            echo "::error::$COUNT unresolved CodeRabbit thread(s). Resolve all CR threads before merging."
-            exit 1
-          fi
-          echo "All CodeRabbit threads resolved."
+          echo "::notice::CodeRabbit retired (OMN-16933); gate is a no-op pending removal from required contexts."
+          echo "OMN-17146: this workflow no longer checks out or executes"
+          echo "omniclaude's scripts/check-unresolved-threads.sh. That script was"
+          echo "deleted from omniclaude dev by omniclaude#2069 (051f96da6, OMN-16933),"
+          echo "and this fork pinned ref: dev, so the gate failed with"
+          echo "\"chmod: cannot access ... No such file or directory\" on every PR."
+          echo "The CodeRabbit dependency is deliberately not being reintroduced."
+          echo "Removal of this workflow, its caller, and the composed context"
+          echo "\"gate / CodeRabbit Thread Check\" from required_status_checks /"
+          echo "EXPECTED_EXTERNAL_CONTEXTS is tracked by OMN-16933."
+          exit 0
