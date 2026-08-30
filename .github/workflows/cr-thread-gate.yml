@@ -48,7 +48,8 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omniclaude
-          ref: main
+          ref: dev
+          path: _external/omniclaude-cr-thread-gate
           sparse-checkout: scripts/check-unresolved-threads.sh
           sparse-checkout-cone-mode: false
 
@@ -81,8 +82,10 @@ jobs:
             echo "No PR number — skipping (merge_group context)."
             exit 0
           fi
-          chmod +x scripts/check-unresolved-threads.sh
-          COUNT=$(bash scripts/check-unresolved-threads.sh \
+          SCRIPT="_external/omniclaude-cr-thread-gate/scripts/check-unresolved-threads.sh"
+          test -f "$SCRIPT"
+          chmod +x "$SCRIPT"
+          COUNT=$(bash "$SCRIPT" \
             "${{ github.repository_owner }}" \
             "${{ steps.resolve-repo.outputs.repo }}" \
             "$PR")
