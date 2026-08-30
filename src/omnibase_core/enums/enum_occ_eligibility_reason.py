@@ -24,6 +24,27 @@ class EnumOccEligibilityReason(StrEnum):
     # to the OCC PR itself (`occ-self-bind-pr-<N>` omitted). Split out of
     # PR_TICKET_MISMATCH so the gate can name the exact remedy.
     MISSING_OCC_SELF_BIND = "missing_occ_self_bind"
+    # OMN-16859: the receipt resolves, is hash-bound and PR-bound, and honestly
+    # declares PENDING — the probe was allocated but has not executed yet —
+    # on a check type a product-repo CI runner executes and supersedes.
+    #
+    # This is a LEGIBILITY split out of NONPASS_RECEIPT, never a relaxation:
+    # the verdict stays `eligible=False`, and the gate reports it only when it
+    # is the SOLE remaining blocker, so a genuinely missing or genuinely
+    # FAILING receipt still wins. Exhaustive consumers should treat unknown
+    # reasons as ineligible and may map this value to NONPASS_RECEIPT until
+    # they render the more specific "wait for or fix the product-repo runner"
+    # remedy. It exists because the OCC producers run in the .201 effects
+    # runtime with no product checkout and structurally cannot execute a
+    # `test_passes` check, so "non-PASS" pointed four separate lanes at the
+    # wrong remedy (hand-author a receipt) on 2026-08-28 alone.
+    AWAITING_RUNNER_RECEIPT = "awaiting_runner_receipt"
+
+    def legacy_external_value(self) -> str:
+        """Return the v0.46-compatible reason value for exhaustive consumers."""
+        if self is EnumOccEligibilityReason.AWAITING_RUNNER_RECEIPT:
+            return EnumOccEligibilityReason.NONPASS_RECEIPT.value
+        return self.value
 
 
 __all__ = ["EnumOccEligibilityReason"]
