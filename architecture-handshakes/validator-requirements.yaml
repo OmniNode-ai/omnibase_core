@@ -43,7 +43,6 @@ known_repos:
   # validators added per-repo below based on repo language and content.
   - omnibase  # meta/registry repo (repos.yaml + docs); no Python src
   - omnicursor  # Python repo: cursor AI plugin
-  - onex-self-extending-agent  # Python repo: ONEX self-extending agent
   - knowledge-base  # Python tooling + documentation; doc-content-scan applies
 
 # Scopes:
@@ -191,10 +190,8 @@ required_validators:
       - omniintelligence
       - omninode_infra
       - onex_change_control
-      # OMN-13579: these repos have hardcoded topic strings in source
-      # (omnicursor: _TOPIC_MAP dict; onex-self-extending-agent: TOPIC_* constants)
+      # OMN-13579: this repo has hardcoded topic strings in source (omnicursor: _TOPIC_MAP dict)
       - omnicursor
-      - onex-self-extending-agent
       # knowledge-base is doc-only; no contract.yaml / Kafka coupling — excluded
 
   stub-implementations:
@@ -224,7 +221,6 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with non-test source code
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   enum-governance:
@@ -255,7 +251,6 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos using enums
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   naming-conventions:
@@ -287,7 +282,6 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with src/
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   self-gating-workflows:
@@ -357,7 +351,6 @@ required_validators:
       - omninode_infra
       # OMN-13579: Python repos with src/
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   mypy-type-check:
@@ -387,7 +380,6 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with src/ + pyproject.toml
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   ruff-format-check:
@@ -420,7 +412,6 @@ required_validators:
       - onex_change_control
       # OMN-13579: Python repos — ruff applies to all with pyproject.toml
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   aislop-patterns:
@@ -471,7 +462,6 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos that use pydantic models
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   single-class-per-file:
@@ -502,7 +492,6 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with src/
       - omnicursor
-      - onex-self-extending-agent
       - knowledge-base
 
   detect-secrets:
@@ -649,8 +638,8 @@ required_validators:
       ENFORCEMENT SCOPE: wired + required on omnibase_core (pre-commit hook
       check-doc-content-scan + the doc-content-scan CI job that feeds the airtight
       CI Summary rollup, registered in model_b_rollup_enforcement).
-      OMN-13579 extends applies_to_repos to knowledge-base, omnibase, omnicursor,
-      and onex-self-extending-agent (all have docs/ with .md content). Wiring the
+      OMN-13579 extends applies_to_repos to knowledge-base, omnibase, and omnicursor
+      (all have docs/ with .md content). Wiring the
       pre-commit hook + CI job in those repos is tracked under OMN-13576 (fleet
       rollout) — adding them here surfaces MISSING_PRE_COMMIT / MISSING_CI_WORKFLOW
       gaps in the consumer, which is the correct ratchet posture before wiring lands.
@@ -682,7 +671,6 @@ required_validators:
       - knowledge-base
       - omnibase
       - omnicursor
-      - onex-self-extending-agent
 
   no-new-os-environ:
     description: |
