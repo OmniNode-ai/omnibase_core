@@ -161,3 +161,5 @@ Known active context:
 ## License
 
 [MIT](LICENSE)
+
+<!-- docs-only CI short-circuit proof probe; this PR is a throwaway and will be closed unmerged. -->
