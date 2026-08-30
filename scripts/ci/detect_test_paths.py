@@ -14,6 +14,7 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+from scripts.ci.enum_additive_diff import classify_enum_diff_additive
 from scripts.ci.test_selection_closure import compute_closure_selection
 from scripts.ci.test_selection_loader import (
     load_adjacency_map,
@@ -58,6 +59,12 @@ def _is_docs_only_path(path: str) -> bool:
 # pyproject.toml is handled content-aware (not as a bare path-prefix trigger).
 # See classify_pyproject_dependency_relevant / step 2 in compute_selection.
 PYPROJECT_PATH = "pyproject.toml"
+
+# OMN-16321. The one `shared_modules` entry whose escalation can be discharged by
+# structural proof instead of a path-prefix match. See scripts/ci/enum_additive_diff.py
+# for why "only ADDS members" is the exact boundary, and why nothing else narrows.
+ENUMS_MODULE = "enums"
+ENUMS_PREFIX = f"{SRC_PREFIX}{ENUMS_MODULE}/"
 
 # Keys under [project] whose change is metadata-only — it cannot alter dependency
 # resolution, build inputs, or test behavior, so a diff confined to these must NOT
@@ -298,6 +305,36 @@ def ci_contract_test_paths(repo_root: Path) -> list[str]:
     return sorted(set(paths))
 
 
+def _enums_escalation_discharged(
+    shared_hits: set[str],
+    changed_files: list[str],
+    enums_diff_additive: bool | None,
+) -> bool:
+    """True only when the ONLY shared module touched is a provably-additive ``enums``.
+
+    OMN-16321. Three conditions, all required, all positive:
+
+    1. ``enums`` is the sole ``shared_modules`` entry in the diff. A diff that
+       also touches ``models``/``runtime``/``contracts``/``validation``/
+       ``event_bus`` escalates on those, untouched by this rule.
+    2. The classifier proved every changed ``enums/`` file only APPENDS members
+       (``True``, never ``None``). ``None`` — no base ref, unreadable revision,
+       unparseable source — escalates, so ambiguity keeps the old behaviour.
+    3. The diff actually contains an ``enums/`` file. Guards against discharging
+       an escalation on a stale or mis-supplied classification.
+
+    Discharging the escalation does not select fewer tests than the closure can
+    prove: the caller still unions ``unnarrowable_test_paths`` into the result,
+    so every always-run root (``tests/enums/``, ``tests/gates/``,
+    ``tests/validation/``, ``tests/models/``, ``tests/ci/`` …) still runs.
+    """
+    if shared_hits != {ENUMS_MODULE}:
+        return False
+    if enums_diff_additive is not True:
+        return False
+    return any(path.startswith(ENUMS_PREFIX) for path in changed_files)
+
+
 def compute_selection(
     changed_files: list[str],
     adjacency_path: Path,
@@ -306,6 +343,7 @@ def compute_selection(
     feature_flag_enabled: bool = True,
     pyproject_dependency_relevant: bool | None = None,
     repo_root: Path | None = None,
+    enums_diff_additive: bool | None = None,
 ) -> ModelTestSelection:
     """Resolve the test selection for a change set.
 
@@ -315,6 +353,14 @@ def compute_selection(
     is metadata-only (do not escalate on ``pyproject.toml`` alone), ``None`` = not
     classified. When ``pyproject.toml`` is in the change set and this is not
     ``False`` (i.e. ``True`` or ``None``), the selector fails closed and escalates.
+
+    ``enums_diff_additive`` carries the structural classification of an
+    ``src/omnibase_core/enums/`` change (OMN-16321, computed by the CLI via a
+    base-vs-head AST diff): ``True`` = every enums hunk only APPENDS members and
+    edits nothing else, ``False`` = it does more than that, ``None`` = not
+    classified. Only ``True`` discharges the ``enums`` shared-module escalation;
+    ``False`` and ``None`` both escalate, so an unclassified or unparseable diff
+    fails closed exactly as before this parameter existed.
 
     ``repo_root`` is the tree the file-grain import-graph closure (OMN-14921) is
     computed over — defaults to :data:`REPO_ROOT` (this checkout). Tests inject a
@@ -364,7 +410,10 @@ def compute_selection(
         for path in changed_files
         if path.startswith(SRC_PREFIX)
     }
-    if changed_modules & set(config.shared_modules):
+    shared_hits = changed_modules & set(config.shared_modules)
+    if shared_hits and not _enums_escalation_discharged(
+        shared_hits, changed_files, enums_diff_additive
+    ):
         return _full_suite(EnumFullSuiteReason.SHARED_MODULE)
 
     # 4. Threshold escalation: too many distinct modules.
@@ -643,6 +692,28 @@ def classify_pyproject_dependency_relevant(
     )
 
 
+# OMN-14891 / OMN-16321. Git exports these into EVERY hook environment, and they
+# OVERRIDE both `git -C` and `cwd=`. This selector runs from the pre-push hook and
+# resolves a base revision to decide whether it may NARROW the suite, so an
+# inherited GIT_DIR pointing at a different repository would let it answer that
+# safety question against the wrong tree. Every git read below is scrubbed.
+# Duplicated (not imported from omnibase_core.validators) so the selector stays
+# runnable without the package importable.
+_GIT_LOCATION_ENV_VARS = (
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    "GIT_COMMON_DIR",
+    "GIT_DIR",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_WORK_TREE",
+)
+
+
+def _scrubbed_git_env() -> dict[str, str]:
+    """The ambient environment with every git location variable removed."""
+    return {k: v for k, v in os.environ.items() if k not in _GIT_LOCATION_ENV_VARS}
+
+
 def _git_show(ref: str, rel_path: str, repo_root: Path) -> str | None:
     """Return the content of ``rel_path`` at ``ref`` via ``git show``, or None.
 
@@ -655,6 +726,7 @@ def _git_show(ref: str, rel_path: str, repo_root: Path) -> str | None:
             capture_output=True,
             text=True,
             check=False,
+            env=_scrubbed_git_env(),
         )
     except OSError:
         return None
@@ -681,6 +753,94 @@ def _resolve_pyproject_dependency_relevant(
         return None
     old_content = _git_show(base_ref, PYPROJECT_PATH, repo_root)
     return classify_pyproject_dependency_relevant(old_content, new_content)
+
+
+def _git_ref_resolves(ref: str, repo_root: Path) -> bool:
+    """True when ``ref`` names a commit that exists in ``repo_root``.
+
+    Needed because :func:`_git_show` returns ``None`` for BOTH "this path did
+    not exist at the base revision" and "this ref cannot be read at all", and
+    those two must not be treated alike: the first is a genuinely new file
+    (additive), the second is an unusable base (never provable). Conflating
+    them made an unfetched base ref narrow — caught by
+    ``test_resolver_refuses_an_unreadable_base_revision``.
+    """
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo_root),
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                f"{ref}^{{commit}}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=_scrubbed_git_env(),
+        )
+    except OSError:
+        return False
+    return result.returncode == 0
+
+
+def _git_path_exists_at_ref(ref: str, rel_path: str, repo_root: Path) -> bool:
+    """True when ``rel_path`` is present in the tree at ``ref``."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "cat-file", "-e", f"{ref}:{rel_path}"],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=_scrubbed_git_env(),
+        )
+    except OSError:
+        return False
+    return result.returncode == 0
+
+
+def _resolve_enums_diff_additive(
+    base_ref: str | None,
+    repo_root: Path,
+    changed_files: list[str],
+) -> bool | None:
+    """Classify every changed ``enums/`` file against its ``base_ref`` revision.
+
+    Returns ``None`` (caller escalates as "unclassified") when no base ref was
+    supplied or no ``enums/`` file is in the diff. Returns ``False`` (caller
+    escalates as "classified unprovable") when the base ref does not resolve, a
+    revision cannot be read, or any single changed ``enums/`` file is not
+    provably additive — there is no per-file partial credit. ``True`` only when
+    EVERY changed ``enums/`` file is proven additive.
+
+    A head file that cannot be read is passed to the classifier as ``None``,
+    which it treats as a deletion and refuses.
+    """
+    if not base_ref:
+        return None
+    enums_files = [p for p in changed_files if p.startswith(ENUMS_PREFIX)]
+    if not enums_files:
+        return None
+    if not _git_ref_resolves(base_ref, repo_root):
+        # An unfetched, garbage, or shallow-truncated base proves nothing.
+        return False
+    for rel_path in enums_files:
+        try:
+            new_content: str | None = (repo_root / rel_path).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            new_content = None
+        if _git_path_exists_at_ref(base_ref, rel_path, repo_root):
+            old_content = _git_show(base_ref, rel_path, repo_root)
+            if old_content is None:
+                # Present in the tree but unreadable — an error, not a new file.
+                return False
+        else:
+            old_content = None  # genuinely new file at this base
+        if not classify_enum_diff_additive(old_content, new_content):
+            return False
+    return True
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -751,6 +911,11 @@ def main(argv: list[str] | None = None) -> int:
         pyproject_dependency_relevant = _resolve_pyproject_dependency_relevant(
             args.base_ref, args.repo_root
         )
+    # Structural enums/ classification (OMN-16321). None -> compute_selection
+    # fails closed and escalates exactly as it did before this existed.
+    enums_diff_additive = _resolve_enums_diff_additive(
+        args.base_ref, args.repo_root, changed
+    )
     selection = compute_selection(
         changed_files=changed,
         adjacency_path=args.adjacency,
@@ -759,6 +924,7 @@ def main(argv: list[str] | None = None) -> int:
         feature_flag_enabled=(args.feature_flag == "on"),
         pyproject_dependency_relevant=pyproject_dependency_relevant,
         repo_root=args.repo_root,
+        enums_diff_additive=enums_diff_additive,
     )
     if args.shadow_closure == "on":
         # SHADOW MODE (OMN-14921): now vestigial post-promotion — compute_selection's

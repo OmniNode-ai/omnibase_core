@@ -24,6 +24,17 @@ schema_version: 1
 # to a permanent layering invariant. Curate based on operational risk + import fan-out.
 # Removing a module from this list is allowed once we have shadow data showing its
 # changes don't surface broad regressions.
+#
+# `enums` carries a NARROW, STRUCTURALLY-PROVEN discharge (OMN-16321) and is
+# otherwise unchanged: a diff whose ONLY shared_modules entry is `enums`, and
+# whose every changed enums/ file provably just APPENDS members (AST-compared
+# base-vs-head by scripts/ci/enum_additive_diff.py — no rename, no removal, no
+# value edit, no non-member edit anywhere in the module), falls through to the
+# import-graph closure instead of escalating. Everything else about `enums`
+# still escalates, including a diff this classifier cannot parse or has no
+# --base-ref to compare against. The entry STAYS in this list: the discharge is
+# conditional and evidence-bearing, not a demotion. Do not delete it thinking
+# the rule is dead.
 shared_modules:
   - models
   - contracts
