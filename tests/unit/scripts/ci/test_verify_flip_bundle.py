@@ -406,8 +406,63 @@ def test_passes_on_coherent_new_flip(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- #
 
 
+def _git_can_read_repo(candidate: Path) -> bool:
+    """Can git actually answer questions about this tree, as THIS user?
+
+    Directory readability is not the same property. On a shared host, git
+    refuses a repository owned by a different uid with ``detected dubious
+    ownership`` (CVE-2022-24765) even when the tree is world-readable — so a
+    candidate can pass an ``is_dir()`` check and still be unusable for every
+    ref query the flip-bundle assertions depend on.
+
+    OMN-17324: that is exactly what happened on the shared ``.201`` box. A
+    collaborator's clone at ``/data/omninode/<user>/omnibase_core`` walks up to
+    ``/data/omninode`` and finds ``omnibase_infra`` there — owned by another
+    user, mode ``drwxrwxr-x``. The old guard accepted it, every ``git
+    rev-parse`` against it exited non-zero, ``load_base_baseline`` returned
+    ``None``, and assertion 4 failed closed on a question it was never able to
+    ask. That reddened the whole governed suite and blocked every
+    ``omnibase_core`` push for anyone on that host who did not own that clone.
+
+    Fail-closed on an unresolvable baseline is correct and is not what changed.
+    What changed is that a repo git cannot read no longer counts as "present".
+
+    The env scrub is load-bearing, not boilerplate (OMN-14891). Git exports
+    ``GIT_DIR`` / ``GIT_WORK_TREE`` / ``GIT_INDEX_FILE`` / ``GIT_COMMON_DIR``
+    into every hook environment, and those OVERRIDE both ``cwd=`` and ``git
+    -C``. Unscrubbed, this probe would answer about the worktree that invoked
+    the pre-push hook rather than about ``candidate`` — reporting True for a
+    repo it never actually looked at, which is the precise failure it exists
+    to prevent. Config is deliberately left intact so a real
+    ``safe.directory`` exemption is still honoured.
+    """
+    from omnibase_core.validators.no_unguarded_git_subprocess import (
+        scrub_git_location_env,
+    )
+
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(candidate), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=scrub_git_location_env(os.environ),
+        )
+    except OSError:
+        return False
+    return proc.returncode == 0
+
+
 def _resolve_infra_root() -> Path | None:
-    """Locate the omnibase_infra canonical clone (env-var first, never hardcoded)."""
+    """Locate the omnibase_infra canonical clone (env-var first, never hardcoded).
+
+    A candidate must be BOTH shaped like the clone (it carries the adequacy
+    receipts this suite reads) AND usable by git as the current user. A
+    candidate failing the second test is skipped rather than returned, so the
+    search continues to a clone that does qualify; if none does, this returns
+    ``None`` and the tests below skip, which is the documented behaviour when
+    the sibling clone is unavailable.
+    """
     candidates: list[Path] = []
     omni_home = os.environ.get("OMNI_HOME")
     if omni_home:
@@ -417,8 +472,11 @@ def _resolve_infra_root() -> Path | None:
     for parent in here.parents:
         candidates.append(parent / "omnibase_infra")
     for cand in candidates:
-        if (cand / "scripts/ci/adequacy_receipts").is_dir():
-            return cand
+        if not (cand / "scripts/ci/adequacy_receipts").is_dir():
+            continue
+        if not _git_can_read_repo(cand):
+            continue
+        return cand
     return None
 
 
@@ -453,6 +511,58 @@ def test_passes_on_committed_infra_flips(node_id: str) -> None:
     # Assertion 4 genuinely exercised the entrypoint twin-baseline (infra HAS that gate).
     a4 = next(o for o in result.outcomes if o.index == 4)
     assert "known_entrypointless" in a4.detail
+
+
+# --------------------------------------------------------------------------- #
+# 2b. OMN-17324: a sibling clone git cannot read is not a sibling clone.
+# --------------------------------------------------------------------------- #
+
+
+def test_git_can_read_repo_rejects_a_readable_non_repository(tmp_path: Path) -> None:
+    """Shaped like the infra clone, unusable by git — must not qualify.
+
+    The regression this pins: the old guard asked only whether
+    ``scripts/ci/adequacy_receipts`` was a readable directory. On the shared
+    ``.201`` box a collaborator's walk-up found another user's clone at
+    ``/data/omninode/omnibase_infra`` — world-readable, so accepted — and git
+    then refused every ref query against it with ``detected dubious ownership``
+    (CVE-2022-24765). ``load_base_baseline`` returned ``None`` and assertion 4
+    failed closed, reddening the governed suite and blocking EVERY
+    ``omnibase_core`` push for anyone on that host who did not own that clone.
+
+    A uid mismatch cannot be simulated portably in a unit test, so this pins
+    the property that actually matters and that the old guard lacked: a
+    directory git cannot answer for is rejected regardless of how readable it
+    is.
+    """
+    fake = tmp_path / "omnibase_infra"
+    (fake / "scripts/ci/adequacy_receipts").mkdir(parents=True)
+    assert (fake / "scripts/ci/adequacy_receipts").is_dir()
+
+    assert _git_can_read_repo(fake) is False
+
+
+def test_git_can_read_repo_accepts_a_real_repository() -> None:
+    """The guard must not reject a clone that git can in fact read.
+
+    Without this, the counter-test above is satisfied by a function that
+    returns False unconditionally — which would silently skip the infra
+    assertions everywhere and retire the coverage instead of fixing it.
+    """
+    assert _git_can_read_repo(Path(__file__).resolve().parent) is True
+
+
+def test_resolved_infra_root_is_always_git_readable() -> None:
+    """Whatever the walk-up selects, git must be able to read it.
+
+    Stated as an invariant rather than per-case so a future candidate source —
+    another env var, a different layout — cannot reintroduce the defect by a
+    route these tests did not anticipate.
+    """
+    root = _resolve_infra_root()
+    if root is None:
+        pytest.skip("no omnibase_infra clone resolvable here")
+    assert _git_can_read_repo(root) is True
 
 
 # --------------------------------------------------------------------------- #
