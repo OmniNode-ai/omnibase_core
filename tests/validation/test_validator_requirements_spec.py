@@ -75,7 +75,6 @@ KNOWN_REPOS = {
     # OMN-13579: ungoverned public repos onboarded
     "omnibase",
     "omnicursor",
-    "onex-self-extending-agent",
     "knowledge-base",
 }
 
@@ -83,7 +82,6 @@ KNOWN_REPOS = {
 NEW_ONBOARDED_REPOS = {
     "omnibase",
     "omnicursor",
-    "onex-self-extending-agent",
     "knowledge-base",
 }
 
@@ -233,11 +231,13 @@ def test_critical_validators_present(spec: dict[str, Any]) -> None:
 
 
 def test_new_public_repos_in_known_repos(spec: dict[str, Any]) -> None:
-    """OMN-13579: the four previously ungoverned public repos must appear in
-    known_repos so the consumer can validate against them.
+    """OMN-13579: the three previously ungoverned public repos must appear in
+    known_repos so the consumer can validate against them. (A fourth,
+    onex-self-extending-agent, was onboarded under OMN-13579 and de-registered
+    under OMN-17241.)
 
-    Repos: omnibase (meta/registry), omnicursor (Python), onex-self-extending-agent
-    (Python), knowledge-base (Python + docs).
+    Repos: omnibase (meta/registry), omnicursor (Python), knowledge-base
+    (Python + docs).
     """
     known = set(spec.get("known_repos", []))
     missing = NEW_ONBOARDED_REPOS - known
@@ -247,13 +247,13 @@ def test_new_public_repos_in_known_repos(spec: dict[str, Any]) -> None:
 
 
 def test_new_public_repos_covered_by_universal_validators(spec: dict[str, Any]) -> None:
-    """OMN-13579: the four onboarded repos must be covered by the known universal
+    """OMN-13579: the three onboarded repos must be covered by the known universal
     validators (applies_to_repos: 'all'). Locking the expected universal validator
     names prevents a silent narrowing (converting 'all' to a list) from removing
     coverage without a test failure.
     """
     # These validators were 'all' when OMN-13579 was authored. Narrowing any of
-    # them to a list silently drops the four onboarded repos unless this test fails.
+    # them to a list silently drops the three onboarded repos unless this test fails.
     expected_universal = {
         "hardcoded-local-paths",
         "hardcoded-private-ip",
@@ -284,16 +284,15 @@ def test_new_public_repos_covered_by_universal_validators(spec: dict[str, Any]) 
 def test_doc_content_scan_applies_to_all_omn13579_doc_repos(
     spec: dict[str, Any],
 ) -> None:
-    """OMN-13579: doc_content_scan must apply to all four onboarded repos — they
+    """OMN-13579: doc_content_scan must apply to all three onboarded repos — they
     all have docs/ directories. The ticket DoD says 'doc_content_scan applies to
     these repos too where docs exist'. Protecting only knowledge-base leaves the
-    other three silently unprotected.
+    other two silently unprotected.
     """
     doc_repos = {
         "knowledge-base",
         "omnibase",
         "omnicursor",
-        "onex-self-extending-agent",
     }
     validators = spec["required_validators"]
     dcs = validators.get("doc-content-scan")
