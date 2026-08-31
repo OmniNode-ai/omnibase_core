@@ -158,6 +158,8 @@ Known active context:
   execution plan, not the current architecture source of truth.
 - Current topic naming truth lives in Core topic validators and standards docs.
 
+<!-- docs-only CI short-circuit proof: this comment is the only diff. -->
+
 ## License
 
 [MIT](LICENSE)
