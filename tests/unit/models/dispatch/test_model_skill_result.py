@@ -6,11 +6,14 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from omnibase_core.enums.enum_execution_locus_kind import EnumExecutionLocusKind
+from omnibase_core.enums.enum_package_source_kind import EnumPackageSourceKind
 from omnibase_core.enums.enum_skill_result_status import EnumSkillResultStatus
 from omnibase_core.models.artifacts.model_artifact_ref import ModelArtifactRef
 from omnibase_core.models.dispatch.model_skill_result import (
@@ -18,6 +21,8 @@ from omnibase_core.models.dispatch.model_skill_result import (
     ModelSkillResult,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.runtime.model_package_identity import ModelPackageIdentity
+from omnibase_core.models.runtime.model_runtime_identity import ModelRuntimeIdentity
 
 
 class StubDelegateResponse(BaseModel):
@@ -37,8 +42,32 @@ def _artifact_ref(seed: bytes = b"capture-log") -> ModelArtifactRef:
     return ModelArtifactRef(ref=f"sha256:{hashlib.sha256(seed).hexdigest()}")
 
 
+def _runtime_identity() -> ModelRuntimeIdentity:
+    """A minimal valid stamp (OMN-17308).
+
+    Required on every current-schema receipt: since 1.1.0 a receipt that does
+    not identify the process that produced it cannot be constructed.
+    """
+    return ModelRuntimeIdentity(
+        host="test-host",
+        locus_kind=EnumExecutionLocusKind.VENV,
+        execution_locus="/venvs/onex",
+        interpreter="/venvs/onex/bin/python3.13",
+        packages={
+            "omnibase_core": ModelPackageIdentity(
+                name="omnibase_core",
+                version="0.47.1",
+                commit=None,
+                source=EnumPackageSourceKind.REGISTRY,
+            ),
+        },
+        stamped_at=datetime(2026, 8, 31, tzinfo=UTC),
+    )
+
+
 def _envelope_kwargs() -> dict[str, object]:
     return {
+        "runtime_identity": _runtime_identity(),
         "skill_name": "delegate",
         "node_name": "node_delegate_skill_orchestrator",
         "status": EnumSkillResultStatus.SUCCESS,

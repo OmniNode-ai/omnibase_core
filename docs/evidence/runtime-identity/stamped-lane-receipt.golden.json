@@ -1,0 +1,43 @@
+{
+  "skill_name": "delegate",
+  "node_name": "node_delegate_skill_orchestrator",
+  "status": "success",
+  "correlation_id": "3f8a1c22-0d64-4a1b-9f0e-6c1d2b3a4e5f",
+  "run_id": "7b2e9d10-5c3a-4f8e-bc21-0a9f8e7d6c5b",
+  "exit_code": 0,
+  "duration_ms": 1840,
+  "result": {"answer": "alive"},
+  "result_model": "omnimarket.models.delegation.ModelDelegateSkillResponse",
+  "metrics": {"capture_log_bytes": 4096.0},
+  "artifact_refs": [],
+  "runtime_identity": {
+    "host": "omninode-runtime",
+    "locus_kind": "container",
+    "execution_locus": "9f2c1b0e4a55c7d81e3f0a6b2d4c8e10a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5",
+    "interpreter": "/app/.venv/bin/python3.12",
+    "packages": {
+      "omnibase_core": {
+        "name": "omnibase_core",
+        "version": "0.47.1",
+        "commit": null,
+        "source": "registry"
+      },
+      "omnibase_infra": {
+        "name": "omnibase_infra",
+        "version": "0.38.16",
+        "commit": "b8783317f69a1c2d3e4f5a6b7c8d9e0f1a2b3c4d",
+        "source": "vcs"
+      },
+      "omnimarket": {
+        "name": "omnimarket",
+        "version": "0.4.11",
+        "commit": "2f123b4c01ea5d6e7f8a9b0c1d2e3f4a5b6c7d8e",
+        "source": "vcs"
+      }
+    },
+    "config_source": "/app/.venv/lib/python3.12/site-packages/omnimarket/nodes/node_delegate_skill_orchestrator/contract.yaml",
+    "stamped_at": "2026-08-31T08:10:54Z",
+    "schema_version": {"major": 1, "minor": 0, "patch": 0, "prerelease": null, "build": null}
+  },
+  "schema_version": {"major": 1, "minor": 1, "patch": 0, "prerelease": null, "build": null}
+}

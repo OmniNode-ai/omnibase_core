@@ -3,6 +3,9 @@
 
 """Runtime models for ONEX node execution."""
 
+from omnibase_core.models.runtime.model_declared_target_identity import (
+    ModelDeclaredTargetIdentity,
+)
 from omnibase_core.models.runtime.model_demand_source_ref import ModelDemandSourceRef
 from omnibase_core.models.runtime.model_descriptor_circuit_breaker import (
     ModelDescriptorCircuitBreaker,
@@ -27,8 +30,12 @@ from omnibase_core.models.runtime.model_liveness_registry_entry import (
     ModelLivenessRegistryEntry,
 )
 from omnibase_core.models.runtime.model_output_join_spec import ModelOutputJoinSpec
+from omnibase_core.models.runtime.model_package_identity import ModelPackageIdentity
 from omnibase_core.models.runtime.model_primary_dlq_disposition_receipt import (
     ModelPrimaryDlqDispositionReceipt,
+)
+from omnibase_core.models.runtime.model_probe_target_verdict import (
+    ModelProbeTargetVerdict,
 )
 from omnibase_core.models.runtime.model_quarantine_disposition_receipt import (
     ModelQuarantineDispositionReceipt,
@@ -46,6 +53,10 @@ from omnibase_core.models.runtime.model_runtime_aliveness_probe_receipt import (
     ModelRuntimeAlivenessProbeReceipt,
 )
 from omnibase_core.models.runtime.model_runtime_directive import ModelRuntimeDirective
+from omnibase_core.models.runtime.model_runtime_identity import (
+    RUNTIME_IDENTITY_SCHEMA_VERSION,
+    ModelRuntimeIdentity,
+)
 from omnibase_core.models.runtime.model_runtime_skill_error import (
     ModelRuntimeSkillError,
 )
@@ -109,6 +120,12 @@ __all__ = [
     # Dual-sink terminal durability (OMN-15666)
     "ModelPrimaryDlqDispositionReceipt",
     "ModelTerminalDispositionRequest",
+    # Runtime-identity stamp + probe-target assertion (OMN-17308 / OMN-17312)
+    "RUNTIME_IDENTITY_SCHEMA_VERSION",
+    "ModelPackageIdentity",
+    "ModelRuntimeIdentity",
+    "ModelDeclaredTargetIdentity",
+    "ModelProbeTargetVerdict",
     # Directive payload types (re-exported for convenience)
     "ModelDirectivePayload",
     "ModelDirectivePayloadBase",

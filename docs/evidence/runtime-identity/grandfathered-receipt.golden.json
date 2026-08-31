@@ -1,0 +1,14 @@
+{
+  "skill_name": "delegate",
+  "node_name": "node_delegate_skill_orchestrator",
+  "status": "success",
+  "correlation_id": "b9cd305c-8f31-497a-b404-b75b45b98341",
+  "run_id": "1c76154a-2b3c-4d5e-8f90-1a2b3c4d5e6f",
+  "exit_code": 0,
+  "duration_ms": 5120,
+  "result": {"answer": "alive"},
+  "result_model": "omnimarket.models.delegation.ModelDelegateSkillResponse",
+  "metrics": {},
+  "artifact_refs": [],
+  "schema_version": {"major": 1, "minor": 0, "patch": 0, "prerelease": null, "build": null}
+}

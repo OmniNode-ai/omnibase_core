@@ -701,6 +701,51 @@ required_validators:
     applies_to_repos:
       - omnibase_core
 
+  runtime-identity:
+    description: |
+      Every evidence-producing execution must self-identify. A skill-dispatch
+      receipt at schema_version >= 1.1.0 must carry a runtime_identity block
+      naming, per distribution, the installed version AND the commit, plus the
+      host, the execution locus (venv prefix or container id), the interpreter,
+      and the resolved config source. Receipts below 1.1.0 are GRANDFATHERED —
+      they predate the requirement, and back-filling an identity they never had
+      would fabricate the very claim this gate exists to prevent.
+
+      Two enforcement layers, both required: the TYPE
+      (ModelSkillResult refuses to construct an unstamped current-schema
+      receipt, so no emitting code path can produce one) and this GATE (scans
+      committed receipt JSON, which may have been written by an older build,
+      hand-edited, or copied in). Rules: MISSING_IDENTITY, INCOMPLETE_IDENTITY
+      (a required distribution absent from `packages`), UNRESOLVED_COMMIT
+      (source `vcs` naming no commit — the OMN-17291 shape: a fresh registry
+      label over week-old vendored content), MALFORMED_RECEIPT (fails closed).
+
+      Motivating class (OMN-17306): four stale-surface incidents in the week of
+      2026-08-24 in which a version string was read as evidence of content —
+      a local venv's probe read as a .201 lane result (OMN-16932/OMN-17295), a
+      lane container mislabelled (OMN-17291), a stale PATH binary executing
+      silently (OMN-17190), a clone sync reporting success without moving.
+      OMN-17308.
+    central_source: "omnibase_core.validation.validator_receipt_runtime_identity"
+    pre_commit: required
+    ci_workflow: required
+    required_check_on_main: "CI Summary"
+    silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-receipt-runtime-identity"
+    ci_workflow_keywords:
+      - "validator_receipt_runtime_identity"
+      - "runtime-identity-validator"
+    excludes:
+      # Nothing is excluded: the validator identifies a receipt STRUCTURALLY
+      # (skill_name + node_name + run_id + status), so scoping it to a path
+      # glob would let a receipt committed under an unexpected name pass by
+      # living outside the glob. Non-receipt JSON simply yields no findings.
+      allowed: []
+      forbidden: []
+    applies_to_repos:
+      - omnibase_core
+
 # ---------------------------------------------------------------------------
 # Model B — failing-rollup enforcement (OMN-13574, epic OMN-13573)
 # ---------------------------------------------------------------------------
@@ -787,6 +832,11 @@ model_b_rollup_enforcement:
         # poller) into a ci.yml job. Moved from grandfathered_validators —
         # first instance of the OMN-14430 generalized fix pattern.
         no-hardcoded-topics: ["hardcoded-topic-validator"]
+        # OMN-17308: runtime-identity ships wired, never advisory (CLAUDE.md
+        # rule 5). Runs as a job in ci.yml rather than its own workflow file —
+        # the ci-summary poller only sees jobs from its own run_id (OMN-14430),
+        # and the OMN-14907 PR-workflow ratchet is count-locked.
+        runtime-identity: ["runtime-identity-validator"]
       # Machine-checkable intentional omissions. These validators are
       # ci_workflow: required and apply to omnibase_core, but are currently
       # grandfathered in validator-requirements-baseline.yaml as

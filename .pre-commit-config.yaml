@@ -1377,6 +1377,29 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # Runtime-Identity Gate (OMN-17308, epic OMN-17306)
+      # Every evidence-producing execution must self-identify. A receipt at
+      # schema_version >= 1.1.0 that carries no runtime_identity block — or
+      # whose block is silent about omnibase_core / omnibase_infra /
+      # omnimarket, or claims source 'vcs' while naming no commit — is
+      # rejected. Receipts stamped below 1.1.0 are grandfathered: they predate
+      # the requirement, and back-filling an identity they never had would
+      # fabricate the exact claim this gate exists to prevent.
+      #
+      # Scoped to ALL staged JSON rather than to a receipt directory: the
+      # validator recognises a receipt structurally (skill_name + node_name +
+      # run_id + status), so a receipt committed under an unexpected name
+      # cannot slip past by living outside a path glob. Non-receipt JSON
+      # returns no findings.
+      - id: check-receipt-runtime-identity
+        name: Runtime Identity Gate (OMN-17308)
+        entry: >-
+          uv run python -m omnibase_core.validation.validator_receipt_runtime_identity
+        language: system
+        types: [json]
+        pass_filenames: true
+        stages: [pre-commit]
+
       # URL Authority Gate (OMN-12818, PR-2 of OMN-12803).
       # Ratchet: NEW fingerprints fail; existing violations are grandfathered.
       # Baseline is burn-down only. Migration debt: OMN-12806 (omnibase_core).

@@ -1753,6 +1753,82 @@ jobs:
         run: |
           uv run python -m omnibase_core.validators.backend_secret_discipline src/
 
+  # Runtime-Identity Gate (OMN-17308, epic OMN-17306).
+  #
+  # Enforces that every evidence-producing execution self-identifies. Four
+  # stale-surface incidents in the week of 2026-08-24 shared one defect: a
+  # version string was read as evidence of content, and the process that
+  # produced the evidence never said what it was — a Mac venv pinning
+  # omnimarket 0.4.11 produced a probe read as a .201 lane result
+  # (OMN-16932/OMN-17295); a lane container wore a fresh 0.38.16 label over
+  # week-old vendored content (OMN-17291); a stale PATH binary executed
+  # silently (OMN-17190).
+  #
+  # Two layers ship together, because a detection-only check is one nobody
+  # adopts (CLAUDE.md rule 5):
+  #   1. the TYPE — ModelSkillResult refuses to CONSTRUCT a receipt at
+  #      schema_version >= 1.1.0 without a runtime_identity block, so no
+  #      emitting code path can produce one. Proven by the model suite below.
+  #   2. this GATE — committed receipt JSON is scanned, because an artifact
+  #      may have been written by an older build, hand-edited, or copied in.
+  #
+  # Lives as a job in THIS file rather than in its own workflow for two
+  # reasons: the ci-summary poller only sees jobs from its own run_id
+  # (OMN-14430), and the OMN-14907 PR-workflow ratchet is count-locked — a new
+  # PR-triggered workflow file would have to retire an existing one or take a
+  # waiver. Registered in SPEC_REQUIRED_VALIDATOR_JOBS
+  # (scripts/ci/ci_summary_gate.py) so a red run turns "CI Summary" red.
+  runtime-identity-validator:
+    name: Runtime Identity Validator
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run runtime-identity + probe-target validator unit tests
+        run: |
+          uv run pytest \
+            tests/unit/models/dispatch/test_model_skill_result_runtime_identity.py \
+            tests/unit/models/runtime/test_model_runtime_identity.py \
+            tests/unit/validation/test_receipt_runtime_identity_gate.py \
+            tests/unit/validation/test_probe_target_assertion.py \
+            -v
+
+      # Scans every committed JSON in the repo. The validator recognises a
+      # receipt STRUCTURALLY (skill_name + node_name + run_id + status), so a
+      # receipt committed under an unexpected name cannot escape by living
+      # outside a path glob. The PASS line prints how many receipts it
+      # actually saw, so a vacuous scan is visible rather than inferred
+      # (OMN-14531: 16/16 sweeps passed while scanning zero items).
+      - name: Scan committed receipts for a runtime-identity block
+        run: |
+          uv run python -m \
+            omnibase_core.validation.validator_receipt_runtime_identity \
+            --receipts-dir .
+
   # Migrated from validator-banned-compose-vars.yml (OMN-14877, OMN-14430
   # fast-follow). NOTE: this validator had NO pre-commit hook in omnibase_core
   # (audited 2026-07-21) — migrating it here as a required-gating ci.yml job is
