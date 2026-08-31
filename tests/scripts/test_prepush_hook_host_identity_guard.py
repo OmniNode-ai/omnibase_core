@@ -62,7 +62,7 @@ from scripts.ci.test_selection_closure import TEST_UNIT_PREFIX
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HOOK_SCRIPT = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
 
-_GUARANTEED_NON_MATCHING_HOSTNAME = "definitely-not-the-200-host-omn15059"
+_GUARANTEED_NON_MATCHING_HOSTNAME = "definitely-not-a-gate-host-omn15059"
 
 _FULL_SUITE_BRANCH_RE = re.compile(
     r'if \[ "\$IS_FULL" = "True" \].*?\n(.*?\n)(?=elif|else|fi)',
@@ -138,6 +138,7 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
     env["PREPUSH_FULL_SUITE"] = "1"
     env["PREPUSH_BASE_REF"] = "HEAD"
     env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
+    env["PREPUSH_201_GATE_RUNNER_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
     # OMN-16425: PREPUSH_ALLOW_LOCAL_FULL_SUITE leaking in from the outer
     # process's ambient env (e.g. an operator's own degraded-host `git push`
     # override) defeats this test's own assertion -- the hook takes the
@@ -320,6 +321,7 @@ def _run_hook_with_stubbed_selection(
     env["PREPUSH_TEST_SELECTION_JSON"] = str(selection_file)
     env["PREPUSH_BASE_REF"] = "HEAD"
     env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
+    env["PREPUSH_201_GATE_RUNNER_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
     for leaky in (
         "PREPUSH_FULL_SUITE",
         "PREPUSH_ALLOW_LOCAL_FULL_SUITE",
