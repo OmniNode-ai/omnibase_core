@@ -212,3 +212,41 @@ def test_always_run_derivations_agree_between_the_two_surfaces() -> None:
     derived = _unnarrowable_test_paths(REPO_ROOT)
     assert derived == unnarrowable_test_paths(REPO_ROOT)
     assert "tests/gates/" in derived
+
+
+def test_node_split_count_counts_every_configured_test_filename_pattern(
+    tmp_path: Path,
+) -> None:
+    """OMN-16619: this node's volume counter must match the oracle's fix.
+
+    OMN-16917 fixed ``scripts.ci.detect_test_paths._count_test_files`` to count
+    BOTH ``TEST_FILE_PATTERNS`` (``test_*.py`` and ``*_test.py``), not just the
+    ``test_*.py`` half — see
+    ``tests/unit/scripts/ci/test_detect_test_paths_ci_contract_omn16917.py::
+    test_split_count_counts_every_configured_test_filename_pattern``, which this
+    test mirrors. That fix was never ported to this node's own
+    ``_count_test_files`` copy, so the two "byte-for-byte" implementations
+    silently diverged: on a real tree large enough for the undercount to cross
+    a split-count rounding boundary, ``node_main`` and ``oracle_main`` emit
+    different ``split_count`` values for the identical selection — caught by
+    ``test_cli_stdout_parity`` failing on CI's checked-out tree (39 vs 40) while
+    passing locally (below the boundary on a smaller/differently-shaped local
+    tree). Asserted against the counter directly so the invariant holds
+    regardless of which patterns happen to be populated in the live tree today.
+    """
+    from omnibase_core.nodes.node_test_selector_compute.runtime_test_selector import (
+        _count_test_files as node_count_test_files,
+    )
+    from omnibase_core.nodes.node_test_selector_compute.runtime_test_selector import (
+        _is_test_file_name,
+    )
+
+    suite = tmp_path / "tests" / "suite"
+    suite.mkdir(parents=True)
+    (suite / "test_prefix_style.py").write_text("def test_a() -> None: ...\n")
+    (suite / "suffix_style_test.py").write_text("def test_b() -> None: ...\n")
+    (suite / "helper.py").write_text("VALUE = 1\n")
+
+    assert node_count_test_files("tests/suite", tmp_path) == 2
+    assert _is_test_file_name("suffix_style_test.py") is True
+    assert _is_test_file_name("helper.py") is False

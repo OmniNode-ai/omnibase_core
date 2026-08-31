@@ -85,11 +85,24 @@ def _load_adjacency(path: Path) -> ModelAdjacencyMap:
 
 
 def _count_test_files(rel_path: str, repo_root: Path) -> int:
-    """Recursive ``test_*.py`` count beneath ``repo_root / rel_path`` (0 if absent)."""
+    """Recursive test-file count beneath ``repo_root / rel_path`` (0 if absent).
+
+    Matches BOTH ``_TEST_FILE_PATTERNS`` (``test_*.py`` and ``*_test.py``), not
+    just the ``test_*.py`` half -- mirrors the oracle's own
+    ``scripts.ci.detect_test_paths._count_test_files`` exactly. Counting only
+    one pattern here while ``_contains_collectable_test`` admits both would let
+    a directory be SELECTED on the strength of files this function then does
+    not count, undercounting the volume and emitting too few matrix splits
+    (the OMN-16917 oracle-side finding; that fix was never ported to this node
+    twin, so the two "byte-for-byte" copies silently diverged on real trees
+    large enough for the miscount to cross a split-count boundary -- OMN-16619
+    companion fix, caught by the CLI stdout parity battery this module exists
+    to hold honest).
+    """
     directory = repo_root / rel_path
     if not directory.is_dir():
         return 0
-    return sum(1 for _ in directory.rglob("test_*.py"))
+    return sum(1 for f in directory.rglob("*.py") if _is_test_file_name(f.name))
 
 
 def _is_test_file_name(name: str) -> bool:
