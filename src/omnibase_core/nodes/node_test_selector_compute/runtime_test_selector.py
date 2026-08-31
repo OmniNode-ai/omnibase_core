@@ -85,11 +85,41 @@ def _load_adjacency(path: Path) -> ModelAdjacencyMap:
 
 
 def _count_test_files(rel_path: str, repo_root: Path) -> int:
-    """Recursive ``test_*.py`` count beneath ``repo_root / rel_path`` (0 if absent)."""
-    directory = repo_root / rel_path
-    if not directory.is_dir():
-        return 0
-    return sum(1 for _ in directory.rglob("test_*.py"))
+    """Test-file count for one ``selected_paths`` entry (0 if absent).
+
+    ``rel_path`` is either a directory (module-grain sentinel, e.g.
+    ``tests/unit/`` -- walked recursively, matching BOTH
+    ``_TEST_FILE_PATTERNS``: ``test_*.py`` and ``*_test.py``) or an individual
+    test FILE (OMN-14921 file-grain closure output, e.g.
+    ``tests/test_foo.py`` -- counted directly as 1, no walk needed). Mirrors
+    the oracle's own ``scripts.ci.detect_test_paths._count_test_files``
+    exactly, including its file branch.
+
+    Two prior undercounts, both caught by the CLI stdout parity battery this
+    module exists to hold honest:
+
+    - Counting only the ``test_*.py`` half of the patterns while
+      ``_contains_collectable_test`` admits both would let a directory be
+      SELECTED on the strength of ``*_test.py`` files this function then
+      does not count (the OMN-16917 oracle-side finding).
+    - Checking only ``directory.is_dir()`` and returning 0 otherwise silently
+      dropped every individual-file selection to 0 instead of 1 -- this repo
+      has real top-level test files that are never inside a directory
+      sentinel (``tests/test_db_ownership_subcontract.py`` and siblings),
+      each undercounted by exactly 1 (OMN-16619).
+
+    Both crossed the ``VOLUME_TARGET_FILES_PER_SPLIT`` rounding boundary on
+    the real tree, emitting a ``split_count`` one lower than the oracle's for
+    an identical selection -- reproducible only against CI's actual
+    ``pull_request`` merge-ref tree (dev merged into the branch), not the
+    branch tip alone.
+    """
+    target = repo_root / rel_path
+    if target.is_dir():
+        return sum(1 for f in target.rglob("*.py") if _is_test_file_name(f.name))
+    if target.is_file():
+        return 1
+    return 0
 
 
 def _is_test_file_name(name: str) -> bool:

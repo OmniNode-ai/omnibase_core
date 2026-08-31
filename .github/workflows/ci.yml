@@ -3105,11 +3105,36 @@ jobs:
           fi
           echo "changed_files=$FILES" >> "$GITHUB_OUTPUT"
 
+      - name: Stage classifier as standalone module
+        # OMN-16619: this step was missing from this inline job while the
+        # reusable .github/workflows/zone-filter.yml (used by every OTHER repo)
+        # has had it all along -- so the docs-only short-circuit worked for
+        # consumers and was inert here, in the repo that owns it.
+        #
+        # src/omnibase_core/__init__.py runs importlib.metadata.version(
+        # "omnibase-core") at import time. This job intentionally does NOT
+        # `uv sync` (the classifier is pure stdlib and must stay cheap), so the
+        # distribution has no metadata on the runner and that call raised
+        # PackageNotFoundError. The traceback exited 1, which the verdict
+        # branch below read as "production/mixed diff" -- a confident, wrong
+        # answer that ran the entire matrix on every docs-only PR while
+        # reporting nothing unusual. Staging the two pure-stdlib modules under
+        # empty __init__.py files bypasses the heavy package init entirely.
+        run: |
+          set -eu
+          mkdir -p .zone-pkg/omnibase_core/enums .zone-pkg/omnibase_core/validation
+          : > .zone-pkg/omnibase_core/__init__.py
+          : > .zone-pkg/omnibase_core/enums/__init__.py
+          : > .zone-pkg/omnibase_core/validation/__init__.py
+          cp src/omnibase_core/enums/enum_file_zone.py .zone-pkg/omnibase_core/enums/
+          cp src/omnibase_core/validation/zone_classifier.py .zone-pkg/omnibase_core/validation/
+          cp scripts/zone_diff_filter.py .zone-pkg/zone_diff_filter.py
+
       - name: Run zone-diff filter
         id: zone
         env:
           ZONE_DIFF_FILTER_FAKE_DIFF: ${{ steps.diff.outputs.changed_files }}
-          PYTHONPATH: src
+          PYTHONPATH: .zone-pkg
         run: |
           if [ -z "$ZONE_DIFF_FILTER_FAKE_DIFF" ]; then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
@@ -3117,7 +3142,7 @@ jobs:
             exit 0
           fi
           set +e
-          python scripts/zone_diff_filter.py --check docs-only
+          python .zone-pkg/zone_diff_filter.py --check docs-only
           RC=$?
           if [ $RC -eq 0 ]; then
             echo "docs_only=true" >> "$GITHUB_OUTPUT"
