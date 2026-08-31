@@ -501,6 +501,16 @@ jobs:
       - name: Run import-layering growth ratchet (protocols->models + hubs)
         run: uv run python scripts/ci/check_import_ratchet.py
 
+      # Async-fixture decorator gate (OMN-17319) — blocking, fail-closed.
+      # An `async def` fixture declared with a bare `@pytest.fixture` does not run under
+      # pytest-asyncio STRICT mode — the body is silently skipped — and pytest >= 9.1
+      # errors on it at setup. Found when omnibase_core + pytest 9.1.1 errored 24 tests in
+      # test_model_service_orchestrator_integration.py that passed on 9.0.3, on a fixture
+      # that had never once executed. Runs in this job so it inherits the quality-gate
+      # blocking wiring; mirrored as the `async-fixture-decorator` pre-commit hook.
+      - name: Run async-fixture decorator gate
+        run: uv run python scripts/ci/check_async_fixture_decorators.py
+
       # Canonical handler-shape GROWTH RATCHET (OMN-14355) — WARN-only-on-baseline.
       # compliance_sweep checks handler hygiene but is blind to handler SHAPE, so a
       # non-canonical handler passes green CI. This classifies each node's
