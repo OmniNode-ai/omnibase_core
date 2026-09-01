@@ -35,6 +35,23 @@ class ModelDelegationResult(BaseModel):
         description="Name of the LLM model that produced the response.",
     )
     endpoint_url: str = Field(..., description="URL of the LLM endpoint used.")
+    delegated_to: str | None = Field(
+        default=None,
+        description=(
+            "Stable backend or agent reference selected for this delegation. "
+            "None when the terminal producer did not resolve one; this field "
+            "must never carry a raw endpoint URL."
+        ),
+    )
+    pricing_manifest_version: int | None = Field(
+        default=None,
+        gt=0,
+        description=(
+            "Version of the pricing manifest applied at the terminal effect "
+            "boundary. None means this terminal has no resolved pricing "
+            "manifest, which is permitted only for an unrouted failure."
+        ),
+    )
     content: str = Field(..., description="The LLM-generated response content.")
     quality_passed: bool = Field(
         ...,

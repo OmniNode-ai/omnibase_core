@@ -391,6 +391,28 @@ class TestModelDelegationResult:
         assert r.escalation_history == ()
         assert r.terminal_failure_reason is None
         assert r.attempts_count == 1
+        assert r.delegated_to is None
+        assert r.pricing_manifest_version is None
+
+    def test_terminal_identity_and_pricing_manifest_round_trip(self) -> None:
+        r = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com/v1beta/openai",
+            delegated_to="cheap-cloud-gemini",
+            pricing_manifest_version=7,
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+
+        dumped = r.model_dump(mode="json")
+        assert dumped["delegated_to"] == "cheap-cloud-gemini"
+        assert dumped["pricing_manifest_version"] == 7
+        assert ModelDelegationResult.model_validate(dumped) == r
 
     def test_structured_quality_evidence_defaults_for_release_compatibility(
         self,
