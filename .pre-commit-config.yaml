@@ -159,6 +159,21 @@ repos:
         files: ^(src/omnibase_core/.*\.py|scripts/ci/check_import_ratchet\.py|scripts/ci/import_ratchet_baseline\.py|\.importlinter|pyproject\.toml)$
         stages: [pre-commit]
 
+      # Async-fixture decorator gate (OMN-17319) -- fail-closed, whole-tree, sub-second.
+      # An `async def` fixture with a bare `@pytest.fixture` is NOT executed under
+      # pytest-asyncio STRICT mode (which tests/pytest.ini leaves in force): pytest hands
+      # the test an un-awaited async_generator and the body never runs, while
+      # tests/pytest.ini's --disable-warnings swallows the deprecation. pytest 9.1 turned
+      # that silent no-op into a hard setup error -- 24 tests errored on 9.1.1 that passed
+      # on 9.0.3. The silent-skip failure mode is the reason this is a gate and not a sweep.
+      - id: async-fixture-decorator
+        name: no bare @pytest.fixture on an async def (OMN-17319)
+        entry: uv run python scripts/ci/check_async_fixture_decorators.py
+        language: system
+        pass_filenames: false
+        files: ^((src|tests)/.*\.py|scripts/ci/check_async_fixture_decorators\.py)$
+        stages: [pre-commit]
+
       # Canonical handler-shape GROWTH RATCHET (OMN-14355)
       # compliance_sweep checks handler hygiene but is blind to handler SHAPE. This
       # classifies each node's contract-declared handler (definition B: typed-payload
