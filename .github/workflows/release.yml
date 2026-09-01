@@ -301,6 +301,18 @@ jobs:
           TAG="$RELEASE_TAG"
           TAG_SHA=$(git rev-list -n 1 "$TAG")
           echo "Resolved tag $TAG -> commit $TAG_SHA"
+          # OMN-17272: actions/checkout persists the job's GITHUB_TOKEN as an
+          # http.<origin>.extraheader Authorization header in the local git
+          # config, and that header overrides the app token embedded in the
+          # push URL below -- so this push actually authenticated as
+          # github-actions[bot] (branch-activity-proven), which the OMN-16289
+          # main ruleset correctly declines (GH013), and which GitHub refuses
+          # to accept as a ruleset bypass actor ("The following actor(s) are
+          # invalid: GitHub Actions"). Drop the persisted header so the push
+          # authenticates as onexbot-occ-writer, the ruleset's bypass actor --
+          # the same identity omnimemory/omnimarket already sync main with,
+          # live-proven against their ACTIVE rulesets on 2026-08-31.
+          git config --local --unset-all "http.https://github.com/.extraheader" || true
           git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" "${TAG_SHA}:refs/heads/main"
           echo "main fast-forwarded to $TAG_SHA ($TAG)"
 
