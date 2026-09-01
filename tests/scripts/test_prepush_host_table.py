@@ -1797,7 +1797,8 @@ def test_the_picker_library_is_byte_identical_to_the_shipped_upstream() -> None:
     """
     digest = hashlib.sha256(LIB.read_bytes()).hexdigest()
     assert (
-        digest == "067706bb61ea8921598b32e23aa16538d307962c44e06ba59a3762f92311c096"
+        digest
+        == "067706bb61ea8921598b32e23aa16538d307962c44e06ba59a3762f92311c096"  # pragma: allowlist secret
     ), (
         "scripts/hooks/prepush_dispatch.sh has diverged from the pinned "
         "upstream copy. If the change is intentional, update this digest in "
