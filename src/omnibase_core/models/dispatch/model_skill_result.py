@@ -85,8 +85,41 @@ class ModelSkillResult(BaseModel, Generic[T]):
     is the result; intermediate context is captured behind ``artifact_refs``
     instead of flooding the dispatching agent.
 
+    Every receipt built at the current schema version carries a
+    ``runtime_identity`` naming the process that produced it. Collect one with
+    ``omnibase_infra.runtime_identity.collect_runtime_identity()``; it is built
+    by hand here only to keep the example self-contained.
+
     Example:
+        >>> from datetime import datetime, timezone
         >>> from uuid import uuid4
+        >>> from omnibase_core.enums.enum_execution_locus_kind import (
+        ...     EnumExecutionLocusKind,
+        ... )
+        >>> from omnibase_core.enums.enum_package_source_kind import (
+        ...     EnumPackageSourceKind,
+        ... )
+        >>> from omnibase_core.models.runtime.model_package_identity import (
+        ...     ModelPackageIdentity,
+        ... )
+        >>> from omnibase_core.models.runtime.model_runtime_identity import (
+        ...     ModelRuntimeIdentity,
+        ... )
+        >>> identity = ModelRuntimeIdentity(
+        ...     host="omninode-runtime",
+        ...     locus_kind=EnumExecutionLocusKind.CONTAINER,
+        ...     execution_locus="c0ffee123456",
+        ...     interpreter="/app/.venv/bin/python",
+        ...     packages={
+        ...         "omnimarket": ModelPackageIdentity(
+        ...             name="omnimarket",
+        ...             version="0.4.13",
+        ...             commit="2f123b4c01ea" + "0" * 28,
+        ...             source=EnumPackageSourceKind.VCS,
+        ...         )
+        ...     },
+        ...     stamped_at=datetime(2026, 8, 31, 10, 7, 45, tzinfo=timezone.utc),
+        ... )
         >>> envelope = ModelSkillResult[dict[str, str]](
         ...     skill_name="delegate",
         ...     node_name="node_delegate_skill_orchestrator",
@@ -97,8 +130,31 @@ class ModelSkillResult(BaseModel, Generic[T]):
         ...     duration_ms=1250,
         ...     result={"answer": "42"},
         ...     result_model="builtins.dict",
+        ...     runtime_identity=identity,
         ... )
         >>> envelope.status.is_success_like
+        True
+        >>> envelope.runtime_identity.host
+        'omninode-runtime'
+
+    A receipt may omit ``runtime_identity`` only by explicitly declaring a
+    pre-1.1.0 ``schema_version`` — the grandfathering path, which states
+    honestly that the receipt predates the requirement:
+
+        >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
+        >>> legacy = ModelSkillResult[dict[str, str]](
+        ...     skill_name="delegate",
+        ...     node_name="node_delegate_skill_orchestrator",
+        ...     status=EnumSkillResultStatus.SUCCESS,
+        ...     correlation_id=uuid4(),
+        ...     run_id=uuid4(),
+        ...     exit_code=0,
+        ...     duration_ms=1250,
+        ...     result={"answer": "42"},
+        ...     result_model="builtins.dict",
+        ...     schema_version=ModelSemVer(major=1, minor=0, patch=0),
+        ... )
+        >>> legacy.runtime_identity is None
         True
     """
 

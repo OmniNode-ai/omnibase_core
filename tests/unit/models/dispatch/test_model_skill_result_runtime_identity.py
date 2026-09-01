@@ -135,3 +135,36 @@ class TestGrandfathering:
         )
         assert restored == receipt
         assert restored.runtime_identity == _identity()
+
+
+class TestDocumentedExampleStaysExecutable:
+    """The module's own docstring must not teach a pattern that raises.
+
+    The 1.0.0 -> 1.1.0 bump silently invalidated the class docstring's example,
+    which constructed a receipt with no ``runtime_identity``. Nothing collected
+    doctests, so the documented example became un-runnable while still reading
+    as authoritative — a docs-shaped instance of exactly the drift epic
+    OMN-17306 exists to close (a surface asserting something the code no longer
+    does). This test executes the docstring so the example is verified rather
+    than assumed.
+    """
+
+    def test_module_doctests_execute_clean(self) -> None:
+        import doctest
+
+        from omnibase_core.models.dispatch import model_skill_result
+
+        results = doctest.testmod(
+            model_skill_result,
+            verbose=False,
+            optionflags=doctest.ELLIPSIS,
+        )
+        assert results.failed == 0, (
+            f"{results.failed} of {results.attempted} doctest example(s) in "
+            "model_skill_result failed — the documented construction pattern "
+            "no longer matches the model's own validation rules."
+        )
+        assert results.attempted > 0, (
+            "no doctest examples were executed; this guard would pass "
+            "vacuously (OMN-14531 failure class)"
+        )
