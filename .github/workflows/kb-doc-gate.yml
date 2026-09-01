@@ -1,13 +1,33 @@
 # SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# KB Doc Gate — thin caller. OMN-16589.
-# Blocks new/regrown non-KB markdown docs, evaluated against the PR diff.
-# Validator lives in omniclaude (mirrors deploy-gate.yml's thin-caller pattern).
+# KB Doc Gate — thin caller. OMN-17172 (fleet rollout; OMN-16589 built the gate).
 #
-# Pilot wiring (P1): transition mode, NOT a required status check yet. The
-# required-check flip is explicit follow-up scope once this repo and
-# omnimarket both run green on real PRs — see OMN-16589 AC.
+# Canonical docs live in the knowledge-base repo. This gate keeps this repo's
+# markdown inside the allowed set stated by the operator ruling of 2026-09-01:
+# root README.md, root CLAUDE.md or anything under .claude/, CHANGELOG*.md,
+# LICENSE*, root SECURITY.md, .github/**, skills|commands|agents/**, and the
+# tests/**/{fixtures,data,golden}/** subtrees. Everything else is documentation
+# that must leave.
+#
+# mode: diff — fails a PR that ADDS or MODIFIES markdown outside that set.
+# Deletions always pass (that is the migration doing its job), and a rename is
+# judged on its destination. Flip this repo to 'strict' (fails if ANY markdown
+# outside the set EXISTS on the branch) by adding a .kb-doc-gate.yaml at this
+# repo's root containing 'mode: strict', once this repo's KB Wave-4 migration
+# lands and its residual doc count reaches zero. Doing it earlier blocks every
+# unrelated PR against the existing sprawl.
+#
+# Validator + reusable workflow live in omniclaude (mirrors deploy-gate.yml's
+# thin-caller pattern). Pinned by immutable SHA, not @main: omniclaude's main is
+# release-synced and carries neither the reusable workflow nor
+# scripts/kb_doc_gate.py. The pin is a SINGLE source of truth — the reusable
+# checks its validator out at github.job_workflow_sha, i.e. this very SHA — so
+# advancing the gate is one line here, via a normal PR.
+#
+# REQUIRED status check: the surfaced context is 'kb-doc-gate / kb-doc-gate'
+# (this job's id / the reusable job's name). Removing this file wedges the
+# branch rather than silently dropping the gate.
 
 name: KB Doc Gate
 
@@ -17,12 +37,6 @@ on:
 
 jobs:
   kb-doc-gate:
-    # Pinned by immutable SHA, not @main: the reusable workflow file exists
-    # only on omniclaude dev (this is dev's 2026-08-26 merge commit that
-    # introduced it, OMN-16589 #2047); main is release-synced and does not
-    # carry it yet (promotion deferred by policy), so @main fails with
-    # "reusable workflow not found" on every PR. Advance this pin via a
-    # normal PR when the gate is updated or main promotion lands.
-    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@96dd18962cc7b02f9ae7beb43c13a1ed9df7b559
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@a78b103e55f1ad595572ecde6ea818c2c585f025
     with:
-      mode: transition
+      mode: diff
