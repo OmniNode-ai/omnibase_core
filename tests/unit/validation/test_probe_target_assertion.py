@@ -110,7 +110,7 @@ class TestRefusals:
         stamped = ModelRuntimeIdentity(
             host="omninode-runtime",
             locus_kind=EnumExecutionLocusKind.CONTAINER,
-            execution_locus="9f2c1b0e4a55",
+            execution_locus="9f2c1b0e4a55",  # pragma: allowlist secret
             interpreter="/app/.venv/bin/python3.12",
             packages={
                 "omnimarket": ModelPackageIdentity(
@@ -132,7 +132,7 @@ class TestRefusals:
         stamped = ModelRuntimeIdentity(
             host="omninode-runtime",
             locus_kind=EnumExecutionLocusKind.CONTAINER,
-            execution_locus="9f2c1b0e4a55",
+            execution_locus="9f2c1b0e4a55",  # pragma: allowlist secret
             interpreter="/app/.venv/bin/python3.12",
             packages={
                 "omnimarket": ModelPackageIdentity(
@@ -153,7 +153,7 @@ class TestRefusals:
         stamped = ModelRuntimeIdentity(
             host="omninode-runtime",
             locus_kind=EnumExecutionLocusKind.CONTAINER,
-            execution_locus="9f2c1b0e4a55",
+            execution_locus="9f2c1b0e4a55",  # pragma: allowlist secret
             interpreter="/app/.venv/bin/python3.12",
             packages={
                 "omnibase_core": ModelPackageIdentity(
