@@ -119,6 +119,13 @@ def _step(name: str) -> dict[object, object]:
     return _steps()[_step_index(name)]
 
 
+def test_main_sync_app_token_can_write_tagged_workflows() -> None:
+    """A release fast-forward may include changes beneath .github/workflows/."""
+    mint_step = _step("Mint onexbot-occ-writer app token")
+    token_scope = _as_mapping(mint_step["with"], "main-sync App token `with:`")
+    assert token_scope["permission-workflows"] == "write"
+
+
 def _partial_state_step() -> dict[object, object]:
     """The partial-state report lives in its own job, not in ``release``.
 

@@ -281,6 +281,10 @@ jobs:
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
+          # The release tag can legitimately contain workflow changes. GitHub
+          # rejects that protected-branch update unless the App token carries
+          # this explicit scope (run 33525584540, OMN-17272).
+          permission-workflows: write
 
       # OMN-16289: main = the last release. Once a release publishes
       # successfully, fast-forward main to the released tag's commit SHA.
