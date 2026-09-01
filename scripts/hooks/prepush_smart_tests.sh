@@ -381,6 +381,43 @@ dispatch_to_lab_host() {
   return 1
 }
 
+# prepush_lock_holder_is_ancestor WORKROOT -- 0 when the heavy-suite slot lock
+# under WORKROOT is held by a process in THIS process's ancestry, else 1.
+#
+# The holder record written by prepush_lock_acquire is "<pid> <hostname> <ts>".
+# The hostname field is checked first for the same reason the library's own
+# reclaim path checks it: a pid recorded by another machine says nothing about
+# ours, and matching it against our process tree would be reading a foreign
+# number as a local ancestor.
+#
+# The walk is bounded rather than `while :` -- a `ps` that returns junk, or a
+# ppid cycle on a platform that reparents oddly, must not spin a gate.
+prepush_lock_holder_is_ancestor() {
+  local workroot holder_file holder_pid holder_host self_host pid depth
+  workroot="$1"
+  [ -n "$workroot" ] || return 1
+  holder_file="${workroot}/LOCK/holder"
+  [ -r "$holder_file" ] || return 1
+  holder_pid="$(cut -d' ' -f1 "$holder_file" 2>/dev/null || true)"
+  holder_host="$(cut -d' ' -f2 "$holder_file" 2>/dev/null || true)"
+  case "$holder_pid" in
+    '' | *[!0-9]*) return 1 ;;
+  esac
+  self_host="$(hostname -s 2>/dev/null || echo unknown)"
+  [ "$holder_host" = "$self_host" ] || return 1
+  pid="$$"
+  depth=0
+  while [ "$depth" -lt 64 ]; do
+    pid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')"
+    case "$pid" in
+      '' | 0 | 1 | *[!0-9]*) return 1 ;;
+    esac
+    [ "$pid" != "$holder_pid" ] || return 0
+    depth=$((depth + 1))
+  done
+  return 1
+}
+
 guard_full_suite_host() {
   local host lc_host label heavy_what designated
   # OMN-15408: the caller names WHICH heavyweight run is being guarded, so the
@@ -443,6 +480,30 @@ guard_full_suite_host() {
         # capacity. Proceed exactly as the hook did before this lock existed
         # rather than inventing a refusal out of an infrastructural failure.
         log "WARNING: could not create the heavy-suite slot lock under '${lw}' -- running unserialized on this host (pre-OMN-17159 behavior). Fix the workroot to restore serialization (OMN-16174)."
+        return 0
+      fi
+      # RE-ENTRANCY (OMN-17159). The slot is held -- but by WHOM decides whether
+      # this is contention at all. If the recorded holder is an ANCESTOR of this
+      # process, this hook run is nested INSIDE the run that already owns the
+      # host's heavy slot; it is the same physical occupancy, not a second
+      # consumer arriving from outside. Refusing here protects nothing (the
+      # outer suite is running either way) and costs the repo the ability to run
+      # its own hook tests under its own gate: this repo's heavy escalation
+      # covers `tests/scripts/`, several of whose tests spawn the real hook, so
+      # a non-re-entrant lock makes every such test fail whenever the gate is
+      # the thing running them. That is exactly how this was found -- the
+      # governed pre-push for the commit ADDING this lock went red on
+      # test_prepush_hook_host_identity_guard.py while 44,608 other tests
+      # passed. omnibase_infra never hit it only because its heavy target is
+      # `tests/unit/` while its hook tests live in `tests/ci/`.
+      #
+      # Ancestry is read from the live process table, so unlike an env var this
+      # cannot be forged by a caller that merely wants the lock skipped. It is
+      # also NOT the recursion guard: unbounded hook-inside-hook recursion is
+      # still ONEX_PREPUSH_HOOK_ACTIVE's job (OMN-16425/OMN-16489), untouched
+      # here and still fail-closed for a real first-entry recursion.
+      if prepush_lock_holder_is_ancestor "$lw"; then
+        log "heavy-suite slot at '${lw}' is held by an ANCESTOR of this process -- this run is nested inside the run that owns the slot, not competing with it. Proceeding without taking a second lock (OMN-17159)."
         return 0
       fi
       log "this host is fit but its heavy-suite slot is already held; looking for another lab host before refusing"
