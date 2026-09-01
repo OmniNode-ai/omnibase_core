@@ -372,9 +372,24 @@ def main(argv: list[str] | None = None) -> int:
         candidates = [p for p in sorted(root.rglob("*.json")) if _is_scannable(p)]
         target = str(root)
     else:
-        # NoReturn: argparse exits 2. Kept as the only "no target" path so a
-        # mis-wired hook fails loudly instead of scanning nothing and passing.
-        parser.error("pass receipt files, or --receipts-dir")
+        # The only "no target" path, so a mis-wired hook fails loudly instead
+        # of scanning nothing and reporting success — a gate that passes
+        # because it was handed nothing is the vacuous-PASS failure class this
+        # validator exists to close (OMN-14531).
+        #
+        # Spelled as an explicit usage-print + return rather than argparse's
+        # parser.error(): error() terminates only by convention, which left
+        # `candidates` and `target` provably-unbound to static analysis (CodeQL
+        # py/uninitialized-local-variable, 3 alerts on PR #1634). A validator
+        # whose own no-target path can raise UnboundLocalError fails in the
+        # least legible way available to it — the operator sees a traceback
+        # instead of the refusal the gate meant to give.
+        parser.print_usage(sys.stderr)
+        print(
+            "ERROR: pass receipt files, or --receipts-dir",
+            file=sys.stderr,
+        )
+        return 2
 
     violations = scan_receipt_files(candidates, required_packages=required)
     receipts = count_receipts(candidates)

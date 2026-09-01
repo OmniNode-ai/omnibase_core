@@ -108,13 +108,13 @@ class ModelSkillResult(BaseModel, Generic[T]):
         >>> identity = ModelRuntimeIdentity(
         ...     host="omninode-runtime",
         ...     locus_kind=EnumExecutionLocusKind.CONTAINER,
-        ...     execution_locus="c0ffee123456",
+        ...     execution_locus="c0ffee123456",  # pragma: allowlist secret
         ...     interpreter="/app/.venv/bin/python",
         ...     packages={
         ...         "omnimarket": ModelPackageIdentity(
         ...             name="omnimarket",
         ...             version="0.4.13",
-        ...             commit="2f123b4c01ea" + "0" * 28,
+        ...             commit="2f123b4c01ea" + "0" * 28,  # pragma: allowlist secret
         ...             source=EnumPackageSourceKind.VCS,
         ...         )
         ...     },

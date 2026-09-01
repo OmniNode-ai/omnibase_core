@@ -13,7 +13,7 @@
   "runtime_identity": {
     "host": "omninode-runtime",
     "locus_kind": "container",
-    "execution_locus": "9f2c1b0e4a55c7d81e3f0a6b2d4c8e10a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d5",
+    "execution_locus": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
     "interpreter": "/app/.venv/bin/python3.12",
     "packages": {
       "omnibase_core": {
@@ -25,13 +25,13 @@
       "omnibase_infra": {
         "name": "omnibase_infra",
         "version": "0.38.16",
-        "commit": "b8783317f69a1c2d3e4f5a6b7c8d9e0f1a2b3c4d",
+        "commit": "b878331700000000000000000000000000000000",
         "source": "vcs"
       },
       "omnimarket": {
         "name": "omnimarket",
         "version": "0.4.11",
-        "commit": "2f123b4c01ea5d6e7f8a9b0c1d2e3f4a5b6c7d8e",
+        "commit": "2f123b4c00000000000000000000000000000000",
         "source": "vcs"
       }
     },

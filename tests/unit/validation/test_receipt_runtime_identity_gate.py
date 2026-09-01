@@ -33,7 +33,7 @@ def _identity(**overrides: Any) -> dict[str, Any]:
     base: dict[str, Any] = {
         "host": "runtime-host",
         "locus_kind": "container",
-        "execution_locus": "9f2c1b0e4a55",
+        "execution_locus": "9f2c1b0e4a55",  # pragma: allowlist secret
         "interpreter": "/app/.venv/bin/python3.12",
         "packages": packages,
         "config_source": "/app/contracts/node.yaml",
@@ -272,3 +272,34 @@ class TestCommittedGoldens:
         )
 
         assert count_receipts(sorted(self.GOLDEN_DIR.glob("*.json"))) == 2
+
+
+class TestNoTargetPathRefusesLegibly:
+    """Handed no target at all, the gate refuses — it never crashes.
+
+    Previously this branch relied on ``argparse.ArgumentParser.error()`` to
+    terminate, which is true at runtime but not provable statically: CodeQL
+    reported three ``py/uninitialized-local-variable`` errors on PR #1634 for
+    ``candidates`` and ``target``. A validator whose own no-target path can
+    raise ``UnboundLocalError`` shows the operator a traceback instead of the
+    refusal it meant to give — and a traceback is much easier to wave off as
+    "the tool is broken" than an explicit refusal is.
+
+    The load-bearing assertion is that it is a REFUSAL (non-zero), never a
+    pass. A gate that reports success because it was handed nothing to scan is
+    the vacuous-PASS failure class (OMN-14531).
+    """
+
+    def test_no_arguments_refuses_without_raising(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        exit_code = main([])
+
+        assert exit_code != 0, (
+            "the gate reported success while scanning nothing — a vacuous PASS"
+        )
+        assert exit_code == 2
+        stderr = capsys.readouterr().err
+        assert "--receipts-dir" in stderr, (
+            "the refusal must name how to give the gate a target"
+        )

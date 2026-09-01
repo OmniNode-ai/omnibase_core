@@ -15,14 +15,14 @@ from omnibase_core.enums.enum_package_source_kind import EnumPackageSourceKind
 from omnibase_core.models.runtime.model_package_identity import ModelPackageIdentity
 from omnibase_core.models.runtime.model_runtime_identity import ModelRuntimeIdentity
 
-_SHA = "66b7131a3508" + "0" * 28
+_SHA = "66b7131a3508" + "0" * 28  # pragma: allowlist secret
 
 
 def _identity(**overrides: object) -> ModelRuntimeIdentity:
     base: dict[str, object] = {
         "host": "runtime-host",
         "locus_kind": EnumExecutionLocusKind.CONTAINER,
-        "execution_locus": "9f2c1b0e4a55",
+        "execution_locus": "9f2c1b0e4a55",  # pragma: allowlist secret
         "interpreter": "/app/.venv/bin/python3.12",
         "packages": {
             "omnimarket": ModelPackageIdentity(

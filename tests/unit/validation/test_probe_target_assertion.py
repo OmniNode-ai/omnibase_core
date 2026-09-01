@@ -32,9 +32,9 @@ from omnibase_core.validation.validator_probe_target import (
 )
 
 # The pre-fix omnimarket the local venv was pinned to (OMN-17295).
-_LOCAL_MARKET_COMMIT = "66b7131a3508" + "0" * 28
+_LOCAL_MARKET_COMMIT = "66b7131a3508" + "0" * 28  # pragma: allowlist secret
 # origin/dev's tip, which the dev lane was correctly vendored at.
-_LANE_MARKET_COMMIT = "2f123b4c01ea" + "0" * 28
+_LANE_MARKET_COMMIT = "2f123b4c01ea" + "0" * 28  # pragma: allowlist secret
 
 
 def _local_venv_stamp(
@@ -67,7 +67,7 @@ def _lane_stamp() -> ModelRuntimeIdentity:
     return ModelRuntimeIdentity(
         host="omninode-runtime",
         locus_kind=EnumExecutionLocusKind.CONTAINER,
-        execution_locus="9f2c1b0e4a55",
+        execution_locus="9f2c1b0e4a55",  # pragma: allowlist secret
         interpreter="/app/.venv/bin/python3.12",
         packages={
             "omnimarket": ModelPackageIdentity(
@@ -87,7 +87,7 @@ def _lane_declaration(**overrides: object) -> ModelDeclaredTargetIdentity:
         "declared_by": "docker exec omninode-runtime cat /app/build-provenance.json",
         "host": "omninode-runtime",
         "locus_kind": EnumExecutionLocusKind.CONTAINER,
-        "execution_locus": "9f2c1b0e4a55",
+        "execution_locus": "9f2c1b0e4a55",  # pragma: allowlist secret
         "packages": {"omnimarket": _LANE_MARKET_COMMIT},
     }
     base.update(overrides)
@@ -116,7 +116,7 @@ class TestRefusals:
                 "omnimarket": ModelPackageIdentity(
                     name="omnimarket",
                     version="0.4.11",
-                    commit="05e3882f9e2a" + "0" * 28,
+                    commit="05e3882f9e2a" + "0" * 28,  # pragma: allowlist secret
                     source=EnumPackageSourceKind.VCS,
                 ),
             },
