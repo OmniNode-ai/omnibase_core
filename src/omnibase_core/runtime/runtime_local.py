@@ -110,6 +110,32 @@ _KAFKA_EVENT_BUS_ENTRY_POINT: str = "event_bus_kafka"
 # the ``onex.backends`` entry-point group.
 SUPPORTED_EVENT_BUS_VALUES: frozenset[str] = frozenset({"inmemory", "kafka"})
 
+# Sentinel distinguishing "the payload model declares no correlation_id field"
+# from "it declares one whose value is None" (OMN-17304). The two need
+# different diagnostics: the first is a contract shape that cannot be used in
+# client mode at all, the second is a value this runtime may still fill.
+_CORRELATION_FIELD_ABSENT: Final[object] = object()
+
+# A nil UUID is a placeholder default, not an identity — treat it as absent.
+_NIL_UUID_TEXT: Final[str] = str(uuid.UUID(int=0))
+
+# Handler locus recorded in ``workflow_result.json`` (OMN-17295 / OMN-17304).
+# ``in_process`` — this runtime hosted the contract's handlers and executed the
+# work itself. ``dispatched`` — this runtime published the command and hosted
+# nothing, so the work was done by whatever runtime is subscribed to the
+# command topic. ``dispatched`` is deliberately not spelled "deployed_lane":
+# the runtime knows it did not execute the work, not who did. Asserting WHICH
+# deployment answered is the caller's job, from a lane-side fact.
+#
+# Named ``handler_locus``, NOT ``execution_locus``, to stay disjoint from
+# ``ModelRuntimeIdentity.execution_locus`` (OMN-17308, in flight on
+# ``model_skill_result.py``), which names where THIS PROCESS runs — a venv
+# prefix or a container id. Same word, different question: that one answers
+# "which install am I", this one answers "did I do the work". Collapsing them
+# into one name is how a receipt ends up asserting a lane it never touched.
+HANDLER_LOCUS_IN_PROCESS: Final[str] = "in_process"
+HANDLER_LOCUS_DISPATCHED: Final[str] = "dispatched"
+
 # Handler-result ``status`` values that unambiguously mean the run failed.
 # Effect/reducer handlers report failures in-band by returning an error-shaped
 # response envelope (``status="error"`` plus an ``error_message``) rather than
@@ -260,6 +286,19 @@ class RuntimeLocal:
         run_id: Identity anchor stamped into ``workflow_result.json`` (OMN-15449).
             Defaults to a freshly minted UUID when the caller has no run_id of
             its own to propagate.
+        host_handlers: Whether this runtime HOSTS the contract's handlers
+            (OMN-17304). ``True`` (default) is the historical behaviour and the
+            offline/standalone path: subscribe every ``handler_routing``
+            entry to its ``input_topic``, then publish the initial command to
+            that same topic and execute it in-process. ``False`` makes this
+            runtime a CLIENT of the bus — it publishes the command and awaits a
+            terminal scoped to this run's correlation, hosting nothing, so the
+            work is done by whatever runtime is actually subscribed to the
+            command topic. On a shared broker ``True`` makes the caller a
+            second, disjoint consumer group of the command topic it publishes
+            to, and the deployed runtime and the caller BOTH execute the entry
+            handler; a probe issued that way measures the caller's own venv, not
+            the deployment it names (OMN-17295).
     """
 
     def __init__(
@@ -271,12 +310,14 @@ class RuntimeLocal:
         input_path: Path | None = None,
         timeout: int = 300,
         run_id: uuid.UUID | None = None,
+        host_handlers: bool = True,
     ) -> None:
         self.workflow_path = workflow_path
         self.state_root = state_root
         self.backend_overrides = backend_overrides or {}
         self.input_path = input_path
         self.timeout = timeout
+        self.host_handlers = host_handlers
         # OMN-15449: identity anchor stamped into workflow_result.json so a
         # caller reading that FIXED, non-run-scoped path back can verify the
         # content it sees is THIS run's own output rather than a different
@@ -295,11 +336,57 @@ class RuntimeLocal:
         self._handlers_wired: list[str] = []
         self._terminal_payload: RawWorkflowMap | None = None
         self._handler_result: object | None = None
+        # OMN-17304 AC6: the correlation id that actually reached the wire, as
+        # distinct from one this runtime minted and then failed to stamp onto a
+        # frozen payload. ``None`` until the event-driven path publishes.
+        self._wire_correlation_id: uuid.UUID | None = None
+        # Correlation predicate for the terminal watcher. Set only in client
+        # mode: an in-process host on its own bus has exactly one producer of
+        # the terminal topic, so filtering there would change offline behaviour
+        # for no gain.
+        self._expected_correlation_id: uuid.UUID | None = None
+
+    # ONEX_EXCLUDE: dict_str_any — event bus payload
+    def _terminal_correlation_matches(self, payload: RawWorkflowMap) -> bool:
+        """Whether a terminal envelope belongs to THIS run (OMN-17304 AC4).
+
+        A delegate terminal is a ``ModelEventEnvelope`` dump: the envelope
+        carries ``correlation_id`` at the top and the domain payload carries
+        its own copy under ``payload``. Every id the envelope declares must be
+        this run's, and it must declare at least one — an envelope that names
+        nobody is unattributable, and an unattributable terminal accepted as
+        ours is the same defect as a foreign one.
+
+        Returns ``True`` unconditionally when no correlation predicate is armed
+        (host mode), preserving first-terminal-wins there.
+        """
+        expected = self._expected_correlation_id
+        if expected is None:
+            return True
+        wanted = str(expected)
+        declared: set[str] = set()
+        containers: list[object] = [payload, payload.get("payload")]
+        for container in containers:
+            if not isinstance(container, dict):
+                continue
+            raw = container.get("correlation_id")
+            if isinstance(raw, str) and raw:
+                declared.add(raw)
+        return declared == {wanted}
 
     # ONEX_EXCLUDE: dict_str_any — event bus payload
     def _on_terminal_event(self, payload: RawWorkflowMap) -> None:
         """Callback invoked when a message arrives on the terminal_event topic."""
         self._record_event("(terminal)")
+        if not self._terminal_correlation_matches(payload):
+            self._record_event("(terminal:foreign)")
+            logger.info(
+                "RuntimeLocal: discarding terminal event — this run awaits "
+                "correlation %s, the envelope names %s",
+                self._expected_correlation_id,
+                payload.get("correlation_id", "(none)"),
+            )
+            return
         if self._terminal_received.is_set():
             logger.warning("Duplicate terminal event received — ignoring (first wins).")
             return
@@ -1132,124 +1219,13 @@ class RuntimeLocal:
                 entry.output_topic,
             )
 
-        # --- 4. Wire adapters to bus ---
-        unsubscribe_handles: list[UnsubscribeCallback] = []
-        self._handlers_wired = [e.handler_name for e in resolved_entries]
-
-        # OMN-14403 §6ii: load the contract's published_events class -> topic map
-        # (when declared) so a def-B fan-out / multi-topic handler's emitted class
-        # resolves its own publish topic instead of the single per-entry
-        # output_topic, and assert the map is injective at boot. Default-OFF seam:
-        # when OFF this map is loaded but unused (single output_topic path).
-        published_events = self._load_published_events_map()
-        if published_events:
-            assert_published_events_injective(
-                published_events,
-                context=str(self._contract.get("name", "<workflow>")),
-            )
-        multi_event_seam_enabled = multi_event_publish_seam_enabled()
-
-        def _fail_callback() -> None:
-            self._result = EnumWorkflowResult.FAILED
-            self._terminal_received.set()
-
-        for entry in resolved_entries:
-            handler_instance = self._instantiate_handler(
-                entry.handler_module, entry.handler_class, bus=bus
-            )
-
-            # Resolve the input model class. operation_match entries route by the
-            # `operation` field and declare no event_model, so event_model_module is
-            # empty — skip the import and forward the raw payload (OMN-13141). Only
-            # payload_type_match entries carry a typed event model to import.
-            input_model_type: type[BaseModel] | None = None
-            if entry.event_model_module:
-                try:
-                    em_mod = importlib.import_module(entry.event_model_module)
-                    input_model_type = cast(
-                        "type[BaseModel]",
-                        getattr(em_mod, entry.event_model_class),
-                    )
-                except (ImportError, AttributeError) as exc:
-                    msg = (
-                        f"Failed to resolve event model "
-                        f"{entry.event_model_module}.{entry.event_model_class}: {exc}"
-                    )
-                    logger.exception("RuntimeLocal: %s", msg)
-                    self._result = EnumWorkflowResult.FAILED
-                    return
-
-            def _make_fail_cb(name: str) -> Callable[[], None]:
-                def _cb() -> None:
-                    self._last_error = f"handler '{name}' failed"
-                    _fail_callback()
-
-                return _cb
-
-            def _make_result_cb(output_topic: str) -> Callable[[object], None] | None:
-                if output_topic != terminal_topic:
-                    return None
-
-                def _cb(result: object) -> None:
-                    self._handler_result = result
-
-                return _cb
-
-            adapter = LocalRuntimeBusAdapter(
-                handler=cast("ProtocolLocalRuntimeCallableTarget", handler_instance),
-                handler_name=entry.handler_name,
-                input_model_cls=input_model_type,
-                output_topic=entry.output_topic or None,
-                bus=bus,
-                on_error=_make_fail_cb(entry.handler_name),
-                on_result=_make_result_cb(entry.output_topic),
-                published_events=published_events,
-                multi_event_seam_enabled=multi_event_seam_enabled,
-            )
-
-            if not entry.input_topic:
-                # Terminal reducer: no input topic, no bus subscription needed.
-                logger.info(
-                    "RuntimeLocal: handler '%s' has no input_topic — "
-                    "skipping bus subscription (terminal reducer)",
-                    entry.handler_name,
-                )
-                continue
-
-            unsub = await bus.subscribe(
-                entry.input_topic,
-                on_message=adapter.on_message,
-                group_id=derive_runtime_local_group_id(entry.handler_name),
-            )
-            unsubscribe_handles.append(unsub)
-
-        # --- 5. Subscribe to the declared terminal event only ---
-        async def _on_terminal_msg(msg: ProtocolLocalRuntimeMessage) -> None:
-            decoded: object = (
-                json.loads(msg.value) if isinstance(msg.value, bytes) else {}
-            )
-            payload = decoded if isinstance(decoded, dict) else {}
-            self._on_terminal_event(cast("RawWorkflowMap", payload))
-
-        unsub = await bus.subscribe(
-            terminal_topic,
-            on_message=_on_terminal_msg,
-            group_id=derive_runtime_local_group_id(TERMINAL_CONSUMER_NODE_NAME),
-        )
-        unsubscribe_handles.append(unsub)
-
-        # --- 6. Build and publish initial payload ---
-        correlation_id = uuid.uuid4()
-
-        # Resolve the initial-payload model from, in order: top-level
-        # ``input_model`` → first routing entry's ``event_model`` → that entry's
-        # ``handler.input_model`` (OMN-13277). Previously this path consulted
-        # only the top-level ``input_model`` and, when absent, published a
-        # degenerate ``{correlation_id}``-only payload — silently dropping caller
-        # input and masking the real validation error downstream (root cause of
-        # OMN-13253). If NEITHER a top-level input_model NOR an event_model /
-        # handler-derivable model can be resolved, fail loud here naming the
-        # contract rather than publishing a degenerate payload.
+        # --- 3b. Resolve the initial payload and the WIRE correlation id ---
+        # Both are needed before any subscription in client mode: the terminal
+        # watcher's correlation predicate must be armed before the topic can
+        # deliver anything, and a client that cannot name its own correlation
+        # has no way to tell its terminal from anyone else's (OMN-17304 AC4/AC6).
+        # Moving this ahead of the subscribe loop also means a contract that
+        # cannot resolve a payload model fails before it binds any consumer.
         resolved_spec = self._resolve_event_driven_payload_spec(routing)
         if resolved_spec is None:
             contract_name = self._contract.get("name", "<unknown>")
@@ -1265,6 +1241,7 @@ class RuntimeLocal:
                 "drop caller input."
             )
             logger.error(msg)
+            self._last_error = msg
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
                 message=msg,
@@ -1289,21 +1266,179 @@ class RuntimeLocal:
                 "input."
             )
             logger.error(msg)
+            self._last_error = msg
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
                 message=msg,
             )
 
-        # Inject correlation_id if the model supports it
-        if hasattr(initial_payload, "correlation_id"):
-            try:
-                payload_with_correlation: ProtocolLocalRuntimePayloadModel = cast(
-                    "ProtocolLocalRuntimePayloadModel", initial_payload
-                )
-                payload_with_correlation.correlation_id = correlation_id
-            except (AttributeError, ValueError):
-                pass  # frozen model or incompatible type
+        correlation_id, correlation_source = self._resolve_wire_correlation_id(
+            initial_payload
+        )
+        if correlation_id is None and not self.host_handlers:
+            msg = (
+                "RuntimeLocal: client mode (host_handlers=False) requires a "
+                "correlation id on the published command — this run has none "
+                f"({correlation_source}). Without it the terminal watcher "
+                "cannot tell this run's terminal from any other run's on a "
+                "shared topic, and would return someone else's result as ours. "
+                f"Declare a 'correlation_id' field on "
+                f"{payload_spec['module']}.{payload_spec['class']}, or run "
+                "with host_handlers=True."
+            )
+            logger.error(msg)
+            self._last_error = msg
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+                message=msg,
+            )
+        self._wire_correlation_id = correlation_id
+        if not self.host_handlers:
+            self._expected_correlation_id = correlation_id
 
+        # --- 4. Wire adapters to bus ---
+        unsubscribe_handles: list[UnsubscribeCallback] = []
+        self._handlers_wired = (
+            [e.handler_name for e in resolved_entries] if self.host_handlers else []
+        )
+
+        # OMN-17304: in client mode the runtime binds NOTHING to the command
+        # topic. Hosting the entry handler here is what made the caller a
+        # second consumer group of the topic it publishes to, so a probe
+        # executed a stale backlog command in the caller's own venv while the
+        # deployed runtime executed the real one — two runs, one receipt, and
+        # the receipt was the wrong one's.
+        if not self.host_handlers:
+            logger.info(
+                "RuntimeLocal: client mode — publishing to '%s' and awaiting "
+                "correlation %s; hosting no handlers (%d declared)",
+                subscribe_topics[0],
+                self._wire_correlation_id,
+                len(resolved_entries),
+            )
+        else:
+            # OMN-14403 §6ii: load the contract's published_events class -> topic map
+            # (when declared) so a def-B fan-out / multi-topic handler's emitted class
+            # resolves its own publish topic instead of the single per-entry
+            # output_topic, and assert the map is injective at boot. Default-OFF seam:
+            # when OFF this map is loaded but unused (single output_topic path).
+            published_events = self._load_published_events_map()
+            if published_events:
+                assert_published_events_injective(
+                    published_events,
+                    context=str(self._contract.get("name", "<workflow>")),
+                )
+            multi_event_seam_enabled = multi_event_publish_seam_enabled()
+
+            def _fail_callback() -> None:
+                self._result = EnumWorkflowResult.FAILED
+                self._terminal_received.set()
+
+            for entry in resolved_entries:
+                handler_instance = self._instantiate_handler(
+                    entry.handler_module, entry.handler_class, bus=bus
+                )
+
+                # Resolve the input model class. operation_match entries route by the
+                # `operation` field and declare no event_model, so event_model_module is
+                # empty — skip the import and forward the raw payload (OMN-13141). Only
+                # payload_type_match entries carry a typed event model to import.
+                input_model_type: type[BaseModel] | None = None
+                if entry.event_model_module:
+                    try:
+                        em_mod = importlib.import_module(entry.event_model_module)
+                        input_model_type = cast(
+                            "type[BaseModel]",
+                            getattr(em_mod, entry.event_model_class),
+                        )
+                    except (ImportError, AttributeError) as exc:
+                        msg = (
+                            f"Failed to resolve event model "
+                            f"{entry.event_model_module}.{entry.event_model_class}: {exc}"
+                        )
+                        logger.exception("RuntimeLocal: %s", msg)
+                        self._result = EnumWorkflowResult.FAILED
+                        return
+
+                def _make_fail_cb(name: str) -> Callable[[], None]:
+                    def _cb() -> None:
+                        self._last_error = f"handler '{name}' failed"
+                        _fail_callback()
+
+                    return _cb
+
+                def _make_result_cb(
+                    output_topic: str,
+                ) -> Callable[[object], None] | None:
+                    if output_topic != terminal_topic:
+                        return None
+
+                    def _cb(result: object) -> None:
+                        self._handler_result = result
+
+                    return _cb
+
+                adapter = LocalRuntimeBusAdapter(
+                    handler=cast(
+                        "ProtocolLocalRuntimeCallableTarget", handler_instance
+                    ),
+                    handler_name=entry.handler_name,
+                    input_model_cls=input_model_type,
+                    output_topic=entry.output_topic or None,
+                    bus=bus,
+                    on_error=_make_fail_cb(entry.handler_name),
+                    on_result=_make_result_cb(entry.output_topic),
+                    published_events=published_events,
+                    multi_event_seam_enabled=multi_event_seam_enabled,
+                )
+
+                if not entry.input_topic:
+                    # Terminal reducer: no input topic, no bus subscription needed.
+                    logger.info(
+                        "RuntimeLocal: handler '%s' has no input_topic — "
+                        "skipping bus subscription (terminal reducer)",
+                        entry.handler_name,
+                    )
+                    continue
+
+                unsub = await bus.subscribe(
+                    entry.input_topic,
+                    on_message=adapter.on_message,
+                    group_id=derive_runtime_local_group_id(entry.handler_name),
+                )
+                unsubscribe_handles.append(unsub)
+
+        # --- 5. Subscribe to the declared terminal event only ---
+        async def _on_terminal_msg(msg: ProtocolLocalRuntimeMessage) -> None:
+            decoded: object = (
+                json.loads(msg.value) if isinstance(msg.value, bytes) else {}
+            )
+            payload = decoded if isinstance(decoded, dict) else {}
+            self._on_terminal_event(cast("RawWorkflowMap", payload))
+
+        # OMN-17304 AC5: a client must not inherit another run's committed
+        # offset on the terminal topic. The shared runtime-local group id is
+        # correct for a long-lived host; for a one-shot client it means a fresh
+        # invocation resumes wherever the last one stopped and works through a
+        # backlog of terminals that are, by construction, not its own. The
+        # group is run-scoped instead, and empty groups age out of the broker
+        # on the standard offset-retention window.
+        terminal_group_node = TERMINAL_CONSUMER_NODE_NAME
+        if not self.host_handlers:
+            terminal_group_node = (
+                f"{TERMINAL_CONSUMER_NODE_NAME}_client_{self.run_id.hex[:12]}"
+            )
+        unsub = await bus.subscribe(
+            terminal_topic,
+            on_message=_on_terminal_msg,
+            group_id=derive_runtime_local_group_id(terminal_group_node),
+        )
+        unsubscribe_handles.append(unsub)
+
+        # --- 6. Publish the initial command ---
+        # The payload and its correlation id were resolved in step 3b, before
+        # any subscription, so the terminal watcher's correlation predicate is
+        # already armed when the topic can first deliver.
         model_payload: ProtocolLocalRuntimePayloadModel = cast(
             "ProtocolLocalRuntimePayloadModel", initial_payload
         )
@@ -1314,9 +1449,12 @@ class RuntimeLocal:
         )
 
         logger.info(
-            "RuntimeLocal: published initial command to '%s' (correlation_id=%s)",
+            "RuntimeLocal: published initial command to '%s' "
+            "(correlation_id=%s, source=%s, locus=%s)",
             subscribe_topics[0],
             correlation_id,
+            correlation_source,
+            self.handler_locus,
         )
 
         # --- 7. Await terminal with timeout ---
@@ -1341,6 +1479,71 @@ class RuntimeLocal:
     def _record_event(self, topic: str) -> None:
         """Increment the event counter for *topic*."""
         self._events_received[topic] = self._events_received.get(topic, 0) + 1
+
+    def _resolve_wire_correlation_id(
+        self, payload: object
+    ) -> tuple[uuid.UUID | None, str]:
+        """Return the correlation id that will actually be ON THE WIRE.
+
+        OMN-17304 AC6. This path used to mint a ``uuid.uuid4()``, assign it to
+        ``payload.correlation_id``, and swallow the failure::
+
+            except (AttributeError, ValueError):
+                pass  # frozen model or incompatible type
+
+        ``ModelDelegateSkillRequest`` is
+        ``model_config = {"frozen": True, "extra": "forbid"}``, so on the
+        delegation path that assignment ALWAYS raised (a pydantic
+        ``ValidationError`` is a ``ValueError``) and was always discarded. The
+        published bytes kept the caller's own correlation — correctly — while
+        every "published initial command (correlation_id=...)" log line named
+        the id that had just been thrown away. Every capture log written by
+        this runtime carried a correlation that appears nowhere on the broker.
+
+        The caller's id is now the authority when the payload already carries
+        one; a runtime-minted id is used only to fill a genuine absence, and a
+        failure to stamp it is reported rather than hidden.
+
+        Returns:
+            ``(correlation_id, source)`` where *source* is one of ``payload``,
+            ``runtime-minted``, ``absent`` (the model declares no
+            ``correlation_id`` field) or ``unstampable`` (it declares one, has
+            no value, and refused the assignment). The id is ``None`` for the
+            last two — the run has no attributable correlation.
+        """
+        declared = getattr(payload, "correlation_id", _CORRELATION_FIELD_ABSENT)
+        if declared is _CORRELATION_FIELD_ABSENT:
+            return None, "absent"
+        if declared is not None:
+            text = str(declared).strip()
+            if text and text != _NIL_UUID_TEXT:
+                try:
+                    return uuid.UUID(text), "payload"
+                except ValueError:
+                    logger.warning(
+                        "RuntimeLocal: payload declares correlation_id=%r which "
+                        "is not a UUID — minting one instead",
+                        declared,
+                    )
+
+        minted = uuid.uuid4()
+        try:
+            payload_with_correlation: ProtocolLocalRuntimePayloadModel = cast(
+                "ProtocolLocalRuntimePayloadModel", payload
+            )
+            payload_with_correlation.correlation_id = minted
+        except (AttributeError, ValueError) as exc:
+            # Not swallowed: a frozen payload with no correlation of its own
+            # means nothing on the wire identifies this run, and the caller has
+            # to be told rather than handed a fabricated id.
+            logger.warning(
+                "RuntimeLocal: %s refused a runtime-minted correlation_id (%s); "
+                "this command will carry no correlation of its own",
+                type(payload).__name__,
+                exc,
+            )
+            return None, "unstampable"
+        return minted, "runtime-minted"
 
     def _log_timeout_summary(self) -> None:
         """Log a diagnostic summary when the workflow times out."""
@@ -1989,7 +2192,16 @@ class RuntimeLocal:
             # receipt_mode.py) verify the file it reads actually belongs to
             # the run it just executed before trusting its content.
             "run_id": str(self.run_id),
+            # OMN-17295 AC2 / OMN-17304: whether THIS process executed the
+            # work. A receipt built from this file can then answer "did this
+            # run here?" from the record itself instead of by hand-correlating
+            # container logs after the fact.
+            "handler_locus": self.handler_locus,
         }
+        if self._wire_correlation_id is not None:
+            # OMN-17304 AC6: the correlation actually published, which is what
+            # a lane-side log grep or projection row can be joined on.
+            data["wire_correlation_id"] = str(self._wire_correlation_id)
         if self._terminal_payload is not None:
             data["terminal_payload"] = self._terminal_payload
         if self._handler_result is not None:
@@ -2023,6 +2235,34 @@ class RuntimeLocal:
     def exit_code(self) -> int:
         """CLI exit code corresponding to the current result."""
         return _exit_code_for(self._result)
+
+    @property
+    def handler_locus(self) -> str:
+        """Whether THIS process ran the handlers (OMN-17304).
+
+        ``in_process`` when this runtime hosted them, ``dispatched`` when it
+        published the command and hosted nothing. A property of the runtime's
+        configured role, not of what happened to be reachable — the whole point
+        of client mode is that locus stops being an environmental accident.
+
+        Distinct from ``ModelRuntimeIdentity.execution_locus`` (OMN-17308),
+        which names the venv or container this process itself lives in.
+        """
+        return (
+            HANDLER_LOCUS_IN_PROCESS if self.host_handlers else HANDLER_LOCUS_DISPATCHED
+        )
+
+    @property
+    def wire_correlation_id(self) -> uuid.UUID | None:
+        """The correlation id this run actually published, if it published one.
+
+        ``None`` before the event-driven path publishes, and on paths that
+        publish no command. Distinct from ``run_id``: ``run_id`` identifies the
+        local invocation, this identifies the message on the bus that any other
+        participant — a lane container log, a projection row — can be joined
+        on.
+        """
+        return self._wire_correlation_id
 
     @property
     def last_error(self) -> str | None:
