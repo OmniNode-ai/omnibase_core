@@ -60,6 +60,8 @@ from pathlib import Path
 from scripts.ci.test_selection_closure import TEST_UNIT_PREFIX
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+from tests.scripts._prepush_lab_isolation import network_free_lab_env
+
 HOOK_SCRIPT = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
 
 _GUARANTEED_NON_MATCHING_HOSTNAME = "definitely-not-a-gate-host-omn15059"
@@ -118,10 +120,31 @@ def test_guard_fails_closed_when_hostname_cannot_be_determined() -> None:
     )
 
 
-def test_guard_has_a_visible_degraded_host_override() -> None:
+def test_the_escape_hatch_is_a_receipted_grant_not_an_env_var() -> None:
+    """OMN-16480, ported here by OMN-17159.
+
+    This gate's escape hatch used to BE `PREPUSH_ALLOW_LOCAL_FULL_SUITE=1`. An
+    environment variable is inherited by every descendant process, bound to no
+    repo/commit/run, never expires and leaves no receipt -- so one leaked value
+    disarmed the gate for a whole process tree and recursively spawned another
+    full suite. The variable is now a HARD REFUSAL in both directions, and the
+    supported path is a single-use, repo+HEAD-scoped, TTL-bounded, receipted
+    grant.
+
+    Both halves are asserted: the rejection must be CALLED (defining it is not
+    enforcing it), and a replacement must exist -- removing the escape hatch
+    with nothing in its place is a different change than this one."""
     script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
-    assert "PREPUSH_ALLOW_LOCAL_FULL_SUITE" in script_text, (
-        "expected a documented PREPUSH_ALLOW_LOCAL_FULL_SUITE escape hatch"
+    assert "reject_inherited_env_overrides" in script_text
+    assert any(
+        line.strip() == "reject_inherited_env_overrides"
+        for line in script_text.splitlines()
+    ), "the entry rejection is defined but never called"
+    assert "consume_override_grant" in script_text, (
+        "the env-var hatch was removed with no receipted replacement"
+    )
+    assert "prepush_override_grant.py" in script_text, (
+        "expected the refusal to name the grant-minting command"
     )
     assert "DEGRADED-HOST OVERRIDE" in script_text, (
         "expected the override to print a loud, visible warning naming the "
@@ -152,6 +175,10 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
     # OMN-16489: this test deliberately exercises FIRST-entry behavior, so the
     # recursion sentinel an outer hook run exports must not leak in.
     env.pop("ONEX_PREPUSH_HOOK_ACTIVE", None)
+    # OMN-16991/OMN-17159: hold the lab-dispatch leg network-free. Without it
+    # this test ships a real bundle to a lab host and starts the whole suite
+    # there. See _prepush_lab_isolation.
+    env.update(network_free_lab_env())
     result = subprocess.run(
         ["bash", str(HOOK_SCRIPT)],
         cwd=REPO_ROOT,
@@ -333,6 +360,10 @@ def _run_hook_with_stubbed_selection(
         "ONEX_PREPUSH_HOOK_ACTIVE",
     ):
         env.pop(leaky, None)
+    # OMN-16991/OMN-17159: see _prepush_lab_isolation. This harness drives
+    # whole-suite-equivalent selections through the real guard, which is
+    # exactly the path that can now place work on a lab host.
+    env.update(network_free_lab_env())
 
     return subprocess.run(
         ["bash", str(HOOK_SCRIPT)],
@@ -681,7 +712,8 @@ _LOAD_HELPERS_RE = re.compile(
 def _extract_load_helpers_source() -> str:
     """Extract-and-execute the real `PREPUSH_LOAD_THRESHOLD` default,
     `host_load_ratio` / `host_is_fit` / `_prepush_timeout_cmd` bash functions,
-    and their shared `_PREPUSH_LOAD_PROBE_PY` constant from the shipped hook
+    and their shared `_PREPUSH_LOAD_PROBE_SH` constant from the shipped hook
+    (interpreter-free since OMN-17159 -- see that constant's comment)
     -- never a Python re-implementation, for the same reason
     `_extract_predicate_source` above extracts `selection_is_whole_suite`
     rather than re-implementing it. The threshold default must travel with
@@ -698,9 +730,9 @@ def _extract_load_helpers_source() -> str:
         f"expected a PREPUSH_LOAD_THRESHOLD default assignment in {HOOK_SCRIPT}"
     )
     py_match = re.search(
-        r"^_PREPUSH_LOAD_PROBE_PY='.*?'$", script_text, re.DOTALL | re.MULTILINE
+        r"^_PREPUSH_LOAD_PROBE_SH='.*?'$", script_text, re.DOTALL | re.MULTILINE
     )
-    assert py_match is not None, f"expected _PREPUSH_LOAD_PROBE_PY in {HOOK_SCRIPT}"
+    assert py_match is not None, f"expected _PREPUSH_LOAD_PROBE_SH in {HOOK_SCRIPT}"
     fn_match = _LOAD_HELPERS_RE.search(script_text)
     assert fn_match is not None, (
         f"expected _prepush_timeout_cmd/host_load_ratio/host_is_fit in {HOOK_SCRIPT}"
@@ -775,7 +807,7 @@ def test_host_load_ratio_computes_from_the_override_not_a_hardcoded_value() -> N
 
 
 def _run_hook_forcing_full_suite(
-    *, env_extra: dict[str, str]
+    *, env_extra: dict[str, str], keep_env_override: bool = False
 ) -> subprocess.CompletedProcess[str]:
     """Run the REAL hook with the full-suite escalation forced
     (`PREPUSH_FULL_SUITE=1`) and the REAL governed selector (a fast, real `uv
@@ -807,13 +839,23 @@ def _run_hook_forcing_full_suite(
         env["PATH"] = f"{stub_bin}{os.pathsep}{env['PATH']}"
         env["PREPUSH_FULL_SUITE"] = "1"
         env["PREPUSH_BASE_REF"] = "HEAD"
-        for leaky in (
-            "PREPUSH_ALLOW_LOCAL_FULL_SUITE",
-            # OMN-16489: this harness exercises FIRST-entry behavior, so the
-            # recursion sentinel an outer hook run exports must not leak in.
-            "ONEX_PREPUSH_HOOK_ACTIVE",
-        ):
+        leaky_names = ["ONEX_PREPUSH_HOOK_ACTIVE"]
+        if not keep_env_override:
+            # OMN-16480: a PREPUSH_ALLOW_* value leaking in from the outer
+            # process is now a hard REFUSAL, so leaving one in place would make
+            # every test in this file fail on entry rather than on the behavior
+            # it is asserting. The one test that is ABOUT that refusal opts back
+            # in with keep_env_override=True.
+            leaky_names.append("PREPUSH_ALLOW_LOCAL_FULL_SUITE")
+        for leaky in leaky_names:
             env.pop(leaky, None)
+        # OMN-16991: this harness runs the REAL hook with the heavy escalation
+        # forced. Since OMN-17159 wired the lab-dispatch leg into this repo,
+        # that is no longer a local-only decision -- without isolation the
+        # picker would ship a real git bundle to a lab host, take its exclusive
+        # slot and start the whole 45k-test suite there, naming THIS test
+        # process as the origin. See _prepush_lab_isolation.
+        env.update(network_free_lab_env())
         env.update(env_extra)
 
         return subprocess.run(
@@ -882,47 +924,131 @@ def test_guard_allows_the_201_gate_runner_identity_when_fit() -> None:
     assert "STUB-PYTEST-INVOKED" in result.stdout, result
 
 
-def test_guard_override_still_works_under_load() -> None:
-    """PREPUSH_ALLOW_LOCAL_FULL_SUITE must still force through the NEW
-    capacity check, exactly as it already does for the identity check --
-    same escape hatch, same visible degraded-evidence warning."""
+def test_the_inherited_env_override_is_refused_not_honored() -> None:
+    """Behavioral inverse of the pre-OMN-16480 test that used to live here.
+
+    The same invocation that once took the "DEGRADED-CAPACITY OVERRIDE IN
+    EFFECT" branch and RAN the suite must now refuse at hook entry, before the
+    selector resolves and before any pytest is reachable. The refusal must
+    happen even though the host would otherwise be designated -- the variable
+    is not a weaker permission, it is a rejection."""
     result = _run_hook_forcing_full_suite(
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
             "PREPUSH_ALLOW_LOCAL_FULL_SUITE": "1",
         },
+        keep_env_override=True,
     )
-    assert result.returncode == 0, result
-    assert "DEGRADED-CAPACITY OVERRIDE" in result.stderr, result.stderr
-    assert "STUB-PYTEST-INVOKED" in result.stdout, result
+    assert result.returncode != 0, (
+        f"expected the leaked override to be REFUSED, not honored: {result!r}"
+    )
+    assert "REJECTED, never honored" in result.stderr, result.stderr
+    assert "STUB-PYTEST-INVOKED" not in result.stdout, (
+        "the refusal must land before any pytest is reachable"
+    )
 
 
-def test_guard_refusal_names_a_fit_alternate_host() -> None:
+def test_the_refusal_records_every_probed_host_and_its_verdict() -> None:
+    """The pre-OMN-17159 refusal interpolated ONE alternate host's load into a
+    sentence. With a table of five rows the useful artifact is the whole probe
+    trail: a refusal that names every host it considered, with the reason each
+    was rejected, can be AUDITED rather than believed.
+
+    The lab leg is held network-free here (see network_free_lab_env), so every
+    row resolves to "slot unknown" and is skipped -- the fail-closed posture
+    the picker applies to any host it cannot prove idle."""
     result = _run_hook_forcing_full_suite(
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
-            "PREPUSH_LOAD_OVERRIDE_REMOTE": "3 32",
         },
     )
     assert result.returncode != 0, result
-    assert "HAS capacity -- route there instead" in result.stderr, result.stderr
+    assert "probed hosts:" in result.stderr, result.stderr
+    for label in ("h200", "h201", "h101", "h105"):
+        assert label in result.stderr, (
+            f"expected {label} on the probe record; a refusal that hides the "
+            f"hosts it considered cannot be audited. got: {result.stderr!r}"
+        )
 
 
-def test_guard_refusal_names_both_hosts_saturated() -> None:
+def test_the_refusal_points_at_the_host_table_and_the_grant() -> None:
+    """A refusal must name its remediation. Both surfaces are load-bearing:
+    the host table's header is how a new lab host gets added, the grant is the
+    only sanctioned way to proceed on an unfit host.
+
+    The pointer is the TABLE, deliberately, not a separate runbook: the
+    procedure and the data it edits then cannot drift apart, and there is no
+    second file to leave stale."""
     result = _run_hook_forcing_full_suite(
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
-            "PREPUSH_LOAD_OVERRIDE_REMOTE": "40 32",
         },
     )
     assert result.returncode != 0, result
-    assert "is ALSO at/over the load threshold" in result.stderr, result.stderr
+    assert "scripts/hooks/prepush_hosts.tsv" in result.stderr, result.stderr
+    assert "prepush_override_grant.py mint" in result.stderr, result.stderr
 
 
 def _real_short_hostname() -> str:
     return subprocess.run(
         ["hostname", "-s"], capture_output=True, text=True, check=True
     ).stdout.strip()
+
+
+def test_both_hook_harnesses_apply_the_lab_isolation() -> None:
+    """Every harness in this file that runs the REAL hook on a heavy path must
+    hold the lab leg network-free.
+
+    This is a static check on purpose. The failure it guards is not a wrong
+    assertion -- it is a test that quietly spends an hour of a lab host's cores
+    and takes a slot real pushes are queued behind, which no behavioral
+    assertion in this file would notice. A new harness added without the
+    isolation is the realistic regression."""
+    text = Path(__file__).read_text(encoding="utf-8")
+    runs = text.count("str(HOOK_SCRIPT)")
+    isolations = text.count("network_free_lab_env()")
+    assert isolations >= runs, (
+        f"{runs} call sites run the real hook but only {isolations} apply the "
+        "lab isolation; a harness that reaches the picker unisolated will "
+        "dispatch a real suite to a lab host"
+    )
+
+
+def test_the_escalation_declares_the_integration_path_array() -> None:
+    """`RUNNABLE_INTEGRATION_PATHS` must be DECLARED in this repo even though
+    it is empty (OMN-17159).
+
+    `prepush_dispatch.sh` is a byte-identical copy of omnibase_infra's and
+    reads `${#RUNNABLE_INTEGRATION_PATHS[@]}` unconditionally. bash 3.2 -- the
+    system bash on every lab Mac -- raises "unbound variable" for that
+    expansion on a never-declared array under `set -u`, while newer bash
+    quietly answers 0. So omitting the declaration aborts the remote leg on
+    exactly the hosts this port exists to reach, and does it nowhere else."""
+    script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
+    assert "RUNNABLE_INTEGRATION_PATHS=()" in script_text, (
+        "expected an explicit empty-array declaration; see the bash 3.2 note"
+    )
+    declared = script_text.index("RUNNABLE_INTEGRATION_PATHS=()")
+    guard_call = script_text.index("  guard_full_suite_host\n")
+    assert declared < guard_call, (
+        "the array must be declared before the guard that can reach the remote leg"
+    )
+
+
+def test_a_green_lab_run_replaces_the_local_suite_rather_than_adding_to_it() -> None:
+    """The point of the lab leg is that the work moves, not that it doubles.
+
+    If the hook dispatched to a lab host and then ALSO ran the suite locally,
+    the escalation would cost more than before the port while the host the
+    guard just measured as unfit did the work anyway."""
+    script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
+    assert 'if [ "$REMOTE_LAB_RUN_VERDICT" -eq 1 ]; then' in script_text, (
+        "expected the local pytest to be elided on a green lab verdict"
+    )
+    assert script_text.count('if [ "$REMOTE_LAB_RUN_VERDICT" -eq 1 ]; then') == 2, (
+        "both heavy call sites (the flagged escalation and the whole-suite-"
+        "equivalent selection) must honor the lab verdict"
+    )

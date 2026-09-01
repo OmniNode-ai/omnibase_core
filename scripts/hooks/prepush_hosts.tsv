@@ -1,0 +1,92 @@
+# Lab capacity/identity table for the pre-push heavy-suite guard.
+# Ported to omnibase_core by OMN-17159; mechanism is OMN-16991.
+#
+# THIS FILE IS AUTHORITY FOR HOST IDENTITY. It is read from the COMMITTED tree
+# (`git show HEAD:scripts/hooks/prepush_hosts.tsv`), never from the working
+# tree, and the hook refuses if the two differ -- an uncommitted row whose
+# `hostname` matches the local machine would otherwise self-designate a laptop
+# as an authorizing gate host with no review, no receipt and no guard tripped.
+# That is precisely the forgeable-on-disk-artifact surface OMN-16688
+# deliberately avoided ("no file on disk to forge"). Adding or enabling a row
+# therefore requires a reviewed commit, and tests/scripts/
+# test_prepush_host_table.py asserts the full contents so a row addition also
+# requires a deliberate test update.
+#
+# WHAT A ROW CLAIMS, AND WHAT IT TOOK TO EARN IT (OMN-17159). A `capacity`
+# row with mode=authorizing asserts that THIS host can run THIS repo's heavy
+# escalation -- `pytest tests/ --ignore=tests/integration`, 45,117 collected
+# tests -- and that its verdict may satisfy the gate. That is a repo-specific
+# claim, not a fleet-wide one: omnibase_infra listing a host says nothing about
+# whether omnibase_core's dependency set resolves there. Every row below was
+# therefore re-proven against THIS repo over the same transport the picker
+# drives (git bundle HEAD --tags -> scp -> clone -> `uv sync --all-extras` ->
+# pytest), never assumed from the sibling table.
+#
+# Columns (TAB separated; no tabs inside any field):
+#   label          stable row id; also names the per-row override env var
+#                  PREPUSH_HOST_OVERRIDE_<LABEL uppercased>
+#   role           capacity = placement candidate AND identity
+#                  identity = identity only, never an execution target
+#   hostname       `hostname -s` of that host, lowercased
+#   ssh_target     ssh(1) target for probes/execution, or - for role=identity
+#   cores          nominal core count (documentation; the live probe re-reads it)
+#   uv_abs_path    ABSOLUTE uv path. uv is on NO host's non-interactive PATH
+#                  (measured 2026-08-31), so every remote leg invokes this path
+#                  literally rather than relying on a login profile.
+#   uv_min_version floor. A host below it is SKIPPED, never assumed fit.
+#   workroot       remote scratch root (bundles/, trees/, runs/, LOCK)
+#   slot_mode      queue   = enqueue into ~/push-lanes/QUEUE (.201, OMN-16968)
+#                  lockdir = exclusive mkdir(2) lockdir at <workroot>/LOCK
+#                  none    = not an execution target
+#   slots          how many CONCURRENT heavy-suite lanes this row may hold.
+#                  Every row here is slots=1 -- see the h105 note for why this
+#                  repo does NOT inherit omnibase_infra's slots=2 widening.
+#   repos_denied   comma-separated repos this host must NOT run, or -
+#   mode           authorizing = its verdict may satisfy the escalation
+#                  shadow      = runs and receipts, but NEVER authorizes
+#                  disabled    = not probed, not run, not an identity
+#   note           free text
+#
+# ADDING A HOST. A row is not a guess about a machine; it is a claim that THIS
+# repo's heavy escalation runs there. Prove it over the same transport the
+# picker drives -- git bundle (HEAD --tags) -> scp -> clone -> `uv sync
+# --all-extras` -> pytest -- and record what you measured in the note column:
+#   1. reachable non-interactively:  ssh -n -o BatchMode=yes <target> 'hostname -s'
+#   2. uv at an ABSOLUTE path, at or above the row's floor (uv is on no host's
+#      non-interactive PATH, so the remote leg invokes this path literally)
+#   3. workroot writable -- never ~/Code, which is TCC-denied to sshd on the Macs
+#   4. `uv sync --all-extras` succeeds in the transplanted tree
+#   5. `uv run pytest tests/ --collect-only -q` returns rc=0. This is the
+#      load-bearing step: it imports every test module and so exercises the
+#      whole dependency graph on that host.
+#   6. a real green slice runs
+#   7. load1/nproc under the threshold, and enough free disk
+# Then update tests/scripts/test_prepush_host_table.py's pins in the same
+# commit, and say in the PR body what you measured.
+#
+# DO NOT STAGE THROUGH mode=shadow. A shadow row runs and receipts but never
+# authorizes, which sounds like a safe first step and is not one: the
+# transplanted conftest.py refuses a full-suite target on any host OUTSIDE the
+# authorizing set, so a shadow row can never record a heavy verdict at all.
+# Promotion is proven by a real dispatch, not by a preceding shadow day.
+#
+# WHEN THE GATE REFUSES, read the `probed hosts:` trail it prints -- every
+# considered host is on the record with its verdict (fit / busy / over(<ratio>)
+# / uv-unfit / unreachable / slot-unknown / repo-denied / mode-...-not-eligible),
+# so a refusal can be audited rather than believed. A PREPUSH_ALLOW_* variable
+# in the environment is a HARD REFUSAL, not a bypass (OMN-16480): unset it, and
+# if the run genuinely must proceed on an unfit host, mint a single-use
+# receipted grant with scripts/hooks/prepush_override_grant.py.
+#
+# CAVEAT, currently open: the picker checks load, slot and uv version -- NOT
+# free disk. Workroot GC is dispatch-triggered, so an aborted leg strands its
+# ~650 MB tree/ until some later push happens to pick the same host, and a host
+# that hits ENOSPC mid-suite returns a RED suite rather than a placement miss.
+# See the h101 note below; tracked as OMN-17420.
+#
+#label	role	hostname	ssh_target	cores	uv_abs_path	uv_min_version	workroot	slot_mode	slots	repos_denied	mode	note
+h200	capacity	stickybeatz-studio	jonah@stickybeatz-studio.tail75df5e.ts.net	24	/Users/jonah/.local/bin/uv	0.11.0	/Users/Shared/onex-prepush	lockdir	1	-	authorizing	.200 Mac Studio; the rule-11a default gate host and the ONLY name this repo's guard recognized before OMN-17159 (alongside the h201c CONTAINER row). Re-probed 2026-08-31: uv 0.11.32, /Users/Shared/onex-prepush writable, 247 GiB free. Listed on identity, not on fresh capacity: it read load1 99.70/24 = 4.15x at the moment this row was written, which is exactly the saturation that made every core escalation refuse and motivated this port. slots=1 -- it is the local/default host, not a distribution target.
+h201	capacity	omninode-pc	jonah@192.168.86.201	32	/home/jonah/.local/bin/uv	0.11.0	/data/omninode/onex-prepush	queue	1	-	authorizing	.201 Linux host, 32 cores. PROVEN for omnibase_core heavy runs by first-hand measurement, not inference: `~/push-lanes/queue-runner.log` records 48 omnibase_core lane lines, and the seven most recent COMPLETED core lanes all finished rc=0 -- OMN-16507 2h44m, OMN-16346 2h50m, OMN-13902-main 2h43m, OMN-16037 2h44m, OMN-16933 2h56m, OMN-17167 3h06m, OMN-16321-additive-enum 3h05m (re-read 2026-08-31). Before this port that capability was reachable only by HAND-ROUTING a lane into ~/push-lanes/QUEUE, because this repo had no host table at all -- the gap OMN-17159 exists to close. slot_mode=queue: the ~/push-lanes serializer is a different concurrency mechanism from the lockdir rows, and a non-empty QUEUE marks the row BUSY (it read 3 deep at write time). uv 0.11.5, /data 1.8T free.
+h201c	identity	gate-runner-201	-	32	-	-	-	none	1	-	authorizing	.201 gate-runner CONTAINER hostname; no sshd (OMN-16446) so identity-only. Carried over from this hook's previous two-name literal so a push from INSIDE the container keeps passing the identity check.
+h101	capacity	stickybeatz	jonah@192.168.86.101	12	/Users/jonah/.local/bin/uv	0.12.7	/Users/Shared/onex-prepush	lockdir	1	-	authorizing	Stickybeatz, 12-core arm64, 32 GB. PROVEN for THIS repo 2026-08-31 over the real remote leg, not by analogy with omnibase_infra's table: bundle carried 104 tag refs into the clone, `uv sync --all-extras` OK, Python 3.12.11, `import omnibase_core` OK, and `pytest tests/ --collect-only` returned rc=0 with **45,117 tests collected in 53.95s** -- the WHOLE core suite resolves and imports there -- followed by a real green cross-section (419 passed, rc=0, 16.37s). Probed non-interactively at the same time: load1 5.13/12 = 0.427x, /Users/Shared/onex-prepush writable. uv_min_version is pinned to the 0.12.7 this host actually runs rather than the fleet floor, so a downgrade re-opens the gate as a SKIP instead of an assumption. CAUTION (OMN-17420, not closed): this host is the tightest on disk in the fleet -- 71 GiB free at 92% capacity, with 8 stranded `runs/*/tree` directories the traffic-triggered GC has not reclaimed. There is no min-free-disk precondition in the picker yet, and an ENOSPC mid-suite surfaces as a RED, not as a placement miss.
+h105	capacity	omnibook	jonah@192.168.86.105	10	/Users/jonah/.local/bin/uv	0.11.0	/Users/Shared/onex-prepush	lockdir	1	-	authorizing	omnibook MacBook Air M4, 10-core arm64, 32 GB. PROVEN for THIS repo 2026-08-31 by the same real remote-leg dispatch as h101: 104 tag refs into the clone, `uv sync --all-extras` OK, Python 3.12.9, `import omnibase_core` OK, `pytest tests/ --collect-only` rc=0 with **45,117 tests collected in 43.92s**, then 419 passed rc=0 in 14.02s. Probed at the same time: load1 1.24/10 = 0.124x (the fittest ratio in the lab), uv 0.11.8, 138 GiB free at 68%. slots=1 DELIBERATELY, NOT inherited from omnibase_infra's slots=2 row: infra's escalation target is tests/unit/, while this repo's is the whole 45k-test tree, and two concurrent core suites on ten cores would make both slower than one serialized pair while degrading the load signal every other row is ranked on. Widening it needs its own measurement, not this ticket's.
