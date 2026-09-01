@@ -83,6 +83,60 @@ fi
 export ONEX_PREPUSH_HOOK_ACTIVE="$$"
 
 # =============================================================================
+# Inheritable env-var gate overrides are REJECTED AT ENTRY (OMN-16480)
+# =============================================================================
+# Ported to this repo by OMN-17159, and deliberately BEFORE the lab-dispatch
+# picker below rather than after it. OMN-17159's own DoD names the ordering:
+# porting the picker first would add a new PASS path to this gate with no entry
+# rejection behind it, so the two land in the same commit with the rejection
+# reachable first.
+#
+# This gate's escape hatch used to BE an environment variable
+# (`PREPUSH_ALLOW_LOCAL_FULL_SUITE=1`). An environment variable is inherited by
+# every descendant process, is bound to no repo/commit/run, never expires, and
+# leaves no receipt -- so "permission to bypass the load gate once, for this
+# push" was really "permission for every process this shell ever spawns to
+# bypass this gate, silently". Same failure shape Rule 10 was hardened against
+# for `[skip-*` tokens (OMN-9731 / OMN-13388), one layer down.
+#
+# Measured: on 2026-08-23 that variable leaked from an operator shell into a
+# guard test's `env=dict(os.environ)` subprocess copy; the sibling hook took its
+# degraded-override branch and recursively launched another full 44,064-test
+# suite, which reached the same test and recursed again -- ~9h03m, ~72% of all
+# serialized suite wall-clock in that window (friction report F-01/F-04).
+# Compliance was PERFECT that night: zero `[skip-*`, zero `--no-verify`. The
+# damage came from the sanctioned escape path being used correctly.
+#
+# So the variable is no longer an arming signal in either direction: its
+# presence is a HARD REFUSAL, not a bypass. That is what makes inheritance
+# harmless -- a leaked override can no longer arm anything, and it surfaces
+# immediately instead of silently disarming the gate for a whole process tree.
+# The supported path is a single-use, repo+HEAD-scoped, TTL-bounded, receipted
+# grant token: scripts/hooks/prepush_override_grant.py.
+#
+# Matched by PREFIX, not by one exact name, so a future
+# `PREPUSH_ALLOW_SOMETHING_ELSE` cannot quietly reopen the class.
+reject_inherited_env_overrides() {
+  local leaked
+  leaked="$(env | sed -n 's/^\(PREPUSH_ALLOW_[A-Za-z0-9_]*\)=..*/\1/p' | sort -u | tr '\n' ' ')"
+  leaked="${leaked% }"
+  [ -n "$leaked" ] || return 0
+  die "inheritable gate-override environment variable(s) present: ${leaked} -- these are REJECTED, never honored (OMN-16480)" \
+      "unset them in this shell (e.g. \`unset ${leaked%% *}\`), then, if this run genuinely must proceed on this host, mint a scoped single-use grant: \`uv run python scripts/hooks/prepush_override_grant.py mint --reason '<why>'\`. The grant is bound to this repo and this HEAD sha, expires in minutes, is consumed by the first guard that reads it (so no child process can reuse it), and appends a receipt line to .onex_state/prepush_override/receipts.jsonl"
+}
+reject_inherited_env_overrides
+
+# consume_override_grant CONTEXT -- 0 when a valid single-use grant was claimed
+# for this run, 1 otherwise. Delegates to the one implementation
+# (scripts/hooks/prepush_override_grant.py) that the pytest-side guard also
+# uses, so the two entry points can never drift apart on what a valid grant is.
+# Routed through `uv run` per the OMN-14953 pinned-interpreter gate.
+consume_override_grant() {
+  uv run python "${REPO_ROOT}/scripts/hooks/prepush_override_grant.py" \
+    consume --context "$1"
+}
+
+# =============================================================================
 # .200-default host guard for the heavy (full-suite) escalation (OMN-15059)
 # =============================================================================
 # CLAUDE.md documents that pushes / heavy gate runs default to the `.200`
@@ -137,19 +191,41 @@ PREPUSH_201_SSH_TARGET="${PREPUSH_201_SSH_TARGET:-jonah@192.168.86.201}"  # onex
 # `.200` snapshots above (1.33x and 2.3x) as over threshold.
 PREPUSH_LOAD_THRESHOLD="${PREPUSH_LOAD_THRESHOLD:-1.0}"
 
-# Cross-platform (Linux `.201` / macOS `.200`) load probe: os.getloadavg()[0]
-# and os.cpu_count() are both POSIX-portable via the stdlib, which sidesteps
-# needing separate /proc/loadavg-vs-sysctl branches (and their escaping) in
-# both the local AND the remote-via-ssh cases below. No quote characters
-# appear in this snippet -- it is embedded inside a single-quoted remote
-# command string in the ssh branch, so it must stay that way.
-_PREPUSH_LOAD_PROBE_PY='import os,sys
-n=os.cpu_count() or 0
-sys.exit(1) if n<=0 else print(os.getloadavg()[0], n)'
+# Cross-platform (Linux `.201` / macOS `.200`) load probe, printing
+# "<load1> <nproc>". Deliberately interpreter-free (OMN-17159, matching the
+# OMN-16991 shape already shipped in omnibase_infra): the previous form here
+# ran `python3 -c` on BOTH the local and the ssh branch, which this repo's own
+# pinned-interpreter doctrine (OMN-14953) wants routed through `uv run` -- and
+# the ssh branch cannot, because `.201` has no `uv` binary at all (probed
+# 2026-08-20, re-probed 2026-08-31). Dropping the interpreter satisfies that
+# constraint rather than carving an exception out of it, and keeps interpreter
+# startup off the pre-push critical path. It also makes the probe usable on a
+# host with no python3 on its non-interactive PATH, which is the normal shape
+# of an ssh login session on the lab Macs.
+#
+# Two portability constraints, both load-bearing:
+#   1. Field extraction uses cut(1), NOT `set -- $(...)` word splitting.
+#      `.200`'s remote login shell is zsh, which does not word-split unquoted
+#      command substitution, so `set --` would collapse the whole line into $1
+#      there while working fine on `.201`'s bash.
+#   2. This snippet is handed to ssh(1) as the remote command and executed by
+#      whatever login shell the remote user has, so it stays POSIX and carries
+#      no single quotes (it is itself a single-quoted assignment here).
+# shellcheck disable=SC2016  # intentionally unexpanded: evaluated by the local
+# `sh -c` / the remote login shell, not by this script.
+_PREPUSH_LOAD_PROBE_SH='n=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 0)
+[ "$n" -gt 0 ] || exit 1
+if [ -r /proc/loadavg ]; then
+  l=$(cut -d" " -f1 /proc/loadavg)
+else
+  l=$(sysctl -n vm.loadavg 2>/dev/null | cut -d" " -f2)
+fi
+[ -n "$l" ] || exit 1
+printf "%s %s\n" "$l" "$n"'
 
 # Prefer GNU coreutils timeout(1); fall back to gtimeout(1) (Homebrew name on
 # macOS); fall back to no wrapper at all (ssh -o ConnectTimeout already bounds
-# the connection phase, and the remote command is a single fast python3 -c).
+# the connection phase, and the remote command is a single fast shell probe).
 _prepush_timeout_cmd() {
   if command -v timeout > /dev/null 2>&1; then
     printf 'timeout'
@@ -166,13 +242,26 @@ _prepush_timeout_cmd() {
 # hardcoded):
 #   PREPUSH_LOAD_OVERRIDE_LOCAL   overrides the direct (TARGET="") read
 #   PREPUSH_LOAD_OVERRIDE_REMOTE  overrides every ssh-target read
+# `ssh -n` IS LOAD-BEARING, not hygiene (OMN-16991 verify finding 1, ported here
+# by OMN-17159). This probe is called from inside the host-table row loop in
+# pick_capacity_host, whose stdin is the row list. Without -n, ssh(1) reads and
+# discards that stdin, so the FIRST probe swallows every remaining row and the
+# picker evaluates exactly one host -- live, infra's picker probed h200 and
+# never saw h201/h101/h105, and a lab with three idle hosts refused the push.
+# The defect is silent: a truncated scan looks exactly like a small lab.
 host_load_ratio() {
   local target="$1" raw load1 ncpu timeout_cmd
+  # OMN-16995: REAP FIRST, MEASURE SECOND. A leaked no-op spin-loop orphan is
+  # indistinguishable from real work in load1, and 19 of them once put `.200`
+  # at 1.64x-core and refused every heavy escalation in the lab. The reaper is
+  # defined in prepush_dispatch.sh, which is sourced below this definition and
+  # therefore resolved by the time any caller runs.
+  reap_spin_loop_orphans "$target" || true
   if [ -z "$target" ]; then
     if [ -n "${PREPUSH_LOAD_OVERRIDE_LOCAL:-}" ]; then
       raw="$PREPUSH_LOAD_OVERRIDE_LOCAL"
     else
-      raw="$(python3 -c "$_PREPUSH_LOAD_PROBE_PY" 2> /dev/null)" || return 1
+      raw="$(sh -c "$_PREPUSH_LOAD_PROBE_SH" 2> /dev/null)" || return 1
     fi
   else
     if [ -n "${PREPUSH_LOAD_OVERRIDE_REMOTE:-}" ]; then
@@ -180,11 +269,11 @@ host_load_ratio() {
     else
       timeout_cmd="$(_prepush_timeout_cmd)"
       if [ -n "$timeout_cmd" ]; then
-        raw="$("$timeout_cmd" 6 ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
-          "$target" "python3 -c '${_PREPUSH_LOAD_PROBE_PY}'" 2> /dev/null)" || return 1
+        raw="$("$timeout_cmd" 6 ssh -n -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+          "$target" "$_PREPUSH_LOAD_PROBE_SH" 2> /dev/null)" || return 1
       else
-        raw="$(ssh -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
-          "$target" "python3 -c '${_PREPUSH_LOAD_PROBE_PY}'" 2> /dev/null)" || return 1
+        raw="$(ssh -n -o ConnectTimeout=3 -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+          "$target" "$_PREPUSH_LOAD_PROBE_SH" 2> /dev/null)" || return 1
       fi
     fi
   fi
@@ -208,8 +297,129 @@ host_is_fit() {
   awk -v r="$ratio" -v thr="$PREPUSH_LOAD_THRESHOLD" 'BEGIN { exit !(r <= thr + 0) }'
 }
 
+# =============================================================================
+# Lab-wide distribution helpers (OMN-16991, ported by OMN-17159)
+# =============================================================================
+# Sourced AFTER host_load_ratio/host_is_fit/_prepush_timeout_cmd, which the
+# library reuses rather than reimplementing, and BEFORE guard_full_suite_host,
+# which is its only caller. Located relative to this script so it resolves the
+# same way whether git invokes the hook through .git/hooks or core.hooksPath.
+#
+# The file is a BYTE-FOR-BYTE copy of omnibase_infra's
+# scripts/hooks/prepush_dispatch.sh. That is enforced, not merely intended:
+# tests/scripts/test_prepush_host_table.py pins its sha256, so a local edit
+# that silently forks the picker fails this repo's own suite. OMN-17159 DoD
+# item 3 -- the "three copies byte-identical" cross-repo assertion is not
+# implementable from a repo-local harness, so each repo pins the digest of the
+# copy it ships.
+# shellcheck source=scripts/hooks/prepush_dispatch.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/prepush_dispatch.sh"
+
+# REMOTE_LAB_RUN_VERDICT (OMN-16991) -- set to 1 when a designated lab host ran
+# this exact tree green over the remote leg, so the caller elides the local
+# pytest entirely.
+REMOTE_LAB_RUN_VERDICT=0
+
+# dispatch_to_lab_host HEAVY_WHAT -- try to satisfy HEAVY_WHAT by running it on
+# a designated lab host, cheapest-loaded first.
+# 0 = satisfied (green), 1 = no evidence (caller falls through), and it does
+# NOT return on a remote RED: a suite that genuinely failed on a designated
+# host is a failing gate, so it refuses here rather than letting the caller
+# fall through to the degraded-evidence override grant.
+#
+# It walks the RANKED candidate list rather than betting the whole escalation on
+# one host (OMN-16991 verify finding 3). Only a verdict -- green or red -- ends
+# the walk. "No evidence" (unreachable on arrival, no completion marker) and
+# "slot taken between the probe and the run" (rc 4) are placement misses, not
+# statements about the tree, so they advance to the next fit host instead of
+# refusing a push that another idle lab host could have cleared.
+#
+# `authorizing` is passed EXPLICITLY: this is the verdict-bearing path, and a
+# shadow row's verdict cannot satisfy the escalation by definition. Ranking one
+# in would spend a bundle, an scp, a `uv sync` and a full suite to produce an
+# answer that is then thrown away, while the authorizing host that could have
+# answered goes unprobed.
+dispatch_to_lab_host() {
+  local heavy_what repo rc=0 idx=1 total
+  heavy_what="$1"
+  repo="$(basename "$REPO_ROOT")"
+  if ! pick_capacity_host "$PREPUSH_LC_HOST" "$repo" authorizing; then
+    log "no lab host is fit for ${heavy_what}: ${PREPUSH_PROBE_LOG:-no hosts probed}"
+    return 1
+  fi
+  total="$(prepush_candidate_count)"
+  while [ "$idx" -le "$total" ]; do
+    prepush_select_candidate "$idx" || break
+    if [ -z "$PREPUSH_PICK_SSH" ]; then
+      # This candidate IS this host: nothing to distribute. The local branch
+      # already measured it unfit or its slot held, so this is no evidence --
+      # but the ranked hosts after it still are.
+      idx=$((idx + 1))
+      continue
+    fi
+    rc=0
+    prepush_remote_run "$heavy_what" || rc=$?
+    case "$rc" in
+      0)
+        REMOTE_LAB_RUN_VERDICT=1
+        return 0
+        ;;
+      3)
+        die "${heavy_what} FAILED on the designated lab host '${PREPUSH_PICK_HOSTNAME}' (${PREPUSH_PICK_LABEL})" \
+            "the suite genuinely failed on a host we designated -- this is a red gate, not a capacity problem. Read the streamed [${PREPUSH_PICK_LABEL}] output above (the tail of that host's suite.log is printed there), fix the failing tests, then re-push. A remote red is never satisfied by minting an override grant"
+        ;;
+      4)
+        log "lab placement: ${PREPUSH_PICK_LABEL}'s heavy-suite slot was taken on arrival; trying the next fit host"
+        ;;
+      *)
+        log "lab placement: ${PREPUSH_PICK_LABEL} returned no usable evidence; trying the next fit host"
+        ;;
+    esac
+    idx=$((idx + 1))
+  done
+  log "no fit lab host produced a verdict for ${heavy_what}: ${PREPUSH_PROBE_LOG:-no hosts probed}"
+  return 1
+}
+
+# prepush_lock_holder_is_ancestor WORKROOT -- 0 when the heavy-suite slot lock
+# under WORKROOT is held by a process in THIS process's ancestry, else 1.
+#
+# The holder record written by prepush_lock_acquire is "<pid> <hostname> <ts>".
+# The hostname field is checked first for the same reason the library's own
+# reclaim path checks it: a pid recorded by another machine says nothing about
+# ours, and matching it against our process tree would be reading a foreign
+# number as a local ancestor.
+#
+# The walk is bounded rather than `while :` -- a `ps` that returns junk, or a
+# ppid cycle on a platform that reparents oddly, must not spin a gate.
+prepush_lock_holder_is_ancestor() {
+  local workroot holder_file holder_pid holder_host self_host pid depth
+  workroot="$1"
+  [ -n "$workroot" ] || return 1
+  holder_file="${workroot}/LOCK/holder"
+  [ -r "$holder_file" ] || return 1
+  holder_pid="$(cut -d' ' -f1 "$holder_file" 2>/dev/null || true)"
+  holder_host="$(cut -d' ' -f2 "$holder_file" 2>/dev/null || true)"
+  case "$holder_pid" in
+    '' | *[!0-9]*) return 1 ;;
+  esac
+  self_host="$(hostname -s 2>/dev/null || echo unknown)"
+  [ "$holder_host" = "$self_host" ] || return 1
+  pid="$$"
+  depth=0
+  while [ "$depth" -lt 64 ]; do
+    pid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')"
+    case "$pid" in
+      '' | 0 | 1 | *[!0-9]*) return 1 ;;
+    esac
+    [ "$pid" != "$holder_pid" ] || return 0
+    depth=$((depth + 1))
+  done
+  return 1
+}
+
 guard_full_suite_host() {
-  local host lc_host lc_target lc_201 heavy_what
+  local host lc_host label heavy_what designated
   # OMN-15408: the caller names WHICH heavyweight run is being guarded, so the
   # refusal names the real cause. Default preserves the OMN-15059 wording for
   # the flag-driven escalation call sites, which pass no argument.
@@ -218,45 +428,120 @@ guard_full_suite_host() {
   if [ -z "$host" ]; then
     # Fail CLOSED (OMN-16489): see the routing note above PREPUSH_200_HOSTNAME.
     die "could not determine the local hostname while deciding where ${heavy_what} may run" \
-        "heavy gate runs are routed by host identity (OMN-15059) and an unidentifiable host cannot be routed. Fix 'hostname -s' (macOS: 'sudo scutil --set HostName <name>'; Linux: 'hostnamectl set-hostname <name>'), or run the push from a designated gate host (.200 '${PREPUSH_200_HOSTNAME}' or the .201 gate-runner '${PREPUSH_201_GATE_RUNNER_HOSTNAME}')"
+        "heavy gate runs are routed by host identity (OMN-15059) and an unidentifiable host cannot be routed. Fix 'hostname -s' (macOS: 'sudo scutil --set HostName <name>'; Linux: 'hostnamectl set-hostname <name>'), or run the push from a designated gate host listed in ${PREPUSH_HOST_TABLE_REL}"
   fi
   lc_host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
-  lc_target="$(printf '%s' "$PREPUSH_200_HOSTNAME" | tr '[:upper:]' '[:lower:]')"
-  lc_201="$(printf '%s' "$PREPUSH_201_GATE_RUNNER_HOSTNAME" | tr '[:upper:]' '[:lower:]')"
-  if [ "$lc_host" = "$lc_target" ] || [ "$lc_host" = "$lc_201" ]; then
+  PREPUSH_LC_HOST="$lc_host"
+
+  # OMN-17159: host identity now resolves against the COMMITTED host table
+  # instead of the two hard-coded names this guard used to test
+  # (`[ "$lc_host" = "$lc_target" ] || [ "$lc_host" = "$lc_201" ]`). That
+  # literal `||` -- not policy -- was the entire structural reason this repo's
+  # heavy escalation could reach no lab host but `.201`, and could reach that
+  # one only by a human hand-routing a lane into `~/push-lanes/QUEUE`. It is
+  # also why `.201` only ever matched from INSIDE the gate-runner container:
+  # the container sets hostname gate-runner-201 while the host itself reports
+  # omninode-pc, so every push on the host needed
+  # PREPUSH_201_GATE_RUNNER_HOSTNAME exported to pass. Both names are now rows,
+  # so `.201` is designated intrinsically and no env var has to survive a
+  # process or ssh boundary for the guard to see it.
+  #
+  # An UNREADABLE table fails CLOSED, on the same reasoning as the unresolvable
+  # hostname above: heavy runs are routed by host identity, and identity that
+  # cannot be resolved cannot be routed.
+  if ! prepush_table_text > /dev/null 2>&1; then
+    die "the pre-push host table (${PREPUSH_HOST_TABLE_REL}) could not be read from HEAD, so no host can be identified as a designated gate host for ${heavy_what}" \
+        "the table is read from the COMMITTED tree so an uncommitted row cannot self-designate this machine as an authorizing gate host. Commit ${PREPUSH_HOST_TABLE_REL} (or, if you have edited it, commit the edit so HEAD and the working tree agree), then re-push"
+  fi
+  label="$(prepush_identity_label "$lc_host" || true)"
+  designated="$(prepush_designated_hostnames)"
+
+  if [ -n "$label" ]; then
     # OMN-16295: identity alone is not enough -- this known-good host must
     # also have capacity right now.
     if host_is_fit ""; then
+      # OMN-16174/OMN-16991: the LOCAL heavy path took no lock of any kind
+      # before this change, which is why five concurrent full suites once ran
+      # on one host with one of them taking 97+ minutes. It is the busiest
+      # path in the hook and was the only unserialized one. Take the same
+      # exclusive slot a remote host would have to take.
+      local lw lock_rc=0
+      lw="$(prepush_local_workroot "$lc_host" || true)"
+      [ -n "$lw" ] || lw="${REPO_ROOT}/.onex_state/prepush_distribution"
+      prepush_lock_acquire "$lw" || lock_rc=$?
+      if [ "$lock_rc" -eq 0 ]; then
+        # No `trap ... EXIT` here: prepush_hook_cleanup (installed once, below)
+        # already releases the lock. Installing a second EXIT trap would drop
+        # the temp-file cleanup this hook installed first.
+        return 0
+      fi
+      if [ "$lock_rc" -eq 2 ]; then
+        # The workroot is unusable, which says nothing about this host's
+        # capacity. Proceed exactly as the hook did before this lock existed
+        # rather than inventing a refusal out of an infrastructural failure.
+        log "WARNING: could not create the heavy-suite slot lock under '${lw}' -- running unserialized on this host (pre-OMN-17159 behavior). Fix the workroot to restore serialization (OMN-16174)."
+        return 0
+      fi
+      # RE-ENTRANCY (OMN-17159). The slot is held -- but by WHOM decides whether
+      # this is contention at all. If the recorded holder is an ANCESTOR of this
+      # process, this hook run is nested INSIDE the run that already owns the
+      # host's heavy slot; it is the same physical occupancy, not a second
+      # consumer arriving from outside. Refusing here protects nothing (the
+      # outer suite is running either way) and costs the repo the ability to run
+      # its own hook tests under its own gate: this repo's heavy escalation
+      # covers `tests/scripts/`, several of whose tests spawn the real hook, so
+      # a non-re-entrant lock makes every such test fail whenever the gate is
+      # the thing running them. That is exactly how this was found -- the
+      # governed pre-push for the commit ADDING this lock went red on
+      # test_prepush_hook_host_identity_guard.py while 44,608 other tests
+      # passed. omnibase_infra never hit it only because its heavy target is
+      # `tests/unit/` while its hook tests live in `tests/ci/`.
+      #
+      # Ancestry is read from the live process table, so unlike an env var this
+      # cannot be forged by a caller that merely wants the lock skipped. It is
+      # also NOT the recursion guard: unbounded hook-inside-hook recursion is
+      # still ONEX_PREPUSH_HOOK_ACTIVE's job (OMN-16425/OMN-16489), untouched
+      # here and still fail-closed for a real first-entry recursion.
+      if prepush_lock_holder_is_ancestor "$lw"; then
+        log "heavy-suite slot at '${lw}' is held by an ANCESTOR of this process -- this run is nested inside the run that owns the slot, not competing with it. Proceeding without taking a second lock (OMN-17159)."
+        return 0
+      fi
+      log "this host is fit but its heavy-suite slot is already held; looking for another lab host before refusing"
+    fi
+    # Precedence, in order of EVIDENCE STRENGTH -- not convenience:
+    #   1. A designated lab host running this exact tree (OMN-16991). A real
+    #      suite actually ran on hardware we designate, bound to this sha by a
+    #      completion marker carrying {head_sha, argv_sha, exit, collected,
+    #      log_sha256}.
+    #   2. Single-use receipted degraded-capacity grant. Weakest: it runs a
+    #      contended suite here and says so.
+    #   3. die().
+    # omnibase_infra additionally consults a sha-pinned GitHub-hosted full-suite
+    # run AHEAD of (1) (OMN-16688). That leg is NOT ported here yet -- it needs
+    # this repo's own sharded-CI shape wired into prepush_remote_verify.py --
+    # and it is tracked as the remaining half of OMN-17159. Its absence cannot
+    # make this gate accept less work: it only means this repo has one fewer
+    # evidence source above the grant, never a new pass.
+    if dispatch_to_lab_host "$heavy_what"; then
       return 0
     fi
-    if [ -n "${PREPUSH_ALLOW_LOCAL_FULL_SUITE:-}" ]; then
-      log "WARNING: DEGRADED-CAPACITY OVERRIDE IN EFFECT (PREPUSH_ALLOW_LOCAL_FULL_SUITE set) -- running ${heavy_what} on '${host}' at/over the ${PREPUSH_LOAD_THRESHOLD}x-core load threshold. Treat any evidence from this run as WEAKER than a fit-host-run gate."
+    if consume_override_grant "degraded-capacity: ${heavy_what} on '${host}' at/over the ${PREPUSH_LOAD_THRESHOLD}x-core load threshold"; then
+      log "WARNING: DEGRADED-CAPACITY OVERRIDE IN EFFECT (single-use grant consumed) -- running ${heavy_what} on '${host}' at/over the ${PREPUSH_LOAD_THRESHOLD}x-core load threshold. Treat any evidence from this run as WEAKER than a fit-host-run gate."
       return 0
     fi
-    local other_target other_label other_rc other_note
-    if [ "$lc_host" = "$lc_target" ]; then
-      other_target="$PREPUSH_201_SSH_TARGET"
-      other_label="the .201 gate-runner (${PREPUSH_201_GATE_RUNNER_HOSTNAME})"
-    else
-      other_target="$PREPUSH_200_SSH_TARGET"
-      other_label=".200 (${PREPUSH_200_HOSTNAME})"
-    fi
-    other_rc=0
-    host_is_fit "$other_target" || other_rc=$?
-    case "$other_rc" in
-      0) other_note="${other_label} currently HAS capacity -- route there instead" ;;
-      2) other_note="${other_label} could not be reached to check capacity" ;;
-      *) other_note="${other_label} is ALSO at/over the load threshold" ;;
-    esac
-    die "${heavy_what} triggered on '${host}' (the designated host by identity), but its load is at/over the ${PREPUSH_LOAD_THRESHOLD}x-core threshold" \
-        "${other_note}. See docs/runbooks/200-build-lane-execution-pattern.md for the .201 gate-runner recipe, or set PREPUSH_ALLOW_LOCAL_FULL_SUITE=1 to run here anyway (degraded evidence -- do not use as a routine bypass)"
+    die "${heavy_what} triggered on '${host}' (designated gate host '${label}'), but its load is at/over the ${PREPUSH_LOAD_THRESHOLD}x-core threshold and no other lab host could take the work" \
+        "probed hosts: ${PREPUSH_PROBE_LOG:-none}. The table's own header (${PREPUSH_HOST_TABLE_REL}) documents how to add or re-enable a lab host. Or mint a single-use grant to run here anyway (degraded evidence -- do not use as a routine bypass): uv run python scripts/hooks/prepush_override_grant.py mint --reason '<why>'"
   fi
-  if [ -n "${PREPUSH_ALLOW_LOCAL_FULL_SUITE:-}" ]; then
-    log "WARNING: DEGRADED-HOST OVERRIDE IN EFFECT (PREPUSH_ALLOW_LOCAL_FULL_SUITE set) -- running ${heavy_what} on '${host}', NOT the designated .200 host ('${PREPUSH_200_HOSTNAME}'). This host has weaker isolation/headroom than .200; treat any evidence from this run as WEAKER than a .200-run gate. See docs/runbooks/200-build-lane-execution-pattern.md."
+  # Not a designated host. Same precedence, same ordering, same reasoning.
+  if dispatch_to_lab_host "$heavy_what"; then
     return 0
   fi
-  die "${heavy_what} triggered on host '${host}', not the designated .200 build host ('${PREPUSH_200_HOSTNAME}')" \
-      "push from .200 instead (ssh jonah@stickybeatz-studio.tail75df5e.ts.net, wrap remote commands as zsh -lc \"...\"; see docs/runbooks/200-build-lane-execution-pattern.md for the full pattern), OR set PREPUSH_ALLOW_LOCAL_FULL_SUITE=1 to run the full suite on this host anyway (visible, degraded-evidence override -- do not use as a routine bypass)"
+  if consume_override_grant "degraded-host: ${heavy_what} on '${host}', not a designated gate host"; then
+    log "WARNING: DEGRADED-HOST OVERRIDE IN EFFECT (single-use grant consumed) -- running ${heavy_what} on '${host}', NOT a designated gate host (${designated}). This host has weaker isolation/headroom; treat any evidence from this run as WEAKER than a designated-host gate. See ${PREPUSH_HOST_TABLE_REL} for the designated set."
+    return 0
+  fi
+  die "${heavy_what} triggered on host '${host}', not the designated .200 build host ('${PREPUSH_200_HOSTNAME}') nor any other designated gate host (${designated})" \
+      "probed lab hosts: ${PREPUSH_PROBE_LOG:-none}. Push from a designated host, OR add/enable a lab host (the procedure is in ${PREPUSH_HOST_TABLE_REL}'s header), OR mint a single-use override grant to run the full suite on this host anyway (visible, receipted, degraded-evidence override -- do not use as a routine bypass): uv run python scripts/hooks/prepush_override_grant.py mint --reason '<why>'"
 }
 
 # -----------------------------------------------------------------------------
@@ -370,7 +655,16 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)"
 CHANGED_FILE="$(mktemp)"
 SELECTION_FILE="$(mktemp)"
 SELECTION_ERR="$(mktemp)"
-trap 'rm -f "$CHANGED_FILE" "$SELECTION_FILE" "$SELECTION_ERR"' EXIT
+# ONE exit trap for the whole hook (OMN-16991). bash keeps exactly one EXIT trap
+# per shell, so a later `trap prepush_lock_release EXIT` installed by
+# guard_full_suite_host would silently REPLACE this temp-file cleanup and leak
+# three mktemp files on every heavy run that took the host slot. Both jobs live
+# in one handler instead, so neither can displace the other.
+prepush_hook_cleanup() {
+  rm -f "${CHANGED_FILE:-}" "${SELECTION_FILE:-}" "${SELECTION_ERR:-}" 2> /dev/null || true
+  prepush_lock_release
+}
+trap prepush_hook_cleanup EXIT
 
 git diff --name-only "${BASE_SHA}" HEAD > "$CHANGED_FILE"
 
@@ -487,6 +781,26 @@ SELECTOR_WHOLE_TREE_SENTINEL="tests/unit/"
 # what each one is.
 HEAVY_SELECTION_TARGETS="${FULL_SUITE_TARGET} ${SELECTOR_WHOLE_TREE_SENTINEL}"
 
+# The integration-path addendum the remote leg appends to a heavy escalation's
+# argv (`prepush_remote_argv` in prepush_dispatch.sh). It is EMPTY in this repo,
+# declared rather than omitted, for two independent reasons:
+#
+#   1. bash 3.2 -- macOS's system bash, which runs this hook on every lab Mac --
+#      raises "unbound variable" for `${#NAME[@]}` on a NEVER-DECLARED array
+#      under `set -u`. Newer bash quietly answers 0. prepush_dispatch.sh is a
+#      byte-identical copy of omnibase_infra's and therefore reads this name
+#      unconditionally, so leaving it undeclared would abort the remote leg on
+#      exactly the hosts this port exists to reach.
+#   2. It is genuinely empty HERE, not merely unset. OMN-16825's invariant is
+#      that an escalation must never run FEWER of the impacted tests than the
+#      narrowing it replaces. omnibase_infra needs an addendum because its
+#      escalation target is `tests/unit/`, which excludes `tests/integration/
+#      chains/`. This repo's target is `tests/` -- the whole tree -- so it is
+#      already a superset of every selectable path, and both the local site and
+#      the remote wrapper append the same `--ignore=tests/integration`. There is
+#      no path the escalation could drop.
+RUNNABLE_INTEGRATION_PATHS=()
+
 # =============================================================================
 # Override-inheritance sanitization (OMN-16489, F-04)
 # =============================================================================
@@ -512,29 +826,49 @@ scrub_prepush_override_env() {
 
 if [ "$IS_FULL" = "True" ] || [ "$IS_FULL" = "true" ]; then
   guard_full_suite_host
-  log "running FULL suite (fail-closed escalation): uv run pytest ${FULL_SUITE_TARGET} --ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
-  (
-    _pytest_timeout_flags="${PREPUSH_TIMEOUT_FLAGS}"
-    _pytest_extra_args="${PREPUSH_PYTEST_ARGS:-}"
-    scrub_prepush_override_env
-    # shellcheck disable=SC2086
-    exec uv run pytest "${FULL_SUITE_TARGET}" --ignore=tests/integration --tb=short ${_pytest_timeout_flags} ${_pytest_extra_args}
-  ) || RC=$?
+  if [ "$REMOTE_LAB_RUN_VERDICT" -eq 1 ]; then
+    # A designated lab host already ran THIS EXACT TREE green over the remote
+    # leg (OMN-16991), bound to this sha by a completion marker carrying
+    # {head_sha, argv_sha, exit, collected, log_sha256}. Re-running the same
+    # suite locally would burn hours to re-derive an answer we hold, on the
+    # host the guard just measured as unfit. Skipping it is not a discount on
+    # the gate: the verdict came from a real pytest exit code on hardware this
+    # repo designates, and a remote RED never reaches here -- dispatch_to_lab_host
+    # refuses the push itself in that case.
+    log "SKIPPING the local full suite: it already ran GREEN on a designated lab host for this exact tree."
+  else
+    log "running FULL suite (fail-closed escalation): uv run pytest ${FULL_SUITE_TARGET} --ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
+    (
+      _pytest_timeout_flags="${PREPUSH_TIMEOUT_FLAGS}"
+      _pytest_extra_args="${PREPUSH_PYTEST_ARGS:-}"
+      scrub_prepush_override_env
+      # shellcheck disable=SC2086
+      exec uv run pytest "${FULL_SUITE_TARGET}" --ignore=tests/integration --tb=short ${_pytest_timeout_flags} ${_pytest_extra_args}
+    ) || RC=$?
+  fi
 elif [ "${#PATHS[@]}" -gt 0 ]; then
   # OMN-15408: guard on the SELECTED WORK, not the is_full_suite flag. A
   # selection that covers a whole heavy target is the heavy run under another
-  # name and must be routed to .200 exactly as the flagged escalation is.
+  # name and must be routed to a designated host exactly as the flagged
+  # escalation is.
   if selection_is_whole_suite "$HEAVY_SELECTION_TARGETS" "${PATHS[@]}"; then
     guard_full_suite_host "whole-suite-equivalent impacted selection (is_full_suite=${IS_FULL}, selected paths [ ${PATHS_STR}] cover an entire heavyweight target [ ${HEAVY_SELECTION_TARGETS} ])"
   fi
-  log "running impacted subset: uv run pytest ${PATHS_STR}--ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
-  (
-    _pytest_timeout_flags="${PREPUSH_TIMEOUT_FLAGS}"
-    _pytest_extra_args="${PREPUSH_PYTEST_ARGS:-}"
-    scrub_prepush_override_env
-    # shellcheck disable=SC2086
-    exec uv run pytest "${PATHS[@]}" --ignore=tests/integration --tb=short ${_pytest_timeout_flags} ${_pytest_extra_args}
-  ) || RC=$?
+  if [ "$REMOTE_LAB_RUN_VERDICT" -eq 1 ]; then
+    # Same reasoning as the escalation branch above. Reachable only through
+    # guard_full_suite_host, which is only called here for a whole-suite-
+    # equivalent selection -- a narrowed selection never sets this sentinel.
+    log "SKIPPING the local run: this whole-suite-equivalent selection already ran GREEN on a designated lab host for this exact tree."
+  else
+    log "running impacted subset: uv run pytest ${PATHS_STR}--ignore=tests/integration ${PREPUSH_TIMEOUT_FLAGS} ${PREPUSH_PYTEST_ARGS:-}"
+    (
+      _pytest_timeout_flags="${PREPUSH_TIMEOUT_FLAGS}"
+      _pytest_extra_args="${PREPUSH_PYTEST_ARGS:-}"
+      scrub_prepush_override_env
+      # shellcheck disable=SC2086
+      exec uv run pytest "${PATHS[@]}" --ignore=tests/integration --tb=short ${_pytest_timeout_flags} ${_pytest_extra_args}
+    ) || RC=$?
+  fi
 else
   log "no impacted unit tests mapped for this push (no source/test change contributed a target); nothing to run."
 fi

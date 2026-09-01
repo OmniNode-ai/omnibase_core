@@ -1092,8 +1092,17 @@ repos:
         entry: uv run python -m omnibase_core.validation.validator_local_paths
         language: system
         types: [text]
+        # OMN-17159: scripts/hooks/prepush_dispatch.sh is a VENDORED, byte-identical
+        # copy of omnibase_infra's pre-push picker. Its integrity is asserted by a
+        # sha256 pin in tests/scripts/test_prepush_host_table.py, which is a
+        # STRONGER control than this scan for that one file: an inline suppression
+        # comment would itself fork the copy and defeat the parity the pin exists
+        # to protect. The flagged literals are prose in comments recording live
+        # measurements and a remote PATH entry -- the same example-bearing class the
+        # tests/ and docs/ excludes already cover.
         exclude: >-
           (?x)^(
+            scripts/hooks/prepush_dispatch\.sh$|
             \.secrets\.baseline$|
             archived/|
             archive/|
@@ -1133,8 +1142,17 @@ repos:
         entry: uv run python -m omnibase_core.validation.local_paths.runtime_local_paths
         language: system
         types: [text]
+        # OMN-17159: scripts/hooks/prepush_dispatch.sh is a VENDORED, byte-identical
+        # copy of omnibase_infra's pre-push picker. Its integrity is asserted by a
+        # sha256 pin in tests/scripts/test_prepush_host_table.py, which is a
+        # STRONGER control than this scan for that one file: an inline suppression
+        # comment would itself fork the copy and defeat the parity the pin exists
+        # to protect. The flagged literals are prose in comments recording live
+        # measurements and a remote PATH entry -- the same example-bearing class the
+        # tests/ and docs/ excludes already cover.
         exclude: >-
           (?x)^(
+            scripts/hooks/prepush_dispatch\.sh$|
             \.secrets\.baseline$|
             archived/|
             archive/|
@@ -1167,8 +1185,17 @@ repos:
         # data; the gate targets src/ (where a hardcoded private IP is a real
         # environment-config leak). Docs are example-bearing too. This mirrors the
         # spec excludes.allowed (^tests/, ^docs/) for hardcoded-private-ip.
+        # OMN-17159: scripts/hooks/prepush_dispatch.sh is a VENDORED, byte-identical
+        # copy of omnibase_infra's pre-push picker. Its integrity is asserted by a
+        # sha256 pin in tests/scripts/test_prepush_host_table.py, which is a
+        # STRONGER control than this scan for that one file: an inline suppression
+        # comment would itself fork the copy and defeat the parity the pin exists
+        # to protect. The flagged literals are prose in comments recording live
+        # measurements and a remote PATH entry -- the same example-bearing class the
+        # tests/ and docs/ excludes already cover.
         exclude: >-
           (?x)^(
+            scripts/hooks/prepush_dispatch\.sh$|
             \.secrets\.baseline$|
             archived/|
             archive/|

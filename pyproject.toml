@@ -396,6 +396,7 @@ ignore = [
 "scripts/ci/check_occ_companion_merged.py" = ["T201"]  # CLI verdict/annotation output for the OCC companion-merged gate (OMN-15222)
 "scripts/ci/canonical_handler_shape.py" = ["T201", "BLE001"]  # CLI output + fail-closed catches for canonical handler-shape ratchet gate (OMN-14355)
 "scripts/ci/rsd_provenance_stamp.py" = ["T201"]  # CLI output for RSD provenance-stamp gate (OMN-15011)
+"scripts/hooks/prepush_override_grant.py" = ["T201"]  # CLI output for the single-use pre-push override grant (OMN-16480, ported by OMN-17159)
 "scripts/ci/verify_flip_bundle.py" = ["T201", "BLE001"]  # CLI output + fail-closed ValidationError catch for the flip-bundle seam gate (OMN-14809)
 "scripts/ci/equivalence_producer.py" = ["BLE001"]  # fail-closed catches around untrusted-shaped handler replay execution (OMN-14905)
 "scripts/ci/product_readiness.py" = ["T201"]  # CLI output for Product Readiness classifier (OMN-14705 Phase 3 shadow)

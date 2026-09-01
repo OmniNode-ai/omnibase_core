@@ -21,8 +21,9 @@ Three defects, each proven live in the 2026-08-23/24 window
    silently honored by every descendant (F-04: "permission to bypass once"
    became "permission for every descendant process, forever"). Fix: the hook
    strips exported `PREPUSH_*` (+`ENABLE_SMART_TESTS`) from the spawned
-   pytest env. Entry semantics are deliberately UNCHANGED — the override
-   redesign is OMN-16480, review-gated.
+   pytest env. OMN-16480 (landed) independently rejects `PREPUSH_ALLOW_*` at
+   hook entry; this scrub covers the whole `PREPUSH_*` prefix class one layer
+   deeper, at the child boundary.
 
 3. Empty-hostname fail-open — `guard_full_suite_host()` warned and
    `return 0`ed when `hostname -s` produced nothing, so the heavy escalation
@@ -41,6 +42,8 @@ import json
 import os
 import subprocess
 from pathlib import Path
+
+from tests.scripts._prepush_lab_isolation import network_free_lab_env
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HOOK_SCRIPT = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
@@ -78,12 +81,12 @@ SENTINEL=${ONEX_PREPUSH_HOOK_ACTIVE:-UNSET}"
     exit 0
     ;;
 esac
-# The hook makes exactly two kinds of `uv` calls (the selector and pytest),
-# both modeled above. Anything else reaching this stub is a harness gap, not
-# something to run for real -- refuse loudly instead of delegating to whatever
-# interpreter happens to be on PATH.
-echo "STUB-UV-UNMODELED-INVOCATION $args" >&2
-exit 97
+shift
+if [ "$1" = "python" ]; then
+  shift
+  exec python3 "$@"
+fi
+exec "$@"
 """
 
 
@@ -131,6 +134,10 @@ def _run_hook(
     env["PREPUSH_TEST_SELECTION_JSON"] = str(selection_file)
     env["PREPUSH_BASE_REF"] = "HEAD"
     env["PREPUSH_200_HOSTNAME"] = _NON_MATCHING_HOSTNAME
+    # OMN-16991: this harness forces first-entry behavior on a de-designated
+    # host, which now reaches the lab-dispatch leg. Keep it network-free -- a
+    # unit test must not take a lab host's exclusive slot for an hour.
+    env.update(network_free_lab_env())
     if extra_env:
         env.update(extra_env)
 
@@ -236,14 +243,18 @@ def test_overrides_do_not_inherit_into_pytest_child(tmp_path: Path) -> None:
     invisible to the pytest tree it spawns, while the recursion sentinel must
     inherit (children need it for the recursion guard to hold).
 
-    RED against the pre-fix hook (ALLOW=1 leaked straight through).
+    RED against the pre-fix hook (exported overrides leaked straight through).
+    `PREPUSH_ALLOW_*` is deliberately absent from extra_env: since OMN-16480
+    landed, its presence is a hard refusal at hook entry (its own tests pin
+    that), so it can never survive to the scrub this test exercises. The
+    probe uses vars the hook still honors at entry (`ENABLE_SMART_TESTS`) plus
+    a generic `PREPUSH_*` canary covering the whole prefix class.
     """
     result = _run_hook(
         tmp_path,
         is_full_suite=False,
         selected_paths=[_NARROW_SELECTION],
         extra_env={
-            "PREPUSH_ALLOW_LOCAL_FULL_SUITE": "1",
             "PREPUSH_CANARY_LEAK_PROBE": "leaked",
             # Deliberately a value the hook's FLAG parsing ignores, so the
             # selection stays the narrow subset; only inheritance is probed.
@@ -256,8 +267,9 @@ def test_overrides_do_not_inherit_into_pytest_child(tmp_path: Path) -> None:
     )
     child_env = _stub_pytest_env(result.stdout)
     assert child_env["ALLOW"] == "UNSET", (
-        "PREPUSH_ALLOW_LOCAL_FULL_SUITE leaked into the pytest child env — "
-        f"the exact F-01/F-04 recursion fuel: {child_env!r}"
+        "PREPUSH_ALLOW_LOCAL_FULL_SUITE reached the pytest child env — it is "
+        "rejected at hook entry (OMN-16480) and scrubbed by prefix here, so "
+        f"any path for it to appear is a regression: {child_env!r}"
     )
     assert child_env["CANARY"] == "UNSET", (
         f"a generic PREPUSH_* var leaked into the pytest child env: {child_env!r}"
