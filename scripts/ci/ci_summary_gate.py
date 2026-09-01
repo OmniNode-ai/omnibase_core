@@ -168,6 +168,7 @@ SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
     "SPDX Headers",  # spdx-headers
     "Duplicate Registry Ids",  # duplicate-registry-ids (OMN-14401)
     "Hardcoded Topic Validator",  # hardcoded-topic-validator (OMN-14430)
+    "Runtime Identity Validator",  # runtime-identity-validator (OMN-17308)
 )
 
 # Conclusions that count as "provably passed".

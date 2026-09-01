@@ -344,6 +344,12 @@ def test_report_exit_code_zero_on_clean_repo(tmp_path: Path, spec_data: dict) ->
         "check-doc-content-scan",  # OMN-13572: doc-content scan (applies_to_repos: [omnibase_core])
         "no-new-os-environ",  # OMN-13566: canonical AST env-read gate (applies_to_repos: [omnibase_core])
         "check-duplicate-registry-ids",  # OMN-14401: duplicate registry id guard (applies_to_repos: [omnibase_core])
+        # OMN-17308: runtime-identity gate. Two entries because this list
+        # doubles as the synthetic repo's pre-commit hook ids AND its CI step
+        # names: the first satisfies pre_commit_hook_ids, the second matches
+        # the ci_workflow_keywords (the ci.yml job id).
+        "check-receipt-runtime-identity",
+        "runtime-identity-validator",
     ]
     _write_precommit(tmp_path, pre_commit_ids)
 
