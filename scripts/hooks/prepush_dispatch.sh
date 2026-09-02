@@ -709,6 +709,19 @@ prepush_lock_acquire() {
     PREPUSH_HELD_LOCK="$lockdir"
     return 0
   fi
+  # OMN-17280: a failed mkdir(2) is not automatically contention. When the
+  # WORKROOT itself is not writable by this process the lockdir can never be
+  # created no matter who is or is not running -- EACCES, not EEXIST. Reading
+  # that as "someone holds the slot" made the caller print "this host is fit
+  # but its heavy-suite slot is already held", which is measurably false and
+  # sends the reader hunting for a lock that does not exist. Measured against a
+  # mode-555 workroot before this line existed: rc=1 (CONTENDED). It is an
+  # INFRASTRUCTURAL failure, which the callers already know how to degrade
+  # through, and it is the exact shape any actor who does not own the row's
+  # workroot hits on every single push.
+  if [ ! -w "$workroot" ]; then
+    return 2
+  fi
   # Occupied. Reclaim only if the recorded holder is provably gone AND it was
   # this same machine (a pid from another host says nothing about ours).
   holder="$(cut -d' ' -f1 "${lockdir}/holder" 2> /dev/null || true)"
@@ -743,6 +756,255 @@ prepush_emit_receipt() {
 
 prepush_json_escape() {
   printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\n'
+}
+
+# -----------------------------------------------------------------------------
+# Actor reachability and the same-host route (OMN-17280)
+# -----------------------------------------------------------------------------
+# THE DEFECT THIS CLOSES, reproduced 2026-09-01 BEFORE any of it was written.
+# Every `ssh_target` in the table used to carry a hardcoded `jonah@` login, so
+# for any OTHER actor -- a collaborator holding his own account on `.201` --
+# every remote row answered `Permission denied (publickey,password)` in under a
+# second and probed `slot-unknown`. His OWN host still probed `fit`, but
+# `dispatch_to_lab_host` SKIPS a self candidate (it carries no ssh target), so
+# the ranked walk executed nothing, returned "no evidence", and the refusal
+# ladder fell through to `die()`. A push refused on REACHABILITY while the host
+# it was standing on had just been measured fit and free. Recorded verbatim
+# from the reproduction driver:
+#   PROBE_LOG=h200=slot-unknown h201=fit(0.10,authorizing,40000MiB,tier=last_resort)
+#   WALK idx=1 label=h201 -> SKIPPED (self candidate, no ssh target)
+#   CANDIDATE_COUNT=1  REMOTE_LEG_EXECUTED=0
+#
+# Two things close it, and neither widens the gate:
+#   1. The table carries a HOST, never a login (see prepush_hosts.tsv). ssh(1)
+#      resolves the user from ~/.ssh/config or the invoking account, so each
+#      actor uses their OWN identity. For the owner this is a no-op -- their
+#      local account name is exactly the one the table used to hardcode.
+#   2. When NO capacity row is reachable BY THIS ACTOR, running the identical
+#      governed suite on this host is a first-class route rather than a
+#      refusal. It is reached only AFTER the lab has been asked and answered
+#      nothing, so the OMN-17392 / OMN-17485 off-box preference is untouched
+#      for anyone who can reach the lab: ONE reachable remote target closes
+#      this route completely.
+#
+# What it is NOT: it is not a narrowing. The identical escalation argv runs,
+# on a host the COMMITTED table designates as authorizing, with the same
+# exclusive-slot serialization every other path takes. No `PREPUSH_*` override
+# opens it, nothing about it can turn a red suite green, and a machine absent
+# from the table is exactly as unable to authorize a heavy run as it was
+# before.
+
+# Deliberately a CONSTANT, on the same reasoning as the OMN-17392 off-box
+# budget: an env indirection here would be a one-word way to force every remote
+# row to read "unreachable" and so to force the local route open.
+PREPUSH_REACH_CONNECT_TIMEOUT=4
+
+# prepush_remote_reachability LC_HOST REPO -- how many capacity rows THIS ACTOR
+# can actually open an ssh session to, excluding this host itself. Sets
+# PREPUSH_REACHABLE_COUNT and PREPUSH_REACHABILITY_LOG (a "label=up/down" trail
+# for the receipt, so a same-host run can be audited rather than believed).
+#
+# It is a SEPARATE probe rather than a re-reading of PREPUSH_PROBE_LOG, and
+# that distinction is the point: `slot-unknown` conflates "cannot log in at
+# all" with "logged in fine but could not read the workroot", and only the
+# first is a statement about the actor's identity. `ssh ... true` answers
+# exactly the question being asked. It runs only on the refusal path, after the
+# ranked walk has already produced no verdict, so it costs nothing on a push
+# that placed normally -- and against an unreachable login it is fast: measured
+# 2026-09-01 against all four lab rows with a non-owner login, every one
+# returned rc=255 in under a second.
+prepush_remote_reachability() {
+  local lc_host repo row label role mode denied name ssh_t v rc n=0 trail="" tcmd
+  lc_host="$1"
+  repo="$2"
+  PREPUSH_REACHABLE_COUNT=0
+  PREPUSH_REACHABILITY_LOG=""
+  if ! prepush_load_rows; then
+    PREPUSH_REACHABILITY_LOG="host-table-unreadable"
+    return 1
+  fi
+  tcmd="$(_prepush_timeout_cmd)"
+  for row in ${PREPUSH_TABLE_ROWS[@]+"${PREPUSH_TABLE_ROWS[@]}"}; do
+    [ -n "$row" ] || continue
+    label="$(prepush_field "$row" 1)"
+    role="$(prepush_field "$row" 2)"
+    mode="$(prepush_field "$row" 12)"
+    [ "$role" = "capacity" ] || continue
+    [ "$mode" != "disabled" ] || continue
+    denied="$(prepush_field "$row" 11)"
+    case ",${denied}," in
+      *",${repo},"*) continue ;;
+    esac
+    name="$(prepush_row_hostname "$row")"
+    if [ "$name" = "$lc_host" ]; then
+      trail="${trail}${label}=self "
+      continue
+    fi
+    ssh_t="$(prepush_field "$row" 4)"
+    if [ -z "$ssh_t" ] || [ "$ssh_t" = "-" ]; then
+      trail="${trail}${label}=no-target "
+      continue
+    fi
+    if [ -n "${PREPUSH_REACH_OVERRIDE_MAP:-}" ]; then
+      v="$(prepush_map_lookup "$PREPUSH_REACH_OVERRIDE_MAP" "$label")"
+      # A `default=` key applies to every label the map does not name. The test
+      # isolation fragment uses it (tests/.../_prepush_lab_isolation.py) so a
+      # hook-subprocess test stays network-free on this probe even after a row
+      # is ADDED to the table -- a per-label map silently stops covering the
+      # new row, and the failure mode of that gap is a unit test opening a real
+      # ssh connection to a lab host.
+      [ -n "$v" ] || v="$(prepush_map_lookup "$PREPUSH_REACH_OVERRIDE_MAP" "default")"
+      case "$v" in
+        up)
+          trail="${trail}${label}=up "
+          n=$((n + 1))
+          ;;
+        *) trail="${trail}${label}=down " ;;
+      esac
+      continue
+    fi
+    # `-n` for the same reason every other ssh in this file carries it: this
+    # loop's stdin is not the row list any more, but a probe that reads stdin
+    # is a defect waiting for the next caller who pipes rows in.
+    rc=0
+    if [ -n "$tcmd" ]; then
+      "$tcmd" 10 ssh -n -o ConnectTimeout="$PREPUSH_REACH_CONNECT_TIMEOUT" -o BatchMode=yes \
+        -o StrictHostKeyChecking=accept-new "$ssh_t" true > /dev/null 2>&1 || rc=$?
+    else
+      ssh -n -o ConnectTimeout="$PREPUSH_REACH_CONNECT_TIMEOUT" -o BatchMode=yes \
+        -o StrictHostKeyChecking=accept-new "$ssh_t" true > /dev/null 2>&1 || rc=$?
+    fi
+    if [ "$rc" -eq 0 ]; then
+      trail="${trail}${label}=up "
+      n=$((n + 1))
+    else
+      trail="${trail}${label}=down(ssh-rc-${rc}) "
+    fi
+  done
+  PREPUSH_REACHABLE_COUNT="$n"
+  PREPUSH_REACHABILITY_LOG="${trail% }"
+  return 0
+}
+
+# prepush_local_actor_route HEAVY_WHAT LABEL -- 0 when the escalation may run on
+# THIS host because no capacity row is reachable by THIS ACTOR, 1 otherwise.
+#
+# Callers place it AFTER dispatch_to_lab_host and BEFORE the override grant.
+# That ordering is evidence-strength ordering, not convenience: this route
+# produces a real, full, unmodified suite run on a designated authorizing host,
+# which is strictly stronger than a receipted degraded-capacity grant AND does
+# not consume one.
+#
+# It deliberately does NOT re-impose the load threshold. Load is a PLACEMENT
+# preference -- it decides which of several hosts should take the work. When
+# the actor has no other host at all, refusing on load produces no evidence
+# whatsoever and leaves no governed route, which is precisely the pressure that
+# sends people to the forbidden `PREPUSH_*` overrides. The measured load and
+# memory are still read and printed, in the banner and in the receipt, so the
+# degradation is visible rather than silent.
+prepush_local_actor_route() {
+  local heavy_what label repo lw fallback_lw lock_rc=0 measured actor head_sha ts ser rcpt
+  local reading ratio memmb
+  heavy_what="$1"
+  label="$2"
+  # Identity is still enforced. This route exists only for a host the COMMITTED
+  # table designates as authorizing; a machine absent from the table is exactly
+  # as unable to authorize a heavy run as it was before OMN-17280.
+  [ -n "$label" ] || return 1
+  repo="$(basename "$REPO_ROOT")"
+
+  prepush_remote_reachability "$PREPUSH_LC_HOST" "$repo" || true
+  if [ "${PREPUSH_REACHABLE_COUNT:-0}" -gt 0 ]; then
+    # At least one lab host answers for this actor, so the refusal above was
+    # about CAPACITY, not reachability, and the off-box preference stands
+    # untouched. This is the branch every one of the owner's own pushes takes.
+    return 1
+  fi
+
+  # Read the local measurement from host_load_ratio DIRECTLY, not through
+  # prepush_probe_ratio. That wrapper has two shapes across the repos that
+  # vendor this library -- one PRINTS the ratio, the OMN-17392 one sets globals
+  # from a single reading -- and capturing it in a command substitution would
+  # run the second shape in a SUBSHELL, discard its globals, and leave the
+  # PREVIOUS candidate's numbers standing in the receipt. That is the exact
+  # defect prepush_probe_ratio's own header warns about, and a receipt is the
+  # worst place to reproduce it: a wrong number there reads as evidence.
+  # host_load_ratio has one shape everywhere, returns everything on stdout, and
+  # holds no state to lose.
+  measured="unmeasured"
+  reading="$(host_load_ratio "" 2> /dev/null || true)"
+  ratio="$(printf '%s' "$reading" | awk '{print $3}')"
+  memmb="$(printf '%s' "$reading" | awk '{print $4}')"
+  if [ -n "$ratio" ]; then
+    measured="load ${ratio}x"
+    # The mem field is absent on the pre-OMN-17392 probe and -1 when it could
+    # not be read; neither is reported as a number.
+    if [ -n "$memmb" ] && [ "$memmb" != "-1" ]; then
+      measured="${measured}, mem ${memmb}MiB"
+    fi
+  fi
+
+  # Serialize where we can (OMN-16174). The row's workroot belongs to whoever
+  # provisioned the host, so an actor without write access to it gets a
+  # per-actor workroot under $HOME instead of an unserialized run -- strictly
+  # better than the pre-existing rc=2 behavior, which only warned and ran.
+  lw="$(prepush_local_workroot "$PREPUSH_LC_HOST" || true)"
+  [ -n "$lw" ] || lw="${REPO_ROOT}/.onex_state/prepush_distribution"
+  ser="serialized at ${lw}/LOCK"
+  lock_rc=0
+  prepush_lock_acquire "$lw" || lock_rc=$?
+  if [ "$lock_rc" -eq 2 ]; then
+    fallback_lw="${HOME:-/tmp}/.onex-prepush"
+    lock_rc=0
+    prepush_lock_acquire "$fallback_lw" || lock_rc=$?
+    case "$lock_rc" in
+      0) ser="serialized at ${fallback_lw}/LOCK -- the row's workroot '${lw}' is not writable by this actor" ;;
+      2)
+        ser="UNSERIALIZED -- neither '${lw}' nor '${fallback_lw}' is usable by this actor"
+        lock_rc=0
+        ;;
+    esac
+  fi
+  if [ "$lock_rc" -ne 0 ]; then
+    # A slot GENUINELY held by another run on this host is contention, not a
+    # reachability problem. OMN-16174's serialization wins: decline, and let the
+    # caller's existing ladder answer.
+    log "SAME-HOST ROUTE declined (OMN-17280): no capacity row is reachable for this actor, but this host's heavy-suite slot ('${lw}') is genuinely held by another run. Serialization wins over convenience -- wait for that run to finish and re-push."
+    return 1
+  fi
+
+  actor="$(id -un 2> /dev/null || whoami 2> /dev/null || echo unknown)"
+  head_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2> /dev/null || echo unknown)"
+  ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  log "=============================================================================="
+  log "SAME-HOST ROUTE IN EFFECT (OMN-17280) -- ${heavy_what} runs ON THIS HOST."
+  log "  RECEIPT route=local_actor_fallback reason=no_remote_target_reachable_for_actor"
+  log "  actor='${actor}' host='${PREPUSH_LC_HOST}' row='${label}' repo='${repo}'"
+  log "  reachability: ${PREPUSH_REACHABILITY_LOG:-none}"
+  log "  last placement probe: ${PREPUSH_PROBE_LOG:-none}"
+  log "  local measurement: ${measured}"
+  log "  ${ser}"
+  log "  This is NOT a bypass and NOT a narrowing: the identical governed suite"
+  log "  runs here, unmodified, on a host this table designates as authorizing."
+  log "  Every capacity row is unreachable for this account, so refusing would"
+  log "  produce no evidence at all and leave no governed route to push through."
+  log "  If you expected off-box placement, your account needs ssh access to a"
+  log "  capacity row in ${PREPUSH_HOST_TABLE_REL}."
+  log "=============================================================================="
+  rcpt="{\"ts\":\"${ts}\",\"ticket\":\"OMN-17280\""
+  rcpt="${rcpt},\"route\":\"local_actor_fallback\""
+  rcpt="${rcpt},\"reason\":\"no_remote_target_reachable_for_actor\""
+  rcpt="${rcpt},\"actor\":\"$(prepush_json_escape "$actor")\""
+  rcpt="${rcpt},\"host\":\"$(prepush_json_escape "$PREPUSH_LC_HOST")\""
+  rcpt="${rcpt},\"row\":\"$(prepush_json_escape "$label")\""
+  rcpt="${rcpt},\"repo\":\"$(prepush_json_escape "$repo")\""
+  rcpt="${rcpt},\"head_sha\":\"$(prepush_json_escape "$head_sha")\""
+  rcpt="${rcpt},\"heavy_what\":\"$(prepush_json_escape "$heavy_what")\""
+  rcpt="${rcpt},\"measured\":\"$(prepush_json_escape "$measured")\""
+  rcpt="${rcpt},\"serialization\":\"$(prepush_json_escape "$ser")\""
+  rcpt="${rcpt},\"reachability\":\"$(prepush_json_escape "${PREPUSH_REACHABILITY_LOG:-none}")\"}"
+  prepush_emit_receipt "$rcpt"
+  return 0
 }
 
 # -----------------------------------------------------------------------------

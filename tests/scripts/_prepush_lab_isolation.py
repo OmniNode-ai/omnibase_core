@@ -32,7 +32,19 @@ no evidence and the hook falls through to its pre-existing precedence
 from __future__ import annotations
 
 #: Deliberately names no real row label. See the module docstring.
-LAB_ISOLATION_ENV = {"PREPUSH_SLOT_OVERRIDE_MAP": "no-such-host=unknown"}
+#:
+#: ``PREPUSH_REACH_OVERRIDE_MAP`` (OMN-17280) closes the second network surface
+#: this module exists to close. The same-host route probes lab reachability
+#: with a real ``ssh ... true`` before it may fire, and a hook-subprocess test
+#: that reached a designated row would otherwise open real connections from
+#: pytest. ``default=up`` reports EVERY row -- including rows added later --
+#: as reachable, which makes the same-host route DECLINE. That is the strict
+#: direction: the leg produces no evidence and the hook falls through to its
+#: pre-existing precedence, which is exactly what these tests assert.
+LAB_ISOLATION_ENV = {
+    "PREPUSH_SLOT_OVERRIDE_MAP": "no-such-host=unknown",
+    "PREPUSH_REACH_OVERRIDE_MAP": "default=up",
+}
 
 
 def network_free_lab_env() -> dict[str, str]:
