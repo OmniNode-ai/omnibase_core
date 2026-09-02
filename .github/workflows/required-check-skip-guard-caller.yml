@@ -50,4 +50,4 @@ jobs:
     needs: occ-preflight
     if: always()
     # pinned to omniclaude dev commit carrying the current reusable guard.
-    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@03acfcd954aa7be86db0c51c754b5b60adeed1a4
+    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@3e6d14da0d12923c32060252967d0f8759fcbb5e
