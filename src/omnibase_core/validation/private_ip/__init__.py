@@ -10,7 +10,7 @@ validator-standardization plan
 ONLY because it passed a deterministic acceptance corpus
 (``node_generation_consumer.validator_corpora.corpus_hardcoded_ip``) in the
 hardened sandbox — the corpus verdict, not the LLM, is the acceptance authority
-(OMN-13289). See ``GENERATION_PROVENANCE.md``.
+(OMN-13289). See the validator's generation-provenance record in the OmniNode internal knowledge base.
 
 Architecture (§1A — validator = COMPUTE node over a swappable bus), mirroring the
 G1 local-paths canary:

@@ -15,8 +15,7 @@ suffix, deeper 5-segment) and produced zero findings on every ``clean_fixture``
 (contract-resolved topic, dotted python import path, two-segment ``onex.core``
 below the topic shape, a non-``onex`` dotted ``kafka.cluster.broker.id`` string).
 The corpus verdict — not the LLM's self-report — was the acceptance authority
-(memory ``feedback_adversarial_receipts``). See ``GENERATION_PROVENANCE.md`` for
-the full run; the raw generated ``handle(input_data)`` is committed verbatim in
+(memory ``feedback_adversarial_receipts``). See the validator's generation-provenance record in the OmniNode internal knowledge base; the raw generated ``handle(input_data)`` is committed verbatim in
 ``docs/evidence/hardcoded-topic-string/hardcoded-topic-string.generation.json``.
 
 The core scan is the regex ``(['"])onex\\.[a-z0-9]+\\.[a-z0-9]+\\.[a-z0-9]+

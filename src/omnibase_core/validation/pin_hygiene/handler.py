@@ -15,7 +15,7 @@ and an ``unknown`` fail-closed pin) and produced zero findings on every
 ``clean_fixture`` (ancestor pin in each syntax, a non-sibling git pin, a
 version-range pin with no git rev). The corpus verdict — not the LLM's
 self-report — was the acceptance authority (memory ``feedback_adversarial_receipts``).
-See ``GENERATION_PROVENANCE.md`` for the full run.
+See the validator's generation-provenance record in the OmniNode internal knowledge base.
 
 Hand-hardening applied to the corpus-accepted seed (the seed is a SEED, not
 drop-in — it hallucinated a module path and carried a fail-OPEN hole):

@@ -6,7 +6,7 @@
 
 # CI/CD workflow changes require platform team review
 # CRITICAL: Protects transport import validation on protected branches
-# See: docs/decisions/RISK-009-ci-workflow-modification-risk.md
+# See the CI-workflow-modification risk record in the OmniNode knowledge base.
 /.github/workflows/ @OmniNode-ai/platform-team
 
 # GitHub configuration (dependabot, issue templates, etc.)

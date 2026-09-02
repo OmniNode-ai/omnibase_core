@@ -1,0 +1,14 @@
+# KB doc gate configuration (OMN-16589 built the gate, OMN-17172 rolled it out,
+# OMN-16606 completed this repo's migration and flipped it to strict).
+#
+# strict: any tracked markdown outside the allowed set fails the check, whether
+# or not the pull request touched it. This is the end-state mode for a repo
+# whose Wave-4 migration (epic OMN-16602) has landed — it is what keeps a
+# scrubbed repo scrubbed. omnibase_core's prose documentation now lives in the
+# OmniNode knowledge base; the root README's link carries the signposting role.
+#
+# The allowed set is the default in omniclaude/scripts/kb_doc_gate.py: root
+# README.md, root CLAUDE.md and .claude/**, CHANGELOG*.md, LICENSE*, root
+# SECURITY.md, .github/**, skills|commands|agents/**, and the three tests/**
+# fixture subtrees. This repo relies on no additions to it.
+mode: strict

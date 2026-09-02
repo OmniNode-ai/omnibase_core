@@ -13,7 +13,7 @@ mutation) and produced zero findings on every ``clean_fixture`` (public host URL
 contract-sourced endpoint reference, bare ``localhost`` prose word, a public host
 whose NAME merely contains ``localhost``, and a suppression-marker line). The corpus
 verdict — not the LLM's self-report — was the acceptance authority (memory
-``feedback_adversarial_receipts``). See ``GENERATION_PROVENANCE.md`` for the full run.
+``feedback_adversarial_receipts``). See the validator's generation-provenance record in the OmniNode internal knowledge base.
 
 ONEX node type: COMPUTE. Handler output: ``result`` only (no events / intents /
 projections). The handler is PURE and DETERMINISTIC: it scans the source TEXT

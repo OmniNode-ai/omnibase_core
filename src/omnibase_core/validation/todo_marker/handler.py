@@ -13,8 +13,7 @@ in the hardened sandbox: it flagged every ``violation_fixture`` (2 base + 3
 adversarial mutation) and produced zero findings on every ``clean_fixture``
 (ordinary comment, marker-substring identifier, ``hackathon`` lowercase substring,
 lowercase prose "to do"). The corpus verdict — not the LLM's self-report — was the
-acceptance authority (memory ``feedback_adversarial_receipts``). See
-``GENERATION_PROVENANCE.md`` for the full run.
+acceptance authority (memory ``feedback_adversarial_receipts``). See the validator's generation-provenance record in the OmniNode internal knowledge base.
 
 The raw generated ``handle(input_data)`` (623 chars) is committed verbatim in the
 provenance evidence

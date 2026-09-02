@@ -100,12 +100,12 @@ The preferred path is contract-driven: YAML declares inputs, outputs,
 capabilities, bindings, and lifecycle constraints; custom Python behavior is
 added only when the contract cannot express the behavior.
 
-Start here:
+Start here, in the knowledge base:
 
-- [Quick Start](docs/getting-started/QUICK_START.md)
-- [First Node Tutorial](docs/getting-started/FIRST_NODE.md)
-- [Node Building Guide](docs/guides/node-building/README.md)
-- [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
+- [Quick Start](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/omnibase-core-quick-start.md)
+- [First Node Tutorial](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/omnibase-core-first-node.md)
+- [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)
+- [ONEX Four-Node Architecture](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md)
 
 ## Track 3: Extend Validation Or Runtime Internals
 
@@ -128,35 +128,34 @@ uv run validate-string-versions src
 ```
 
 For ownership, downstream-consumer guidance, and cross-repo usage, see
-[Validation Ownership](docs/reference/VALIDATION_OWNERSHIP.md).
+[Validation Ownership](https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/omnibase-core-validation-ownership.md).
 
-## Documentation Map
+## Documentation
 
-[docs/INDEX.md](docs/INDEX.md) is the canonical full docs map.
+**Full documentation → https://github.com/OmniNode-ai/knowledge-base**
+
+This repository ships code, contracts, and executable configuration. Its prose
+documentation lives in the OmniNode knowledge base; nothing is duplicated here,
+and the `kb-doc-gate` check (`.kb-doc-gate.yaml`, `mode: strict`) fails any pull
+request that reintroduces markdown outside the allowed set.
 
 High-signal entrypoints:
 
-- [Architecture Overview](docs/architecture/overview.md)
-- [Contract System](docs/architecture/CONTRACT_SYSTEM.md)
-- [Handler Contract Guide](docs/contracts/HANDLER_CONTRACT_GUIDE.md)
-- [Validation Ownership](docs/reference/VALIDATION_OWNERSHIP.md)
-- [Validation Framework](docs/reference/VALIDATION_FRAMEWORK.md)
-- [ADR Index](docs/decisions/README.md)
-- [Contributing](CONTRIBUTING.md)
+- [Architecture Overview](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/omnibase-core-overview.md)
+- [ONEX Four-Node Architecture](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md)
+- [Contract System](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-contract-system.md)
+- [Handler Contract Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-handler-contracts.md)
+- [Validation Framework](https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/omnibase-core-validation-framework.md)
+- [Validation Ownership](https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/omnibase-core-validation-ownership.md)
+- [Decision records](https://github.com/OmniNode-ai/knowledge-base/blob/main/adrs)
+- [Contributing](.github/CONTRIBUTING.md)
 - [Security](SECURITY.md)
 
-## Current Versus Historical Docs
-
-Root `README.md`, `CLAUDE.md`, and `docs/INDEX.md` are the primary human entry
-surfaces. Dated plans and migration notes are historical or execution context
-unless a stable architecture, reference, runbook, or migration page explicitly
-promotes them.
-
-Known active context:
-
-- The hardcoded-topic cleanup plan in the umbrella `omni_home` docs is an
-  execution plan, not the current architecture source of truth.
-- Current topic naming truth lives in Core topic validators and standards docs.
+Internal-only and in-flight-migration material for this package (per-repo
+architecture handshakes, the mixin/handler/protocol migration guides, repo CI
+operations, and the validator generation-provenance records) lives in the
+OmniNode internal knowledge base instead — teammates have access; it is not
+linked from here because that repository is private.
 
 ## License
 

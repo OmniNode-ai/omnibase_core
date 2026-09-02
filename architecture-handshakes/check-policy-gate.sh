@@ -250,7 +250,7 @@ main() {
         done
         echo ""
         echo "To fix: install handshake and add CI workflow."
-        echo "See: architecture-handshakes/README.md"
+        echo "See: the omnibase_core architecture-handshakes reference in the OmniNode internal knowledge base"
         echo ""
 
         if [[ "${STRICT}" == "true" ]]; then

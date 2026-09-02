@@ -60,6 +60,14 @@ class EmptyDirectoryValidator:
         "src",  # Top-level src directory (contains package folders only)
         "drift",  # Evidence/artifact tree; nested receipts may leave parent dirs fileless.
         "tmp",  # Workspace for custom commands (intentionally empty)
+        # Container directories that group sub-collections and hold no direct
+        # files of their own. Same rationale as "src" and "drift" above: the
+        # "incomplete refactoring" signal this validator looks for does not
+        # apply to a grouping node (OMN-16606).
+        "assets",  # Brand/asset families live in per-family subdirectories.
+        "evidence",  # Evidence artifacts live in per-subject subdirectories.
+        "corpus",  # Demo corpora split into golden/ and edge-cases/.
+        "mock-responses",  # Demo mock responses split by scenario.
     }
 
     # Patterns to exclude (directories containing these strings)

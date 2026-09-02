@@ -7,7 +7,7 @@ local-model-first through the real delegation chain, and accepted ONLY because i
 passed a deterministic acceptance corpus
 (``node_generation_consumer.validator_corpora.corpus_doc_content_scan``) in the
 hardened sandbox — the corpus verdict, not the LLM, is the acceptance authority
-(OMN-13289). See ``GENERATION_PROVENANCE.md``.
+(OMN-13289). See the validator's generation-provenance record in the OmniNode internal knowledge base.
 
 Invariant: a documentation file (``*.md`` / ``.mdx`` / ``.rst`` / ``.txt`` /
 ``.adoc``) must not carry local-environment traces (RFC1918 LAN IP literals,

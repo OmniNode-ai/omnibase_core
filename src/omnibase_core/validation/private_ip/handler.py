@@ -11,8 +11,7 @@ hardened sandbox: it flagged every ``violation_fixture`` (3 base + 4 adversarial
 mutation) and produced zero findings on every ``clean_fixture`` (public IP,
 SemVer-shaped token, 172.15 below-band public, suppression-marker line,
 contract-sourced endpoint). The corpus verdict — not the LLM's self-report — was
-the acceptance authority (memory ``feedback_adversarial_receipts``). See
-``GENERATION_PROVENANCE.md`` for the full run.
+the acceptance authority (memory ``feedback_adversarial_receipts``). See the validator's generation-provenance record in the OmniNode internal knowledge base.
 
 ONEX node type: COMPUTE. Handler output: ``result`` only (no events / intents /
 projections). The handler is PURE and DETERMINISTIC: it scans the source TEXT

@@ -37,7 +37,11 @@ repos:
     rev: v0.21.0
     hooks:
       - id: yamlfmt
-        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/)
+        # .kb-doc-gate.yaml is excluded because the KB doc gate reads it with a
+        # deliberately stdlib-only, bootstrap-safe parser that accepts a restricted
+        # YAML subset; this repo's yamlfmt config sets include_document_start, and the
+        # '---' it inserts is not in that subset (OMN-16606).
+        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/|\.kb-doc-gate\.yaml$)
 
   # Essential file formatting (standard across ecosystem)
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -652,7 +656,7 @@ repos:
       # Enforces structured versions: ModelSemVer(1, 0, 0) instead of "1.0.0"
       # Catches: ModelSemVer.parse(), string literals, flat YAML versions
       # Allows: Docstrings, regex patterns (r"..."), test fixtures, log messages
-      # See: docs/ANTI_PATTERNS.md#string-version-literals
+      # See: https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-anti-patterns.md
       #
       # PROTOCOL EXCLUSION: protocols/ is excluded because Protocol types define
       # interfaces (structural typing), not concrete implementations. They may
@@ -771,7 +775,13 @@ repos:
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
-        exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
+        # src/omnibase_core/validation/todo_marker/ is excluded for the same reason it
+        # is excluded from no-untracked-todos below: that validator's own docstrings
+        # name the TODO/FIXME marker token as their SUBJECT, so a docstring-marker
+        # heuristic reads its documentation as an unfinished stub. The package already
+        # carries this repo's file-level escape hatch (onex-allow-file-todo-marker,
+        # OMN-13480), which this hook does not read (OMN-16606).
+        exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$|^src/omnibase_core/validation/todo_marker/
         stages: [pre-commit]
 
       - id: check-no-fallbacks
@@ -933,7 +943,7 @@ repos:
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>
-      # See: docs/conventions/FILE_HEADERS.md for canonical header format
+      # See: https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/onex-file-headers.md for canonical header format
       - id: validate-spdx-headers
         name: ONEX SPDX Header Requirement
         entry: uv run python scripts/validation/validate_spdx_headers.py
@@ -1611,7 +1621,7 @@ repos:
       # Enforces core-infra dependency boundary: omnibase_core must be pure
       # Detects forbidden imports: aiohttp, httpx, requests, kafka, redis, asyncpg, etc.
       # AST-based validator correctly handles TYPE_CHECKING guards (allowed per ADR-005)
-      # See: docs/decisions/ADR-005-core-infra-dependency-boundary.md
+      # See: https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-dependency-inversion.md
       - id: validate-no-transport-imports
         name: ONEX Transport Import Prevention
         entry: uv run python scripts/validate_no_transport_imports.py
@@ -1851,6 +1861,13 @@ repos:
         exclude: ^(src/omnibase_core/constants/constants_event_types\.py|src/omnibase_core/models/events/contract_registration/model_contract_deregistered_event\.py|src/omnibase_core/models/events/contract_registration/model_contract_registered_event\.py|src/omnibase_core/models/events/contract_registration/model_node_heartbeat_event\.py|src/omnibase_core/models/events/model_episode_event\.py|src/omnibase_core/models/events/model_git_hook_event\.py|src/omnibase_core/models/events/model_github_pr_status_event\.py|src/omnibase_core/models/events/model_linear_snapshot_event\.py|src/omnibase_core/models/events/validation/model_validation_run_completed_event\.py|src/omnibase_core/models/events/validation/model_validation_run_started_event\.py|src/omnibase_core/models/events/validation/model_validation_violations_batch_event\.py|src/omnibase_core/schemas/cli_contribution\.v1\.example\.yaml|src/omnibase_core/validation/validator_topic_suffix\.py)$
         stages: [pre-commit]
       - id: no-untracked-todos
+        # The todo-marker validator's own source names TODO/FIXME/HACK as its SUBJECT.
+        # Both files already carry this repo's file-level escape hatch comment
+        # (onex-allow-file-todo-marker, OMN-13480), which the validator itself honors;
+        # this hook is owned by onex_change_control and does not read that marker, so the
+        # two files are excluded here rather than having their documentation mangled
+        # (OMN-16606 — first change to touch them since the hook was added).
+        exclude: ^src/omnibase_core/validation/todo_marker/
         stages: [pre-commit]
 
   # KB doc gate (OMN-16589) — blocks new/regrown non-KB markdown docs.
