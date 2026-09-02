@@ -156,9 +156,45 @@ EOF
 # process without flagging an untracked foreign process as fit -- if more
 # heavy pids are running than held locks explain, that is an untracked
 # process this table cannot account for, and the probe stays fail-closed.
+# THIS SNIPPET RUNS UNDER THE REMOTE LOGIN SHELL, WHICH IS zsh ON THE LAB MACS
+# (measured 2026-09-02: `ssh <h101|h105> 'echo $SHELL'` -> /bin/zsh). Three
+# properties below exist because of that, and each of them was a live defect
+# that silently made every `slots>1` row unreachable (OMN-17606; found by
+# the OMN-17602 lane, which widened a host table to slots=2 and got the
+# first slot-2 verdicts this probe had ever been asked for -- all of them
+# wrong):
+#
+#   1. NO UNMATCHED GLOB MAY REACH THE SHELL. zsh's default `nomatch` makes an
+#      unmatched glob a FATAL parse-time error that aborts the whole command
+#      line -- the redirection on the command never applies, because the
+#      command never runs. `ls -d "$W"/LOCK "$W"/LOCK.* 2>/dev/null` therefore
+#      printed NOTHING whenever no LOCK.<k> existed, so `held` read 0 on every
+#      remote Mac probe, precisely in the state where slot 2 is placeable
+#      (slot 1 locked, slot 2 free). `find -name` does its own matching, so no
+#      glob is ever handed to the shell.
+#   2. ONE LEG MUST COUNT AS ONE PROCESS. The remote leg is launched as
+#      `zsh -c 'cd ...; ./prepush_smart_tests.sh ...'`, so BOTH the wrapper
+#      shell and the script itself carry `prepush_smart_tests.sh` in their
+#      argv and a plain grep counted a single leg TWICE (measured on h101,
+#      h105 and h201: p=2 with exactly one leg running). Dropping ` -c `
+#      lines counts the leg, not the shell that spawned it.
+#   3. THE FIELD COUNT IS FIXED AT FOUR. `grep -c .` on an EXISTING BUT EMPTY
+#      file prints 0 and exits 1, so the old `|| echo 0` fired as well and
+#      emitted a second line -- `$q` became two words, every later field
+#      shifted left, and `l` was read out of `p`. Live on h201, whose
+#      ~/push-lanes/QUEUE exists and is empty: the trail printed `lock=2`,
+#      a value the code cannot otherwise produce.
+#
+# Together (1) and (2) are why LOCK.2 had never been created once anywhere in
+# the fleet: with p double-counted and held stuck at 0 the busy predicate
+# `p <= self + held` read `2 <= 0` for the one state slot 2 exists to serve.
+# Fixing either alone is not enough -- `2 <= 1` and `1 <= 0` both still refuse.
 _PREPUSH_SLOT_PROBE_SH='q=0
-if [ -r "$HOME/push-lanes/QUEUE" ]; then q=$(grep -c . "$HOME/push-lanes/QUEUE" 2>/dev/null || echo 0); fi
-p=$(ps ax 2>/dev/null | grep prepush_smart_tests.sh | grep -v grep | grep -c . || true)
+if [ -r "$HOME/push-lanes/QUEUE" ]; then
+  q=$(grep -c . "$HOME/push-lanes/QUEUE" 2>/dev/null)
+  [ -n "$q" ] || q=0
+fi
+p=$(ps ax -o args= 2>/dev/null | grep prepush_smart_tests.sh | grep -v grep | grep -cv -e " -c " || true)
 [ -n "$p" ] || p=0
 si="${PREPUSH_SLOT_INDEX:-1}"
 lockdir="$PREPUSH_WORKROOT/LOCK"
@@ -167,7 +203,7 @@ l=0
 if [ -n "$PREPUSH_WORKROOT" ] && [ -d "$lockdir" ]; then l=1; fi
 held=0
 if [ -n "$PREPUSH_WORKROOT" ]; then
-  held=$(ls -d "$PREPUSH_WORKROOT"/LOCK "$PREPUSH_WORKROOT"/LOCK.* 2>/dev/null | grep -c . || true)
+  held=$(find "$PREPUSH_WORKROOT" -maxdepth 1 -type d -name "LOCK*" 2>/dev/null | grep -c . || true)
   [ -n "$held" ] || held=0
 fi
 printf "%s %s %s %s\n" "$q" "$p" "$l" "$held"'
@@ -198,7 +234,14 @@ prepush_slot_state() {
   [ -n "$raw" ] || return 2
   # shellcheck disable=SC2086
   set -- $raw
-  q="${1:-}"; p="${2:-}"; l="${3:-}"; held="${4:-0}"
+  # EXACTLY four fields, or UNKNOWN. The old parse took ${1..4} positionally
+  # with defaults, so a probe that emitted five words (the empty-QUEUE double
+  # `q` above) was not rejected -- it was silently READ SHIFTED, and reported
+  # one host's heavy_pids as its lock count. A field-count mismatch is now
+  # fail-closed: unknown is skipped exactly like unreachable, which is the
+  # rule this whole probe is built on.
+  [ "$#" -eq 4 ] || return 2
+  q="$1"; p="$2"; l="$3"; held="$4"
   [ -n "$q" ] && [ -n "$p" ] && [ -n "$l" ] || return 2
   PREPUSH_SLOT_DETAIL="queue=${q} heavy_pids=${p} lock=${l} held=${held} slot=${slot}"
   [ "$l" -eq 0 ] || return 3
