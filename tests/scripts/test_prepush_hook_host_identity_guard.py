@@ -51,11 +51,14 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
+
+import pytest
 
 from scripts.ci.test_selection_closure import TEST_UNIT_PREFIX
 
@@ -291,6 +294,9 @@ def _run_hook_with_stubbed_selection(
     *,
     is_full_suite: bool,
     selected_paths: list[str],
+    extra_env: dict[str, str] | None = None,
+    isolate_lab: bool = True,
+    force_fit_local_capacity: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     """Run the REAL hook end-to-end with a stubbed selector + stubbed pytest.
 
@@ -301,9 +307,9 @@ def _run_hook_with_stubbed_selection(
     else (`uv run python - <heredoc>` for JSON parsing) is delegated to the
     real interpreter.
 
-    `PREPUSH_BASE_REF=HEAD` keeps the pre-selector preamble deterministic and
-    offline: it always resolves, `merge-base HEAD HEAD` is HEAD, and the diff is
-    empty -- the stub supplies the selection regardless.
+    The shim's controls deliberately use the ``OMN_TEST_`` prefix. A
+    ``local_only`` invocation must accept no test, selector, placement, or
+    verdict control through ``PREPUSH_*``.
     """
     selection_file = tmp_path / "selection.json"
     selection_file.write_text(
@@ -325,12 +331,21 @@ def _run_hook_with_stubbed_selection(
         'args="$*"\n'
         'case "$args" in\n'
         "  *detect_test_paths*)\n"
-        '    cat "$PREPUSH_TEST_SELECTION_JSON"\n'
+        '    if [ -n "${OMN_TEST_SELECTOR_WITNESS:-}" ]; then\n'
+        '      printf "selector\\n" >> "$OMN_TEST_SELECTOR_WITNESS"\n'
+        "    fi\n"
+        '    cat "$OMN_TEST_SELECTION_JSON"\n'
         "    exit 0\n"
         "    ;;\n"
         "  *pytest*)\n"
         '    echo "STUB-PYTEST-INVOKED $args"\n'
-        "    exit 0\n"
+        '    exit "${OMN_TEST_PYTEST_EXIT:-0}"\n'
+        "    ;;\n"
+        "  *prepush_override_grant.py*)\n"
+        '    if [ -n "${OMN_TEST_GRANT_WITNESS:-}" ]; then\n'
+        '      printf "grant\\n" >> "$OMN_TEST_GRANT_WITNESS"\n'
+        "    fi\n"
+        "    exit 88\n"
         "    ;;\n"
         "esac\n"
         "shift\n"
@@ -343,27 +358,76 @@ def _run_hook_with_stubbed_selection(
     )
     uv_stub.chmod(0o755)
 
+    # The permitted source-base fetch and prohibited executor transports have
+    # separate witnesses. The hook may fetch its ordinary Git source base, but
+    # local_only must not start an executor SSH/SCP probe, queue, or dispatch.
+    real_git = shutil.which("git")
+    assert real_git is not None
+    git_stub = stub_bin / "git"
+    git_stub.write_text(
+        "#!/usr/bin/env bash\n"
+        'if [ "${1:-}" = "fetch" ]; then\n'
+        '  printf "fetch\\n" >> "$OMN_TEST_GIT_FETCH_WITNESS"\n'
+        "  exit 0\n"
+        "fi\n"
+        'exec "$OMN_TEST_REAL_GIT" "$@"\n',
+        encoding="utf-8",
+    )
+    git_stub.chmod(0o755)
+    for transport in ("ssh", "scp"):
+        transport_stub = stub_bin / transport
+        transport_stub.write_text(
+            "#!/usr/bin/env bash\n"
+            'printf "%s\\n" "$0 $*" >> "$OMN_TEST_EXECUTOR_WITNESS"\n'
+            "exit 97\n",
+            encoding="utf-8",
+        )
+        transport_stub.chmod(0o755)
+
+    # This Mac's shared load can legitimately exceed the production threshold
+    # while tests run. On Darwin, replace only the OS load reader with a
+    # witnessed, deterministic reading: this exercises the production probe
+    # command without using a PREPUSH_* production override. Linux uses
+    # /proc/loadavg and keeps its ordinary measurement.
+    if force_fit_local_capacity and platform.system() == "Darwin":
+        sysctl_stub = stub_bin / "sysctl"
+        sysctl_stub.write_text(
+            "#!/usr/bin/env bash\n"
+            'if [ "$*" = "-n vm.loadavg" ]; then\n'
+            '  printf "{ 0.10 0.10 0.10 }\\n"\n'
+            '  printf "load-probe\\n" >> "$OMN_TEST_LOCAL_CAPACITY_WITNESS"\n'
+            "  exit 0\n"
+            "fi\n"
+            'exec /usr/sbin/sysctl "$@"\n',
+            encoding="utf-8",
+        )
+        sysctl_stub.chmod(0o755)
+
     env = dict(os.environ)
+    for name in tuple(env):
+        if name.startswith("PREPUSH_"):
+            env.pop(name)
     env["PATH"] = f"{stub_bin}{os.pathsep}{env['PATH']}"
-    env["PREPUSH_TEST_SELECTION_JSON"] = str(selection_file)
-    env["PREPUSH_BASE_REF"] = "HEAD"
-    env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
-    env["PREPUSH_201_GATE_RUNNER_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
+    env["OMN_TEST_REAL_GIT"] = real_git
+    env["OMN_TEST_SELECTION_JSON"] = str(selection_file)
+    env["OMN_TEST_GIT_FETCH_WITNESS"] = str(tmp_path / "git-fetch.txt")
+    env["OMN_TEST_EXECUTOR_WITNESS"] = str(tmp_path / "executor-transport.txt")
+    env["OMN_TEST_LOCAL_CAPACITY_WITNESS"] = str(tmp_path / "local-capacity.txt")
     for leaky in (
-        "PREPUSH_FULL_SUITE",
-        "PREPUSH_ALLOW_LOCAL_FULL_SUITE",
         "ENABLE_SMART_TESTS",
-        "PREPUSH_ADJACENCY",
-        "PREPUSH_PYTEST_ARGS",
+        "PYTEST_ADDOPTS",
+        "REMOTE_LAB_RUN_VERDICT",
         # OMN-16489: this harness exercises FIRST-entry behavior, so the
         # recursion sentinel an outer hook run exports must not leak in.
         "ONEX_PREPUSH_HOOK_ACTIVE",
     ):
         env.pop(leaky, None)
-    # OMN-16991/OMN-17159: see _prepush_lab_isolation. This harness drives
-    # whole-suite-equivalent selections through the real guard, which is
-    # exactly the path that can now place work on a lab host.
-    env.update(network_free_lab_env())
+    if isolate_lab:
+        # Governed-path tests remain network-free; local_only tests prove that
+        # they never reach this executor path without using its test override.
+        env.update(network_free_lab_env())
+    if extra_env is not None:
+        env.update(extra_env)
 
     return subprocess.run(
         ["bash", str(HOOK_SCRIPT)],
@@ -690,6 +754,202 @@ def test_guard_allows_a_genuinely_narrow_selection_on_a_local_host(
         "expected the narrow selection's own path to be handed to pytest; "
         f"stdout: {result.stdout!r}"
     )
+
+
+# =============================================================================
+# OMN-17503: explicit local-only execution scope
+# =============================================================================
+
+
+def test_local_only_scope_is_a_closed_typed_policy() -> None:
+    """The scope is an enum-like closed policy, not a permissive switch."""
+    script_text = HOOK_SCRIPT.read_text(encoding="utf-8")
+    assert (
+        'PREPUSH_EXECUTION_SCOPE="${PREPUSH_EXECUTION_SCOPE:-governed}"' in script_text
+    )
+    assert "governed | local_only" in script_text
+    assert "invalid PREPUSH_EXECUTION_SCOPE" in script_text
+
+
+def test_local_only_runs_the_selector_prescribed_full_suite_without_remote_io(
+    tmp_path: Path,
+) -> None:
+    """local_only needs a real local capacity reading and lock acquisition."""
+    if _local_only_lock_path().exists():
+        pytest.skip("local heavy-suite lock is held by an active local run")
+    git_fetch_witness = tmp_path / "git-fetch.txt"
+    executor_witness = tmp_path / "executor-transport.txt"
+    grant_witness = tmp_path / "grant.txt"
+    capacity_witness = tmp_path / "local-capacity.txt"
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=False,
+        selected_paths=[_WHOLE_SUITE_SELECTION],
+        extra_env={
+            "PREPUSH_EXECUTION_SCOPE": "local_only",
+            "OMN_TEST_GRANT_WITNESS": str(grant_witness),
+        },
+        isolate_lab=False,
+        force_fit_local_capacity=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "LOCAL-ONLY EXECUTION SCOPE" in result.stderr
+    assert "OFF-BOX ROUTING" not in result.stderr
+    assert "OFF-BOX QUEUE-AND-WAIT" not in result.stderr
+    assert git_fetch_witness.exists(), "the ordinary source-base fetch is permitted"
+    assert not executor_witness.exists(), "no executor SSH/SCP may start"
+    assert not grant_witness.exists(), "local_only must never consume a grant"
+    if platform.system() == "Darwin":
+        assert capacity_witness.exists(), "local_only must read local capacity"
+    assert "STUB-PYTEST-INVOKED" in result.stdout
+    assert "pytest tests/ --ignore=tests/integration" in result.stdout
+
+
+def _local_only_lock_path() -> Path:
+    """Mirror the committed-table local workroot lookup without an override."""
+    host = (
+        subprocess.run(
+            ["hostname", "-s"],
+            capture_output=True,
+            check=True,
+            text=True,
+            timeout=60,
+        )
+        .stdout.strip()
+        .lower()
+    )
+    table = REPO_ROOT / "scripts" / "hooks" / "prepush_hosts.tsv"
+    for line in table.read_text(encoding="utf-8").splitlines():
+        if not line or line.startswith("#"):
+            continue
+        fields = line.split("\t")
+        if len(fields) >= 8 and fields[1] == "capacity" and fields[2] == host:
+            return Path(fields[7]) / "LOCK"
+    return REPO_ROOT / ".onex_state" / "prepush_distribution" / "LOCK"
+
+
+def test_local_only_refuses_when_its_exclusive_local_lock_cannot_be_acquired(
+    tmp_path: Path,
+) -> None:
+    """A real occupied mkdir lock refuses rather than routing off-box."""
+    lock_path = _local_only_lock_path()
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        lock_path.mkdir()
+    except FileExistsError:
+        pytest.skip(f"local heavy-suite lock already held at {lock_path}")
+    try:
+        result = _run_hook_with_stubbed_selection(
+            tmp_path,
+            is_full_suite=True,
+            selected_paths=[],
+            extra_env={"PREPUSH_EXECUTION_SCOPE": "local_only"},
+            isolate_lab=False,
+            force_fit_local_capacity=True,
+        )
+    finally:
+        lock_path.rmdir()
+
+    assert result.returncode != 0
+    assert "requires PREPUSH_EXECUTION_SCOPE=local_only" in result.stderr
+    assert not (tmp_path / "executor-transport.txt").exists()
+    assert "STUB-PYTEST-INVOKED" not in result.stdout
+
+
+def test_local_only_requires_a_real_local_pytest_pass_without_remote_io(
+    tmp_path: Path,
+) -> None:
+    """A local test red remains a refusal; no verdict shortcut can satisfy it."""
+    if _local_only_lock_path().exists():
+        pytest.skip("local heavy-suite lock is held by an active local run")
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=True,
+        selected_paths=[],
+        extra_env={
+            "PREPUSH_EXECUTION_SCOPE": "local_only",
+            "OMN_TEST_PYTEST_EXIT": "23",
+        },
+        isolate_lab=False,
+        force_fit_local_capacity=True,
+    )
+
+    assert result.returncode == 23
+    assert "STUB-PYTEST-INVOKED" in result.stdout
+    assert "ERROR: impacted tests failed (pytest exit 23)" in result.stderr
+    assert not (tmp_path / "executor-transport.txt").exists()
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("PREPUSH_LOAD_OVERRIDE_LOCAL", "0.10 8"),
+        ("PREPUSH_LOAD_OVERRIDE_REMOTE", "0.10 8"),
+        ("PREPUSH_SLOT_OVERRIDE", "0 0 0"),
+        ("PREPUSH_LOAD_OVERRIDE_MAP", "h200=0.10"),
+        ("PREPUSH_SLOT_OVERRIDE_MAP", "h200=free"),
+        ("PREPUSH_UV_OVERRIDE_MAP", "h200=0.12.0"),
+        ("PREPUSH_200_HOSTNAME", "forged-host"),
+        ("PREPUSH_200_SSH_TARGET", "forged@host"),
+        ("PREPUSH_BASE_REF", "HEAD"),
+        ("PREPUSH_ADJACENCY", "tests/fixture-adjacency.yaml"),
+        ("PREPUSH_PYTEST_ARGS", "--collect-only"),
+        ("PREPUSH_PYTEST_ARGS", "-k no_such_test"),
+        ("PREPUSH_PYTEST_ARGS", "--ignore=tests/unit"),
+        ("PREPUSH_UNREVIEWED_FUTURE_OVERRIDE", "1"),
+        ("ENABLE_SMART_TESTS", "off"),
+        ("PYTEST_ADDOPTS", "--collect-only"),
+        ("REMOTE_LAB_RUN_VERDICT", "1"),
+    ],
+)
+def test_local_only_rejects_every_selector_test_or_placement_override_before_execution(
+    tmp_path: Path,
+    name: str,
+    value: str,
+) -> None:
+    """Only the typed execution scope may enter local_only from the environment."""
+    selector_witness = tmp_path / "selector.txt"
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=False,
+        selected_paths=[_WHOLE_SUITE_SELECTION],
+        extra_env={
+            "PREPUSH_EXECUTION_SCOPE": "local_only",
+            name: value,
+            "OMN_TEST_SELECTOR_WITNESS": str(selector_witness),
+        },
+        isolate_lab=False,
+    )
+
+    assert result.returncode != 0
+    assert "LOCAL-ONLY ENVIRONMENT REFUSED" in result.stderr
+    assert name in result.stderr
+    assert not selector_witness.exists()
+    assert "STUB-PYTEST-INVOKED" not in result.stdout
+    assert not (tmp_path / "git-fetch.txt").exists()
+    assert not (tmp_path / "executor-transport.txt").exists()
+
+
+def test_invalid_execution_scope_refuses_before_selector_or_pytest(
+    tmp_path: Path,
+) -> None:
+    """A typo cannot silently restore governed off-box placement."""
+    selector_witness = tmp_path / "selector.txt"
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=False,
+        selected_paths=[_NARROW_SELECTION],
+        extra_env={
+            "PREPUSH_EXECUTION_SCOPE": "local-please",
+            "OMN_TEST_SELECTOR_WITNESS": str(selector_witness),
+        },
+    )
+
+    assert result.returncode != 0
+    assert "invalid PREPUSH_EXECUTION_SCOPE='local-please'" in result.stderr
+    assert not selector_witness.exists()
+    assert "STUB-PYTEST-INVOKED" not in result.stdout
 
 
 # =============================================================================

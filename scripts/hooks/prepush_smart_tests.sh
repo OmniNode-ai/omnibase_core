@@ -43,10 +43,17 @@
 # class escalates. No env override, no allowlist to zero tests, no bypass token;
 # the vars below are untouched and can still only make this hook run MORE tests.
 #
-# Env overrides (all optional):
+# Env overrides (all optional in governed scope):
 #   PREPUSH_BASE_REF     git ref to diff against            (default: origin/dev)
 #   PREPUSH_ADJACENCY    adjacency yaml path            (default: selector built-in)
 #   PREPUSH_PYTEST_ARGS  extra args appended to the pytest invocation
+#   PREPUSH_EXECUTION_SCOPE
+#                       `governed` (default) permits the committed host-table
+#                       placement policy; `local_only` prohibits every off-box
+#                       probe, queue, and dispatch and requires the unchanged
+#                       suite to run on this host. In local_only, this is the
+#                       ONLY accepted PREPUSH_* environment variable: every
+#                       selector/test/placement/receipt override refuses.
 #   ENABLE_SMART_TESTS   set false/0/off to force the FULL suite (parity with the
 #                        CI var name); default here is smart selection ON, because
 #                        the whole point of the local hook is the impacted subset.
@@ -125,6 +132,47 @@ reject_inherited_env_overrides() {
       "unset them in this shell (e.g. \`unset ${leaked%% *}\`), then, if this run genuinely must proceed on this host, mint a scoped single-use grant: \`uv run python scripts/hooks/prepush_override_grant.py mint --reason '<why>'\`. The grant is bound to this repo and this HEAD sha, expires in minutes, is consumed by the first guard that reads it (so no child process can reuse it), and appends a receipt line to .onex_state/prepush_override/receipts.jsonl"
 }
 reject_inherited_env_overrides
+
+# =============================================================================
+# Caller-authorized execution scope (OMN-17503)
+# =============================================================================
+# `local_only` is a closed, stricter placement policy, not an override grant:
+# it still requires measured local capacity and an exclusive local slot before
+# the hook runs the exact selected pytest argv. It cannot accept a remote
+# verdict, a grant, a narrowed suite, or a green skip. Parse before selection
+# so a typo cannot silently restore off-box execution.
+PREPUSH_EXECUTION_SCOPE="${PREPUSH_EXECUTION_SCOPE:-governed}"
+case "$PREPUSH_EXECUTION_SCOPE" in
+  governed | local_only) ;;
+  *)
+    die "invalid PREPUSH_EXECUTION_SCOPE='${PREPUSH_EXECUTION_SCOPE}'" \
+        "set PREPUSH_EXECUTION_SCOPE to exactly 'governed' (the committed host-table policy) or 'local_only' (run the unchanged selected suite on this host and prohibit all off-box placement)"
+    ;;
+esac
+
+# `local_only` is intentionally a CLOSED environment policy. The caller may
+# choose that typed scope, but cannot combine it with a PREPUSH_* selector,
+# pytest, capacity, host, slot, grant, receipt, or future placement override.
+# This check occurs before source-base fetch, selector, host-table helpers, and
+# pytest so no mutable process environment can forge capacity, narrow work, or
+# reuse a verdict. ENABLE_SMART_TESTS and PYTEST_ADDOPTS are non-PREPUSH names
+# that can respectively alter selection and pytest's argv, so they are denied
+# here as well. REMOTE_LAB_RUN_VERDICT is normally reset in this process, but
+# rejecting an inherited value makes that fact a boundary rather than a
+# convention and prevents a future refactor from trusting it.
+reject_local_only_environment_overrides() {
+  local leaked
+  [ "$PREPUSH_EXECUTION_SCOPE" = "local_only" ] || return 0
+  leaked="$({
+    env | sed -n 's/^\(PREPUSH_[A-Za-z0-9_]*\)=.*/\1/p' | grep -vx 'PREPUSH_EXECUTION_SCOPE' || true
+    env | awk -F= '$1 == "ENABLE_SMART_TESTS" || $1 == "PYTEST_ADDOPTS" || $1 == "REMOTE_LAB_RUN_VERDICT" { print $1 }'
+  } | sort -u | tr '\n' ' ')"
+  leaked="${leaked% }"
+  [ -z "$leaked" ] || die \
+    "LOCAL-ONLY ENVIRONMENT REFUSED: ${leaked}" \
+    "local_only accepts only PREPUSH_EXECUTION_SCOPE=local_only. Unset every listed selector, pytest, capacity, placement, grant, or verdict override and retry; the hook will measure local capacity, acquire its real exclusive lock, and run the committed selector argv."
+}
+reject_local_only_environment_overrides
 
 # consume_override_grant CONTEXT -- 0 when a valid single-use grant was claimed
 # for this run, 1 otherwise. Delegates to the one implementation
@@ -418,6 +466,33 @@ prepush_lock_holder_is_ancestor() {
   return 1
 }
 
+# prepush_try_local_only_heavy_slot -- prove that this process may run the
+# selector-prescribed heavy suite locally. This is deliberately stricter than
+# the governed local path: local_only cannot turn an unmeasurable load or an
+# unusable/contended lock into an unserialized run, a grant, or a remote route.
+# It is a per-push decision only; it persists no verdict and returns with the
+# exclusive lock held for prepush_hook_cleanup to release after pytest exits.
+prepush_try_local_only_heavy_slot() {
+  local lw lock_rc=0
+  PREPUSH_LOCAL_ONLY_REASON=""
+  if ! host_is_fit ""; then
+    PREPUSH_LOCAL_ONLY_REASON="local capacity could not be proven"
+    return 1
+  fi
+  lw="$(prepush_local_workroot "$PREPUSH_LC_HOST" || true)"
+  [ -n "$lw" ] || lw="${REPO_ROOT}/.onex_state/prepush_distribution"
+  prepush_lock_acquire "$lw" || lock_rc=$?
+  if [ "$lock_rc" -eq 0 ]; then
+    return 0
+  fi
+  case "$lock_rc" in
+    1) PREPUSH_LOCAL_ONLY_REASON="the exclusive local heavy-suite slot is already held" ;;
+    2) PREPUSH_LOCAL_ONLY_REASON="the exclusive local heavy-suite slot could not be acquired" ;;
+    *) PREPUSH_LOCAL_ONLY_REASON="the exclusive local heavy-suite slot returned an unknown failure" ;;
+  esac
+  return 1
+}
+
 guard_full_suite_host() {
   local host lc_host label heavy_what designated
   # OMN-15408: the caller names WHICH heavyweight run is being guarded, so the
@@ -455,6 +530,18 @@ guard_full_suite_host() {
   fi
   label="$(prepush_identity_label "$lc_host" || true)"
   designated="$(prepush_designated_hostnames)"
+
+  # OMN-17503: this must precede every dispatch_to_lab_host call. The picker
+  # probes remote hosts and dispatch_to_lab_host may queue or execute there;
+  # local_only instead permits only this process's unchanged pytest invocation.
+  if [ "$PREPUSH_EXECUTION_SCOPE" = "local_only" ]; then
+    if prepush_try_local_only_heavy_slot; then
+      log "LOCAL-ONLY EXECUTION SCOPE: ${heavy_what} is restricted to this host ('${host}'); off-box probing, queueing, and dispatch are prohibited."
+      return 0
+    fi
+    die "${heavy_what} requires PREPUSH_EXECUTION_SCOPE=local_only, but ${PREPUSH_LOCAL_ONLY_REASON:-local capacity could not be proven}" \
+        "local_only never falls through to an off-box host, a grant, or a persisted verdict. Free local capacity/slot and retry, or explicitly change the task execution boundary before using governed placement"
+  fi
 
   if [ -n "$label" ]; then
     # OMN-16295: identity alone is not enough -- this known-good host must
