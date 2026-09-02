@@ -589,29 +589,94 @@ _SYNTHETIC_TABLE_MULTISLOT = (
 
 
 def test_the_shipped_slots_column_is_pinned(table_repo: Path) -> None:
-    """EVERY row in THIS repo stays slots=1 -- including h105 (OMN-17159).
+    """h101 and h105 carry slots=2; every other row stays slots=1.
 
-    omnibase_infra widened h105 to slots=2 on measured evidence about ITS
-    escalation, which targets `tests/unit/`. This repo's escalation is the
-    whole `tests/` tree -- 45,117 collected tests, measured on both lab Macs
-    2026-08-31 -- so the sibling repo's measurement does not transfer, and
-    inheriting the widening would be exactly the "assumed fit" move the whole
-    table exists to prevent. Two concurrent core suites on h105's ten cores
-    would also degrade the load1 signal every other row is ranked on.
+    OMN-17159 pinned every row here at slots=1 and refused to inherit
+    omnibase_infra's widening, on an explicit premise: that this repo's
+    escalation is the whole `tests/` tree, so "two concurrent core suites on
+    h105's ten cores would make both slower than one serialized pair while
+    degrading the load signal every other row is ranked on." That premise was
+    a projection, and it is now falsified by direct measurement of the thing
+    it projected about -- a REAL core escalation on the remote leg.
 
-    Widening a row's capacity is the kind of change this file exists to force
-    through a reviewed, deliberate test edit (same reasoning as the
-    mode-promotion pins above); doing it for this repo needs its own
-    measurement, not a copied one."""
+    Measured 2026-09-02T19:22Z by read-only `ps`/`uptime` over ssh, on two
+    hosts each carrying exactly one live governed core full-suite leg:
+
+    * h101 (12 cores, 32 GiB), run `omnibase_core-4e116501fd0a-37091`,
+      1h13m43s elapsed: the ENTIRE suite is ONE pytest process at 100.0% of
+      ONE core, RSS 670 MB (whole process tree: cpu_sum 100.0%, rss_sum
+      671 MB, 2 processes). load1 2.96/12 = 0.25x.
+    * h105 (10 cores, 32 GiB), run `omnibase_core-e69568dd5e02-80404`,
+      1h49m49s elapsed: same shape, one process, RSS 700 MB. load1 at
+      19:22:08Z 4.07/10 = 0.41x while that host was carrying TWO concurrent
+      core pytest invocations (the single-threaded leg plus a second `-n4`
+      one) -- an accidental but on-point datapoint that a 10-core M4 is
+      nowhere near saturated by two concurrent core suites.
+
+    A core lane costs one core and ~0.7 GB, not the machine. Two of them cost
+    two cores of ten (0.2x) and ~1.4 GB of 32 GiB -- so the serialization the
+    old pin bought was not protecting the host from saturation, it was
+    idling 8-11 cores per host while six lanes queued for a placement target.
+    The load1 signal is not degraded either: it is re-measured per slot at
+    pick time and 2/10 stays an order of magnitude under the 1.0x threshold.
+
+    The widening survives OMN-17603 restoring `-n4` on the remote leg: two
+    4-way suites is 8 of h105's 10 cores (0.8x, still under threshold) and 8
+    of h101's 12 (0.67x), at ~2.8 GB per suite by the per-worker RSS measured
+    above -- 5.6 GB of 32 GiB. It does NOT survive a widening past 2, which
+    would put h105 over the threshold under `-n4`; slots=3 needs its own
+    measurement, exactly as this one did.
+
+    h200 and h201 are deliberately NOT widened: h200 is the local/default
+    identity host rather than a distribution target, and h201 runs the
+    separate `~/push-lanes/QUEUE` serializer (slot_mode=queue), a different
+    concurrency mechanism this column does not govern. h201c never executes.
+
+    `hcloud` -- the AWS overflow row this same PR adds (OMN-16634) -- also
+    stays slots=1, and NOT by inheriting the old blanket pin. The h101/h105
+    widening above is earned by a measurement of those two hosts; no such
+    measurement of the EC2 host exists, and the row is an overflow target that
+    is only reached once the lab is saturated anyway. Widening it is a separate,
+    measured change, exactly as this one was.
+
+    Widening a row's capacity stays the kind of change this file exists to
+    force through a reviewed, deliberate test edit (same reasoning as the
+    mode-promotion pins above)."""
     slots = {r[0]: r[9] for r in _rows()}
     assert slots == {
         "h200": "1",
         "h201": "1",
         "h201c": "1",
-        "h101": "1",
-        "h105": "1",
+        "h101": "2",
+        "h105": "2",
         "hcloud": "1",
     }
+
+
+def test_a_widened_shipped_row_places_a_second_lane_when_slot_one_is_held(
+    table_repo: Path,
+) -> None:
+    """The point of the widening, asserted against the REAL shipped table.
+
+    Before OMN-17602 this behaviour was only ever exercised on the synthetic
+    `hm` fixture below, because no shipped row declared slots>1 -- so the
+    table could have been widened wrongly (a typo, a column shift) and every
+    slot test would still have passed. Measured live 2026-09-02T19:11Z:
+    across h105 (121 run dirs) and h101 (73), `LOCK.2` has never once been
+    created and no `slots/` directory exists, i.e. the fleet has never taken
+    a second slot for ANY repo -- which is what an unexercised path looks
+    like from the outside.
+
+    With slot 1 held and slot 2 re-qualified on its own live load, the picker
+    must offer `h105.2` rather than reporting a placement miss."""
+    out = _pick(
+        table_repo,
+        load="h200=2.09,h201=3.10,h101=2.50,h105.2=0.25",
+        slot="h200=busy,h201=busy,h101=busy,h101.2=busy,h105=busy,h105.2=free",
+        uv="h105.2=0.11.8",
+    )
+    assert "PICK=h105.2" in out, out
+    assert "h105=busy" in out, out
 
 
 def test_slot_one_keeps_the_bare_label_not_a_dot_one_suffix(
