@@ -280,6 +280,17 @@ def _real_producer_group_names(
     names["runtime_local.terminal"] = runtime_local.derive_runtime_local_group_id(
         runtime_local.TERMINAL_CONSUMER_NODE_NAME
     )
+    # OMN-15660 run-scoped the terminal group for every correlated run, in host
+    # mode as well as client mode — so this variant, not the bare one, is what
+    # `onex delegate` now mints against MSK. An unauthorized name here is the
+    # OMN-15639 failure mode again (GroupAuthorizationFailedError before publish),
+    # so the gate has to see the shape that actually reaches the broker.
+    names["runtime_local.terminal_run_scoped"] = (
+        runtime_local.derive_runtime_local_group_id(
+            f"{runtime_local.TERMINAL_CONSUMER_NODE_NAME}_run_"
+            f"{_SAMPLE_CORRELATION_ID.hex[:12]}"
+        )
+    )
     names["runtime_local.handler"] = runtime_local.derive_runtime_local_group_id(
         "HandlerDelegateSkill"
     )

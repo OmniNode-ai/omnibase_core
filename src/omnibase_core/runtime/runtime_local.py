@@ -340,10 +340,16 @@ class RuntimeLocal:
         # distinct from one this runtime minted and then failed to stamp onto a
         # frozen payload. ``None`` until the event-driven path publishes.
         self._wire_correlation_id: uuid.UUID | None = None
-        # Correlation predicate for the terminal watcher. Set only in client
-        # mode: an in-process host on its own bus has exactly one producer of
-        # the terminal topic, so filtering there would change offline behaviour
-        # for no gain.
+        # Correlation predicate for the terminal watcher. Armed in BOTH modes
+        # from the correlation id that actually reached the wire (OMN-15660).
+        # It was client-only under OMN-17304 on the premise that an in-process
+        # host owns its bus and is therefore the only producer of the terminal
+        # topic. That premise holds only for the in-memory bus, which dies with
+        # the process; on a durable broker the terminal topic retains every
+        # earlier run's terminal, and `onex delegate` — the sole production
+        # caller — runs host mode. ``None`` only when no correlation reached
+        # the wire at all, which host mode still tolerates (see the arming site
+        # in ``_run_event_driven``).
         self._expected_correlation_id: uuid.UUID | None = None
 
     # ONEX_EXCLUDE: dict_str_any — event bus payload
@@ -358,7 +364,9 @@ class RuntimeLocal:
         ours is the same defect as a foreign one.
 
         Returns ``True`` unconditionally when no correlation predicate is armed
-        (host mode), preserving first-terminal-wins there.
+        — i.e. when no correlation id reached the wire, so there is nothing to
+        compare against. That is the only remaining unfiltered case; it is NOT
+        a host/client distinction (OMN-15660).
         """
         expected = self._expected_correlation_id
         if expected is None:
@@ -391,12 +399,99 @@ class RuntimeLocal:
             logger.warning("Duplicate terminal event received — ignoring (first wins).")
             return
 
-        status = payload.get("status", "success")
-        logger.info("RuntimeLocal: terminal event received (status=%s)", status)
+        declared = self._terminal_status_declarations(payload)
+        if not declared and self._is_envelope_shaped(payload):
+            msg = (
+                "RuntimeLocal: terminal envelope declares no status at either "
+                "the envelope or the payload level — this run's outcome is "
+                "UNKNOWN, and UNKNOWN is never read as success (OMN-17567). "
+                "correlation="
+                f"{payload.get('correlation_id', '(none)')}"
+            )
+            logger.error(msg)
+            self._last_error = msg
+            self._terminal_payload = payload
+            self._result = EnumWorkflowResult.FAILED
+            self._terminal_received.set()
+            return
+
+        logger.info(
+            "RuntimeLocal: terminal event received (status=%s)",
+            "/".join(sorted(declared)) if declared else "(absent)",
+        )
         self._terminal_payload = payload
-        self._result = self._classify_result(payload)
+        self._result = self._classify_terminal(payload, declared)
 
         self._terminal_received.set()
+
+    # ONEX_EXCLUDE: dict_str_any — event bus payload
+    @staticmethod
+    def _is_envelope_shaped(payload: RawWorkflowMap) -> bool:
+        """Whether a terminal message is a ``ModelEventEnvelope`` wire dict.
+
+        Same discriminator the inbound path already uses
+        (``runtime_local_adapter._unwrap_envelope_dict``): ``envelope_id`` plus a
+        mapping ``payload``. A bare domain payload that happens to carry its own
+        ``payload`` field (e.g. ``ModelRoutingIntent``) has no ``envelope_id``
+        and is not an envelope.
+        """
+        return "envelope_id" in payload and isinstance(payload.get("payload"), dict)
+
+    # ONEX_EXCLUDE: dict_str_any — event bus payload
+    @staticmethod
+    def _terminal_status_declarations(payload: RawWorkflowMap) -> set[str]:
+        """Every ``status`` a terminal declares, normalized, across both levels.
+
+        Two terminal shapes coexist on one topic: the single-output adapter path
+        publishes the bare domain payload (``status`` at the top level), the
+        fan-out path publishes a ``ModelEventEnvelope`` (``status`` under
+        ``payload``). Reading only the top level — and defaulting the miss to
+        ``"success"`` — meant an envelope-shaped terminal could never surface a
+        failure, so a FAILED delegation was reported as completed (OMN-17567).
+
+        Both levels are read, with the same precedence
+        ``_terminal_correlation_matches`` uses for correlation ids: collect what
+        is declared, then decide on the whole set rather than on whichever level
+        happened to be looked at first.
+        """
+        declared: set[str] = set()
+        for container in (payload, payload.get("payload")):
+            if not isinstance(container, dict):
+                continue
+            raw = container.get("status")
+            if isinstance(raw, str) and raw.strip():
+                declared.add(raw.strip().lower())
+        return declared
+
+    # ONEX_EXCLUDE: dict_str_any — event bus payload
+    def _classify_terminal(
+        self, payload: RawWorkflowMap, declared: set[str]
+    ) -> EnumWorkflowResult:
+        """Classify a terminal event from the statuses it actually declares.
+
+        Decision order:
+        1. a failure status declared at EITHER level → FAILED. Disagreement
+           fails closed — a terminal that says both is not a success.
+        2. every declared status a success value → COMPLETED.
+        3. otherwise → the shared ``_classify_result`` heuristics
+           (``cycles_failed`` / ``error_message`` / no marker) over the DOMAIN
+           payload, unwrapped when the message is envelope-shaped so those
+           fields are read where they actually live.
+
+        The no-status-anywhere case on an envelope never reaches here: the
+        caller refuses it outright rather than letting rule 3's "no failure
+        marker → COMPLETED" tail read an unclassifiable terminal as green. A
+        bare domain terminal with no status (e.g. ``{"kind": "completed"}``) is
+        the long-standing offline shape and keeps rule 3.
+        """
+        if declared & _FAILURE_STATUS_VALUES:
+            return EnumWorkflowResult.FAILED
+        if declared and declared <= _SUCCESS_STATUS_VALUES:
+            return EnumWorkflowResult.COMPLETED
+        domain: object = (
+            payload.get("payload") if self._is_envelope_shaped(payload) else payload
+        )
+        return self._classify_result(domain)
 
     # ------------------------------------------------------------------
     # Routing detection
@@ -1293,8 +1388,17 @@ class RuntimeLocal:
                 message=msg,
             )
         self._wire_correlation_id = correlation_id
-        if not self.host_handlers:
-            self._expected_correlation_id = correlation_id
+        # OMN-15660: arm the terminal correlation predicate in BOTH modes. Under
+        # OMN-17304 this was client-only, and client mode has zero production
+        # callers — `onex delegate` runs host mode — so on a Kafka-backed lane
+        # every delegation accepted whatever terminal the topic still retained
+        # from an earlier run. The predicate is the actual isolation boundary;
+        # run-scoping the terminal consumer group below is not sufficient on its
+        # own, because a brand-new group still reads the retained log from the
+        # beginning. ``None`` here means nothing correlated reached the wire, and
+        # a filter with no operand cannot be armed; client mode already refuses
+        # that case above, host mode keeps first-terminal-wins.
+        self._expected_correlation_id = correlation_id
 
         # --- 4. Wire adapters to bus ---
         unsubscribe_handles: list[UnsubscribeCallback] = []
@@ -1416,17 +1520,26 @@ class RuntimeLocal:
             payload = decoded if isinstance(decoded, dict) else {}
             self._on_terminal_event(cast("RawWorkflowMap", payload))
 
-        # OMN-17304 AC5: a client must not inherit another run's committed
+        # OMN-17304 AC5 / OMN-15660: no run may inherit another run's committed
         # offset on the terminal topic. The shared runtime-local group id is
-        # correct for a long-lived host; for a one-shot client it means a fresh
-        # invocation resumes wherever the last one stopped and works through a
-        # backlog of terminals that are, by construction, not its own. The
-        # group is run-scoped instead, and empty groups age out of the broker
-        # on the standard offset-retention window.
+        # only correct for a long-lived host on a bus that dies with it; on a
+        # durable broker it means a fresh invocation resumes wherever the last
+        # one stopped and works through a backlog of terminals that are, by
+        # construction, not its own. OMN-17304 run-scoped this for clients only
+        # and client mode has no production callers, so every `onex delegate`
+        # on a Kafka-backed lane shared one group. Empty groups age out of the
+        # broker on the standard offset-retention window.
+        #
+        # Gated on the correlation predicate being armed because the two are
+        # only safe together: a brand-new group reads the retained log from the
+        # beginning, so scoping WITHOUT a filter trades "the uncommitted tail"
+        # for "the entire retention window" — strictly worse. When nothing
+        # correlated reached the wire there is no operand to filter on, so the
+        # shared group is left exactly as it was rather than made worse.
         terminal_group_node = TERMINAL_CONSUMER_NODE_NAME
-        if not self.host_handlers:
+        if self._expected_correlation_id is not None:
             terminal_group_node = (
-                f"{TERMINAL_CONSUMER_NODE_NAME}_client_{self.run_id.hex[:12]}"
+                f"{TERMINAL_CONSUMER_NODE_NAME}_run_{self.run_id.hex[:12]}"
             )
         unsub = await bus.subscribe(
             terminal_topic,
