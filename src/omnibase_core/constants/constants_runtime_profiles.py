@@ -28,7 +28,10 @@ the orchestrator / effect / worker consumer lanes respectively. ``local-dev``,
 ``default``, ``staging``, and ``production`` are policy overlays (prefetch
 posture), not distinct consumer lanes; ``canary`` and ``projection-api`` run
 isolated lanes that do NOT consume the general command/event groups a
-REDUCER/EFFECT needs.
+REDUCER/EFFECT needs. ``tenant-projection`` (OMN-17556) is a real consumer
+lane: one consolidated writer process that owns every TENANT-domain projection
+contract, because it is the only process holding the ``tenant_projection``
+binding's store-resolved credential.
 
 A REDUCER or EFFECT contract that subscribes to topics but names *only*
 non-consumer-attached profiles is the second, subtler class of silent
@@ -51,6 +54,16 @@ REGISTERED_RUNTIME_PROFILES: frozenset[str] = frozenset(
         "canary",
         "staging",
         "production",
+        # OMN-17556: the consolidated TENANT-domain projection writer. Eight
+        # contracts resolve the `tenant_projection` topology binding, whose
+        # principal (`tenant_projection_writer`) the shared main/effects pods
+        # deliberately hold no credential for -- and never will, by operator
+        # ruling (2026-09-03: no credential env var on any shared pod). They
+        # run in ONE process booted under this profile, which is the only
+        # process that resolves that binding's `secret_ref` from the store.
+        # Consolidated, not one writer per contract: onex-dev sits at ~87% CPU
+        # requests with ~520m headroom and eight 100m writers do not fit.
+        "tenant-projection",
     }
 )
 
@@ -62,6 +75,13 @@ CONSUMER_ATTACHED_RUNTIME_PROFILES: frozenset[str] = frozenset(
         "main",
         "effects",
         "workers",
+        # OMN-17556. All eight contracts moving here are subscribing
+        # REDUCER/EFFECT archetypes naming ONLY this profile, so omitting it
+        # would leave them registered-but-undrained -- the second, subtler
+        # silent-orphan class `_check_no_consumer_lane` exists to catch. The
+        # writer is the ONEX runtime booted under a different profile (not a
+        # bespoke daemon), so it attaches a real consumer group.
+        "tenant-projection",
     }
 )
 
