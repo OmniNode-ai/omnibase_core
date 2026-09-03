@@ -589,7 +589,7 @@ _SYNTHETIC_TABLE_MULTISLOT = (
 
 
 def test_the_shipped_slots_column_is_pinned(table_repo: Path) -> None:
-    """h101 and h105 carry slots=2; every other row stays slots=1.
+    """h201 carries slots=3, h101 and h105 slots=2; every other row stays 1.
 
     OMN-17159 pinned every row here at slots=1 and refused to inherit
     omnibase_infra's widening, on an explicit premise: that this repo's
@@ -627,10 +627,54 @@ def test_the_shipped_slots_column_is_pinned(table_repo: Path) -> None:
     would put h105 over the threshold under `-n4`; slots=3 needs its own
     measurement, exactly as this one did.
 
-    h200 and h201 are deliberately NOT widened: h200 is the local/default
-    identity host rather than a distribution target, and h201 runs the
-    separate `~/push-lanes/QUEUE` serializer (slot_mode=queue), a different
-    concurrency mechanism this column does not govern. h201c never executes.
+    h200 is deliberately NOT widened: it is the local/default identity host
+    rather than a distribution target. h201c never executes.
+
+    h201 IS widened, 1 -> 3, under OMN-17776/OMN-17743 -- and the sentence
+    that used to stand here ("h201 runs the separate ~/push-lanes/QUEUE
+    serializer (slot_mode=queue), a different concurrency mechanism this
+    column does not govern") was wrong on its second half and is corrected
+    rather than merely overruled. The QUEUE is a different mechanism, and it
+    does still gate the row: `_PREPUSH_SLOT_PROBE_SH` returns busy on EVERY
+    slot of this row while `q != 0`. But `slots` DOES govern h201 -- the
+    candidate loop in `pick_capacity_host` generates `h201`, `h201.2`,
+    `h201.3` from this column exactly as it does for a lockdir row, and
+    `test_h201_third_slot_places_while_the_first_two_are_busy` below proves
+    the third one places on the REAL shipped table. What the QUEUE changes is
+    that three slots widen concurrency only while the queue is drained; it is
+    an AND, not a substitute.
+
+    The measurement is host-scoped and therefore repo-independent, taken live
+    and read-only on `.201` on 2026-09-03 in two separate windows:
+
+    * 10:57Z-11:03Z, one heavy leg in flight: nproc 32, MemTotal 91.96 GiB,
+      MemAvailable ~57-60 GiB, `/proc/loadavg` 5x/4s = 7.36 7.01 7.01 6.93
+      6.86 (mean load1 7.03/32 = 0.22x), `docker stats --no-stream` over 147
+      containers = 2.46 cores of which the 90-container CI runner fleet is
+      0.11 (idle since OMN-16688 moved trusted CI to GitHub-hosted runners).
+      Subtracting the in-flight leg (98.7% ~= 1.0 core): baseline ~6.0 of 32.
+    * 15:22Z-15:28Z, zero heavy legs: 10 samples 20s apart = 5.72 5.29 5.42
+      4.99 4.59 4.87 4.25 4.29 5.13 4.97 (mean 4.87), 3 `Runner.Worker` CI
+      jobs, `docker stats` over 146 containers = 6.934 cores. A 15:23Z spot
+      read peaked at 10.73.
+
+    Per-leg cost is `min(row cores, PREPUSH_REMOTE_XDIST_WORKER_CAP)` =
+    `min(32, 4)` = 4 xdist workers + 1 idle controller ~= 5.0 runnable cores,
+    which is why OMN-17603 restoring `-n4` does not disturb this row the way
+    it constrains h105: 3 legs = 15.0 + 6.0 baseline = 21.0 = 0.66x of 32,
+    and 0.80x even against the 10.73 peak baseline. 4 slots would read 0.96x
+    at that peak and 5 would exceed 1.0x, which is why the count is 3 and not
+    "as many as fit the mean".
+
+    OBSERVED DIVERGENCE, recorded rather than silently inherited: this repo's
+    table has 13 columns and carries NO `placement_tier`, and this repo's
+    `prepush_dispatch.sh` ranks fit records by `sort -t'|' -k1,1g` -- load
+    ratio alone. So unlike omnibase_infra, where OMN-17485 made h201
+    `last_resort`, a core lane already prefers `.201` whenever it reads
+    least-loaded, at slots=1 as much as at slots=3. The widening changes how
+    MANY core lanes that ranking can send there, not whether it sends them,
+    and the count it can send is exactly the count the measurement above
+    budgeted for. Porting the tier column is tracked on OMN-17529, not here.
 
     `hcloud` -- the AWS overflow row this same PR adds (OMN-16634) -- also
     stays slots=1, and NOT by inheriting the old blanket pin. The h101/h105
@@ -645,12 +689,79 @@ def test_the_shipped_slots_column_is_pinned(table_repo: Path) -> None:
     slots = {r[0]: r[9] for r in _rows()}
     assert slots == {
         "h200": "1",
-        "h201": "1",
+        "h201": "3",
         "h201c": "1",
         "h101": "2",
         "h105": "2",
         "hcloud": "1",
     }
+
+
+def test_widening_h201_slots_did_not_change_its_slot_mode_or_mode(
+    table_repo: Path,
+) -> None:
+    """OMN-17776 widened h201's slot COUNT and nothing else on the row.
+
+    `slot_mode=queue` is load-bearing: `.201` runs the separate
+    `~/push-lanes/QUEUE` serializer and the slot probe reads busy on EVERY
+    slot of this row while that queue is non-empty, so three slots widen
+    concurrency only while the queue is drained -- they do not retire the
+    serializer. `mode=authorizing` is what lets a verdict recorded there
+    satisfy an escalation at all. Pinning both here means a future capacity
+    edit cannot quietly ride a mode change in with it, which is the same
+    reason the mode-promotion pins above exist."""
+    row = {r[0]: r for r in _rows()}["h201"]
+    assert row[8] == "queue", row
+    assert row[11] == "authorizing", row
+
+
+def test_h201_third_slot_places_while_the_first_two_are_busy(
+    table_repo: Path,
+) -> None:
+    """OMN-17776: h201's THIRD slot is independently placeable on the REAL
+    shipped table while slots 1 and 2 are both held.
+
+    This is the only test in this file that proves the slot suffix
+    generalises past `.2`, and the only one that proves a multi-slot
+    placement for a `slot_mode=queue` row -- h101 and h105, the other two
+    multi-slot rows, are both `lockdir`.
+
+    It also proves LABEL GENERATION for the middle slot, not just the last:
+    `h201.2` can only appear in `PREPUSH_PROBE_LOG` if the candidate loop
+    generated that label from `slots=3` and probed it, so a broken middle
+    suffix would fail this assertion rather than slip past it."""
+    out = _pick(
+        table_repo,
+        load="h201.3=0.22",
+        slot="h201=busy,h201.2=busy,h201.3=free",
+        uv="h201.3=0.11.5",
+    )
+    assert "PICK=h201.3" in out, out
+    assert "h201=busy" in out, out
+    assert "h201.2=busy" in out, out
+
+
+def test_h201_offers_exactly_three_slots_and_never_a_phantom_fourth(
+    table_repo: Path,
+) -> None:
+    """A fourth concurrent core lane targeting `.201` gets no placement, not
+    an `h201.4`.
+
+    The candidate count is the declared `slots` value and nothing else. This
+    is the assertion that keeps the widening bounded by the measurement that
+    justified it: the raw `prepush_slot_state` probe is per-slot and knows
+    nothing about the row's declared count -- probed directly, `LOCK.4` is
+    absent so slot 4 answers FREE -- and the ONLY thing that stops a fourth
+    lane is this loop bound."""
+    out = _pick(
+        table_repo,
+        load="h201=0.22,h201.2=0.22,h201.3=0.22",
+        slot="h201=busy,h201.2=busy,h201.3=busy",
+        uv="h201=0.11.5,h201.2=0.11.5,h201.3=0.11.5",
+    )
+    assert "PICK=none" in out, out
+    assert "h201.3=busy" in out, out
+    assert "h201.4" not in out, out
 
 
 def test_a_widened_shipped_row_places_a_second_lane_when_slot_one_is_held(
