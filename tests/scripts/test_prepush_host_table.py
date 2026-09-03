@@ -32,6 +32,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -100,6 +101,7 @@ def test_table_contents_are_pinned() -> None:
         "h201c": ("identity", "gate-runner-201", "authorizing"),
         "h101": ("capacity", "stickybeatz", "authorizing"),
         "h105": ("capacity", "omnibook", "authorizing"),
+        "hcloud": ("capacity", "onex-prepush-cloud1", "authorizing"),
     }
 
 
@@ -587,28 +589,94 @@ _SYNTHETIC_TABLE_MULTISLOT = (
 
 
 def test_the_shipped_slots_column_is_pinned(table_repo: Path) -> None:
-    """EVERY row in THIS repo stays slots=1 -- including h105 (OMN-17159).
+    """h101 and h105 carry slots=2; every other row stays slots=1.
 
-    omnibase_infra widened h105 to slots=2 on measured evidence about ITS
-    escalation, which targets `tests/unit/`. This repo's escalation is the
-    whole `tests/` tree -- 45,117 collected tests, measured on both lab Macs
-    2026-08-31 -- so the sibling repo's measurement does not transfer, and
-    inheriting the widening would be exactly the "assumed fit" move the whole
-    table exists to prevent. Two concurrent core suites on h105's ten cores
-    would also degrade the load1 signal every other row is ranked on.
+    OMN-17159 pinned every row here at slots=1 and refused to inherit
+    omnibase_infra's widening, on an explicit premise: that this repo's
+    escalation is the whole `tests/` tree, so "two concurrent core suites on
+    h105's ten cores would make both slower than one serialized pair while
+    degrading the load signal every other row is ranked on." That premise was
+    a projection, and it is now falsified by direct measurement of the thing
+    it projected about -- a REAL core escalation on the remote leg.
 
-    Widening a row's capacity is the kind of change this file exists to force
-    through a reviewed, deliberate test edit (same reasoning as the
-    mode-promotion pins above); doing it for this repo needs its own
-    measurement, not a copied one."""
+    Measured 2026-09-02T19:22Z by read-only `ps`/`uptime` over ssh, on two
+    hosts each carrying exactly one live governed core full-suite leg:
+
+    * h101 (12 cores, 32 GiB), run `omnibase_core-4e116501fd0a-37091`,
+      1h13m43s elapsed: the ENTIRE suite is ONE pytest process at 100.0% of
+      ONE core, RSS 670 MB (whole process tree: cpu_sum 100.0%, rss_sum
+      671 MB, 2 processes). load1 2.96/12 = 0.25x.
+    * h105 (10 cores, 32 GiB), run `omnibase_core-e69568dd5e02-80404`,
+      1h49m49s elapsed: same shape, one process, RSS 700 MB. load1 at
+      19:22:08Z 4.07/10 = 0.41x while that host was carrying TWO concurrent
+      core pytest invocations (the single-threaded leg plus a second `-n4`
+      one) -- an accidental but on-point datapoint that a 10-core M4 is
+      nowhere near saturated by two concurrent core suites.
+
+    A core lane costs one core and ~0.7 GB, not the machine. Two of them cost
+    two cores of ten (0.2x) and ~1.4 GB of 32 GiB -- so the serialization the
+    old pin bought was not protecting the host from saturation, it was
+    idling 8-11 cores per host while six lanes queued for a placement target.
+    The load1 signal is not degraded either: it is re-measured per slot at
+    pick time and 2/10 stays an order of magnitude under the 1.0x threshold.
+
+    The widening survives OMN-17603 restoring `-n4` on the remote leg: two
+    4-way suites is 8 of h105's 10 cores (0.8x, still under threshold) and 8
+    of h101's 12 (0.67x), at ~2.8 GB per suite by the per-worker RSS measured
+    above -- 5.6 GB of 32 GiB. It does NOT survive a widening past 2, which
+    would put h105 over the threshold under `-n4`; slots=3 needs its own
+    measurement, exactly as this one did.
+
+    h200 and h201 are deliberately NOT widened: h200 is the local/default
+    identity host rather than a distribution target, and h201 runs the
+    separate `~/push-lanes/QUEUE` serializer (slot_mode=queue), a different
+    concurrency mechanism this column does not govern. h201c never executes.
+
+    `hcloud` -- the AWS overflow row this same PR adds (OMN-16634) -- also
+    stays slots=1, and NOT by inheriting the old blanket pin. The h101/h105
+    widening above is earned by a measurement of those two hosts; no such
+    measurement of the EC2 host exists, and the row is an overflow target that
+    is only reached once the lab is saturated anyway. Widening it is a separate,
+    measured change, exactly as this one was.
+
+    Widening a row's capacity stays the kind of change this file exists to
+    force through a reviewed, deliberate test edit (same reasoning as the
+    mode-promotion pins above)."""
     slots = {r[0]: r[9] for r in _rows()}
     assert slots == {
         "h200": "1",
         "h201": "1",
         "h201c": "1",
-        "h101": "1",
-        "h105": "1",
+        "h101": "2",
+        "h105": "2",
+        "hcloud": "1",
     }
+
+
+def test_a_widened_shipped_row_places_a_second_lane_when_slot_one_is_held(
+    table_repo: Path,
+) -> None:
+    """The point of the widening, asserted against the REAL shipped table.
+
+    Before OMN-17602 this behaviour was only ever exercised on the synthetic
+    `hm` fixture below, because no shipped row declared slots>1 -- so the
+    table could have been widened wrongly (a typo, a column shift) and every
+    slot test would still have passed. Measured live 2026-09-02T19:11Z:
+    across h105 (121 run dirs) and h101 (73), `LOCK.2` has never once been
+    created and no `slots/` directory exists, i.e. the fleet has never taken
+    a second slot for ANY repo -- which is what an unexercised path looks
+    like from the outside.
+
+    With slot 1 held and slot 2 re-qualified on its own live load, the picker
+    must offer `h105.2` rather than reporting a placement miss."""
+    out = _pick(
+        table_repo,
+        load="h200=2.09,h201=3.10,h101=2.50,h105.2=0.25",
+        slot="h200=busy,h201=busy,h101=busy,h101.2=busy,h105=busy,h105.2=free",
+        uv="h105.2=0.11.8",
+    )
+    assert "PICK=h105.2" in out, out
+    assert "h105=busy" in out, out
 
 
 def test_slot_one_keeps_the_bare_label_not_a_dot_one_suffix(
@@ -705,6 +773,240 @@ def test_prepush_select_candidate_defaults_slot_to_one(table_repo: Path) -> None
         'echo "LABEL=$PREPUSH_PICK_LABEL SLOT=$PREPUSH_PICK_SLOT"\n',
     )
     assert "LABEL=h105 SLOT=1" in out, out
+
+
+# =============================================================================
+# The slot PROBE itself (OMN-17602): why slots>1 was unreachable in practice
+# =============================================================================
+#
+# OMN-17269 shipped the slot MECHANISM and OMN-17159 pinned this repo at
+# slots=1, so the probe's multi-slot arithmetic had never run against a real
+# remote host until OMN-17602 widened h101/h105. It did not work. Measured
+# read-only 2026-09-02T19:11-20:20Z: `LOCK.2` had never been created ONCE
+# anywhere in the fleet -- h105 121 run dirs, h101 73, bare `LOCK` only, no
+# `slots/` directory -- even though omnibase_infra had carried h105 slots=2
+# since 2026-08-30. Three defects in `_PREPUSH_SLOT_PROBE_SH` explain it, and
+# the tests below pin each one. Every fix makes the predicate LESS strict, so
+# each is pinned by the exact arithmetic it restores rather than by "it now
+# returns free": an untracked heavy process with no lock to explain it must
+# still read BUSY, and `test_an_unexplained_heavy_process_is_still_busy`
+# asserts exactly that.
+
+
+def _probe_line(out: str) -> list[str]:
+    """The probe's last stdout line, split into fields."""
+    lines = [ln for ln in out.strip().splitlines() if ln.strip()]
+    assert lines, f"probe produced no output: {out!r}"
+    return lines[-1].split()
+
+
+def _fake_ps(bin_dir: Path, *lines: str) -> None:
+    """A `ps` stub on PATH that prints LINES for any argv.
+
+    The real signal cannot be produced from a test -- it needs a live remote
+    leg -- so the stub reproduces the exact two argv lines a single leg puts
+    in `ps`, captured verbatim from h105 at 2026-09-02T20:14Z.
+    """
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    script = "#!/bin/sh\n" + "".join(f"printf '%s\\n' {line!r}\n" for line in lines)
+    ps = bin_dir / "ps"
+    ps.write_text(script, encoding="utf-8")
+    ps.chmod(0o755)
+
+
+#: The two argv lines ONE remote leg contributes to `ps ax -o args=`, copied
+#: from h105 (run omnibase_core-e69568dd5e02-80404). The first is the ssh
+#: wrapper shell, the second is the leg. A count that returns 2 here is
+#: counting the shell that spawned the leg as a second leg. The `/Users/Shared`
+#: paths are annotated rather than parameterised on purpose: this is a VERBATIM
+#: transcript of what `ps` printed on a lab Mac, and the workroot the lab Macs
+#: actually use is part of the evidence. Rewriting it to a tmp path would make
+#: the fixture agree with the code instead of with the machine.
+_ONE_LEG_PS = (
+    "zsh -c cd '/Users/Shared/onex-prepush/runs/omnibase_core-e69568dd5e02-80404'"  # local-path-ok
+    " || exit 96; chmod +x prepush_smart_tests.sh || exit 97;"
+    " ./prepush_smart_tests.sh '/Users/Shared/onex-prepush/runs/x' '/uv' 'sha' '1'",  # local-path-ok
+    "bash ./prepush_smart_tests.sh /Users/Shared/onex-prepush/runs/x /uv sha 1",  # local-path-ok
+)
+
+
+def test_the_slot_probe_counts_held_locks_under_a_shell_that_rejects_globs(
+    table_repo: Path, tmp_path: Path
+) -> None:
+    """`held` must not depend on the shell expanding an unmatched glob.
+
+    The lab Macs' login shell is zsh (measured 2026-09-02:
+    `ssh <h101|h105> 'echo $SHELL'` -> /bin/zsh), and zsh's default `nomatch`
+    makes an unmatched glob a FATAL error that aborts the command line before
+    it runs -- so the old `ls -d "$W"/LOCK "$W"/LOCK.*` printed nothing, and
+    its `2>/dev/null` could not suppress the message because the redirection
+    belonged to a command that never executed. `held` therefore read 0 on
+    every remote Mac probe in exactly the state slot 2 exists for: slot 1
+    locked, slot 2 free. Reproduced portably with bash's `failglob`, which
+    has the same semantics; a real-zsh twin runs below where zsh exists."""
+    wr = tmp_path / "wr"
+    (wr / "LOCK").mkdir(parents=True)
+    home = tmp_path / "home"
+    home.mkdir()
+    out = _driver(
+        table_repo,
+        f'export HOME="{home}"\n'
+        f'export PREPUSH_WORKROOT="{wr}"\n'
+        "export PREPUSH_SLOT_INDEX=2\n"
+        'bash -O failglob -c "$_PREPUSH_SLOT_PROBE_SH"\n',
+    )
+    fields = _probe_line(out)
+    assert len(fields) == 4, fields
+    assert fields[2] == "0", f"LOCK.2 does not exist, so l must be 0: {fields}"
+    assert fields[3] == "1", f"one held lock dir (LOCK) must be counted: {fields}"
+
+
+@pytest.mark.skipif(shutil.which("zsh") is None, reason="zsh not installed")
+def test_the_slot_probe_counts_held_locks_under_real_zsh(
+    table_repo: Path, tmp_path: Path
+) -> None:
+    """The same property against the ACTUAL shell the lab Macs run, so the
+    portable `failglob` stand-in above can never drift away from the thing it
+    stands in for."""
+    wr = tmp_path / "wr"
+    (wr / "LOCK").mkdir(parents=True)
+    home = tmp_path / "home"
+    home.mkdir()
+    out = _driver(
+        table_repo,
+        f'export HOME="{home}"\n'
+        f'export PREPUSH_WORKROOT="{wr}"\n'
+        "export PREPUSH_SLOT_INDEX=2\n"
+        'zsh -c "$_PREPUSH_SLOT_PROBE_SH"\n',
+    )
+    fields = _probe_line(out)
+    assert len(fields) == 4, fields
+    assert fields[3] == "1", f"one held lock dir (LOCK) must be counted: {fields}"
+
+
+def test_the_slot_probe_counts_one_process_per_leg_not_the_ssh_wrapper(
+    table_repo: Path, tmp_path: Path
+) -> None:
+    """A single remote leg must count as ONE heavy process, not two.
+
+    The leg is launched as `zsh -c '...; ./prepush_smart_tests.sh ...'`, so
+    the wrapper shell AND the script both carry the script name in their
+    argv. Measured on h101, h105 and h201 at 2026-09-02T20:14Z: exactly one
+    leg was running on each and the old count returned 2 on all three. That
+    doubling is what defeats `p <= self + held` -- one lock can never explain
+    two processes, so a correctly-locked host reads BUSY on every slot."""
+    wr = tmp_path / "wr"
+    wr.mkdir()
+    home = tmp_path / "home"
+    home.mkdir()
+    _fake_ps(tmp_path / "bin", *_ONE_LEG_PS)
+    out = _driver(
+        table_repo,
+        f'export HOME="{home}"\n'
+        f'export PATH="{tmp_path / "bin"}:$PATH"\n'
+        f'export PREPUSH_WORKROOT="{wr}"\n'
+        'sh -c "$_PREPUSH_SLOT_PROBE_SH"\n',
+    )
+    fields = _probe_line(out)
+    assert fields[1] == "1", f"one leg must count once, got p={fields[1]}: {fields}"
+
+
+def test_the_slot_probe_emits_four_fields_when_the_queue_file_is_empty(
+    table_repo: Path, tmp_path: Path
+) -> None:
+    """`grep -c .` on an EXISTING BUT EMPTY file prints 0 and exits 1, so the
+    old `|| echo 0` fired as well and `q` became two lines. Every later field
+    then shifted left by one and `l` was read out of `p`.
+
+    This was live on h201, whose `~/push-lanes/QUEUE` exists and is empty: the
+    2026-09-02T20:07Z refusal trail printed `h201=busy(queue=0 heavy_pids=0
+    lock=2 held=1)` -- and `l` is assigned only 0 or 1, so `lock=2` is a value
+    the code cannot produce except by shifting."""
+    wr = tmp_path / "wr"
+    wr.mkdir()
+    home = tmp_path / "home"
+    (home / "push-lanes").mkdir(parents=True)
+    (home / "push-lanes" / "QUEUE").write_text("", encoding="utf-8")
+    out = _driver(
+        table_repo,
+        f'export HOME="{home}"\n'
+        f'export PREPUSH_WORKROOT="{wr}"\n'
+        'sh -c "$_PREPUSH_SLOT_PROBE_SH"\n',
+    )
+    # The WHOLE probe output, not just its last line: the defect emitted the
+    # extra `0` on a line of its own, which a last-line read would hide while
+    # `set -- $raw` in the caller still word-splits across the newline and
+    # shifts every field.
+    words = out.split()
+    assert len(words) == 4, f"an empty QUEUE must not add a field: {out!r}"
+    assert words[0] == "0", words
+
+
+def test_a_probe_with_the_wrong_field_count_is_unknown_not_shifted(
+    table_repo: Path,
+) -> None:
+    """Fail closed on a malformed probe instead of reading it shifted.
+
+    The old parse took `${1..4}` positionally with defaults, so the five-word
+    output above was accepted and silently misread rather than rejected.
+    Unknown is skipped exactly like unreachable, which is the rule the whole
+    probe is built on -- so a future field change degrades to a placement
+    miss, never to a wrong verdict."""
+    out = _driver(
+        table_repo,
+        'PREPUSH_SLOT_OVERRIDE="0 0 0 0 1" prepush_slot_state "" /nonexistent 0 1\n'
+        'echo "RC=$?"\n',
+    )
+    assert "RC=2" in out, out
+
+
+def test_a_second_slot_is_free_when_one_locked_leg_explains_the_heavy_process(
+    table_repo: Path, tmp_path: Path
+) -> None:
+    """The whole point, end to end, against the real probe.
+
+    State: slot 1 locked (`LOCK` present), slot 2 unlocked (no `LOCK.2`), and
+    exactly one live leg -- the state every lab Mac was in for hours on
+    2026-09-02 while six lanes queued for a placement target. Slot 1 must read
+    BUSY and slot 2 must read FREE. Before OMN-17602 both read BUSY."""
+    wr = tmp_path / "wr"
+    (wr / "LOCK").mkdir(parents=True)
+    home = tmp_path / "home"
+    home.mkdir()
+    _fake_ps(tmp_path / "bin", *_ONE_LEG_PS)
+    out = _driver(
+        table_repo,
+        f'export HOME="{home}"\n'
+        f'export PATH="{tmp_path / "bin"}:$PATH"\n'
+        f'prepush_slot_state "" "{wr}" 0 1; echo "SLOT1=$?"\n'
+        f'prepush_slot_state "" "{wr}" 0 2; echo "SLOT2=$?"\n',
+    )
+    assert "SLOT1=3" in out, out
+    assert "SLOT2=0" in out, out
+
+
+def test_an_unexplained_heavy_process_is_still_busy(
+    table_repo: Path, tmp_path: Path
+) -> None:
+    """The fixes must not turn the probe permissive.
+
+    Two independent legs (two wrapper+script pairs, so p=2) with only ONE
+    held lock is a host running an untracked heavy process this table cannot
+    account for. That must stay BUSY on the free slot -- the `p <= self +
+    held` predicate is what makes the probe fail closed, and OMN-17602 only
+    restored its inputs, it did not relax it."""
+    wr = tmp_path / "wr"
+    (wr / "LOCK").mkdir(parents=True)
+    home = tmp_path / "home"
+    home.mkdir()
+    _fake_ps(tmp_path / "bin", *(_ONE_LEG_PS + _ONE_LEG_PS))
+    out = _driver(
+        table_repo,
+        f'export HOME="{home}"\n'
+        f'export PATH="{tmp_path / "bin"}:$PATH"\n'
+        f'prepush_slot_state "" "{wr}" 0 2; echo "SLOT2=$?"\n',
+    )
+    assert "SLOT2=3" in out, out
 
 
 # =============================================================================
@@ -1626,6 +1928,7 @@ def test_the_conftest_guard_reads_the_same_committed_table_as_the_bash_guard(
         "gate-runner-201",
         "stickybeatz",
         "omnibook",
+        "onex-prepush-cloud1",
     )
 
 
@@ -1794,11 +2097,32 @@ def test_the_picker_library_is_byte_identical_to_the_shipped_upstream() -> None:
     legitimately changes -- re-copy the file, re-run, paste the new digest, and
     say in the PR body which upstream commit it tracks. Editing the library
     WITHOUT touching this constant is the thing that cannot happen quietly.
+
+    WHAT THIS DIGEST TRACKS, AND WHAT IT DOES NOT (OMN-17606). The name of this
+    test overstates what it can currently assert, and has since OMN-17159: this
+    repo's copy is 1114 lines while omnibase_infra's is 1511, because core never
+    took the OMN-17392 memory-aware admission block. The digest therefore pins
+    "core's copy has not changed without review", not "core's copy equals
+    omnibase_infra's" -- the two have not been byte-identical for some time, and
+    saying so here is cheaper than letting the name keep asserting it.
+
+    The bump in OMN-17606 is the three-defect slot-probe fix (zsh `nomatch`
+    killing the `held` glob, one remote leg counted as two processes, and an
+    existing-but-empty QUEUE file shifting every field left). The shared block
+    it lands in -- from the `# multi-slot row it lets a legitimately-held`
+    comment through the end of `prepush_slot_state` -- is BYTE-IDENTICAL to the
+    copy already merged on omnimarket dev (omnimarket#2276, omnimarket dev
+    b79d8983), verified by `diff` at 2026-09-03T08:55Z. That parity is the
+    point: the comment above the probe names only ticket ids and host labels,
+    never a repo, so the next vendor re-sync of lines 140-300 sees no diff and
+    neither repo's `test_the_picker_library_is_not_edited_into_a_repo_specific_fork`
+    can fire on the other's wording. Re-sync of the REST of the file (OMN-17392
+    and the host-table columns it needs) is deliberately NOT bundled here.
     """
     digest = hashlib.sha256(LIB.read_bytes()).hexdigest()
     assert (
         digest
-        == "067706bb61ea8921598b32e23aa16538d307962c44e06ba59a3762f92311c096"  # pragma: allowlist secret
+        == "6813caf5a8b9b13c9de2ecdb1702ebd74a9829055b391e9dfc39507da51bc67d"  # pragma: allowlist secret
     ), (
         "scripts/hooks/prepush_dispatch.sh has diverged from the pinned "
         "upstream copy. If the change is intentional, update this digest in "

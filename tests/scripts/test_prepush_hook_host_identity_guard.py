@@ -66,6 +66,42 @@ HOOK_SCRIPT = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
 
 _GUARANTEED_NON_MATCHING_HOSTNAME = "definitely-not-a-gate-host-omn15059"
 
+_HOST_TABLE = REPO_ROOT / "scripts" / "hooks" / "prepush_hosts.tsv"
+
+
+def _nonmatching_host_overrides() -> dict[str, str]:
+    """Point EVERY authorizing row of the committed host table at a
+    guaranteed-non-matching hostname (the omnibase_infra
+    tests/ci/test_prepush_hook_host_identity_guard.py mechanism, ported).
+
+    The two legacy aliases (`PREPUSH_200_HOSTNAME`,
+    `PREPUSH_201_GATE_RUNNER_HOSTNAME`) only replace rows h200/h201c. Every
+    OTHER capacity row (h101, h105, h201, hcloud) still matches its live
+    hostname when this suite runs ON that host, which flips these refusal
+    proofs into the designated-host branch instead. Measured live on
+    onex-prepush-cloud1 (OMN-16634, 2026-09-01): the hook answered with the
+    slot/placement refusal, not the identity refusal, and the assertion on
+    the message text went red -- the same false-red class was latent for any
+    full-suite dispatch of THIS repo to h101/h105 since OMN-17159 added those
+    rows. The override contract is that PREPUSH_HOST_OVERRIDE_<LABEL>
+    REPLACES the row's hostname, so pointing each row at nonsense keeps the
+    refusal proof host-independent on every current and future table row.
+    """
+    env: dict[str, str] = {}
+    for raw in _HOST_TABLE.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0]
+        if not line.strip():
+            continue
+        fields = line.split("\t")
+        if len(fields) < 12 or fields[11] != "authorizing":
+            continue
+        label = "".join(c if c.isalnum() else "_" for c in fields[0].upper())
+        env[f"PREPUSH_HOST_OVERRIDE_{label}"] = (
+            f"{_GUARANTEED_NON_MATCHING_HOSTNAME}-{fields[0]}"
+        )
+    return env
+
+
 _FULL_SUITE_BRANCH_RE = re.compile(
     r'if \[ "\$IS_FULL" = "True" \].*?\n(.*?\n)(?=elif|else|fi)',
     re.DOTALL,
@@ -162,6 +198,7 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
     env["PREPUSH_BASE_REF"] = "HEAD"
     env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
     env["PREPUSH_201_GATE_RUNNER_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
+    env.update(_nonmatching_host_overrides())
     # OMN-16425: PREPUSH_ALLOW_LOCAL_FULL_SUITE leaking in from the outer
     # process's ambient env (e.g. an operator's own degraded-host `git push`
     # override) defeats this test's own assertion -- the hook takes the
@@ -349,6 +386,7 @@ def _run_hook_with_stubbed_selection(
     env["PREPUSH_BASE_REF"] = "HEAD"
     env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
     env["PREPUSH_201_GATE_RUNNER_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
+    env.update(_nonmatching_host_overrides())
     for leaky in (
         "PREPUSH_FULL_SUITE",
         "PREPUSH_ALLOW_LOCAL_FULL_SUITE",

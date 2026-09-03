@@ -1,0 +1,53 @@
+{
+  "argv_sha": "33e0cbb55d642ec70f9e6ebed7f08434be9ed3f3dd70d03cb5ace38e272feef1",
+  "correlation_id": "omn-16634-hcloud-host-identity-5eb4bf51904d-71828",
+  "defect": {
+    "cause": "The three refusal proofs forced the not-a-designated-host condition with the two legacy aliases PREPUSH_200_HOSTNAME and PREPUSH_201_GATE_RUNNER_HOSTNAME, which displace only rows h200 and h201c. Every other authorizing row (h101, h105, h201, hcloud) still carried its real hostname, so running the suite ON one of those hosts made the hook match a row, take the designated-host branch, and answer with a placement/slot refusal instead of the identity refusal the assertion read for.",
+    "latent_since": "OMN-17159 added the h101 and h105 rows; any full-suite dispatch of this repo to either host had the same false red. The hcloud row is the one that made it observable.",
+    "not_a_host_defect": true,
+    "summary": "the host-identity refusal proofs were host-dependent"
+  },
+  "dispatch": {
+    "run_dir": "~/onex-prepush/runs/omnibase_core-5eb4bf51904d-71828",
+    "transport": "git bundle HEAD --tags -> scp -> clone -> uv sync --all-extras -> pytest",
+    "uv_sync_exit": 0
+  },
+  "fix": "tests/scripts/test_prepush_hook_host_identity_guard.py::_nonmatching_host_overrides reads the committed host table and points PREPUSH_HOST_OVERRIDE_<LABEL> at a guaranteed-non-matching hostname for EVERY authorizing row, so the refusal proofs stay host-independent as rows are added.",
+  "green_after": [
+    {
+      "command": "PATH=$HOME/.local/bin:$PATH uv run pytest tests/scripts/test_prepush_hook_host_identity_guard.py -q",
+      "host": "onex-prepush-cloud1",
+      "note": "the host that exposed the defect",
+      "result": "38 passed in 8.20s"
+    },
+    {
+      "command": "uv run pytest tests/scripts/test_prepush_hook_host_identity_guard.py -q",
+      "host": "stickybeatz-studio",
+      "note": "h200; these were already green here because the legacy PREPUSH_200_HOSTNAME alias covered that row",
+      "result": "38 passed in 69.31s"
+    }
+  ],
+  "head_sha": "5eb4bf51904d2b5543d3fddcb56904c0d34a7e10",
+  "host": "onex-prepush-cloud1",
+  "host_label": "hcloud",
+  "instance": {
+    "id": "i-02a5f8bc0833bdacd",
+    "region": "us-east-1a",
+    "type": "c7a.4xlarge"
+  },
+  "invocation_caveat": "uv is on no host's non-interactive PATH (the host-table header records this). A bare `ssh <host> 'uv run pytest ...'` makes six further tests in this file fail with 'expected uv on PATH to run this test' and turns the ..._non_200_host refusal into a different refusal string. Those are artifacts of the invocation, not of the tree: export PATH=$HOME/.local/bin:$PATH first.",
+  "pytest_collected": 44695,
+  "pytest_exit": 143,
+  "red_first": [
+    "tests/scripts/test_prepush_hook_host_identity_guard.py::test_guard_refuses_full_suite_escalation_on_non_200_host",
+    "tests/scripts/test_prepush_hook_host_identity_guard.py::test_guard_refuses_selector_whole_tree_sentinel_when_flag_is_false",
+    "tests/scripts/test_prepush_hook_host_identity_guard.py::test_guard_refuses_whole_suite_equivalent_selection_when_flag_is_false"
+  ],
+  "repo": "omnibase_core",
+  "suite_log_sha256": "bdbc6d1a5e45f32e412d6a9993a98a25355c95d72b74e69b4ef8edb66d1b3ab6",
+  "suite_reached_terminal_verdict": false,
+  "suite_termination": "SIGTERM at 48% when the driving session was killed; MARKER records exit=143 and WRAPPER_EXIT records 143. The three reds above are the only red evidence this leg produced. NO green full-suite claim is made from it.",
+  "ticket": "OMN-16634",
+  "ts": "2026-09-01T18:55:00Z",
+  "wrapper_artifact": "MARKER records collected=0, which is a wrapper bug, not a collection failure: its `sed -n 's/^collected \\([0-9]*\\) item.*/\\1/p` misses pytest's real line, which is prefixed by 'collecting ... ' on the same line. Actual collection was 44695 items / 4 skipped."
+}
