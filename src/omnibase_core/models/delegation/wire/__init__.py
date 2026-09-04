@@ -27,6 +27,18 @@ from omnibase_core.models.delegation.wire.model_delegation_result import (
     EnumQualityScoreComparison,
     ModelDelegationResult,
 )
+from omnibase_core.models.delegation.wire.model_delegation_terminal_v2 import (
+    EnumDelegationRoutingDisposition,
+    EnumDelegationTerminalOutcome,
+    EnumDelegationUnroutedReason,
+    ModelDelegationProviderFailureCause,
+    ModelDelegationQualityGateRejection,
+    ModelDelegationTerminalCompletedV2,
+    ModelDelegationTerminalFailedRoutedV2,
+    ModelDelegationTerminalFailedUnroutedV2,
+    ModelQualityBarEvaluation,
+    TypeDelegationRoutedFailureCause,
+)
 from omnibase_core.models.delegation.wire.model_delegation_wire_envelope import (
     ModelDelegationEventEnvelope,
 )
@@ -71,6 +83,9 @@ __all__: list[str] = [
     "TASK_DELEGATED_TOPIC_V1",
     "EnumBudgetAction",
     "EnumDelegationTerminalFailureCause",
+    "EnumDelegationRoutingDisposition",
+    "EnumDelegationTerminalOutcome",
+    "EnumDelegationUnroutedReason",
     "EnumQualityContractMode",
     "EnumQualityGateCategory",
     "EnumQualityScoreComparison",
@@ -89,6 +104,11 @@ __all__: list[str] = [
     "ModelDelegationFallbackPolicy",
     "ModelDelegationRequest",
     "ModelDelegationResult",
+    "ModelDelegationProviderFailureCause",
+    "ModelDelegationQualityGateRejection",
+    "ModelDelegationTerminalCompletedV2",
+    "ModelDelegationTerminalFailedRoutedV2",
+    "ModelDelegationTerminalFailedUnroutedV2",
     "ModelDelegationRoutingRule",
     "ModelDelegationShadowConfig",
     "ModelInferenceIntent",
@@ -97,10 +117,12 @@ __all__: list[str] = [
     "ModelQualityGateInput",
     "ModelQualityGateIntent",
     "ModelQualityGateResult",
+    "ModelQualityBarEvaluation",
     "ModelRoutingIntent",
     "ModelRoutingTier",
     "ModelTaskDelegatedEvent",
     "ModelTierCost",
     "ModelTierModel",
+    "TypeDelegationRoutedFailureCause",
     "validate_acceptance_criteria",
 ]
