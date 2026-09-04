@@ -64,6 +64,14 @@ def _quality_bar_evaluation() -> dict[str, Any]:
     }
 
 
+def _below_quality_bar_evaluation() -> dict[str, Any]:
+    return {
+        "quality_score": 0.89,
+        "required_quality_bar": 0.9,
+        "score_vs_required_bar": EnumQualityScoreComparison.BELOW_BAR.value,
+    }
+
+
 def _completed_payload() -> dict[str, Any]:
     return {
         **_common_payload(),
@@ -85,12 +93,12 @@ def _routed_failure_payload() -> dict[str, Any]:
         "backend_ref": "local-coder",
         "pricing_manifest_version": 7,
         "quality_passed": False,
+        "quality_bar_evaluation": _quality_bar_evaluation(),
         "failed_acceptance_criteria": ("response_non_empty",),
         "terminal_failure_reason": "provider refused the request",
         "routed_failure_cause": {
             "kind": "provider",
             "cause": "provider_error",
-            "quality_bar_evaluation": _quality_bar_evaluation(),
         },
     }
 
@@ -175,9 +183,9 @@ def test_routed_failure_requires_exactly_one_closed_failure_cause() -> None:
 
 
 @pytest.mark.unit
-def test_provider_failure_requires_its_quality_bar_evaluation() -> None:
+def test_routed_failure_requires_its_top_level_quality_bar_evaluation() -> None:
     payload = _routed_failure_payload()
-    del payload["routed_failure_cause"]["quality_bar_evaluation"]
+    del payload["quality_bar_evaluation"]
 
     with pytest.raises(ValidationError, match="quality_bar_evaluation"):
         ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
@@ -189,9 +197,26 @@ def test_provider_failure_carries_one_quality_bar_evaluation() -> None:
         _routed_failure_payload()
     )
 
-    assert (
-        terminal.routed_failure_cause.quality_bar_evaluation.required_quality_bar == 0.9
-    )
+    assert terminal.quality_bar_evaluation.required_quality_bar == 0.9
+    assert terminal.routed_failure_cause.kind == "provider"
+
+
+@pytest.mark.unit
+def test_provider_failure_requires_a_closed_enum_cause() -> None:
+    payload = _routed_failure_payload()
+    del payload["routed_failure_cause"]["cause"]
+
+    with pytest.raises(ValidationError, match="cause"):
+        ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+def test_routed_failure_rejects_an_unknown_cause_discriminator() -> None:
+    payload = _routed_failure_payload()
+    payload["routed_failure_cause"] = {"kind": "unknown"}
+
+    with pytest.raises(ValidationError, match="tag"):
+        ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
 
 
 @pytest.mark.unit
@@ -200,8 +225,8 @@ def test_quality_gate_rejection_cannot_claim_quality_passed() -> None:
     payload["quality_passed"] = True
     payload["routed_failure_cause"] = {
         "kind": "quality_gate_rejection",
-        "quality_bar_evaluation": _quality_bar_evaluation(),
     }
+    payload["quality_bar_evaluation"] = _below_quality_bar_evaluation()
 
     with pytest.raises(ValidationError, match="quality_passed=false"):
         ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
@@ -212,12 +237,90 @@ def test_quality_gate_rejection_is_a_valid_routed_failure_cause() -> None:
     payload = _routed_failure_payload()
     payload["routed_failure_cause"] = {
         "kind": "quality_gate_rejection",
-        "quality_bar_evaluation": _quality_bar_evaluation(),
     }
+    payload["quality_bar_evaluation"] = _below_quality_bar_evaluation()
 
     terminal = ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
 
     assert terminal.routed_failure_cause.kind == "quality_gate_rejection"
+    assert (
+        terminal.quality_bar_evaluation.score_vs_required_bar
+        is EnumQualityScoreComparison.BELOW_BAR
+    )
+
+
+@pytest.mark.unit
+def test_quality_gate_rejection_rejects_non_failing_quality_evidence() -> None:
+    payload = _routed_failure_payload()
+    payload["routed_failure_cause"] = {"kind": "quality_gate_rejection"}
+
+    with pytest.raises(ValidationError, match="quality_gate_rejection requires"):
+        ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("cause", "extra_field"),
+    [
+        (
+            {"kind": "provider", "cause": "provider_error"},
+            "quality_bar_evaluation",
+        ),
+        ({"kind": "quality_gate_rejection"}, "quality_bar_evaluation"),
+    ],
+)
+def test_routed_failure_cause_rejects_nested_duplicate_quality_evaluation(
+    cause: dict[str, Any], extra_field: str
+) -> None:
+    payload = _routed_failure_payload()
+    cause[extra_field] = _below_quality_bar_evaluation()
+    payload["routed_failure_cause"] = cause
+    if cause["kind"] == "quality_gate_rejection":
+        payload["quality_bar_evaluation"] = _below_quality_bar_evaluation()
+
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+def test_quality_gate_rejection_rejects_a_provider_cause_field() -> None:
+    payload = _routed_failure_payload()
+    payload["routed_failure_cause"] = {
+        "kind": "quality_gate_rejection",
+        "cause": "provider_error",
+    }
+    payload["quality_bar_evaluation"] = _below_quality_bar_evaluation()
+
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "payload",
+    [
+        _routed_failure_payload(),
+        {
+            **_routed_failure_payload(),
+            "routed_failure_cause": {"kind": "quality_gate_rejection"},
+            "quality_bar_evaluation": _below_quality_bar_evaluation(),
+        },
+    ],
+)
+def test_routed_failure_round_trip_serializes_quality_evaluation_once(
+    payload: dict[str, Any],
+) -> None:
+    terminal = ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+    serialized = terminal.model_dump(mode="json")
+    restored = ModelDelegationTerminalFailedRoutedV2.model_validate_json(
+        terminal.model_dump_json()
+    )
+
+    assert restored == terminal
+    assert serialized["quality_bar_evaluation"] == payload["quality_bar_evaluation"]
+    assert "quality_bar_evaluation" not in serialized["routed_failure_cause"]
+    assert terminal.model_dump_json().count('"quality_bar_evaluation"') == 1
 
 
 @pytest.mark.unit
@@ -262,13 +365,9 @@ def test_completed_quality_invariants_are_preserved(
 
 
 @pytest.mark.unit
-def test_quality_failure_above_bar_requires_failed_criteria() -> None:
+def test_provider_failure_above_bar_requires_failed_criteria() -> None:
     payload = _routed_failure_payload()
     payload["failed_acceptance_criteria"] = ()
-    payload["routed_failure_cause"] = {
-        "kind": "quality_gate_rejection",
-        "quality_bar_evaluation": _quality_bar_evaluation(),
-    }
 
     with pytest.raises(ValidationError, match="must carry failed_acceptance_criteria"):
         ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
