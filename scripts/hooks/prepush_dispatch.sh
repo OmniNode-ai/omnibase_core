@@ -1069,6 +1069,10 @@ prepush_remote_run() {
 set -uo pipefail
 RUNDIR="$1"; UV="$2"; HEAD_SHA="$3"; ARGV_SHA="$4"; ORIGIN="$5"; WORKROOT="$6"
 BASE_REF="${7:-}"; BASE_SHA="${8:-}"; SLOT_INDEX="${9:-1}"
+# The repo this bundle carries, so the registry root below can name it. Passed
+# rather than derived: RUNDIR's basename is `<repo>-<sha12>-<pid>` and repo
+# names contain both separators, so splitting it back apart is guesswork.
+REPO_NAME="${10:-}"
 cd "$RUNDIR" || exit 90
 # Re-arm BOTH guards explicitly. ssh forwards neither, so without this the
 # remote repo's own suite -- which subprocesses this very hook from
@@ -1183,6 +1187,38 @@ git checkout -q "$HEAD_SHA" 2> /dev/null || true
 if [ -n "$BASE_REF" ] && [ -n "$BASE_SHA" ] && git rev-parse --verify --quiet "${BASE_SHA}^{commit}" > /dev/null 2>&1; then
   git update-ref "refs/remotes/origin/${BASE_REF#origin/}" "$BASE_SHA" 2> /dev/null || true
 fi
+# THE TRANSPLANTED TREE NEEDS A REGISTRY ROOT (OMN-17741).
+# `ssh` forwards no environment, so without this the suite runs with OMNI_HOME
+# UNSET on every target host. Code that resolves a workspace then either fails,
+# or -- the case actually measured -- falls back to a home-relative default
+# that EXISTS on the lab Macs and is TCC-denied to `sshd`. OMN-17459 recorded
+# that shape: a real full suite on h101, 17,883 tests in 13m58s, 12 failures,
+# ALL 12 green locally, one root cause. Same standing as the PATH block above
+# -- a false red here HARD-BLOCKS a push, so this is part of the verdict
+# meaning anything, not a convenience.
+#
+# The value is CONSTRUCTED HERE, never forwarded. Exporting the launcher's
+# `$OMNI_HOME` would be strictly worse than leaving it unset: that path exists
+# on every lab Mac and is TCC-denied, so forwarding converts a fail-fast into a
+# PermissionError deep inside a test. What is true of a transplant is that it
+# contains exactly ONE repo, so a one-entry registry naming that repo is an
+# honest workspace root and a lie about nothing. It is the same shape a
+# vendoring repo's own aislop-sweep smoke test already builds for itself (a
+# tmpdir plus a symlink to the repo under its own name).
+#
+# It lives under $RUNDIR, so `prepush_remote_gc` already sweeps it and this
+# adds no new class of stranded state. Failure to build it exits 98 -- an
+# unhandled wrapper exit produces no MARKER, which the dispatcher classifies as
+# "NO EVIDENCE" and walks past to the next fit host. That is the correct
+# classification: a workspace that could not be created on the TARGET says
+# nothing about the tree under test.
+[ -n "$REPO_NAME" ] || { echo "NO_REPO_NAME_FOR_REGISTRY_ROOT" >&2; exit 98; }
+rm -rf "$RUNDIR/omni_home" 2> /dev/null || true
+mkdir -p "$RUNDIR/omni_home" || { echo "REGISTRY_ROOT_MKDIR_FAILED" >&2; exit 98; }
+ln -s "$RUNDIR/tree" "$RUNDIR/omni_home/$REPO_NAME" || { echo "REGISTRY_ROOT_LINK_FAILED" >&2; exit 98; }
+OMNI_HOME="$RUNDIR/omni_home"
+export OMNI_HOME
+
 "$UV" sync --all-extras > "$RUNDIR/sync.log" 2>&1 || { echo "UV_SYNC_FAILED" >&2; exit 93; }
 # THE COLLECTED COUNT IS READ FROM A MACHINE-READABLE REPORT (OMN-17787).
 # `--junitxml` is asked for HERE, next to the invocation, because the count it
@@ -1313,7 +1349,7 @@ REMOTE
   # dispatch_to_lab_host treats as a placement miss and walks past. Fail-closed
   # posture is unchanged -- a genuine remote RED still carries a marker and
   # still refuses the push.
-  remote_cmd="cd '${rundir}' || exit 96; chmod +x prepush_smart_tests.sh || exit 97; ./prepush_smart_tests.sh '${rundir}' '${uv}' '${head_sha}' '${argv_sha}' '$(hostname -s 2> /dev/null || echo unknown):$$' '${workroot}' '${base_ref}' '${base_sha}' '${slot_idx}'; rc=\$?; echo REMOTE_WRAPPER_EXIT=\$rc; echo \$rc > '${rundir}/WRAPPER_EXIT'; exit 0"
+  remote_cmd="cd '${rundir}' || exit 96; chmod +x prepush_smart_tests.sh || exit 97; ./prepush_smart_tests.sh '${rundir}' '${uv}' '${head_sha}' '${argv_sha}' '$(hostname -s 2> /dev/null || echo unknown):$$' '${workroot}' '${base_ref}' '${base_sha}' '${slot_idx}' '${repo}'; rc=\$?; echo REMOTE_WRAPPER_EXIT=\$rc; echo \$rc > '${rundir}/WRAPPER_EXIT'; exit 0"
   tcmd="$(_prepush_timeout_cmd)"
   if [ -n "$tcmd" ]; then
     "$tcmd" "$PREPUSH_REMOTE_EXEC_TIMEOUT_SECONDS" \
