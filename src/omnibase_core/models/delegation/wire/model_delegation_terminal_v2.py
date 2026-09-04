@@ -66,7 +66,6 @@ class ModelDelegationProviderFailureCause(BaseModel):
 
     kind: Literal["provider"]
     cause: EnumDelegationTerminalFailureCause
-    quality_bar_evaluation: ModelQualityBarEvaluation
 
 
 class ModelDelegationQualityGateRejection(BaseModel):
@@ -75,7 +74,6 @@ class ModelDelegationQualityGateRejection(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     kind: Literal["quality_gate_rejection"]
-    quality_bar_evaluation: ModelQualityBarEvaluation
 
 
 type TypeDelegationRoutedFailureCause = Annotated[
@@ -185,6 +183,7 @@ class ModelDelegationTerminalFailedRoutedV2(_ModelDelegationTerminalCommonV2):
     backend_ref: str = Field(..., min_length=1)
     pricing_manifest_version: int = Field(..., ge=1)
     quality_passed: bool
+    quality_bar_evaluation: ModelQualityBarEvaluation
     failed_acceptance_criteria: tuple[str, ...]
     terminal_failure_reason: str = Field(..., min_length=1)
     routed_failure_cause: TypeDelegationRoutedFailureCause
@@ -222,9 +221,13 @@ class ModelDelegationTerminalFailedRoutedV2(_ModelDelegationTerminalCommonV2):
             msg = "routed failed terminal requires quality_passed=false"
             raise ValueError(msg)
 
-        comparison = (
-            self.routed_failure_cause.quality_bar_evaluation.score_vs_required_bar
-        )
+        comparison = self.quality_bar_evaluation.score_vs_required_bar
+        if (
+            self.routed_failure_cause.kind == "quality_gate_rejection"
+            and comparison is not EnumQualityScoreComparison.BELOW_BAR
+        ):
+            msg = "quality_gate_rejection requires below required_quality_bar"
+            raise ValueError(msg)
         if (
             comparison is EnumQualityScoreComparison.AT_OR_ABOVE_BAR
             and not self.failed_acceptance_criteria
