@@ -1184,14 +1184,78 @@ if [ -n "$BASE_REF" ] && [ -n "$BASE_SHA" ] && git rev-parse --verify --quiet "$
   git update-ref "refs/remotes/origin/${BASE_REF#origin/}" "$BASE_SHA" 2> /dev/null || true
 fi
 "$UV" sync --all-extras > "$RUNDIR/sync.log" 2>&1 || { echo "UV_SYNC_FAILED" >&2; exit 93; }
-"$UV" run pytest "${ARGV[@]}" --ignore=tests/integration --tb=short > "$RUNDIR/suite.log" 2>&1
+# THE COLLECTED COUNT IS READ FROM A MACHINE-READABLE REPORT (OMN-17787).
+# `--junitxml` is asked for HERE, next to the invocation, because the count it
+# yields is the only number in the whole dispatch that separates "this host ran
+# the selection green" from "this host ran NOTHING and exited 0".
+#
+# THE DEFECT THIS CLOSES, measured 2026-09-04 by reading this repo's own run
+# dirs on h101 and h105 (/Users/Shared/onex-prepush/runs/) read-only. EVERY run
+# dir present for this repo on either host recorded `collected=0` -- serial and
+# parallel alike, over suites of ~44,700 passing tests:
+#
+#   <repo>-378075e85050-2669   SERIAL, 3:57:27
+#     suite.log:9  ESC[1mcollecting ... ESC[0mcollected 44730 items / 4 skipped
+#     MARKER       exit=0  collected=0
+#   <repo>-d839c27cb88a-83571  -n4 --dist=loadgroup, 1:34:58, 44683 passed
+#     suite.log:13 4 workers [44741 items]
+#     MARKER       exit=0  collected=0
+#
+# TWO INDEPENDENT CAUSES, and the upstream copy of this file has only the first:
+#
+#   1. `pytest-xdist` 3.8.0 REPLACES the collector banner with the worker
+#      banner, so `^collected N items` matches nothing. Since OMN-17603 made
+#      `-n<k> --dist=loadgroup` the remote policy here, that is every parallel
+#      dispatch.
+#   2. The SERIAL banner does not match either, and never has. `tests/pytest.ini`
+#      addopts carries `--color=yes` and this leg's rootdir resolves into
+#      `tests/`, so the banner arrives as
+#      `ESC[1mcollecting ... ESC[0mcollected 44730 items / 4 skipped`. That line
+#      does not BEGIN with `collected`, so the `^` anchor fails. Upstream ships
+#      no `tests/pytest.ini`, so its banner is uncolored and its fallback works.
+#
+# A banner is a HUMAN-READABLE artifact whose shape is decided by whichever
+# plugins are loaded and whether color is on; the JUnit document is not, and it
+# is identical serial, parallel and colorized. The two banner forms are kept as
+# ordered fallbacks -- now read through a normalizer, so cause 2 cannot make
+# them inert -- so a host that somehow cannot write the report degrades to
+# banner accuracy rather than to a zero. And a zero is now NO EVIDENCE at the
+# acceptance branch, so every path here fails CLOSED.
+#
+# The report lands in $RUNDIR beside MARKER/suite.log, so `prepush_remote_gc`
+# already sweeps it on the same 3-day rule and this strands no new state.
+"$UV" run pytest "${ARGV[@]}" --ignore=tests/integration --tb=short \
+  --junitxml="$RUNDIR/junit.xml" > "$RUNDIR/suite.log" 2>&1
 rc=$?
 if command -v sha256sum > /dev/null 2>&1; then
   LOGSHA=$(sha256sum "$RUNDIR/suite.log" | cut -d" " -f1)
 else
   LOGSHA=$(shasum -a 256 "$RUNDIR/suite.log" | cut -d" " -f1)
 fi
-COLLECTED=$(sed -n 's/^collected \([0-9][0-9]*\) item.*/\1/p' "$RUNDIR/suite.log" | tail -1)
+# Normalize BEFORE any banner is read: strip SGR colour codes and turn CR
+# progress writes into newlines, so every `^` below anchors on a real start of
+# line. Without this the colorized collector banner (cause 2 above) is
+# unreachable by any anchored expression. The ESC byte is materialized with
+# printf rather than written as `\x1b`, which BSD sed does not understand.
+ESC_SGR=$(printf '\033')
+prepush_banner_stream() {
+  tr '\r' '\n' < "$RUNDIR/suite.log" | sed "s/${ESC_SGR}\[[0-9;]*[a-zA-Z]//g"
+}
+COLLECTED=""
+if [ -s "$RUNDIR/junit.xml" ]; then
+  COLLECTED=$(sed -n 's/.*<testsuite [^>]*tests="\([0-9][0-9]*\)".*/\1/p' "$RUNDIR/junit.xml" | head -1)
+fi
+[ -n "$COLLECTED" ] || COLLECTED=$(prepush_banner_stream |
+  sed -n 's/^[0-9][0-9]* workers \[\([0-9][0-9]*\) item.*/\1/p' | tail -1)
+# Both serial forms in one pass, each anchored: the bare banner, and the
+# `collecting ... collected N items` form the status line leaves behind once the
+# colour codes are stripped. `collecting [^A-Za-z]*collected` is deliberately
+# tight -- only the dots and spaces pytest writes may sit between the two words
+# -- so a test id such as `...::test_absent-not_collected` cannot be read as a
+# count.
+[ -n "$COLLECTED" ] || COLLECTED=$(prepush_banner_stream |
+  sed -n -e 's/^collected \([0-9][0-9]*\) item.*/\1/p' \
+         -e 's/^collecting [^A-Za-z]*collected \([0-9][0-9]*\) item.*/\1/p' | tail -1)
 [ -n "$COLLECTED" ] || COLLECTED=0
 {
   echo "head_sha=$HEAD_SHA"
@@ -1299,6 +1363,15 @@ REMOTE
   m_argv="$(printf '%s\n' "$marker" | sed -n 's/^argv_sha=//p')"
   m_exit="$(printf '%s\n' "$marker" | sed -n 's/^exit=//p')"
   m_collected="$(printf '%s\n' "$marker" | sed -n 's/^collected=//p')"
+  # OMN-17787: the marker is REMOTE input, so the count is normalized to a
+  # number BEFORE it is compared or interpolated. `[ "$m_collected" -eq 0 ]` on
+  # a non-numeric value is a bash ERROR whose status is 2 -- which reads as
+  # "not zero" and falls straight through into the PASS branch -- and the same
+  # value is interpolated unquoted into the receipt's JSON below, where garbage
+  # produces a receipt that will not parse.
+  case "$m_collected" in
+    '' | *[!0-9]*) m_collected=0 ;;
+  esac
   m_log="$(printf '%s\n' "$marker" | sed -n 's/^log_sha256=//p')"
   if [ "$m_head" != "$head_sha" ] || [ "$m_argv" != "$argv_sha" ] || [ -z "$m_exit" ] || [ -z "$m_log" ]; then
     log "remote leg: marker from ${label} does not bind to this tree/argv -- NO EVIDENCE"
@@ -1308,6 +1381,34 @@ REMOTE
   log_sha="$m_log"
 
   prepush_emit_receipt "{\"ts\":\"$(date -u '+%Y-%m-%dT%H:%M:%SZ')\",\"repo\":\"$(prepush_json_escape "$repo")\",\"head_sha\":\"${head_sha}\",\"chosen_host\":\"$(prepush_json_escape "$PREPUSH_PICK_HOSTNAME")\",\"chosen_label\":\"${label}\",\"chosen_slot\":${slot_idx},\"host_mode\":\"${PREPUSH_PICK_MODE}\",\"host_load_ratio\":\"${PREPUSH_PICK_RATIO}\",\"all_probed_ratios\":\"$(prepush_json_escape "$PREPUSH_PROBE_LOG")\",\"selection_paths\":\"$(prepush_json_escape "$(prepush_remote_argv | tr '\n' ' ')")\",\"pytest_policy\":\"$(prepush_json_escape "$(prepush_remote_pytest_flags | tr '\n' ' ')")\",\"pytest_exit\":${m_exit},\"collected\":${m_collected:-0},\"duration_s\":${dur},\"suite_log_sha256\":\"${log_sha}\"}"
+
+  # A COUNT OF ZERO IS NO EVIDENCE, NOT A PASS (OMN-17787).
+  #
+  # Acceptance used to be exit-code-only: `m_collected` was logged, written into
+  # the durable receipt, and never compared to anything. A remote run that
+  # collected genuinely ZERO tests and exited 0 was therefore accepted as a
+  # PASS and satisfied the escalation -- and the sentence it printed,
+  # "${label} ran 0 tests green", is byte-identical to the one the banner
+  # parsing defect produced for a run of 44,683 real tests. The gate could not
+  # tell the two apart, so it treated both as evidence. In this repo that was
+  # not an occasional confusion: the count was zero on every remote run.
+  #
+  # NO EVIDENCE (rc 1), deliberately, and NOT a refusal (rc 3): an empty
+  # selection says nothing about the tree. `dispatch_to_lab_host` walks to the
+  # next fit host on rc 1 and, if none answers, falls through to the
+  # local/same-host/grant ladder that ends in die() -- so this is fail-CLOSED
+  # without turning a placement miss into a red gate.
+  #
+  # pytest exit 5 is EXIT_NOTESTSCOLLECTED and is folded in here for the same
+  # reason: it means nothing ran, which is the same statement about the tree as
+  # a missing marker. It used to return 3 and die() the push. Every OTHER
+  # non-zero exit stays a RED -- a collection ERROR is exit 2, not 5, and must
+  # still refuse.
+  if [ "$m_collected" -eq 0 ] && { [ "$m_exit" -eq 0 ] || [ "$m_exit" -eq 5 ]; }; then
+    log "remote leg: ${label} recorded ZERO collected tests (pytest exit ${m_exit}) on ${head_sha} -- NO EVIDENCE (not a pass, not a failure). A green exit over an empty run cannot be told apart from a green exit over ${heavy_what}, so it does not satisfy it; trying the next fit host."
+    prepush_remote_gc "$ssh_t" "$rundir" "$workroot"
+    return 1
+  fi
 
   if [ "$m_exit" -ne 0 ]; then
     # The refusal below tells the developer to read the failing output. The
