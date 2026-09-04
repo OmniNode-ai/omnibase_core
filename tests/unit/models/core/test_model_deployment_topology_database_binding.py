@@ -43,6 +43,16 @@ from omnibase_core.models.core.model_deployment_topology_database_binding import
 
 pytestmark = pytest.mark.unit
 
+# Logical secret NAMES and deliberately-synthetic DSN literals used as negative
+# fixtures. No real credential appears in this file; the pragmas mark that fact
+# once, here, instead of on every use site.
+_SECRET_REF = "database.application.tenant_projection.dsn"  # pragma: allowlist secret
+_OTHER_SECRET_REF = "database.application.other.dsn"  # pragma: allowlist secret
+_DSN_SHAPED_REF = "postgresql://user:pw@host:5432/db"  # pragma: allowlist secret
+_PASTED_DSN = (
+    "postgresql://tenant_projection_writer:pw@host:5432/db"  # pragma: allowlist secret
+)
+
 
 class TestDsnEnvCarrier:
     """The legacy env carrier keeps working, unchanged, on its own."""
@@ -72,9 +82,9 @@ class TestSecretRefCarrier:
         binding = ModelDeploymentTopologyDatabaseBinding(
             database_ref="application",
             principal="tenant_projection_writer",
-            secret_ref="database.application.tenant_projection.dsn",
+            secret_ref=_SECRET_REF,
         )
-        assert binding.secret_ref == "database.application.tenant_projection.dsn"
+        assert binding.secret_ref == _SECRET_REF
         assert binding.dsn_env is None
 
     @pytest.mark.parametrize(
@@ -85,7 +95,7 @@ class TestSecretRefCarrier:
             "database..dsn",
             "database.application.",
             ".database.application",
-            "postgresql://user:pw@host:5432/db",
+            _DSN_SHAPED_REF,
             "database.application.tenant projection.dsn",
         ],
     )
@@ -112,7 +122,7 @@ class TestExactlyOneCarrier:
                 database_ref="application",
                 principal="tenant_projection_writer",
                 dsn_env="ONEX_TENANT_DB_URL",
-                secret_ref="database.application.tenant_projection.dsn",
+                secret_ref=_SECRET_REF,
             )
         message = str(excinfo.value)
         assert "exactly one" in message
@@ -145,10 +155,10 @@ class TestBindingStaysSecretFree:
         binding = ModelDeploymentTopologyDatabaseBinding(
             database_ref="application",
             principal="tenant_projection_writer",
-            secret_ref="database.application.tenant_projection.dsn",
+            secret_ref=_SECRET_REF,
         )
         with pytest.raises(ValidationError):
-            binding.secret_ref = "database.application.other.dsn"  # type: ignore[misc]
+            binding.secret_ref = _OTHER_SECRET_REF  # type: ignore[misc]
 
     def test_binding_forbids_unknown_fields(self) -> None:
         """An unmodelled carrier (e.g. a pasted `dsn:`) cannot slip through."""
@@ -156,6 +166,6 @@ class TestBindingStaysSecretFree:
             ModelDeploymentTopologyDatabaseBinding(
                 database_ref="application",
                 principal="tenant_projection_writer",
-                secret_ref="database.application.tenant_projection.dsn",
-                dsn="postgresql://tenant_projection_writer:pw@host:5432/db",
+                secret_ref=_SECRET_REF,
+                dsn=_PASTED_DSN,
             )
