@@ -1229,8 +1229,22 @@ def test_the_verdict_is_read_from_a_marker_not_the_ssh_exit_code() -> None:
     assert "NO EVIDENCE" in lib
     # The streaming pipeline's status belongs to sed(1), and `|| true` follows
     # it, so nothing about the verdict can come from that command's exit code.
-    stream = lib[lib.index("./prepush_smart_tests.sh '${rundir}'") :][:400]
-    assert "|| true" in stream
+    #
+    # OMN-17603 lifted the wrapper invocation into `$remote_cmd` (it is now
+    # issued twice -- once timeout-wrapped, once not, depending on whether
+    # timeout(1) exists on the pusher), so the invocation and the pipeline that
+    # streams it are no longer adjacent and a fixed window after the invocation
+    # would pin nothing. Assert the property directly instead, on EVERY
+    # streaming branch: a branch added later without the discard would
+    # reintroduce exactly the fail-open shape this test exists for.
+    assert "./prepush_smart_tests.sh '${rundir}'" in lib, (
+        "the remote command no longer invokes the wrapper"
+    )
+    streams = [m.start() for m in re.finditer(r'"\$remote_cmd" 2>&1 \|', lib)]
+    assert streams, "no streaming invocation of $remote_cmd found"
+    for idx in streams:
+        window = lib[idx : idx + 200]
+        assert 'sed "s/^/[${label}] /" >&2 || true' in window, window
 
 
 def test_a_shadow_host_verdict_never_authorizes() -> None:
@@ -2118,11 +2132,34 @@ def test_the_picker_library_is_byte_identical_to_the_shipped_upstream() -> None:
     neither repo's `test_the_picker_library_is_not_edited_into_a_repo_specific_fork`
     can fire on the other's wording. Re-sync of the REST of the file (OMN-17392
     and the host-table columns it needs) is deliberately NOT bundled here.
+
+    THE BUMP IN OMN-17603 is this file's dev content (the OMN-17606 probe fix
+    above, digest ``6813caf5``) PLUS the remote-leg execution-policy seam ported
+    from omnibase_infra ``abc144fe6`` (OMN-17564) as a SUBSET, not a verbatim
+    re-copy. Two facts make a verbatim copy impossible
+    today, and both are somebody else's ticket:
+
+    1. That upstream file reads ``heavy_local`` at COLUMN 13 and ranks on a
+       ``placement_tier`` at column 14 (OMN-17392/OMN-17485). This repo's
+       ``prepush_hosts.tsv`` has thirteen columns with ``note`` at 13, so a
+       verbatim copy would read every row's free-text note as its heavy_local
+       policy. The columns must land here first.
+    2. That upstream file names this repo in three comment lines, which
+       ``test_the_picker_library_is_not_edited_into_a_repo_specific_fork``
+       below rejects outright.
+
+    So the two copies are NOT byte-identical and this constant cannot pretend
+    they are. What was ported is the OMN-17564 execution-policy seam verbatim
+    in behavior: same constant names, same ``PREPUSH_PICK_CORES`` name, same
+    ``min(row cores, cap)`` rule. One index diverges as a CONSEQUENCE of (1)
+    above -- upstream reads ``cores`` at fit-record f11 because its record
+    carries a ``tier_rank`` at f10; this record is nine fields, so ``cores``
+    appends at f10.
     """
     digest = hashlib.sha256(LIB.read_bytes()).hexdigest()
     assert (
         digest
-        == "6813caf5a8b9b13c9de2ecdb1702ebd74a9829055b391e9dfc39507da51bc67d"  # pragma: allowlist secret
+        == "7f44d020132ad43e2d8fd3458ad9e1a064c31d51538e5656384ca87ef5dd60ad"  # pragma: allowlist secret
     ), (
         "scripts/hooks/prepush_dispatch.sh has diverged from the pinned "
         "upstream copy. If the change is intentional, update this digest in "
