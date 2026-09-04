@@ -21,6 +21,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_DELEGATION_TERMINAL_V2_PATH = Path(
+    "src/omnibase_core/models/delegation/wire/model_delegation_terminal_v2.py"
+)
+
 
 class ClassDefinitionDetector(ast.NodeVisitor):
     """AST visitor to detect module-level class definitions in Python code.
@@ -179,6 +183,13 @@ def should_exclude_file(filepath: Path) -> bool:
     if filepath.name == "singleton_holders.py":
         return True
 
+    # Task 1.1's concrete terminal-state DTOs are structurally coupled and
+    # intentionally share one canonical delegation-wire module. Keep the
+    # exemption tied to that module: an identically named file elsewhere must
+    # remain subject to this validator.
+    if filepath == _DELEGATION_TERMINAL_V2_PATH:
+        return True
+
     # Exclude the COMPUTE-validator scan I/O trios (OMN-13294 / OMN-13497).
     # validation/<name>/models.py co-locates the tightly-coupled
     # ScanInput + Finding + ScanResult DTOs of one generated COMPUTE validator
@@ -200,7 +211,6 @@ def should_exclude_file(filepath: Path) -> bool:
         "model_routing_config.py",  # ModelTierModel + ModelRoutingTier + ModelDelegationConfig (hierarchy)
         "model_quality_gate.py",  # ModelQualityGateInput + ModelQualityGateResult (paired gate DTOs)
         "model_bifrost_delegation_config.py",  # 7 tightly-coupled Bifrost gateway config DTOs
-        "model_delegation_terminal_v2.py",  # Task 1.1's closed terminal states and structural evidence models
         "model_golden_chain_fixture.py",  # ModelGoldenChainProvenance + ModelGoldenChainFixture (fixture + embedded provenance); pre-existing OMN-13499 file surfaced by spdx-headers CI gate wiring (OMN-13576); split tracked separately
     }
 
