@@ -359,13 +359,19 @@ async def test_client_mode_accepts_its_own_terminal_after_a_foreign_one(
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_host_mode_terminal_is_not_correlation_filtered(tmp_path: Path) -> None:
-    """Counter-assertion: host mode keeps first-terminal-wins semantics.
+async def test_host_mode_terminal_is_correlation_filtered_too(tmp_path: Path) -> None:
+    """SUPERSEDED BY OMN-15660: host mode is filtered on the same terms.
 
-    In-process hosting on the in-memory bus has exactly one producer of the
-    terminal topic — this run's own handler — so adding a filter there would
-    change offline behaviour for no gain. Scoping the filter to client mode is
-    deliberate, and this test pins that scope.
+    This test previously asserted the opposite — that first-terminal-wins was
+    deliberately preserved in host mode because "in-process hosting on the
+    in-memory bus has exactly one producer of the terminal topic". That premise
+    is true only of the in-memory bus, which dies with the process. Host mode is
+    the DEFAULT (``host_handlers=True``) and the only mode any production caller
+    uses, so on a Kafka-backed lane the unfiltered path meant `onex delegate`
+    adopted whatever terminal the topic still retained from an earlier run —
+    observed live 2026-09-02, a run returning a 12-minute-old FAILED terminal as
+    its own success. The predicate is now armed wherever a correlation id
+    reached the wire, in either mode.
     """
     correlation_id = uuid.uuid4()
     runtime = _build_runtime(
@@ -381,7 +387,14 @@ async def test_host_mode_terminal_is_not_correlation_filtered(tmp_path: Path) ->
     )
     result = await task
 
-    assert result is EnumWorkflowResult.COMPLETED
+    assert result is EnumWorkflowResult.TIMEOUT, (
+        "host mode accepted a foreign terminal — the default (and only "
+        "production) mode still returns another run's result as its own"
+    )
+    written = json.loads(
+        (tmp_path / "state" / "workflow_result.json").read_text(encoding="utf-8")
+    )
+    assert "terminal_payload" not in written
 
 
 # ---------------------------------------------------------------------------
