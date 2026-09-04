@@ -1654,6 +1654,10 @@ def remote_run_env(tmp_path: Path) -> dict[str, Path]:
     fake_uv = tmp_path / "uv"
     fake_uv.write_text(
         "#!/bin/sh\n"
+        # OMN-17741: record the workspace root the wrapper handed us. Written
+        # on BOTH the `sync` and the pytest invocation, so a wrapper that
+        # establishes the registry too late (after `uv sync`) is still caught.
+        'printf "%s\\n" "${OMNI_HOME:-<unset>}" > "$OMNI_HOME_WITNESS"\n'
         'if [ "$1" = "sync" ]; then exit 0; fi\n'
         # Proof that the target-host slot is held for the DURATION of the run,
         # not merely acquired and dropped before the expensive part.
@@ -1669,6 +1673,7 @@ def remote_run_env(tmp_path: Path) -> dict[str, Path]:
         "rundir": rundir,
         "uv": fake_uv,
         "witness": witness,
+        "omni_home_witness": tmp_path / "omni_home_witness",
         "head": head,  # type: ignore[dict-item]
     }
 
@@ -1678,13 +1683,28 @@ def _run_wrapper(
     *,
     extra_env: dict[str, str] | None = None,
     extra_argv: list[str] | None = None,
+    repo: str = "omnibase_core",
 ) -> subprocess.CompletedProcess[str]:
     env = {
         **os.environ,
         "LOCK_PROBE": str(env_info["workroot"] / "LOCK"),
         "LOCK_WITNESS": str(env_info["witness"]),
+        "OMNI_HOME_WITNESS": str(env_info["omni_home_witness"]),
     }
+    # FIDELITY, not tidiness (OMN-17741): `ssh` forwards no environment, so on
+    # a real target host the wrapper starts with OMNI_HOME UNSET. This pytest
+    # process inherits a developer shell where it IS set, and leaking that in
+    # would let a wrapper that establishes nothing pass the registry assertions
+    # on the launcher's value.
+    env.pop("OMNI_HOME", None)
     env.update(extra_env or {})
+    # The wrapper's trailing positionals are optional on the remote side but
+    # POSITIONAL, so they are padded here rather than appended: a caller that
+    # passes only BASE_REF/BASE_SHA must still land the repo name in slot 10.
+    tail = list(extra_argv or [])
+    base_ref = tail[0] if len(tail) > 0 else ""
+    base_sha = tail[1] if len(tail) > 1 else ""
+    slot = tail[2] if len(tail) > 2 and tail[2] else "1"
     return subprocess.run(
         [
             "bash",
@@ -1695,7 +1715,10 @@ def _run_wrapper(
             "argvsha",
             "origin-host:1",
             str(env_info["workroot"]),
-            *(extra_argv or []),
+            base_ref,
+            base_sha,
+            slot,
+            repo,
         ],
         capture_output=True,
         text=True,
@@ -1732,6 +1755,128 @@ def test_the_remote_leg_holds_the_target_hosts_lock_for_the_whole_run(
     )
 
 
+# =============================================================================
+# The transplanted tree needs a registry root (OMN-17741)
+# =============================================================================
+# Ported from omnibase_infra (OMN-17741, merge 4053dc3c065b0bc94e98001a28ea9415
+# ffd782cb, PR #3161) under OMN-17754, and re-run here against THIS repo's copy
+# of the library. `ssh` forwards no environment, so the wrapper starts with
+# OMNI_HOME unset on every target host. Code the suite runs that resolves a
+# workspace then either fails, or -- the case actually measured upstream --
+# falls back to a home-relative default that EXISTS on the lab Macs and is
+# TCC-denied to `sshd`. OMN-17459 recorded that shape: a real full suite on
+# h101, 17,883 tests in 13m58s, 12 failures, all 12 green locally, one root
+# cause.
+#
+# A false red here HARD-BLOCKS a push (`dispatch_to_lab_host` rc=3 -> `die`,
+# "a remote red is never satisfied by minting an override grant"), so this is
+# part of the verdict meaning anything -- the same standing the PATH-parity
+# block already has.
+
+
+def test_the_remote_wrapper_gives_the_transplanted_tree_a_registry_root(
+    remote_run_env: dict[str, Path],
+) -> None:
+    """The value must be a REAL registry the remote process can write, holding
+    the transplanted repo under its own name -- not an unset variable and not a
+    bare rundir, which contains no directory named for the repo at all."""
+    result = _run_wrapper(remote_run_env, repo="omnibase_core")
+    assert result.returncode == 0, result.stderr
+
+    recorded = remote_run_env["omni_home_witness"].read_text().strip()
+    assert recorded != "<unset>", (
+        "the suite ran with no OMNI_HOME: every workspace-resolving call site "
+        "in the transplanted tree is left to guess, and the lab Macs have a "
+        "TCC-denied ~/Code/omni_home for it to guess wrong onto"
+    )
+    registry = Path(recorded)
+    assert registry == remote_run_env["rundir"] / "omni_home", recorded
+    assert registry.is_dir()
+
+    linked = registry / "omnibase_core"
+    assert linked.is_symlink(), "the repo must be reachable under its own name"
+    assert linked.resolve() == (remote_run_env["rundir"] / "tree").resolve()
+    assert (linked / "tests" / "test_a.py").is_file(), (
+        "the registry entry must resolve to the tree that was actually cloned"
+    )
+
+    # Writability is the whole point: the measured failure was PermissionError
+    # on mkdir, not a missing path.
+    (registry / ".onex_state" / "probe").mkdir(parents=True)
+
+
+def test_the_registry_root_is_established_on_target_never_inherited(
+    remote_run_env: dict[str, Path],
+) -> None:
+    """Forwarding the LAUNCHER's OMNI_HOME is strictly worse than leaving it
+    unset: the launcher's workspace path exists on every lab Mac and is
+    TCC-denied to `sshd`, so forwarding converts a fail-fast into a
+    PermissionError deep inside a test. Pin that an inherited value loses."""
+    launcher_value = "/nonexistent/launcher/Code/omni_home"
+    result = _run_wrapper(
+        remote_run_env,
+        repo="omnibase_core",
+        extra_env={"OMNI_HOME": launcher_value},
+    )
+    assert result.returncode == 0, result.stderr
+    recorded = remote_run_env["omni_home_witness"].read_text().strip()
+    assert recorded != launcher_value, (
+        "the wrapper forwarded the launcher's workspace path to the target host"
+    )
+    assert recorded == str(remote_run_env["rundir"] / "omni_home")
+    assert (Path(recorded) / "omnibase_core").is_symlink()
+
+
+def test_the_registry_root_is_named_by_the_dispatch_not_hardcoded(
+    remote_run_env: dict[str, Path],
+) -> None:
+    """One wrapper serves omnibase_infra, omnibase_core and omnimarket, so the
+    repo name has to travel with the dispatch. `prepush_remote_run` already
+    computes it as `basename "$REPO_ROOT"`; assert it is passed through as the
+    tenth positional, and that a dispatch naming a different repo gets a
+    registry entry under THAT name."""
+    lib = LIB.read_text(encoding="utf-8")
+    idx = lib.index('remote_cmd="cd ')
+    invocation = lib[idx : lib.index("\n", idx)]
+    assert "'${repo}'" in invocation, (
+        "the remote command does not pass the repo name to the wrapper: " + invocation
+    )
+    remote = _remote_wrapper_text()
+    assert "REPO_NAME=" in remote, "the wrapper does not bind a repo name positional"
+    for hardcoded in ("omni_home/omnibase_core", "omni_home/omnimarket"):
+        assert hardcoded not in remote
+
+    result = _run_wrapper(remote_run_env, repo="some-other-repo")
+    assert result.returncode == 0, result.stderr
+    registry = Path(remote_run_env["omni_home_witness"].read_text().strip())
+    assert (registry / "some-other-repo").is_symlink()
+    assert not (registry / "omnibase_core").exists()
+
+
+def test_the_registry_root_lives_under_the_gc_swept_workroot() -> None:
+    """It must not become a new class of stranded state. `prepush_remote_gc`
+    sweeps `<workroot>/runs`, so the registry belongs inside the rundir."""
+    remote = _remote_wrapper_text()
+    idx = remote.index("OMNI_HOME=")
+    assignment = remote[idx : remote.index("\n", idx)]
+    assert "$RUNDIR/" in assignment, assignment
+
+
+def test_a_dispatch_that_names_no_repo_is_no_evidence_not_a_verdict(
+    remote_run_env: dict[str, Path],
+) -> None:
+    """A registry that cannot be built on the TARGET says nothing about the
+    tree under test. The wrapper exits 98 before the suite runs, which produces
+    no MARKER -- the classification the dispatcher already walks past."""
+    result = _run_wrapper(remote_run_env, repo="")
+    assert result.returncode == 98, (result.returncode, result.stderr)
+    assert "NO_REPO_NAME_FOR_REGISTRY_ROOT" in result.stderr
+    assert not (remote_run_env["rundir"] / "MARKER").exists()
+    assert not (remote_run_env["workroot"] / "LOCK").exists(), (
+        "the slot must be released even when the registry cannot be built"
+    )
+
+
 def test_the_remote_leg_releases_the_lock_even_when_the_suite_fails(
     remote_run_env: dict[str, Path],
 ) -> None:
@@ -1758,7 +1903,9 @@ def test_the_remote_wrapper_locks_a_numbered_lockdir_for_slot_two(
         **os.environ,
         "LOCK_PROBE": str(slot2_probe),
         "LOCK_WITNESS": str(remote_run_env["witness"]),
+        "OMNI_HOME_WITNESS": str(remote_run_env["omni_home_witness"]),
     }
+    env.pop("OMNI_HOME", None)
     result = subprocess.run(
         [
             "bash",
@@ -1772,6 +1919,7 @@ def test_the_remote_wrapper_locks_a_numbered_lockdir_for_slot_two(
             "",
             "",
             "2",
+            "omnibase_core",
         ],
         capture_output=True,
         text=True,
@@ -2095,95 +2243,82 @@ def test_the_wrapper_runs_normally_when_no_base_ref_is_supplied(
 # =============================================================================
 
 
-def test_the_picker_library_is_byte_identical_to_the_shipped_upstream() -> None:
-    """`prepush_dispatch.sh` is a BYTE-FOR-BYTE copy of omnibase_infra's.
+# =============================================================================
+# Vendored-file provenance: digest + upstream commit (OMN-17754)
+# =============================================================================
+# Three repos are meant to run one picker, not three that drifted. The obvious
+# assertion -- "all three copies are identical" -- is NOT implementable from a
+# repo-local harness: this suite cannot read a sibling checkout, and a test
+# that reaches for `$OMNI_HOME/omnibase_infra` would pass or fail on whether an
+# unrelated clone happens to exist. So each repo pins the sha256 of the copy IT
+# ships, and a local edit is a deliberate, reviewed digest bump rather than a
+# silent fork.
+#
+# Until OMN-17754 this repo pinned that digest as a literal inside this test,
+# which detects a LOCAL edit but says nothing about whether the copy is STALE
+# -- measured 2026-09-01, core's copy sat a whole feature (OMN-17392) behind
+# upstream before its own PR merged, and nothing here could say so. The record
+# now lives in scripts/hooks/prepush_vendored.tsv, the same shape omnimarket
+# adopted under OMN-17435: each row carries the upstream COMMIT alongside the
+# digest, so "has upstream moved?" is answerable by anyone with network access
+# without this repo needing that access at push time. The header of that file
+# records where and why this repo's copy diverges from a verbatim take.
 
-    Three repos are meant to run one picker, not three that drifted. The
-    obvious assertion -- "all three copies are identical" -- is NOT
-    implementable from a repo-local harness: this suite cannot read a sibling
-    checkout, and a test that reaches for `$OMNI_HOME/omnibase_infra` would
-    pass or fail on whether an unrelated clone happens to exist. OMN-17159's
-    DoD names the workable form instead: each repo pins the sha256 of the copy
-    IT ships, so a local edit is a deliberate, reviewed digest bump rather than
-    a silent fork.
+VENDORED = REPO_ROOT / "scripts" / "hooks" / "prepush_vendored.tsv"
 
-    Updating this constant is the correct move when the upstream library
-    legitimately changes -- re-copy the file, re-run, paste the new digest, and
-    say in the PR body which upstream commit it tracks. Editing the library
-    WITHOUT touching this constant is the thing that cannot happen quietly.
 
-    WHAT THIS DIGEST TRACKS, AND WHAT IT DOES NOT (OMN-17606). The name of this
-    test overstates what it can currently assert, and has since OMN-17159: this
-    repo's copy is 1114 lines while omnibase_infra's is 1511, because core never
-    took the OMN-17392 memory-aware admission block. The digest therefore pins
-    "core's copy has not changed without review", not "core's copy equals
-    omnibase_infra's" -- the two have not been byte-identical for some time, and
-    saying so here is cheaper than letting the name keep asserting it.
+def _vendored_rows() -> list[list[str]]:
+    rows = []
+    for line in VENDORED.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0]
+        if not line.strip():
+            continue
+        rows.append(line.split("\t"))
+    return rows
 
-    The bump in OMN-17606 is the three-defect slot-probe fix (zsh `nomatch`
-    killing the `held` glob, one remote leg counted as two processes, and an
-    existing-but-empty QUEUE file shifting every field left). The shared block
-    it lands in -- from the `# multi-slot row it lets a legitimately-held`
-    comment through the end of `prepush_slot_state` -- is BYTE-IDENTICAL to the
-    copy already merged on omnimarket dev (omnimarket#2276, omnimarket dev
-    b79d8983), verified by `diff` at 2026-09-03T08:55Z. That parity is the
-    point: the comment above the probe names only ticket ids and host labels,
-    never a repo, so the next vendor re-sync of lines 140-300 sees no diff and
-    neither repo's `test_the_picker_library_is_not_edited_into_a_repo_specific_fork`
-    can fire on the other's wording. Re-sync of the REST of the file (OMN-17392
-    and the host-table columns it needs) is deliberately NOT bundled here.
 
-    THE BUMP IN OMN-17754 is the OMN-17787 port from omnibase_infra (that
-    repo's merge ``812d0b5451c1b157dd764cc26a83b9c7e12bcf71``, PR #3179): the
-    remote wrapper now asks pytest for a ``--junitxml`` report and reads the
-    collected count out of it, the marker's ``collected`` field is normalized
-    to a number before it is compared, and acceptance refuses a green run that
-    collected zero as NO EVIDENCE rather than accepting it as a PASS.
+def test_every_vendored_file_matches_its_recorded_digest() -> None:
+    """The shipped bytes and the provenance record cannot disagree.
 
-    ONE DELIBERATE DIVERGENCE FROM UPSTREAM, and it is not cosmetic. Upstream's
-    two banner fallbacks are read straight off ``suite.log``; here they are read
-    through a normalizer that strips SGR colour codes and CR progress writes
-    first. ``tests/pytest.ini`` addopts carries ``--color=yes`` and this leg's
-    rootdir resolves into ``tests/``, so this repo's serial collector banner
-    arrives as ``ESC[1mcollecting ... ESC[0mcollected N items`` -- a line that
-    does not begin with ``collected``. Upstream ships no ``tests/pytest.ini``
-    and so never sees the colorized form. A verbatim copy would have shipped a
-    fallback that is dead in this repo, which is measurably how the count read
-    zero here even on runs with no xdist involved.
-
-    THE BUMP IN OMN-17603 is this file's dev content (the OMN-17606 probe fix
-    above, digest ``6813caf5``) PLUS the remote-leg execution-policy seam ported
-    from omnibase_infra ``abc144fe6`` (OMN-17564) as a SUBSET, not a verbatim
-    re-copy. Two facts make a verbatim copy impossible
-    today, and both are somebody else's ticket:
-
-    1. That upstream file reads ``heavy_local`` at COLUMN 13 and ranks on a
-       ``placement_tier`` at column 14 (OMN-17392/OMN-17485). This repo's
-       ``prepush_hosts.tsv`` has thirteen columns with ``note`` at 13, so a
-       verbatim copy would read every row's free-text note as its heavy_local
-       policy. The columns must land here first.
-    2. That upstream file names this repo in three comment lines, which
-       ``test_the_picker_library_is_not_edited_into_a_repo_specific_fork``
-       below rejects outright.
-
-    So the two copies are NOT byte-identical and this constant cannot pretend
-    they are. What was ported is the OMN-17564 execution-policy seam verbatim
-    in behavior: same constant names, same ``PREPUSH_PICK_CORES`` name, same
-    ``min(row cores, cap)`` rule. One index diverges as a CONSEQUENCE of (1)
-    above -- upstream reads ``cores`` at fit-record f11 because its record
-    carries a ``tier_rank`` at f10; this record is nine fields, so ``cores``
-    appends at f10.
+    Updating a vendored file is a legitimate, expected operation -- re-copy (or
+    re-port) from the named upstream path, update BOTH the sha256 and the
+    upstream_commit in the same commit, and name the upstream revision in the
+    PR body. Editing the file WITHOUT touching the record is the thing that
+    cannot happen quietly.
     """
-    digest = hashlib.sha256(LIB.read_bytes()).hexdigest()
-    assert (
-        digest
-        == "ab998c7c147c0b926a236212caf12165a3412ab4a2f1e3059872e699dc396541"  # pragma: allowlist secret
-    ), (
-        "scripts/hooks/prepush_dispatch.sh has diverged from the pinned "
-        "upstream copy. If the change is intentional, update this digest in "
-        "the same commit and name the upstream revision it tracks; if it is "
-        "not, restore the file from omnibase_infra"
-    )
+    rows = _vendored_rows()
+    assert rows, f"expected at least one provenance row in {VENDORED}"
+    for row in rows:
+        assert len(row) == 7, f"malformed provenance row: {row!r}"
+        rel, _repo, _upath, commit, _branch, digest, _copied = row
+        target = REPO_ROOT / rel
+        assert target.is_file(), f"provenance names a missing file: {rel}"
+        actual = hashlib.sha256(target.read_bytes()).hexdigest()
+        assert actual == digest, (
+            f"{rel} has diverged from its recorded copy "
+            f"({_repo}@{commit}:{_upath}). If the change is intentional, update "
+            f"the sha256 in {VENDORED.name} in the same commit and say which "
+            "upstream revision it now tracks; if it is not, restore the file"
+        )
+        assert len(commit) == 40, (
+            f"upstream_commit for {rel} is not a full 40-char sha: {commit!r}"
+        )
+        assert all(c in "0123456789abcdef" for c in commit), (
+            f"upstream_commit for {rel} is not lowercase hex: {commit!r}"
+        )
+
+
+def test_the_picker_library_is_covered_by_the_provenance_record() -> None:
+    """The picker specifically -- not merely "some file" -- must be pinned.
+
+    A provenance file that happened to list only the two Python helpers would
+    leave the fail-closed placement logic itself unguarded, which is the one
+    file whose silent fork actually changes where a suite runs.
+    """
+    covered = {row[0] for row in _vendored_rows()}
+    assert "scripts/hooks/prepush_dispatch.sh" in covered
+    assert "scripts/hooks/prepush_override_grant.py" in covered
+    assert "scripts/hooks/pytest_full_suite_host_guard.py" in covered
 
 
 def test_the_picker_library_is_not_edited_into_a_repo_specific_fork() -> None:
