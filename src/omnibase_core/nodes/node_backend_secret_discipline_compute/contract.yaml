@@ -17,9 +17,11 @@ contract_version: {major: 1, minor: 0, patch: 0}
 description: >
   Backend secret-ref / credential-ref discipline gate (OMN-13305, ported from OMN-12971). Validates that
   committed routing-authority config contains no literal PEM/SA-JSON/bearer credentials, and that every
-  authenticated cloud backend declares a logical secret reference (secret_ref / api_key_ref / api_key_env
-  / credential_ref). ADC and API-key auth are mutually exclusive. Returns a ModelBackendSecretDisciplineOutput
-  verdict. #magic___^_^___line
+  authenticated cloud backend declares a logical secret reference (secret_ref / api_key_ref / credential_ref).
+  ADC and API-key auth are mutually exclusive. api_key_env is NOT a logical reference (OMN-17931, OMN-17372
+  AC3): it names a house environment variable, so a cloud backend declaring only api_key_env is reported
+  as missing a reference and api_key_env beside a real reference is reported as migration debt. Returns
+  a ModelBackendSecretDisciplineOutput verdict. #magic___^_^___line
 handler_routing:
   default_handler: handler:NodeBackendSecretDisciplineCompute
 

@@ -247,14 +247,18 @@ def test_local_tier_exempt() -> None:
 
 
 @pytest.mark.unit
-def test_api_key_env_counts_as_logical_ref() -> None:
+def test_api_key_env_does_not_count_as_logical_ref() -> None:
+    """OMN-17931 (OMN-17372 AC3): api_key_env names a HOUSE env var, not a ref."""
     import yaml
 
     data = yaml.safe_load(
         "backends:\n  - backend_id: cloud-x\n    tier: cheap_cloud\n    api_key_env: SOME_ENV_VAR\n"
     )
     violations = scan_bifrost_backends("ok.yaml", data)
-    assert violations == []
+    assert violations
+    assert any(
+        "cloud-x" in v.message and "api_key_env" in v.message for v in violations
+    )
 
 
 @pytest.mark.unit

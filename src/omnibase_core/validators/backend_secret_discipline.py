@@ -29,11 +29,17 @@ What it checks (over the supplied config files)
    - bearer/api-key-shaped literals (``Bearer <...>``, ``sk-...``, ``AIza...``,
      ``ya29.`` OAuth tokens, Google API keys)
 2. Every CLOUD backend that requires authentication declares a LOGICAL
-   reference (``secret_ref`` / ``api_key_ref`` / ``api_key_env`` for API-key
-   backends, or ``credential_ref`` for ADC backends) — not an inline value.
+   reference (``secret_ref`` / ``api_key_ref`` for API-key backends, or
+   ``credential_ref`` for ADC backends) — not an inline value.
 3. ADC and API-key auth are mutually exclusive on a single backend
-   (``credential_ref`` must not coexist with ``secret_ref`` / ``api_key_ref`` /
-   ``api_key_env``).
+   (``credential_ref`` must not coexist with ``secret_ref`` / ``api_key_ref``).
+4. ``api_key_env`` is NOT a logical reference (OMN-17931, OMN-17372 AC3). It
+   names a HOUSE environment variable, so a backend carrying it resolves a
+   platform-held provider credential from the runtime env. A cloud backend
+   whose only credential declaration is ``api_key_env`` is reported as missing
+   a logical reference; ``api_key_env`` beside a real reference is reported as
+   migration debt. This aligns the gate with the OMN-12878 guard in
+   ``omnibase_core.validation.api_key_ref_discipline``.
 
 The literal-credential scan applies to every supplied file. The backend-ref /
 exclusivity scan applies only to files that parse to a mapping carrying a
@@ -192,23 +198,32 @@ def scan_literal_credentials(rel: str, text: str) -> list[Finding]:
     return findings
 
 
+# The only credential declarations that are LOGICAL references resolved through
+# the secret store. ``api_key_env`` is deliberately absent: it names a HOUSE
+# environment variable, so a backend carrying it resolves a platform-held
+# provider credential from the runtime env — the path OMN-17372 AC3 requires to
+# be unreachable by construction (OMN-17931; aligned with the OMN-12878 guard in
+# ``omnibase_core.validation.api_key_ref_discipline``).
+_LOGICAL_REF_KEYS: tuple[str, ...] = ("secret_ref", "api_key_ref", "credential_ref")
+_LEGACY_ENV_KEY = "api_key_env"
+
+
+def _declares(backend: dict[str, object], key: str) -> bool:
+    value = backend.get(key)
+    return isinstance(value, str) and bool(value.strip())
+
+
 def _backend_has_logical_ref(backend: dict[str, object]) -> bool:
-    for key in ("secret_ref", "api_key_ref", "api_key_env", "credential_ref"):
-        value = backend.get(key)
-        if isinstance(value, str) and value.strip():
-            return True
-    return False
+    return any(_declares(backend, key) for key in _LOGICAL_REF_KEYS)
+
+
+def _backend_declares_legacy_env(backend: dict[str, object]) -> bool:
+    return _declares(backend, _LEGACY_ENV_KEY)
 
 
 def _backend_auth_is_exclusive(backend: dict[str, object]) -> bool:
-    credential = backend.get("credential_ref")
-    has_credential = isinstance(credential, str) and bool(credential.strip())
-    has_api_key = False
-    for key in ("secret_ref", "api_key_ref", "api_key_env"):
-        value = backend.get(key)
-        if isinstance(value, str) and value.strip():
-            has_api_key = True
-            break
+    has_credential = _declares(backend, "credential_ref")
+    has_api_key = _declares(backend, "secret_ref") or _declares(backend, "api_key_ref")
     return not (has_credential and has_api_key)
 
 
@@ -227,14 +242,36 @@ def scan_backends(rel: str, data: dict[str, object]) -> list[Finding]:
             continue
         if tier in _LOCAL_TIERS:
             continue
-        if tier in _CLOUD_TIERS and not _backend_has_logical_ref(backend):
+        has_logical_ref = _backend_has_logical_ref(backend)
+        declares_env = _backend_declares_legacy_env(backend)
+        if tier in _CLOUD_TIERS and not has_logical_ref:
+            if declares_env:
+                detail = (
+                    "only the legacy 'api_key_env' is declared — that is a HOUSE "
+                    "environment-variable name, not a logical secret reference "
+                    "(OMN-17931 / OMN-17372 AC3); declare a store-resolved ref and "
+                    "remove api_key_env"
+                )
+            else:
+                detail = "none declared"
             findings.append(
                 Finding(
                     "backend-ref",
                     rel,
                     f"{rel}: cloud backend {backend_id!r} (tier={tier!r}) requires a "
-                    f"logical secret reference (secret_ref/api_key_ref/api_key_env for "
-                    f"API-key auth, or credential_ref for ADC) — none declared",
+                    f"logical secret reference (secret_ref/api_key_ref for API-key "
+                    f"auth, or credential_ref for ADC) — {detail}",
+                )
+            )
+        elif declares_env:
+            findings.append(
+                Finding(
+                    "backend-ref",
+                    rel,
+                    f"{rel}: backend {backend_id!r} carries the legacy 'api_key_env' "
+                    f"beside its logical secret reference — migration debt: the "
+                    f"store-resolved ref is the only credential declaration allowed; "
+                    f"remove api_key_env (OMN-17931 / OMN-17372 AC3)",
                 )
             )
         if not _backend_auth_is_exclusive(backend):
