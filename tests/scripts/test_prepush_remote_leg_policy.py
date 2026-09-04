@@ -80,6 +80,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tomllib
 from pathlib import Path
 
@@ -689,14 +690,26 @@ def test_argv_flags_beat_the_inifile_shadow_that_ate_the_repo_addopts(
     )
 
     def _run_pytest(extra: list[str]) -> str:
+        # `sys.executable -m pytest`, NOT `uv run pytest`. The synthetic tree
+        # is deliberately not a uv project -- its pyproject.toml carries only
+        # `[tool.pytest.ini_options]`, because a `[project]` table is exactly
+        # what this fixture must NOT have to reproduce the shadow. `uv run`
+        # refuses such a tree outright ("No `project` table found in ...") on
+        # the uv that CI resolves, and worse, pointing UV_PROJECT_ENVIRONMENT
+        # at the real repo venv invites `uv run` to sync a throwaway fixture
+        # project INTO the venv running this suite. The interpreter already
+        # executing this test has pytest, xdist and pytest-timeout available
+        # by construction, so invoking it directly is both hermetic and
+        # uv-version-independent.
+        env = {k: v for k, v in os.environ.items() if not k.startswith("PYTEST_")}
         completed = subprocess.run(
-            ["uv", "run", "pytest", "tests/", "--tb=short", *extra],
+            [sys.executable, "-m", "pytest", "tests/", "--tb=short", *extra],
             cwd=tree,
             capture_output=True,
             text=True,
             timeout=600,
             check=False,
-            env={**os.environ, "UV_PROJECT_ENVIRONMENT": str(REPO_ROOT / ".venv")},
+            env=env,
         )
         return completed.stdout + completed.stderr
 
