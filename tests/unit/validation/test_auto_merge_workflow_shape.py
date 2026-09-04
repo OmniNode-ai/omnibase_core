@@ -272,3 +272,161 @@ class TestAutoMergeEnableStepBehavior:
         assert result.returncode == 1
         assert "auto-merge failed:" in result.stdout
         assert "(squash)" not in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# OMN-17875: arming-token guard.
+#
+# Root cause (measured live 2026-09-04T15:20-15:25Z on this repo): the two
+# merge-state-mutating steps armed `gh pr merge --auto` with
+# `secrets.GITHUB_TOKEN`. GitHub completes an armed auto-merge as the identity
+# that armed it, and fires no `push` event for `GITHUB_TOKEN`-authored commits
+# (documented Actions-recursion prevention). Every push-on-`dev` workflow was
+# therefore skipped on every PR that landed through this job::
+#
+#     1bd884e57 (#1645, app/github-actions) -> 0 push runs
+#     d191ffb22 (#1643, jonahgabriel)       -> 12 push runs
+#
+# (`gh api "repos/OmniNode-ai/omnibase_core/actions/runs?head_sha=<full-oid>&event=push"
+# --jq .total_count`.) Over the 30 most recently merged dev PRs, ALL 20 bot
+# merges had zero dev-branch push runs while all 10 human merges had 12-14 --
+# the human counts are the positive control that makes those zeros evidence of
+# absence rather than a broken query (CLAUDE.md rule 16).
+#
+# Fix: arm with `secrets.CROSS_REPO_PAT` -- an existing org secret
+# (`visibility: all`) this repo already consumes in seven other workflows, and
+# the same credential omninode_infra's auto-merge.yml deliberately retained for
+# this exact property (OMN-15769, re-affirmed by OMN-16373). Ported from
+# omnibase_infra#3178.
+#
+# These assertions are the mechanical guard (CLAUDE.md rule 5: enforcement, not
+# detection) so the swap cannot be silently reverted to `GITHUB_TOKEN` -- or
+# "modernised" to an `onexbot-occ-writer` App installation token, which the
+# OMN-16373 controlled probe proved suppresses push events identically.
+# ---------------------------------------------------------------------------
+
+# The steps that cause a commit to be attributed to the token: arming the
+# merge, and update-branch/enqueue. Both must carry the non-suppressing
+# identity.
+MUTATING_STEP_NAMES: tuple[str, ...] = (
+    "Enable auto-merge",
+    "Enqueue armed PR and verify it entered the queue",
+)
+
+# The step that only reads PR/repo metadata. It lives in the `pre-check` job,
+# not `auto-merge`, and is safe under the default token because it creates no
+# commit.
+READ_ONLY_STEP_JOB = "pre-check"
+READ_ONLY_STEP_NAME = "Resolve PR number and author without checkout"
+
+REQUIRED_TOKEN_EXPR = "${{ secrets.CROSS_REPO_PAT }}"
+
+# Substrings that would reintroduce the suppression on a different credential.
+APP_TOKEN_MARKERS: tuple[str, ...] = (
+    "create-github-app-token",
+    "ONEXBOT_OCC_APP_ID",
+    "ONEXBOT_OCC_PRIVATE_KEY",
+)
+
+
+def _step_in_job(job_name: str, step_name: str) -> dict[str, object]:
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    steps = data["jobs"][job_name]["steps"]
+    matches = [
+        step
+        for step in steps
+        if isinstance(step, dict) and step.get("name") == step_name
+    ]
+    assert len(matches) == 1, (
+        f"expected exactly one step named {step_name!r} in job {job_name!r}, "
+        f"got {len(matches)}"
+    )
+    return matches[0]
+
+
+@pytest.mark.parametrize("step_name", MUTATING_STEP_NAMES)
+def test_merge_state_mutating_steps_arm_with_cross_repo_pat(step_name: str) -> None:
+    """The arming/enqueue steps must authenticate as CROSS_REPO_PAT.
+
+    A GITHUB_TOKEN- or App-token-authored merge commit fires no push event, so
+    this assertion is the difference between ci.yml / security-scan.yml /
+    cross-repo-validation.yml (and nine more) running on every dev merge and
+    running on none of them.
+    """
+    step = _step_in_job("auto-merge", step_name)
+    env = step.get("env")
+    assert isinstance(env, dict)
+    token = env.get("GH_TOKEN")
+    assert token == REQUIRED_TOKEN_EXPR, (
+        f"{step_name!r} must arm with {REQUIRED_TOKEN_EXPR}; found {token!r}. "
+        "GITHUB_TOKEN- and GitHub-App-token-authored merges suppress "
+        "push-triggered workflow runs on dev (OMN-17875 / OMN-16373)."
+    )
+
+
+@pytest.mark.parametrize("step_name", MUTATING_STEP_NAMES)
+def test_mutating_steps_have_no_github_token_fallback(step_name: str) -> None:
+    """No ``|| secrets.GITHUB_TOKEN`` fallback on the mutating steps.
+
+    A fallback would restore the defect silently on any run where the PAT is
+    unavailable, which is exactly the invisible-failure shape this ticket
+    exists to remove: the job would report success while starving every
+    downstream push workflow.
+    """
+    step = _step_in_job("auto-merge", step_name)
+    env = step.get("env")
+    assert isinstance(env, dict)
+    token = str(env.get("GH_TOKEN", ""))
+    assert "GITHUB_TOKEN" not in token, (
+        f"{step_name!r} must not fall back to GITHUB_TOKEN; found {token!r}"
+    )
+
+
+def test_read_only_resolve_step_stays_on_default_token() -> None:
+    """The read-only ``pre-check`` step keeps GITHUB_TOKEN — it creates no commit.
+
+    Narrow blast radius is deliberate: the PAT is only granted to the steps
+    that actually need the non-suppressing identity.
+    """
+    step = _step_in_job(READ_ONLY_STEP_JOB, READ_ONLY_STEP_NAME)
+    env = step.get("env")
+    assert isinstance(env, dict)
+    assert env.get("GH_TOKEN") == "${{ secrets.GITHUB_TOKEN }}"
+
+    run = step.get("run", "")
+    assert isinstance(run, str)
+    for mutating_verb in (
+        "gh pr merge",
+        "gh pr update-branch",
+        "enqueuePullRequest",
+        "git push",
+    ):
+        assert mutating_verb not in run, (
+            f"{READ_ONLY_STEP_NAME!r} performs {mutating_verb!r} but runs under "
+            "GITHUB_TOKEN; move it to a CROSS_REPO_PAT step or the suppression "
+            "returns."
+        )
+
+
+def test_no_app_token_mint_is_introduced() -> None:
+    """An onexbot-occ-writer App token is not a valid substitute here.
+
+    The OMN-16373 controlled probe pushed commit ``38ffe1f4`` under the App
+    identity and the push-triggered marker workflow did not fire, while the
+    ``jonahgabriel`` control push (``fd534b2a``) fired run 32562988366.
+    """
+    raw = WORKFLOW_PATH.read_text()
+    body = raw.split("name: Auto-Merge", 1)[1]
+    for marker in APP_TOKEN_MARKERS:
+        assert marker not in body, (
+            f"auto-merge.yml must not mint a GitHub App token ({marker!r}); "
+            "App-token pushes suppress push-triggered runs identically to "
+            "GITHUB_TOKEN (OMN-16373)."
+        )
+
+
+def test_header_documents_the_defect_and_cites_the_evidence_tickets() -> None:
+    """The in-file rationale must survive, so the next reader does not revert it."""
+    header = WORKFLOW_PATH.read_text().split("name: Auto-Merge", 1)[0]
+    for citation in ("OMN-17875", "OMN-16373", "CROSS_REPO_PAT"):
+        assert citation in header, f"auto-merge.yml header must cite {citation}"
