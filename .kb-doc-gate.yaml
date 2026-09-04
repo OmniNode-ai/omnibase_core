@@ -1,0 +1,38 @@
+# KB doc gate configuration (OMN-16589 built the gate, OMN-17172 rolled it out,
+# OMN-16606 completed this repo's migration and flipped it to strict).
+#
+# strict: any tracked markdown outside the allowed set fails the check, whether
+# or not the pull request touched it. This is the end-state mode for a repo
+# whose Wave-4 migration (epic OMN-16602) has landed — it is what keeps a
+# scrubbed repo scrubbed. omnibase_core's prose documentation now lives in the
+# OmniNode knowledge base; the root README's link carries the signposting role.
+#
+# The allowed set is the default in omniclaude/scripts/kb_doc_gate.py: root
+# README.md, root CLAUDE.md and .claude/**, CHANGELOG*.md, LICENSE*, root
+# SECURITY.md, .github/**, skills|commands|agents/**, and the three tests/**
+# fixture subtrees. This repo adds exactly one glob to it, below, and that
+# glob is machine-read configuration rather than prose.
+mode: strict
+
+# The ONE addition to the default allowed set, and it is not prose.
+#
+# `architecture-handshakes/repos/<repo>.md` are the fleet's per-repo handshake
+# SOURCE contracts, machine-consumed and cryptographically bound:
+# `architecture-handshakes/check-handshake.sh` reads `source_sha256:` out of a
+# repo's installed `.claude/architecture-handshake.md` and compares it to the
+# sha256 of the matching file here, failing the `Check architecture handshake`
+# job (exit 2) when the source is absent. Verified 2026-09-04 on this branch:
+# `.claude/architecture-handshake.md` carries
+# `source_sha256: 3553cfd0922697c12358831f9ad7a2f0c032794772de0c2e88185b547c7fa52a`
+# and `shasum -a 256 architecture-handshakes/repos/omnibase_core.md` returns the
+# same digest. omnibase_core IS the source of truth for these (see the comment
+# in `.github/workflows/check-handshake.yml`), and every downstream repo checks
+# this repo out and runs the same script against these paths.
+#
+# That places them squarely inside ruling (2) of the 2026-09-01 OMN-16602
+# comment -- markdown a program loads as executable configuration stays -- and
+# outside the prose scope of this migration. The human-readable narrative that
+# accompanied them (`architecture-handshakes/README.md`, 301 lines) IS prose and
+# IS deleted by this change; only the machine-read contracts remain.
+allowed:
+  - "architecture-handshakes/repos/*.md"

@@ -1,5 +1,10 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
+## v0.47.3 (2026-09-02)
+
+### Changes
+- chore move this repository's prose documentation to the OmniNode knowledge base and flip the KB doc gate to `mode: strict`. 199 markdown files outside the gate's allowed set are gone: 113 to the public knowledge base, 37 to the internal one, 47 deleted as stubs or dated artifacts, and `CONTRIBUTING.md`/`CODE_OF_CONDUCT.md` moved under `.github/`. No public API changes; the packaged tree changes only in that the eight generated validators no longer ship a `GENERATION_PROVENANCE.md` beside them, and their docstrings now cite that record in the knowledge base instead.
+
 ## v0.47.0 (2026-08-29)
 
 ### Breaking Changes
@@ -1438,7 +1443,7 @@ Since these models are now `frozen=True`, they are **inherently thread-safe for 
 | Creating modified copies with `model_copy()` | Yes | Creates new instance, no shared mutable state |
 | Passing models between async tasks | Yes | No race conditions on immutable data |
 
-This aligns with the ONEX thread safety model documented in [docs/guides/THREADING.md](docs/guides/THREADING.md). Workflow contract models now join other frozen models (like `ModelComputeInput`, `ModelReducerInput`, etc.) in being safe for concurrent access without synchronization.
+This aligns with the ONEX thread safety model documented in [the ONEX threading guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-threading.md). Workflow contract models now join other frozen models (like `ModelComputeInput`, `ModelReducerInput`, etc.) in being safe for concurrent access without synchronization.
 
 **Migration Guide**:
 
@@ -1679,7 +1684,7 @@ The default value of `MixinEventBus.STRICT_BINDING_MODE` has been changed from `
 **Rationale**:
 - Fail-fast behavior catches thread-unsafe patterns in production before they cause subtle race conditions
 - Warnings can be missed in CI/CD pipelines and logs, but errors are immediately visible
-- This aligns with ONEX thread safety principles documented in [docs/guides/THREADING.md](docs/guides/THREADING.md)
+- This aligns with ONEX thread safety principles documented in [the ONEX threading guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-threading.md)
 
 **Migration Guide**:
 
@@ -2465,7 +2470,7 @@ Actions now include `lease_id` and `epoch` for idempotent retries, preventing du
 
 ### Migration Guide (v0.3.x to v0.4.0)
 
-> **Estimated Migration Time**: 30-60 minutes for typical projects. **Full Guide**: See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for comprehensive migration instructions with complete examples.
+> **Estimated Migration Time**: 30-60 minutes for typical projects. **Full Guide**: See the declarative-node migration guide (now in the OmniNode internal knowledge base) for comprehensive migration instructions with complete examples.
 
 #### Quick Migration Checklist
 
@@ -2500,7 +2505,7 @@ class MyReducer(NodeReducer):
 #### 3. Adopt FSM/Workflow Patterns
 - **Reducer nodes**: Implement `ModelIntent` emission instead of direct state updates
 - **Orchestrator nodes**: Use `ModelAction` with lease management for coordination
-- See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for detailed examples
+- See the declarative-node migration guide (now in the OmniNode internal knowledge base) for detailed examples
 
 #### 4. Update Error Handling
 ```python
@@ -2540,7 +2545,7 @@ class MyReducer(NodeReducerBase):
 - Legacy imports (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) will **fail immediately** - no deprecation warnings
 - The `omnibase_core.nodes.legacy` namespace **does not exist**
 - All nodes must use FSM-driven (`NodeReducer`) or workflow-driven (`NodeOrchestrator`) patterns
-- See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for migration instructions
+- See the declarative-node migration guide (now in the OmniNode internal knowledge base) for migration instructions
 
 ---
 

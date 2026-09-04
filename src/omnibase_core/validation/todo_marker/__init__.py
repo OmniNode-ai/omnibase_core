@@ -9,7 +9,7 @@ scanner for agent-left TODO/FIXME/HACK markers, produced by the canonical genera
 live model and accepted ONLY because it passed a deterministic acceptance corpus
 (``node_generation_consumer.validator_corpora.corpus_todo_marker.TODO_MARKER_CORPUS``)
 in the hardened sandbox — the corpus verdict, not the LLM, is the acceptance
-authority (OMN-13289). See ``GENERATION_PROVENANCE.md``.
+authority (OMN-13289). See the validator's generation-provenance record in the OmniNode internal knowledge base.
 
 Architecture (§1A — validator = COMPUTE node over a swappable bus), mirroring the
 G1 local-paths canary and the G2 private-IP validator:

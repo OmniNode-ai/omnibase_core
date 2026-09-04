@@ -1,7 +1,7 @@
 # import-linter contract — intra-core dependency-layering oracle (OMN-14216)
 #
 # Encodes the DIRECTION of imports between omnibase_core's architectural
-# sub-packages, per ADR-001, ADR-005, and docs/architecture/DEPENDENCY_INVERSION.md.
+# sub-packages, per ADR-001, ADR-005, and https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-dependency-inversion.md.
 # This is the enforcement oracle every later decoupling change verifies against:
 # a new illegal back-edge fails `lint-imports`; the current known back-edges are
 # frozen below as an explicit, annotated allowlist to be burned down under the
@@ -151,11 +151,9 @@ name = Execution-tier packages must not import nodes (direct)
 # file has zero production consumers anywhere in the OmniNode org (verified by
 # exhaustive grep across every canonical repo) but IS referenced as a
 # documented "Service Wrappers" pattern from 6 architecture/tutorial docs
-# (docs/architecture/overview.md, docs/architecture/NODE_CLASS_HIERARCHY.md,
-# docs/architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md,
-# docs/guides/node-building/03_EFFECT_NODE_TUTORIAL.md,
-# docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md,
-# docs/reference/SERVICE_WRAPPERS.md). Severing the 4 edges means either
+# (the omnibase_core overview, node class hierarchy, ecosystem directory
+# structure, node-building tutorials, and service-wrappers reference, all in the
+# OmniNode knowledge base). Severing the 4 edges means either
 # relocating infra_bases.py into nodes/ or retiring the documented pattern —
 # an architecture call out of scope for a lint-contract ticket, not a
 # mechanical import removal. Per this ticket's own precondition contingency

@@ -74,7 +74,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "2423622dc22413cc48dc86c623484359251b1046235dc61d3b8fd947512cd69e"  # pragma: allowlist secret
     ),
     "core-infra-boundary": (
-        "403fa52e3d6f4b8954bc692c6ec40d133278cc00cc34807fa7552732866275ad"  # pragma: allowlist secret
+        "a6fa1e4ffb7740fc365e526a88e488cccf2d1f08474c6e6b2f2cbe8bdb95f85d"  # pragma: allowlist secret
     ),
     "check-deterministic-skills": (
         "e9092b6a2e64c9dcc5d1d89ac7171a0e84547dbd1dfc4c962660c522fba99e7a"  # pragma: allowlist secret

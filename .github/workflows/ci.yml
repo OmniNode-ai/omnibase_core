@@ -312,7 +312,7 @@ jobs:
       #   - Protected branches (main/develop): Full scan mode (comprehensive validation)
       #
       # WARNING: Do not modify the branch detection logic without understanding RISK-009.
-      # See: docs/decisions/RISK-009-ci-workflow-modification-risk.md
+      # See the CI-workflow-modification risk record in the OmniNode knowledge base.
       - name: Check for transport import violations (OMN-220)
         id: transport-check
         run: |
@@ -444,7 +444,7 @@ jobs:
           echo "- No Message queues (pika, kombu, celery)" >> $GITHUB_STEP_SUMMARY
           echo "- No gRPC or WebSocket libraries" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "See: docs/decisions/ADR-005-core-infra-dependency-boundary.md" >> $GITHUB_STEP_SUMMARY
+          echo "See: https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-dependency-inversion.md" >> $GITHUB_STEP_SUMMARY
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
@@ -3918,7 +3918,21 @@ jobs:
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             exit 0
           fi
-          gh pr diff "$PR_NUMBER" --repo "$GH_REPO" --name-only > /tmp/pr-files.txt
+          # OMN-16606: NOT `gh pr diff --name-only`. That verb fetches the whole
+          # unified diff and only then filters to names, so GitHub answers
+          # `HTTP 406: the diff exceeded the maximum number of lines (20000)`
+          # and the step exits 1 -- reddening this GATE_JOBS entry, and with it
+          # the required `CI Summary`, for every large PR regardless of content.
+          # Measured on this very PR (#1644, 91,033 deletions): "could not find
+          # pull request diff: HTTP 406 ... PullRequest.diff too_large".
+          # The files API returns names without the diff body and paginates, so
+          # it has no line cap. It does cap at 3000 files; a truncated list can
+          # only ever shrink `files`, and `workflow_only` requires ALL entries
+          # to be under .github/workflows/ with `bool(files)` guarding empty --
+          # so a truncation or an empty response leaves `exempt=false` and the
+          # full compliance check runs. Fail-closed in both directions.
+          gh api "repos/$GH_REPO/pulls/$PR_NUMBER/files" --paginate \
+            --jq '.[].filename' > /tmp/pr-files.txt
           python3 - <<'PY'
           import os
           from pathlib import Path

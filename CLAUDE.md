@@ -130,7 +130,7 @@ This applies **only** to the single-handler path; the event-driven path
 double-emit. Full rationale: `_publish_synthesized_terminal` docstring in
 `src/omnibase_core/runtime/runtime_local.py`.
 
-**See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md), [Canonical Execution Shapes](docs/architecture/CANONICAL_EXECUTION_SHAPES.md)
+**See**: [ONEX Four-Node Architecture](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md), [Canonical Execution Shapes](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-canonical-execution-shapes.md)
 
 ---
 
@@ -142,7 +142,7 @@ double-emit. Full rationale: `_publish_synthesized_terminal` docstring in
 
 **Canonical shapes**: `EVENT_TO_REDUCER`, `EVENT_TO_ORCHESTRATOR`, `INTENT_TO_EFFECT`, `COMMAND_TO_ORCHESTRATOR`, `COMMAND_TO_EFFECT`
 
-**See**: [Canonical Execution Shapes](docs/architecture/CANONICAL_EXECUTION_SHAPES.md), [Execution Shape Examples](docs/architecture/EXECUTION_SHAPE_EXAMPLES.md)
+**See**: [Canonical Execution Shapes](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-canonical-execution-shapes.md), [Execution Shape Examples](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-execution-shape-examples.md)
 
 ---
 
@@ -157,7 +157,7 @@ double-emit. Full rationale: `_publish_synthesized_terminal` docstring in
 
 **Resolution style**: Prefer type-based (`container.get_service(ProtocolLogger)`). String-based allowed for late-binding plugins. Never mix styles within the same module.
 
-**See**: [Container Types](docs/architecture/CONTAINER_TYPES.md), [Dependency Injection](docs/architecture/DEPENDENCY_INJECTION.md)
+**See**: [Container Types](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-container-types.md), [Dependency Injection](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-dependency-injection.md)
 
 ---
 
@@ -185,13 +185,13 @@ double-emit. Full rationale: `_publish_synthesized_terminal` docstring in
 - `# boundary-ok:` - API boundaries
 - `# cleanup-resilience-ok:` - Cleanup must complete
 
-**See**: [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md)
+**See**: [Error Handling Best Practices](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-error-handling-best-practices.md)
 
 ---
 
 ## Project Structure
 
-**See**: [Architecture Overview](docs/architecture/overview.md) for full directory tree.
+**See**: [Architecture Overview](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/omnibase-core-overview.md) for full directory tree.
 
 ### Architecture Extensions
 
@@ -251,7 +251,7 @@ in `extra_forbid_waivers.yaml`.
 
 `ModelPlanContract` carries plan-level enforcement metadata for the plan → epic → tickets → PR → dogfood chain. When adding a new plan, set `epic_id` (Linear epic identifier), `plan_phases`, `success_criteria` (via `ModelDoDItem`), and `halt_conditions` at the top level — not in `context`. The existing `phase: EnumPlanPhase` lifecycle field is distinct from `plan_phases: list[str]` and must not be confused.
 
-**See**: [Pydantic Best Practices](docs/conventions/PYDANTIC_BEST_PRACTICES.md)
+**See**: [Pydantic Best Practices](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-pydantic-best-practices.md)
 
 ---
 
@@ -260,7 +260,7 @@ in `extra_forbid_waivers.yaml`.
 - **TODO policy**: `# TODO(TICKET-ID): ...` — a TODO without a Linear ticket is blocked by the agent-left-marker pre-commit hook.
 - **Type ignores**: specific code + reason — `# type: ignore[arg-type]` with a `NOTE(TICKET-ID):` explanation; never bare `# type: ignore`.
 - **Enum vs Literal**: Enums on external contract surfaces and cross-process boundaries; Literals allowed only in internal parsing glue.
-- **Thread safety**: Do NOT share node instances across threads — nodes are single-request scoped; use thread-local instances. See [Threading Guide](docs/guides/THREADING.md).
+- **Thread safety**: Do NOT share node instances across threads — nodes are single-request scoped; use thread-local instances. See [Threading Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-threading.md).
 
 ---
 
@@ -278,20 +278,20 @@ in `extra_forbid_waivers.yaml`.
 
 | Topic | Document |
 |-------|----------|
-| Documentation Index | `docs/INDEX.md` |
-| Four-Node Architecture | `docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md` |
-| Execution Shapes | `docs/architecture/CANONICAL_EXECUTION_SHAPES.md` |
-| Container Types | `docs/architecture/CONTAINER_TYPES.md` |
-| Node Building Guide | `docs/guides/node-building/README.md` |
-| Declarative Contracts | `docs/architecture/CONTRACT_SYSTEM.md` |
-| Handler System | `docs/contracts/HANDLER_CONTRACT_GUIDE.md` |
-| Claude Code Hooks | `docs/architecture/CLAUDE_CODE_HOOKS.md` |
-| Mixins | `docs/architecture/MIXIN_ARCHITECTURE.md` |
-| Migration Guide | `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md` |
-| Threading | `docs/guides/THREADING.md` |
-| Error Handling | `docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md` |
-| ONEX Terminology | `docs/standards/onex_terminology.md` |
+| Documentation home | https://github.com/OmniNode-ai/knowledge-base |
+| Four-Node Architecture | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md |
+| Execution Shapes | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-canonical-execution-shapes.md |
+| Container Types | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-container-types.md |
+| Node Building Guide | https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md |
+| Declarative Contracts | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-contract-system.md |
+| Handler System | https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-handler-contracts.md |
+| Claude Code Hooks | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-claude-code-hook-models.md |
+| Mixins | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-mixin-architecture.md |
+| Migration guides | OmniNode internal knowledge base (private) |
+| Threading | https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-threading.md |
+| Error Handling | https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-error-handling-best-practices.md |
+| ONEX Terminology | https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/onex-terminology.md |
 
 ---
 
-**Ready?** → [Node Building Guide](docs/guides/node-building/README.md)
+**Ready?** → [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)

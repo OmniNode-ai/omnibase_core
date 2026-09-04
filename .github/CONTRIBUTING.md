@@ -25,9 +25,9 @@ Thank you for your interest in contributing to omnibase_core! This document prov
 ### First Steps
 
 1. **Read the documentation**:
-   - [ONEX Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
-   - [Node Building Guide](docs/guides/node-building/README.md)
-   - [CLAUDE.md](CLAUDE.md) for coding standards and rules
+   - [ONEX Architecture](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md)
+   - [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)
+   - [CLAUDE.md](../CLAUDE.md) for coding standards and rules
 
 2. **Explore the codebase**:
    - Review existing node implementations in `src/omnibase_core/`
@@ -363,9 +363,9 @@ Brief description of changes
 
 ### Resources
 
-- [Documentation](docs/INDEX.md)
-- [Node Building Guide](docs/guides/node-building/README.md)
-- [Node Purity Failure Guide](docs/ci/CORE_PURITY_FAILURE.md) - Fixing CI purity check failures
+- [Documentation](https://github.com/OmniNode-ai/knowledge-base) — the OmniNode knowledge base is this repository's documentation home
+- [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)
+- Node purity failure guide — in the OmniNode internal knowledge base
 - [GitHub Issues](https://github.com/OmniNode-ai/omnibase_core/issues)
 
 ### Questions

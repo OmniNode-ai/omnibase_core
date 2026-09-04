@@ -15,7 +15,7 @@
 #
 # Individual gap entries close as OMN-9048 sub-tickets land. Remove each entry
 # when the corresponding wiring work lands in this repo. See
-# docs/audits/2026-04-17-validator-inventory.md for the per-validator roadmap.
+# the archived validator-inventory audit for the per-validator roadmap.
 #
 # Spec consumer: OMN-9115. Baseline pattern mirrors validate-dict-any-usage
 # (pre-commit-config --max-violations), which is the established ratchet

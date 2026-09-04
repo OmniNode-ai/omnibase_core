@@ -14,8 +14,7 @@ in the hardened sandbox on the FIRST attempt: it flagged every ``violation_fixtu
 (6 base + 9 adversarial mutation) and produced zero findings on every
 ``clean_fixture`` (13, incl. 8 adversarial mutation). The corpus verdict — not the
 LLM's self-report — was the acceptance authority (memory
-``feedback_adversarial_receipts``). See ``GENERATION_PROVENANCE.md`` for the full
-run; the raw generated ``handle(input_data)`` is committed verbatim in
+``feedback_adversarial_receipts``). See the validator's generation-provenance record in the OmniNode internal knowledge base; the raw generated ``handle(input_data)`` is committed verbatim in
 ``omnimarket/docs/evidence/OMN-13569/doc-content-scan.generation.json``.
 
 The invariant — "a documentation file (``*.md`` / ``.mdx`` / ``.rst`` / ``.txt`` /
