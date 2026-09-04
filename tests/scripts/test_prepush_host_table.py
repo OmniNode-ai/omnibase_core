@@ -2529,7 +2529,7 @@ def _remote_run_driver(
         f'PREPUSH_PICK_WORKROOT="{tmp_path}/wb"\n'
         "PREPUSH_PICK_SLOT=1\n"
         "PREPUSH_PICK_HOSTNAME=hostb\n"
-        "PREPUSH_PICK_MODE=authorizing\n"
+        "PREPUSH_PICK_MODE=authorizing\n"  # pragma: allowlist secret
         "PREPUSH_PICK_RATIO=0.10\n"
         "PREPUSH_PICK_CORES=24\n"
         "PREPUSH_PROBE_LOG=stub\n"
