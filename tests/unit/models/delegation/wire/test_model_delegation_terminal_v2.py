@@ -90,6 +90,7 @@ def _routed_failure_payload() -> dict[str, Any]:
         "routed_failure_cause": {
             "kind": "provider",
             "cause": "provider_error",
+            "quality_bar_evaluation": _quality_bar_evaluation(),
         },
     }
 
@@ -138,13 +139,19 @@ def test_shared_base_has_no_nullable_field() -> None:
 @pytest.mark.unit
 @pytest.mark.parametrize(
     "backend_ref",
-    ["https://backend.example/v1", "//backend.example", "mailto:ops@example.com"],
+    [
+        "https://backend.example/v1",
+        "//backend.example",
+        "mailto:ops@example.com",
+        " ",
+        " local-coder ",
+    ],
 )
 def test_backend_ref_rejects_url_or_uri_shape(backend_ref: str) -> None:
     payload = _completed_payload()
     payload["backend_ref"] = backend_ref
 
-    with pytest.raises(ValidationError, match="not a URL or URI"):
+    with pytest.raises(ValidationError, match=r"not a URL or URI|nonblank"):
         ModelDelegationTerminalCompletedV2.model_validate(payload)
 
 
@@ -165,6 +172,26 @@ def test_routed_failure_requires_exactly_one_closed_failure_cause() -> None:
 
     with pytest.raises(ValidationError, match="routed_failure_cause"):
         ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+def test_provider_failure_requires_its_quality_bar_evaluation() -> None:
+    payload = _routed_failure_payload()
+    del payload["routed_failure_cause"]["quality_bar_evaluation"]
+
+    with pytest.raises(ValidationError, match="quality_bar_evaluation"):
+        ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+def test_provider_failure_carries_one_quality_bar_evaluation() -> None:
+    terminal = ModelDelegationTerminalFailedRoutedV2.model_validate(
+        _routed_failure_payload()
+    )
+
+    assert (
+        terminal.routed_failure_cause.quality_bar_evaluation.required_quality_bar == 0.9
+    )
 
 
 @pytest.mark.unit

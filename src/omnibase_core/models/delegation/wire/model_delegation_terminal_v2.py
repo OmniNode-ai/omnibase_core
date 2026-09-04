@@ -10,44 +10,27 @@ not have to infer whether routing or quality evaluation occurred from nulls.
 
 from __future__ import annotations
 
-from enum import StrEnum, unique
 from typing import Annotated, Literal, Self
 from urllib.parse import urlparse
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.enums.enum_delegation_routing_disposition import (
+    EnumDelegationRoutingDisposition,
+)
 from omnibase_core.enums.enum_delegation_terminal_failure_cause import (
     EnumDelegationTerminalFailureCause,
+)
+from omnibase_core.enums.enum_delegation_terminal_outcome import (
+    EnumDelegationTerminalOutcome,
+)
+from omnibase_core.enums.enum_delegation_unrouted_reason import (
+    EnumDelegationUnroutedReason,
 )
 from omnibase_core.enums.enum_quality_score_comparison import (
     EnumQualityScoreComparison,
 )
-
-
-@unique
-class EnumDelegationRoutingDisposition(StrEnum):
-    """Whether terminal processing selected a concrete backend."""
-
-    ROUTED = "routed"
-    UNROUTED = "unrouted"
-
-
-@unique
-class EnumDelegationTerminalOutcome(StrEnum):
-    """The terminal outcome of a delegation attempt."""
-
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-
-@unique
-class EnumDelegationUnroutedReason(StrEnum):
-    """Why routing did not select a backend."""
-
-    NO_ELIGIBLE_BACKEND = "no_eligible_backend"
-    ROUTING_POLICY_REJECTED = "routing_policy_rejected"
-    ROUTING_CONFIGURATION_INVALID = "routing_configuration_invalid"
 
 
 class ModelQualityBarEvaluation(BaseModel):
@@ -83,6 +66,7 @@ class ModelDelegationProviderFailureCause(BaseModel):
 
     kind: Literal["provider"]
     cause: EnumDelegationTerminalFailureCause
+    quality_bar_evaluation: ModelQualityBarEvaluation
 
 
 class ModelDelegationQualityGateRejection(BaseModel):
@@ -156,6 +140,11 @@ class ModelDelegationTerminalCompletedV2(_ModelDelegationTerminalCommonV2):
     @classmethod
     def validate_backend_ref(cls, value: str) -> str:
         """Keep a routed backend reference opaque and non-URL-shaped."""
+        if value != value.strip() or not value:
+            msg = (
+                "backend_ref must be nonblank and must not have surrounding whitespace"
+            )
+            raise ValueError(msg)
         parsed = urlparse(value)
         if parsed.scheme or parsed.netloc:
             msg = "backend_ref must be a backend identifier, not a URL or URI"
@@ -204,6 +193,11 @@ class ModelDelegationTerminalFailedRoutedV2(_ModelDelegationTerminalCommonV2):
     @classmethod
     def validate_backend_ref(cls, value: str) -> str:
         """Keep a routed backend reference opaque and non-URL-shaped."""
+        if value != value.strip() or not value:
+            msg = (
+                "backend_ref must be nonblank and must not have surrounding whitespace"
+            )
+            raise ValueError(msg)
         parsed = urlparse(value)
         if parsed.scheme or parsed.netloc:
             msg = "backend_ref must be a backend identifier, not a URL or URI"
@@ -228,18 +222,18 @@ class ModelDelegationTerminalFailedRoutedV2(_ModelDelegationTerminalCommonV2):
             msg = "routed failed terminal requires quality_passed=false"
             raise ValueError(msg)
 
-        cause = self.routed_failure_cause
-        if isinstance(cause, ModelDelegationQualityGateRejection):
-            comparison = cause.quality_bar_evaluation.score_vs_required_bar
-            if (
-                comparison is EnumQualityScoreComparison.AT_OR_ABOVE_BAR
-                and not self.failed_acceptance_criteria
-            ):
-                msg = (
-                    "quality-failed result at or above required_quality_bar must "
-                    "carry failed_acceptance_criteria"
-                )
-                raise ValueError(msg)
+        comparison = (
+            self.routed_failure_cause.quality_bar_evaluation.score_vs_required_bar
+        )
+        if (
+            comparison is EnumQualityScoreComparison.AT_OR_ABOVE_BAR
+            and not self.failed_acceptance_criteria
+        ):
+            msg = (
+                "quality-failed result at or above required_quality_bar must "
+                "carry failed_acceptance_criteria"
+            )
+            raise ValueError(msg)
         return self
 
 
