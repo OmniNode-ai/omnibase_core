@@ -1338,13 +1338,13 @@ def test_an_unusable_workroot_is_reported_as_infrastructural_not_contention(
 
 def test_the_local_fit_path_proceeds_when_the_workroot_is_unusable() -> None:
     """An unusable workroot says nothing about capacity, so the hook must fall
-    back to its pre-OMN-16991 behavior rather than refuse."""
+    through to the governed actor route rather than refuse."""
     text = HOOK.read_text(encoding="utf-8")
     start = text.index("guard_full_suite_host() {")
     fit = text[start:]
-    fit = fit[fit.index('if host_is_fit ""; then') :][:1600]
+    fit = fit[fit.index('if host_is_fit ""; then') :][:2400]
     assert '[ "$lock_rc" -eq 2 ]' in fit
-    assert "running unserialized on this host" in fit
+    assert "prepush_local_actor_route" in fit
 
 
 # =============================================================================

@@ -351,9 +351,16 @@ dispatch_to_lab_host() {
   while [ "$idx" -le "$total" ]; do
     prepush_select_candidate "$idx" || break
     if [ -z "$PREPUSH_PICK_SSH" ]; then
-      # This candidate IS this host: nothing to distribute. The local branch
-      # already measured it unfit or its slot held, so this is no evidence --
-      # but the ranked hosts after it still are.
+      # This candidate IS this host: there is nothing to DISTRIBUTE, so the
+      # remote leg cannot answer for it and the ranked hosts after it still
+      # can. Skipping it here is correct -- but it used to be SILENT, and that
+      # silence is how OMN-17280 stayed invisible: for an actor who can reach
+      # no other host, this was the only fit candidate in the lab, and the walk
+      # dropped it without a word before falling through to die(). The
+      # same-host route now lives in prepush_local_actor_route, one rung below
+      # this call in guard_full_suite_host; naming the skip makes the transcript
+      # explain how control got there.
+      log "lab placement: ${PREPUSH_PICK_LABEL} IS this host, so it carries no remote leg; the same-host route is evaluated after the lab walk (OMN-17280)"
       idx=$((idx + 1))
       continue
     fi
@@ -479,6 +486,18 @@ guard_full_suite_host() {
         # The workroot is unusable, which says nothing about this host's
         # capacity. Proceed exactly as the hook did before this lock existed
         # rather than inventing a refusal out of an infrastructural failure.
+        # OMN-17280. Before degrading to an UNSERIALIZED run, ask whether this is
+        # the actor case: a workroot we cannot write is the signature of running as
+        # someone other than whoever provisioned this host, and when NO capacity row
+        # is reachable for that actor the same-host route is the governed answer --
+        # it takes a per-actor slot under $HOME instead of running with no lock at
+        # all, and it writes the receipt that names why the suite ran here. It
+        # declines the moment any lab host is reachable, so an OWNER whose workroot
+        # is genuinely broken still gets exactly the warning below.
+        if prepush_local_actor_route "${heavy_what:-heavy fail-closed full-suite escalation}" \
+          "$(prepush_identity_label "$PREPUSH_LC_HOST" || true)"; then
+          return 0
+        fi
         log "WARNING: could not create the heavy-suite slot lock under '${lw}' -- running unserialized on this host (pre-OMN-17159 behavior). Fix the workroot to restore serialization (OMN-16174)."
         return 0
       fi
@@ -523,6 +542,17 @@ guard_full_suite_host() {
     # make this gate accept less work: it only means this repo has one fewer
     # evidence source above the grant, never a new pass.
     if dispatch_to_lab_host "$heavy_what"; then
+      return 0
+    fi
+    # OMN-17280 -- SAME-HOST ROUTE, above the grant on evidence strength.
+    # Placed here, and only here, so it can fire ONLY after the lab has been
+    # asked and answered nothing. It refuses itself the moment any capacity row
+    # is reachable for this actor, which is every one of the owner's own
+    # pushes, so the OMN-17392 / OMN-17485 off-box preference is untouched. It
+    # is above consume_override_grant because it produces a real full suite on
+    # a designated authorizing host -- strictly stronger evidence than a
+    # receipted degraded-capacity grant, and it burns no grant to get there.
+    if prepush_local_actor_route "$heavy_what" "$label"; then
       return 0
     fi
     if consume_override_grant "degraded-capacity: ${heavy_what} on '${host}' at/over the ${PREPUSH_LOAD_THRESHOLD}x-core load threshold"; then
