@@ -369,11 +369,13 @@
   name: Backend Secret Discipline (OMN-13290)
   description: >
     Reject literal credentials (PEM private keys, service-account JSON, bearer tokens, sk-/AIza/ya29.
-    keys) in committed config, and require a logical secret reference (secret_ref/api_key_ref/api_key_env
-    for API-key auth, or credential_ref for ADC) on every authenticated cloud backend in a bifrost routing-authority
-    config. ADC and api-key auth are mutually exclusive on one backend. Ported from omnimarket check_backend_secret_discipline
-    (OMN-12971) to core for fleet wiring. Credential VALUES live in the secret store, never in routing-authority
-    config. Suppression (test fixtures only): # backend-secret-ok: <reason> on the offending line.
+    keys) in committed config, and require a logical secret reference (secret_ref/api_key_ref for API-key
+    auth, or credential_ref for ADC) on every authenticated cloud backend in a bifrost routing-authority
+    config. api_key_env is NOT a logical reference (OMN-17931): a backend declaring only api_key_env fails,
+    and api_key_env beside a real reference is reported as migration debt. ADC and api-key auth are mutually
+    exclusive on one backend. Ported from omnimarket check_backend_secret_discipline (OMN-12971) to core
+    for fleet wiring. Credential VALUES live in the secret store, never in routing-authority config. Suppression
+    (test fixtures only): # backend-secret-ok: <reason> on the offending line.
   language: python
   entry: python -m omnibase_core.validators.backend_secret_discipline
   files: \.(ya?ml|json)$
@@ -385,8 +387,9 @@
   description: >
     Canonical COMPUTE hook for backend secret discipline. Rejects literal PEM, service-account JSON, bearer
     tokens, sk-/AIza/ya29-style keys in committed routing-authority config, and requires every authenticated
-    cloud backend to declare a logical secret reference (secret_ref / api_key_ref / api_key_env / credential_ref).
-    ADC and API-key auth are mutually exclusive per backend.
+    cloud backend to declare a logical secret reference (secret_ref / api_key_ref / credential_ref). api_key_env
+    is NOT a logical reference (OMN-17931): only-api_key_env fails; api_key_env beside a real reference
+    is migration debt. ADC and API-key auth are mutually exclusive per backend.
   language: python
   entry: python -m omnibase_core.validation.validator_backend_secret_discipline
   files: \.(ya?ml|json)$
