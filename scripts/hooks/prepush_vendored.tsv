@@ -1,0 +1,104 @@
+# PROVENANCE of the pre-push files this repo VENDORS from omnibase_infra
+# (OMN-17754). Read by tests/scripts/test_prepush_host_table.py.
+#
+# WHY VENDORED AND NOT SHARED -- the decision, on the facts, not on preference:
+#
+#   * A sibling-clone source (`. "$OMNI_HOME/omnibase_infra/scripts/hooks/..."`)
+#     makes a FAIL-CLOSED gate depend on a second repository being checked out
+#     next to this one. An isolated single-repo clone, a CI runner checkout, or
+#     a contributor without the whole workspace would then hit `die` on every
+#     heavy push. A placement optimisation must not be able to brick a push.
+#   * A pip-installed picker moves the gate behind a synced `.venv`, which a
+#     pre-push hook cannot assume exists -- and the hook must run BEFORE the
+#     machinery that would install it.
+#   * A git submodule has the same failure shape as the sibling clone, one
+#     `git clone` flag away (`--recurse-submodules` omitted -> empty dir).
+#
+# So the copy is local, and the DRIFT is what gets mechanically controlled:
+# each file's sha256 is pinned, and the upstream revision it was taken from is
+# recorded HERE so "has upstream moved?" is answerable by anyone with network
+# access, without this repo depending on that access at push time.
+#
+# WHAT THIS FILE ADDS OVER THE BARE DIGEST PIN this repo carried from OMN-17159
+# until OMN-17754 (a sha256 literal inside
+# test_the_picker_library_is_byte_identical_to_the_shipped_upstream): a digest
+# alone detects a LOCAL edit. It cannot tell you the copy is STALE. Measured
+# 2026-09-01: this repo's OMN-17159 copy pinned omnibase_infra 81955c0d0
+# (OMN-17269) while omnibase_infra dev had already shipped 3e1c975b0
+# (OMN-17392) -- a full feature behind before its own PR merged, and nothing
+# in this repo could say so. Recording the upstream commit next to the digest
+# is what makes that question answerable.
+#
+# TO UPDATE: re-copy (or re-port, see below) the file from the named upstream
+# path, update BOTH the sha256 and the upstream_commit here in the same commit,
+# re-run tests/scripts/test_prepush_host_table.py and
+# tests/scripts/test_prepush_remote_leg_policy.py, and name the upstream
+# revision in the PR body. Editing a vendored file WITHOUT touching this record
+# is the thing that cannot happen quietly.
+#
+#
+# THIS REPO'S COPIES ARE NOT VERBATIM, AND THIS HEADER SAYS EXACTLY HOW. The
+# `sha256` column pins the bytes THIS repo ships. The `upstream_commit` column
+# names the upstream revision those bytes were last taken from -- for a
+# verbatim copy that is the whole story; for a port it names the revision the
+# ported blocks came from, and the divergence is recorded here so the next
+# re-sync knows what it is looking at.
+#
+#   scripts/hooks/prepush_dispatch.sh -- a SUBSET PORT of upstream 812d0b545
+#     (OMN-17787, #3179, which is on top of OMN-17741's 4053dc3c0, #3161).
+#     1471 lines here against 1917 upstream. What is IN this copy, executable
+#     lines byte-identical to upstream: the OMN-17606 slot-probe fix, the
+#     OMN-17564/OMN-17603 remote-leg execution policy seam, the OMN-17787
+#     `--junitxml` collected count + zero-collection NO EVIDENCE gate, and (as
+#     of OMN-17754) the OMN-17741 registry root -- the wrapper constructs
+#     `$RUNDIR/omni_home/<repo>` on the target, exports OMNI_HOME to it, and
+#     the repo name travels as the TENTH positional of the remote command.
+#     What is NOT in this copy, and why:
+#       1. OMN-17392/OMN-17485 (memory-aware admission, prefer_remote,
+#          placement_tier ranking). Upstream reads `heavy_local` at host-table
+#          column 13 and `placement_tier` at column 14; this repo's
+#          prepush_hosts.tsv has THIRTEEN columns with `note` at 13, so a
+#          verbatim take of upstream's reader would parse every row's free-text
+#          note as its heavy_local policy. The columns must land here first
+#          (OMN-17756 is the tracked port). One fit-record index diverges as a
+#          consequence: upstream reads `cores` at f11 because its record
+#          carries a `tier_rank` at f10; this record is nine fields, so `cores`
+#          appends at f10.
+#       2. ONE DELIBERATE ADDITION upstream does not have: the two banner
+#          fallbacks behind the junit count are read through
+#          `prepush_banner_stream`, a normalizer that strips SGR colour codes
+#          and CR progress writes first. `tests/pytest.ini` addopts carries
+#          `--color=yes` and the remote leg's rootdir resolves into `tests/`,
+#          so this repo's serial collector banner arrives as
+#          `ESC[1mcollecting ... ESC[0mcollected N items` and upstream's plain
+#          `^collected` anchor never matched here. Upstream ships no
+#          tests/pytest.ini and never sees the colorized form.
+#       3. Upstream's prose names the vendoring repos in comment lines;
+#          test_the_picker_library_is_not_edited_into_a_repo_specific_fork
+#          forbids those tokens inside the shared library, so the same facts
+#          are stated repo-neutrally here.
+#     Convergence check that IS mechanical from this repo, comment lines
+#     stripped, against upstream 812d0b545 (verified 2026-09-04, recorded in
+#     the OMN-17754 PR body): the OMN-17741 registry block diffs EMPTY; the
+#     OMN-17787 wrapper block diffs by exactly the normalizer in (2) and
+#     nothing else.
+#
+#   scripts/hooks/prepush_override_grant.py -- VERBATIM copy of upstream
+#     eddf4a9d2 (digest identical to omnimarket's pin of the same revision).
+#     Upstream has since moved to 4349bb362 (OMN-17441, inherited
+#     PREPUSH_*_OVERRIDE_MAP rejection at both hook entry points); that re-take
+#     is NOT bundled into OMN-17754 and is recorded here as the outstanding
+#     delta rather than silently carried.
+#
+#   scripts/hooks/pytest_full_suite_host_guard.py -- a PORT of upstream
+#     eddf4a9d2 taken under OMN-17159: 11 lines differ, all of them this
+#     repo's own wording (the host-table pointer in the refusal message, the
+#     narrow-target example path, the OMN-17159 history note). Upstream has
+#     since moved to 65cb31cdf (OMN-17441 placement-map rejection at
+#     pytest_configure, OMN-16607 runbook pointer); same outstanding delta,
+#     same rule -- recorded, not hidden.
+#
+#path	upstream_repo	upstream_path	upstream_commit	upstream_branch	sha256	copied_at
+scripts/hooks/prepush_dispatch.sh	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_dispatch.sh	812d0b5451c1b157dd764cc26a83b9c7e12bcf71	dev	3731ca42fea56fa61dec993a3818e9046b70890c7d8da2ed0b71d2b8768ad71b	2026-09-04
+scripts/hooks/prepush_override_grant.py	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_override_grant.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	6777c592a944fe1964a195bf088c00c7747551e5e9a20705ca49d9e59dbc3f3c	2026-09-01
+scripts/hooks/pytest_full_suite_host_guard.py	OmniNode-ai/omnibase_infra	scripts/hooks/pytest_full_suite_host_guard.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	73a104fc080bfa49cbab263830c43f53d473d5c51f31bc2fa37018d34c3c67d8	2026-09-01
