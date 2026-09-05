@@ -77,7 +77,6 @@ Author: ONEX Framework Team
 """
 
 import asyncio
-import os
 import random
 import re
 import threading
@@ -129,6 +128,7 @@ from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.operations.model_effect_operation_config import (
     ModelEffectOperationConfig,
 )
+from omnibase_core.overlays.contract_env_ref import resolve_env_value
 from omnibase_core.types.type_effect_result import DbParamType, EffectResultType
 
 __all__ = ["MixinEffectExecution"]
@@ -590,7 +590,7 @@ class MixinEffectExecution:
 
         Template Resolution:
             - ${input.field} - from input_data.operation_data
-            - ${env.VAR} - from os.environ
+            - ${env.VAR} - from the core contract-env overlay authority
             - ${secret.KEY} - from container secret service (if available)
 
         v1.0 Behavior:
@@ -599,8 +599,9 @@ class MixinEffectExecution:
             This is intentional - see PERFORMANCE NOTE in _execute_with_retry().
 
         Thread Safety:
-            Pure function, thread-safe. Environment variable access is
-            inherently racy but this is expected behavior.
+            Pure function, thread-safe. Overlay resolution reads the operator
+            environment, which is inherently racy, but this is expected
+            behavior.
 
         Note:
             In v1.0, this method is called ONCE before the retry loop begins.
@@ -641,11 +642,14 @@ class MixinEffectExecution:
                 else:
                     var_name = env_expr
                     default_value = None
-                value = os.environ.get(var_name)
+                # OMN-17554: resolved through the core contract-env overlay
+                # authority, the one sanctioned reader of this syntax, rather
+                # than by this mixin reaching into the process environment
+                # itself. Semantics are unchanged: an operator-supplied value
+                # wins, then the inline default, then this fails closed.
+                value = resolve_env_value(var_name, default_value)
                 if value is not None:
                     return value
-                if default_value is not None:
-                    return default_value
                 raise ModelOnexError(
                     message=f"Environment variable not found: {var_name}",
                     error_code=EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,

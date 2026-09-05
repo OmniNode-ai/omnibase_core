@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import inspect
+import typing
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -14,23 +17,25 @@ from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 
 
-def test_env_vars_all_set():
-    env = {
-        "LINEAR_API_KEY": "lin_abc",  # pragma: allowlist secret
-        "OMNICLAUDE_PROJECT_ROOT": "/some/path",
-    }
-    with patch.dict("os.environ", env, clear=False):
-        result = CheckEnvVars().run()
+def test_env_vars_requires_an_explicit_config_authority():
+    """OMN-17554: the check cannot be built without being told what to read.
+
+    A zero-argument constructor is what let this check fall back to ambient
+    ``os.environ``. Removing that constructor is the structural half of the fix;
+    the behavioural half is covered in ``test_checks_env_typed_binding.py``.
+    """
+    with pytest.raises(TypeError):
+        CheckEnvVars()  # type: ignore[call-arg]
+
+    signature = inspect.signature(CheckEnvVars.__init__)
+    assert list(signature.parameters) == ["self", "config_path"]
+    assert typing.get_type_hints(CheckEnvVars.__init__)["config_path"] is Path
+
+
+def test_env_vars_reports_environment_category(tmp_path: Path):
+    result = CheckEnvVars(tmp_path / "config.yaml").run()
     assert result.category == EnumDoctorCategory.ENVIRONMENT
-
-
-def test_env_vars_missing():
-    with patch.dict("os.environ", {}, clear=True):
-        result = CheckEnvVars().run()
-    assert result.status in (
-        EnumHealthStatusValue.DEGRADED,
-        EnumHealthStatusValue.UNHEALTHY,
-    )
+    assert result.status == EnumHealthStatusValue.UNHEALTHY
 
 
 def test_python_version():

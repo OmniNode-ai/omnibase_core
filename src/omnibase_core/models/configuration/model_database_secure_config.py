@@ -925,7 +925,11 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             "username": os.getenv(f"{env_prefix}USERNAME", "onex_user"),
             "password": SecretStr(password),
             "driver": os.getenv(f"{env_prefix}DRIVER", "postgresql"),
-            "schema": os.getenv(f"{env_prefix}SCHEMA"),
+            # The field is ``db_schema``; "schema" shadows a BaseModel member.
+            # With extra="forbid" now inherited from ModelSecureCredentials
+            # (OMN-17554), the old "schema" key is rejected outright rather than
+            # silently dropped, so the canonical binding is spelled correctly here.
+            "db_schema": os.getenv(f"{env_prefix}SCHEMA"),
             "ssl_enabled": os.getenv(f"{env_prefix}SSL_ENABLED", "false").lower()
             == "true",
             "ssl_mode": os.getenv(f"{env_prefix}SSL_MODE", "prefer"),

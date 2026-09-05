@@ -1,18 +1,41 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import os
 from urllib.parse import urljoin, urlparse
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_env_overlay_binding import (
+    ModelEnvOverlayBinding,
+)
 from omnibase_core.models.configuration.model_request_config import ModelRequestConfig
 from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.overlays.contract_env_ref import resolve_overlay_binding
+
+# Declared overlay bindings (OMN-17554).
+#
+# This env-var -> field table used to be a bare dict literal inside
+# ``apply_environment_overrides``, read back from the process environment on
+# the loop variable. A read keyed on a loop variable is dynamic: nothing can
+# enumerate what this model binds, and no static gate can attribute the read to
+# a name. The table is now typed and validated by ``ModelEnvOverlayBinding``,
+# and every value resolves through the single sanctioned overlay authority in
+# ``omnibase_core.overlays.contract_env_ref``. This model performs no
+# environment read of its own.
+_ENV_OVERLAY_BINDINGS: tuple[ModelEnvOverlayBinding, ...] = (
+    ModelEnvOverlayBinding(env_var="ONEX_API_BASE_URL", field_name="base_url"),
+    ModelEnvOverlayBinding(env_var="ONEX_API_KEY", field_name="api_key"),
+    ModelEnvOverlayBinding(env_var="ONEX_API_BEARER_TOKEN", field_name="bearer_token"),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_API_TIMEOUT_SECONDS", field_name="timeout_seconds"
+    ),
+    ModelEnvOverlayBinding(env_var="ONEX_API_MAX_RETRIES", field_name="max_retries"),
+)
 
 
 class ModelRestApiConnectionConfig(BaseModel):
@@ -30,6 +53,12 @@ class ModelRestApiConnectionConfig(BaseModel):
     - Health check endpoint support
     - Rate limiting awareness
     """
+
+    # OMN-17554: unknown wire fields are rejected rather than silently dropped.
+    # Pydantic's default is extra="ignore", so before this line a caller that
+    # misspelled a field name got a model built from defaults and no error —
+    # for a credential model, a silently-dropped password.
+    model_config = ConfigDict(extra="forbid")
 
     base_url: str = Field(
         default=...,
@@ -386,23 +415,15 @@ class ModelRestApiConnectionConfig(BaseModel):
             ),  # Fewer failures needed for unhealthy
         )
 
-    # === Environment Override Support ===
+    # === Overlay Binding Support ===
 
     def apply_environment_overrides(self) -> "ModelRestApiConnectionConfig":
-        """Apply environment variable overrides for CI/local testing."""
+        """Apply the declared overlay bindings for CI/local testing."""
         overrides: dict[str, str | int | SecretStr] = {}
 
-        # Environment variable mappings
-        env_mappings = {
-            "ONEX_API_BASE_URL": "base_url",
-            "ONEX_API_KEY": "api_key",
-            "ONEX_API_BEARER_TOKEN": "bearer_token",
-            "ONEX_API_TIMEOUT_SECONDS": "timeout_seconds",
-            "ONEX_API_MAX_RETRIES": "max_retries",
-        }
-
-        for env_var, field_name in env_mappings.items():
-            env_value = os.environ.get(env_var)
+        for binding in _ENV_OVERLAY_BINDINGS:
+            field_name = binding.field_name
+            env_value = resolve_overlay_binding(binding)
             if env_value is not None:
                 # Type conversion for numeric fields
                 if field_name in ["timeout_seconds", "max_retries"]:

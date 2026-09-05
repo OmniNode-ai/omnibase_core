@@ -1,11 +1,10 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import os
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -14,13 +13,41 @@ from omnibase_core.enums.enum_overhead_type import EnumOverheadType
 from omnibase_core.enums.enum_scalability_level import EnumScalabilityLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.enums.enum_throughput_level import EnumThroughputLevel
+from omnibase_core.models.configuration.model_env_overlay_binding import (
+    ModelEnvOverlayBinding,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.overlays.contract_env_ref import resolve_overlay_binding
 
 from .model_backend_capabilities import ModelBackendCapabilities
 from .model_backend_config import ModelBackendConfig
 from .model_backend_config_validation import ModelBackendConfigValidation
 from .model_backend_performance_profile import ModelBackendPerformanceProfile
 from .model_backend_security_profile import ModelBackendSecurityProfile
+
+# Declared environment probes (OMN-17554).
+#
+# ``detect_environment_type`` classifies the surrounding platform to recommend a
+# secret backend. Its probes are structural — they ask *where am I running*, not
+# *what is the value of this setting* — but they are still environment reads,
+# and the CI probe was a dynamic one keyed on a loop variable. Declaring them as
+# validated bindings makes the full probe set enumerable, and routes every read
+# through the single sanctioned overlay authority.
+_KUBERNETES_BINDING = ModelEnvOverlayBinding(
+    env_var="KUBERNETES_SERVICE_HOST", field_name="environment_type"
+)
+_DEVELOPMENT_BINDINGS: tuple[ModelEnvOverlayBinding, ...] = (
+    ModelEnvOverlayBinding(env_var="NODE_ENV", field_name="environment_type"),
+    ModelEnvOverlayBinding(env_var="ENVIRONMENT", field_name="environment_type"),
+)
+_CI_BINDINGS: tuple[ModelEnvOverlayBinding, ...] = (
+    ModelEnvOverlayBinding(env_var="CI", field_name="environment_type"),
+    ModelEnvOverlayBinding(
+        env_var="CONTINUOUS_INTEGRATION", field_name="environment_type"
+    ),
+    ModelEnvOverlayBinding(env_var="GITHUB_ACTIONS", field_name="environment_type"),
+    ModelEnvOverlayBinding(env_var="GITLAB_CI", field_name="environment_type"),
+)
 
 
 class ModelSecretBackend(BaseModel):
@@ -36,6 +63,12 @@ class ModelSecretBackend(BaseModel):
     - Security assessment and best practices
     - Performance characteristics analysis
     """
+
+    # OMN-17554: unknown wire fields are rejected rather than silently dropped.
+    # Pydantic's default is extra="ignore", so before this line a caller that
+    # misspelled a field name got a model built from defaults and no error —
+    # for a credential model, a silently-dropped password.
+    model_config = ConfigDict(extra="forbid")
 
     backend_type: EnumBackendType = Field(
         default=EnumBackendType.ENVIRONMENT,
@@ -214,26 +247,44 @@ class ModelSecretBackend(BaseModel):
 
     # === Environment Detection ===
 
+    @staticmethod
+    def _is_development_environment() -> bool:
+        """Two independent development signals, checked in order.
+
+        Written as separate statements rather than one ``a or b or c`` chain:
+        an or-chain of three call operands is a silent dispatch degradation —
+        which signal fired is unrecoverable from the result, and adding a
+        fourth is invisible in review.
+        """
+        if Path(".env").exists() or Path(".env.local").exists():
+            return True
+        return any(
+            resolve_overlay_binding(binding) == "development"
+            for binding in _DEVELOPMENT_BINDINGS
+        )
+
     def detect_environment_type(self) -> str:
-        """Detect the current environment type for backend recommendations."""
+        """Detect the current environment type for backend recommendations.
+
+        Every environment probe here resolves through the core contract-env
+        overlay authority (OMN-17554). The CI probe in particular used to read
+        the environment on a loop variable — a dynamic read that no
+        static gate could attribute to a name. Its four indicators are now a
+        declared, validated table.
+        """
         # Check for Kubernetes environment
-        if Path("/var/run/secrets/kubernetes.io/serviceaccount").exists() or os.getenv(
-            "KUBERNETES_SERVICE_HOST",
+        if (
+            Path("/var/run/secrets/kubernetes.io/serviceaccount").exists()
+            or resolve_overlay_binding(_KUBERNETES_BINDING) is not None
         ):
             return "kubernetes"
 
         # Check for development environment indicators
-        if (
-            Path(".env").exists()
-            or Path(".env.local").exists()
-            or os.getenv("NODE_ENV") == "development"
-            or os.getenv("ENVIRONMENT") == "development"
-        ):
+        if self._is_development_environment():
             return "development"
 
         # Check for CI environment
-        ci_indicators = ["CI", "CONTINUOUS_INTEGRATION", "GITHUB_ACTIONS", "GITLAB_CI"]
-        if any(os.getenv(indicator) for indicator in ci_indicators):
+        if any(resolve_overlay_binding(binding) for binding in _CI_BINDINGS):
             return "ci"
 
         # Default to production

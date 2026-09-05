@@ -60,14 +60,11 @@ Size Limits:
       In parallel mode, raises ModelOnexError. In sequential mode, treated as
       a step failure (per error_action configuration, defaults to continue).
 
-    These limits are configurable via environment variables for extreme workloads:
-    - ONEX_MAX_WORKFLOW_STEPS: Override max workflow steps (bounds: 1-100,000)
-    - ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES: Override max step payload size (bounds: 1KB-10MB)
-    - ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES: Override max total payload size (bounds: 1KB-1GB)
-
-    Invalid environment variable values log a warning and fall back to defaults.
-    Bounds are enforced to prevent both DoS attacks (too-small limits causing many
-    small workflows) and memory exhaustion (too-large limits).
+    These limits are fixed, immutable Core safety ceilings (OMN-17554). They are
+    not configurable — neither by environment variable nor by workflow contract.
+    The executor compares against the module constants directly; there is no
+    per-workflow override field and no typed configuration surface that selects
+    them.
 
 Security Considerations:
     Compression Attacks:
@@ -139,8 +136,8 @@ from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowCon
 from omnibase_core.validation.validator_reserved_enum import validate_execution_mode
 
 # Note: MAX_WORKFLOW_STEPS, MAX_STEP_PAYLOAD_SIZE_BYTES, MAX_TOTAL_PAYLOAD_SIZE_BYTES
-# are imported from constants_workflow.py (canonical source with memoized env var parsing).
-# See constants_workflow.py module docstring for configuration details.
+# are imported from constants_workflow.py, which is the canonical source. They are
+# fixed Core ceilings, not configuration — see that module's docstring.
 
 # Module logger for workflow executor operations
 logger = logging.getLogger(__name__)
@@ -861,6 +858,11 @@ async def _execute_sequential(
             raise
 
         except Exception as e:
+            # fallback-ok: a workflow step executes contract-declared external code, so
+            # its exception type is unbounded. Recording it as a failed step is this
+            # loop's entire contract — re-raising would abort the remaining steps and
+            # discard `error_action`, which is what the declaration asks the executor
+            # NOT to do. Cancellation still propagates, in the clause above.
             # boundary-ok: workflow steps execute external code with unknown exception types
             # Production workflows require resilient error handling - all failures logged
             # with full traceback for debugging. Failed steps tracked per error_action config.

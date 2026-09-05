@@ -10,14 +10,84 @@ for all ONEX nodes with environment variable support and sensible defaults.
 Domain: Infrastructure configuration management
 """
 
-import os
-
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+from omnibase_core.models.configuration.model_env_overlay_binding import (
+    ModelEnvOverlayBinding,
+)
 from omnibase_core.models.configuration.model_node_config_value import (
     ModelNodeConfigSchema,
     ScalarConfigValue,
     is_valid_value_type,
 )
+from omnibase_core.overlays.contract_env_ref import resolve_overlay_binding
+
+# Declared overlay bindings (OMN-17554).
+#
+# This table used to be implicit: the loader derived an environment variable
+# name from each default key with ``f"ONEX_{key.upper().replace('.', '_')}"`` and
+# read it. A derived name is not a declaration — nothing could enumerate what
+# this provider actually binds, and no gate could attribute the read to a name.
+# The bindings are now written out, validated by ``ModelEnvOverlayBinding``, and
+# resolved through the single sanctioned overlay authority in
+# ``omnibase_core.overlays.contract_env_ref``. ``test_node_config_provider``
+# asserts this table covers exactly the default keys, so the two cannot drift.
+_ENV_OVERLAY_BINDINGS: tuple[ModelEnvOverlayBinding, ...] = (
+    ModelEnvOverlayBinding(
+        env_var="ONEX_COMPUTE_MAX_PARALLEL_WORKERS",
+        field_name="compute.max_parallel_workers",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_COMPUTE_CACHE_TTL_MINUTES",
+        field_name="compute.cache_ttl_minutes",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_COMPUTE_PERFORMANCE_THRESHOLD_MS",
+        field_name="compute.performance_threshold_ms",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EFFECT_DEFAULT_TIMEOUT_MS",
+        field_name="effect.default_timeout_ms",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EFFECT_DEFAULT_RETRY_DELAY_MS",
+        field_name="effect.default_retry_delay_ms",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EFFECT_MAX_CONCURRENT_EFFECTS",
+        field_name="effect.max_concurrent_effects",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_REDUCER_DEFAULT_BATCH_SIZE",
+        field_name="reducer.default_batch_size",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_REDUCER_MAX_MEMORY_USAGE_MB",
+        field_name="reducer.max_memory_usage_mb",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_REDUCER_STREAMING_BUFFER_SIZE",
+        field_name="reducer.streaming_buffer_size",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_ORCHESTRATOR_MAX_CONCURRENT_WORKFLOWS",
+        field_name="orchestrator.max_concurrent_workflows",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_ORCHESTRATOR_DEFAULT_STEP_TIMEOUT_MS",
+        field_name="orchestrator.default_step_timeout_ms",
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_ORCHESTRATOR_ACTION_EMISSION_ENABLED",
+        field_name="orchestrator.action_emission_enabled",
+    ),
+)
+
+# Index by the field path the binding targets, so the loader below cannot bind a
+# key to a variable no one declared: a default key with no declared binding
+# raises KeyError at construction rather than silently taking its default.
+_BINDINGS_BY_FIELD: dict[str, ModelEnvOverlayBinding] = {
+    binding.field_name: binding for binding in _ENV_OVERLAY_BINDINGS
+}
 
 
 class NodeConfigProvider:
@@ -50,9 +120,12 @@ class NodeConfigProvider:
             - effect.default_retry_delay_ms: Default retry delay for effects
             - orchestrator.default_step_timeout_ms: Default step timeout for orchestrator
 
-    Environment Variables:
-        - ONEX_<KEY>: Override any configuration (e.g., ONEX_COMPUTE_MAX_PARALLEL_WORKERS=8)
-        - Keys use uppercase with underscores (dots become underscores)
+    Overlay Bindings:
+        Each configuration key has one declared binding in
+        ``_ENV_OVERLAY_BINDINGS`` (e.g. ONEX_COMPUTE_MAX_PARALLEL_WORKERS ->
+        compute.max_parallel_workers). Values are resolved through the core
+        contract-env overlay authority; this class performs no environment
+        read of its own.
 
     Example:
         ```python
@@ -97,11 +170,10 @@ class NodeConfigProvider:
         self._load_environment_config()
 
     def _load_environment_config(self) -> None:
-        """Load configuration from environment variables."""
-        # Load all ONEX_* environment variables
+        """Resolve each declared overlay binding, falling back to the default."""
         for key, default_value in self._DEFAULTS.items():
-            env_key = f"ONEX_{key.upper().replace('.', '_')}"
-            env_value = os.environ.get(env_key)
+            binding = _BINDINGS_BY_FIELD[key]
+            env_value = resolve_overlay_binding(binding)
 
             if env_value is not None:
                 # Convert environment variable to appropriate type

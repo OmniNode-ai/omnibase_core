@@ -141,6 +141,34 @@ class TestNodeConfigProviderDefaults:
 
 
 @pytest.mark.unit
+class TestNodeConfigProviderDeclaredBindings:
+    """OMN-17554: the binding table is declared, not derived from the key name."""
+
+    def test_every_default_key_has_exactly_one_declared_binding(self) -> None:
+        from omnibase_core.infrastructure.node_config_provider import (
+            _ENV_OVERLAY_BINDINGS,
+        )
+
+        declared = [b.field_name for b in _ENV_OVERLAY_BINDINGS]
+        assert sorted(declared) == sorted(NodeConfigProvider._DEFAULTS)
+        assert len(declared) == len(set(declared)), "duplicate binding declared"
+
+    def test_declared_names_match_the_documented_convention(self) -> None:
+        """ONEX_ + the field path uppercased, dots to underscores.
+
+        Asserted rather than computed at load time: deriving the name in the
+        loader is exactly what made the read dynamic. The convention is still
+        the convention, but a change to it now has to be written down here.
+        """
+        from omnibase_core.infrastructure.node_config_provider import (
+            _ENV_OVERLAY_BINDINGS,
+        )
+
+        for binding in _ENV_OVERLAY_BINDINGS:
+            expected = "ONEX_" + binding.field_name.upper().replace(".", "_")
+            assert binding.env_var == expected
+
+
 class TestNodeConfigProviderEnvironmentOverrides:
     """Test environment variable override functionality."""
 

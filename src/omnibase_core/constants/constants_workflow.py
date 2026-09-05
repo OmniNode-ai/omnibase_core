@@ -34,9 +34,9 @@ maintainability and avoiding duplication.
     Workflow-specific limits and configuration. Re-exports MAX_DFS_ITERATIONS
     from constants_field_limits.py for workflow module convenience.
 
-    - MAX_WORKFLOW_STEPS: Maximum steps per workflow (env-configurable)
-    - MAX_STEP_PAYLOAD_SIZE_BYTES: Per-step payload limit (env-configurable)
-    - MAX_TOTAL_PAYLOAD_SIZE_BYTES: Total payload limit (env-configurable)
+    - MAX_WORKFLOW_STEPS: Maximum steps per workflow (fixed Core ceiling)
+    - MAX_STEP_PAYLOAD_SIZE_BYTES: Per-step payload limit (fixed Core ceiling)
+    - MAX_TOTAL_PAYLOAD_SIZE_BYTES: Total payload limit (fixed Core ceiling)
     - MIN_TIMEOUT_MS (100ms): Minimum timeout per ONEX v1.0.3 schema
     - MAX_TIMEOUT_MS (24h): Maximum timeout to prevent resource exhaustion
     - VALID_STEP_TYPES: Allowed step types per ONEX v1.0.4
@@ -97,121 +97,29 @@ Workflow Execution Limits (OMN-670: Security hardening):
     - MAX_STEP_PAYLOAD_SIZE_BYTES: Maximum size of individual step payload
     - MAX_TOTAL_PAYLOAD_SIZE_BYTES: Maximum accumulated payload size
 
-    Limits are configurable via environment variables for extreme workloads:
-    - ONEX_MAX_WORKFLOW_STEPS: Override max workflow steps (bounds: 1-100,000)
-    - ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES: Override max step payload size (bounds: 1KB-10MB)
-    - ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES: Override max total payload size (bounds: 1KB-1GB)
+    These three limits are FIXED, immutable Core safety ceilings. They are not
+    configurable — not by environment variable, not by workflow contract, and
+    not at runtime. A workflow that needs more than these allows is a workflow
+    that needs decomposing, not a larger ceiling.
 
-    Bounds are enforced to prevent both DoS attacks (too-small limits causing many
-    small workflows) and memory exhaustion (too-large limits).
-
-Thread Safety:
-    The module-level ``_cached_limits`` dict is NOT thread-safe in the strict sense.
-    However, this is an intentional design choice for simplicity:
-
-    1. Python's GIL ensures that dict operations (``in``, ``[]``, ``[]=``) are atomic
-       at the bytecode level, preventing data corruption.
-    2. The worst-case race condition is duplicate computation: two threads may both
-       compute the same limit value before either caches it. This is benign because:
-       - Environment variables are immutable during process lifetime
-       - Both threads compute identical values
-       - The final cached value is correct regardless of which thread wins
-    3. Adding threading.Lock would add complexity and overhead with no practical
-       benefit for this read-heavy, write-once pattern.
-
-    For truly thread-safe requirements (e.g., dynamic reconfiguration), use
-    explicit synchronization at the application level.
+    Why they stopped being configurable (OMN-17554): reading them from the
+    process environment at import time made a DoS ceiling settable by whoever
+    controlled that environment, and made two processes running the same
+    contract enforce different limits with nothing in the workflow result
+    recording which ceiling applied. A safety bound that the thing it bounds can
+    move is not a bound.
 """
-
-import logging
-import os
-
-# --- Environment Variable Helpers ---
-
-# Module-level cache for environment-based limits to avoid repeated parsing
-_cached_limits: dict[str, int] = {}
-
-
-def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) -> int:
-    """Get limit from environment variable with bounds checking and memoization.
-
-    Uses module-level caching to avoid repeated environment variable parsing
-    and bounds checking on each access.
-
-    Args:
-        env_var: Environment variable name
-        default: Default value if env var not set
-        min_val: Minimum allowed value
-        max_val: Maximum allowed value
-
-    Returns:
-        Validated limit value (cached after first computation)
-
-    Thread Safety:
-        This function uses a module-level cache that is not strictly thread-safe.
-        However, Python's GIL ensures atomic dict operations, so the worst case
-        is benign duplicate computation (two threads compute the same value).
-        No data corruption can occur. See module docstring for full rationale.
-    """
-    # Check cache first (memoization for repeated access)
-    if env_var in _cached_limits:
-        return _cached_limits[env_var]
-
-    value = os.environ.get(env_var)
-    if value is None:
-        result = default
-    else:
-        try:
-            int_value = int(value)
-            result = max(min_val, min(int_value, max_val))
-            # Log warning when value is clamped to bounds (DoS prevention)
-            if int_value != result:
-                logging.warning(
-                    f"{env_var} value {int_value} clamped to {result} "
-                    f"(bounds: {min_val}-{max_val}). "
-                    "This prevents DoS attacks via extreme configuration values."
-                )
-        except ValueError:
-            logging.warning(
-                f"Invalid value for {env_var}: {value}, using default {default}"
-            )
-            result = default
-
-    # Cache the result for subsequent accesses
-    _cached_limits[env_var] = result
-    return result
-
-
-def _clear_limit_cache() -> None:
-    """Clear the cached limits (for testing purposes only)."""
-    _cached_limits.clear()
-
 
 # --- Workflow Execution Limits (OMN-670: Security hardening) ---
 
-# Maximum number of steps in a workflow
-# Configurable via ONEX_MAX_WORKFLOW_STEPS (bounds: 1-100,000)
-MAX_WORKFLOW_STEPS: int = _get_limit_from_env(
-    "ONEX_MAX_WORKFLOW_STEPS", default=1000, min_val=1, max_val=100000
-)
+# Maximum number of steps in a workflow. Fixed Core ceiling.
+MAX_WORKFLOW_STEPS: int = 1000
 
-# Maximum size of individual step payload in bytes
-# Configurable via ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES (bounds: 1KB-10MB)
-MAX_STEP_PAYLOAD_SIZE_BYTES: int = _get_limit_from_env(
-    "ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES",
-    default=64 * 1024,
-    min_val=1024,
-    max_val=10 * 1024 * 1024,
-)
+# Maximum size of individual step payload in bytes. Fixed Core ceiling.
+MAX_STEP_PAYLOAD_SIZE_BYTES: int = 64 * 1024
 
-# Maximum total payload size across all steps in bytes
-# Configurable via ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES (bounds: 1KB-1GB)
-MAX_TOTAL_PAYLOAD_SIZE_BYTES: int = _get_limit_from_env(
-    "ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES",
-    default=10 * 1024 * 1024,
-    min_val=1024,
-    max_val=1024 * 1024 * 1024,
-)
+# Maximum total payload size across all steps in bytes. Fixed Core ceiling.
+MAX_TOTAL_PAYLOAD_SIZE_BYTES: int = 10 * 1024 * 1024
 
 # --- Reserved Step Types ---
 

@@ -1,10 +1,77 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import os
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
+
+from omnibase_core.models.configuration.model_env_overlay_binding import (
+    ModelEnvOverlayBinding,
+)
+from omnibase_core.overlays.contract_env_ref import resolve_overlay_binding
+
+# Declared overlay bindings (OMN-17554).
+#
+# This env-var -> field table used to be a bare dict literal inside
+# ``apply_environment_overrides``, read back from the process environment on
+# the loop variable. A read keyed on a loop variable is dynamic: nothing can
+# enumerate what this model binds, and no static gate can attribute the read to
+# a name. The table is now typed and validated by ``ModelEnvOverlayBinding``,
+# and every value resolves through the single sanctioned overlay authority in
+# ``omnibase_core.overlays.contract_env_ref``. This model performs no
+# environment read of its own.
+# The two bindings ``default()`` needs by themselves. These two reads were NOT
+# part of the ten dynamic reads OMN-17554 counts — they are constant-keyed and
+# already on the allowlist — but leaving them as the last direct environment
+# access in a module whose stated invariant is "no environment read of its own"
+# would make that invariant untrue, and untestable.
+_BOOTSTRAP_SERVERS_BINDING = ModelEnvOverlayBinding(
+    env_var="ONEX_EVENT_BUS_BOOTSTRAP_SERVERS", field_name="bootstrap_servers"
+)
+_TOPICS_BINDING = ModelEnvOverlayBinding(
+    env_var="ONEX_EVENT_BUS_TOPICS", field_name="topics"
+)
+
+_ENV_OVERLAY_BINDINGS: tuple[ModelEnvOverlayBinding, ...] = (
+    _BOOTSTRAP_SERVERS_BINDING,
+    _TOPICS_BINDING,
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_SECURITY_PROTOCOL", field_name="security_protocol"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_SASL_MECHANISM", field_name="sasl_mechanism"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_SASL_USERNAME", field_name="sasl_username"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_SASL_PASSWORD", field_name="sasl_password"
+    ),
+    ModelEnvOverlayBinding(env_var="ONEX_EVENT_BUS_CLIENT_ID", field_name="client_id"),
+    ModelEnvOverlayBinding(env_var="ONEX_EVENT_BUS_GROUP_ID", field_name="group_id"),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_PARTITIONS", field_name="partitions"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_REPLICATION_FACTOR", field_name="replication_factor"
+    ),
+    ModelEnvOverlayBinding(env_var="ONEX_EVENT_BUS_ACKS", field_name="acks"),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_ENABLE_AUTO_COMMIT", field_name="enable_auto_commit"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_AUTO_OFFSET_RESET", field_name="auto_offset_reset"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_SSL_CAFILE", field_name="ssl_cafile"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_SSL_CERTFILE", field_name="ssl_certfile"
+    ),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_EVENT_BUS_SSL_KEYFILE", field_name="ssl_keyfile"
+    ),
+)
 
 
 class ModelEventBusConfig(BaseModel):
@@ -78,31 +145,14 @@ class ModelEventBusConfig(BaseModel):
         return self.sasl_password.get_secret_value()
 
     def apply_environment_overrides(self) -> "ModelEventBusConfig":
-        """Apply environment variable overrides for CI/local testing."""
+        """Apply the declared overlay bindings for CI/local testing."""
         overrides: dict[
             str,
             list[str] | str | int | bool | SecretStr | None,
         ] = {}
-        env_mappings = {
-            "ONEX_EVENT_BUS_BOOTSTRAP_SERVERS": "bootstrap_servers",
-            "ONEX_EVENT_BUS_TOPICS": "topics",
-            "ONEX_EVENT_BUS_SECURITY_PROTOCOL": "security_protocol",
-            "ONEX_EVENT_BUS_SASL_MECHANISM": "sasl_mechanism",
-            "ONEX_EVENT_BUS_SASL_USERNAME": "sasl_username",
-            "ONEX_EVENT_BUS_SASL_PASSWORD": "sasl_password",
-            "ONEX_EVENT_BUS_CLIENT_ID": "client_id",
-            "ONEX_EVENT_BUS_GROUP_ID": "group_id",
-            "ONEX_EVENT_BUS_PARTITIONS": "partitions",
-            "ONEX_EVENT_BUS_REPLICATION_FACTOR": "replication_factor",
-            "ONEX_EVENT_BUS_ACKS": "acks",
-            "ONEX_EVENT_BUS_ENABLE_AUTO_COMMIT": "enable_auto_commit",
-            "ONEX_EVENT_BUS_AUTO_OFFSET_RESET": "auto_offset_reset",
-            "ONEX_EVENT_BUS_SSL_CAFILE": "ssl_cafile",
-            "ONEX_EVENT_BUS_SSL_CERTFILE": "ssl_certfile",
-            "ONEX_EVENT_BUS_SSL_KEYFILE": "ssl_keyfile",
-        }
-        for env_var, field_name in env_mappings.items():
-            env_value = os.environ.get(env_var)
+        for binding in _ENV_OVERLAY_BINDINGS:
+            field_name = binding.field_name
+            env_value = resolve_overlay_binding(binding)
             if env_value is not None:
                 if field_name in ["bootstrap_servers", "topics"]:
                     overrides[field_name] = [
@@ -136,13 +186,13 @@ class ModelEventBusConfig(BaseModel):
         Returns a canonical default config from environment variables.
         Requires ONEX_EVENT_BUS_BOOTSTRAP_SERVERS to be set.
         """
-        servers_env = os.environ.get("ONEX_EVENT_BUS_BOOTSTRAP_SERVERS", "")
+        servers_env = resolve_overlay_binding(_BOOTSTRAP_SERVERS_BINDING) or ""
         bootstrap_servers = [s.strip() for s in servers_env.split(",") if s.strip()]
         if not bootstrap_servers:
             msg = "ONEX_EVENT_BUS_BOOTSTRAP_SERVERS must be set"
             # error-ok: env var validation at config boundary
             raise ValueError(msg)
-        topics_env = os.environ.get("ONEX_EVENT_BUS_TOPICS", "onex-default")
+        topics_env = resolve_overlay_binding(_TOPICS_BINDING) or "onex-default"
         topics = [t.strip() for t in topics_env.split(",") if t.strip()]
         base_config = cls(
             bootstrap_servers=bootstrap_servers,

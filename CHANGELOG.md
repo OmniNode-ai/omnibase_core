@@ -1,5 +1,13 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
+## v0.47.4 (2026-09-05)
+
+### Changes
+- fix core configuration, resolver and secret-loop code no longer reads the process environment. The ten remaining dynamic reads — the ones keyed on a loop variable rather than a literal, which no static gate can attribute to a name — are replaced by declared `ModelEnvOverlayBinding` tables resolved through `omnibase_core.overlays.contract_env_ref`, the single sanctioned overlay authority. Affects `NodeConfigProvider`, `MixinEffectExecution` template resolution, `ModelDatabaseConnectionConfig`, `ModelRestApiConnectionConfig`, `ModelEventBusConfig`, `ModelSecretBackend` and `ModelSecureCredentials`. Behaviour is unchanged at every call site; what changes is that the binding table is now enumerable and asserted.
+- **`MAX_WORKFLOW_STEPS`, `MAX_STEP_PAYLOAD_SIZE_BYTES` and `MAX_TOTAL_PAYLOAD_SIZE_BYTES` are now fixed, immutable Core ceilings.** `ONEX_MAX_WORKFLOW_STEPS`, `ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES` and `ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES` no longer have any effect. A DoS ceiling that the process environment can move is not a bound, and two processes running the same contract could enforce different limits with nothing recording which applied.
+- **`onex doctor` proves a real credential binding.** The `env_vars` check no longer reads the process environment; it resolves `credentials.LINEAR_API_KEY` from `~/.onex/config.yaml` validated as `ModelCliUserConfig`. An exported shell variable no longer makes the check report healthy. `CheckEnvVars` now requires a config path at construction, and `DoctorRegistry.register()` accepts an optional factory for checks with a declared dependency. The retired `OMNICLAUDE_PROJECT_ROOT` requirement had no typed counterpart and is dropped.
+- **`extra="forbid"` on `ModelDatabaseConnectionConfig`, `ModelRestApiConnectionConfig`, `ModelSecretBackend` and `ModelSecureCredentials`.** Previously undeclared, so Pydantic's `"ignore"` default silently dropped unknown keywords — on the two credential models, a misspelled field meant a silently dropped secret. Callers passing an undeclared keyword to any of the four now raise `ValidationError`. One live consequence is fixed in the same change: `ModelDatabaseSecureConfig.load_from_env()` wrote `ONEX_DB_SCHEMA` to the payload key `"schema"` while the declared field is `db_schema`, so that value was being dropped; it now reaches its field.
+
 ## v0.47.3 (2026-09-05)
 
 ### Features

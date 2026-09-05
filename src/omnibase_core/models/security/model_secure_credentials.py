@@ -2,14 +2,20 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-import os
 import re
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, ConfigDict, SecretStr
 
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+from omnibase_core.models.configuration.model_env_overlay_binding import (
+    ModelEnvOverlayBinding,
+)
+from omnibase_core.overlays.contract_env_ref import (
+    has_env_prefix,
+    resolve_overlay_binding,
+)
 
 from .model_audit_data import ModelAuditData
 from .model_credential_validation_result import ModelCredentialValidationResult
@@ -38,6 +44,12 @@ class ModelSecureCredentials(BaseModel, ABC):
     - Field-level security classification
     - Audit trail support
     """
+
+    # OMN-17554: unknown wire fields are rejected rather than silently dropped.
+    # Pydantic's default is extra="ignore", so before this line a caller that
+    # misspelled a field name got a model built from defaults and no error —
+    # for a credential model, a silently-dropped password.
+    model_config = ConfigDict(extra="forbid")
 
     # === Abstract Methods ===
 
@@ -207,18 +219,34 @@ class ModelSecureCredentials(BaseModel, ABC):
     # === Environment Integration ===
 
     def validate_environment_variables(self, env_prefix: str = "ONEX_") -> list[str]:
-        """Validate that required environment variables are available."""
+        """Validate that every required field has a bound overlay value.
+
+        The binding for each required field is constructed explicitly and
+        resolved through the core contract-env overlay authority (OMN-17554),
+        rather than this model reading a name it computed on a loop variable.
+        Constructing the binding also validates the composed name, so a prefix
+        that cannot form a legal variable name fails here instead of silently
+        resolving to nothing and reporting the field as missing.
+        """
         issues = []
 
         for field_name, field_info in self.__class__.model_fields.items():
             if field_info.is_required():
-                env_var_name = f"{env_prefix}{field_name.upper()}"
-                if not os.getenv(env_var_name):
+                binding = self._overlay_binding(env_prefix, field_name)
+                if not resolve_overlay_binding(binding):
                     issues.append(
-                        f"Missing required environment variable: {env_var_name}",
+                        f"Missing required environment variable: {binding.env_var}",
                     )
 
         return issues
+
+    @staticmethod
+    def _overlay_binding(env_prefix: str, field_name: str) -> ModelEnvOverlayBinding:
+        """Declare the binding that supplies ``field_name`` under ``env_prefix``."""
+        return ModelEnvOverlayBinding(
+            env_var=f"{env_prefix}{field_name.upper()}",
+            field_name=field_name,
+        )
 
     def get_environment_mapping(self, env_prefix: str = "ONEX_") -> dict[str, str]:
         """Get mapping of model fields to environment variable names."""
@@ -239,7 +267,9 @@ class ModelSecureCredentials(BaseModel, ABC):
         env_mapping = self.get_environment_mapping(env_prefix)
 
         for field_name, env_var in env_mapping.items():
-            env_value = os.getenv(env_var)
+            env_value = resolve_overlay_binding(
+                self._overlay_binding(env_prefix, field_name)
+            )
             if env_value:
                 try:
                     # Attempt to set the field value
@@ -440,7 +470,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         # Helper to check if any env vars with prefix exist
         def has_env_vars(prefix: str) -> bool:
             """Check if any environment variables with the given prefix exist."""
-            return any(key.startswith(prefix) for key in os.environ)
+            return has_env_prefix(prefix)
 
         # Try primary prefix first
         if has_env_vars(env_prefix):

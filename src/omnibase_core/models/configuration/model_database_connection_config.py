@@ -1,17 +1,42 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import os
 import re
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from omnibase_core.constants.constants_field_limits import (
     MAX_IDENTIFIER_LENGTH,
     MAX_NAME_LENGTH,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_env_overlay_binding import (
+    ModelEnvOverlayBinding,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.overlays.contract_env_ref import resolve_overlay_binding
+
+# Declared overlay bindings (OMN-17554).
+#
+# This env-var -> field table used to be a bare dict literal inside
+# ``apply_environment_overrides``, read back from the process environment on
+# the loop variable. A read keyed on a loop variable is dynamic: nothing can
+# enumerate what this model binds, and no static gate can attribute the read to
+# a name. The table is now typed and validated by ``ModelEnvOverlayBinding``,
+# and every value resolves through the single sanctioned overlay authority in
+# ``omnibase_core.overlays.contract_env_ref``. This model performs no
+# environment read of its own.
+_ENV_OVERLAY_BINDINGS: tuple[ModelEnvOverlayBinding, ...] = (
+    ModelEnvOverlayBinding(env_var="ONEX_DB_HOST", field_name="host"),
+    ModelEnvOverlayBinding(env_var="ONEX_DB_PORT", field_name="port"),
+    ModelEnvOverlayBinding(env_var="ONEX_DB_DATABASE", field_name="database"),
+    ModelEnvOverlayBinding(env_var="ONEX_DB_USERNAME", field_name="username"),
+    ModelEnvOverlayBinding(env_var="ONEX_DB_PASSWORD", field_name="password"),
+    ModelEnvOverlayBinding(env_var="ONEX_DB_SSL_ENABLED", field_name="ssl_enabled"),
+    ModelEnvOverlayBinding(
+        env_var="ONEX_DB_CONNECTION_TIMEOUT", field_name="connection_timeout"
+    ),
+)
 
 
 class ModelDatabaseConnectionConfig(BaseModel):
@@ -28,6 +53,12 @@ class ModelDatabaseConnectionConfig(BaseModel):
     - Health check capability assessment
     - Performance tuning recommendations
     """
+
+    # OMN-17554: unknown wire fields are rejected rather than silently dropped.
+    # Pydantic's default is extra="ignore", so before this line a caller that
+    # misspelled a field name got a model built from defaults and no error —
+    # for a credential model, a silently-dropped password.
+    model_config = ConfigDict(extra="forbid")
 
     host: str = Field(
         default=...,
@@ -390,25 +421,15 @@ class ModelDatabaseConnectionConfig(BaseModel):
             "pool_timeout": self.connection_timeout + 5,
         }
 
-    # === Environment Override Support ===
+    # === Overlay Binding Support ===
 
     def apply_environment_overrides(self) -> "ModelDatabaseConnectionConfig":
-        """Apply environment variable overrides for CI/local testing."""
+        """Apply the declared overlay bindings for CI/local testing."""
         overrides: dict[str, object] = {}
 
-        # Environment variable mappings
-        env_mappings = {
-            "ONEX_DB_HOST": "host",
-            "ONEX_DB_PORT": "port",
-            "ONEX_DB_DATABASE": "database",
-            "ONEX_DB_USERNAME": "username",
-            "ONEX_DB_PASSWORD": "password",
-            "ONEX_DB_SSL_ENABLED": "ssl_enabled",
-            "ONEX_DB_CONNECTION_TIMEOUT": "connection_timeout",
-        }
-
-        for env_var, field_name in env_mappings.items():
-            env_value = os.environ.get(env_var)
+        for binding in _ENV_OVERLAY_BINDINGS:
+            field_name = binding.field_name
+            env_value = resolve_overlay_binding(binding)
             if env_value is not None:
                 # Type conversion for different field types
                 if field_name in ["port", "connection_timeout"]:

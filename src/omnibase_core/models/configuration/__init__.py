@@ -13,6 +13,7 @@ from .model_cli_config import (
 )
 from .model_compute_cache_config import ModelComputeCacheConfig
 from .model_config_types import ScalarConfigValue
+from .model_env_overlay_binding import ModelEnvOverlayBinding
 from .model_environment_config_override import ModelEnvironmentConfigOverride
 from .model_environment_override import ModelEnvironmentOverride
 from .model_git_hub_actions_container import ModelGitHubActionsContainer
@@ -38,6 +39,7 @@ __all__ = [
     "ModelCLIConfig",
     "ModelComputeCacheConfig",
     "ModelDatabaseConfig",
+    "ModelEnvOverlayBinding",
     "ModelEnvironmentConfigOverride",
     "ModelEnvironmentOverride",
     "ModelGitHubActionsContainer",
