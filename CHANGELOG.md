@@ -1,9 +1,23 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
-## v0.47.3 (2026-09-02)
+## v0.47.3 (2026-09-05)
+
+### Features
+- feat typed store-resolved credential carrier on the deployment topology database binding, plus the `tenant-projection` runtime profile (#1648). `ModelDeploymentTopologyDatabaseBinding` now declares exactly ONE credential carrier per binding: `dsn_env` (legacy — a process env var holding the DSN) or `secret_ref` (a dotted logical secret name the runtime resolves through `SecretResolver` at the binding boundary). Both-set and neither-set are rejected by a model validator that names the offending principal either way; neither field is defaulted. `tenant-projection` is registered in `REGISTERED_RUNTIME_PROFILES` and in `CONSUMER_ATTACHED_RUNTIME_PROFILES` — it is one consolidated writer process owning every TENANT-domain projection contract, because it is the only process holding that binding's store-resolved credential. Additive: existing `dsn_env` bindings are unchanged.
+- feat give omnibase_core a lab host table so heavy pre-push escalations can leave the launching host (#1635), and add the hcloud EC2 overflow row while making the host-identity refusal proofs host-independent (#1640).
 
 ### Changes
-- chore move this repository's prose documentation to the OmniNode knowledge base and flip the KB doc gate to `mode: strict`. 199 markdown files outside the gate's allowed set are gone: 113 to the public knowledge base, 37 to the internal one, 47 deleted as stubs or dated artifacts, and `CONTRIBUTING.md`/`CODE_OF_CONDUCT.md` moved under `.github/`. No public API changes; the packaged tree changes only in that the eight generated validators no longer ship a `GENERATION_PROVENANCE.md` beside them, and their docstrings now cite that record in the knowledge base instead.
+- fix `backend_secret_discipline` no longer accepts `api_key_env` as a logical secret reference (#1649). An env-var name is a carrier, not a logical secret name; accepting it let a raw env credential pass a check that exists to force store resolution.
+- fix let a non-owner actor push through the governed pre-push dispatcher (#1642).
+- fix core vendored provenance record + the registry-root half of the picker (#1650), and port the zero-collected-tests refusal — a remote pre-push run that collected zero tests is no evidence, not a pass (#1647). A remote selector run that collected nothing now fails closed instead of reporting a green it never earned.
+- fix carry the pytest execution policy across the pre-push remote dispatch seam (#1643) — 3:36:06 to 1:32:51 on h105.
+- fix arm the terminal correlation predicate in host mode and stop reading a missing status as success (#1645).
+- fix arm omnibase_core auto-merge with the org PAT so dev push workflows fire (#1646).
+- fix scope the core release App token for workflows (#1638); the release main-sync pushes as `onexbot-occ-writer`, not `github-actions[bot]` (#1637).
+- fix remove a dead async autouse fixture that errors on pytest 9.1 + wire an async-fixture-decorator gate (#1636).
+- chore move this repository's prose documentation to the OmniNode knowledge base and flip the KB doc gate to `mode: strict` (#1644). 199 markdown files outside the gate's allowed set are gone: 113 to the public knowledge base, 37 to the internal one, 47 deleted as stubs or dated artifacts, and `CONTRIBUTING.md`/`CODE_OF_CONDUCT.md` moved under `.github/`. No public API changes; the packaged tree changes only in that the eight generated validators no longer ship a `GENERATION_PROVENANCE.md` beside them, and their docstrings now cite that record in the knowledge base instead.
+- ci require the KB doc gate on omnibase_core PRs (#1639).
+- chore(deps) bump the actions group with 2 updates.
 
 ## v0.47.0 (2026-08-29)
 
