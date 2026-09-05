@@ -338,7 +338,7 @@ def test_the_same_host_route_still_requires_a_designated_row(
     is exactly as unable to authorize a heavy run as it was before."""
     out = _run(
         actor_repo,
-        "PREPUSH_LC_HOST=some-random-laptop\n"
+        "PREPUSH_LC_HOST=some-random-laptop\n"  # pragma: allowlist secret
         'rc=0; prepush_local_actor_route "full-suite escalation" "" || rc=$?\n'
         'echo "RC=${rc}"',
         env=_actor_env(PREPUSH_REACH_OVERRIDE_MAP="hfar=down"),

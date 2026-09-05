@@ -99,6 +99,6 @@
 #     same rule -- recorded, not hidden.
 #
 #path	upstream_repo	upstream_path	upstream_commit	upstream_branch	sha256	copied_at
-scripts/hooks/prepush_dispatch.sh	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_dispatch.sh	812d0b5451c1b157dd764cc26a83b9c7e12bcf71	dev	3731ca42fea56fa61dec993a3818e9046b70890c7d8da2ed0b71d2b8768ad71b	2026-09-04
+scripts/hooks/prepush_dispatch.sh	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_dispatch.sh	812d0b5451c1b157dd764cc26a83b9c7e12bcf71	dev	568443860442346f2a8687740b1a9469db439cdb571e6c56110e3b30872dc070	2026-09-05
 scripts/hooks/prepush_override_grant.py	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_override_grant.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	6777c592a944fe1964a195bf088c00c7747551e5e9a20705ca49d9e59dbc3f3c	2026-09-01
 scripts/hooks/pytest_full_suite_host_guard.py	OmniNode-ai/omnibase_infra	scripts/hooks/pytest_full_suite_host_guard.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	73a104fc080bfa49cbab263830c43f53d473d5c51f31bc2fa37018d34c3c67d8	2026-09-01
