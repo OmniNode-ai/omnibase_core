@@ -1337,3 +1337,145 @@ async def test_no_terminal_event_no_handler_spec_still_writes_state(
     assert workflow_data["run_id"] != str(stale_run_id)
     assert workflow_data["result"] == EnumWorkflowResult.FAILED.value
     assert "handler_result" not in workflow_data
+
+
+# ---------------------------------------------------------------------------
+# OMN-17980 regression: a canonical def-B single-emit terminal declares NO
+# correlation id at any level, and the OMN-15660 correlation predicate refused
+# it as foreign — so every def-B ORCHESTRATOR run through the event-driven
+# runtime timed out on 0.47.3.
+# ---------------------------------------------------------------------------
+
+_BARE_TERMINAL_TOPIC = "onex.evt.omn17962.completed.v1"
+
+
+class _ModelBareDomainTerminal(BaseModel):
+    """A canonical def-B response model: domain fields only, no run identity.
+
+    This is the shape ``LocalRuntimeBusAdapter`` publishes verbatim on the
+    single-emit path (``result.model_dump_json()``), and it is the shape every
+    ``NodeCompute``/``NodeOrchestrator`` def-B handler returns —
+    ``handle(request: ModelX) -> ModelY`` carries no envelope and therefore no
+    place to put a correlation id.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: str = Field(default="success")
+    artifact_written: bool = Field(default=True)
+
+
+class _BareDomainTerminalHandler:
+    """Returns the bare domain model — the def-B contract, no envelope."""
+
+    async def handle(
+        self, payload: _ModelRequiresOnlyCorrelationId
+    ) -> _ModelBareDomainTerminal:
+        return _ModelBareDomainTerminal()
+
+
+def _write_bare_terminal_contract(target: Path) -> None:
+    contract: dict[str, Any] = {
+        "workflow_id": "omn-17962-bare-domain-terminal",
+        "terminal_event": _BARE_TERMINAL_TOPIC,
+        "event_bus": {
+            "subscribe_topics": ["onex.cmd.omn17962.start.v1"],
+            "publish_topics": [_BARE_TERMINAL_TOPIC],
+        },
+        "handler_routing": {
+            "routing_strategy": "operation_match",
+            "handlers": [
+                {
+                    "operation": "start",
+                    "handler": {
+                        "module": _THIS_MODULE_FOR_IDENTITY,
+                        "name": "_BareDomainTerminalHandler",
+                    },
+                    "event_model": {
+                        "module": _THIS_MODULE_FOR_IDENTITY,
+                        "name": "_ModelRequiresOnlyCorrelationId",
+                    },
+                }
+            ],
+        },
+    }
+    target.write_text(yaml.safe_dump(contract), encoding="utf-8")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_bare_domain_terminal_without_correlation_is_this_run(
+    tmp_path: Path,
+) -> None:
+    """A def-B single-emit terminal completes the run (OMN-17980).
+
+    OMN-15660 armed ``_expected_correlation_id`` in host mode, and
+    ``_terminal_correlation_matches`` demanded ``declared == {wanted}``. A bare
+    domain payload declares nothing, so ``set() != {wanted}`` classified the
+    run's OWN terminal as foreign: ``(terminal) 1`` / ``(terminal:foreign) 1``,
+    then TIMEOUT. The existing event-driven coverage
+    (``test_event_driven_runtime_waits_for_declared_terminal_event``) stamps
+    ``correlation_id`` into a hand-built dict, which is why core stayed green
+    while every def-B consumer node broke.
+
+    This asserts the run COMPLETES and the terminal payload is the handler's
+    own — never that an unattributable ENVELOPE is accepted, which is the
+    OMN-17304 AC4 refusal pinned by the counter-assertion below.
+    """
+    contract_path = tmp_path / "contract.yaml"
+    state_root = tmp_path / "state"
+    _write_bare_terminal_contract(contract_path)
+
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=state_root,
+        timeout=10,
+    )
+
+    result = await runtime.run_async()
+
+    assert result == EnumWorkflowResult.COMPLETED, (
+        "a def-B single-emit terminal is this run's own terminal; refusing it "
+        f"as foreign makes every def-B node unrunnable (got {result})"
+    )
+    workflow_data = json.loads((state_root / "workflow_result.json").read_text())
+    assert workflow_data["terminal_payload"]["artifact_written"] is True
+    assert workflow_data["handler_result"]["status"] == "success"
+
+
+@pytest.mark.unit
+def test_bare_terminal_with_foreign_correlation_is_still_refused() -> None:
+    """Counter-assertion: a bare payload that NAMES another run stays foreign.
+
+    The OMN-17980 fix widens the predicate only for payloads that declare no
+    correlation at all. A bare domain payload that carries a correlation id is
+    fully attributable, so the OMN-15660 isolation boundary is unchanged there.
+    """
+    runtime = RuntimeLocal(workflow_path=Path("unused.yaml"), timeout=1)
+    runtime._expected_correlation_id = _uuid_module.uuid4()
+
+    assert runtime._terminal_correlation_matches(
+        {"status": "success", "correlation_id": str(runtime._expected_correlation_id)}
+    )
+    assert not runtime._terminal_correlation_matches(
+        {"status": "success", "correlation_id": str(_uuid_module.uuid4())}
+    )
+
+
+@pytest.mark.unit
+def test_envelope_terminal_naming_nobody_is_still_refused() -> None:
+    """Counter-assertion: OMN-17304 AC4 survives the OMN-17980 widening.
+
+    An envelope-shaped terminal has a declared place for a correlation id at
+    both levels. One that names nobody is unattributable rather than
+    shapeless, and is still discarded.
+    """
+    runtime = RuntimeLocal(workflow_path=Path("unused.yaml"), timeout=1)
+    runtime._expected_correlation_id = _uuid_module.uuid4()
+
+    assert not runtime._terminal_correlation_matches(
+        {
+            "envelope_id": str(_uuid_module.uuid4()),
+            "payload": {"status": "success"},
+        }
+    )
