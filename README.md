@@ -151,12 +151,6 @@ High-signal entrypoints:
 - [Contributing](.github/CONTRIBUTING.md)
 - [Security](SECURITY.md)
 
-Internal-only and in-flight-migration material for this package (per-repo
-architecture handshakes, the mixin/handler/protocol migration guides, repo CI
-operations, and the validator generation-provenance records) lives in the
-OmniNode internal knowledge base instead — teammates have access; it is not
-linked from here because that repository is private.
-
 ## License
 
 [MIT](LICENSE)
