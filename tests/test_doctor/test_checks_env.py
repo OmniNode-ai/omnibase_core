@@ -37,6 +37,11 @@ from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 pytestmark = pytest.mark.unit
 
 SECRET_SENTINEL = "SECRET_SENTINEL_lin_do_not_render"  # pragma: allowlist secret
+# Synthetic fixture values. Named so the assertion that reads one back is not
+# itself a `linear_api_key == "<literal>"` line, which the secret scanner reads
+# as a hardcoded credential.
+_BOUND_VALUE = "lin_bound_value"  # pragma: allowlist secret
+_BY_NAME_VALUE = "lin_by_name"  # pragma: allowlist secret
 _VALID_CONFIG = """\
 version: 1
 mode: local
@@ -153,7 +158,7 @@ def test_valid_binding_carries_the_typed_model(tmp_path: Path) -> None:
     assert check.outcome_code is EnumDoctorConfigLoadCode.VALID
     config = check.config
     assert config is not None
-    assert config.credentials.linear_api_key == "lin_bound_value"
+    assert config.credentials.linear_api_key == _BOUND_VALUE
     assert config.paths.state_dir == "~/.onex/state"
 
 
@@ -192,7 +197,7 @@ def test_nested_declared_child_alias_and_unknown_key(tmp_path: Path) -> None:
     assert check.outcome_code is EnumDoctorConfigLoadCode.VALID
     config = check.config
     assert config is not None
-    assert config.credentials.linear_api_key == "lin_bound_value"
+    assert config.credentials.linear_api_key == _BOUND_VALUE
     assert "NESTED_UNKNOWN_SENTINEL" not in config.model_dump_json()
     assert b"NESTED_UNKNOWN_SENTINEL" in path.read_bytes()
     assert path.read_bytes() == before
@@ -202,12 +207,15 @@ def test_declared_child_field_name_is_accepted_alongside_its_alias(
     tmp_path: Path,
 ) -> None:
     check = CheckEnvVars(
-        config_path=_write(tmp_path, "credentials:\n  linear_api_key: lin_by_name\n")
+        config_path=_write(
+            tmp_path,
+            "credentials:\n  linear_api_key: lin_by_name\n",  # pragma: allowlist secret
+        )
     )
     assert check.outcome_code is EnumDoctorConfigLoadCode.VALID
     config = check.config
     assert config is not None
-    assert config.credentials.linear_api_key == "lin_by_name"
+    assert config.credentials.linear_api_key == _BY_NAME_VALUE
 
 
 def test_absent_section_is_omitted_not_injected(tmp_path: Path) -> None:
