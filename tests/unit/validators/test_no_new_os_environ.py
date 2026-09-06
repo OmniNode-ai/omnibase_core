@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.validators import environment_reader_inventory as inventory
 from omnibase_core.validators import no_new_os_environ as validator
 from omnibase_core.validators.environment_reader_inventory import (
     READER_INVENTORY_BY_PATH,
@@ -264,3 +265,47 @@ def test_inventory_report_marks_a_new_reader_path_unassigned(
     stdout = capsys.readouterr().out
     assert "unassigned=1" in stdout
     assert "src/new_reader.py: UNASSIGNED" in stdout
+
+
+@pytest.mark.unit
+def test_inventory_mode_passes_when_all_reader_paths_are_assigned(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assigned_path = "src/omnibase_core/artifacts/artifact_store.py"
+    _write(
+        tmp_path,
+        assigned_path,
+        "import os\nos.getenv('TOKEN')\n",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(validator, "_DEFAULT_ROOTS", (Path("src"),))
+    monkeypatch.setattr(
+        inventory,
+        "READER_INVENTORY_BY_PATH",
+        {assigned_path: READER_INVENTORY_BY_PATH[assigned_path]},
+    )
+
+    assert validator.main(["--all", "--inventory"]) == 0
+
+    stdout = capsys.readouterr().out
+    assert "unassigned=0" in stdout
+    assert "stale=0" in stdout
+
+
+@pytest.mark.unit
+def test_inventory_mode_fails_when_inventory_path_is_stale(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(validator, "_DEFAULT_ROOTS", (Path("src"),))
+    (tmp_path / "src").mkdir()
+
+    assert validator.main(["--all", "--inventory"]) == 1
+
+    stdout = capsys.readouterr().out
+    assert "stale=" in stdout
+    assert "src/omnibase_core/artifacts/artifact_store.py: STALE-INVENTORY" in stdout
