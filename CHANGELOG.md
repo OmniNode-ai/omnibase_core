@@ -1,5 +1,10 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
+## v0.47.6 (2026-09-06)
+
+### Changes
+- docs no public prose in this repository names the private knowledge base (#1660). One `README.md` paragraph named a private repository, enumerated its contents and stated that teammates have access; it is deleted, since the public knowledge-base links beside it already serve the reader. The same phrasing had reached twenty other sites: fourteen shipped `src/` docstrings that go out inside the published wheel and each pointed at a generation-provenance record the reader cannot reach (seven also cited an internal memory slug), `architecture-handshakes/check-policy-gate.sh` which printed a private destination into PUBLIC CI logs on failure, `.github/CONTRIBUTING.md`, `CLAUDE.md`'s documentation map, and three changelog entries. Each now states that the record is not part of this repository and cites the ticket. Text only: no test, script or gate resolves any of it. The version moves because fourteen of the edited files are packaged source, so the wheel bytes change and the release-identity gate correctly refuses new packaged code on an already-published version — a docstring is shipped code.
+
 ## v0.47.5 (2026-09-06)
 
 ### Features
