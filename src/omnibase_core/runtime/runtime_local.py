@@ -365,8 +365,21 @@ class RuntimeLocal:
 
         Returns ``True`` unconditionally when no correlation predicate is armed
         — i.e. when no correlation id reached the wire, so there is nothing to
-        compare against. That is the only remaining unfiltered case; it is NOT
-        a host/client distinction (OMN-15660).
+        compare against. That is NOT a host/client distinction (OMN-15660).
+
+        A terminal that declares NO correlation id at either level is judged on
+        its SHAPE, not treated as unattributable outright (OMN-17980). The
+        canonical def-B terminal is the handler's bare domain model, published
+        verbatim by ``LocalRuntimeBusAdapter`` on the single-emit path
+        (``result.model_dump_json()``): ``handle(request: ModelX) -> ModelY``
+        has no envelope and therefore no field in which to carry a correlation
+        id. Refusing that shape does not isolate the run, it makes every def-B
+        ORCHESTRATOR unrunnable — the whole event-driven path records
+        ``(terminal) 1`` / ``(terminal:foreign) 1`` and then times out.
+
+        An ENVELOPE that names nobody is a different fact: it has the field and
+        left it empty, so it stays refused (OMN-17304 AC4). Once anything IS
+        declared, shape is irrelevant and every declared id must be this run's.
         """
         expected = self._expected_correlation_id
         if expected is None:
@@ -380,6 +393,8 @@ class RuntimeLocal:
             raw = container.get("correlation_id")
             if isinstance(raw, str) and raw:
                 declared.add(raw)
+        if not declared:
+            return not self._is_envelope_shaped(payload)
         return declared == {wanted}
 
     # ONEX_EXCLUDE: dict_str_any — event bus payload
