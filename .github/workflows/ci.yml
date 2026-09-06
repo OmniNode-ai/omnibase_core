@@ -1559,10 +1559,10 @@ jobs:
           # shellcheck disable=SC2086
           .venv/bin/python scripts/validation/validate_spdx_headers.py $files
 
-  # Typed-bootstrap env gate (OMN-17744) — canonical AST-based enforcement.
-  # Blocks every direct or aliased process-environment access outside the exact
-  # typed capture operation. The four-root adversarial corpus is the proof that
-  # source, tests, examples, and scripts all remain in scope.
+  # Typed-bootstrap env gate (OMN-17744) — canonical AST-based inventory audit.
+  # The four-root adversarial corpus remains in scope. Existing readers are
+  # tracked with an owner/disposition; new or stale inventory entries fail
+  # closed, while the default validator mode remains strict for raw access.
   typed-bootstrap-environment-boundary:
     name: Typed Bootstrap Environment Boundary (OMN-17744)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
@@ -1597,7 +1597,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --no-dev
 
-      - name: Scan source, tests, examples, and scripts for raw environment access
+      - name: Audit source, tests, examples, and scripts environment-reader inventory
         run: |
           .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all --inventory
 

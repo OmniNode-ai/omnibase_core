@@ -426,15 +426,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     findings = validate_paths(paths)
     if args.inventory:
-        _write_inventory_report(findings)
-    if args.inventory:
-        finding_paths = {finding.path for finding in findings}
-        return int(
-            bool(
-                unassigned_reader_paths(finding_paths)
-                or stale_inventory_paths(finding_paths)
-            )
-        )
+        unassigned, stale = _write_inventory_report(findings)
+        # Inventory mode is the migration-boundary contract: existing readers
+        # must be explicitly owned, while new or removed readers fail closed.
+        # Raw-access enforcement remains the default behavior above when the
+        # caller does not request the audited inventory.
+        return int(bool(unassigned or stale))
     if not findings:
         return 0
     sys.stderr.write(
@@ -446,7 +443,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 1
 
 
-def _write_inventory_report(findings: Sequence[ModelEnvReadFinding]) -> None:
+def _write_inventory_report(
+    findings: Sequence[ModelEnvReadFinding],
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """Render the checked reader-to-owner/disposition mapping for review."""
     finding_paths = {finding.path for finding in findings}
     unassigned = unassigned_reader_paths(finding_paths)
@@ -467,6 +466,7 @@ def _write_inventory_report(findings: Sequence[ModelEnvReadFinding]) -> None:
         )
     for stale_path in stale:
         sys.stdout.write(f"  {stale_path}: STALE-INVENTORY\n")
+    return unassigned, stale
 
 
 if __name__ == "__main__":

@@ -274,6 +274,7 @@ def test_inventory_mode_passes_when_all_reader_paths_are_assigned(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     assigned_path = "src/omnibase_core/artifacts/artifact_store.py"
+    assigned_inventory = {assigned_path: READER_INVENTORY_BY_PATH[assigned_path]}
     _write(
         tmp_path,
         assigned_path,
@@ -282,10 +283,11 @@ def test_inventory_mode_passes_when_all_reader_paths_are_assigned(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(validator, "_DEFAULT_ROOTS", (Path("src"),))
     monkeypatch.setattr(
-        inventory,
+        validator,
         "READER_INVENTORY_BY_PATH",
-        {assigned_path: READER_INVENTORY_BY_PATH[assigned_path]},
+        assigned_inventory,
     )
+    monkeypatch.setattr(inventory, "READER_INVENTORY_BY_PATH", assigned_inventory)
 
     assert validator.main(["--all", "--inventory"]) == 0
 
