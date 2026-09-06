@@ -690,6 +690,9 @@ required_validators:
     ci_workflow_keywords:
       - "typed-bootstrap-environment-boundary"
       - "no_new_os_environ"
+    excludes:
+      allowed: []
+      forbidden: []
     applies_to_repos:
       - omnibase_core
 
