@@ -122,7 +122,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "a0d28fb716ae9560bc17be1d8f3631474ba82e00db2ad2b4490820fedcad8d8a"  # pragma: allowlist secret
     ),
     "typed-bootstrap-environment-boundary": (
-        "3e76ad346c0f718f3f6e0ccc469484d2e16193630b3461e3621bb8d6c013449a"  # pragma: allowlist secret
+        "293672e13575a0813cc34b495ee4fbe41f740788ee150c08cdf495a8c8540a6b"  # pragma: allowlist secret
     ),
     "duplicate-registry-ids": (
         "6d4d2c5bb43d103924a336575a5022d17cedf8e086ceff477121255d52e71dca"  # pragma: allowlist secret
