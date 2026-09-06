@@ -46,6 +46,9 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_duplicate_yaml_mapping_key import (
+    DuplicateYamlMappingKeyError,
+)
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_error_context import ModelErrorContext
@@ -61,6 +64,75 @@ from omnibase_core.types.typed_dict_yaml_dump_options import TypedDictYamlDumpOp
 
 
 # Removed _load_yaml_content function - YAML loading now handled by Pydantic model from_yaml methods
+
+
+class _DuplicateKeyRejectingSafeLoader(yaml.SafeLoader):
+    """SafeLoader variant that fails before duplicate mapping data is collapsed."""
+
+    source: str = "<unknown YAML source>"
+
+    def construct_mapping(
+        self,
+        node: yaml.MappingNode,
+        deep: bool = False,
+    ) -> dict[object, object]:
+        """Construct a mapping while rejecting direct and merged duplicate keys."""
+        self.flatten_mapping(node)
+        mapping: dict[object, object] = {}
+        for key_node, value_node in node.value:
+            key = self.construct_object(  # type: ignore[no-untyped-call]
+                key_node,
+                deep=deep,
+            )
+            try:
+                duplicate = key in mapping
+            except TypeError as error:
+                raise yaml.constructor.ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    f"found unacceptable mapping key ({error})",
+                    key_node.start_mark,
+                ) from error
+            if duplicate:
+                raise DuplicateYamlMappingKeyError(
+                    source=self.source,
+                    key=key,
+                    line=key_node.start_mark.line + 1,
+                    column=key_node.start_mark.column + 1,
+                    mapping_line=node.start_mark.line + 1,
+                    mapping_column=node.start_mark.column + 1,
+                )
+            mapping[key] = self.construct_object(  # type: ignore[no-untyped-call]
+                value_node,
+                deep=deep,
+            )
+        return mapping
+
+
+def load_yaml_mapping_no_duplicates(
+    content: str,
+    *,
+    source: str,
+) -> dict[object, object]:
+    """Load one typed-schema mapping without YAML's silent key precedence.
+
+    This narrow helper is for callers that immediately validate a known schema.
+    YAML merge keys are accepted only when their fully expanded mapping has one
+    value per key. A duplicate between two merged maps, or between a merge and
+    a local mapping value, raises ``DuplicateYamlMappingKeyError`` instead of
+    selecting a value by YAML precedence rules.
+    """
+    loader = _DuplicateKeyRejectingSafeLoader(content)
+    loader.source = source
+    try:
+        loaded = loader.get_single_data()
+    finally:
+        loader.dispose()  # type: ignore[no-untyped-call]
+    if not isinstance(loaded, dict):
+        raise ValueError(  # error-ok: reject malformed YAML before typed validation
+            f"{source}: YAML document root must be a mapping",
+        )
+    return loaded
 
 
 def validate_file_exists(path: Path | str) -> None:

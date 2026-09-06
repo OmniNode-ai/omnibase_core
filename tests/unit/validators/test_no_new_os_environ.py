@@ -1,291 +1,266 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Tests for the canonical no-new-os-environ validator (OMN-13566).
-
-TDD test file written before the implementation. The validator must:
-
-1. Block os.environ[KEY], os.environ.get(KEY), and os.getenv(KEY) calls
-   outside the keep allowlist in source files.
-2. Pass reads of keys listed in KEEP_ALLOWLIST.
-3. Respect ``# env-read-ok: <reason>`` inline suppression.
-4. Skip test files and scripts/ directories.
-5. Parse multiline strings correctly (no false positives inside docstrings).
-6. Exit 0 / 1 via main() for CLI use.
-7. Contain a deliberate red-test corpus (used as DoD proof in CI).
-
-Red-test corpus (DoD item: "a new env read in any repo fails CI"):
-  The test ``test_deliberate_violation_corpus`` plants two known-bad snippets
-  and asserts that validate_file() flags both.  If the validator ever stops
-  flagging them, this test fails — proving the gate is live.
-"""
+"""Adversarial regression coverage for the raw-environment access gate."""
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import pytest
 
-from omnibase_core.validators.no_new_os_environ import (
-    KEEP_ALLOWLIST,
-    validate_file,
-    validate_paths,
+from omnibase_core.validators import no_new_os_environ as validator
+from omnibase_core.validators.environment_reader_inventory import (
+    READER_INVENTORY_BY_PATH,
+    unassigned_reader_paths,
 )
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+
+def _write(tmp_path: Path, relative_path: str, source: str) -> Path:
+    path = tmp_path / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(source, encoding="utf-8")
+    return path
 
 
-def _write(tmp_path: Path, name: str, source: str) -> Path:
-    p = tmp_path / name
-    p.write_text(source, encoding="utf-8")
-    return p
-
-
-# ---------------------------------------------------------------------------
-# Basic violation detection
-# ---------------------------------------------------------------------------
-
-
-def test_flags_os_environ_subscript(tmp_path: Path) -> None:
-    """os.environ[KEY] outside allowlist → violation."""
-    src = _write(
-        tmp_path,
-        "bad.py",
-        'import os\nVAL = os.environ["MY_SECRET_KEY"]\n',
-    )
-    findings = validate_file(src)
-    assert len(findings) == 1
-    assert findings[0].var_name == "MY_SECRET_KEY"
-    assert findings[0].line == 2
-
-
-def test_flags_os_environ_get(tmp_path: Path) -> None:
-    """os.environ.get(KEY) outside allowlist → violation."""
-    src = _write(
-        tmp_path,
-        "bad2.py",
-        'import os\nVAL = os.environ.get("UNLISTED_TOKEN")\n',
-    )
-    findings = validate_file(src)
-    assert len(findings) == 1
-    assert findings[0].var_name == "UNLISTED_TOKEN"
-
-
-def test_flags_os_getenv(tmp_path: Path) -> None:
-    """os.getenv(KEY) outside allowlist → violation."""
-    src = _write(
-        tmp_path,
-        "bad3.py",
-        'import os\nVAL = os.getenv("MYSTERY_PARAM")\n',
-    )
-    findings = validate_file(src)
-    assert len(findings) == 1
-    assert findings[0].var_name == "MYSTERY_PARAM"
-
-
-# ---------------------------------------------------------------------------
-# Allowlist pass-through
-# ---------------------------------------------------------------------------
-
-
+@pytest.mark.unit
+@pytest.mark.parametrize("root", ["src", "tests", "examples", "scripts"])
 @pytest.mark.parametrize(
-    "keep_var",
-    sorted(KEEP_ALLOWLIST)[:10],  # spot-check 10 entries
+    ("source", "required_line"),
+    [
+        (
+            "import os\nenvironment = os.environ\nVALUE = environment['TOKEN']\n",
+            3,
+        ),
+        ("import os\nget = os.getenv\nVALUE = get('TOKEN')\n", 3),
+        ("import os\nalias = os\nVALUE = alias.environ['TOKEN']\n", 3),
+        ("import os\nVALUE = getattr(os, 'environ')['TOKEN']\n", 2),
+        (
+            "import os\nattribute = 'getenv'\nget = getattr(os, attribute)\n"
+            "VALUE = get('TOKEN')\n",
+            3,
+        ),
+    ],
 )
-def test_allows_keep_allowlist_vars(tmp_path: Path, keep_var: str) -> None:
-    """Reads of vars in KEEP_ALLOWLIST must not produce findings."""
-    src = _write(
-        tmp_path,
-        "ok.py",
-        f'import os\nVAL = os.environ["{keep_var}"]\n',
-    )
-    assert validate_file(src) == []
-
-
-def test_allows_omni_home(tmp_path: Path) -> None:
-    src = _write(tmp_path, "ok2.py", 'import os\nroot = os.environ["OMNI_HOME"]\n')
-    assert validate_file(src) == []
-
-
-def test_allows_ci_var(tmp_path: Path) -> None:
-    src = _write(tmp_path, "ok3.py", 'import os\nciv = os.getenv("CI")\n')
-    assert validate_file(src) == []
-
-
-# ---------------------------------------------------------------------------
-# Inline suppression
-# ---------------------------------------------------------------------------
-
-
-def test_inline_suppression_skips_line(tmp_path: Path) -> None:
-    """Lines annotated with # env-read-ok are skipped."""
-    src = _write(
-        tmp_path,
-        "suppressed.py",
-        'import os\nVAL = os.environ["MY_CUSTOM_KEY"]  # env-read-ok: bootstrap boundary\n',
-    )
-    assert validate_file(src) == []
-
-
-def test_inline_suppression_required_reason(tmp_path: Path) -> None:
-    """Bare # env-read-ok (no reason) is still accepted as suppression."""
-    src = _write(
-        tmp_path,
-        "suppressed2.py",
-        'import os\nVAL = os.environ["MY_CUSTOM_KEY"]  # env-read-ok\n',
-    )
-    assert validate_file(src) == []
-
-
-# ---------------------------------------------------------------------------
-# Skip rules
-# ---------------------------------------------------------------------------
-
-
-def test_skips_test_files(tmp_path: Path) -> None:
-    """Files inside a tests/ directory are skipped entirely."""
-    tests_dir = tmp_path / "tests"
-    tests_dir.mkdir()
-    src = tests_dir / "test_something.py"
-    src.write_text('import os\nos.environ["UNLISTED"]\n', encoding="utf-8")
-    assert validate_file(src) == []
-
-
-def test_skips_scripts_dir(tmp_path: Path) -> None:
-    """Files inside a scripts/ directory are skipped entirely."""
-    scripts_dir = tmp_path / "scripts"
-    scripts_dir.mkdir()
-    src = scripts_dir / "bootstrap.py"
-    src.write_text('import os\nos.environ["UNLISTED"]\n', encoding="utf-8")
-    assert validate_file(src) == []
-
-
-def test_skips_non_python_file(tmp_path: Path) -> None:
-    """Non-.py files are skipped."""
-    src = _write(tmp_path, "config.yaml", 'key: "os.environ[THING]"\n')
-    assert validate_file(src) == []
-
-
-# ---------------------------------------------------------------------------
-# Multiline string false-positive guard
-# ---------------------------------------------------------------------------
-
-
-def test_no_false_positive_in_docstring(tmp_path: Path) -> None:
-    """env reads in docstrings / multiline strings must not fire."""
-    src = _write(
-        tmp_path,
-        "docs.py",
-        '''\
-def foo():
-    """
-    Example::
-
-        val = os.environ["SOME_KEY"]
-    """
-    pass
-''',
-    )
-    assert validate_file(src) == []
-
-
-def test_no_false_positive_in_triple_quoted_string(tmp_path: Path) -> None:
-    src = _write(
-        tmp_path,
-        "tqs.py",
-        '''\
-TEMPLATE = """
-os.getenv("SHOULD_BE_IGNORED")
-"""
-''',
-    )
-    assert validate_file(src) == []
-
-
-# ---------------------------------------------------------------------------
-# validate_paths — multi-file aggregation
-# ---------------------------------------------------------------------------
-
-
-def test_validate_paths_aggregates(tmp_path: Path) -> None:
-    """validate_paths returns findings from all supplied paths."""
-    f1 = _write(tmp_path, "a.py", 'import os\nos.environ["AAA"]\n')
-    f2 = _write(tmp_path, "b.py", 'import os\nos.getenv("BBB")\n')
-    findings = validate_paths([f1, f2])
-    var_names = {f.var_name for f in findings}
-    assert "AAA" in var_names
-    assert "BBB" in var_names
-
-
-def test_validate_paths_returns_empty_on_clean_files(tmp_path: Path) -> None:
-    f1 = _write(tmp_path, "clean.py", "x = 1\n")
-    assert validate_paths([f1]) == []
-
-
-# ---------------------------------------------------------------------------
-# CLI (main) exit codes
-# ---------------------------------------------------------------------------
-
-
-def test_main_exits_0_on_no_violations(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_alias_and_getattr_readers_are_rejected_in_every_scanned_root(
+    tmp_path: Path,
+    root: str,
+    source: str,
+    required_line: int,
 ) -> None:
-    """main() returns 0 when no files have violations."""
-    clean = _write(tmp_path, "clean.py", "x = 1\n")
-    monkeypatch.setattr(sys, "argv", ["validator", str(clean)])
-    from omnibase_core.validators.no_new_os_environ import main
+    """No source, test, example, or script path can bypass the AST gate."""
+    findings = validator.validate_file(_write(tmp_path, f"{root}/reader.py", source))
 
-    assert main() == 0
+    assert required_line in {finding.line for finding in findings}
 
 
-def test_main_exits_1_on_violation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.unit
+def test_module_alias_is_resolved_inside_a_function_scope(tmp_path: Path) -> None:
+    path = _write(
+        tmp_path,
+        "reader.py",
+        "import os\nalias = os\ndef read() -> str | None:\n    return alias.getenv('TOKEN')\n",
+    )
+
+    assert 4 in {finding.line for finding in validator.validate_file(path)}
+
+
+@pytest.mark.unit
+def test_function_scope_shadowing_does_not_misclassify_a_local_mapping(
+    tmp_path: Path,
 ) -> None:
-    """main() returns 1 when at least one violation is found."""
-    bad = _write(tmp_path, "bad.py", 'import os\nos.environ["FORBIDDEN_KEY"]\n')
-    monkeypatch.setattr(sys, "argv", ["validator", str(bad)])
-    from omnibase_core.validators.no_new_os_environ import main
-
-    assert main() == 1
-
-
-# ---------------------------------------------------------------------------
-# DELIBERATE RED-TEST CORPUS (DoD proof OMN-13566)
-# ---------------------------------------------------------------------------
-# These two snippets are planted violations — each must produce exactly one
-# finding.  If the validator is ever regressed to the point of not catching
-# them, this test fails, proving the CI gate would have let the violation in.
-
-
-_CORPUS_VIOLATION_A = """\
-import os
-
-SECRET = os.environ["ONEX_NEW_VIOLATION_CORPUS_A"]
-"""
-
-_CORPUS_VIOLATION_B = """\
-import os
-
-SECRET = os.getenv("ONEX_NEW_VIOLATION_CORPUS_B")
-"""
-
-
-def test_deliberate_violation_corpus(tmp_path: Path) -> None:
-    """Red-test corpus: two known-bad snippets must each produce exactly one finding."""
-    va = _write(tmp_path, "corpus_a.py", _CORPUS_VIOLATION_A)
-    vb = _write(tmp_path, "corpus_b.py", _CORPUS_VIOLATION_B)
-
-    findings_a = validate_file(va)
-    findings_b = validate_file(vb)
-
-    assert len(findings_a) == 1, (
-        f"Corpus-A violation not flagged — gate is broken! findings={findings_a}"
+    path = _write(
+        tmp_path,
+        "reader.py",
+        "import os\nenvironment = os.environ\ndef read() -> str:\n"
+        "    environment = {'TOKEN': 'typed'}\n    return environment['TOKEN']\n",
     )
-    assert findings_a[0].var_name == "ONEX_NEW_VIOLATION_CORPUS_A"
 
-    assert len(findings_b) == 1, (
-        f"Corpus-B violation not flagged — gate is broken! findings={findings_b}"
+    assert [finding.line for finding in validator.validate_file(path)] == [2]
+
+
+@pytest.mark.unit
+def test_from_os_function_alias_is_rejected(tmp_path: Path) -> None:
+    path = _write(
+        tmp_path,
+        "reader.py",
+        "from os import getenv as get\nVALUE = get('TOKEN')\n",
     )
-    assert findings_b[0].var_name == "ONEX_NEW_VIOLATION_CORPUS_B"
+
+    assert [finding.line for finding in validator.validate_file(path)] == [2]
+
+
+@pytest.mark.unit
+def test_exact_capture_operation_is_the_only_bootstrap_exemption(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = _write(
+        tmp_path,
+        "bootstrap/environment_bootstrap.py",
+        "import os\nclass ModelEnvironmentBootstrap:\n    @classmethod\n"
+        "    def capture_process_environment(cls, *, declared_keys):\n"
+        "        return cls.from_mapping(os.environ, declared_keys=declared_keys)\n",
+    )
+    monkeypatch.setattr(validator, "_BOOTSTRAP_MODULE", path.resolve())
+
+    assert validator.validate_file(path) == []
+
+
+@pytest.mark.unit
+def test_bootstrap_module_does_not_exempt_a_second_raw_reader(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = _write(
+        tmp_path,
+        "bootstrap/environment_bootstrap.py",
+        "import os\nclass ModelEnvironmentBootstrap:\n    @classmethod\n"
+        "    def capture_process_environment(cls, *, declared_keys):\n"
+        "        return cls.from_mapping(os.environ, declared_keys=declared_keys)\n"
+        "def rogue() -> str | None:\n    return os.getenv('TOKEN')\n",
+    )
+    monkeypatch.setattr(validator, "_BOOTSTRAP_MODULE", path.resolve())
+
+    assert [finding.line for finding in validator.validate_file(path)] == [7]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "source",
+    [
+        "import os\ndef capture_process_environment(cls, *, declared_keys):\n"
+        "    return cls.from_mapping(os.environ, declared_keys=declared_keys)\n",
+        "import os\nclass ForeignBootstrap:\n    @classmethod\n"
+        "    def capture_process_environment(cls, *, declared_keys):\n"
+        "        return cls.from_mapping(os.environ, declared_keys=declared_keys)\n",
+        "import os\nclass ModelEnvironmentBootstrap:\n"
+        "    def capture_process_environment(cls, *, declared_keys):\n"
+        "        return cls.from_mapping(os.environ, declared_keys=declared_keys)\n",
+    ],
+)
+def test_capture_name_alone_cannot_claim_the_bootstrap_exemption(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    source: str,
+) -> None:
+    path = _write(tmp_path, "bootstrap/environment_bootstrap.py", source)
+    monkeypatch.setattr(validator, "_BOOTSTRAP_MODULE", path.resolve())
+
+    assert len(validator.validate_file(path)) == 1
+
+
+@pytest.mark.unit
+def test_validation_aggregates_every_supplied_path(tmp_path: Path) -> None:
+    first = _write(tmp_path, "first.py", "import os\nos.environ['ONE']\n")
+    second = _write(tmp_path, "second.py", "import os\nos.getenv('TWO')\n")
+
+    assert len(validator.validate_paths([first, second])) == 2
+
+
+@pytest.mark.unit
+def test_validation_reports_an_explicit_missing_python_file(tmp_path: Path) -> None:
+    missing = tmp_path / "missing.py"
+
+    findings = validator.validate_paths([missing])
+
+    assert len(findings) == 1
+    assert findings[0].var_name == "<unreadable>"
+
+
+@pytest.mark.unit
+def test_validation_reports_invalid_utf8_as_unreadable(tmp_path: Path) -> None:
+    path = tmp_path / "invalid-encoding.py"
+    path.write_bytes(b"import os\n\xff\n")
+
+    findings = validator.validate_file(path)
+
+    assert len(findings) == 1
+    assert findings[0].var_name == "<unreadable>"
+
+
+@pytest.mark.unit
+def test_ast_column_is_character_offset_after_non_ascii_prefix(tmp_path: Path) -> None:
+    path = _write(
+        tmp_path,
+        "reader.py",
+        "import os\néé = 1; os.getenv('TOKEN')\n",
+    )
+
+    findings = validator.validate_file(path)
+
+    assert [(finding.line, finding.col) for finding in findings] == [(2, 8)]
+
+
+@pytest.mark.unit
+def test_removed_src_argument_cannot_conceal_a_root() -> None:
+    with pytest.raises(SystemExit):
+        validator._parse_args(["--all", "--src", "src"])
+
+
+@pytest.mark.unit
+def test_main_all_scans_each_of_the_four_default_roots(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    roots = ("src", "tests", "examples", "scripts")
+    for root in roots:
+        _write(tmp_path, f"{root}/reader.py", "import os\nos.getenv('TOKEN')\n")
+    monkeypatch.chdir(tmp_path)
+
+    assert validator.main(["--all"]) == 1
+
+    stderr = capsys.readouterr().err
+    assert all(f"{root}/reader.py" in stderr for root in roots)
+
+
+@pytest.mark.unit
+def test_main_reports_an_unreadable_python_file(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    missing = tmp_path / "missing.py"
+
+    assert validator.main([str(missing)]) == 1
+
+    assert "<unreadable>" in capsys.readouterr().err
+
+
+@pytest.mark.unit
+def test_main_reports_a_python_syntax_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path = _write(tmp_path, "invalid.py", "def unfinished(:\n")
+
+    assert validator.main([str(path)]) == 1
+
+    assert "<syntax-error>" in capsys.readouterr().err
+
+
+@pytest.mark.unit
+def test_inventory_assigns_every_approved_reader_path_to_a_disposition() -> None:
+    assigned_path = Path("src/omnibase_core/artifacts/artifact_store.py")
+
+    assignment = READER_INVENTORY_BY_PATH[assigned_path.as_posix()]
+
+    assert assignment.owner == "OMN-17744"
+    assert assignment.disposition == "migrate-to-typed-bootstrap-injection"
+    assert unassigned_reader_paths([assigned_path]) == ()
+
+
+@pytest.mark.unit
+def test_inventory_report_marks_a_new_reader_path_unassigned(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _write(tmp_path, "src/new_reader.py", "import os\nos.getenv('TOKEN')\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(validator, "_DEFAULT_ROOTS", (Path("src"),))
+
+    assert validator.main(["--all", "--inventory"]) == 1
+
+    stdout = capsys.readouterr().out
+    assert "unassigned=1" in stdout
+    assert "src/new_reader.py: UNASSIGNED" in stdout
