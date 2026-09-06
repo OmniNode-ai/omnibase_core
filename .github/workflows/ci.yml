@@ -1599,7 +1599,7 @@ jobs:
 
       - name: Scan source, tests, examples, and scripts for raw environment access
         run: |
-          .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all
+          .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all --inventory
 
   # Duplicate registry id guard (OMN-14401). Rejects config/registry YAML files
   # declaring duplicate ids over a key that is not guaranteed unique (the

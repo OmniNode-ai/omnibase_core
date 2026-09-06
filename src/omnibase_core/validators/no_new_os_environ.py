@@ -427,6 +427,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     findings = validate_paths(paths)
     if args.inventory:
         _write_inventory_report(findings)
+    if args.inventory:
+        finding_paths = {finding.path for finding in findings}
+        return int(
+            bool(
+                unassigned_reader_paths(finding_paths)
+                or stale_inventory_paths(finding_paths)
+            )
+        )
     if not findings:
         return 0
     sys.stderr.write(
