@@ -1,9 +1,11 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
-## v0.47.4 (2026-09-06)
+## v0.47.5 (2026-09-06)
 
 ### Features
 - feat register the seven standalone projection-writer runtime profiles. `projection-writer-{delegation,hook-ledger,live-events,registration,savings,tenant-credentials,tenant-registry}` join both `REGISTERED_RUNTIME_PROFILES` and `CONSUMER_ATTACHED_RUNTIME_PROFILES`. Seven Deployments already run on `onex-dev` under these `RUNTIME_PROFILE` values; until now no registry knew them and no contract could declare them, so each writer's contract was also claimed by a shared runtime (two by `effects`, five by `main` via the undeclared-defaults-to-main rule) and two processes drained the same subscriptions under different consumer groups. Registration is what makes the ownership claim single-valued. Consumer-attachment is measured, not assumed: every one of the seven joined its group and holds a broker-issued partition assignment. Additive — no existing name changes meaning.
+
+## v0.47.4 (2026-09-06)
 
 ### Changes
 - fix a def-B single-emit terminal no longer reads as a foreign run's terminal (#PRNUM). v0.47.3 (#1645) armed the terminal correlation predicate in host mode as well as client mode, and the predicate required the terminal to declare this run's correlation id and nothing else. The canonical def-B terminal is the handler's bare domain model, published verbatim by `LocalRuntimeBusAdapter` on the single-emit path (`result.model_dump_json()`) — `handle(request: ModelX) -> ModelY` has no envelope and therefore no field in which to carry a correlation id. It declared nothing, so every def-B ORCHESTRATOR run through `RuntimeLocal._run_event_driven` recorded its own terminal as foreign, discarded it, and timed out. The predicate now judges a terminal that declares NO correlation on its shape: a bare domain payload is this run's own; an ENVELOPE that names nobody stays refused; and once anything is declared, every declared id must still be this run's, so the isolation boundary #1645 added is unchanged. Core's own event-driven coverage stamped a correlation id into a hand-built dict, which is why this repo stayed green while every downstream def-B node broke.
