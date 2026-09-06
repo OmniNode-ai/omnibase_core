@@ -8,8 +8,23 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Version tag to release (e.g. v0.20.0)'
-        required: true
+        description: 'Version tag to release (e.g. v0.20.0). Leave empty when using sync_main_to_tag.'
+        required: false
+        default: ''
+      # OMN-16289: sync-only recovery input. The main fast-forward is the LAST
+      # step of the `release` job, sequenced behind `Publish to PyPI` and
+      # `Create GitHub Release`, so neither a `--failed` re-run nor a plain
+      # `-f tag=` dispatch can reach it without re-executing the publish,
+      # re-cutting the GitHub Release and re-firing the dependency cascade.
+      # When the sync is the ONLY thing that failed -- runs 34030901325
+      # (v0.47.4) and 34052816626 (v0.47.5): publish SUCCESS, GitHub Release
+      # SUCCESS, `Mint onexbot-occ-writer app token` FAILURE with HTTP 422
+      # because the App installation lacked `workflows: write` -- this input
+      # runs the mint + fast-forward and nothing else.
+      sync_main_to_tag:
+        description: 'Sync-only: fast-forward main to this EXISTING release tag. No build, no publish, no GitHub Release, no cascade.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -20,6 +35,11 @@ concurrency:
 
 jobs:
   release:
+    # OMN-16289: a sync-only dispatch (`-f sync_main_to_tag=vX.Y.Z`) must not
+    # re-publish an already-published version, re-cut its GitHub Release or
+    # re-fire the dependency cascade. This job IS the release; skip it whole
+    # and let `sync-main` below perform the pointer move on its own.
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.sync_main_to_tag == '' }}
     # OMN-15603: this job used to run on the trusted self-hosted `omnibase-ci`
     # runner. Measured egress from that runner to upload.pypi.org is
     # 30-39 KiB/s, and upload.pypi.org enforces a hard ~240s server-side
@@ -47,6 +67,24 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      # OMN-16289: `tag` is no longer a REQUIRED dispatch input -- a sync-only
+      # dispatch supplies `sync_main_to_tag` instead and skips this job whole.
+      # A dispatch that supplies NEITHER would otherwise fall back to
+      # `github.ref` and die several steps later on a confusing
+      # "tag v does not match pyproject.toml version" message. Fail here, in
+      # the language of the mistake that was actually made.
+      - name: Require a release tag on workflow_dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RELEASE_TAG}" ]; then
+            echo "::error::workflow_dispatch needs one of: tag=<tag> to run a release, or sync_main_to_tag=<tag> to fast-forward main only"
+            exit 1
+          fi
+          echo "Release dispatch for tag ${RELEASE_TAG}"
 
       - name: Assert clean working tree
         run: |
@@ -321,6 +359,140 @@ jobs:
           echo "main fast-forwarded to $TAG_SHA ($TAG)"
 
   # ---------------------------------------------------------------------------
+  # OMN-16289: sync-only main fast-forward, dispatchable for an EXISTING tag
+  # ---------------------------------------------------------------------------
+  # The `release` job's own main sync is the last step of a long, partly
+  # non-idempotent job. When only that step fails, the pointer move has no
+  # recovery path that does not also re-run the publish. This job is that path:
+  # it builds nothing, publishes nothing, and touches no downstream repo.
+  #
+  # The step NAMES here are deliberately identical to the release job's
+  # ("Mint onexbot-occ-writer app token", "Sync main to release tag") -- the
+  # release-on-merge work (OMN-18010) reuses this dispatch path, and stable
+  # step names are what its evidence is read from.
+  #
+  # Two guards, both fail-closed:
+  #   * ancestor-valid: the tag must exist and be an ancestor of origin/dev.
+  #     A tag cut from anywhere else is not a release this policy may point
+  #     main at.
+  #   * fast-forward only: current main must be an ancestor of the tag SHA, so
+  #     main can never be moved backwards or sideways. main already AT the tag
+  #     is a no-op, not a failure.
+  #
+  # The validation script is free of inline `${{ }}` (values arrive through
+  # `env:`) so tests can execute the committed shell verbatim instead of
+  # pattern-matching it.
+  sync-main:
+    name: Sync main to release tag (sync-only)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.sync_main_to_tag != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate sync tag
+        id: sync_tag
+        env:
+          SYNC_TAG: ${{ inputs.sync_main_to_tag }}
+        run: |
+          set -euo pipefail
+          TAG="$SYNC_TAG"
+
+          # A newline in the dispatch input would forge extra GITHUB_OUTPUT
+          # entries, so constrain it to the tag charset before it is written.
+          case "$TAG" in
+            ''|*[!A-Za-z0-9.+_-]*)
+              echo "::error::sync_main_to_tag contains unsupported characters"
+              exit 1
+              ;;
+          esac
+
+          # Only a real release tag. This is the same shape the push trigger
+          # accepts, so nothing reachable here is outside the release policy.
+          case "$TAG" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *)
+              echo "::error::sync_main_to_tag '$TAG' is not a vX.Y.Z release tag"
+              exit 1
+              ;;
+          esac
+          case "$TAG" in
+            *rc*)
+              echo "::error::refusing to point main at the prerelease tag '$TAG'"
+              exit 1
+              ;;
+          esac
+
+          if ! git rev-parse -q --verify "refs/tags/${TAG}^{commit}" >/dev/null; then
+            echo "::error::tag '$TAG' does not exist in this repository"
+            exit 1
+          fi
+          TAG_SHA="$(git rev-list -n 1 "refs/tags/${TAG}")"
+
+          # Explicit refspecs: never rely on git opportunistically updating
+          # the remote-tracking refs for a named-branch fetch.
+          git fetch --no-tags --quiet origin \
+            "+refs/heads/dev:refs/remotes/origin/dev" \
+            "+refs/heads/main:refs/remotes/origin/main"
+          if ! git merge-base --is-ancestor "$TAG_SHA" origin/dev; then
+            echo "::error::tag '$TAG' ($TAG_SHA) is not an ancestor of origin/dev -- it is not a release cut from dev, refusing to point main at it"
+            exit 1
+          fi
+
+          MAIN_SHA="$(git rev-parse origin/main)"
+          echo "main=$MAIN_SHA  tag=$TAG_SHA ($TAG)"
+          if [ "$MAIN_SHA" = "$TAG_SHA" ]; then
+            echo "::notice::main is already at $TAG_SHA ($TAG) -- nothing to do"
+            echo "noop=true" >> "$GITHUB_OUTPUT"
+          elif ! git merge-base --is-ancestor "$MAIN_SHA" "$TAG_SHA"; then
+            echo "::error::main ($MAIN_SHA) is not an ancestor of $TAG ($TAG_SHA) -- refusing to move main backwards or sideways"
+            exit 1
+          else
+            echo "noop=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "tag_sha=$TAG_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        if: steps.sync_tag.outputs.noop == 'false'
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          # A release tag can legitimately contain workflow changes; GitHub
+          # rejects that protected-branch update unless the App token carries
+          # this explicit scope (run 33525584540, OMN-17272).
+          permission-workflows: write
+
+      - name: Sync main to release tag
+        if: steps.sync_tag.outputs.noop == 'false'
+        env:
+          RELEASE_TAG: ${{ steps.sync_tag.outputs.tag }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          TAG="$RELEASE_TAG"
+          TAG_SHA=$(git rev-list -n 1 "$TAG")
+          echo "Resolved tag $TAG -> commit $TAG_SHA"
+          # OMN-17272: actions/checkout persists the job's GITHUB_TOKEN as an
+          # http.<origin>.extraheader Authorization header, and that header
+          # overrides the app token embedded in the push URL below -- so the
+          # push would authenticate as github-actions[bot], which the
+          # OMN-16289 main ruleset correctly declines (GH013) and which GitHub
+          # refuses to accept as a ruleset bypass actor. Drop the persisted
+          # header so the push authenticates as onexbot-occ-writer.
+          git config --local --unset-all "http.https://github.com/.extraheader" || true
+          git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" "${TAG_SHA}:refs/heads/main"
+          echo "main fast-forwarded to $TAG_SHA ($TAG)"
+
+
+  # ---------------------------------------------------------------------------
   # Post-release: open dependency bump PRs in downstream repos (OMN-5109)
   # ---------------------------------------------------------------------------
   # When omnibase_core is released, downstream repos (omnibase_infra,
@@ -328,7 +500,10 @@ jobs:
   dependency-cascade:
     name: Dependency Cascade
     needs: release
-    if: ${{ !contains(needs.release.outputs.version, 'rc') }}
+    # OMN-16289: `needs.release.result == 'success'` is explicit rather than
+    # implied, so a sync-only dispatch (which skips `release`) can never open
+    # downstream bump PRs off an empty version string.
+    if: ${{ needs.release.result == 'success' && !contains(needs.release.outputs.version, 'rc') }}
     uses: ./.github/workflows/dependency-cascade.yml
     with:
       package: omnibase_core

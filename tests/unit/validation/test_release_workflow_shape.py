@@ -833,7 +833,15 @@ def test_workflow_dispatch_recovery_checks_out_the_requested_tag() -> None:
     dispatch = _as_mapping(triggers["workflow_dispatch"], "`workflow_dispatch:`")
     inputs = _as_mapping(dispatch["inputs"], "`workflow_dispatch.inputs:`")
     tag_input = _as_mapping(inputs["tag"], "the `tag` dispatch input")
-    assert tag_input["required"] is True
+    # OMN-16289: `tag` stopped being a REQUIRED input when the sync-only
+    # `sync_main_to_tag` dispatch landed -- a dispatch that only fast-forwards
+    # main has no release tag to give. AC5's real invariant is that a release
+    # dispatch cannot proceed WITHOUT one, which is now enforced by an explicit
+    # guard step rather than by the form field.
+    assert tag_input.get("required") is not True
+    guard = _step("Require a release tag on workflow_dispatch")
+    assert "sync_main_to_tag" in str(guard["run"])
+    assert "exit 1" in str(guard["run"])
 
     checkout = _steps()[0]
     assert "actions/checkout@" in str(checkout["uses"])
