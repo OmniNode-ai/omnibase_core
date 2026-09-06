@@ -2494,7 +2494,7 @@ Actions now include `lease_id` and `epoch` for idempotent retries, preventing du
 
 ### Migration Guide (v0.3.x to v0.4.0)
 
-> **Estimated Migration Time**: 30-60 minutes for typical projects. **Full Guide**: See the declarative-node migration guide (now in the OmniNode internal knowledge base) for comprehensive migration instructions with complete examples.
+> **Estimated Migration Time**: 30-60 minutes for typical projects. **Full Guide**: See the declarative-node migration guide for comprehensive migration instructions with complete examples.
 
 #### Quick Migration Checklist
 
@@ -2529,7 +2529,7 @@ class MyReducer(NodeReducer):
 #### 3. Adopt FSM/Workflow Patterns
 - **Reducer nodes**: Implement `ModelIntent` emission instead of direct state updates
 - **Orchestrator nodes**: Use `ModelAction` with lease management for coordination
-- See the declarative-node migration guide (now in the OmniNode internal knowledge base) for detailed examples
+- See the declarative-node migration guide for detailed examples
 
 #### 4. Update Error Handling
 ```python
@@ -2569,7 +2569,7 @@ class MyReducer(NodeReducerBase):
 - Legacy imports (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) will **fail immediately** - no deprecation warnings
 - The `omnibase_core.nodes.legacy` namespace **does not exist**
 - All nodes must use FSM-driven (`NodeReducer`) or workflow-driven (`NodeOrchestrator`) patterns
-- See the declarative-node migration guide (now in the OmniNode internal knowledge base) for migration instructions
+- See the declarative-node migration guide for migration instructions
 
 ---
 
