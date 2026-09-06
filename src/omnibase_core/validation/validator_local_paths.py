@@ -27,6 +27,18 @@ Usage Examples:
         python -m omnibase_core.validation.validator_local_paths .
         python -m omnibase_core.validation.validator_local_paths src/ plugins/
 
+    CLI — check every tracked repository-root file (OMN-17993)::
+
+        python -m omnibase_core.validation.validator_local_paths --tracked-root
+
+    The root scan exists because the pre-commit hook only ever sees the files
+    a commit stages. A root file committed before the hook existed — or before
+    its pattern matched — is never re-examined, which is how ``.mcp.json``
+    carried an operator-home clone path at HEAD while the hook reported green
+    on every subsequent commit. The root scan reads the **tracked set** (``git
+    ls-files``), not the ignore rules, and it ignores the extension allowlist:
+    a root file has no reason to be exempt because of its name.
+
 Suppression:
     Add ``# local-path-ok`` anywhere on a line to suppress that line::
 
@@ -144,9 +156,18 @@ class ValidatorLocalPaths(BaseModel):
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
-    def check_file(self, path: Path) -> list[ModelLocalPathViolation]:
-        """Check a single file. Returns violations found."""
-        if path.suffix not in _TEXT_EXTENSIONS:
+    def check_file(
+        self, path: Path, *, ignore_extension_filter: bool = False
+    ) -> list[ModelLocalPathViolation]:
+        """Check a single file. Returns violations found.
+
+        ``ignore_extension_filter`` scans the file whatever its name. The
+        extension allowlist is a cheap way to skip binaries during a recursive
+        walk; on an explicitly enumerated set (the tracked repository-root
+        scan) it is a blind spot, because an extension-less dotfile such as
+        ``.envrc`` reads as "not text" and is skipped in silence.
+        """
+        if not ignore_extension_filter and path.suffix not in _TEXT_EXTENSIONS:
             return []
 
         file_violations: list[ModelLocalPathViolation] = []
@@ -196,6 +217,46 @@ class ValidatorLocalPaths(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Tracked repository-root scan (OMN-17993)
+# ---------------------------------------------------------------------------
+
+
+def tracked_root_files(repo_root: Path | None = None) -> list[Path]:
+    """Every tracked file at the repository root, dotfiles included.
+
+    ``git ls-files`` is the source of truth rather than a directory listing:
+    an ignore rule neither untracks an existing path nor stops ``git add -f``,
+    so ignore state is not evidence about what is committed. Fails loud when
+    git cannot answer — a scan that silently returns nothing is the defect
+    this mode exists to close.
+    """
+    import os
+    import subprocess
+
+    from omnibase_core.validators.no_unguarded_git_subprocess import (
+        scrub_git_location_env,
+    )
+
+    root = repo_root or Path.cwd()
+    # The pre-commit hook that calls this runs INSIDE a git hook environment,
+    # where GIT_DIR / GIT_WORK_TREE / GIT_INDEX_FILE override both `cwd=` and
+    # `git -C`. Without the scrub this would enumerate the invoking worktree
+    # rather than `root` — the OMN-14891 failure shape.
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+    return [
+        root / rel
+        for rel in result.stdout.split("\0")
+        if rel and "/" not in rel and (root / rel).is_file()
+    ]
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -224,6 +285,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Files or directories to check (default: current directory)",
     )
     parser.add_argument(
+        "--tracked-root",
+        action="store_true",
+        help=(
+            "Scan every tracked repository-root file (dotfiles included, "
+            "extension filter ignored) instead of the positional paths"
+        ),
+    )
+    parser.add_argument(
         "--quiet",
         "-q",
         action="store_true",
@@ -232,7 +301,24 @@ def main(argv: list[str] | None = None) -> int:
     parsed = parser.parse_args(argv)
 
     validator = ValidatorLocalPaths()
-    violations = validator.check_paths(parsed.paths)
+    if parsed.tracked_root:
+        import subprocess
+
+        try:
+            root_files = tracked_root_files()
+        except (OSError, subprocess.CalledProcessError) as exc:
+            print(
+                f"check-local-paths: --tracked-root requires a git work tree: {exc}",
+                file=sys.stderr,
+            )
+            return 1
+        violations = [
+            v
+            for f in root_files
+            for v in validator.check_file(f, ignore_extension_filter=True)
+        ]
+    else:
+        violations = validator.check_paths(parsed.paths)
 
     for v in violations:
         print(f"{v.file}:{v.line}:{v.column}: [{v.pattern_name}] {v.matched_text!r}")

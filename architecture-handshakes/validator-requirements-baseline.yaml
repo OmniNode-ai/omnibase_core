@@ -132,9 +132,6 @@ gaps:
     validator: detect-secrets
     kind: MISSING_PRE_COMMIT
   - repo: omnibase_core
-    validator: hardcoded-local-paths
-    kind: MISSING_CI_WORKFLOW
-  - repo: omnibase_core
     validator: hardcoded-localhost-url
     kind: MISSING_CI_WORKFLOW
   - repo: omnibase_core

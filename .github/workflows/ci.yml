@@ -2219,6 +2219,52 @@ jobs:
   # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
   # rollup — closes the --no-verify pre-commit bypass and retires the standalone
   # workflow's duplicate run_id + embedded occ-preflight caller.
+  # OMN-17993: the local-paths pre-commit hook is pass_filenames — it only ever
+  # sees the files a commit stages, so a repository-root file committed before
+  # the hook existed is never re-examined. `.mcp.json` carried an operator-home
+  # clone path at HEAD for exactly that reason while the hook reported green on
+  # every subsequent commit. This job scans the tracked repository-root set on
+  # every run, dotfiles included and with no extension filter, so the blind spot
+  # cannot reopen silently. It is a standalone job rather than a step inside an
+  # existing one because every `--no-dev` guard job's execution surface is
+  # pinned by an audited digest (tests/unit/validation/test_ci_workflow_shape.py)
+  # — adding a step there would silently re-pin a security contract to land a
+  # hygiene check. Local mirror: the `check-local-paths-tracked-root`
+  # pre-commit hook runs the same command.
+  tracked-root-local-paths:
+    name: No Local Paths in Tracked Repository Root (OMN-17993)
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Scan the tracked repository-root set (blocking)
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.validation.validator_local_paths --tracked-root
+
   no-hardcoded-ip-validator:
     name: No Hardcoded IP Validator
     runs-on: >-

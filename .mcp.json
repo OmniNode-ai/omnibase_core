@@ -4,7 +4,7 @@
       "command": "repowise",
       "args": [
         "mcp",
-        "/Users/jonah/Code/omni_home/omnibase_core",
+        ".",
         "--transport",
         "stdio"
       ],
