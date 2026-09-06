@@ -64,6 +64,31 @@ REGISTERED_RUNTIME_PROFILES: frozenset[str] = frozenset(
         # Consolidated, not one writer per contract: onex-dev sits at ~87% CPU
         # requests with ~520m headroom and eight 100m writers do not fit.
         "tenant-projection",
+        # OMN-17985: the seven STANDALONE projection writers already deployed on
+        # onex-dev. Each is a `python -m <handler>` BaseProjectionRunner process
+        # with its own explicit KAFKA_CONSUMER_GROUP -- not the ONEX runtime --
+        # so unlike every profile above it, the name is not what wires the
+        # subscriptions. What the name does is settle OWNERSHIP: before these
+        # were registered, no contract could declare them, so each writer's
+        # contract was ALSO claimed by a shared runtime (two by `effects`, five
+        # by `main` through the undeclared-defaults-to-main rule) and two
+        # processes drained the same topics under different groups.
+        #
+        # Registered rather than retired on measured evidence (probe run
+        # 34026361940, dev-system i-06169517a92b45f86, ns onex-dev): all seven
+        # are 1/1 Ready with zero restarts and each holds a broker-issued
+        # partition assignment (9 / 4 / 28 / 3 / 5 / 2 / 1 partitions in the
+        # order below). public.live_events held 291,415 rows and grew between
+        # two runs 28 minutes apart, so the archetype demonstrably writes.
+        # None of the seven owns nothing, so retiring any would delete the only
+        # consumer of the topics its contract names.
+        "projection-writer-delegation",
+        "projection-writer-hook-ledger",
+        "projection-writer-live-events",
+        "projection-writer-registration",
+        "projection-writer-savings",
+        "projection-writer-tenant-credentials",
+        "projection-writer-tenant-registry",
     }
 )
 
@@ -82,6 +107,21 @@ CONSUMER_ATTACHED_RUNTIME_PROFILES: frozenset[str] = frozenset(
         # writer is the ONEX runtime booted under a different profile (not a
         # bespoke daemon), so it attaches a real consumer group.
         "tenant-projection",
+        # OMN-17985. Membership here is a statement of measured fact about a
+        # deployed process, not a validator workaround: each of the seven
+        # writers joined its consumer group and was issued partitions by the
+        # group coordinator (a broker-side fact, not a member self-report). All
+        # seven contracts are subscribing projection archetypes that name ONLY
+        # their own writer profile, so omitting them here would leave every one
+        # registered-but-undrained -- the second, subtler silent-orphan class
+        # `_check_no_consumer_lane` exists to catch.
+        "projection-writer-delegation",
+        "projection-writer-hook-ledger",
+        "projection-writer-live-events",
+        "projection-writer-registration",
+        "projection-writer-savings",
+        "projection-writer-tenant-credentials",
+        "projection-writer-tenant-registry",
     }
 )
 

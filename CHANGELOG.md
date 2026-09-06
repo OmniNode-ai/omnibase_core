@@ -1,5 +1,10 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
+## v0.47.5 (2026-09-06)
+
+### Features
+- feat register the seven standalone projection-writer runtime profiles. `projection-writer-{delegation,hook-ledger,live-events,registration,savings,tenant-credentials,tenant-registry}` join both `REGISTERED_RUNTIME_PROFILES` and `CONSUMER_ATTACHED_RUNTIME_PROFILES`. Seven Deployments already run on `onex-dev` under these `RUNTIME_PROFILE` values; until now no registry knew them and no contract could declare them, so each writer's contract was also claimed by a shared runtime (two by `effects`, five by `main` via the undeclared-defaults-to-main rule) and two processes drained the same subscriptions under different consumer groups. Registration is what makes the ownership claim single-valued. Consumer-attachment is measured, not assumed: every one of the seven joined its group and holds a broker-issued partition assignment. Additive — no existing name changes meaning.
+
 ## v0.47.4 (2026-09-06)
 
 ### Changes
