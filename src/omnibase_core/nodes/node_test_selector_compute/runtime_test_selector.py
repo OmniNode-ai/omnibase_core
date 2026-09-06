@@ -81,7 +81,10 @@ def _load_adjacency(path: Path) -> ModelAdjacencyMap:
     mapping key (OMN-14897) rather than silently last-wins — so the fail-closed
     guard runs on the node entrypoint as well as the legacy oracle.
     """
-    return ModelAdjacencyMap.from_yaml_text(path.read_text(encoding="utf-8"))
+    return ModelAdjacencyMap.from_yaml_text(
+        path.read_text(encoding="utf-8"),
+        source=str(path),
+    )
 
 
 def _count_test_files(rel_path: str, repo_root: Path) -> int:

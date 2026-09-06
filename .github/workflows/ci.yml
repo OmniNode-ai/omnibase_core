@@ -1559,13 +1559,12 @@ jobs:
           # shellcheck disable=SC2086
           .venv/bin/python scripts/validation/validate_spdx_headers.py $files
 
-  # No-new-os-environ gate (OMN-13566) — canonical AST-based env-read enforcement.
-  # Blocks ALL os.environ/os.getenv reads outside KEEP_ALLOWLIST. Feeds quality-gate
-  # so a violation turns the single required CI Summary rollup red. The deliberate
-  # red-test corpus (test_deliberate_violation_corpus) is the DoD proof that CI
-  # would catch a real violation.
-  no-new-os-environ:
-    name: No New os.environ Reads (OMN-13566)
+  # Typed-bootstrap env gate (OMN-17744) — canonical AST-based enforcement.
+  # Blocks every direct or aliased process-environment access outside the exact
+  # typed capture operation. The four-root adversarial corpus is the proof that
+  # source, tests, examples, and scripts all remain in scope.
+  typed-bootstrap-environment-boundary:
+    name: Typed Bootstrap Environment Boundary (OMN-17744)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -1598,9 +1597,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --no-dev
 
-      - name: Scan src/ for os.environ/os.getenv reads outside KEEP_ALLOWLIST (OMN-13566)
+      - name: Scan source, tests, examples, and scripts for raw environment access
         run: |
-          .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all --src src/
+          .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all
 
   # Duplicate registry id guard (OMN-14401). Rejects config/registry YAML files
   # declaring duplicate ids over a key that is not guaranteed unique (the
@@ -2953,7 +2952,7 @@ jobs:
     # job itself stays `if: always()` so it is never a skip-vector; the step
     # below re-derives docs_only itself before ever admitting a `skipped` leaf
     # as passing, mirroring tests-gate's per-upstream skip policy (OMN-15315).
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers, zone-filter]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, typed-bootstrap-environment-boundary, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers, zone-filter]
     if: always()
 
     steps:
@@ -2985,7 +2984,7 @@ jobs:
           pydantic="${{ needs.pydantic-patterns.result }}"
           aislop="${{ needs.aislop-patterns.result }}"
           doc_content="${{ needs.doc-content-scan.result }}"
-          no_new_os_environ="${{ needs.no-new-os-environ.result }}"
+          typed_bootstrap_environment_boundary="${{ needs.typed-bootstrap-environment-boundary.result }}"
           noncanonical_classes="${{ needs.no-noncanonical-lifecycle-classes.result }}"
           extra_forbid="${{ needs.pydantic-extra-forbid.result }}"
           pr_workflow_ratchet="${{ needs.pull-request-workflow-ratchet.result }}"
@@ -3017,7 +3016,7 @@ jobs:
           echo "| Pydantic Patterns (OMN-13574) | $pydantic |" >> $GITHUB_STEP_SUMMARY
           echo "| AI Slop Patterns (OMN-13574) | $aislop |" >> $GITHUB_STEP_SUMMARY
           echo "| Doc-Content Scan (OMN-13572) | $doc_content |" >> $GITHUB_STEP_SUMMARY
-          echo "| No New os.environ Reads (OMN-13566) | $no_new_os_environ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Typed Bootstrap Environment Boundary (OMN-17744) | $typed_bootstrap_environment_boundary |" >> $GITHUB_STEP_SUMMARY
           echo "| Non-Canonical Lifecycle-Class Ratchet (OMN-14350) | $noncanonical_classes |" >> $GITHUB_STEP_SUMMARY
           echo "| Pydantic extra=\"forbid\" Ratchet (OMN-14515) | $extra_forbid |" >> $GITHUB_STEP_SUMMARY
           echo "| Pull-Request Workflow Ratchet (OMN-14907) | $pr_workflow_ratchet |" >> $GITHUB_STEP_SUMMARY
@@ -3051,7 +3050,7 @@ jobs:
             "pydantic=${{ needs.pydantic-patterns.result }}" \
             "aislop=${{ needs.aislop-patterns.result }}" \
             "doc_content=${{ needs.doc-content-scan.result }}" \
-            "no_new_os_environ=${{ needs.no-new-os-environ.result }}" \
+            "typed_bootstrap_environment_boundary=${{ needs.typed-bootstrap-environment-boundary.result }}" \
             "spdx_headers=${{ needs.spdx-headers.result }}"; do
             NAME="${check%%=*}"
             RESULT="${check#*=}"

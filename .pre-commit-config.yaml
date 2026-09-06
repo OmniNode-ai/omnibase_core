@@ -1823,22 +1823,11 @@ repos:
           session files. See OMN-4569."
         stages: [pre-commit]
 
-      # OMN-11186: Block new os.environ / os.getenv additions outside allowlist
-      - id: no-new-env-vars
-        name: No New os.environ/os.getenv Additions (OMN-11186)
-        language: python
-        entry: python scripts/validation/validate_no_new_env_vars.py
-        types: [python]
-        pass_filenames: true
-        stages: [pre-commit]
-
-      # OMN-13566: Canonical AST env-read gate replacing the regex ratchet.
-      - id: no-new-os-environ
-        name: No New os.environ/os.getenv Reads (OMN-13566)
+      - id: typed-bootstrap-environment-boundary
+        name: Typed bootstrap is the only raw process-environment boundary (OMN-17744)
         entry: uv run python -m omnibase_core.validators.no_new_os_environ
         language: system
         types: [python]
-        exclude: ^(tests/|scripts/|examples/)
         pass_filenames: true
         stages: [pre-commit]
 
