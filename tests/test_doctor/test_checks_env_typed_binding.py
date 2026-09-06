@@ -17,6 +17,8 @@ a test never reads or writes the developer's own ``~/.onex/config.yaml``.
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import traceback
 from pathlib import Path
 from unittest.mock import patch
@@ -64,6 +66,26 @@ def test_construction_never_touches_the_filesystem(tmp_path: Path) -> None:
         tmp_path,  # a directory where a file is expected
     ):
         assert isinstance(CheckEnvVars(candidate), CheckEnvVars)
+
+
+def test_doctor_checks_package_imports_on_a_cold_interpreter() -> None:
+    """``import omnibase_core.doctor.checks`` must work as the first import.
+
+    This check needs the user-config parser, which lives under
+    ``omnibase_core.cli`` — and that package's ``__init__`` eagerly builds the
+    whole CLI, whose ``cli_commands`` imports ``cli_doctor``, which imports this
+    very package. A module-level import closes that loop. It is invisible in a
+    session that has already imported the CLI for some other reason, which is
+    why this runs in a fresh interpreter.
+    """
+    completed = subprocess.run(
+        [sys.executable, "-c", "import omnibase_core.doctor.checks"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert completed.returncode == 0, completed.stderr
 
 
 # ---------------------------------------------------------------------------

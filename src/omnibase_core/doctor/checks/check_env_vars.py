@@ -58,7 +58,6 @@ from typing import Final
 
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.cli.cli_user_config import parse_user_config_text
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
@@ -187,6 +186,17 @@ class CheckEnvVars(DoctorCheckBase):
         # single raw-YAML entry point for this file. Parsing it a second time
         # here would fork that entry point; it also already rejects a document
         # that is not a top-level mapping, which is the same fault class.
+        #
+        # Imported here rather than at module scope because
+        # ``omnibase_core.cli.__init__`` eagerly builds the whole CLI, and
+        # ``cli_commands`` imports ``cli_doctor``, which imports this package —
+        # a module-level import closes that cycle and makes
+        # ``import omnibase_core.doctor.checks`` fail on a cold interpreter.
+        # ``test_doctor_checks_package_imports_on_a_cold_interpreter`` pins it.
+        from omnibase_core.cli.cli_user_config import (
+            parse_user_config_text,
+        )
+
         try:
             document = parse_user_config_text(text, DISPLAY_CONFIG_PATH)
         except ModelOnexError:

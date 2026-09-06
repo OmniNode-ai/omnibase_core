@@ -92,7 +92,6 @@ violations:
   - "omnibase_core.models.configuration.model_custom_resource_limits:ModelCustomResourceLimits"
   - "omnibase_core.models.configuration.model_database_config:ModelDatabaseConfig"
   - "omnibase_core.models.configuration.model_database_secure_config:ModelComplianceStatus"
-  - "omnibase_core.models.configuration.model_database_secure_config:ModelDatabaseSecureConfig"
   - "omnibase_core.models.configuration.model_database_secure_config:ModelPerformanceProfile"
   - "omnibase_core.models.configuration.model_database_secure_config:ModelSecurityAssessment"
   - "omnibase_core.models.configuration.model_dict_config:ModelDictConfig"
