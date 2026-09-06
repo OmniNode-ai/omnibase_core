@@ -14,11 +14,13 @@ from omnibase_core.doctor.checks import (
     CheckReposSynced,
     CheckStaleWorktrees,
 )
+from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.doctor.doctor_registry import DoctorRegistry
 from omnibase_core.models.doctor.model_doctor_report import ModelDoctorReport
 
-# Built-in checks registered at import time
-_BUILTIN_CHECKS = [
+# Built-in checks registered at import time. Annotated explicitly: without it
+# the inferred element type is the metaclass, not type[DoctorCheckBase].
+_BUILTIN_CHECKS: list[type[DoctorCheckBase]] = [
     CheckDocker,
     CheckKafka,
     CheckPostgres,
@@ -41,7 +43,7 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
     # Register built-ins
     for check_cls in _BUILTIN_CHECKS:
         # Why: Registry stores protocol contracts rather than instantiating them directly.
-        registry.register(check_cls)  # type: ignore[type-abstract]
+        registry.register(check_cls)
 
     # Discover entry-point checks from other packages
     registry.discover()

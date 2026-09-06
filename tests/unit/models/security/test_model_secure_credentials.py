@@ -389,6 +389,27 @@ class TestModelSecureCredentialsEnvironmentIntegration:
         # No required fields without defaults, so no issues expected
         assert isinstance(issues, list)
 
+    def test_get_environment_bindings_declares_one_reference_per_field(self):
+        """Field set is the declaration; each entry is a contract reference.
+
+        OMN-17554: the model no longer reads os.getenv on a name it builds at
+        call time — it declares ``${env.VAR}`` references and resolves them
+        through the sanctioned overlay boundary.
+        """
+        from omnibase_core.overlays.contract_env_ref import (
+            resolve_contract_env_binding,
+        )
+
+        creds = SampleCredentials()
+        bindings = creds.get_environment_bindings(env_prefix="ONEX_")
+
+        assert set(bindings) == set(type(creds).model_fields)
+        for field_name, reference in bindings.items():
+            assert reference == "${env.ONEX_" + field_name.upper() + "}"
+            assert resolve_contract_env_binding(reference).name == (
+                f"ONEX_{field_name.upper()}"
+            )
+
     def test_get_environment_mapping(self):
         """Test environment variable mapping generation."""
         creds = SampleCredentials()

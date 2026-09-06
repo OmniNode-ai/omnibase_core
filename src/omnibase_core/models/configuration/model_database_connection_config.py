@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import os
 import re
+from typing import ClassVar
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from omnibase_core.constants.constants_field_limits import (
     MAX_IDENTIFIER_LENGTH,
@@ -12,6 +12,7 @@ from omnibase_core.constants.constants_field_limits import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
 
 class ModelDatabaseConnectionConfig(BaseModel):
@@ -28,6 +29,11 @@ class ModelDatabaseConnectionConfig(BaseModel):
     - Health check capability assessment
     - Performance tuning recommendations
     """
+
+    # OMN-14515 ratchet: this model was baselined without an explicit
+    # extra= setting, so Pydantic silently dropped unknown fields. Touching
+    # its body (OMN-17554) is the moment to fix it.
+    model_config = ConfigDict(extra="forbid")
 
     host: str = Field(
         default=...,
@@ -392,23 +398,26 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
     # === Environment Override Support ===
 
+    # Declared contract-env binding per overridable field (OMN-17554). Each
+    # entry is a literal ${env.VAR} reference resolved through the sanctioned
+    # overlay boundary; this model does not read the environment itself.
+    _ENV_BINDINGS: ClassVar[tuple[tuple[str, str], ...]] = (
+        ("host", "${env.ONEX_DB_HOST}"),
+        ("port", "${env.ONEX_DB_PORT}"),
+        ("database", "${env.ONEX_DB_DATABASE}"),
+        ("username", "${env.ONEX_DB_USERNAME}"),
+        ("password", "${env.ONEX_DB_PASSWORD}"),
+        ("ssl_enabled", "${env.ONEX_DB_SSL_ENABLED}"),
+        ("connection_timeout", "${env.ONEX_DB_CONNECTION_TIMEOUT}"),
+    )
+
     def apply_environment_overrides(self) -> "ModelDatabaseConnectionConfig":
-        """Apply environment variable overrides for CI/local testing."""
+        """Apply declared binding overrides for CI/local testing."""
         overrides: dict[str, object] = {}
 
-        # Environment variable mappings
-        env_mappings = {
-            "ONEX_DB_HOST": "host",
-            "ONEX_DB_PORT": "port",
-            "ONEX_DB_DATABASE": "database",
-            "ONEX_DB_USERNAME": "username",
-            "ONEX_DB_PASSWORD": "password",
-            "ONEX_DB_SSL_ENABLED": "ssl_enabled",
-            "ONEX_DB_CONNECTION_TIMEOUT": "connection_timeout",
-        }
-
-        for env_var, field_name in env_mappings.items():
-            env_value = os.environ.get(env_var)
+        for field_name, reference in self._ENV_BINDINGS:
+            binding = resolve_contract_env_binding(reference)
+            env_value = binding.value
             if env_value is not None:
                 # Type conversion for different field types
                 if field_name in ["port", "connection_timeout"]:

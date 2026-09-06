@@ -86,10 +86,12 @@ All iteration and size limits exist to prevent denial-of-service attacks:
    Prevent memory exhaustion from oversized payloads. Validated on deserialized
    data to protect against compression bomb attacks (see workflow_executor.py).
 
-4. **Environment Variable Bounds Clamping**:
-   Even when limits are configurable via environment variables, they are clamped
-   to safe bounds (e.g., MAX_WORKFLOW_STEPS clamped to 1-100,000). This prevents
-   operators from accidentally (or maliciously) setting dangerous values.
+4. **Fixed Core ceilings**:
+   The workflow execution limits below are immutable Core constants. Nothing —
+   no environment variable, no contract, no per-workflow field — can raise or
+   lower them at runtime. That is deliberate: these limits are the DoS
+   protection itself, so a configuration surface for them would be a surface
+   for turning the protection off (OMN-17554).
 
 Workflow Execution Limits (OMN-670: Security hardening):
     These limits prevent memory exhaustion and DoS attacks:
@@ -97,121 +99,38 @@ Workflow Execution Limits (OMN-670: Security hardening):
     - MAX_STEP_PAYLOAD_SIZE_BYTES: Maximum size of individual step payload
     - MAX_TOTAL_PAYLOAD_SIZE_BYTES: Maximum accumulated payload size
 
-    Limits are configurable via environment variables for extreme workloads:
-    - ONEX_MAX_WORKFLOW_STEPS: Override max workflow steps (bounds: 1-100,000)
-    - ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES: Override max step payload size (bounds: 1KB-10MB)
-    - ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES: Override max total payload size (bounds: 1KB-1GB)
-
-    Bounds are enforced to prevent both DoS attacks (too-small limits causing many
-    small workflows) and memory exhaustion (too-large limits).
+    They are module-level constants with no configuration path. Workflow
+    contracts do not configure or override them.
 
 Thread Safety:
-    The module-level ``_cached_limits`` dict is NOT thread-safe in the strict sense.
-    However, this is an intentional design choice for simplicity:
-
-    1. Python's GIL ensures that dict operations (``in``, ``[]``, ``[]=``) are atomic
-       at the bytecode level, preventing data corruption.
-    2. The worst-case race condition is duplicate computation: two threads may both
-       compute the same limit value before either caches it. This is benign because:
-       - Environment variables are immutable during process lifetime
-       - Both threads compute identical values
-       - The final cached value is correct regardless of which thread wins
-    3. Adding threading.Lock would add complexity and overhead with no practical
-       benefit for this read-heavy, write-once pattern.
-
-    For truly thread-safe requirements (e.g., dynamic reconfiguration), use
-    explicit synchronization at the application level.
+    Every value in this module is an immutable module-level constant read at
+    import time. There is no cache, no lazy initialisation and no mutable
+    module state, so concurrent readers need no synchronization.
 """
 
-import logging
-import os
-
-# --- Environment Variable Helpers ---
-
-# Module-level cache for environment-based limits to avoid repeated parsing
-_cached_limits: dict[str, int] = {}
-
-
-def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) -> int:
-    """Get limit from environment variable with bounds checking and memoization.
-
-    Uses module-level caching to avoid repeated environment variable parsing
-    and bounds checking on each access.
-
-    Args:
-        env_var: Environment variable name
-        default: Default value if env var not set
-        min_val: Minimum allowed value
-        max_val: Maximum allowed value
-
-    Returns:
-        Validated limit value (cached after first computation)
-
-    Thread Safety:
-        This function uses a module-level cache that is not strictly thread-safe.
-        However, Python's GIL ensures atomic dict operations, so the worst case
-        is benign duplicate computation (two threads compute the same value).
-        No data corruption can occur. See module docstring for full rationale.
-    """
-    # Check cache first (memoization for repeated access)
-    if env_var in _cached_limits:
-        return _cached_limits[env_var]
-
-    value = os.environ.get(env_var)
-    if value is None:
-        result = default
-    else:
-        try:
-            int_value = int(value)
-            result = max(min_val, min(int_value, max_val))
-            # Log warning when value is clamped to bounds (DoS prevention)
-            if int_value != result:
-                logging.warning(
-                    f"{env_var} value {int_value} clamped to {result} "
-                    f"(bounds: {min_val}-{max_val}). "
-                    "This prevents DoS attacks via extreme configuration values."
-                )
-        except ValueError:
-            logging.warning(
-                f"Invalid value for {env_var}: {value}, using default {default}"
-            )
-            result = default
-
-    # Cache the result for subsequent accesses
-    _cached_limits[env_var] = result
-    return result
-
-
-def _clear_limit_cache() -> None:
-    """Clear the cached limits (for testing purposes only)."""
-    _cached_limits.clear()
-
-
 # --- Workflow Execution Limits (OMN-670: Security hardening) ---
+#
+# These three limits are fixed, immutable Core ceilings. They are not
+# configurable: not by environment variable, not by contract, and not per
+# workflow (OMN-17554). They exist to bound resource consumption for every
+# workflow this build executes, so a per-deployment override would be a way to
+# opt out of the DoS protection rather than a way to tune it. Changing a
+# ceiling is a Core change with a Core review.
+#
+# Before OMN-17554 each was read from an ``ONEX_MAX_*`` environment variable
+# through a memoizing helper that clamped out-of-range values and logged a
+# warning. Nothing consumed that authority except the module's own import-time
+# initialisation, and the clamp meant an operator could only ever move a limit
+# within a range Core already declared safe.
 
-# Maximum number of steps in a workflow
-# Configurable via ONEX_MAX_WORKFLOW_STEPS (bounds: 1-100,000)
-MAX_WORKFLOW_STEPS: int = _get_limit_from_env(
-    "ONEX_MAX_WORKFLOW_STEPS", default=1000, min_val=1, max_val=100000
-)
+# Maximum number of steps in a workflow.
+MAX_WORKFLOW_STEPS: int = 1000
 
-# Maximum size of individual step payload in bytes
-# Configurable via ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES (bounds: 1KB-10MB)
-MAX_STEP_PAYLOAD_SIZE_BYTES: int = _get_limit_from_env(
-    "ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES",
-    default=64 * 1024,
-    min_val=1024,
-    max_val=10 * 1024 * 1024,
-)
+# Maximum size of an individual step payload, in bytes (64 KB).
+MAX_STEP_PAYLOAD_SIZE_BYTES: int = 64 * 1024
 
-# Maximum total payload size across all steps in bytes
-# Configurable via ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES (bounds: 1KB-1GB)
-MAX_TOTAL_PAYLOAD_SIZE_BYTES: int = _get_limit_from_env(
-    "ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES",
-    default=10 * 1024 * 1024,
-    min_val=1024,
-    max_val=1024 * 1024 * 1024,
-)
+# Maximum total payload size across all steps, in bytes (10 MB).
+MAX_TOTAL_PAYLOAD_SIZE_BYTES: int = 10 * 1024 * 1024
 
 # --- Reserved Step Types ---
 

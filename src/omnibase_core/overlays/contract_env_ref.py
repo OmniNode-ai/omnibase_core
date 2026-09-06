@@ -19,12 +19,30 @@ reference without reaching upward into infra.
 An unset var with no inline default expands to the empty string, so the caller's
 fail-closed check rejects it (rather than leaving a literal ``${env.…}``
 placeholder, or silently falling back to localhost).
+
+Two surfaces, one boundary
+--------------------------
+
+:func:`expand_contract_env_refs` substitutes references inside a larger string
+(an endpoint template, a path). :func:`resolve_contract_env_binding` resolves a
+single reference and returns a typed
+:class:`~omnibase_core.models.configuration.model_contract_env_binding.ModelContractEnvBinding`
+that preserves whether the variable was *declared* at all — the distinction
+substitution throws away, and the one every configuration override in this repo
+turns on. Product code declares its bindings as ``${env.NAME}`` references and
+resolves them here (OMN-17554); it does not read the environment itself.
 """
 
 from __future__ import annotations
 
 import os
 import re
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.configuration.model_contract_env_binding import (
+    ModelContractEnvBinding,
+)
 
 # ``${env.VAR}`` / ``${env.VAR:default}`` — the same env-overlay convention
 # the infra runtime overlay and node_contract_loader_effect use for endpoints.
@@ -50,4 +68,63 @@ def expand_contract_env_refs(value: str) -> str:
     return _ENV_REF.sub(_sub, value)
 
 
-__all__: list[str] = ["expand_contract_env_refs"]
+# A bare variable name, i.e. what goes between ``${env.`` and ``}``.
+_ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+# A string that is exactly one reference and nothing else.
+_ENV_REF_EXACT = re.compile(f"^{_ENV_REF.pattern}$")
+
+
+def contract_env_reference(name: str, default: str | None = None) -> str:
+    """Render the canonical ``${env.NAME}`` / ``${env.NAME:default}`` reference.
+
+    Fails closed on a name that is not a legal environment variable identifier,
+    so a caller that derives reference names from a declared field set cannot
+    silently emit an unresolvable reference.
+    """
+    if not _ENV_NAME.match(name):
+        raise ModelOnexError(
+            f"{name!r} is not a legal environment variable name; a contract env "
+            "reference must name an identifier.",
+            EnumCoreErrorCode.INVALID_CONFIGURATION,
+        )
+    if default is None:
+        return f"${{env.{name}}}"
+    if "}" in default:
+        raise ModelOnexError(
+            "a contract env reference default must not contain '}'.",
+            EnumCoreErrorCode.INVALID_CONFIGURATION,
+        )
+    return f"${{env.{name}:{default}}}"
+
+
+def resolve_contract_env_binding(reference: str) -> ModelContractEnvBinding:
+    """Resolve exactly one ``${env.VAR}`` / ``${env.VAR:default}`` reference.
+
+    Fails closed: a malformed, unclosed, or non-reference string raises rather
+    than being passed through as a literal. An unset variable with no inline
+    default resolves to ``bound=False, value=None`` so the caller can leave its
+    typed default in place instead of overriding it with an empty string.
+    """
+    match = _ENV_REF_EXACT.match(reference)
+    if match is None:
+        raise ModelOnexError(
+            f"{reference!r} is not a single ${{env.VAR}} contract reference.",
+            EnumCoreErrorCode.INVALID_CONFIGURATION,
+        )
+    name = match.group("name")
+    default = match.group("default")
+    declared = os.environ.get(name)
+    return ModelContractEnvBinding(
+        name=name,
+        reference=reference,
+        bound=declared is not None,
+        value=declared if declared is not None else default,
+    )
+
+
+__all__: list[str] = [
+    "contract_env_reference",
+    "expand_contract_env_refs",
+    "resolve_contract_env_binding",
+]

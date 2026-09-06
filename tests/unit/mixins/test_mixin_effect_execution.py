@@ -463,6 +463,65 @@ class TestResolveIOContext:
                 test_node._resolve_io_context(io_config, input_data)
             assert "Environment variable not found" in str(exc_info.value)
 
+    def test_resolve_http_context_env_inline_default(self, test_node: TestNode) -> None:
+        """``${env.VAR:default}`` falls back when the variable is unbound.
+
+        Resolution goes through the sanctioned overlay boundary (OMN-17554),
+        which owns the reference grammar including the inline-default form.
+        """
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+            headers={"Authorization": "Bearer ${env.OMN17554_UNSET:fallback_token}"},
+        )
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={},
+        )
+
+        with patch.dict(os.environ, {}, clear=True):
+            result = test_node._resolve_io_context(io_config, input_data)
+
+        assert isinstance(result, ModelResolvedHttpContext)
+        assert result.headers["Authorization"] == "Bearer fallback_token"
+
+    def test_resolve_http_context_bound_var_beats_inline_default(
+        self, test_node: TestNode
+    ) -> None:
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+            headers={"Authorization": "Bearer ${env.OMN17554_BOUND:fallback_token}"},
+        )
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={},
+        )
+
+        with patch.dict(os.environ, {"OMN17554_BOUND": "real_token"}, clear=True):
+            result = test_node._resolve_io_context(io_config, input_data)
+
+        assert isinstance(result, ModelResolvedHttpContext)
+        assert result.headers["Authorization"] == "Bearer real_token"
+
+    def test_resolve_http_context_illegal_env_name_fails_closed(
+        self, test_node: TestNode
+    ) -> None:
+        """A placeholder that is not a legal reference raises, never resolves empty."""
+        io_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+            headers={"Authorization": "Bearer ${env.9NOT_AN_IDENTIFIER}"},
+        )
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={},
+        )
+
+        with patch.dict(os.environ, {}, clear=True):
+            with pytest.raises(ModelOnexError):
+                test_node._resolve_io_context(io_config, input_data)
+
     def test_resolve_http_context_with_body_template(self, test_node: TestNode) -> None:
         """Test resolving HTTP context with body template."""
         io_config = ModelHttpIOConfig(
