@@ -127,6 +127,21 @@ def test_completed_terminal_round_trips() -> None:
 
 
 @pytest.mark.unit
+def test_unrouted_terminal_round_trips() -> None:
+    terminal = ModelDelegationTerminalFailedUnroutedV2.model_validate(
+        _unrouted_payload()
+    )
+
+    restored = ModelDelegationTerminalFailedUnroutedV2.model_validate_json(
+        terminal.model_dump_json()
+    )
+
+    assert restored == terminal
+    assert restored.routing_disposition is EnumDelegationRoutingDisposition.UNROUTED
+    assert restored.terminal_outcome is EnumDelegationTerminalOutcome.FAILED
+
+
+@pytest.mark.unit
 def test_every_concrete_field_is_required_without_defaults() -> None:
     for model in (
         ModelDelegationTerminalCompletedV2,
@@ -151,6 +166,7 @@ def test_shared_base_has_no_nullable_field() -> None:
         "https://backend.example/v1",
         "//backend.example",
         "mailto:ops@example.com",
+        "backend:local-coder",
         " ",
         " local-coder ",
     ],
@@ -168,6 +184,15 @@ def test_unrouted_terminal_rejects_routed_or_quality_fields() -> None:
     payload = _unrouted_payload()
     payload["backend_ref"] = "local-coder"
     payload["quality_passed"] = False
+
+    with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+        ModelDelegationTerminalFailedUnroutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+def test_unrouted_terminal_rejects_quality_field_without_routed_field() -> None:
+    payload = _unrouted_payload()
+    payload["quality_bar_evaluation"] = _below_quality_bar_evaluation()
 
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
         ModelDelegationTerminalFailedUnroutedV2.model_validate(payload)
