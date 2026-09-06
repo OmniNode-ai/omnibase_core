@@ -12,7 +12,7 @@
 #   type-safety (mypy)    -> ci.yml `lint` (mypy src/omnibase_core auto-discovers mypy.ini)
 #   type-union-check      -> ci.yml `lint` (ruff selects the full UP family incl. UP006/UP007)
 #   ai-slop-check         -> ci.yml `aislop-patterns` (same check_ai_slop.py --strict, full tree)
-#   no-new-env-vars       -> ci.yml `no-new-os-environ` (canonical AST validator supersedes the regex script)
+#   no-new-env-vars       -> ci.yml `typed-bootstrap-environment-boundary` (canonical AST validator supersedes the regex script)
 # The jobs below have no `ci.yml` equivalent and are kept.
 name: Omni* Ecosystem Standards Compliance
 

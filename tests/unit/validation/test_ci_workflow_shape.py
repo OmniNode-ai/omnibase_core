@@ -31,7 +31,7 @@ DEPENDENCY_GUARD_PROFILES = {
     #
     # OMN-15980: mypy-validation-scripts, enum-governance,
     # contract-config-compliance, sdk-boundary-check, aislop-patterns,
-    # doc-content-scan, spdx-headers, no-new-os-environ,
+    # doc-content-scan, spdx-headers, typed-bootstrap-environment-boundary,
     # duplicate-registry-ids, and pull-request-workflow-ratchet raised
     # 6/7 -> 20. These are the jobs directly evidenced hitting their OLD
     # budget on the self-hosted omnibase-ci fleet under push-event load in
@@ -53,7 +53,7 @@ DEPENDENCY_GUARD_PROFILES = {
     "aislop-patterns": ("uv sync --frozen --no-dev", 20),
     "doc-content-scan": ("uv sync --frozen --no-dev", 20),
     "spdx-headers": ("uv sync --frozen --no-dev", 20),
-    "no-new-os-environ": ("uv sync --frozen --no-dev", 20),
+    "typed-bootstrap-environment-boundary": ("uv sync --frozen --no-dev", 20),
     "duplicate-registry-ids": ("uv sync --frozen", 20),
     "no-noncanonical-lifecycle-classes": ("uv sync --frozen --no-dev", 7),
     "pull-request-workflow-ratchet": ("uv sync --frozen --no-dev", 20),
@@ -121,8 +121,8 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     "spdx-headers": (
         "a0d28fb716ae9560bc17be1d8f3631474ba82e00db2ad2b4490820fedcad8d8a"  # pragma: allowlist secret
     ),
-    "no-new-os-environ": (
-        "9cc6299ee4ee8831d443d25614c7ca92e607a96237c9b7d9db378acd6853e4e6"  # pragma: allowlist secret
+    "typed-bootstrap-environment-boundary": (
+        "293672e13575a0813cc34b495ee4fbe41f740788ee150c08cdf495a8c8540a6b"  # pragma: allowlist secret
     ),
     "duplicate-registry-ids": (
         "6d4d2c5bb43d103924a336575a5022d17cedf8e086ceff477121255d52e71dca"  # pragma: allowlist secret
@@ -150,7 +150,7 @@ NO_DEV_DIRECT_EXECUTABLES = {
     "aislop-patterns": ".venv/bin/python",
     "doc-content-scan": ".venv/bin/python",
     "spdx-headers": ".venv/bin/python",
-    "no-new-os-environ": ".venv/bin/python",
+    "typed-bootstrap-environment-boundary": ".venv/bin/python",
     "no-noncanonical-lifecycle-classes": ".venv/bin/python",
     "pull-request-workflow-ratchet": ".venv/bin/python",
 }

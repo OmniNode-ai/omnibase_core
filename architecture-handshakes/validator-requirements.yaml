@@ -672,32 +672,27 @@ required_validators:
       - omnibase
       - omnicursor
 
-  no-new-os-environ:
+  typed-bootstrap-environment-boundary:
     description: |
-      Canonical AST-based gate: block ALL os.environ[KEY], os.environ.get(KEY),
-      and os.getenv(KEY) reads outside the explicit KEEP_ALLOWLIST of
-      structurally required bootstrap/path/CI vars. Generalises the infra
-      check-env-reads.sh (OMN-11069/11186) as a single canonical implementation
-      deployed from omnibase_core. Converts the platform from "block new vs
-      frozen 685 baseline" to "zero env reads outside the named bootstrap set."
-      KEEP_ALLOWLIST is the only permitted escape, reviewed in CODEOWNERS.
-      Suppression: # env-read-ok: <reason> (structural bootstrap seams only).
-      Exempts tests/, scripts/, examples/. DoD proof: deliberate red-test corpus
-      in test_no_new_os_environ.py asserts the gate catches real violations.
-      OMN-13566 (Wave-4 env-read enforcement ratchet).
+      Canonical AST-based gate: block every direct and aliased process-
+      environment access outside ModelEnvironmentBootstrap's exact classmethod
+      capture operation. The validator follows assignment/module/function
+      aliases and getattr indirection. It has no allowlist, path exclusion, or
+      inline suppression. The four-root adversarial corpus proves src/, tests/,
+      examples/, and scripts/ all remain in scope. OMN-17744.
     central_source: "omnibase_core.validators.no_new_os_environ"
     pre_commit: required
     ci_workflow: required
     required_check_on_main: "CI Summary"
     silent_skip_allowed: false
     pre_commit_hook_ids:
-      - "no-new-os-environ"
+      - "typed-bootstrap-environment-boundary"
     ci_workflow_keywords:
+      - "typed-bootstrap-environment-boundary"
       - "no_new_os_environ"
-      - "no-new-os-environ"
     excludes:
-      allowed: ["^tests/", "^scripts/", "^examples/"]
-      forbidden: ["^src/"]
+      allowed: []
+      forbidden: []
     applies_to_repos:
       - omnibase_core
 
@@ -818,7 +813,7 @@ model_b_rollup_enforcement:
         pydantic-patterns: ["pydantic-patterns"]
         aislop-patterns: ["aislop-patterns"]
         doc-content-scan: ["doc-content-scan"]
-        no-new-os-environ: ["no-new-os-environ"]
+        typed-bootstrap-environment-boundary: ["typed-bootstrap-environment-boundary"]
         spdx-headers: ["spdx-headers"]
         # OMN-14401: duplicate-registry-ids runs as a job IN THIS workflow
         # (ci.yml), unconditional (no `if:`, no `needs:`) — the ci-summary

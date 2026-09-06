@@ -339,12 +339,12 @@ gates:
     skip_semantics: never
     rationale: "Live required status check on omnibase_core dev branch protection."
 
-  - name: "No New os.environ Reads (OMN-13566)"
+  - name: "Typed Bootstrap Environment Boundary (OMN-17744)"
     mode: REQUIRED
     branch: main
     producer_kind: local
     workflow: ci.yml
-    job_path: ["no-new-os-environ"]
+    job_path: ["typed-bootstrap-environment-boundary"]
     skip_semantics: never
     rationale: "Live required status check on omnibase_core dev branch protection."
 
