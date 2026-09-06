@@ -179,11 +179,34 @@ def test_the_sync_push_uses_the_minted_app_token_not_the_workflow_token() -> Non
     assert "--force" not in script, script
 
 
-def test_the_sync_app_token_can_write_tagged_workflows() -> None:
-    """A release tag may itself change .github/workflows/**."""
-    with_block = _step(_SYNC_JOB, _MINT_STEP)["with"]
-    assert isinstance(with_block, dict)
-    assert with_block["permission-workflows"] == "write"
+def test_the_sync_app_token_can_write_refs_and_tagged_workflows() -> None:
+    """Both scopes, because a ``permission-*`` input REPLACES the whole set.
+
+    ``actions/create-github-app-token`` does not ADD to the installation's
+    permissions when a ``permission-*`` input is present -- it narrows the
+    minted token to exactly what is listed. Listing only
+    ``permission-workflows: write`` therefore drops ``contents: write``, and a
+    token with no contents scope cannot move ``refs/heads/main`` at all: run
+    34065670492 (v0.47.5) minted successfully and then died on
+    ``GH013 ... Cannot update this protected ref``, which reads exactly like a
+    ruleset rejection of the identity. omnimarket, whose sync has worked
+    throughout, mints with ``permission-contents: write``.
+    """
+    for job in (_SYNC_JOB, _RELEASE_JOB):
+        # The release job's mint step carries a repo-specific suffix in some
+        # repos, so resolve it by `id` rather than by exact name; the sync-only
+        # job's names are the ones OMN-18010 reads and those stay canonical.
+        mint = next(step for step in _steps(job) if step.get("id") == "app-token")
+        with_block = mint["with"]
+        assert isinstance(with_block, dict)
+        assert with_block["permission-contents"] == "write", (
+            f"the {job} job's main-sync App token has no contents scope, so the "
+            "fast-forward push is rejected before the ruleset is even consulted"
+        )
+        assert with_block["permission-workflows"] == "write", (
+            f"the {job} job's main-sync App token cannot fast-forward a release "
+            "tag that changes .github/workflows/**"
+        )
 
 
 def test_the_mint_and_push_steps_are_skipped_when_main_is_already_synced() -> None:
