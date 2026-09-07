@@ -164,26 +164,75 @@ def test_the_sync_job_keeps_the_release_jobs_step_names() -> None:
     assert names.index(_MINT_STEP) < names.index(_SYNC_STEP), names
 
 
-def test_the_sync_push_uses_the_minted_app_token_not_the_workflow_token() -> None:
-    """The main ruleset's only bypass actor is the onexbot-occ-writer App."""
-    script = str(_step(_SYNC_JOB, _SYNC_STEP)["run"])
-    assert "x-access-token:${APP_TOKEN}@github.com" in script, script
-    assert (
-        'git config --local --unset-all "http.https://github.com/.extraheader"'
-        in script
-    ), (
-        "actions/checkout's persisted GITHUB_TOKEN header overrides the app token "
-        "in the push URL, so the push would authenticate as github-actions[bot] "
-        "and the ruleset would decline it (OMN-17272)"
-    )
-    assert "--force" not in script, script
+def test_the_sync_updates_the_ref_over_rest_with_the_minted_app_token() -> None:
+    """The main ruleset's only bypass actor is the onexbot-occ-writer App.
+
+    The pointer move must NOT go over git. actions/checkout v7 persists the
+    workflow GITHUB_TOKEN as an ``http.<origin>.extraheader`` written into a
+    separate file and pulled in through ``includeIf.gitdir`` -- NOT into
+    ``--local`` config. The OMN-17272 mitigation
+    (``git config --local --unset-all http.https://github.com/.extraheader``)
+    therefore removes nothing, the included header still overrides credentials
+    embedded in a remote URL, and the push authenticates as
+    ``github-actions[bot]``. The ruleset declines exactly that, with GH013
+    "Cannot update this protected ref" -- reproduced live on core runs
+    34065670492 and 34069756070 (2026-09-06): mint SUCCESS, sync FAILURE.
+
+    Updating ``refs/heads/main`` through the REST API with the App token has
+    no git credential layer that could override the identity. That is the
+    shape omnimarket already syncs main with, live-proven against its ACTIVE
+    ruleset (run 34050376661, main = v0.4.18).
+    """
+    for job in (_SYNC_JOB, _RELEASE_JOB):
+        script = str(_step(job, _SYNC_STEP)["run"])
+
+        # The token must never travel through a git remote URL again.
+        assert "access-token:" not in script, (job, script)
+        assert "git push" not in script, (job, script)
+
+        assert "-X PATCH" in script, (job, script)
+        assert (
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/refs/heads/main" in script
+        ), (job, script)
+        assert "Authorization: Bearer ${APP_TOKEN}" in script, (job, script)
+
+        # Server-side fast-forward enforcement, on top of this workflow's own
+        # ancestry guard. A forced ref update would defeat both.
+        assert '"force":false' in script, (job, script)
+        assert "--force" not in script, (job, script)
+
+        # A non-2xx ref update must fail the step, not be swallowed.
+        assert "http_code" in script, (job, script)
 
 
-def test_the_sync_app_token_can_write_tagged_workflows() -> None:
-    """A release tag may itself change .github/workflows/**."""
-    with_block = _step(_SYNC_JOB, _MINT_STEP)["with"]
-    assert isinstance(with_block, dict)
-    assert with_block["permission-workflows"] == "write"
+def test_the_sync_app_token_can_write_refs_and_tagged_workflows() -> None:
+    """Both scopes, because a ``permission-*`` input REPLACES the whole set.
+
+    ``actions/create-github-app-token`` does not ADD to the installation's
+    permissions when a ``permission-*`` input is present -- it narrows the
+    minted token to exactly what is listed. Listing only
+    ``permission-workflows: write`` therefore drops ``contents: write``, and a
+    token with no contents scope cannot move ``refs/heads/main`` at all: run
+    34065670492 (v0.47.5) minted successfully and then died on
+    ``GH013 ... Cannot update this protected ref``, which reads exactly like a
+    ruleset rejection of the identity. omnimarket, whose sync has worked
+    throughout, mints with ``permission-contents: write``.
+    """
+    for job in (_SYNC_JOB, _RELEASE_JOB):
+        # The release job's mint step carries a repo-specific suffix in some
+        # repos, so resolve it by `id` rather than by exact name; the sync-only
+        # job's names are the ones OMN-18010 reads and those stay canonical.
+        mint = next(step for step in _steps(job) if step.get("id") == "app-token")
+        with_block = mint["with"]
+        assert isinstance(with_block, dict)
+        assert with_block["permission-contents"] == "write", (
+            f"the {job} job's main-sync App token has no contents scope, so the "
+            "fast-forward push is rejected before the ruleset is even consulted"
+        )
+        assert with_block["permission-workflows"] == "write", (
+            f"the {job} job's main-sync App token cannot fast-forward a release "
+            "tag that changes .github/workflows/**"
+        )
 
 
 def test_the_mint_and_push_steps_are_skipped_when_main_is_already_synced() -> None:

@@ -13,8 +13,8 @@ mutation) and produced zero findings on every ``clean_fixture`` (recorded-from-r
 replay completion, real ``RoutingResolvedJudgeInferenceAdapter`` usage, real
 ``EventBusInmemory`` usage, external Slack/boto3 mocks, recorded literal whose
 prose merely contains the word 'prompt'). The corpus verdict — not the LLM's
-self-report — was the acceptance authority (memory ``feedback_adversarial_receipts``).
-See the validator's generation-provenance record in the OmniNode internal knowledge base.
+self-report — was the acceptance authority.
+The generation-provenance record is not part of this repository (OMN-13289).
 
 ONEX node type: COMPUTE. Handler output: ``result`` only (no events / intents /
 projections). The handler is PURE and DETERMINISTIC: it scans the source TEXT

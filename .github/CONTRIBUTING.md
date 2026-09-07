@@ -365,7 +365,6 @@ Brief description of changes
 
 - [Documentation](https://github.com/OmniNode-ai/knowledge-base) — the OmniNode knowledge base is this repository's documentation home
 - [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)
-- Node purity failure guide — in the OmniNode internal knowledge base
 - [GitHub Issues](https://github.com/OmniNode-ai/omnibase_core/issues)
 
 ### Questions

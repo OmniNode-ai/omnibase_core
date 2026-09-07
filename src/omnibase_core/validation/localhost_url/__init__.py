@@ -10,7 +10,7 @@ The residual G2 mechanical scanner of the validator-standardization plan
 delegation chain, and accepted ONLY because it passed a deterministic acceptance
 corpus (``node_generation_consumer.validator_corpora.corpus_hardcoded_localhost_url``)
 in the hardened sandbox — the corpus verdict, not the LLM, is the acceptance
-authority (OMN-13289). See the validator's generation-provenance record in the OmniNode internal knowledge base.
+authority (OMN-13289). The generation-provenance record is not part of this repository (OMN-13289).
 
 Coverage rationale (why this is NOT a duplicate of ``validator_url_authority``):
 url-authority's ``public-https-literal`` rule deliberately EXCLUDES localhost /

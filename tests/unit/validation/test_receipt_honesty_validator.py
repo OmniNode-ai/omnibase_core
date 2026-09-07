@@ -665,7 +665,12 @@ class TestRuleDFakeHumanVerifier:
     )
     @pytest.mark.parametrize(
         "human_verifier",
-        ["jonah", "user", "human", "jonah.gabriel@gmail.com"],
+        # "jonah" stays: validator_receipt_honesty._HUMAN_VERIFIER_RE carries a
+        # literal `\bjonah\b` branch in SHIPPED source, and this is the only test
+        # of it — removing the value would widen a detection hole, not close one.
+        # The address is synthetic (RFC 2606 reserved domain); the regex's e-mail
+        # branch is domain-agnostic, so the rule is still exercised.
+        ["jonah", "user", "human", "someone@example.com"],
     )
     def test_agent_runner_human_verifier_fails(
         self, agent_runner: str, human_verifier: str
@@ -685,7 +690,7 @@ class TestRuleDFakeHumanVerifier:
 
     def test_both_human_handles_passes_rule_d(self) -> None:
         """Two human handles is unusual but not flagged by rule D (rule C handles it if equal)."""
-        receipt = _make_receipt(runner="jonah-manual", verifier="bret-reviewer")
+        receipt = _make_receipt(runner="operator-manual", verifier="reviewer-b")
         violations = check_receipt_honesty(receipt)
         assert not any(
             v.rule == EnumHonestyRule.FAKE_HUMAN_VERIFIER for v in violations
@@ -736,7 +741,7 @@ class TestRuleEDeployRealness:
             "kubectl rollout status",
             "psql -c 'SELECT 1'",
             "curl https://api.example.com/health",
-            "ssh jonah@192.168.86.201 docker ps",
+            "ssh operator@192.168.86.201 docker ps",
         ],
     )
     def test_deploy_evidence_with_real_verb_passes_rule_e(self, real_verb: str) -> None:

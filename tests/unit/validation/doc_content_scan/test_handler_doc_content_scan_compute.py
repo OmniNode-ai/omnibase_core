@@ -25,6 +25,7 @@ These tests assert three things:
 from __future__ import annotations
 
 import asyncio
+from typing import Final
 
 import pytest
 
@@ -48,8 +49,8 @@ _VIOLATION_FIXTURES: tuple[str, ...] = (
     "The broker runs on 192.168.86.201 in the lab.",  # v-base-lan-ip
     "Deployed to .201 over the weekend.",  # v-base-host-shorthand
     "Logs are written to /Users/jonah/Code/omni_home/run.log",  # v-base-personal-path  # local-path-ok OMN-13569 fixture is the personal-path violation the scanner must flag
-    "Connect with `ssh jonah@192.168.86.201` then tail the logs.",  # v-base-ssh-line
-    "Questions go to jonah.neugass@gmail.com for now.",  # v-base-personal-email
+    "Connect with `ssh operator@192.168.86.201` then tail the logs.",  # v-base-ssh-line
+    "Questions go to someone@gmail.example for now.",  # v-base-personal-email  # the .example TLD is RFC 2606-reserved and non-routable; the provider label is what _PERSONAL_EMAIL keys on, so this row stays RED (example.com would NOT)
     "This was fixed in OMN-13294 last sprint.",  # v-base-omn-prose
     "Postgres listens on 10.0.0.5 inside the cluster.",  # v-mut-lan-ip-10-band
     "Valkey is reachable at 172.16.4.9 from the runners.",  # v-mut-lan-ip-172-band
@@ -78,6 +79,36 @@ _CLEAN_FIXTURES: tuple[str, ...] = (
 )
 
 
+# Each violation fixture's REQUIRED violation class — the class its ``# v-...``
+# tag names. This map is the ANTI-VACUITY guard for the corpus above.
+#
+# ``test_every_violation_fixture_is_flagged`` only asserts ``flagged is True``,
+# which ANY class on the line satisfies. Several rows carry more than one trace
+# — the ssh row also carries a LAN IP — so an edit that makes a fixture stop
+# matching its OWN class (a scrub, a regex narrowing, a rule retirement) leaves
+# the corpus test green on a co-located class while the rule that row was
+# pinning is no longer exercised anywhere. That is the failure mode this map
+# exists to catch, and it is why a fixture is scrubbed by swapping the
+# identifying value for a synthetic one the SAME rule still matches, never by
+# removing the trace.
+_VIOLATION_FIXTURE_REQUIRED_CLASS: Final[dict[str, EnumDocViolationType]] = {
+    _VIOLATION_FIXTURES[0]: EnumDocViolationType.LAN_IP,
+    _VIOLATION_FIXTURES[1]: EnumDocViolationType.HOST_SHORTHAND,
+    _VIOLATION_FIXTURES[2]: EnumDocViolationType.PERSONAL_PATH,
+    _VIOLATION_FIXTURES[3]: EnumDocViolationType.SSH_INVOCATION,
+    _VIOLATION_FIXTURES[4]: EnumDocViolationType.PERSONAL_EMAIL,
+    _VIOLATION_FIXTURES[5]: EnumDocViolationType.TICKET_REFERENCE,
+    _VIOLATION_FIXTURES[6]: EnumDocViolationType.LAN_IP,
+    _VIOLATION_FIXTURES[7]: EnumDocViolationType.LAN_IP,
+    _VIOLATION_FIXTURES[8]: EnumDocViolationType.HOST_SHORTHAND,
+    _VIOLATION_FIXTURES[9]: EnumDocViolationType.PERSONAL_PATH,
+    _VIOLATION_FIXTURES[10]: EnumDocViolationType.TICKET_REFERENCE,
+    _VIOLATION_FIXTURES[11]: EnumDocViolationType.TICKET_REFERENCE,
+    _VIOLATION_FIXTURES[12]: EnumDocViolationType.TICKET_REFERENCE,
+    _VIOLATION_FIXTURES[13]: EnumDocViolationType.TICKET_REFERENCE,
+    _VIOLATION_FIXTURES[14]: EnumDocViolationType.TICKET_REFERENCE,
+}
+
 # ---------------------------------------------------------------------------
 # Corpus acceptance — the verdict that gated the generation run
 # ---------------------------------------------------------------------------
@@ -98,6 +129,32 @@ def test_every_clean_fixture_passes(source: str) -> None:
     result = scan_source(source)
     assert result.flagged is False, f"clean fixture false-flagged: {source!r}"
     assert result.findings == ()
+
+
+@pytest.mark.unit
+def test_required_class_map_covers_every_violation_fixture() -> None:
+    """The anti-vacuity map must stay aligned with the corpus it guards."""
+    assert len(_VIOLATION_FIXTURES) == len(set(_VIOLATION_FIXTURES)), (
+        "violation fixtures must be unique so the required-class map can key on them"
+    )
+    assert set(_VIOLATION_FIXTURE_REQUIRED_CLASS) == set(_VIOLATION_FIXTURES)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("source", _VIOLATION_FIXTURES)
+def test_every_violation_fixture_yields_its_own_class(source: str) -> None:
+    """Anti-vacuity: each fixture must flag the class its tag names.
+
+    Non-vacuity is the whole point of a positive-control corpus. Asserting only
+    ``flagged is True`` lets a fixture keep passing on a co-located trace after
+    the rule it was pinning stopped matching it.
+    """
+    expected = _VIOLATION_FIXTURE_REQUIRED_CLASS[source]
+    observed = {finding.violation_type for finding in scan_source(source).findings}
+    assert expected in observed, (
+        f"fixture no longer exercises its own class {expected.value!r}: "
+        f"{source!r} produced {sorted(v.value for v in observed)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -250,7 +307,7 @@ def test_file_marker_suppresses_the_whole_file() -> None:
         "<!-- doc-content-file-ok doc fixture -->\n"
         "host = 10.0.0.5\n"
         "see OMN-1234\n"
-        "ssh jonah@192.168.86.201"
+        "ssh operator@192.168.86.201"
     )
     result = scan_source(src)
     assert result.flagged is False

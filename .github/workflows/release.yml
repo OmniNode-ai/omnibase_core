@@ -319,9 +319,17 @@ jobs:
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
-          # The release tag can legitimately contain workflow changes. GitHub
-          # rejects that protected-branch update unless the App token carries
-          # this explicit scope (run 33525584540, OMN-17272).
+          # OMN-16289: a `permission-*` input REPLACES the installation's full
+          # permission set with exactly what is listed. OMN-17272 added
+          # `permission-workflows: write` alone, which silently dropped
+          # `contents: write` -- so the minted token could not push ANY ref and
+          # the fast-forward died on `GH013 ... Cannot update this protected
+          # ref` (run 34065670492, v0.47.5). omnimarket, whose sync has worked
+          # throughout, mints with `permission-contents: write`. Both scopes are
+          # required: contents to move the ref at all, workflows because a
+          # release tag can legitimately contain changes under
+          # .github/workflows/ (run 33525584540, OMN-17272).
+          permission-contents: write
           permission-workflows: write
 
       # OMN-16289: main = the last release. Once a release publishes
@@ -343,19 +351,57 @@ jobs:
           TAG="$RELEASE_TAG"
           TAG_SHA=$(git rev-list -n 1 "$TAG")
           echo "Resolved tag $TAG -> commit $TAG_SHA"
-          # OMN-17272: actions/checkout persists the job's GITHUB_TOKEN as an
-          # http.<origin>.extraheader Authorization header in the local git
-          # config, and that header overrides the app token embedded in the
-          # push URL below -- so this push actually authenticated as
-          # github-actions[bot] (branch-activity-proven), which the OMN-16289
-          # main ruleset correctly declines (GH013), and which GitHub refuses
-          # to accept as a ruleset bypass actor ("The following actor(s) are
-          # invalid: GitHub Actions"). Drop the persisted header so the push
-          # authenticates as onexbot-occ-writer, the ruleset's bypass actor --
-          # the same identity omnimemory/omnimarket already sync main with,
-          # live-proven against their ACTIVE rulesets on 2026-08-31.
-          git config --local --unset-all "http.https://github.com/.extraheader" || true
-          git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" "${TAG_SHA}:refs/heads/main"
+          # OMN-16289: main = the last release. This step moves the pointer.
+          #
+          # It used to push the tag SHA to refs/heads/main over git, with
+          # the App token embedded in the remote URL, after unsetting
+          # `http.<origin>.extraheader` so the persisted workflow GITHUB_TOKEN
+          # header could not override it (the OMN-17272 fix).
+          #
+          # That unset is now a NO-OP. actions/checkout v7 no longer persists
+          # the token in `--local` config -- it writes the header into a
+          # separate file and includes it through `includeIf.gitdir`:
+          #   git config --file .../git-credentials-<uuid>.config \
+          #     http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+          #   git config --local includeIf.gitdir:<workdir>/.git.path <file>
+          # so `--unset-all` against --local removes nothing, the included
+          # header still overrides the URL credentials, and the push
+          # authenticates as github-actions[bot]. The OMN-16289 main ruleset's
+          # only bypass actor is the onexbot-occ-writer App, so it declines
+          # exactly that: GH013 "Cannot update this protected ref" (core run
+          # 34065670492, 2026-09-06 -- mint SUCCESS, push FAILURE).
+          #
+          # Update the ref through the REST API with the App token instead.
+          # No git credential layer is involved, so nothing can override the
+          # push identity. This is the shape omnimarket already syncs main
+          # with, live-proven against its ACTIVE ruleset (run 34050376661,
+          # 2026-09-06, main = v0.4.18). `"force": false` makes GitHub itself
+          # enforce the fast-forward, server-side, on top of this workflow's
+          # own ancestry guard.
+          case "$TAG_SHA" in
+            [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+            *)
+              echo "::error::resolved release SHA is not a full commit SHA"
+              exit 1
+              ;;
+          esac
+          printf '{"sha":"%s","force":false}' "$TAG_SHA" > update-main-ref.json
+          http_code="$(curl -sS -o update-main-ref.out -w '%{http_code}' \
+            -X PATCH \
+            -H "Authorization: Bearer ${APP_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/refs/heads/main" \
+            --data @update-main-ref.json)"
+          cat update-main-ref.out
+          echo
+          case "$http_code" in
+            2*) ;;
+            *)
+              echo "::error::refs/heads/main update refused with HTTP ${http_code}"
+              exit 1
+              ;;
+          esac
           echo "main fast-forwarded to $TAG_SHA ($TAG)"
 
   # ---------------------------------------------------------------------------
@@ -465,9 +511,11 @@ jobs:
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
-          # A release tag can legitimately contain workflow changes; GitHub
-          # rejects that protected-branch update unless the App token carries
-          # this explicit scope (run 33525584540, OMN-17272).
+          # Both scopes are required, and a `permission-*` input REPLACES the
+          # installation's full set: contents to move refs/heads/main at all,
+          # workflows because a release tag can legitimately contain changes
+          # under .github/workflows/ (OMN-16289 run 34065670492, OMN-17272).
+          permission-contents: write
           permission-workflows: write
 
       - name: Sync main to release tag
@@ -480,15 +528,57 @@ jobs:
           TAG="$RELEASE_TAG"
           TAG_SHA=$(git rev-list -n 1 "$TAG")
           echo "Resolved tag $TAG -> commit $TAG_SHA"
-          # OMN-17272: actions/checkout persists the job's GITHUB_TOKEN as an
-          # http.<origin>.extraheader Authorization header, and that header
-          # overrides the app token embedded in the push URL below -- so the
-          # push would authenticate as github-actions[bot], which the
-          # OMN-16289 main ruleset correctly declines (GH013) and which GitHub
-          # refuses to accept as a ruleset bypass actor. Drop the persisted
-          # header so the push authenticates as onexbot-occ-writer.
-          git config --local --unset-all "http.https://github.com/.extraheader" || true
-          git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" "${TAG_SHA}:refs/heads/main"
+          # OMN-16289: main = the last release. This step moves the pointer.
+          #
+          # It used to push the tag SHA to refs/heads/main over git, with
+          # the App token embedded in the remote URL, after unsetting
+          # `http.<origin>.extraheader` so the persisted workflow GITHUB_TOKEN
+          # header could not override it (the OMN-17272 fix).
+          #
+          # That unset is now a NO-OP. actions/checkout v7 no longer persists
+          # the token in `--local` config -- it writes the header into a
+          # separate file and includes it through `includeIf.gitdir`:
+          #   git config --file .../git-credentials-<uuid>.config \
+          #     http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+          #   git config --local includeIf.gitdir:<workdir>/.git.path <file>
+          # so `--unset-all` against --local removes nothing, the included
+          # header still overrides the URL credentials, and the push
+          # authenticates as github-actions[bot]. The OMN-16289 main ruleset's
+          # only bypass actor is the onexbot-occ-writer App, so it declines
+          # exactly that: GH013 "Cannot update this protected ref" (core run
+          # 34065670492, 2026-09-06 -- mint SUCCESS, push FAILURE).
+          #
+          # Update the ref through the REST API with the App token instead.
+          # No git credential layer is involved, so nothing can override the
+          # push identity. This is the shape omnimarket already syncs main
+          # with, live-proven against its ACTIVE ruleset (run 34050376661,
+          # 2026-09-06, main = v0.4.18). `"force": false` makes GitHub itself
+          # enforce the fast-forward, server-side, on top of this workflow's
+          # own ancestry guard.
+          case "$TAG_SHA" in
+            [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+            *)
+              echo "::error::resolved release SHA is not a full commit SHA"
+              exit 1
+              ;;
+          esac
+          printf '{"sha":"%s","force":false}' "$TAG_SHA" > update-main-ref.json
+          http_code="$(curl -sS -o update-main-ref.out -w '%{http_code}' \
+            -X PATCH \
+            -H "Authorization: Bearer ${APP_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/refs/heads/main" \
+            --data @update-main-ref.json)"
+          cat update-main-ref.out
+          echo
+          case "$http_code" in
+            2*) ;;
+            *)
+              echo "::error::refs/heads/main update refused with HTTP ${http_code}"
+              exit 1
+              ;;
+          esac
           echo "main fast-forwarded to $TAG_SHA ($TAG)"
 
 
