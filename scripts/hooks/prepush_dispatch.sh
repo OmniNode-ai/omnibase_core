@@ -57,9 +57,124 @@ prepush_table_text() {
   printf '%s\n' "$head_copy"
 }
 
-# prepush_table_rows -- data rows only (comments and blanks dropped).
+# -----------------------------------------------------------------------------
+# Private placement overlay -- OMN-18025, porting OMN-17996 (epic OMN-17992)
+# -----------------------------------------------------------------------------
+# The committed table carries `@private` in ssh_target, uv_abs_path and
+# workroot. The transport target is resolved from the committed hostname column;
+# private ssh configuration may map that host alias to a lab address, but an
+# unversioned overlay may not choose where a git bundle is copied. The overlay
+# only hydrates the non-transport path values.
+#
+# Authorization is the (label, role, hostname, mode) columns of the committed
+# table, still read from HEAD, still refusing on working-tree divergence, and
+# still re-checked on the remote host by pytest_full_suite_host_guard.py against
+# its own `hostname -s`. So the OMN-16688 "no file on disk to forge" premise is
+# untouched: the overlay cannot add a host, redirect a bundle to a different
+# host, or make an unresolved row usable.
+#
+# Resolution is fail-fast with no default (CLAUDE.md rule 8): there is no
+# fallback path and no built-in address. OMNI_HOME unset, or the file absent,
+# leaves path columns UNRESOLVED and emits a diagnostic. A row with incomplete
+# overlay data is resolved the same way: `-` for ssh_target and empty for
+# uv/workroot, so lab placement is SKIPPED and the caller falls through to the
+# pre-existing precedence. It never refuses a push: a placement optimisation
+# that bricks pushes is the failure mode this hook family already rejected once.
+#
+# ONE DIVERGENCE FROM UPSTREAM, and it is forced rather than chosen. Upstream
+# hardcodes its own overlay filename in this library. This copy may not: the
+# vendoring rule (test_the_picker_library_is_not_edited_into_a_repo_specific
+# _fork) forbids naming a vendoring repo inside the shared picker, because a
+# repo-local literal here is how "one mechanism, three repos" becomes three
+# mechanisms wearing one filename. That rule names the supported seam --
+# per-repo behavior is DATA this library reads out of the host table -- so the
+# overlay filename is declared by the table itself, on a `#!placement-overlay`
+# directive line. The resolved path is byte-identical to the one upstream
+# writes, this text stays repo-neutral so the next re-vendor is still a copy,
+# and the declaration inherits the table's own protections: it is read from
+# HEAD and the hook refuses when the working tree diverges, so the overlay a
+# push reads cannot be re-pointed by an uncommitted edit either.
+#
+# A table with no directive declares no overlay. That is not an error and not a
+# default -- it is a table whose placement columns carry real values already
+# (every synthetic fixture), or one that wants no lab placement at all. Either
+# way the resolver returns rc=1 with a reason and the rows fall through
+# unhydrated.
+PREPUSH_HOST_OVERLAY_DIRECTIVE="#!placement-overlay"
+
+# prepush_overlay_rel -- the overlay path relative to $OMNI_HOME as DECLARED BY
+# THE COMMITTED TABLE, or rc=1. No repo literal, no branch, no default.
+prepush_overlay_rel() {
+  local rel
+  rel="$(prepush_table_text | awk -v D="$PREPUSH_HOST_OVERLAY_DIRECTIVE" '
+    $1 == D && NF >= 2 { print $2; exit }
+  ')"
+  [ -n "$rel" ] || return 1
+  printf '%s' "$rel"
+}
+
+# prepush_overlay_path -- absolute path to the private overlay, or rc=1 with a
+# reason on stderr. There is no fallback path and no built-in address.
+prepush_overlay_path() {
+  local rel path
+  if ! rel="$(prepush_overlay_rel)"; then
+    printf 'placement overlay unresolved: the host table declares no %s\n' \
+      "$PREPUSH_HOST_OVERLAY_DIRECTIVE" >&2
+    return 1
+  fi
+  if [ -z "${OMNI_HOME:-}" ]; then
+    printf 'placement overlay unresolved: OMNI_HOME is not set (%s)\n' \
+      "$rel" >&2
+    return 1
+  fi
+  path="${OMNI_HOME}/${rel}"
+  if [ ! -f "$path" ]; then
+    printf 'placement overlay absent at %s\n' "$path" >&2
+    return 1
+  fi
+  printf '%s' "$path"
+}
+
+# prepush_table_rows -- data rows only (comments and blanks dropped), with the
+# `@private` placement columns hydrated from the overlay.
 prepush_table_rows() {
-  prepush_table_text | sed -e 's/#.*$//' -e '/^[[:space:]]*$/d'
+  local overlay
+  overlay="$(prepush_overlay_path)" || overlay="/dev/null"
+  prepush_table_text | sed -e 's/#.*$//' -e '/^[[:space:]]*$/d' | awk \
+    -F'\t' -v OFS='\t' -v OVL="$overlay" '
+      # The overlay is matched by FILENAME rather than the NR==FNR idiom on
+      # purpose: an EMPTY or absent overlay (/dev/null) contributes zero
+      # records, and NR==FNR would then be true for the FIRST TABLE ROW and
+      # silently eat it.
+      FILENAME == OVL {
+        line = $0
+        sub(/#.*$/, "", line)
+        if (line ~ /^[ \t]*$/) next
+        split(line, f, "\t")
+        if (f[1] == "") next
+        uvv[f[1]] = f[3]
+        wrv[f[1]] = f[4]
+        next
+      }
+      {
+        needs_private = ($4 == "@private" || $6 == "@private" || $8 == "@private")
+        complete_overlay = (($1 in uvv) && uvv[$1] ~ /^\// && ($1 in wrv) && wrv[$1] ~ /^\//)
+        if (needs_private && !complete_overlay) {
+          print "placement overlay incomplete for " $1 "; skipping row placement" > "/dev/stderr"
+          if ($4 == "@private") { $4 = "-" }
+          if ($6 == "@private") { $6 = "" }
+          if ($8 == "@private") { $8 = "" }
+          print
+          next
+        }
+        # The transport target is the committed hostname. Private ssh config is
+        # where lab addresses and account-specific login details belong; the
+        # unversioned overlay never controls where the git bundle is copied.
+        if ($4 == "@private") { $4 = $3 }
+        if ($6 == "@private") { $6 = uvv[$1] }
+        if ($8 == "@private") { $8 = wrv[$1] }
+        print
+      }' "$overlay" -
 }
 
 # prepush_field ROW N -- Nth tab-separated field of ROW.
@@ -1359,8 +1474,8 @@ export ONEX_PREPUSH_HOOK_ACTIVE="remote-leg:${ORIGIN}"
 #
 # The list below was macOS-only by construction (OMN-16989): `/opt/homebrew/bin`
 # has no meaning on a Linux row, and the fleet's only Linux capacity row is
-# h201. Measured there non-interactively 2026-08-30, `ssh jonah@192.168.86.201
-# 'echo $PATH'` prints
+# h201. Measured there non-interactively 2026-08-30, a non-interactive ssh
+# login to that row printing `$PATH` gives
 # `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin`
 # -- `~/.local/bin` is absent, and BOTH `uv` and `shellcheck` live there, so the
 # `$(dirname "$UV")` and `~/.local/bin` entries already covered that host (a

@@ -183,8 +183,17 @@ PREPUSH_200_HOSTNAME="${PREPUSH_200_HOSTNAME:-stickybeatz-studio}"
 # happened -- assumed headroom that was not there. "Neither host reachable"
 # refuses; it does not skip the check.
 PREPUSH_201_GATE_RUNNER_HOSTNAME="${PREPUSH_201_GATE_RUNNER_HOSTNAME:-gate-runner-201}"
-PREPUSH_200_SSH_TARGET="${PREPUSH_200_SSH_TARGET:-jonah@stickybeatz-studio.tail75df5e.ts.net}"  # onex-allow-internal-ip OMN-16295 reason="pre-push guard needs the real host target to probe live load"
-PREPUSH_201_SSH_TARGET="${PREPUSH_201_SSH_TARGET:-jonah@192.168.86.201}"  # onex-allow-internal-ip OMN-16295 reason="pre-push guard needs the real host target to probe live load" # fallback-ok: real .201 host target, not a dev/local placeholder
+# PREPUSH_200_SSH_TARGET / PREPUSH_201_SSH_TARGET are GONE (OMN-18025). They
+# hardcoded a `login@host` default -- an operator account name, a Tailscale
+# MagicDNS name and an RFC1918 address -- in a PUBLIC repository, each behind
+# a self-written internal-address waiver annotation this hook family granted
+# itself. They were also DEAD: measured repo-wide before removal, both names appeared
+# on exactly the two lines that defined them and at no consumer, while the
+# control name PREPUSH_200_HOSTNAME appeared at 36 sites. The live probe path
+# is prepush_dispatch.sh's host table, whose transport target is the row's
+# committed `hostname` and whose paths hydrate from the private placement
+# overlay. The waivers are deleted with the values they waived, which is the
+# only direction that needs no approval -- widening one would.
 # load1/cores at or under this ratio counts as "fit". 1.0 == "not
 # oversubscribed" (a standard load-average heuristic); correctly reads the
 # observed-fit `.201` snapshot (~0.4x, 2026-08-20) as fit and both observed

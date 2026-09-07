@@ -83,6 +83,22 @@
 #     OMN-17787 wrapper block diffs by exactly the normalizer in (2) and
 #     nothing else.
 #
+#     ONE FURTHER DIVERGENCE, added by OMN-18025 when the OMN-17996 private
+#     placement overlay was ported in from upstream 116b49143 (#3246) as
+#     amended by 6cf0c1167 (#3249). Upstream HARDCODES its own overlay
+#     filename in the library
+#     (`PREPUSH_HOST_OVERLAY_REL="config/lab/prepush_hosts.omnibase_infra.
+#     overlay.tsv"`). This copy may not: test_the_picker_library_is_not_edited
+#     _into_a_repo_specific_fork forbids naming a vendoring repo inside the
+#     shared picker. That test also names the supported seam -- per-repo
+#     behavior is DATA the library reads out of the host table -- so this copy
+#     declares the overlay path on a `#!placement-overlay` directive line in
+#     prepush_hosts.tsv and resolves it with prepush_overlay_rel(). The
+#     resolved path is byte-identical to the one upstream writes; the
+#     hydration awk, the two absence semantics and the "transport is the
+#     committed hostname" rule are taken verbatim. Upstream would be strictly
+#     improved by the same change; that is a follow-up there, not a fork here.
+#
 #   scripts/hooks/prepush_override_grant.py -- VERBATIM copy of upstream
 #     eddf4a9d2 (digest identical to omnimarket's pin of the same revision).
 #     Upstream has since moved to 4349bb362 (OMN-17441, inherited
@@ -96,9 +112,15 @@
 #     narrow-target example path, the OMN-17159 history note). Upstream has
 #     since moved to 65cb31cdf (OMN-17441 placement-map rejection at
 #     pytest_configure, OMN-16607 runbook pointer); same outstanding delta,
-#     same rule -- recorded, not hidden.
+#     same rule -- recorded, not hidden. OMN-18025 adds a sixth diverging
+#     block: the refusal string used to tell the reader to `ssh <login>@<host>`
+#     at a lab machine, publishing an operator account name and a tailnet
+#     MagicDNS name from a PUBLIC repository every time the guard fired. It now
+#     names the row LABEL and points at the host table's own header. Upstream
+#     carries the same defect; fixing it there is a separate ticket in that
+#     repo, and this record is what stops the divergence being silent.
 #
 #path	upstream_repo	upstream_path	upstream_commit	upstream_branch	sha256	copied_at
-scripts/hooks/prepush_dispatch.sh	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_dispatch.sh	812d0b5451c1b157dd764cc26a83b9c7e12bcf71	dev	568443860442346f2a8687740b1a9469db439cdb571e6c56110e3b30872dc070	2026-09-05
+scripts/hooks/prepush_dispatch.sh	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_dispatch.sh	6cf0c1167bf0e26eac7cbe53022dc98d5d1597a1	dev	746cc8128d9b6e51167bb61f34084b2653a7325cdfa66327c568f1e25295aa80	2026-09-07
 scripts/hooks/prepush_override_grant.py	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_override_grant.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	6777c592a944fe1964a195bf088c00c7747551e5e9a20705ca49d9e59dbc3f3c	2026-09-01
-scripts/hooks/pytest_full_suite_host_guard.py	OmniNode-ai/omnibase_infra	scripts/hooks/pytest_full_suite_host_guard.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	73a104fc080bfa49cbab263830c43f53d473d5c51f31bc2fa37018d34c3c67d8	2026-09-01
+scripts/hooks/pytest_full_suite_host_guard.py	OmniNode-ai/omnibase_infra	scripts/hooks/pytest_full_suite_host_guard.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	ef67c1cc95510196c2304953caeb934288d3e992422b93eee22e1f82232709d6	2026-09-07

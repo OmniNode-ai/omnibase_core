@@ -32,7 +32,7 @@ that guard, and it shipped ``"$UV" run pytest "${ARGV[@]}"
 --ignore=tests/integration --tb=short`` with ARGV holding PATHS ONLY. This
 module is the missing half of OMN-14967's invariant, at the dispatch seam.
 
-MEASURED, read-only probe of h105 (192.168.86.105) at 2026-09-02T19:24Z, on
+MEASURED, read-only probe of row h105 at 2026-09-02T19:24Z, on
 the live run ``omnibase_core-e69568dd5e02-80404``:
 
 * ``ps -Ao pid,ppid,pcpu,rss,etime,command`` showed pid 87006 as the ONLY

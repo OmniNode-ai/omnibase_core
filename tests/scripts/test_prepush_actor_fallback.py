@@ -10,10 +10,15 @@ login, so for any other actor every remote row answered
 ``Permission denied (publickey,password)``. Re-measured 2026-09-02 against
 THIS repo's own committed table, one ssh per capacity row, non-owner login::
 
-    h200  ...tail75df5e.ts.net   rc=255  0s  Permission denied (publickey,password,keyboard-interactive).
-    h201  192.168.86.201         rc=255  0s  Permission denied (publickey,password).
-    h101  192.168.86.101         rc=255  0s  Permission denied (publickey,password,keyboard-interactive).
-    h105  192.168.86.105         rc=255  1s  Permission denied (publickey,password,keyboard-interactive).
+    h200  <row target>  rc=255  0s  Permission denied (publickey,password,keyboard-interactive).
+    h201  <row target>  rc=255  0s  Permission denied (publickey,password).
+    h101  <row target>  rc=255  0s  Permission denied (publickey,password,keyboard-interactive).
+    h105  <row target>  rc=255  1s  Permission denied (publickey,password,keyboard-interactive).
+
+(The targets are redacted here rather than transcribed: OMN-18025 moved the
+placement values into a private overlay, and a docstring is as public as the
+table was. What the transcript proves -- four rows, four refusals, rc=255 in
+under a second each -- does not depend on the addresses.)
 
 The actor's OWN host still probed ``fit``, but ``dispatch_to_lab_host`` skips a
 self candidate (it carries no ssh target), so the ranked walk executed nothing
@@ -99,9 +104,17 @@ def test_no_capacity_row_hardcodes_an_ssh_login() -> None:
     A ``user@`` here is not a style question: it pins every execution target to
     one person's credentials, and the picker then reports the whole lab
     unreachable for everybody else while their own fit host goes unused. This
-    assertion is what stops the next row from quietly reintroducing it."""
+    assertion is what stops the next row from quietly reintroducing it.
+
+    As of OMN-18025 the column carries the literal ``@private`` token and
+    hydrates to the row's committed ``hostname`` at read time, so the rule is
+    unchanged and strictly easier to hold: there is no address in this file for
+    a login to be attached to. The token is the one accepted ``@``.
+    """
     for row in _rows():
         if row[1] != "capacity":
+            continue
+        if row[3] == "@private":
             continue
         assert "@" not in row[3], (
             f"{row[0]}: ssh_target {row[3]!r} hardcodes a login. Use the bare "
