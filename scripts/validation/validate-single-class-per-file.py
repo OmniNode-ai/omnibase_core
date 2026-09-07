@@ -21,6 +21,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_DELEGATION_TERMINAL_V2_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "src"
+    / "omnibase_core"
+    / "models"
+    / "delegation"
+    / "wire"
+    / "model_delegation_terminal_v2.py"
+)
+
 
 class ClassDefinitionDetector(ast.NodeVisitor):
     """AST visitor to detect module-level class definitions in Python code.
@@ -177,6 +187,13 @@ def should_exclude_file(filepath: Path) -> bool:
     # Exclude singleton_holders.py - shared infrastructure module
     # that consolidates singleton holder classes by design
     if filepath.name == "singleton_holders.py":
+        return True
+
+    # Task 1.1's concrete terminal-state DTOs are structurally coupled and
+    # intentionally share one canonical delegation-wire module. Keep the
+    # exemption tied to that module: an identically named file elsewhere must
+    # remain subject to this validator.
+    if filepath.resolve() == _DELEGATION_TERMINAL_V2_PATH:
         return True
 
     # Exclude the COMPUTE-validator scan I/O trios (OMN-13294 / OMN-13497).
