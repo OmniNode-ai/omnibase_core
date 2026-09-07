@@ -85,6 +85,23 @@ _PYTHON_LINES = [
 ]
 _PYTHON_BLOCK = "\n".join(_PYTHON_LINES)
 
+# OMN-18016 (epic OMN-17992). applies_when: always, so every fixture repo below
+# needs it -- including the JS-only and no-pyproject ones. That is the point of
+# the block: the agent-state trees it refuses are not language-specific.
+_PUBLIC_REPO_HYGIENE_LINES = [
+    "# === onex-managed: public_repo_hygiene ===",
+    ".claude/*",
+    "!.claude/architecture-handshake.md",
+    ".claude_scratch/",
+    ".repowise-workspace/",
+    ".repowise-workspace.yaml",
+    ".evidence/",
+    "docs/evidence/",
+    "merge-sweep/",
+    "# === end onex-managed: public_repo_hygiene ===",
+]
+_HYGIENE_BLOCK = "\n".join(_PUBLIC_REPO_HYGIENE_LINES)
+
 
 def _write_gitignore(tmp_path: Path, content: str) -> None:
     (tmp_path / ".gitignore").write_text(content, encoding="utf-8")
@@ -109,7 +126,7 @@ def _write_package_json(tmp_path: Path) -> None:
 def test_python_repo_missing_python_block_fails(tmp_path: Path) -> None:
     """A repo with pyproject.toml that lacks the python managed block → finding."""
     _write_pyproject(tmp_path)
-    _write_gitignore(tmp_path, _UNIVERSAL_BLOCK + "\n")
+    _write_gitignore(tmp_path, _UNIVERSAL_BLOCK + "\n\n" + _HYGIENE_BLOCK + "\n")
 
     findings = validate(tmp_path, _SPEC_PATH)
 
@@ -121,7 +138,7 @@ def test_python_repo_missing_python_block_fails(tmp_path: Path) -> None:
 def test_js_repo_with_universal_block_passes(tmp_path: Path) -> None:
     """A JS-only repo (no pyproject.toml) with the universal block → clean."""
     _write_package_json(tmp_path)
-    _write_gitignore(tmp_path, _UNIVERSAL_BLOCK + "\n")
+    _write_gitignore(tmp_path, _UNIVERSAL_BLOCK + "\n\n" + _HYGIENE_BLOCK + "\n")
 
     findings = validate(tmp_path, _SPEC_PATH)
 
@@ -134,7 +151,7 @@ def test_verbatim_match_passes(tmp_path: Path) -> None:
     _write_pyproject(tmp_path)
     _write_gitignore(
         tmp_path,
-        _UNIVERSAL_BLOCK + "\n\n" + _PYTHON_BLOCK + "\n",
+        _UNIVERSAL_BLOCK + "\n\n" + _PYTHON_BLOCK + "\n\n" + _HYGIENE_BLOCK + "\n",
     )
 
     findings = validate(tmp_path, _SPEC_PATH)
@@ -161,7 +178,7 @@ playwright-report/
 # === end onex-managed: universal ==="""
     _write_gitignore(
         tmp_path,
-        altered_universal + "\n\n" + _PYTHON_BLOCK + "\n",
+        altered_universal + "\n\n" + _PYTHON_BLOCK + "\n\n" + _HYGIENE_BLOCK + "\n",
     )
 
     findings = validate(tmp_path, _SPEC_PATH)
@@ -199,27 +216,28 @@ def test_missing_gitignore_produces_finding(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-def test_both_blocks_missing_produces_two_findings(tmp_path: Path) -> None:
-    """Python repo with empty .gitignore → one finding per block."""
+def test_every_missing_block_produces_its_own_finding(tmp_path: Path) -> None:
+    """Python repo with empty .gitignore → one finding per applicable block."""
     _write_pyproject(tmp_path)
     _write_gitignore(tmp_path, "# just some comment\n")
 
     findings = validate(tmp_path, _SPEC_PATH)
 
-    assert len(findings) == 2, (
-        f"expected 2 findings (universal + python), got {findings}"
+    assert len(findings) == 3, (
+        f"expected 3 findings (universal + python + public_repo_hygiene), "
+        f"got {findings}"
     )
     block_names = {
         f.split("block ")[1].split("'")[1] for f in findings if "block " in f
     }
-    assert block_names == {"universal", "python"}
+    assert block_names == {"universal", "python", "public_repo_hygiene"}
 
 
 @pytest.mark.unit
 def test_no_pyproject_skips_python_block(tmp_path: Path) -> None:
     """Repo with no pyproject.toml only needs the universal block."""
     # No pyproject.toml, no package.json — plain repo
-    _write_gitignore(tmp_path, _UNIVERSAL_BLOCK + "\n")
+    _write_gitignore(tmp_path, _UNIVERSAL_BLOCK + "\n\n" + _HYGIENE_BLOCK + "\n")
 
     findings = validate(tmp_path, _SPEC_PATH)
 

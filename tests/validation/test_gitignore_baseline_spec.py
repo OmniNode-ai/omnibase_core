@@ -29,7 +29,7 @@ SPEC_PATH = (
 
 # Sections the DoD requires. Extending this list is a backwards-compatible
 # change; removing from it is not.
-REQUIRED_SECTIONS = {"universal", "python"}
+REQUIRED_SECTIONS = {"universal", "python", "public_repo_hygiene"}
 
 REQUIRED_BLOCK_FIELDS = {
     "description",
@@ -54,6 +54,26 @@ UNIVERSAL_REQUIRED_PATTERNS = [
     ".vscode/",
     "test-results/",
     "playwright-report/",
+]
+
+# OMN-18016 (epic OMN-17992). The agent-state, scratch and workspace-index
+# trees that kept landing in PUBLIC repositories.
+#
+# .onex/ and .onex_state/ are deliberately ABSENT and must stay absent: the
+# first is product surface read at runtime by the aislop rule loader, and the
+# second is governed by this repo's own OMN-15989 re-include, whose retirement
+# is blocked on an operator ruling. A conflicting managed rule would silently
+# fight a test-asserted rule. test_public_repo_hygiene_block_does_not_fight_the
+# _onex_state_reinclude pins that.
+PUBLIC_REPO_HYGIENE_REQUIRED_PATTERNS = [
+    ".claude/*",
+    "!.claude/architecture-handshake.md",
+    ".claude_scratch/",
+    ".repowise-workspace/",
+    ".repowise-workspace.yaml",
+    ".evidence/",
+    "docs/evidence/",
+    "merge-sweep/",
 ]
 
 PYTHON_REQUIRED_PATTERNS = [
@@ -206,4 +226,87 @@ def test_metadata_references_owning_ticket(spec: dict[str, Any]) -> None:
     related = metadata.get("related_tickets", [])
     assert "OMN-12451" in related, (
         "metadata.related_tickets must include OMN-12451 (this spec's owner ticket)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# OMN-18016 — the public-repo hygiene managed block (epic OMN-17992).
+# ---------------------------------------------------------------------------
+
+
+def test_public_repo_hygiene_contains_required_patterns_in_order(
+    spec: dict[str, Any],
+) -> None:
+    """The hygiene block carries exactly the OMN-18016 patterns, in order."""
+    patterns = spec["managed_blocks"]["public_repo_hygiene"]["patterns"]
+    assert patterns == PUBLIC_REPO_HYGIENE_REQUIRED_PATTERNS, (
+        f"public_repo_hygiene patterns diverge from the OMN-18016 spec.\n"
+        f"  expected: {PUBLIC_REPO_HYGIENE_REQUIRED_PATTERNS}\n"
+        f"  actual:   {patterns}"
+    )
+
+
+def test_public_repo_hygiene_block_does_not_fight_the_onex_state_reinclude(
+    spec: dict[str, Any],
+) -> None:
+    """``.onex_state/`` must stay OUT of the managed block.
+
+    This repo's own ``.gitignore`` deliberately re-includes
+    ``.onex_state/evidence/`` and ``.onex_state/friction/`` (OMN-15989), with
+    ``test_onex_state_disposable_gitignore.py`` asserting it. Retiring that
+    re-include is root cause 4.1 of the OMN-17992 plan and is blocked on an
+    operator ruling about the public evidence corpus.
+
+    A managed ``.onex_state/`` rule would be appended AFTER those lines and
+    would silently override a test-asserted rule in one repo while reading as
+    a fleet-wide hygiene improvement. That is worse than the gap it closes,
+    so it is pinned absent until the ruling lands.
+    """
+    patterns = spec["managed_blocks"]["public_repo_hygiene"]["patterns"]
+    offenders = [p for p in patterns if ".onex_state" in p]
+    assert not offenders, (
+        f"the managed hygiene block declares {offenders}, which fights the "
+        "OMN-15989 re-include this repo still asserts. Retire the re-include "
+        "first (root cause 4.1), then add the pattern."
+    )
+
+
+def test_public_repo_hygiene_block_does_not_ignore_product_surface(
+    spec: dict[str, Any],
+) -> None:
+    """``.onex/`` is read at runtime by the aislop rule loader, not scratch.
+
+    Ignoring it would break the per-repo override mechanism OMN-11132 shipped,
+    and would do it in a change whose stated purpose is hygiene.
+    """
+    patterns = spec["managed_blocks"]["public_repo_hygiene"]["patterns"]
+    offenders = [p for p in patterns if p.rstrip("/*") == ".onex"]
+    assert not offenders, (
+        f"the managed hygiene block declares {offenders}; .onex/ is product "
+        "surface read by the aislop rule loader, not machine state."
+    )
+
+
+def test_the_tracked_handshake_file_survives_the_claude_rule(
+    spec: dict[str, Any],
+) -> None:
+    """A bare ``.claude/*`` would untrack the architecture handshake.
+
+    Every governed repo tracks ``.claude/architecture-handshake.md``. The
+    ignore-with-explicit-allowlist-exception pattern is the reason this block
+    can ship without breaking the handshake check in eight repos at once.
+    """
+    patterns = spec["managed_blocks"]["public_repo_hygiene"]["patterns"]
+    assert ".claude/*" in patterns
+    exception_index = patterns.index("!.claude/architecture-handshake.md")
+    assert exception_index > patterns.index(".claude/*"), (
+        "the re-include must come AFTER the ignore rule; git applies the last "
+        "matching pattern, so an exception placed first does nothing"
+    )
+
+
+def test_metadata_references_the_hygiene_ticket(spec: dict[str, Any]) -> None:
+    related = spec["metadata"].get("related_tickets", [])
+    assert "OMN-18016" in related, (
+        "metadata.related_tickets must name the ticket that added the block"
     )
