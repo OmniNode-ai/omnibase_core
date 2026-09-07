@@ -68,10 +68,21 @@
 # branch (same follow-up named in the infra caller and in OMN-14812, which is
 # a separate ticket about the legacy autobind publisher's own promotion).
 #
-# SECRET-FREE: no `secrets: inherit` — the dev-lane broker comes from
-# omnimarket's committed config/ci_bus_lanes.yaml overlay (OMN-14813), and the
-# dev-lane listener is plaintext. This repo needs no Kafka secrets for this
-# workflow.
+# BROKER-SECRET-FREE, SASL-CREDENTIALLED (OMN-14813 + OMN-18012). The paragraph
+# this replaces asserted that this workflow needs no Kafka secrets because the
+# dev-lane listener was unauthenticated. The BROKER half still holds and always
+# will:
+# it comes from omnimarket's committed config/ci_bus_lanes.yaml overlay and must
+# never be a secret, because an opaque broker value is the OMN-14800 silent-
+# repoint surface. The transport half expired at ~16:40Z on 2026-09-07, when
+# OMN-18012 Phase B enabled SASL/SCRAM-SHA-256 on the dev-lane listener. The
+# overlay now DECLARES that transport (SASL_PLAINTEXT / SCRAM-SHA-256 —
+# authenticated, not encrypted) and omnimarket's publisher reads the protocol
+# from it rather than inferring TLS from credential presence. `secrets: inherit`
+# is therefore required below so KAFKA_SASL_{USERNAME,PASSWORD} reach the
+# publisher; without them it fail-fasts on the declared SASL lane instead of
+# publishing unauthenticated. A credential is not a broker address and
+# re-creates none of the OMN-14800 surface.
 #
 # Ticket: OMN-14990 (OMN-14941 / OMN-14811 / OMN-14987 lineage)
 
@@ -109,5 +120,12 @@ jobs:
     # the caller-level duplicate of the gate (which produced NO check run at
     # all) is removed.
     uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev
+    # OMN-18012: the dev lane declares SASL_PLAINTEXT/SCRAM-SHA-256, so the
+    # publisher needs the KAFKA_SASL_* credentials. The broker is still
+    # resolved from omnimarket's committed overlay, never from a secret.
+    # pragma: allowlist secret -- `secrets: inherit` is a GHA syntax keyword,
+    # not a literal secret; the repo secret scanner's Secret Keyword heuristic
+    # false-positives on the word "secrets:" here.
+    secrets: inherit  # pragma: allowlist secret
     with:
       lane: dev
