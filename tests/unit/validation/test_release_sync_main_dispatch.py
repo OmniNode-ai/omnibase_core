@@ -164,19 +164,45 @@ def test_the_sync_job_keeps_the_release_jobs_step_names() -> None:
     assert names.index(_MINT_STEP) < names.index(_SYNC_STEP), names
 
 
-def test_the_sync_push_uses_the_minted_app_token_not_the_workflow_token() -> None:
-    """The main ruleset's only bypass actor is the onexbot-occ-writer App."""
-    script = str(_step(_SYNC_JOB, _SYNC_STEP)["run"])
-    assert "x-access-token:${APP_TOKEN}@github.com" in script, script
-    assert (
-        'git config --local --unset-all "http.https://github.com/.extraheader"'
-        in script
-    ), (
-        "actions/checkout's persisted GITHUB_TOKEN header overrides the app token "
-        "in the push URL, so the push would authenticate as github-actions[bot] "
-        "and the ruleset would decline it (OMN-17272)"
-    )
-    assert "--force" not in script, script
+def test_the_sync_updates_the_ref_over_rest_with_the_minted_app_token() -> None:
+    """The main ruleset's only bypass actor is the onexbot-occ-writer App.
+
+    The pointer move must NOT go over git. actions/checkout v7 persists the
+    workflow GITHUB_TOKEN as an ``http.<origin>.extraheader`` written into a
+    separate file and pulled in through ``includeIf.gitdir`` -- NOT into
+    ``--local`` config. The OMN-17272 mitigation
+    (``git config --local --unset-all http.https://github.com/.extraheader``)
+    therefore removes nothing, the included header still overrides credentials
+    embedded in a remote URL, and the push authenticates as
+    ``github-actions[bot]``. The ruleset declines exactly that, with GH013
+    "Cannot update this protected ref" -- reproduced live on core runs
+    34065670492 and 34069756070 (2026-09-06): mint SUCCESS, sync FAILURE.
+
+    Updating ``refs/heads/main`` through the REST API with the App token has
+    no git credential layer that could override the identity. That is the
+    shape omnimarket already syncs main with, live-proven against its ACTIVE
+    ruleset (run 34050376661, main = v0.4.18).
+    """
+    for job in (_SYNC_JOB, _RELEASE_JOB):
+        script = str(_step(job, _SYNC_STEP)["run"])
+
+        # The token must never travel through a git remote URL again.
+        assert "access-token:" not in script, (job, script)
+        assert "git push" not in script, (job, script)
+
+        assert "-X PATCH" in script, (job, script)
+        assert (
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/git/refs/heads/main" in script
+        ), (job, script)
+        assert "Authorization: Bearer ${APP_TOKEN}" in script, (job, script)
+
+        # Server-side fast-forward enforcement, on top of this workflow's own
+        # ancestry guard. A forced ref update would defeat both.
+        assert '"force":false' in script, (job, script)
+        assert "--force" not in script, (job, script)
+
+        # A non-2xx ref update must fail the step, not be swallowed.
+        assert "http_code" in script, (job, script)
 
 
 def test_the_sync_app_token_can_write_refs_and_tagged_workflows() -> None:
