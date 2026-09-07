@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import os
+from typing import ClassVar
 from urllib.parse import urljoin, urlparse
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_request_config import ModelRequestConfig
@@ -13,6 +13,7 @@ from omnibase_core.models.configuration.model_request_retry_config import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
 
 class ModelRestApiConnectionConfig(BaseModel):
@@ -30,6 +31,11 @@ class ModelRestApiConnectionConfig(BaseModel):
     - Health check endpoint support
     - Rate limiting awareness
     """
+
+    # OMN-14515 ratchet: this model was baselined without an explicit
+    # extra= setting, so Pydantic silently dropped unknown fields. Touching
+    # its body (OMN-17554) is the moment to fix it.
+    model_config = ConfigDict(extra="forbid")
 
     base_url: str = Field(
         default=...,
@@ -388,21 +394,22 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     # === Environment Override Support ===
 
+    # Declared contract-env binding per overridable field (OMN-17554).
+    _ENV_BINDINGS: ClassVar[tuple[tuple[str, str], ...]] = (
+        ("base_url", "${env.ONEX_API_BASE_URL}"),
+        ("api_key", "${env.ONEX_API_KEY}"),
+        ("bearer_token", "${env.ONEX_API_BEARER_TOKEN}"),
+        ("timeout_seconds", "${env.ONEX_API_TIMEOUT_SECONDS}"),
+        ("max_retries", "${env.ONEX_API_MAX_RETRIES}"),
+    )
+
     def apply_environment_overrides(self) -> "ModelRestApiConnectionConfig":
-        """Apply environment variable overrides for CI/local testing."""
+        """Apply declared binding overrides for CI/local testing."""
         overrides: dict[str, str | int | SecretStr] = {}
 
-        # Environment variable mappings
-        env_mappings = {
-            "ONEX_API_BASE_URL": "base_url",
-            "ONEX_API_KEY": "api_key",
-            "ONEX_API_BEARER_TOKEN": "bearer_token",
-            "ONEX_API_TIMEOUT_SECONDS": "timeout_seconds",
-            "ONEX_API_MAX_RETRIES": "max_retries",
-        }
-
-        for env_var, field_name in env_mappings.items():
-            env_value = os.environ.get(env_var)
+        for field_name, reference in self._ENV_BINDINGS:
+            binding = resolve_contract_env_binding(reference)
+            env_value = binding.value
             if env_value is not None:
                 # Type conversion for numeric fields
                 if field_name in ["timeout_seconds", "max_retries"]:

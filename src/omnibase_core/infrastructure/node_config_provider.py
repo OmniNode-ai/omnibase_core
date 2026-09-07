@@ -10,14 +10,13 @@ for all ONEX nodes with environment variable support and sensible defaults.
 Domain: Infrastructure configuration management
 """
 
-import os
-
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.models.configuration.model_node_config_value import (
     ModelNodeConfigSchema,
     ScalarConfigValue,
     is_valid_value_type,
 )
+from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
 
 class NodeConfigProvider:
@@ -50,9 +49,12 @@ class NodeConfigProvider:
             - effect.default_retry_delay_ms: Default retry delay for effects
             - orchestrator.default_step_timeout_ms: Default step timeout for orchestrator
 
-    Environment Variables:
-        - ONEX_<KEY>: Override any configuration (e.g., ONEX_COMPUTE_MAX_PARALLEL_WORKERS=8)
-        - Keys use uppercase with underscores (dots become underscores)
+    Declared bindings:
+        Each configuration key has one declared ``${env.ONEX_*}`` contract
+        reference in ``_BINDINGS`` below, resolved through the sanctioned
+        overlay resolver (OMN-17554). This provider does not read the
+        environment itself and does not derive reference names at runtime, so
+        the full set of bindings is readable in one place.
 
     Example:
         ```python
@@ -91,36 +93,57 @@ class NodeConfigProvider:
         "orchestrator.action_emission_enabled": True,
     }
 
+    # Declared contract-env binding per configuration key (OMN-17554). One
+    # literal reference per key: the set is closed and reviewable, unlike the
+    # f-string builder this replaced, whose keys could not be enumerated
+    # statically and were therefore invisible to the env-read gate.
+    _BINDINGS: dict[str, str] = {
+        "compute.max_parallel_workers": "${env.ONEX_COMPUTE_MAX_PARALLEL_WORKERS}",
+        "compute.cache_ttl_minutes": "${env.ONEX_COMPUTE_CACHE_TTL_MINUTES}",
+        "compute.performance_threshold_ms": (
+            "${env.ONEX_COMPUTE_PERFORMANCE_THRESHOLD_MS}"
+        ),
+        "effect.default_timeout_ms": "${env.ONEX_EFFECT_DEFAULT_TIMEOUT_MS}",
+        "effect.default_retry_delay_ms": "${env.ONEX_EFFECT_DEFAULT_RETRY_DELAY_MS}",
+        "effect.max_concurrent_effects": "${env.ONEX_EFFECT_MAX_CONCURRENT_EFFECTS}",
+        "reducer.default_batch_size": "${env.ONEX_REDUCER_DEFAULT_BATCH_SIZE}",
+        "reducer.max_memory_usage_mb": "${env.ONEX_REDUCER_MAX_MEMORY_USAGE_MB}",
+        "reducer.streaming_buffer_size": "${env.ONEX_REDUCER_STREAMING_BUFFER_SIZE}",
+        "orchestrator.max_concurrent_workflows": (
+            "${env.ONEX_ORCHESTRATOR_MAX_CONCURRENT_WORKFLOWS}"
+        ),
+        "orchestrator.default_step_timeout_ms": (
+            "${env.ONEX_ORCHESTRATOR_DEFAULT_STEP_TIMEOUT_MS}"
+        ),
+        "orchestrator.action_emission_enabled": (
+            "${env.ONEX_ORCHESTRATOR_ACTION_EMISSION_ENABLED}"
+        ),
+    }
+
     def __init__(self) -> None:
         """Initialize configuration provider."""
         self._config_cache: dict[str, ScalarConfigValue] = {}
-        self._load_environment_config()
+        self._load_declared_bindings()
 
-    def _load_environment_config(self) -> None:
-        """Load configuration from environment variables."""
-        # Load all ONEX_* environment variables
+    def _load_declared_bindings(self) -> None:
+        """Resolve every declared binding, falling back to the typed default."""
         for key, default_value in self._DEFAULTS.items():
-            env_key = f"ONEX_{key.upper().replace('.', '_')}"
-            env_value = os.environ.get(env_key)
-
-            if env_value is not None:
-                # Convert environment variable to appropriate type
-                if isinstance(default_value, bool):
-                    self._config_cache[key] = env_value.lower() in (
-                        "true",
-                        "1",
-                        "yes",
-                        "on",
-                    )
-                elif isinstance(default_value, int):
-                    self._config_cache[key] = int(env_value)
-                elif isinstance(default_value, float):
-                    self._config_cache[key] = float(env_value)
-                else:
-                    self._config_cache[key] = env_value
-            else:
-                # Use default value
+            binding = resolve_contract_env_binding(self._BINDINGS[key])
+            if binding.value is None:
                 self._config_cache[key] = default_value
+                continue
+            self._config_cache[key] = self._coerce(binding.value, default_value)
+
+    @staticmethod
+    def _coerce(value: str, default_value: ScalarConfigValue) -> ScalarConfigValue:
+        """Coerce a resolved binding to the type its declared default carries."""
+        if isinstance(default_value, bool):
+            return value.lower() in ("true", "1", "yes", "on")
+        if isinstance(default_value, int):
+            return int(value)
+        if isinstance(default_value, float):
+            return float(value)
+        return value
 
     async def get_config_value(
         self, key: str, default: ScalarConfigValue | None = None

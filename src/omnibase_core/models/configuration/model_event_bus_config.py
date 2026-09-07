@@ -2,9 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 import os
+from typing import ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
+
+from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
 
 class ModelEventBusConfig(BaseModel):
@@ -77,32 +80,43 @@ class ModelEventBusConfig(BaseModel):
             return None
         return self.sasl_password.get_secret_value()
 
+    # Declared contract-env binding per overridable field (OMN-17554).
+    #
+    # A tuple of pairs, not a dict literal: the OMN-15639 consumer-group gate
+    # reads any `"group_id": "<literal>"` dict entry as a hardcoded consumer
+    # group name, and it is right to -- it cannot tell a group name from a
+    # reference to one by looking at the value. The binding below names the
+    # variable the group id is read FROM; the id itself is still resolved at
+    # run time through the sanctioned overlay boundary. Keeping the gate strict
+    # and declaring the table as pairs costs nothing.
+    _ENV_BINDINGS: ClassVar[tuple[tuple[str, str], ...]] = (
+        ("bootstrap_servers", "${env.ONEX_EVENT_BUS_BOOTSTRAP_SERVERS}"),
+        ("topics", "${env.ONEX_EVENT_BUS_TOPICS}"),
+        ("security_protocol", "${env.ONEX_EVENT_BUS_SECURITY_PROTOCOL}"),
+        ("sasl_mechanism", "${env.ONEX_EVENT_BUS_SASL_MECHANISM}"),
+        ("sasl_username", "${env.ONEX_EVENT_BUS_SASL_USERNAME}"),
+        ("sasl_password", "${env.ONEX_EVENT_BUS_SASL_PASSWORD}"),
+        ("client_id", "${env.ONEX_EVENT_BUS_CLIENT_ID}"),
+        ("group_id", "${env.ONEX_EVENT_BUS_GROUP_ID}"),
+        ("partitions", "${env.ONEX_EVENT_BUS_PARTITIONS}"),
+        ("replication_factor", "${env.ONEX_EVENT_BUS_REPLICATION_FACTOR}"),
+        ("acks", "${env.ONEX_EVENT_BUS_ACKS}"),
+        ("enable_auto_commit", "${env.ONEX_EVENT_BUS_ENABLE_AUTO_COMMIT}"),
+        ("auto_offset_reset", "${env.ONEX_EVENT_BUS_AUTO_OFFSET_RESET}"),
+        ("ssl_cafile", "${env.ONEX_EVENT_BUS_SSL_CAFILE}"),
+        ("ssl_certfile", "${env.ONEX_EVENT_BUS_SSL_CERTFILE}"),
+        ("ssl_keyfile", "${env.ONEX_EVENT_BUS_SSL_KEYFILE}"),
+    )
+
     def apply_environment_overrides(self) -> "ModelEventBusConfig":
-        """Apply environment variable overrides for CI/local testing."""
+        """Apply declared binding overrides for CI/local testing."""
         overrides: dict[
             str,
             list[str] | str | int | bool | SecretStr | None,
         ] = {}
-        env_mappings = {
-            "ONEX_EVENT_BUS_BOOTSTRAP_SERVERS": "bootstrap_servers",
-            "ONEX_EVENT_BUS_TOPICS": "topics",
-            "ONEX_EVENT_BUS_SECURITY_PROTOCOL": "security_protocol",
-            "ONEX_EVENT_BUS_SASL_MECHANISM": "sasl_mechanism",
-            "ONEX_EVENT_BUS_SASL_USERNAME": "sasl_username",
-            "ONEX_EVENT_BUS_SASL_PASSWORD": "sasl_password",
-            "ONEX_EVENT_BUS_CLIENT_ID": "client_id",
-            "ONEX_EVENT_BUS_GROUP_ID": "group_id",
-            "ONEX_EVENT_BUS_PARTITIONS": "partitions",
-            "ONEX_EVENT_BUS_REPLICATION_FACTOR": "replication_factor",
-            "ONEX_EVENT_BUS_ACKS": "acks",
-            "ONEX_EVENT_BUS_ENABLE_AUTO_COMMIT": "enable_auto_commit",
-            "ONEX_EVENT_BUS_AUTO_OFFSET_RESET": "auto_offset_reset",
-            "ONEX_EVENT_BUS_SSL_CAFILE": "ssl_cafile",
-            "ONEX_EVENT_BUS_SSL_CERTFILE": "ssl_certfile",
-            "ONEX_EVENT_BUS_SSL_KEYFILE": "ssl_keyfile",
-        }
-        for env_var, field_name in env_mappings.items():
-            env_value = os.environ.get(env_var)
+        for field_name, reference in self._ENV_BINDINGS:
+            binding = resolve_contract_env_binding(reference)
+            env_value = binding.value
             if env_value is not None:
                 if field_name in ["bootstrap_servers", "topics"]:
                     overrides[field_name] = [

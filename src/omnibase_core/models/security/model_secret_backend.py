@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -15,12 +15,21 @@ from omnibase_core.enums.enum_scalability_level import EnumScalabilityLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.enums.enum_throughput_level import EnumThroughputLevel
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
 from .model_backend_capabilities import ModelBackendCapabilities
 from .model_backend_config import ModelBackendConfig
 from .model_backend_config_validation import ModelBackendConfigValidation
 from .model_backend_performance_profile import ModelBackendPerformanceProfile
 from .model_backend_security_profile import ModelBackendSecurityProfile
+
+# Declared contract-env references for CI platform detection (OMN-17554).
+CI_INDICATOR_BINDINGS: tuple[str, ...] = (
+    "${env.CI}",
+    "${env.CONTINUOUS_INTEGRATION}",
+    "${env.GITHUB_ACTIONS}",
+    "${env.GITLAB_CI}",
+)
 
 
 class ModelSecretBackend(BaseModel):
@@ -36,6 +45,11 @@ class ModelSecretBackend(BaseModel):
     - Security assessment and best practices
     - Performance characteristics analysis
     """
+
+    # OMN-14515 ratchet: this model was baselined without an explicit
+    # extra= setting, so Pydantic silently dropped unknown fields. Touching
+    # its body (OMN-17554) is the moment to fix it.
+    model_config = ConfigDict(extra="forbid")
 
     backend_type: EnumBackendType = Field(
         default=EnumBackendType.ENVIRONMENT,
@@ -225,15 +239,24 @@ class ModelSecretBackend(BaseModel):
         # Check for development environment indicators
         if (
             Path(".env").exists()
+            # fallback-ok: platform detection, not dispatch degradation. Each of
+            # these four signals independently indicates a developer machine; no
+            # ordered chain of handlers silently degrades through them. The
+            # structural reads are owned by OMN-17525 / OMN-17555.
             or Path(".env.local").exists()
             or os.getenv("NODE_ENV") == "development"
             or os.getenv("ENVIRONMENT") == "development"
         ):
             return "development"
 
-        # Check for CI environment
-        ci_indicators = ["CI", "CONTINUOUS_INTEGRATION", "GITHUB_ACTIONS", "GITLAB_CI"]
-        if any(os.getenv(indicator) for indicator in ci_indicators):
+        # Check for CI environment. The indicators are declared as literal
+        # ${env.VAR} references and resolved through the sanctioned overlay
+        # boundary (OMN-17554); the loop that read os.getenv on a computed name
+        # was invisible to the env-read gate.
+        if any(
+            resolve_contract_env_binding(reference).value
+            for reference in CI_INDICATOR_BINDINGS
+        ):
             return "ci"
 
         # Default to production

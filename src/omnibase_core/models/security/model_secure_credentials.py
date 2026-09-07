@@ -7,9 +7,13 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, ConfigDict, SecretStr
 
 from omnibase_core.errors.exception_groups import VALIDATION_ERRORS
+from omnibase_core.overlays.contract_env_ref import (
+    contract_env_reference,
+    resolve_contract_env_binding,
+)
 
 from .model_audit_data import ModelAuditData
 from .model_credential_validation_result import ModelCredentialValidationResult
@@ -38,6 +42,11 @@ class ModelSecureCredentials(BaseModel, ABC):
     - Field-level security classification
     - Audit trail support
     """
+
+    # OMN-14515 ratchet: this model was baselined without an explicit
+    # extra= setting, so Pydantic silently dropped unknown fields. Touching
+    # its body (OMN-17554) is the moment to fix it.
+    model_config = ConfigDict(extra="forbid")
 
     # === Abstract Methods ===
 
@@ -207,28 +216,42 @@ class ModelSecureCredentials(BaseModel, ABC):
     # === Environment Integration ===
 
     def validate_environment_variables(self, env_prefix: str = "ONEX_") -> list[str]:
-        """Validate that required environment variables are available."""
+        """Validate that every required declared binding resolves."""
         issues = []
 
         for field_name, field_info in self.__class__.model_fields.items():
             if field_info.is_required():
-                env_var_name = f"{env_prefix}{field_name.upper()}"
-                if not os.getenv(env_var_name):
+                binding = resolve_contract_env_binding(
+                    self.get_environment_bindings(env_prefix)[field_name]
+                )
+                if not binding.value:
                     issues.append(
-                        f"Missing required environment variable: {env_var_name}",
+                        f"Missing required environment variable: {binding.name}",
                     )
 
         return issues
 
+    def get_environment_bindings(self, env_prefix: str = "ONEX_") -> dict[str, str]:
+        """Declare one ``${env.VAR}`` contract reference per model field.
+
+        This is the model's own binding declaration: the field set is the
+        declaration, and the canonical reference builder fails closed on any
+        name that is not a legal identifier (OMN-17554). Resolution happens
+        through the sanctioned overlay boundary, never here.
+        """
+        return {
+            field_name: contract_env_reference(f"{env_prefix}{field_name.upper()}")
+            for field_name in self.__class__.model_fields
+        }
+
     def get_environment_mapping(self, env_prefix: str = "ONEX_") -> dict[str, str]:
         """Get mapping of model fields to environment variable names."""
-        mapping = {}
-
-        for field_name in self.__class__.model_fields:
-            env_var_name = f"{env_prefix}{field_name.upper()}"
-            mapping[field_name] = env_var_name
-
-        return mapping
+        return {
+            field_name: resolve_contract_env_binding(reference).name
+            for field_name, reference in self.get_environment_bindings(
+                env_prefix
+            ).items()
+        }
 
     def load_from_environment_with_validation(
         self,
@@ -236,10 +259,11 @@ class ModelSecureCredentials(BaseModel, ABC):
     ) -> list[str]:
         """Load values from environment with validation, return any issues."""
         issues = []
-        env_mapping = self.get_environment_mapping(env_prefix)
 
-        for field_name, env_var in env_mapping.items():
-            env_value = os.getenv(env_var)
+        for field_name, reference in self.get_environment_bindings(env_prefix).items():
+            binding = resolve_contract_env_binding(reference)
+            env_var = binding.name
+            env_value = binding.value
             if env_value:
                 try:
                     # Attempt to set the field value

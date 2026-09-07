@@ -8,7 +8,7 @@
 # an entry here becomes compliant, forcing the count down. Do not hand-add.
 #
 # scan roots: src/omnibase_core
-# count: 1108
+# count: 1103
 #
 # Regenerate: python -m omnibase_core.validators.pydantic_extra_forbid \
 #     --write-baseline src/omnibase_core
@@ -91,9 +91,7 @@ violations:
   - "omnibase_core.models.configuration.model_configuration_merge_result:ModelConfigurationMergeResult"
   - "omnibase_core.models.configuration.model_custom_resource_limits:ModelCustomResourceLimits"
   - "omnibase_core.models.configuration.model_database_config:ModelDatabaseConfig"
-  - "omnibase_core.models.configuration.model_database_connection_config:ModelDatabaseConnectionConfig"
   - "omnibase_core.models.configuration.model_database_secure_config:ModelComplianceStatus"
-  - "omnibase_core.models.configuration.model_database_secure_config:ModelDatabaseSecureConfig"
   - "omnibase_core.models.configuration.model_database_secure_config:ModelPerformanceProfile"
   - "omnibase_core.models.configuration.model_database_secure_config:ModelSecurityAssessment"
   - "omnibase_core.models.configuration.model_dict_config:ModelDictConfig"
@@ -150,7 +148,6 @@ violations:
   - "omnibase_core.models.configuration.model_request_summary:ModelRequestSummary"
   - "omnibase_core.models.configuration.model_resource_allocation:ModelResourceAllocation"
   - "omnibase_core.models.configuration.model_resource_limits:ModelResourceLimits"
-  - "omnibase_core.models.configuration.model_rest_api_connection_config:ModelRestApiConnectionConfig"
   - "omnibase_core.models.configuration.model_schedule_trigger:ModelScheduleTrigger"
   - "omnibase_core.models.configuration.model_serialized_block:ModelSerializedBlock"
   - "omnibase_core.models.configuration.model_service_container:ModelServiceContainer"
@@ -1016,11 +1013,9 @@ violations:
   - "omnibase_core.models.security.model_risk_assessment:ModelRiskAssessment"
   - "omnibase_core.models.security.model_rule_condition_class:ModelRuleCondition"
   - "omnibase_core.models.security.model_rule_condition_value:ModelRuleConditionValue"
-  - "omnibase_core.models.security.model_secret_backend:ModelSecretBackend"
   - "omnibase_core.models.security.model_secret_config:ModelSecretConfig"
   - "omnibase_core.models.security.model_secret_health_check_result:ModelSecretHealthCheckResult"
   - "omnibase_core.models.security.model_secret_manager:ModelSecretManager"
-  - "omnibase_core.models.security.model_secure_credentials:ModelSecureCredentials"
   - "omnibase_core.models.security.model_secure_mask_config:ModelSecureMaskConfig"
   - "omnibase_core.models.security.model_security_context:ModelSecurityContext"
   - "omnibase_core.models.security.model_security_event:ModelSecurityEvent"

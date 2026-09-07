@@ -52,22 +52,18 @@ v1.0.4 Additional Fixes (OMN-661):
 
 Size Limits:
     To prevent memory exhaustion, this module enforces the following limits:
-    - MAX_WORKFLOW_STEPS (default 1000): Maximum number of steps in a workflow.
+    - MAX_WORKFLOW_STEPS (1000): Maximum number of steps in a workflow.
       Validated during workflow validation; raises ModelOnexError if exceeded.
-    - MAX_STEP_PAYLOAD_SIZE_BYTES (default 64KB): Maximum size of individual step payload.
+    - MAX_STEP_PAYLOAD_SIZE_BYTES (64KB): Maximum size of individual step payload.
       Validated during action creation; raises ModelOnexError if exceeded.
-    - MAX_TOTAL_PAYLOAD_SIZE_BYTES (default 10MB): Maximum accumulated payload size.
+    - MAX_TOTAL_PAYLOAD_SIZE_BYTES (10MB): Maximum accumulated payload size.
       In parallel mode, raises ModelOnexError. In sequential mode, treated as
       a step failure (per error_action configuration, defaults to continue).
 
-    These limits are configurable via environment variables for extreme workloads:
-    - ONEX_MAX_WORKFLOW_STEPS: Override max workflow steps (bounds: 1-100,000)
-    - ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES: Override max step payload size (bounds: 1KB-10MB)
-    - ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES: Override max total payload size (bounds: 1KB-1GB)
-
-    Invalid environment variable values log a warning and fall back to defaults.
-    Bounds are enforced to prevent both DoS attacks (too-small limits causing many
-    small workflows) and memory exhaustion (too-large limits).
+    All three are fixed, immutable Core ceilings (OMN-17554). They are not
+    configurable by environment variable or by contract, and a workflow
+    contract cannot raise or lower them: they are the DoS protection itself,
+    so a configuration surface for them would be a surface for disabling it.
 
 Security Considerations:
     Compression Attacks:
@@ -862,6 +858,10 @@ async def _execute_sequential(
 
         except Exception as e:
             # boundary-ok: workflow steps execute external code with unknown exception types
+            # fallback-ok: a failed step is a workflow OUTCOME here, not an error to
+            # re-raise. The step is recorded in failed_steps, logged with its full
+            # traceback, and the workflow's declared error_action ("stop" / "continue")
+            # decides what happens next. Re-raising would make error_action unreachable.
             # Production workflows require resilient error handling - all failures logged
             # with full traceback for debugging. Failed steps tracked per error_action config.
             failed_steps.append(str(step.step_id))

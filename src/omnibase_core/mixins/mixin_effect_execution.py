@@ -77,7 +77,6 @@ Author: ONEX Framework Team
 """
 
 import asyncio
-import os
 import random
 import re
 import threading
@@ -129,6 +128,7 @@ from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.operations.model_effect_operation_config import (
     ModelEffectOperationConfig,
 )
+from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 from omnibase_core.types.type_effect_result import DbParamType, EffectResultType
 
 __all__ = ["MixinEffectExecution"]
@@ -590,7 +590,7 @@ class MixinEffectExecution:
 
         Template Resolution:
             - ${input.field} - from input_data.operation_data
-            - ${env.VAR} - from os.environ
+            - ${env.VAR} - through the sanctioned overlay resolver
             - ${secret.KEY} - from container secret service (if available)
 
         v1.0 Behavior:
@@ -599,7 +599,7 @@ class MixinEffectExecution:
             This is intentional - see PERFORMANCE NOTE in _execute_with_retry().
 
         Thread Safety:
-            Pure function, thread-safe. Environment variable access is
+            Pure function, thread-safe. Environment binding resolution is
             inherently racy but this is expected behavior.
 
         Note:
@@ -632,25 +632,20 @@ class MixinEffectExecution:
                 return str(value) if value is not None else ""
 
             elif placeholder.startswith("env."):
-                # Extract from environment.  Supports ${env.VAR:default}
-                # syntax where the value after the first colon is the
-                # fallback when the env var is unset.
-                env_expr = placeholder[4:]  # Remove "env."
-                if ":" in env_expr:
-                    var_name, default_value = env_expr.split(":", 1)
-                else:
-                    var_name = env_expr
-                    default_value = None
-                value = os.environ.get(var_name)
-                if value is not None:
-                    return value
-                if default_value is not None:
-                    return default_value
+                # Resolve through the sanctioned ${env.VAR} overlay boundary
+                # (OMN-17554) rather than reading os.environ here. The resolver
+                # owns the reference grammar — including the ${env.VAR:default}
+                # inline-default form — and fails closed on a malformed or
+                # unclosed reference instead of passing it through as a
+                # literal.
+                binding = resolve_contract_env_binding(f"${{{placeholder}}}")
+                if binding.value is not None:
+                    return binding.value
                 raise ModelOnexError(
-                    message=f"Environment variable not found: {var_name}",
+                    message=f"Environment variable not found: {binding.name}",
                     error_code=EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,
                     context={
-                        "variable_name": var_name,
+                        "variable_name": binding.name,
                         "placeholder": placeholder,
                         "operation_id": str(input_data.operation_id),
                     },
