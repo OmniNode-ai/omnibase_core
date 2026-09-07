@@ -24,7 +24,7 @@
 
 schema_version:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
 
 # Managed block definitions.
@@ -90,14 +90,55 @@ managed_blocks:
       - "build/"
       - "*.egg-info/"
 
+  public_repo_hygiene:
+    description: |
+      Patterns enforced on every OmniNode-ai repo, covering the agent-state,
+      scratch and workspace-index trees that keep landing in PUBLIC
+      repositories. Companion to the OMN-18014 public-repo hygiene gate.
+
+      READ 4.9 OF THE OMN-17992 PREVENTION PLAN BEFORE TRUSTING THIS BLOCK.
+      An ignore file does not untrack an existing path and does not stop a
+      forced add. Five repos are clean of these classes with no ignore rule at
+      all, by author discipline; meanwhile one repo's OS-junk file is committed
+      AND ignored, because the rule was added after the file. This block is a
+      useful FIRST layer and a worthless LAST one. The enforcement layer is the
+      hygiene gate, which checks the TRACKED SET.
+
+      NOT LISTED HERE, deliberately:
+        .onex/        — product surface, not machine state. It is read at
+                        runtime by the aislop rule loader. Ignoring it would
+                        break the per-repo override mechanism.
+        .onex_state/  — omnibase_core's .gitignore deliberately re-includes
+                        .onex_state/evidence/ and .onex_state/friction/, with a
+                        test asserting it (OMN-15989). Retiring that re-include
+                        is root cause 4.1 and is blocked on the operator ruling
+                        for the public evidence corpus (plan 6.0, 7.2). Adding
+                        a conflicting rule here would silently fight a
+                        test-asserted rule in one repo, which is worse than the
+                        gap it closes.
+    start_marker: "# === onex-managed: public_repo_hygiene ==="
+    end_marker: "# === end onex-managed: public_repo_hygiene ==="
+    applies_when: always
+    patterns:
+      - ".claude/*"
+      - "!.claude/architecture-handshake.md"
+      - ".claude_scratch/"
+      - ".repowise-workspace/"
+      - ".repowise-workspace.yaml"
+      - ".evidence/"
+      - "docs/evidence/"
+      - "merge-sweep/"
+
+
 # Metadata
 
 metadata:
   generated_by: "manually authored (OMN-12451)"
-  last_updated: "2026-05-30"
+  last_updated: "2026-09-07"
   next_review: "on any new pattern addition — single source of truth, change propagates via OMN-12450
     pin-bump bot"
   related_tickets:
     - OMN-12450  # canonical .gitignore baseline + cross-repo enforcement epic
     - OMN-12451  # this spec file
     - OMN-12452  # T2 validator + CI wiring
+    - OMN-18016  # public-repo-hygiene managed block (epic OMN-17992)

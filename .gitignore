@@ -349,6 +349,17 @@ build/
 *.egg-info/
 # === end onex-managed: python ===
 
+# === onex-managed: public_repo_hygiene ===
+.claude/*
+!.claude/architecture-handshake.md
+.claude_scratch/
+.repowise-workspace/
+.repowise-workspace.yaml
+.evidence/
+docs/evidence/
+merge-sweep/
+# === end onex-managed: public_repo_hygiene ===
+
 # -----------------------------------------------------------------------------
 # .onex_state/ -- disposable by default, two named durable subtrees (OMN-15989)
 # -----------------------------------------------------------------------------
