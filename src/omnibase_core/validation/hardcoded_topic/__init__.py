@@ -9,7 +9,7 @@ produced by the canonical generator ``HandlerGenerationConsumer``
 ONLY because it passed a deterministic acceptance corpus
 (``node_generation_consumer.validator_corpora.corpus_hardcoded_topic.HARDCODED_TOPIC_CORPUS``)
 in the hardened sandbox — the corpus verdict, not the LLM, is the acceptance
-authority (OMN-13289). See the validator's generation-provenance record in the OmniNode internal knowledge base.
+authority (OMN-13289). The generation-provenance record is not part of this repository (OMN-13289).
 
 Architecture (§1A — validator = COMPUTE node over a swappable bus), mirroring the
 G1 local-paths canary and the G2 private-IP / unfinished-work-marker validators:

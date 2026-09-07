@@ -287,7 +287,7 @@ in `extra_forbid_waivers.yaml`.
 | Handler System | https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-handler-contracts.md |
 | Claude Code Hooks | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-claude-code-hook-models.md |
 | Mixins | https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-mixin-architecture.md |
-| Migration guides | OmniNode internal knowledge base (private) |
+| Migration guides | Not part of this repository |
 | Threading | https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-threading.md |
 | Error Handling | https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-error-handling-best-practices.md |
 | ONEX Terminology | https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/onex-terminology.md |
