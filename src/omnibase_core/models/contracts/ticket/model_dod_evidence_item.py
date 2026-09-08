@@ -59,6 +59,40 @@ class ModelDodEvidenceItem(BaseModel):
     id: str = Field(..., min_length=1)
     description: str = Field(..., min_length=1)
     checks: list[ModelDodEvidenceCheck] = Field(default_factory=list)
+    # OMN-18056. WHICH ACCEPTANCE CRITERIA THIS ITEM CLAIMS TO COVER.
+    #
+    # Until this field existed the relation between a ticket's acceptance
+    # criteria and its evidence items was not merely undeclared, it was
+    # UNDECLARABLE: ``extra="forbid"`` above meant a contract that tried to
+    # state it would fail to parse. So the only question the evidence
+    # autoclose sweep could ask of a green verdict was "how many checks
+    # passed", never "which criterion did any of them cover".
+    #
+    # Measured (DoD closeout sweep run 2, 2026-09-08): 8 of 9 adjudicated
+    # sprint tickets satisfied the closer's full flip predicate and 7 of those
+    # 8 were not done — in every held case the acceptance criterion that
+    # decides the ticket was bound to no check in its contract. A corpus grep
+    # over all 8709 contracts for any binding field returned 0 files, against
+    # a positive control of 8708 for ``dod_evidence``.
+    #
+    # OPTIONAL AND DEFAULTED, so all 8709 existing contracts keep parsing
+    # unchanged; ``extra="forbid"`` stays, because forbidding what is not
+    # declared is the property that made this field necessary rather than a
+    # defect to route around.
+    #
+    # HONEST LIMIT, stated rather than implied: this is the AUTHOR'S CLAIM. A
+    # consumer can verify that a named check ran and was probative; it cannot
+    # verify that the check proves the criterion. What the field removes is
+    # the SILENT case — a criterion nothing even claims to cover — not
+    # authorial error.
+    binds_ac: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Acceptance-criterion labels (`AC1`, `DoD2`) from the ticket body "
+            "that this evidence item claims to prove. Empty means the item "
+            "claims none, which is a coverage gap rather than a pass."
+        ),
+    )
 
     @model_validator(mode="after")
     def reject_sole_file_exists_check(self) -> ModelDodEvidenceItem:
