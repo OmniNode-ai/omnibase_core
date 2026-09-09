@@ -30,6 +30,7 @@ from scripts.ci.ci_summary_gate import (
     SOFT_ALLOWLIST,
     SPEC_REQUIRED_VALIDATOR_JOBS,
     STRICT_SUCCESS_JOBS,
+    drop_superseded_skips,
     evaluate,
     evaluate_external,
 )
@@ -59,6 +60,7 @@ def _check_run(
     *,
     status: str = "completed",
     started_at: str = "",
+    head_sha: str = "",
 ) -> dict:
     """Build a ``commits/{sha}/check-runs`` row (L4 external-context fixture)."""
     return {
@@ -66,6 +68,7 @@ def _check_run(
         "status": status,
         "conclusion": conclusion,
         "started_at": started_at,
+        "head_sha": head_sha,
     }
 
 
@@ -877,3 +880,164 @@ class TestEnforceEverythingCompleteness:
                     f"{path.name} is neither a live PR validator nor "
                     "workflow_dispatch-only -- classify it"
                 )
+
+
+# --------------------------------------------------------------------------- #
+# OMN-18062 -- a `skipped` row that lands on a head SHA which ALREADY carries a
+# non-skipped row for the same context name is a RE-TRIGGER ARTIFACT, not a
+# verdict about that head.
+#
+# Live shape being pinned (onex_change_control#8709, 2026-09-08): `gh pr edit`
+# fired a second `pull_request` run of a workflow whose `types:` include
+# `edited`; a job whose own `if:` excludes `edited` was SKIPPED, and GitHub
+# wrote a fresh `skipped` check-run onto the unchanged head 64 seconds after
+# that same job reported `success`. Latest-wins resolution
+# (`_external_check_states`) read the newest row; L4 admits only `success`; the
+# required `CI Summary` context failed closed on a head nothing regressed on.
+# Re-running `CI Summary` could not clear it -- the skip is and stays the
+# newest row -- so only a new head SHA could.
+#
+# This was fixed in four repos (omnimarket#2422, onex_change_control#8748,
+# omnibase_infra#3348, omniclaude#2126) and NOT here; the defect was
+# reproduced against this file's own pre-fix code before this suite was added.
+#
+# Every relaxation below is paired with a positive control that must STILL
+# fail, and the head-SHA partition is pinned separately.
+# --------------------------------------------------------------------------- #
+
+_HEAD_A = "a" * 40
+_HEAD_B = "b" * 40
+_T0 = "2026-09-08T20:47:00Z"
+_T0_PLUS_64 = "2026-09-08T20:48:04Z"
+
+
+def _external_rows(*, head_sha: str = _HEAD_A, started_at: str = _T0) -> list[dict]:
+    """Every L4 context present + completed + success on one head."""
+
+    return [
+        _check_run(name, "success", started_at=started_at, head_sha=head_sha)
+        for name in EXPECTED_EXTERNAL_CONTEXTS
+    ]
+
+
+def _with_second_row(
+    target: str,
+    conclusion: str | None,
+    *,
+    status: str = "completed",
+    head_sha: str = _HEAD_A,
+) -> list[dict]:
+    """All-green L4 rows, plus a SECOND row for ``target`` 64 seconds later."""
+
+    runs = _external_rows()
+    runs.append(
+        _check_run(
+            target,
+            conclusion,
+            status=status,
+            started_at=_T0_PLUS_64,
+            head_sha=head_sha,
+        )
+    )
+    return runs
+
+
+class TestSupersededSkips:
+    """OMN-18062 port: a re-trigger skip must not supersede a real verdict."""
+
+    def test_all_green_baseline_is_success(self) -> None:
+        """CONTROL for every zero below: the unperturbed fixture passes."""
+
+        failures, missing = evaluate_external(_external_rows())
+        assert failures == []
+        assert missing == []
+
+    def test_skip_after_success_on_same_head_is_not_a_regression(self) -> None:
+        """GREEN: success at t0, skipped at t0+64s, SAME head -> success.
+
+        This is the case that was failing closed before this change.
+        """
+
+        target = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = _with_second_row(target, "skipped")
+        failures, missing = evaluate_external(runs)
+        assert failures == [], failures
+        assert missing == [], missing
+
+    def test_failure_after_success_on_same_head_still_fails(self) -> None:
+        """POSITIVE CONTROL: a real verdict at t0+64s still wins on recency."""
+
+        target = EXPECTED_EXTERNAL_CONTEXTS[0]
+        failures, _missing = evaluate_external(_with_second_row(target, "failure"))
+        assert failures == [target]
+
+    def test_cancelled_after_success_on_same_head_still_fails(self) -> None:
+        """POSITIVE CONTROL: `cancelled` is a verdict too, not an artifact."""
+
+        target = EXPECTED_EXTERNAL_CONTEXTS[0]
+        failures, _missing = evaluate_external(_with_second_row(target, "cancelled"))
+        assert failures == [target]
+
+    def test_lone_skip_with_no_other_row_still_fails_closed(self) -> None:
+        """POSITIVE CONTROL: a name whose ONLY row is `skipped` fails closed.
+
+        This is the skip-as-pass vector (OMN-15057 / OMN-14854) the strict L4
+        bar exists for -- a producer whose `if:` was false for the whole life
+        of the head never ran, and must never read green.
+        """
+
+        target = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = [r for r in _external_rows() if r["name"] != target]
+        runs.append(
+            _check_run(target, "skipped", started_at=_T0_PLUS_64, head_sha=_HEAD_A)
+        )
+        failures, _missing = evaluate_external(runs)
+        assert failures == [target]
+
+    def test_in_progress_after_success_is_still_pending(self) -> None:
+        """POSITIVE CONTROL: a live re-run stays PENDING, never stale-green."""
+
+        target = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = _with_second_row(target, None, status="in_progress")
+        failures, missing = evaluate_external(runs)
+        assert failures == []
+        assert missing == [target]
+
+    def test_skip_after_success_does_not_leak_across_names(self) -> None:
+        """POSITIVE CONTROL: a non-skipped row for one name cannot clear a
+        skip recorded against a DIFFERENT name."""
+
+        rows = [
+            _check_run("a", "success", head_sha=_HEAD_A),
+            _check_run("b", "skipped", head_sha=_HEAD_A),
+        ]
+        assert drop_superseded_skips(rows) == rows
+
+    def test_skip_on_a_different_head_is_not_superseded(self) -> None:
+        """The head SHA partitions supersession (OMN-18062 follow-up).
+
+        A `success` recorded on head A is a verdict about head A. It must not
+        clear a `skipped` recorded on head B -- doing so would re-open the
+        skip-as-pass vector on the head actually being gated. Unreachable
+        through the sanctioned caller (which fetches one head's
+        `commits/{sha}/check-runs`), so this makes it a property of the
+        function rather than of the convention.
+        """
+
+        target = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = _with_second_row(target, "skipped", head_sha=_HEAD_B)
+        assert len(drop_superseded_skips(runs)) == len(runs)
+        failures, _missing = evaluate_external(runs)
+        assert failures == [target]
+
+    def test_rows_without_a_head_sha_still_supersede(self) -> None:
+        """POSITIVE CONTROL for the partition: rows carrying no `head_sha`
+        share one partition, so a payload without head SHAs behaves exactly as
+        it did before the head guard."""
+
+        rows = [
+            {"name": "x", "status": "completed", "conclusion": "success"},
+            {"name": "x", "status": "completed", "conclusion": "skipped"},
+        ]
+        kept = drop_superseded_skips(rows)
+        assert [r["conclusion"] for r in kept] == ["success"]
