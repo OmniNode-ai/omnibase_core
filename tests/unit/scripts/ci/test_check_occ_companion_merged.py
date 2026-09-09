@@ -78,7 +78,7 @@ class FakeFetcher:
 def _product_pr(
     body: str,
     author: str = "jonahgabriel",
-    head_sha: str = "615219ec46868e2ebf09f8b35a9e6cfc6d743dea",
+    head_sha: str = "615219ec46868e2ebf09f8b35a9e6cfc6d743dea",  # pragma: allowlist secret
 ) -> dict[str, object]:
     return {"body": body, "author": {"login": author}, "headRefOid": head_sha}
 
