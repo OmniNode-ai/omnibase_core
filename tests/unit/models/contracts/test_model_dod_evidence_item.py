@@ -205,3 +205,21 @@ def test_an_undeclared_field_is_still_refused() -> None:
             ],
             binds_acceptance_criteria=("AC1",),  # type: ignore[call-arg]
         )
+
+
+def test_the_governance_item_model_carries_the_same_binding() -> None:
+    """Both item models own the field, because both gate on the field set.
+
+    ``ModelContractDodItem`` is what the DoD verifier validates a contract's
+    items against; a binding declared only on the receipt-gate model would be
+    rejected THERE as an unknown field, so a contract could not carry it at
+    all. One meaning, two owners, added together.
+    """
+    from omnibase_core.models.ticket.model_contract_dod_item import (
+        ModelContractDodItem,
+    )
+
+    assert ModelContractDodItem(id="dod-1", description="x").binds_ac == ()
+    assert ModelContractDodItem(
+        id="dod-1", description="x", binds_ac=("AC1",)
+    ).binds_ac == ("AC1",)
