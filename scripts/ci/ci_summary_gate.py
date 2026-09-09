@@ -262,6 +262,87 @@ def dedup_latest(
     return latest
 
 
+def _is_skipped_row(raw: dict[str, object]) -> bool:
+    """True for a completed check-run whose conclusion is ``skipped``."""
+
+    return (
+        str(raw.get("status") or "") == "completed"
+        and str(raw.get("conclusion") or "") == "skipped"
+    )
+
+
+def _skip_partition_key(raw: dict[str, object]) -> tuple[str, str]:
+    """Partition key for skip supersession: ``(context name, head SHA)``.
+
+    The head SHA is load-bearing, not decoration. A ``skipped`` row is only a
+    re-trigger artifact when a non-skipped row exists for the same name ON THE
+    SAME HEAD; a non-skipped row on a DIFFERENT head is a verdict about a
+    different commit and must not clear it. Partitioning by name alone would
+    let a ``success`` recorded on an earlier head silently suppress a
+    ``skipped`` on the head actually being gated — the exact skip-as-pass
+    vector (OMN-15057 / OMN-14854) the strict external bar exists for.
+
+    Rows carrying no ``head_sha`` field all share the ``""`` partition, so a
+    payload without head SHAs behaves exactly as it did before this guard.
+    Unreachable through the sanctioned caller — it fetches
+    ``commits/{sha}/check-runs`` for one head — but the safety of that rested
+    on convention, and this makes it a property of the function.
+    """
+
+    return (str(raw.get("name") or ""), str(raw.get("head_sha") or ""))
+
+
+def drop_superseded_skips(
+    check_runs: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Drop ``skipped`` rows for a ``(name, head_sha)`` that also carries a
+    non-skipped row (OMN-18062).
+
+    MECHANISM this closes, measured on onex_change_control#8709 (2026-09-08): a
+    ``gh pr edit`` of the PR body fires a SECOND ``pull_request`` run of a
+    workflow whose ``types:`` include ``edited``. A job in that run whose own
+    ``if:`` excludes ``edited`` is SKIPPED, and GitHub writes a FRESH check-run
+    with conclusion ``skipped`` onto the same, unchanged head SHA where that
+    very job reported ``success`` 64 seconds earlier. Latest-wins resolution in
+    :func:`_external_check_states` picks the skip, L4 admits only ``success``
+    (see :data:`EXPECTED_EXTERNAL_CONTEXTS`), and ``CI Summary`` fails closed on
+    a head nothing regressed on. Re-running ``CI Summary`` cannot clear it — the
+    skip is and stays the newest row for that name — so only a new head SHA can,
+    and every lane that edits a PR body (OCC autobind stamps, union-resolves)
+    pays a re-push cycle.
+
+    A ``skipped`` row is evidence about a WORKFLOW RUN — a job's ``if:`` was
+    false for that run's event — not about the head. When a non-skipped row for
+    the same name exists on the same head, that row is the verdict about the
+    head and the skip is a re-trigger artifact.
+
+    What this deliberately does NOT relax:
+
+    * ``skipped`` with **no** non-skipped row for that name still stands and
+      still fails closed — a producer whose ``if:`` was false for the whole life
+      of the head never ran, which is exactly the skip-as-pass vector
+      (OMN-15057 / OMN-14854) the strict external bar exists for.
+    * A ``failure`` (or ``cancelled``) after a ``success`` still wins on
+      recency — a failure IS a verdict about the head.
+    * A still-running row is non-skipped, so a later skip can never suppress
+      PENDING into a stale green.
+    * A skip on a DIFFERENT head SHA. Supersession is partitioned by
+      ``(name, head_sha)``, not by name alone — see
+      :func:`_skip_partition_key`.
+    """
+
+    non_skipped_keys = {
+        _skip_partition_key(raw)
+        for raw in check_runs
+        if str(raw.get("name") or "") and not _is_skipped_row(raw)
+    }
+    return [
+        raw
+        for raw in check_runs
+        if not (_is_skipped_row(raw) and _skip_partition_key(raw) in non_skipped_keys)
+    ]
+
+
 def _external_check_states(
     check_runs: list[dict[str, object]],
 ) -> dict[str, JobState]:
@@ -272,10 +353,14 @@ def _external_check_states(
     kept by latest ``started_at`` (lexicographic ISO-8601 compare; ties keep
     array order, last wins) so a stale failed rerun can never outrank a fresh
     success, mirroring the run-attempt dedup used for in-run jobs above.
+
+    Rows are read after :func:`drop_superseded_skips`, so a re-trigger skip
+    cannot supersede a real conclusion already recorded for that name on this
+    head (OMN-18062).
     """
 
     best: dict[str, tuple[str, JobState]] = {}
-    for raw in check_runs:
+    for raw in drop_superseded_skips(check_runs):
         name = str(raw.get("name") or "")
         if not name:
             continue
