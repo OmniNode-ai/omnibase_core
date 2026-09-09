@@ -1509,6 +1509,7 @@ class RuntimeLocal:
                     on_result=_make_result_cb(entry.output_topic),
                     published_events=published_events,
                     multi_event_seam_enabled=multi_event_seam_enabled,
+                    expected_correlation_id=self._expected_correlation_id,
                 )
 
                 if not entry.input_topic:
@@ -1520,10 +1521,31 @@ class RuntimeLocal:
                     )
                     continue
 
+                # OMN-15660 AC3, handler half. The terminal group below is
+                # run-scoped; this one was still derived from the handler name
+                # alone, so two concurrent invocations of the same handler
+                # joined ONE group on the command topic and the broker gave
+                # each record to exactly one of them — a run's own command
+                # executed in the other run's process, which is the handler-leg
+                # form of the cross-talk this ticket was filed on.
+                #
+                # Gated on the correlation predicate being armed for the same
+                # reason as the terminal group: a brand-new group reads the
+                # retained log from the beginning, so scoping WITHOUT a filter
+                # trades "the uncommitted tail" for "the entire retention
+                # window". The filter is ``expected_correlation_id`` on the
+                # adapter above; when nothing correlated reached the wire there
+                # is no operand for it, so the shared group is left exactly as
+                # it was rather than made worse.
+                handler_group_node = entry.handler_name
+                if self._expected_correlation_id is not None:
+                    handler_group_node = (
+                        f"{entry.handler_name}_run_{self.run_id.hex[:12]}"
+                    )
                 unsub = await bus.subscribe(
                     entry.input_topic,
                     on_message=adapter.on_message,
-                    group_id=derive_runtime_local_group_id(entry.handler_name),
+                    group_id=derive_runtime_local_group_id(handler_group_node),
                 )
                 unsubscribe_handles.append(unsub)
 

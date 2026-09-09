@@ -88,6 +88,32 @@ class HandlerIsolationEcho:
         }
 
 
+# Which handler INSTANCE observed which correlation. A module-level registry is
+# the only way to see that: the runtime constructs its own handler instance from
+# the contract, so a test never holds a reference to it. Instances are kept alive
+# by this list, so ``id()`` stays a stable identity for the run of a test.
+_HANDLER_OBSERVATIONS: list[tuple[object, str]] = []
+
+
+class HandlerIsolationRecorder:
+    """Host-mode handler that records which instance executed which correlation.
+
+    Behaviourally identical to :class:`HandlerIsolationEcho`; the only addition is
+    the registry write, which is what makes handler-leg cross-talk observable at
+    all. Without it two concurrent runs both complete and the wrong-process
+    execution is invisible.
+    """
+
+    async def handle(self, payload: ModelIsolationCommand) -> dict[str, str]:
+        _HANDLER_OBSERVATIONS.append((self, str(payload.correlation_id)))
+        await asyncio.sleep(0.30 if payload.prompt == "slow" else 0.01)
+        return {
+            "status": "success",
+            "correlation_id": str(payload.correlation_id),
+            "prompt": payload.prompt,
+        }
+
+
 # ---------------------------------------------------------------------------
 # A retaining broker double: Kafka semantics (retained log + per-group committed
 # offsets) with no Kafka. The in-memory bus dies with the process and is immune
@@ -169,6 +195,9 @@ class _DurableBus:
             group for topic, group in self.subscriptions if topic == _TERMINAL_TOPIC
         ]
 
+    def handler_groups(self) -> list[str]:
+        return [group for topic, group in self.subscriptions if topic == _COMMAND_TOPIC]
+
     async def start(self) -> None:
         return None
 
@@ -199,7 +228,9 @@ class _DurableBus:
         return _unsub
 
 
-def _write_contract(target: Path) -> None:
+def _write_contract(
+    target: Path, *, handler_name: str = "HandlerIsolationEcho"
+) -> None:
     contract: dict[str, Any] = {
         "workflow_id": "omn-15660-terminal-isolation",
         "name": "terminal_isolation_probe",
@@ -213,7 +244,7 @@ def _write_contract(target: Path) -> None:
             "handlers": [
                 {
                     "operation": "start",
-                    "handler": {"module": _MODULE, "name": "HandlerIsolationEcho"},
+                    "handler": {"module": _MODULE, "name": handler_name},
                     "event_model": {"module": _MODULE, "name": "ModelIsolationCommand"},
                     "output_topic": _TERMINAL_TOPIC,
                 }
@@ -230,12 +261,13 @@ def _build_runtime(
     host_handlers: bool = True,
     timeout: int = 2,
     prompt: str = "probe",
+    handler_name: str = "HandlerIsolationEcho",
 ) -> RuntimeLocal:
     """One runtime, with its own state_root — a distinct `onex delegate` process."""
     run_dir.mkdir(parents=True, exist_ok=True)
     contract_path = run_dir / "contract.yaml"
     input_path = run_dir / "input.json"
-    _write_contract(contract_path)
+    _write_contract(contract_path, handler_name=handler_name)
     input_path.write_text(
         json.dumps({"correlation_id": str(correlation_id), "prompt": prompt}),
         encoding="utf-8",
@@ -604,3 +636,126 @@ def test_envelope_payload_failure_beats_an_envelope_level_success(
     runtime._on_terminal_event(payload)
 
     assert runtime._result is EnumWorkflowResult.FAILED
+
+
+# ---------------------------------------------------------------------------
+# OMN-15660 AC2/AC3, handler leg: the command-topic consumer group and the
+# handler-path correlation refusal. The terminal leg above landed in #1645; this
+# is the half AC3 names as `:1211`/`:1226` and calls out by name — "a fix that
+# scopes only one path is incomplete".
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_host_mode_handler_group_is_run_scoped(tmp_path: Path) -> None:
+    """The handler subscribe must not use a group derived from the handler name.
+
+    RED before the fix: ``group_id=derive_runtime_local_group_id(entry.handler_name)``
+    is identical for every invocation of the same handler, so two concurrent runs
+    joined one group on the command topic and the broker handed each record to
+    exactly one of them.
+    """
+    broker = _DurableBroker()
+    run_dir = tmp_path / "run"
+    runtime = _build_runtime(run_dir, correlation_id=uuid.uuid4())
+    bus = _DurableBus(broker)
+    _bind(runtime, bus)
+
+    await runtime.run_async()
+
+    groups = bus.handler_groups()
+    assert len(groups) == 1
+    assert runtime.run_id.hex[:12] in groups[0], (
+        "the handler subscription reused the handler-name-derived group id "
+        f"{groups[0]!r}; two concurrent invocations of this handler collide on it"
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_two_concurrent_host_runs_do_not_share_a_handler_group(
+    tmp_path: Path,
+) -> None:
+    """AC3, both call sites: the terminal groups AND the handler groups differ."""
+    broker = _DurableBroker()
+    slow_dir = tmp_path / "handler_slow"
+    fast_dir = tmp_path / "handler_fast"
+    slow = _build_runtime(
+        slow_dir, correlation_id=uuid.uuid4(), timeout=5, prompt="slow"
+    )
+    fast = _build_runtime(
+        fast_dir, correlation_id=uuid.uuid4(), timeout=5, prompt="fast"
+    )
+    slow_bus = _DurableBus(broker)
+    fast_bus = _DurableBus(broker)
+    _bind(slow, slow_bus)
+    _bind(fast, fast_bus)
+
+    await asyncio.gather(slow.run_async(), fast.run_async())
+
+    assert slow_bus.handler_groups() != fast_bus.handler_groups(), (
+        "both concurrent runs joined the same handler consumer group on the "
+        "command topic"
+    )
+    assert slow_bus.terminal_groups() != fast_bus.terminal_groups()
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_a_concurrent_run_never_executes_a_siblings_command(
+    tmp_path: Path,
+) -> None:
+    """AC1/AC2, the handler leg: each process executes only its own command.
+
+    RED before the fix: sharing one command-topic group, the first-registered
+    run's handler instance drained BOTH commands and the sibling's instance
+    executed nothing — the run's work ran in the wrong process. The assertion is
+    on instance identity rather than on the returned result because the echo
+    handler returns the payload's own correlation either way, which is exactly
+    why this defect survived the terminal-leg fix.
+    """
+    _HANDLER_OBSERVATIONS.clear()
+    broker = _DurableBroker()
+    slow_correlation = uuid.uuid4()
+    fast_correlation = uuid.uuid4()
+    slow_dir = tmp_path / "recorder_slow"
+    fast_dir = tmp_path / "recorder_fast"
+    slow = _build_runtime(
+        slow_dir,
+        correlation_id=slow_correlation,
+        timeout=5,
+        prompt="slow",
+        handler_name="HandlerIsolationRecorder",
+    )
+    fast = _build_runtime(
+        fast_dir,
+        correlation_id=fast_correlation,
+        timeout=5,
+        prompt="fast",
+        handler_name="HandlerIsolationRecorder",
+    )
+    _bind(slow, _DurableBus(broker))
+    _bind(fast, _DurableBus(broker))
+
+    slow_result, fast_result = await asyncio.gather(slow.run_async(), fast.run_async())
+
+    by_instance: dict[int, set[str]] = {}
+    for instance, correlation in _HANDLER_OBSERVATIONS:
+        by_instance.setdefault(id(instance), set()).add(correlation)
+
+    assert len(by_instance) == 2, (
+        "expected one handler instance per run; one process executed both "
+        f"commands (observations={_HANDLER_OBSERVATIONS!r})"
+    )
+    for observed in by_instance.values():
+        assert len(observed) == 1, (
+            f"a single handler instance executed {len(observed)} different "
+            "runs' commands"
+        )
+    assert {next(iter(v)) for v in by_instance.values()} == {
+        str(slow_correlation),
+        str(fast_correlation),
+    }
+    assert slow_result is EnumWorkflowResult.COMPLETED
+    assert fast_result is EnumWorkflowResult.COMPLETED
