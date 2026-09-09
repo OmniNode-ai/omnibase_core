@@ -211,3 +211,95 @@ def test_live_invocation_fails_when_version_is_not_ahead(tmp_path):
 
     assert result.returncode == 1, result.stdout
     assert "is NOT ahead of the latest published version" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# OMN-18058: the empty-three-dot fallback stays MERGE-BASE anchored.
+# ---------------------------------------------------------------------------
+
+
+def _omn18058_git(repo: Path, *args: str) -> str:
+    # OMN-14891: git exports GIT_DIR/GIT_WORK_TREE into every hook environment and
+    # those OVERRIDE `-C`, so an unscrubbed fixture would mutate the real worktree.
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        env=scrub_git_location_env(os.environ),
+    ).stdout
+
+
+def _omn18058_stale_base_repo(tmp_path: Path) -> Path:
+    """A branch with NO commits of its own, after which a peer advanced ``dev``.
+
+    The peer's commit touches packaged source (``src/``), so the two-dot form
+    attributes a packaged-source change to a branch that changed nothing.
+    """
+    origin = tmp_path / "omn18058-origin.git"
+    work = tmp_path / "omn18058-work"
+    subprocess.run(
+        ["git", "init", "-q", "--bare", str(origin)],
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+    subprocess.run(
+        ["git", "init", "-q", str(work)],
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+    _omn18058_git(work, "config", "user.email", "omn18058@example.invalid")
+    _omn18058_git(work, "config", "user.name", "omn18058 fixture")
+    _omn18058_git(work, "config", "commit.gpgsign", "false")
+    _omn18058_git(work, "checkout", "-q", "-b", "dev")
+    (work / "docs").mkdir(parents=True, exist_ok=True)
+    (work / "docs" / "base.md").write_text("base\n", encoding="utf-8")
+    _omn18058_git(work, "add", "-A")
+    _omn18058_git(work, "commit", "-q", "-m", "base")
+    _omn18058_git(work, "remote", "add", "origin", str(origin))
+    _omn18058_git(work, "push", "-q", "origin", "dev")
+
+    _omn18058_git(work, "checkout", "-q", "-b", "feature")
+    _omn18058_git(work, "checkout", "-q", "dev")
+    peer = work / "src" / "peer_pkg" / "landed_by_someone_else.py"
+    peer.parent.mkdir(parents=True, exist_ok=True)
+    peer.write_text("# a peer's packaged-source landing\n", encoding="utf-8")
+    _omn18058_git(work, "add", "-A")
+    _omn18058_git(work, "commit", "-q", "-m", "a peer's packaged-source landing")
+    _omn18058_git(work, "push", "-q", "origin", "dev")
+
+    _omn18058_git(work, "checkout", "-q", "feature")
+    _omn18058_git(work, "fetch", "-q", "origin", "dev")
+    return work
+
+
+@pytest.mark.unit
+def test_omn18058_empty_branch_diff_never_attributes_a_peers_packaged_source(
+    mod, monkeypatch, tmp_path
+):
+    """OMN-18058: a branch with no commits of its own is exempt, not armed.
+
+    The old fallback used the two-dot ``git diff origin/dev``, which describes
+    the difference between two TREES -- so every ``src/`` file a peer landed on
+    ``dev`` since the branch point was reported as this branch's change and the
+    version gate fired on work the branch never did.
+    """
+    repo = _omn18058_stale_base_repo(tmp_path)
+
+    # Positive controls, on this same fixture: the three-dot set really is empty
+    # (so the fallback under test is the branch that executes), and the two-dot
+    # form really does surface the peer's packaged-source file.
+    assert _omn18058_git(repo, "diff", "--name-only", "origin/dev...HEAD").strip() == ""
+    assert "src/peer_pkg/landed_by_someone_else.py" in _omn18058_git(
+        repo, "diff", "--name-only", "origin/dev", "HEAD"
+    )
+
+    monkeypatch.setattr(mod, "_REPO_ROOT", repo)
+    assert mod._packaged_source_changed("origin/dev", []) is False
+
+    # ...and the fallback still sees this branch's own UNCOMMITTED packaged edit.
+    own = repo / "src" / "own_pkg" / "mine.py"
+    own.parent.mkdir(parents=True, exist_ok=True)
+    own.write_text("# uncommitted, mine\n", encoding="utf-8")
+    _omn18058_git(repo, "add", "-A")
+    assert mod._packaged_source_changed("origin/dev", []) is True
