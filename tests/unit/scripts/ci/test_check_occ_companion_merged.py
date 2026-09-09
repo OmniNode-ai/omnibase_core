@@ -383,7 +383,7 @@ class TestAutobindOutcomeShortCircuit:
     failures that each cost this gate its full 1500-second deadline.
     """
 
-    HEAD = "615219ec46868e2ebf09f8b35a9e6cfc6d743dea"
+    HEAD = "615219ec46868e2ebf09f8b35a9e6cfc6d743dea"  # pragma: allowlist secret
     REASON = "failed: Could not parse the provided public key."
 
     def _outcome_run(
