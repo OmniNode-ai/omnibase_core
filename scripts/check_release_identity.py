@@ -113,9 +113,16 @@ def _packaged_source_changed(base: str | None, explicit: list[str]) -> bool:
         diff = _git(["diff", "--name-only", f"{base}...HEAD"])
         files = [f for f in diff.splitlines() if f.strip()]
         if not files:
-            # Fall back to a two-dot diff if the merge-base form yielded nothing.
-            diff = _git(["diff", "--name-only", base])
-            files = [f for f in diff.splitlines() if f.strip()]
+            # No commits of our own: look for uncommitted edits, still anchored on
+            # the MERGE BASE (OMN-18058). Never the two-dot ``git diff <base>``:
+            # that form describes the difference between two trees, so on a stale
+            # base it reports every packaged-source file a PEER landed on the base
+            # branch as this branch's change, arming this version gate against a
+            # branch that touched no packaged source at all.
+            merge_base = _git(["merge-base", base, "HEAD"])
+            if merge_base:
+                diff = _git(["diff", "--name-only", merge_base])
+                files = [f for f in diff.splitlines() if f.strip()]
     else:
         # No base and no explicit list: cannot prove the diff is exempt — enforce.
         return True
