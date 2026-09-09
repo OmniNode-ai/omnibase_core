@@ -58,6 +58,26 @@ class ModelContractDodItem(BaseModel):
         default="generated",
         description="Where this DoD item originated",
     )
+    # OMN-18056. WHICH ACCEPTANCE CRITERIA THIS ITEM CLAIMS TO COVER.
+    #
+    # This model owns the item-level field set the DoD verifier validates
+    # contracts against, so a binding declared only on the receipt-gate model
+    # would be rejected here as an unknown field. Both models carry it, for
+    # the same reason and with the same meaning.
+    #
+    # See ModelDodEvidenceItem for the measurement that motivated it: the
+    # relation between a ticket's acceptance criteria and its evidence was
+    # UNDECLARABLE under `extra="forbid"`, so a green verdict could only ever
+    # report how many checks passed, never which criterion any covered.
+    binds_ac: tuple[str, ...] = Field(
+        default=(),
+        max_length=_MAX_LIST_ITEMS,
+        description=(
+            "Acceptance-criterion labels (`AC1`, `DoD2`) from the ticket body "
+            "that this evidence item claims to prove. Empty means it claims "
+            "none, which is a coverage gap rather than a pass."
+        ),
+    )
     linear_dod_text: str | None = Field(
         default=None,
         description="Original DoD text from Linear, if sourced from Linear",

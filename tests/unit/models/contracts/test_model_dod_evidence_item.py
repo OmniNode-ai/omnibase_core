@@ -155,3 +155,71 @@ class TestModelDodEvidenceItemAcceptedShapes:
             checks=[],
         )
         assert item.checks == []
+
+
+# -- OMN-18056: the acceptance-criterion binding ---------------------------
+
+
+def test_binds_ac_defaults_to_empty_so_the_whole_corpus_keeps_parsing() -> None:
+    """8709 existing contracts declare no binding; none of them may break.
+
+    The field is the enabling half of OMN-18056 and it is additive by
+    construction: an item that says nothing about acceptance criteria is still
+    a valid item, it just covers none of them — which is a coverage gap for
+    the consumer to report, never a parse error here.
+    """
+    item = ModelDodEvidenceItem(
+        id="dod-1",
+        description="tests pass",
+        checks=[ModelDodEvidenceCheck(check_type="test_passes", check_value="pytest")],
+    )
+    assert item.binds_ac == ()
+
+
+def test_a_contract_can_declare_which_criteria_an_item_covers() -> None:
+    """THE RECORDED DEFECT, at the layer that made it unfixable.
+
+    Before this field, ``extra="forbid"`` meant a contract that TRIED to state
+    which criterion an evidence item proves would fail to parse — so the
+    relation was not merely undeclared across the corpus, it was undeclarable,
+    and the only question a consumer could ask of a green verdict was how many
+    checks passed.
+    """
+    item = ModelDodEvidenceItem(
+        id="dod-tests",
+        description="terminal isolation covered on both call sites",
+        checks=[ModelDodEvidenceCheck(check_type="test_passes", check_value="pytest")],
+        binds_ac=("AC2", "AC3"),
+    )
+    assert item.binds_ac == ("AC2", "AC3")
+
+
+def test_an_undeclared_field_is_still_refused() -> None:
+    """`extra="forbid"` stays. It is why the field was needed, not a defect."""
+    with pytest.raises(ValidationError):
+        ModelDodEvidenceItem(
+            id="dod-1",
+            description="x",
+            checks=[
+                ModelDodEvidenceCheck(check_type="test_passes", check_value="pytest")
+            ],
+            binds_acceptance_criteria=("AC1",),  # type: ignore[call-arg]
+        )
+
+
+def test_the_governance_item_model_carries_the_same_binding() -> None:
+    """Both item models own the field, because both gate on the field set.
+
+    ``ModelContractDodItem`` is what the DoD verifier validates a contract's
+    items against; a binding declared only on the receipt-gate model would be
+    rejected THERE as an unknown field, so a contract could not carry it at
+    all. One meaning, two owners, added together.
+    """
+    from omnibase_core.models.ticket.model_contract_dod_item import (
+        ModelContractDodItem,
+    )
+
+    assert ModelContractDodItem(id="dod-1", description="x").binds_ac == ()
+    assert ModelContractDodItem(
+        id="dod-1", description="x", binds_ac=("AC1",)
+    ).binds_ac == ("AC1",)
