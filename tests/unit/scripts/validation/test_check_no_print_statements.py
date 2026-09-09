@@ -191,6 +191,37 @@ def foo():
         detector.visit(tree)
         assert len(detector.violations) == 0
 
+    def test_print_ok_on_multiline_call_closer(self) -> None:
+        """A CLI renderer marker may live on the closing line of its call."""
+        source = """
+def render() -> None:
+    print(
+        "status"
+    )  # print-ok: CLI renderer output
+"""
+        source_lines = source.splitlines()
+        import ast
+
+        detector = PrintStatementDetector("renderer.py", source_lines)
+        detector.visit(ast.parse(source))
+        assert detector.violations == []
+
+    def test_marker_after_multiline_call_does_not_suppress(self) -> None:
+        """Only the call span is eligible for a renderer marker."""
+        source = """
+def render() -> None:
+    print(
+        "status"
+    )
+# print-ok: unrelated later line
+"""
+        source_lines = source.splitlines()
+        import ast
+
+        detector = PrintStatementDetector("renderer.py", source_lines)
+        detector.visit(ast.parse(source))
+        assert len(detector.violations) == 1
+
     def test_print_ok_does_not_affect_distant_lines(self) -> None:
         """Test that # print-ok: only affects same line and line below.
 

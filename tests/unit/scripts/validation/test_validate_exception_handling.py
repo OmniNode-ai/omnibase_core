@@ -100,3 +100,15 @@ class TestExceptionHandlingValidatorLogic:
         v = ExceptionHandlingValidator()
         assert v.validate_file(f)
         assert v.errors == []
+
+    def test_docstring_example_does_not_become_a_bare_except_violation(
+        self, tmp_path: Path
+    ) -> None:
+        """Detector documentation is not an exception handler."""
+        f = tmp_path / "documented.py"
+        f.write_text(
+            'def explain() -> None:\n    """\n    except:\n        illustrative only\n    """\n    return None\n'
+        )
+        v = ExceptionHandlingValidator()
+        assert v.validate_file(f)
+        assert v.errors == []

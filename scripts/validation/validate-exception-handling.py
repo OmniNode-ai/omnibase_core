@@ -16,6 +16,7 @@ Exit codes:
 """
 
 import argparse
+import ast
 import re
 import sys
 from pathlib import Path
@@ -40,8 +41,11 @@ class ExceptionHandlingValidator:
         try:
             content = file_path.read_text()
             lines = content.split("\n")
+            docstring_lines = _docstring_line_numbers(content)
 
             for i, line in enumerate(lines, 1):
+                if i in docstring_lines:
+                    continue
                 # Check for bare except:
                 if re.search(r"^\s*except\s*:", line):
                     # Check if there's a fallback-ok comment nearby (within 2 lines)
@@ -140,6 +144,33 @@ class ExceptionHandlingValidator:
         print("  2. Use specific exception types: except (AttributeError, TypeError)")
         print("  3. Add # fallback-ok comment with justification")
         print("=" * 80)
+
+
+def _docstring_line_numbers(content: str) -> set[int]:
+    """Return lines occupied by docstrings so prose is never parsed as a handler."""
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return set()
+
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(
+            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
+            continue
+        if not node.body:
+            continue
+        first = node.body[0]
+        if not (
+            isinstance(first, ast.Expr)
+            and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)
+        ):
+            continue
+        end = getattr(first, "end_lineno", first.lineno)
+        lines.update(range(first.lineno, end + 1))
+    return lines
 
 
 def main() -> int:

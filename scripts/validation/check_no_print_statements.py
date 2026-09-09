@@ -57,7 +57,7 @@ class PrintStatementDetector(ast.NodeVisitor):
             )
 
             # Check for print-ok comment
-            if self._has_print_ok_comment(line_num):
+            if self._has_print_ok_comment(node):
                 self.generic_visit(node)
                 return
 
@@ -76,20 +76,15 @@ class PrintStatementDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _has_print_ok_comment(self, line_num: int) -> bool:
-        """Check if line has a # print-ok: comment allowing the print."""
-        # Check same line
-        if line_num <= len(self.source_lines):
-            line = self.source_lines[line_num - 1]
-            if "# print-ok:" in line:
+    def _has_print_ok_comment(self, node: ast.Call) -> bool:
+        """Check the exact AST call span and its preceding line for a CLI marker."""
+        start = node.lineno
+        end = node.end_lineno or start
+        for line_num in range(start, end + 1):
+            if "# print-ok:" in self.source_lines[line_num - 1]:
                 return True
-
-        # Check line above
-        if line_num > 1:
-            prev_line = self.source_lines[line_num - 2]
-            if "# print-ok:" in prev_line.strip():
-                return True
-
+        if start > 1:
+            return "# print-ok:" in self.source_lines[start - 2].strip()
         return False
 
 
