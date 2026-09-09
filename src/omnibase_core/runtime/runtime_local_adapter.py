@@ -96,6 +96,7 @@ class LocalRuntimeBusAdapter:
         on_result: Callable[[object], None] | None = None,
         published_events: Mapping[str, str] | None = None,
         multi_event_seam_enabled: bool = False,
+        expected_correlation_id: UUID | None = None,
     ) -> None:
         self.handler = handler
         self.handler_name = handler_name
@@ -114,6 +115,34 @@ class LocalRuntimeBusAdapter:
         # class varies per phase. None/empty keeps the single-``output_topic`` path.
         self.published_events: Mapping[str, str] = published_events or {}
         self.multi_event_seam_enabled = multi_event_seam_enabled
+        # OMN-15660 AC2, handler half. The correlation id THIS invocation put on
+        # the wire, or ``None`` when nothing correlated reached it. Armed, it is
+        # the refusal operand in ``_correlation_matches``: a message that names
+        # a DIFFERENT run is not this run's input and is not invoked on. Group
+        # ids alone cannot carry this — Kafka fans every record to every group,
+        # so a run-scoped group still sees every other run's records; the
+        # refusal is the actual isolation boundary.
+        self.expected_correlation_id = expected_correlation_id
+
+    def _correlation_matches(self, correlation_id: str | None) -> bool:
+        """Whether a handler input belongs to THIS invocation (OMN-15660 AC2).
+
+        Returns ``True`` when no predicate is armed — there is no operand to
+        compare against, so the pre-OMN-15660 behaviour stands unchanged for
+        the offline / in-memory path.
+
+        Returns ``True`` when the message declares NO correlation id. That is
+        deliberate and it is the OMN-17980 lesson, already paid for once on the
+        terminal leg: the canonical def-B message is the handler's bare domain
+        model (``handle(request: ModelX) -> ModelY``), which has no field in
+        which to carry a correlation. Refusing that shape would not isolate the
+        run, it would make every def-B chain unrunnable after its first hop.
+
+        Once a correlation IS declared it must be this invocation's own.
+        """
+        if self.expected_correlation_id is None or correlation_id is None:
+            return True
+        return correlation_id == str(self.expected_correlation_id)
 
     async def on_message(self, msg: ProtocolLocalRuntimeMessage) -> None:
         """Receive bus message, invoke handler, publish result."""
@@ -154,6 +183,20 @@ class LocalRuntimeBusAdapter:
             )
             if self.on_error:
                 self.on_error()
+            return
+
+        # 1b. Refuse another invocation's input (OMN-15660 AC2, handler half).
+        # Deliberately NOT an ``on_error``: a foreign record is not a failure of
+        # this run, and marking the workflow FAILED on one would make every
+        # concurrent invocation fail the moment a sibling published.
+        if not self._correlation_matches(correlation_id):
+            logger.info(
+                "LocalRuntimeBusAdapter: discarding input for %s — this "
+                "invocation awaits correlation %s, the message names %s",
+                self.handler_name,
+                self.expected_correlation_id,
+                correlation_id,
+            )
             return
 
         # 2. Invoke handler

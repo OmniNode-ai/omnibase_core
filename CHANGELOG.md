@@ -1,5 +1,10 @@
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
+## v0.47.7 (2026-09-09)
+
+### Changes
+- fix run-scope the RuntimeLocal handler consumer group and refuse another invocation's handler input. #1645 closed the TERMINAL leg of the cross-invocation isolation defect: the terminal consumer group became run-scoped and `_terminal_correlation_matches` refuses a terminal naming another run. The HANDLER leg was untouched. `RuntimeLocal._run_event_driven` still subscribed to the command topic with `derive_runtime_local_group_id(entry.handler_name)` — a group id identical for every invocation of the same handler — and `LocalRuntimeBusAdapter.on_message` read `correlation_id` for logging only, with no conditional between deserialize and invoke. Two concurrent invocations therefore shared one group on the command topic and the broker handed each command to exactly one of them, so a run's own work executed in the sibling's process. The subscribe group is now suffixed with the invocation's `run_id` and the adapter refuses a message declaring a correlation that is not this invocation's. Both are gated on the correlation predicate being armed, for the reason the terminal group already documents: a brand-new group reads the retained log from the beginning, so scoping without a filter trades the uncommitted tail for the entire retention window. A message declaring NO correlation is still invoked on, which is the lesson #1655 paid for on the terminal leg — the canonical def-B message is a bare domain model with no field to carry a correlation. A refusal is not routed through `on_error`: a sibling's record is not this run's failure.
+
 ## v0.47.6 (2026-09-06)
 
 ### Changes
