@@ -16,6 +16,8 @@ These tests pin the fail-closed verdict table:
 * SHA ancestor of dev/main    → PASS
 * SHA not an ancestor         → FAIL (OMN-15216 strandable pre-merge pin)
 * missing Evidence-Source     → PENDING (autobind mint may be in flight)
+* missing Evidence-Source AND the producer reported ERROR on this head
+                              → FAIL immediately, naming the reason (OMN-18069)
 * malformed Evidence-Source   → FAIL
 * dependency-bot author       → PASS (mirrors occ-preflight OMN-13762)
 * non-PR event                → PASS (gate not applicable)
@@ -28,12 +30,15 @@ from __future__ import annotations
 import pytest
 
 from scripts.ci.check_occ_companion_merged import (
+    AUTOBIND_OUTCOME_CHECK_NAME,
+    AUTOBIND_OUTCOME_MARKER_PREFIX,
     EXIT_FAIL,
     EXIT_PASS,
     EXIT_PENDING,
     evaluate_once,
     main,
     parse_evidence_source,
+    read_autobind_outcome,
     resolve_pr_number,
 )
 
@@ -51,9 +56,14 @@ class FakeFetcher:
         *,
         prs: dict[tuple[str, str], dict[str, object] | None] | None = None,
         compare: dict[tuple[str, str], str | None] | None = None,
+        check_runs: dict[tuple[str, str], list[dict[str, object]] | None] | None = None,
     ) -> None:
         self._prs = prs or {}
         self._compare = compare or {}
+        # OMN-18069. Default `[]` = "the producer posted no outcome", the
+        # ordinary case; `None` = "the read itself failed", which must be a
+        # distinct input because the gate may never treat one as the other.
+        self._check_runs = check_runs or {}
 
     def pr_view(self, repo: str, number: str, fields: str) -> dict[str, object] | None:
         return self._prs.get((repo, str(number)))
@@ -61,9 +71,16 @@ class FakeFetcher:
     def compare_status(self, repo: str, base: str, head_sha: str) -> str | None:
         return self._compare.get((base, head_sha))
 
+    def check_runs(self, repo: str, head_sha: str) -> list[dict[str, object]] | None:
+        return self._check_runs.get((repo, head_sha), [])
 
-def _product_pr(body: str, author: str = "jonahgabriel") -> dict[str, object]:
-    return {"body": body, "author": {"login": author}}
+
+def _product_pr(
+    body: str,
+    author: str = "jonahgabriel",
+    head_sha: str = "615219ec46868e2ebf09f8b35a9e6cfc6d743dea",  # pragma: allowlist secret
+) -> dict[str, object]:
+    return {"body": body, "author": {"login": author}, "headRefOid": head_sha}
 
 
 def _evaluate(fetcher: FakeFetcher, **kwargs: object):
@@ -353,3 +370,153 @@ class TestMainEntrypoint:
         )
         assert rc == EXIT_PASS
         assert "not a merge-gating event" in capsys.readouterr().out
+
+
+class TestAutobindOutcomeShortCircuit:
+    """OMN-18069 — the gate asks the producer instead of waiting it out.
+
+    Fixtures are the REAL 2026-09-09 records: omninode_infra#1266 at head
+    ``615219ec…`` (correlation ``d856d7ff-2044-4e3b-af1a-6d14ae892743``,
+    published to ``onex.cmd.omnimarket.occ-autobind.v1`` partition 0 offset
+    4508), whose autobind was consumed and then failed with
+    ``Could not parse the provided public key.`` — one of 37 identical
+    failures that each cost this gate its full 1500-second deadline.
+    """
+
+    HEAD = "615219ec46868e2ebf09f8b35a9e6cfc6d743dea"  # pragma: allowlist secret
+    REASON = "failed: Could not parse the provided public key."
+
+    def _outcome_run(
+        self,
+        outcome: str,
+        *,
+        name: str = AUTOBIND_OUTCOME_CHECK_NAME,
+        completed_at: str = "2026-09-09T04:20:29Z",
+        reason: str | None = None,
+    ) -> dict[str, object]:
+        summary = (
+            f"{AUTOBIND_OUTCOME_MARKER_PREFIX} {outcome} "
+            f"repo=OmniNode-ai/omninode_infra pr=1266 "
+            f"correlation_id=d856d7ff-2044-4e3b-af1a-6d14ae892743 "
+            f"reason={reason if reason is not None else self.REASON}\n\n"
+            "prose a human reads\n"
+        )
+        return {
+            "name": name,
+            "status": "completed",
+            "completed_at": completed_at,
+            "output": {"title": f"{outcome}: x", "summary": summary},
+        }
+
+    def _fetcher(self, runs: list[dict[str, object]] | None) -> FakeFetcher:
+        return FakeFetcher(
+            prs={
+                (PRODUCT_REPO, "2500"): _product_pr(
+                    "no evidence yet", head_sha=self.HEAD
+                )
+            },
+            check_runs={(PRODUCT_REPO, self.HEAD): runs},
+        )
+
+    def test_reported_error_fails_immediately_naming_the_reason(self) -> None:
+        verdict = _evaluate(self._fetcher([self._outcome_run("ERROR")]))
+        assert verdict.code == EXIT_FAIL
+        assert "Could not parse the provided public key." in verdict.reason
+        assert "will NOT appear" in verdict.reason
+
+    def test_no_outcome_posted_still_polls(self) -> None:
+        """The ordinary in-flight case is unchanged — this is additive."""
+        assert _evaluate(self._fetcher([])).code == EXIT_PENDING
+
+    def test_an_unreadable_check_run_list_never_fails_the_pr(self) -> None:
+        """Fail-OPEN here on purpose: the evidence is written by another repo's
+        runtime, and an outage there must not become an outage on this gate."""
+        assert _evaluate(self._fetcher(None)).code == EXIT_PENDING
+
+    def test_a_declined_outcome_still_polls(self) -> None:
+        """A DECLINED outcome (lease held, suppression) may still resolve —
+        another producer can be minting. Only ERROR is terminal."""
+        assert _evaluate(self._fetcher([self._outcome_run("DECLINED")])).code == (
+            EXIT_PENDING
+        )
+
+    def test_a_minted_outcome_still_polls_for_the_body_patch(self) -> None:
+        assert _evaluate(self._fetcher([self._outcome_run("MINTED")])).code == (
+            EXIT_PENDING
+        )
+
+    def test_a_check_run_with_another_name_is_ignored(self) -> None:
+        runs = [self._outcome_run("ERROR", name="occ-autobind / mint status")]
+        assert _evaluate(self._fetcher(runs)).code == EXIT_PENDING
+
+    def test_the_newest_outcome_wins(self) -> None:
+        """Offsets 4508 and 4510 are the same PR: two dispatches, two outcomes."""
+        runs = [
+            self._outcome_run("ERROR", completed_at="2026-09-09T04:20:29Z"),
+            self._outcome_run(
+                "MINTED",
+                completed_at="2026-09-09T04:45:17Z",
+                reason="authored OCC#8760",
+            ),
+        ]
+        assert _evaluate(self._fetcher(runs)).code == EXIT_PENDING
+
+    def test_an_incomplete_check_run_is_not_read(self) -> None:
+        run = self._outcome_run("ERROR")
+        run["status"] = "in_progress"
+        assert _evaluate(self._fetcher([run])).code == EXIT_PENDING
+
+    def test_a_present_evidence_source_bypasses_the_probe_entirely(self) -> None:
+        """The short-circuit only ever replaces a would-be timeout."""
+        fetcher = FakeFetcher(
+            prs={
+                (PRODUCT_REPO, "2500"): _product_pr(
+                    "Evidence-Source: OCC#8760", head_sha=self.HEAD
+                ),
+                (OCC_REPO, "8760"): {
+                    "state": "MERGED",
+                    "mergeCommit": {"oid": "a" * 40},
+                },
+            },
+            check_runs={(PRODUCT_REPO, self.HEAD): [self._outcome_run("ERROR")]},
+        )
+        assert _evaluate(fetcher).code == EXIT_PASS
+
+
+class TestReadAutobindOutcome:
+    def test_marker_line_is_parsed_off_the_summary(self) -> None:
+        summary = (
+            f"{AUTOBIND_OUTCOME_MARKER_PREFIX} ERROR repo=r pr=1 "
+            "correlation_id=c reason=boom happened\n\nprose\n"
+        )
+        parsed = read_autobind_outcome(
+            [
+                {
+                    "name": AUTOBIND_OUTCOME_CHECK_NAME,
+                    "status": "completed",
+                    "completed_at": "2026-09-09T00:00:00Z",
+                    "output": {"summary": summary},
+                }
+            ]
+        )
+        assert parsed == ("ERROR", "boom happened")
+
+    def test_a_summary_with_no_marker_yields_none(self) -> None:
+        assert (
+            read_autobind_outcome(
+                [
+                    {
+                        "name": AUTOBIND_OUTCOME_CHECK_NAME,
+                        "status": "completed",
+                        "output": {"summary": "just prose"},
+                    }
+                ]
+            )
+            is None
+        )
+
+    def test_an_empty_list_yields_none(self) -> None:
+        assert read_autobind_outcome([]) is None
+
+    def test_non_dict_entries_are_skipped(self) -> None:
+        assert read_autobind_outcome(["nonsense", 3]) is None  # type: ignore[list-item]

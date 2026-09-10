@@ -91,6 +91,13 @@ ENFORCED_EVENTS: frozenset[str] = frozenset({"pull_request", "merge_group"})
 EVIDENCE_SOURCE_RE = re.compile(
     r"^Evidence-Source:\s+(\S.*)$", re.IGNORECASE | re.MULTILINE
 )
+# OMN-18069 -- the autobind producer's terminal outcome, posted as a check-run on
+# the product PR's own head SHA by
+# omnimarket/.../handlers/occ_autobind_outcome.py. The name and the marker
+# prefix are a cross-repo contract; changing either is a two-repo change.
+AUTOBIND_OUTCOME_CHECK_NAME = "occ-autobind / outcome"
+AUTOBIND_OUTCOME_MARKER_PREFIX = "occ-autobind-outcome:"
+AUTOBIND_OUTCOME_ERROR = "ERROR"
 OCC_PR_REF_RE = re.compile(r"^OCC#(\d+)$", re.IGNORECASE)
 HEX_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
 MERGE_GROUP_PR_RE = re.compile(r"/pr-(\d+)-")
@@ -147,6 +154,31 @@ class GhFetcher:
             return None
         return data if isinstance(data, dict) else None
 
+    def check_runs(self, repo: str, head_sha: str) -> list[dict[str, object]] | None:
+        """Check-runs on *head_sha*, or ``None`` when the read itself failed.
+
+        ``None`` is deliberately distinct from ``[]``: an empty list is
+        evidence that no outcome was posted, a failed read is evidence of
+        nothing at all, and this gate must never convert the second into the
+        first (rule 16 -- an empty result is not evidence of absence).
+        """
+        raw = self._run(
+            [
+                "gh",
+                "api",
+                f"repos/{repo}/commits/{head_sha}/check-runs?per_page=100",
+                "--jq",
+                ".check_runs",
+            ]
+        )
+        if raw is None:
+            return None
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        return data if isinstance(data, list) else None
+
     def compare_status(self, repo: str, base: str, head_sha: str) -> str | None:
         """``identical``/``behind`` ⇒ ``head_sha`` is an ancestor of ``base``."""
         raw = self._run(
@@ -167,6 +199,54 @@ def parse_evidence_source(body: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
+def read_autobind_outcome(
+    check_runs: list[dict[str, object]],
+) -> tuple[str, str] | None:
+    """Return ``(outcome, reason)`` from the newest autobind outcome check-run.
+
+    OMN-18069. The producer writes a machine-readable first line into the
+    check-run summary:
+
+    ``occ-autobind-outcome: ERROR repo=... pr=... correlation_id=... reason=...``
+
+    Returns ``None`` when no such check-run is present, which is the ordinary
+    case for a PR whose autobind has not reported yet.
+    """
+    latest: dict[str, object] | None = None
+    for run in check_runs:
+        if not isinstance(run, dict):
+            continue
+        if str(run.get("name") or "") != AUTOBIND_OUTCOME_CHECK_NAME:
+            continue
+        if str(run.get("status") or "") != "completed":
+            continue
+        if latest is None or str(run.get("completed_at") or "") >= str(
+            latest.get("completed_at") or ""
+        ):
+            latest = run
+    if latest is None:
+        return None
+
+    output = latest.get("output")
+    summary = ""
+    if isinstance(output, dict):
+        summary = str(output.get("summary") or "")
+    for line in summary.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith(AUTOBIND_OUTCOME_MARKER_PREFIX):
+            continue
+        payload = stripped[len(AUTOBIND_OUTCOME_MARKER_PREFIX) :].strip()
+        if not payload:
+            break
+        outcome = payload.split(None, 1)[0]
+        reason = ""
+        marker = "reason="
+        if marker in payload:
+            reason = payload.split(marker, 1)[1].strip()
+        return outcome, reason
+    return None
+
+
 def resolve_pr_number(
     event_name: str, pr_number: str, merge_group_head_ref: str
 ) -> str:
@@ -178,6 +258,33 @@ def resolve_pr_number(
         if match:
             return match.group(1)
     return ""
+
+
+def _terminal_autobind_error(
+    fetcher: GhFetcher, repo: str, pr_number: str, head_sha: str
+) -> str | None:
+    """The producer's ERROR reason for *head_sha*, or ``None``.
+
+    Fail-OPEN by design, and only here: an unreadable check-run list, a missing
+    head SHA, or any non-ERROR outcome all return ``None`` and leave the caller
+    on its existing PENDING path. This short-circuit may only ever turn a
+    would-be timeout into a fast, reasoned failure -- it must never be able to
+    fail a PR on its own, because the evidence it reads is written by a
+    different repo's runtime and an outage there would otherwise become an
+    outage here.
+    """
+    if not head_sha:
+        return None
+    check_runs = fetcher.check_runs(repo, head_sha)
+    if check_runs is None:
+        return None
+    parsed = read_autobind_outcome(check_runs)
+    if parsed is None:
+        return None
+    outcome, reason = parsed
+    if outcome.upper() != AUTOBIND_OUTCOME_ERROR:
+        return None
+    return reason or "(no reason recorded)"
 
 
 def evaluate_once(
@@ -207,7 +314,7 @@ def evaluate_once(
     if evidence_source_override is None:
         # Live body, never the event payload: occ-autobind PATCHes
         # Evidence-Source onto the body AFTER the triggering event fired.
-        pr_data = fetcher.pr_view(repo, pr_number, "body,author")
+        pr_data = fetcher.pr_view(repo, pr_number, "body,author,headRefOid")
         if pr_data is None:
             return Verdict(
                 EXIT_PENDING, f"could not fetch {repo}#{pr_number} (retryable)"
@@ -224,11 +331,31 @@ def evaluate_once(
                 "exemption mirrored; no OCC evidence applicable",
             )
 
+        head_sha = str(pr_data.get("headRefOid") or "")
+
         evidence_source = parse_evidence_source(str(pr_data.get("body") or ""))
     else:
         evidence_source = evidence_source_override
+        head_sha = ""
 
     if not evidence_source:
+        # OMN-18069: before deciding this is "still in flight", ask the producer.
+        # On 2026-09-09 the autobind effect consumed 37 commands and minted
+        # nothing; this gate spent its full 1500-second deadline on each of them
+        # and then reported only that a deadline had passed -- never the reason,
+        # which the runtime already knew and had already typed. A terminal ERROR
+        # outcome on the head SHA means the companion is not coming, so waiting
+        # is not merely wasteful, it is wrong.
+        outcome = _terminal_autobind_error(fetcher, repo, pr_number, head_sha)
+        if outcome is not None:
+            return Verdict(
+                EXIT_FAIL,
+                f"{repo}#{pr_number} has no 'Evidence-Source:' line and the "
+                f"occ-autobind producer reported {AUTOBIND_OUTCOME_ERROR} for this "
+                f"head: {outcome}. The OCC companion will NOT appear on its own -- "
+                "repair the reported fault and re-run the publisher, or hand-author "
+                "the companion (OMN-18069).",
+            )
         return Verdict(
             EXIT_PENDING,
             f"{repo}#{pr_number} body has no 'Evidence-Source:' line yet "
