@@ -18,7 +18,7 @@ from typing import cast
 from uuid import UUID, uuid4
 
 # Third-party imports (alphabetized)
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # Local imports (alphabetized)
 from omnibase_core.decorators import allow_dict_any
@@ -55,6 +55,8 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         envelope_id: Unique identifier for this envelope instance
         envelope_timestamp: When this envelope was created
         correlation_id: Optional correlation ID for request tracing
+        parent_envelope_id: Optional envelope_id of the envelope whose
+            consumption caused this one; None means this hop is a chain head
         source_tool: Optional identifier of the tool that created this event
         target_tool: Optional identifier of the intended recipient tool
         metadata: Additional envelope metadata (tool version, environment, etc.)
@@ -102,6 +104,48 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     )
     correlation_id: UUID | None = Field(
         default=None, description="Correlation ID for request tracing"
+    )
+    # OMN-18116: the CAUSAL EDGE -- the identity of the envelope whose
+    # consumption caused this one to be published.
+    #
+    # `correlation_id` says these hops belong to the same request. It does not
+    # say what caused what, so a chain read back by correlation alone is a SET,
+    # not a sequence, and any "replay green" verdict derived from it is a claim
+    # rather than a re-derivation. This field is the recorded half of that
+    # re-derivation: a verifier recomputes hop N-1's `envelope_id` independently
+    # and compares it to what hop N recorded here.
+    #
+    # It references `envelope_id`, not `span_id`. `envelope_id` is the only
+    # per-hop identity the platform already originates on every envelope (it has
+    # a default factory, and the runtime's dispatch-result applier sets it
+    # deterministically). Measured read-only on the dev lane over a two-hour
+    # `event_ledger` window: 4920 rows, `envelope_id` populated on 4920,
+    # `correlation_id` on 4920, `span_id` on 0, `parent_span_id` on 0. Reusing
+    # the span pair would mean originating two things, a span and its edge, to
+    # record one -- and would overload a distributed-tracing field whose
+    # semantics change the day a real trace exporter is wired. `span_id` and
+    # `parent_span_id` are deliberately left exactly as they are.
+    #
+    # `None` is a statement, not an omission: this hop consumed nothing, so it
+    # is a chain HEAD. That is checkable. A hop that should have an edge and
+    # carries none is a broken chain, which is precisely what this field lets a
+    # verifier fail on.
+    #
+    # Origination is ONE site -- the runtime dispatch-result applier, which
+    # already holds the consumed envelope. No handler sets this: the canonical
+    # handler signature is `handle(request: ModelX) -> ModelY` and never sees an
+    # envelope, which is the architecture working rather than a gap.
+    #
+    # WIRE COMPATIBILITY: this model is `extra="forbid"` (see above), so a
+    # consumer pinned to a core release that predates this field REFUSES an
+    # envelope carrying it rather than ignoring it. `envelope_version` moves to
+    # 2.2.0 for that reason; a reader must be on a core that declares the field.
+    parent_envelope_id: UUID | None = Field(
+        default=None,
+        description=(
+            "envelope_id of the envelope whose consumption caused this one. "
+            "None means this hop is a chain head."
+        ),
     )
     source_tool: str | None = Field(
         default=None, description="Identifier of the tool that created this event"
@@ -203,9 +247,35 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         return value
 
     envelope_version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=2, minor=1, patch=0),
+        # 2.1.0 -> 2.2.0 (OMN-18116): the schema gained the declared
+        # `parent_envelope_id` field. Additive, but not silently so -- this
+        # model is `extra="forbid"`, so an older reader rejects the new key
+        # instead of dropping it. The minor bump is the signal for that.
+        default_factory=lambda: ModelSemVer(major=2, minor=2, patch=0),
         description="Envelope schema version",
     )
+
+    @model_validator(mode="after")
+    def _parent_edge_is_not_self_referential(self) -> "ModelEventEnvelope[T]":
+        """Refuse an envelope that records itself as its own cause.
+
+        ``ModelEnvelope.validate_no_self_reference`` proves the same shape for
+        ``causation_id``. The consequence is sharper here: a verifier
+        re-derives the expected parent and compares it against what was
+        recorded. A self-edge closes that comparison against the hop itself, so
+        a chain with no real predecessor would read as a valid one-hop chain --
+        a verdict-from-claim of exactly the kind this edge exists to prevent.
+        """
+        if (
+            self.parent_envelope_id is not None
+            and self.parent_envelope_id == self.envelope_id
+        ):
+            raise ValueError(
+                "parent_envelope_id cannot equal envelope_id (self-reference): "
+                "an envelope cannot be its own cause, and a self-edge would let "
+                "a broken chain re-derive as a valid one"
+            )
+        return self
 
     def __init__(self, **data: object) -> None:
         """Initialize envelope with lazy evaluation capabilities."""
@@ -513,6 +583,13 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "envelope_id": str(self.envelope_id),
             "envelope_timestamp": self.envelope_timestamp.isoformat(),
             "correlation_id": str(self.correlation_id) if self.correlation_id else None,
+            # OMN-18116: enumerated explicitly, because this projection is
+            # hand-written -- a field added to the model is not carried here
+            # automatically, which is how a recorded edge gets silently dropped
+            # on the way to a reader.
+            "parent_envelope_id": (
+                str(self.parent_envelope_id) if self.parent_envelope_id else None
+            ),
             "source_tool": self.source_tool,
             "target_tool": self.target_tool,
             "event_type": self.event_type,

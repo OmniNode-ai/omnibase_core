@@ -152,6 +152,9 @@ class PythonASTValidator(ast.NodeVisitor):
             # These represent serialize() output - UUIDs and versions become strings in JSON
             "option_id",  # TypedDict CLI command option ID (serialized UUID)
             "envelope_id",  # TypedDict event envelope ID (serialized UUID)
+            # OMN-18116: the causal edge references envelope_id, so it is the
+            # same serialized-UUID boundary as the line above.
+            "parent_envelope_id",  # TypedDict causal-edge parent (serialized UUID)
             "action_id",  # TypedDict CLI action ID (serialized UUID)
             "command_name_id",  # TypedDict CLI command name ID (serialized UUID)
             "target_node_id",  # TypedDict CLI target node ID (serialized UUID)
