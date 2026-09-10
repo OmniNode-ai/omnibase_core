@@ -40,6 +40,9 @@ from omnibase_core.validation.local_paths.models import (
     ModelLocalPathScanInput,
     ModelLocalPathScanResult,
 )
+from omnibase_core.validation.validator_local_paths import (
+    _comment_carries_suppression_marker,
+)
 
 __all__ = ["HandlerLocalPathsCompute", "scan_source"]
 
@@ -53,8 +56,8 @@ _PATTERNS: Final[tuple[tuple[str, re.Pattern[str]], ...]] = (
     ("Windows user path", re.compile(r"[Cc]:[/\\][Uu]sers[/\\]")),
 )
 
-# A line carrying this exact marker is suppressed (allowlisted), matching the
-# ground truth's `# local-path-ok` escape hatch.
+# A source comment carrying this exact marker is suppressed (allowlisted),
+# matching the ground truth's `# local-path-ok` escape hatch.
 _SUPPRESSION_MARKER: Final[str] = "local-path-ok"
 
 
@@ -62,14 +65,14 @@ def scan_source(content: str, path: str = "<input>") -> ModelLocalPathScanResult
     """Scan ``content`` line by line for hardcoded absolute paths.
 
     Pure and deterministic. Reproduces ``validator_local_paths.py`` per-line
-    logic: a line containing the ``local-path-ok`` suppression marker is skipped;
-    otherwise every match of every pattern on the line is a finding. Findings are
+    logic: a source comment containing the ``local-path-ok`` suppression marker is
+    skipped; otherwise every match of every pattern on the line is a finding. Findings are
     emitted in a stable order (line, then column, then pattern order) so the
     verdict is order-independent regardless of dispatch backend (§1A risk 2).
     """
     findings: list[ModelLocalPathFinding] = []
     for lineno, line in enumerate(content.splitlines(), start=1):
-        if _SUPPRESSION_MARKER in line:
+        if _comment_carries_suppression_marker(line):
             continue
         for pattern_name, pattern in _PATTERNS:
             for match in pattern.finditer(line):

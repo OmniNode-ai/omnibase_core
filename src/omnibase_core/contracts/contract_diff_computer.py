@@ -885,7 +885,7 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
             non_reversible.append(f"{fd.field_path} ({fd.change_type.value})")
 
     if non_reversible:
-        raise ValueError(
+        raise ValueError(  # error-ok: documented public validation boundary
             "Cannot generate reverse patch: diff contains scalar field changes "
             "at paths that are not expressible as ModelContractPatch operations. "
             "Non-reversible paths: "

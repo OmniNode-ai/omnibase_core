@@ -31,6 +31,9 @@ Resolution Flow
 """
 
 from omnibase_core.models.routing.model_capability_token import ModelCapabilityToken
+from omnibase_core.models.routing.model_ci_override_policy import (
+    ModelCiOverridePolicy,
+)
 from omnibase_core.models.routing.model_classification_gate import (
     ModelClassificationGate,
 )
@@ -59,10 +62,7 @@ from omnibase_core.models.routing.model_routing_decision import (
 from omnibase_core.models.routing.model_routing_degraded_event import (
     ModelRoutingDegradedEvent,
 )
-from omnibase_core.models.routing.model_routing_policy import (
-    ModelCiOverridePolicy,
-    ModelRoutingPolicy,
-)
+from omnibase_core.models.routing.model_routing_policy import ModelRoutingPolicy
 from omnibase_core.models.routing.model_tier_attempt import ModelTierAttempt
 from omnibase_core.models.routing.model_tiered_resolution_config import (
     ModelTieredResolutionConfig,

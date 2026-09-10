@@ -2,12 +2,7 @@
   "mcpServers": {
     "repowise": {
       "command": "repowise",
-      "args": [
-        "mcp",
-        "/Users/jonah/Code/omni_home/omnibase_core",
-        "--transport",
-        "stdio"
-      ],
+      "args": ["mcp", ".", "--transport", "stdio"],
       "description": "repowise: codebase intelligence \u2014 docs, graph, git signals, dead code, decisions"
     }
   }

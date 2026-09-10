@@ -39,6 +39,7 @@ def test_resolved_route_event_requires_policy_hash_alias_match() -> None:
 
     assert event.policy_hash == event.routing_policy_hash
     assert event.logical_model_key == "coder"
+    assert event.routing_decision_id == "decision-1"
 
 
 def test_resolved_route_event_rejects_mismatched_policy_hash_alias() -> None:
@@ -77,6 +78,7 @@ def test_rejected_route_event_carries_failure_classification() -> None:
 
     assert event.failure_class is RoutingErrorClass.FALLBACK_UNAUTHORIZED
     assert event.served_model_id == ""
+    assert event.routing_decision_id == "decision-2"
 
 
 def test_model_routing_policy_requires_fallback_when_roles_declared() -> None:

@@ -56,3 +56,30 @@ def test_delegation_terminal_v2_exception_is_scoped_to_its_canonical_path(
     assert validator.should_exclude_file(canonical_absolute_path)
     assert not validator.should_exclude_file(shadow_path)
     assert not validator.check_file(shadow_path)["valid"]
+
+
+def test_pydantic_extra_forbid_exception_is_scoped_to_its_canonical_path(
+    tmp_path: Path,
+) -> None:
+    """The ratchet exemption must not exclude a same-named shadow module."""
+    validator = _load_validator_module()
+    canonical_path = Path("src/omnibase_core/validators/pydantic_extra_forbid.py")
+    canonical_absolute_path = (
+        VALIDATOR_PATH.parents[2]
+        / "src"
+        / "omnibase_core"
+        / "validators"
+        / "pydantic_extra_forbid.py"
+    )
+    shadow_path = (
+        tmp_path.parent
+        / f"single_class_scope_shadow_{tmp_path.name}"
+        / "pydantic_extra_forbid.py"
+    )
+    shadow_path.parent.mkdir()
+    shadow_path.write_text("class First:\n    pass\n\nclass Second:\n    pass\n")
+
+    assert validator.should_exclude_file(canonical_path)
+    assert validator.should_exclude_file(canonical_absolute_path)
+    assert not validator.should_exclude_file(shadow_path)
+    assert not validator.check_file(shadow_path)["valid"]

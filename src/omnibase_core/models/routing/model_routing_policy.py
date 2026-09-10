@@ -9,13 +9,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
-class ModelCiOverridePolicy(BaseModel):
-    """CI-mode override: when ONEX_CI_MODE=true, use this primary model key."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
-
-    primary: str = Field(..., description="model_id key to use in CI mode.")
+from omnibase_core.models.routing.model_ci_override_policy import ModelCiOverridePolicy
 
 
 class ModelRoutingPolicy(BaseModel):
@@ -74,7 +68,4 @@ class ModelRoutingPolicy(BaseModel):
         return self
 
 
-__all__ = [
-    "ModelCiOverridePolicy",
-    "ModelRoutingPolicy",
-]
+__all__ = ["ModelRoutingPolicy"]

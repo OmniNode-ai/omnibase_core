@@ -108,6 +108,7 @@ class ModelArtifactMetadata(BaseModel):
         ...,
         description="ISO-8601 UTC timestamp of creation.",
     )
+    # string-version-ok: opaque writer generation marker, not SemVer
     writer_version: str = Field(
         ...,
         min_length=1,

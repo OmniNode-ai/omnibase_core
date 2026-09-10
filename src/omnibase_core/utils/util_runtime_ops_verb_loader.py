@@ -25,11 +25,25 @@ import importlib.resources
 from functools import cache
 from pathlib import Path
 
-import yaml
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_content_document,
+)
 
 _CONTRACTS_PKG = "omnibase_core.contracts"
 _ALLOWLIST_YAML = "runtime_ops_verb_allowlist.yaml"
 _ALLOWLIST_KEY = "runtime_ops_verbs"
+
+
+class _ModelRuntimeOpsVerbAllowlist(BaseModel):
+    """Strict schema for the one governed runtime-operations verb document."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    schema_version: StrictInt
+    runtime_ops_verbs: list[StrictStr] = Field(min_length=1)
 
 
 @cache
@@ -59,20 +73,25 @@ def load_runtime_ops_verb_allowlist() -> frozenset[str]:
                 f"and {fallback}"
             ) from exc
 
-    data = yaml.safe_load(raw)
-    if not isinstance(data, dict):
-        raise ValueError(
-            f"{_ALLOWLIST_YAML} must be a mapping with a {_ALLOWLIST_KEY!r} key"
+    try:
+        allowlist = load_typed_yaml_content_document(
+            raw,
+            _ModelRuntimeOpsVerbAllowlist,
+            source=f"package:{_CONTRACTS_PKG}/{_ALLOWLIST_YAML}",
         )
-    verbs = data.get(_ALLOWLIST_KEY)
-    if not isinstance(verbs, list) or not verbs:
-        raise ValueError(
+    except ModelOnexError as exc:
+        raise ValueError(  # error-ok: documented public validation boundary
+            f"{_ALLOWLIST_YAML} must declare a non-empty {_ALLOWLIST_KEY!r} list"
+        ) from exc
+    if allowlist is None:
+        raise ValueError(  # error-ok: documented public validation boundary
             f"{_ALLOWLIST_YAML} must declare a non-empty {_ALLOWLIST_KEY!r} list"
         )
+
     normalized: set[str] = set()
-    for verb in verbs:
-        if not isinstance(verb, str) or not verb.strip():
-            raise ValueError(
+    for verb in allowlist.runtime_ops_verbs:
+        if not verb.strip():
+            raise ValueError(  # error-ok: documented public validation boundary
                 f"{_ALLOWLIST_KEY} entries must be non-blank strings, got: {verb!r}"
             )
         normalized.add(verb.strip())

@@ -51,20 +51,27 @@ from __future__ import annotations
 import re
 import sys
 import time
-from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_content_document,
+)
+from omnibase_core.models.validation.model_demo_yaml_document import (
+    ModelDemoYamlDocument,
+)
+from omnibase_core.types.type_json import StrictJsonType
+from omnibase_core.validation.demo_path_contract import DemoPathContract
+from omnibase_core.validation.demo_path_topic_index import DemoPathTopicIndex
 
 # ---------------------------------------------------------------------------
 # Rule identifiers (exported so tests can reference them symbolically)
@@ -82,6 +89,19 @@ RULE_WIDGET_TOPIC_NO_PRODUCER: str = "demo_path_widget_topic_no_producer"
 
 _LITERAL_SUPPRESSION_MARKER: str = "onex-demo-gate-allow:"
 
+
+def _load_demo_document(
+    content: str, *, source: str = "demo path contract YAML"
+) -> dict[str, StrictJsonType] | None:
+    try:
+        document = load_typed_yaml_content_document(
+            content, ModelDemoYamlDocument, source=source
+        )
+    except ModelOnexError:
+        return None
+    return None if document is None else document.root
+
+
 # Pattern for bare onex topic string literals in Python/TypeScript source
 _ONEX_TOPIC_LITERAL: re.Pattern[str] = re.compile(
     r"""["']onex\.(cmd|evt|dlq|snapshot|intent)\.[^"'\s]+["']"""
@@ -90,17 +110,6 @@ _ONEX_TOPIC_LITERAL: re.Pattern[str] = re.compile(
 # ---------------------------------------------------------------------------
 # Demo-path contract data model
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class DemoPathContract:
-    """Parsed representation of a single demo-path contract.yaml."""
-
-    name: str  # node directory name (from contract file parent dir)
-    contract_path: Path
-    subscribe_topics: frozenset[str]
-    publish_topics: frozenset[str]
-    widget_topics: frozenset[str]  # metadata.widget_topics
 
 
 # ---------------------------------------------------------------------------
@@ -142,8 +151,10 @@ def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
                 continue
 
             try:
-                raw = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
-            except Exception:  # noqa: BLE001  # boundary-ok: skip unreadable/invalid contracts
+                raw = _load_demo_document(
+                    contract_path.read_text(encoding="utf-8"), source=str(contract_path)
+                )
+            except (OSError, UnicodeDecodeError):
                 continue
 
             if not isinstance(raw, dict):
@@ -180,80 +191,6 @@ def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
 # ---------------------------------------------------------------------------
 # Topic registry and coherence checks
 # ---------------------------------------------------------------------------
-
-
-@dataclass
-class DemoPathTopicRegistry:
-    """Aggregated topic view across all demo-path contracts."""
-
-    # Map topic -> set of node names that publish it
-    producers: dict[str, set[str]] = field(default_factory=dict)
-    # Map topic -> set of node names that subscribe to it
-    consumers: dict[str, set[str]] = field(default_factory=dict)
-    # All widget topics declared across contracts
-    widget_topics: set[str] = field(default_factory=set)
-
-    @classmethod
-    def from_contracts(cls, contracts: list[DemoPathContract]) -> DemoPathTopicRegistry:
-        registry = cls()
-        for contract in contracts:
-            for topic in contract.publish_topics:
-                registry.producers.setdefault(topic, set()).add(contract.name)
-            for topic in contract.subscribe_topics:
-                registry.consumers.setdefault(topic, set()).add(contract.name)
-            registry.widget_topics.update(contract.widget_topics)
-        return registry
-
-    def find_publish_subscribe_mismatches(self) -> list[str]:
-        """Return descriptions of topics that are published but have no subscriber.
-
-        A mismatch means some node's ``publish_topics`` entry byte-mismatches
-        every ``subscribe_topics`` entry across all demo-path contracts.
-        """
-        mismatches: list[str] = []
-        for topic, publishers in sorted(self.producers.items()):
-            if topic not in self.consumers:
-                mismatches.append(
-                    f"topic {topic!r} published by {sorted(publishers)} "
-                    "but no demo-path consumer subscribes to it (byte mismatch or orphan)"
-                )
-        return mismatches
-
-    def find_orphan_producers(self) -> list[str]:
-        """Return descriptions of topics that are published but never consumed.
-
-        Note: this is the same check as ``find_publish_subscribe_mismatches``
-        but expressed as orphan producers for rule-code clarity.
-        """
-        orphans: list[str] = []
-        for topic, publishers in sorted(self.producers.items()):
-            if topic not in self.consumers:
-                orphans.append(
-                    f"orphan producer: topic {topic!r} published by "
-                    f"{sorted(publishers)} but has no demo-path subscriber"
-                )
-        return orphans
-
-    def find_orphan_consumers(self) -> list[str]:
-        """Return descriptions of topics that are subscribed to but never produced."""
-        orphans: list[str] = []
-        for topic, subscribers in sorted(self.consumers.items()):
-            if topic not in self.producers:
-                orphans.append(
-                    f"orphan consumer: topic {topic!r} subscribed by "
-                    f"{sorted(subscribers)} but has no demo-path producer"
-                )
-        return orphans
-
-    def find_widget_topics_without_producers(self) -> list[str]:
-        """Return descriptions of widget topics that have no producing node."""
-        missing: list[str] = []
-        for topic in sorted(self.widget_topics):
-            if topic not in self.producers:
-                missing.append(
-                    f"widget topic {topic!r} has no producing node on the demo path"
-                )
-        return missing
 
 
 # ---------------------------------------------------------------------------
@@ -330,7 +267,7 @@ class ValidatorDemoPathTopicCoherence:
         contracts = load_demo_path_contracts(self.repo_roots)
 
         if contracts:
-            registry = DemoPathTopicRegistry.from_contracts(contracts)
+            registry = DemoPathTopicIndex.from_contracts(contracts)
 
             # (b) publish/subscribe byte-match
             for desc in registry.find_publish_subscribe_mismatches():

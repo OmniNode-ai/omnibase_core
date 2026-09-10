@@ -5,16 +5,20 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
+import omnibase_core.validation.antipattern_registry_loader as registry_loader
 from omnibase_core.models.validation.model_antipattern_registry import (
     ModelAntipatternRegistry,
 )
 from omnibase_core.validation.antipattern_registry_loader import (
     load_default_registry,
+    load_repo_overrides,
     resolve_antipatterns,
 )
 
@@ -48,6 +52,36 @@ _EXPECTED_SEMANTIC_NAMES = {
 
 @pytest.mark.unit
 class TestLoadDefaultRegistry:
+    def test_null_default_registry_preserves_validation_failure(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A bundled null document is not silently treated as an empty registry."""
+        (tmp_path / "antipattern_registry.yaml").write_text("null\n", encoding="utf-8")
+        monkeypatch.setattr(
+            registry_loader.importlib.resources,
+            "files",
+            lambda _package: tmp_path,
+        )
+
+        with pytest.raises(ValidationError):
+            load_default_registry()
+
+    def test_invalid_default_registry_preserves_public_validation_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The real typed loader's chained schema failure remains public here."""
+        (tmp_path / "antipattern_registry.yaml").write_text(
+            "version: '1.0.0'\nentries: []\n", encoding="utf-8"
+        )
+        monkeypatch.setattr(
+            registry_loader.importlib.resources,
+            "files",
+            lambda _package: tmp_path,
+        )
+
+        with pytest.raises(ValidationError, match="last_updated"):
+            load_default_registry()
+
     def test_loads_without_error(self) -> None:
         registry = load_default_registry()
         assert isinstance(registry, ModelAntipatternRegistry)
@@ -98,9 +132,51 @@ class TestLoadDefaultRegistry:
         reparsed = ModelAntipatternRegistry.model_validate(data)
         assert len(reparsed.entries) == len(registry.entries)
 
+    @pytest.mark.parametrize(
+        ("entry_name", "source"),
+        [
+            ("obvious_comment", "# TODO: "),
+            ("todo_fixme", "# FIXME: resolve this"),
+        ],
+    )
+    def test_unfinished_work_rule_patterns_remain_effective(
+        self, entry_name: str, source: str
+    ) -> None:
+        registry = load_default_registry()
+        entry = next(item for item in registry.entries if item.name == entry_name)
+        assert re.search(entry.pattern, source) is not None
+
 
 @pytest.mark.unit
 class TestResolveAntipatterns:
+    @pytest.mark.parametrize("content", ["null\n", "{}\n"])
+    def test_null_or_empty_override_is_an_explicit_empty_override(
+        self, tmp_path: Path, content: str
+    ) -> None:
+        overrides_dir = tmp_path / ".onex"
+        overrides_dir.mkdir()
+        (overrides_dir / "antipattern-overrides.yaml").write_text(
+            content, encoding="utf-8"
+        )
+
+        overrides = load_repo_overrides(tmp_path)
+
+        assert overrides is not None
+        assert overrides.overrides == []
+        assert overrides.custom_entries == []
+
+    def test_invalid_override_preserves_public_validation_error(
+        self, tmp_path: Path
+    ) -> None:
+        overrides_dir = tmp_path / ".onex"
+        overrides_dir.mkdir()
+        (overrides_dir / "antipattern-overrides.yaml").write_text(
+            "unexpected: true\n", encoding="utf-8"
+        )
+
+        with pytest.raises(ValidationError, match="unexpected"):
+            load_repo_overrides(tmp_path)
+
     def test_no_overrides_returns_defaults(self, tmp_path: Path) -> None:
         result = resolve_antipatterns(tmp_path)
         defaults = load_default_registry()

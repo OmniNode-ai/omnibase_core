@@ -371,8 +371,7 @@ DATABASE_URL = "postgresql://localhost/mydb"
         """Test that bypass comment allows hardcoded env vars."""
         test_file = tmp_path / "test_bypass.py"
         test_file.write_text(
-            """# env-var-ok: constant definition
-DATABASE_URL = "postgresql://localhost/mydb"
+            """DATABASE_URL = "postgresql://localhost/mydb"  # env-var-ok: constant definition
 """,
             encoding="utf-8",
         )

@@ -56,6 +56,19 @@ class TestCheckFileClean:
         # Calling check_file again on f2 still returns 0 (no leakage from f1)
         assert len(validator.check_file(f2)) == 0
 
+    def test_observability_rule_uses_portable_example_prose(self) -> None:
+        """Validator documentation must not create a finding in another validator."""
+        rule = (
+            Path(__file__).parents[3]
+            / "src"
+            / "omnibase_core"
+            / "validation"
+            / "cross_repo"
+            / "rules"
+            / "validator_observability.py"
+        )
+        assert ValidatorLocalPaths().check_file(rule) == []
+
 
 @pytest.mark.unit
 class TestMacOSVolume:
@@ -168,6 +181,14 @@ class TestSuppressionMarker:
         violations = validator.check_file(f)
         assert len(violations) == 1
         assert violations[0].line == 2
+
+    def test_marker_inside_a_path_literal_does_not_suppress(
+        self, tmp_path: Path
+    ) -> None:
+        """Only a source comment can carry the rule-local suppression marker."""
+        f = tmp_path / "cfg.py"
+        f.write_text('PATH = "/Users/alice/project# local-path-ok"\n', encoding="utf-8")
+        assert len(ValidatorLocalPaths().check_file(f)) == 1
 
 
 @pytest.mark.unit

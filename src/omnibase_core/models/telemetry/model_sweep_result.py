@@ -31,6 +31,7 @@ class ModelSweepResult(BaseModel):
         "runtime",
         "data_flow",
     ]
+    # string-id-ok: sweep-run session key projected to omnidash; contract uses opaque session-N tokens, not UUIDs
     session_id: str
     correlation_id: str
     ran_at: datetime

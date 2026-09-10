@@ -25,6 +25,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import ast
 import re
 import sys
 from pathlib import Path
@@ -119,8 +120,38 @@ _BOOTSTRAP_ALLOWLIST: frozenset[str] = frozenset(
     }
 )
 
+# These two reads are established platform probes in their specific model
+# contracts. Keep the exception path-scoped: allowing either variable globally
+# would hide a new read in an unrelated source file. The canonical
+# ``no_new_os_environ`` validator carries the same approved variable names.
+_PATH_ENV_ALLOWLIST: dict[str, frozenset[str]] = {
+    "src/omnibase_core/models/security/model_secret_backend.py": frozenset(
+        {"KUBERNETES_SERVICE_HOST"}
+    ),
+    "src/omnibase_core/models/services/model_node_service_config.py": frozenset(
+        {"SERVICE_HOST"}
+    ),
+}
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _allowed_env_names(path: Path) -> frozenset[str]:
+    """Return global bootstrap names plus exact path-scoped legacy exceptions."""
+    try:
+        relative_path = path.resolve().relative_to(_REPO_ROOT)
+    except ValueError:
+        return _BOOTSTRAP_ALLOWLIST
+
+    path_specific = _PATH_ENV_ALLOWLIST.get(relative_path.as_posix())
+    if not path_specific:
+        return _BOOTSTRAP_ALLOWLIST
+    return _BOOTSTRAP_ALLOWLIST | path_specific
+
+
 # ---------------------------------------------------------------------------
-# Patterns we scan for (line-level, no AST needed)
+# Pattern syntax used only when an invalid Python file cannot be parsed. Valid Python
+# files are inspected through the AST below, so diagnostic strings and docstrings do
+# not masquerade as environment reads.
 # ---------------------------------------------------------------------------
 _ENV_VAR_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"os\.environ\["),
@@ -202,7 +233,9 @@ def _iter_scannable_lines(content: str) -> list[tuple[int, str]]:
     return lines
 
 
-def _extract_disallowed_env_name(line: str) -> str | None:
+def _extract_disallowed_env_name(
+    line: str, *, allowed_names: frozenset[str] = _BOOTSTRAP_ALLOWLIST
+) -> str | None:
     if _line_has_bypass(line) or _is_comment_line(line):
         return None
 
@@ -214,10 +247,65 @@ def _extract_disallowed_env_name(line: str) -> str | None:
         return None
 
     var_name = name_match.group(1)
-    if var_name in _BOOTSTRAP_ALLOWLIST:
+    if var_name in allowed_names:
         return None
 
     return var_name
+
+
+def _is_os_environ(node: ast.expr) -> bool:
+    """Return whether *node* is the direct ``os.environ`` attribute."""
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr == "environ"
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "os"
+    )
+
+
+def _string_literal(node: ast.expr) -> str | None:
+    """Return a literal environment name, preserving the existing literal-only scope."""
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    return None
+
+
+def _direct_env_name(node: ast.expr) -> str | None:
+    """Return the literal name from one supported direct environment read."""
+    if isinstance(node, ast.Subscript) and _is_os_environ(node.value):
+        return _string_literal(node.slice)
+
+    if not isinstance(node, ast.Call) or not node.args:
+        return None
+
+    first_arg = _string_literal(node.args[0])
+    if first_arg is None or not isinstance(node.func, ast.Attribute):
+        return None
+
+    if node.func.attr == "get" and _is_os_environ(node.func.value):
+        return first_arg
+
+    if (
+        node.func.attr == "getenv"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "os"
+    ):
+        return first_arg
+
+    return None
+
+
+def _ast_violations(content: str) -> list[tuple[int, str]]:
+    """Return direct literal environment reads from valid Python source in source order."""
+    tree = ast.parse(content)
+    violations: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.Subscript, ast.Call)):
+            continue
+        var_name = _direct_env_name(node)
+        if var_name is not None:
+            violations.append((node.lineno, var_name))
+    return sorted(violations)
 
 
 # ---------------------------------------------------------------------------
@@ -234,12 +322,31 @@ def check_file(path: Path) -> list[tuple[int, str, str]]:
     if content is None:
         return []
 
-    violations: list[tuple[int, str, str]] = []
-    for lineno, line in _iter_scannable_lines(content):
-        var_name = _extract_disallowed_env_name(line)
-        if var_name is not None:
-            violations.append((lineno, line.rstrip(), var_name))
+    allowed_names = _allowed_env_names(path)
 
+    lines = content.splitlines()
+    try:
+        candidates = _ast_violations(content)
+    except SyntaxError:
+        # Keep the former line scanner as a fail-closed fallback. A syntax error
+        # must not turn a direct read into an unreported green result.
+        return [
+            (lineno, line.rstrip(), var_name)
+            for lineno, line in _iter_scannable_lines(content)
+            if (
+                var_name := _extract_disallowed_env_name(
+                    line, allowed_names=allowed_names
+                )
+            )
+            is not None
+        ]
+
+    violations: list[tuple[int, str, str]] = []
+    for lineno, var_name in candidates:
+        line = lines[lineno - 1]
+        if _line_has_bypass(line) or var_name in allowed_names:
+            continue
+        violations.append((lineno, line.rstrip(), var_name))
     return violations
 
 

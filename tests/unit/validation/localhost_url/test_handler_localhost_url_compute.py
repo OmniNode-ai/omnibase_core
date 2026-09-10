@@ -233,15 +233,21 @@ def test_line_marker_suppresses_only_that_line() -> None:
 
 
 @pytest.mark.unit
-def test_file_marker_suppresses_whole_file() -> None:
+def test_marker_inside_a_url_literal_does_not_suppress_a_real_violation() -> None:
+    source = 'A = "http://localhost/a# onex-allow-internal-ip"'
+    assert scan_source(source).flagged is True
+
+
+@pytest.mark.unit
+def test_file_marker_does_not_suppress_seeded_genuine_violations() -> None:
     src = (
         "# onex-allow-file-internal-ip doc whose subject is localhost URLs\n"
         'A = "http://localhost/a"\n'
         'B = "https://127.0.0.1/b"'
     )
     result = scan_source(src)
-    assert result.flagged is False
-    assert result.findings == ()
+    assert result.flagged is True
+    assert [finding.line for finding in result.findings] == [2, 3]
 
 
 # ---------------------------------------------------------------------------

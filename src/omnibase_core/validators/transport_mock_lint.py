@@ -70,6 +70,14 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_document,
+)
+from omnibase_core.models.validation.model_transport_mock_baseline import (
+    ModelTransportMockBaseline,
+)
+
 try:
     import yaml
 
@@ -107,7 +115,8 @@ SURFACE_KEYWORDS: tuple[str, ...] = (
     "subscriber",
 )
 
-SUPPRESSION_TOKEN = "# transport-mock-ok:"
+SUPPRESSION_TOKEN = "# transport-mock-ok:"  # secret-ok: detector grammar token, not a credential; env-var-ok: validator grammar token, not configuration
+
 
 _EXCLUDED_PATH_PARTS: frozenset[str] = frozenset(
     {
@@ -350,20 +359,15 @@ def _load_baseline(baseline_path: Path) -> dict[str, int]:
             "transport-mock-lint: PyYAML not available; cannot load baseline. "
             "Install pyyaml or run without --baseline.\n"
         )
-        raise SystemExit(2)
+        raise SystemExit(2)  # error-ok: CLI reports an unusable baseline
     try:
-        raw = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as exc:
+        baseline = load_typed_yaml_document(baseline_path, ModelTransportMockBaseline)
+    except ModelOnexError as exc:
         sys.stderr.write(
             f"transport-mock-lint: cannot load baseline {baseline_path}: {exc}\n"
         )
-        raise SystemExit(2) from exc
-    if not isinstance(raw, dict):
-        sys.stderr.write(
-            f"transport-mock-lint: baseline {baseline_path} must be a YAML mapping.\n"
-        )
-        raise SystemExit(2)
-    return {str(k): int(v) for k, v in raw.items()}
+        raise SystemExit(2) from exc  # error-ok: CLI reports baseline parse failure
+    return {} if baseline is None else baseline.root
 
 
 def _apply_baseline(
@@ -425,7 +429,7 @@ def _git_changed_files(base: str) -> list[Path]:
     )
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr)
-        raise SystemExit(2)
+        raise SystemExit(2)  # error-ok: CLI reports an unavailable git comparison
     return [Path(p) for p in proc.stdout.splitlines() if p.strip()]
 
 
@@ -526,4 +530,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())  # error-ok: CLI process exit boundary

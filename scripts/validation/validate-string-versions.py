@@ -22,13 +22,16 @@ from __future__ import annotations
 
 import argparse
 import ast
+import io
 import os
 import re
 import sys
+import tokenize
 from pathlib import Path
 from typing import Any, NamedTuple
 
 import yaml
+from pydantic import ValidationError
 
 
 class ValidationViolation(NamedTuple):
@@ -120,7 +123,16 @@ def should_exclude_file(file_path: Path, verbose: bool = False) -> bool:
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-# Try to import Pydantic models if available (may not exist in empty package structure)
+# The canonical registry schema is independently available even when the
+# optional generic-YAML adapter is not installed in this checkout.
+try:
+    from omnibase_core.models.validation.model_antipattern_registry import (
+        ModelAntipatternRegistry,
+    )
+except ImportError:
+    ModelAntipatternRegistry = None
+
+# Try to import the optional generic-YAML adapter if available.
 try:
     from omnibase_core.core.model_generic_yaml import ModelGenericYaml
 
@@ -433,22 +445,45 @@ class PythonASTValidator(ast.NodeVisitor):
         if line_idx < 0 or line_idx >= len(self.source_lines):
             return False
 
-        line = self.source_lines[line_idx]
+        def has_bypass_token(source_line: str) -> bool:
+            """Return whether a physical line has an exact bypass comment token.
 
-        # Check for inline comment with bypass pattern on the current line
-        if "#" in line:
-            comment_part = line.split("#", 1)[1]
-            for pattern in bypass_patterns:
-                if pattern in comment_part:
-                    return True
+            A marker embedded in a string literal is data, not a policy waiver.
+            ``tokenize`` also keeps this check tied to Python's comment grammar
+            instead of treating every ``#`` as a comment delimiter.
+            """
+            comments: list[str] = []
+            try:
+                tokens = tokenize.generate_tokens(io.StringIO(source_line).readline)
+                for token in tokens:
+                    if token.type == tokenize.COMMENT:
+                        comments.append(token.string[1:].lstrip())
+            except tokenize.TokenError:
+                # A single physical line can be an incomplete parenthesized
+                # expression. Any comment token already emitted is still valid.
+                pass
+            return any(
+                comment.startswith(pattern)
+                for comment in comments
+                for pattern in bypass_patterns
+            )
+
+        # Check an inline bypass marker only when it is a real comment token.
+        if has_bypass_token(self.source_lines[line_idx]):
+            return True
 
         # Check for bypass comment on the previous line (consistent with YAML validation)
         if line_idx > 0:
-            prev_line = self.source_lines[line_idx - 1].strip()
-            if prev_line.startswith("#"):
-                for pattern in bypass_patterns:
-                    if pattern in prev_line:
-                        return True
+            if has_bypass_token(self.source_lines[line_idx - 1]):
+                return True
+
+        # Ruff formats an annotated Pydantic field as ``field: str = (`` then
+        # ``Field(  # string-id-ok: reason``. Accept only that immediate Field
+        # continuation, not an arbitrary later comment.
+        if line_idx + 1 < len(self.source_lines):
+            next_line = self.source_lines[line_idx + 1].lstrip()
+            if next_line.startswith("Field(") and has_bypass_token(next_line):
+                return True
 
         return False
 
@@ -593,6 +628,27 @@ class StringVersionValidator:
         self.errors: list[str] = []
         self.ast_violations: list[ValidationViolation] = []
         self.checked_files = 0
+
+    @staticmethod
+    def _is_canonical_antipattern_registry(yaml_path: Path, data: object) -> bool:
+        """Return whether the canonical registry owns its string schema version."""
+        repository_root = Path(__file__).resolve().parent.parent.parent
+        canonical_path = (
+            repository_root
+            / "src"
+            / "omnibase_core"
+            / "contracts"
+            / "antipattern_registry.yaml"
+        )
+        if yaml_path.resolve() != canonical_path.resolve():
+            return False
+        if not isinstance(data, dict) or ModelAntipatternRegistry is None:
+            return False
+        try:
+            ModelAntipatternRegistry.model_validate(data)
+        except ValidationError:
+            return False
+        return isinstance(data.get("version"), str)
 
     def validate_python_file(self, python_path: Path) -> bool:
         """Validate a Python file for hardcoded __version__ strings."""
@@ -845,7 +901,7 @@ class StringVersionValidator:
 
         # Basic YAML syntax validation
         try:
-            yaml.safe_load(content)
+            parsed_yaml = yaml.safe_load(content)
         except yaml.YAMLError as e:
             self.errors.append(f"{yaml_path}: Invalid YAML syntax - {e}")
             return False
@@ -867,7 +923,16 @@ class StringVersionValidator:
 
         # Use AST-based validation on the raw content (always runs)
         try:
-            self._validate_yaml_content_ast(content, yaml_path, file_errors)
+            registry_string_version = self._is_canonical_antipattern_registry(
+                yaml_path,
+                parsed_yaml,
+            )
+            self._validate_yaml_content_ast(
+                content,
+                yaml_path,
+                file_errors,
+                registry_string_version=registry_string_version,
+            )
         except Exception as e:
             self.errors.append(f"{yaml_path}: Error during AST validation - {e}")
             return False
@@ -875,7 +940,11 @@ class StringVersionValidator:
         # Also validate the parsed structure if we have it
         if yaml_data:
             try:
-                self._validate_parsed_yaml(yaml_data, file_errors)
+                self._validate_parsed_yaml(
+                    yaml_data,
+                    file_errors,
+                    registry_string_version=registry_string_version,
+                )
             except Exception as e:
                 self.errors.append(
                     f"{yaml_path}: Error during parsed YAML validation - {e}"
@@ -893,6 +962,8 @@ class StringVersionValidator:
         content: str,
         yaml_path: Path,
         errors: list[str],
+        *,
+        registry_string_version: bool,
     ) -> None:
         """Use AST-like parsing to detect string versions in YAML content."""
         lines = content.splitlines()
@@ -923,6 +994,12 @@ class StringVersionValidator:
                         # Remove quotes and check if it's a version string
                         clean_value = value_part.strip().strip("\"'")
 
+                        if (
+                            registry_string_version
+                            and field_name == "version"
+                            and line == line.lstrip()
+                        ):
+                            continue
                         if self._is_semantic_version_ast(clean_value):
                             errors.append(
                                 f"Line {line_num}: Field '{field_name}' uses string version '{clean_value}' - "
@@ -933,6 +1010,8 @@ class StringVersionValidator:
         self,
         yaml_data: dict[str, Any],
         errors: list[str],
+        *,
+        registry_string_version: bool,
     ) -> None:
         """Validate the parsed YAML structure for string versions."""
         version_fields = [
@@ -947,20 +1026,31 @@ class StringVersionValidator:
         for field in version_fields:
             if field in yaml_data:
                 value = yaml_data[field]
-                if isinstance(value, str) and self._is_semantic_version_ast(value):
+                if (
+                    isinstance(value, str)
+                    and self._is_semantic_version_ast(value)
+                    and not (registry_string_version and field == "version")
+                ):
                     errors.append(
                         f"Field '{field}' uses string version '{value}' - "
                         f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
                     )
 
         # Check nested version fields
-        self._check_nested_versions(yaml_data, errors, [])
+        self._check_nested_versions(
+            yaml_data,
+            errors,
+            [],
+            registry_string_version=registry_string_version,
+        )
 
     def _check_nested_versions(
         self,
         data: Any,
         errors: list[str],
         path: list[str],
+        *,
+        registry_string_version: bool,
     ) -> None:
         """Recursively check for version strings in nested structures."""
         if isinstance(data, dict):
@@ -969,7 +1059,13 @@ class StringVersionValidator:
 
                 # If the key suggests it's a version field
                 if any(version_word in key.lower() for version_word in ["version"]):
-                    if isinstance(value, str) and self._is_semantic_version_ast(value):
+                    if (
+                        isinstance(value, str)
+                        and self._is_semantic_version_ast(value)
+                        and not (
+                            registry_string_version and not path and key == "version"
+                        )
+                    ):
                         path_str = ".".join(current_path)
                         errors.append(
                             f"Field '{path_str}' uses string version '{value}' - "
@@ -977,12 +1073,22 @@ class StringVersionValidator:
                         )
 
                 # Recurse into nested structures
-                self._check_nested_versions(value, errors, current_path)
+                self._check_nested_versions(
+                    value,
+                    errors,
+                    current_path,
+                    registry_string_version=registry_string_version,
+                )
 
         elif isinstance(data, list):
             for i, item in enumerate(data):
                 current_path = path + [f"[{i}]"]
-                self._check_nested_versions(item, errors, current_path)
+                self._check_nested_versions(
+                    item,
+                    errors,
+                    current_path,
+                    registry_string_version=registry_string_version,
+                )
 
     def _is_semantic_version_ast(self, value: str) -> bool:
         """

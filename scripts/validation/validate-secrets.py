@@ -27,64 +27,26 @@ import ast
 import os
 import re
 import sys
+import tokenize
+from io import StringIO
 from pathlib import Path
 from typing import Final, NamedTuple
 
 
 class BypassChecker:
-    """Unified bypass comment detection for security validators.
-
-    Provides consistent bypass checking across all security validation tools.
-    Supports both file-level bypasses (anywhere in file) and line-level
-    bypasses (inline with specific violations).
-    """
+    """Parse a rule-local suppression comment without granting file-wide bypasses."""
 
     @staticmethod
-    def check_line_bypass(line: str, bypass_patterns: list[str]) -> bool:
-        """Check if a specific line has an inline bypass comment.
-
-        Args:
-            line: The line of code to check
-            bypass_patterns: List of bypass marker patterns to search for
-
-        Returns:
-            True if line contains any bypass pattern, False otherwise
-
-        Example:
-            >>> BypassChecker.check_line_bypass(
-            ...     'password = "test"  # secret-ok: test fixture',
-            ...     ["secret-ok:", "nosec"]
-            ... )
-            True
-        """
-        return any(pattern in line for pattern in bypass_patterns)
-
-    @staticmethod
-    def check_file_bypass(
-        content_lines: list[str], bypass_patterns: list[str], max_lines: int = 10
-    ) -> bool:
-        """Check if file has a bypass comment in the header.
-
-        Args:
-            content_lines: Lines of the file to check
-            bypass_patterns: List of bypass marker patterns to search for
-            max_lines: Maximum number of lines to check from file start (default: 10)
-
-        Returns:
-            True if file header contains any bypass pattern, False otherwise
-
-        Example:
-            >>> lines = ["# secret-ok: test file", "password = 'test'"]
-            >>> BypassChecker.check_file_bypass(lines, ["secret-ok:"])
-            True
-        """
-        # Check first N lines for bypass comment
-        for line in content_lines[:max_lines]:
-            stripped = line.strip()
-            if stripped.startswith("#"):
-                if any(pattern in line for pattern in bypass_patterns):
-                    return True
-        return False
+    def check_line_bypass(line: str, suppression_token: str) -> bool:
+        """Allow only an explicit marker in the comment on the reported line."""
+        try:
+            tokens = tokenize.generate_tokens(StringIO(line).readline)
+            return any(
+                token.type == tokenize.COMMENT and suppression_token in token.string
+                for token in tokens
+            )
+        except tokenize.TokenError:
+            return False
 
     @staticmethod
     def extract_bypass_reason(line: str) -> str:
@@ -122,14 +84,8 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks
 VALIDATION_TIMEOUT = 600  # 10 minutes
 
 
-# Bypass patterns for allowing intentional hardcoded secrets (e.g., test fixtures)
-BYPASS_PATTERNS: Final[list[str]] = [
-    "secret-ok:",
-    "password-ok:",
-    "hardcoded-ok:",
-    "nosec",  # Common security scanner bypass
-    "noqa: secrets",  # Another common bypass pattern
-]
+# A line-local fixture marker. It is intentionally private to this detector.
+_SUPPRESSION_TOKEN: Final[str] = "secret-ok:"
 
 # Pre-compiled regex patterns for performance (compiled once at module load)
 # Typical performance improvement: 2-5x faster for repeated pattern matching
@@ -319,7 +275,7 @@ class PythonSecretValidator(ast.NodeVisitor):
             return False
 
         line = self.file_lines[line_number - 1]
-        is_bypass = BypassChecker.check_line_bypass(line, BYPASS_PATTERNS)
+        is_bypass = BypassChecker.check_line_bypass(line, _SUPPRESSION_TOKEN)
 
         if is_bypass:
             reason = BypassChecker.extract_bypass_reason(line)
@@ -386,7 +342,12 @@ class PythonSecretValidator(ast.NodeVisitor):
         if isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
             # Ignore empty strings and placeholder patterns
             value = value_node.value
-            if not value or value in ["", "YOUR_KEY_HERE", "CHANGEME", "TODO"]:
+            if not value or value in [
+                "",
+                "YOUR_KEY_HERE",
+                "CHANGEME",
+                "TODO",  # onex-allow-todo-marker OMN-17522 detector sentinel
+            ]:  # onex-allow-todo-marker OMN-17522 detector sentinel
                 return False
             # Ignore very short strings (< 3 chars) - likely not real secrets
             if len(value) < 3:
@@ -490,10 +451,6 @@ class SecretValidator:
         if not content.strip():
             return True
 
-        # Check for bypass comments
-        if self._has_bypass_comment(content_lines):
-            return True
-
         self.checked_files += 1
 
         # AST-based validation for hardcoded secrets
@@ -515,13 +472,6 @@ class SecretValidator:
             print(f"Warning: Error during AST validation of {python_path}: {e}")
 
         return len(ast_validator.violations) == 0
-
-    def _has_bypass_comment(self, content_lines: list[str]) -> bool:
-        """Check if file has a bypass comment at the top.
-
-        Uses BypassChecker for consistent bypass detection across validators.
-        """
-        return BypassChecker.check_file_bypass(content_lines, BYPASS_PATTERNS)
 
     def print_results(self) -> None:
         """Print validation results."""

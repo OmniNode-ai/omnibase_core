@@ -34,14 +34,26 @@ from pathlib import Path
 from omnibase_core.validation.validator_receipt_gate import check_evidence_source_shape
 
 
+def _optional_string_argument(args: argparse.Namespace, name: str) -> str | None:
+    """Read an optional parser argument without leaking ``Any`` past the CLI boundary."""
+    value = getattr(args, name, None)
+    if value is None or isinstance(value, str):
+        return value
+    raise TypeError(  # error-ok: argparse namespace type validation at CLI boundary
+        f"parser argument {name!r} must be a string or None"
+    )
+
+
 def _resolve_pr_body(args: argparse.Namespace) -> str | None:
     """Return the PR body from the highest-precedence provided source, else None."""
-    if args.pr_body is not None:
-        return args.pr_body
-    if args.pr_body_file is not None:
-        if args.pr_body_file == "-":
+    pr_body = _optional_string_argument(args, "pr_body")
+    if pr_body is not None:
+        return pr_body
+    pr_body_file = _optional_string_argument(args, "pr_body_file")
+    if pr_body_file is not None:
+        if pr_body_file == "-":
             return sys.stdin.read()
-        return Path(args.pr_body_file).read_text(encoding="utf-8")
+        return Path(pr_body_file).read_text(encoding="utf-8")
     return None
 
 

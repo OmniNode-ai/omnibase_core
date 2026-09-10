@@ -36,18 +36,18 @@ from omnibase_core.validation.validator_local_paths import (
 # ValidatorLocalPaths per-line logic, so the corpus cannot drift from the ground
 # truth. Mirrors the G1 acceptance corpus used during generation.
 _VIOLATION_LINES: tuple[str, ...] = (
-    '"/Users/alice/Code/project"  # comment',  # test-literal-ok: corpus violation fixture
-    'Path("/Volumes/DISK/Code/worktrees")',  # test-literal-ok: corpus violation fixture
-    'CACHE = "/home/runner/.cache/onex"',  # test-literal-ok: corpus violation fixture
-    r'WIN = "C:\Users\bob\Documents"',  # test-literal-ok: corpus violation fixture
-    'WIN = "c:/Users/bob/Documents"',  # test-literal-ok: corpus violation fixture
-    'subprocess.run(["cp", "/Users/dev/file", "d"])',  # test-literal-ok: corpus violation fixture
-    'import os\nB = "/Users/ci/workspace/repo"\n',  # test-literal-ok: corpus violation fixture (2nd line)
+    '"/Users/alice/Code/project"  # comment',  # local-path-ok: test fixture supplies a violation to the scanner
+    'Path("/Volumes/DISK/Code/worktrees")',  # local-path-ok: test fixture supplies a violation to the scanner
+    'CACHE = "/home/runner/.cache/onex"',  # local-path-ok: test fixture supplies a violation to the scanner
+    r'WIN = "C:\Users\bob\Documents"',  # local-path-ok: test fixture supplies a violation to the scanner
+    'WIN = "c:/Users/bob/Documents"',  # local-path-ok: test fixture supplies a violation to the scanner
+    'subprocess.run(["cp", "/Users/dev/file", "d"])',  # local-path-ok: test fixture supplies a violation to the scanner
+    'import os\nB = "/Users/ci/workspace/repo"\n',  # local-path-ok: test fixture supplies a violation to the scanner
 )
 _CLEAN_LINES: tuple[str, ...] = (
     'CONFIG = Path(__file__).parent / "c.yaml"',
     'ROOT = Path(os.environ["OMNI_HOME"])',
-    'D = "/Users/jonah/Code/omni_home"  # local-path-ok',  # test-literal-ok: suppressed
+    'D = "/Users/jonah/Code/omni_home"  # local-path-ok',  # local-path-ok: test fixture verifies suppression
     '"/node_modules/some/pkg/index.js"',
     'BREW = "/usr/local/bin/python3.13"',  # test-literal-ok: near-miss, must stay clean
     'HOST = "/homelab/data/cache"',  # test-literal-ok: near-miss, must stay clean
@@ -108,17 +108,23 @@ def test_equivalence_with_ground_truth(source: str) -> None:
 @pytest.mark.unit
 def test_findings_are_stably_ordered() -> None:
     # two violations on two lines -> findings in (line, column) order
-    src = '"/Users/a/x/"\n"/Volumes/D/y/"'  # test-literal-ok: ordering fixture
+    src = '"/Users/a/x/"\n"/Volumes/D/y/"'  # local-path-ok: test fixture supplies ordered violations
     findings = scan_source(src).findings
     assert [f.line for f in findings] == [1, 2]
 
 
 @pytest.mark.unit
 def test_suppression_marker_suppresses_line() -> None:
-    src = (
-        'X = "/Users/jonah/x/"  # local-path-ok'  # test-literal-ok: suppression fixture
-    )
+    src = 'X = "/Users/jonah/x/"  # local-path-ok'  # local-path-ok: test fixture verifies suppression
     assert scan_source(src).flagged is False
+
+
+@pytest.mark.unit
+def test_marker_inside_path_literal_does_not_suppress_finding() -> None:
+    src = 'PATH = "/Users/alice/project# local-path-ok"\n'  # local-path-ok: test fixture verifies marker text inside a literal
+    result = scan_source(src, path="t.py")
+    assert result.flagged is True
+    assert len(result.findings) == 1
 
 
 @pytest.mark.unit
@@ -127,7 +133,7 @@ async def test_handler_returns_compute_result_over_envelope() -> None:
     handler = HandlerLocalPathsCompute()
     envelope: ModelEventEnvelope[ModelLocalPathScanInput] = ModelEventEnvelope(
         payload=ModelLocalPathScanInput(
-            content='X = "/Users/jonah/x/"',  # test-literal-ok: handler fixture
+            content='X = "/Users/jonah/x/"',  # local-path-ok: test fixture supplies a violation to the handler
             path="t.py",
         )
     )
@@ -154,7 +160,7 @@ async def test_runner_dispatches_over_in_memory_bus() -> None:
         results = await runner.scan_inputs(
             [
                 ModelLocalPathScanInput(
-                    content='X = "/Users/jonah/x/"',  # test-literal-ok: bus fixture
+                    content='X = "/Users/jonah/x/"',  # local-path-ok: test fixture supplies a violation to the bus runner
                     path="v.py",
                 ),
                 ModelLocalPathScanInput(content="X = 1", path="c.py"),
@@ -166,3 +172,30 @@ async def test_runner_dispatches_over_in_memory_bus() -> None:
     by_path = {r.path: r for r in results}
     assert by_path["v.py"].flagged is True
     assert by_path["c.py"].flagged is False
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_runner_does_not_suppress_marker_inside_path_literal() -> None:
+    from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+    from omnibase_core.validation.local_paths.runtime_local_paths import (
+        LocalPathsBusRunner,
+    )
+
+    bus = EventBusInmemory()
+    await bus.start()
+    try:
+        results = await LocalPathsBusRunner(
+            bus
+        ).scan_inputs(
+            [
+                ModelLocalPathScanInput(
+                    content='PATH = "/Users/alice/project# local-path-ok"\n',  # local-path-ok: test fixture verifies marker text inside a literal
+                    path="literal.py",
+                )
+            ]
+        )
+    finally:
+        await bus.shutdown()
+
+    assert results[0].flagged is True

@@ -69,9 +69,7 @@ class ManifestObserver:
         Added as part of Manifest Generation & Observability (OMN-1113)
     """
 
-    CONTEXT_KEY = (
-        "__omnibase_manifest_generator__"  # env-var-ok: internal context key constant
-    )
+    CONTEXT_KEY = "__omnibase_manifest_generator__"  # env-var-ok: internal key
     """Key used to store the generator in pipeline context data.
 
     Uses dunder naming convention to minimize collision risk with user keys.

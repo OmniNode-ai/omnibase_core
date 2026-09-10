@@ -28,55 +28,26 @@ import ast
 import os
 import re
 import sys
+import tokenize
+from io import StringIO
 from pathlib import Path
 from typing import Final, NamedTuple
 
 
 class BypassChecker:
-    """Unified bypass comment detection for security validators.
-
-    Provides consistent bypass checking across all security validation tools.
-    Supports both file-level bypasses (anywhere in file) and line-level
-    bypasses (inline with specific violations).
-    """
+    """Parse a rule-local suppression comment without granting file-wide bypasses."""
 
     @staticmethod
-    def check_line_bypass(line: str, bypass_patterns: list[str]) -> bool:
-        """Check if a specific line has an inline bypass comment.
-
-        Args:
-            line: The line of code to check
-            bypass_patterns: List of bypass marker patterns to search for
-
-        Returns:
-            True if line contains any bypass pattern, False otherwise
-
-        Example:
-            >>> BypassChecker.check_line_bypass(
-            ...     'DATABASE_URL = "test"  # env-var-ok: test constant',
-            ...     ["env-var-ok:"]
-            ... )
-            True
-        """
-        return any(pattern in line for pattern in bypass_patterns)
-
-    @staticmethod
-    def check_file_bypass(content: str, bypass_patterns: list[str]) -> bool:
-        """Check if file has a bypass comment anywhere.
-
-        Args:
-            content: File content to check
-            bypass_patterns: List of bypass marker patterns to search for
-
-        Returns:
-            True if file contains any bypass pattern, False otherwise
-
-        Example:
-            >>> content = "# env-var-ok: test file\nDATABASE_URL = 'test'"
-            >>> BypassChecker.check_file_bypass(content, ["env-var-ok:"])
-            True
-        """
-        return any(pattern in content for pattern in bypass_patterns)
+    def check_line_bypass(line: str, suppression_token: str) -> bool:
+        """Allow only an explicit marker in the comment on the reported line."""
+        try:
+            tokens = tokenize.generate_tokens(StringIO(line).readline)
+            return any(
+                token.type == tokenize.COMMENT and suppression_token in token.string
+                for token in tokens
+            )
+        except tokenize.TokenError:
+            return False
 
     @staticmethod
     def extract_bypass_reason(line: str) -> str:
@@ -113,10 +84,8 @@ class EnvVarViolation(NamedTuple):
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks
 
 
-# Bypass patterns for allowing intentional hardcoded environment variables
-BYPASS_PATTERNS: Final[list[str]] = [
-    "env-var-ok:",
-]
+# A line-local fixture marker. It is intentionally private to this detector.
+_SUPPRESSION_TOKEN: Final[str] = "env-var-ok:"
 
 # Pre-compiled regex pattern for performance (compiled once at module load)
 # Typical performance improvement: 2-5x faster for repeated pattern matching
@@ -129,8 +98,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 class PythonEnvVarValidator(ast.NodeVisitor):
     """AST visitor to validate environment variables are not hardcoded."""
 
-    def __init__(self, file_path: str):
+    def __init__(self, file_path: str, file_lines: list[str] | None = None):
         self.file_path = file_path
+        self.file_lines = file_lines or []
         self.violations: list[EnvVarViolation] = []
         self.class_stack: list[
             ast.ClassDef
@@ -299,6 +269,9 @@ class PythonEnvVarValidator(ast.NodeVisitor):
         if var_name in self.exceptions:
             return
 
+        if self._has_inline_bypass(line_number):
+            return
+
         # Check if value is hardcoded (not from environment)
         if self._is_hardcoded_value(value_node):
             value_repr = self._get_value_repr(value_node)
@@ -317,6 +290,18 @@ class PythonEnvVarValidator(ast.NodeVisitor):
                     suggestion=suggestion,
                 )
             )
+
+    def _has_inline_bypass(self, line_number: int) -> bool:
+        """Return whether this exact finding line has the rule-local marker."""
+        if not 1 <= line_number <= len(self.file_lines):
+            return False
+        line = self.file_lines[line_number - 1]
+        if not BypassChecker.check_line_bypass(line, _SUPPRESSION_TOKEN):
+            return False
+        self.bypass_usage.append(
+            (self.file_path, line_number, BypassChecker.extract_bypass_reason(line))
+        )
+        return True
 
     def _is_in_enum_class(self) -> bool:
         """Check if we're currently inside an Enum class definition."""
@@ -489,21 +474,10 @@ class HardcodedEnvVarValidator:
         if not content.strip():
             return True
 
-        # Check for bypass comments using BypassChecker
-        if BypassChecker.check_file_bypass(content, BYPASS_PATTERNS):
-            # Track file-level bypass
-            reason = "# env-var-ok: (file-level bypass)"
-            for line_num, line in enumerate(content.split("\n"), 1):
-                if any(pattern in line for pattern in BYPASS_PATTERNS):
-                    reason = BypassChecker.extract_bypass_reason(line)
-                    self.bypass_usage.append((str(python_path), line_num, reason))
-                    break
-            return True
-
         self.checked_files += 1
 
         # AST-based validation for hardcoded environment variables
-        ast_validator = PythonEnvVarValidator(str(python_path))
+        ast_validator = PythonEnvVarValidator(str(python_path), content.splitlines())
         try:
             tree = ast.parse(content, filename=str(python_path))
             ast_validator.visit(tree)

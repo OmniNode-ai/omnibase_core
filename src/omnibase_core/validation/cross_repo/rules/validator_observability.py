@@ -139,7 +139,7 @@ class RuleObservability:
         """
         # Compute repo-relative path for stable fingerprints across environments.
         # Using relative paths ensures fingerprints are consistent regardless of
-        # where the repository is checked out (e.g., /home/user/repo vs /tmp/repo).
+        # where the repository is checked out (e.g., Path.home() / "repo" vs a temp checkout).
         # Uses safe helper to handle ValueError when file is not under root_directory.
         relative_path = get_relative_path_safe(file_path, root_directory)
 

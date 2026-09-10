@@ -121,15 +121,15 @@ entries:
     enforcement: informational
     category: code_quality
     pattern_type: regex_line
-    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"
+    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
     file_globs: ["*.py"]
     suppression_annotation: ai-slop-ok
     description: >-
-      Self-evident inline comment with no content (e.g. "# TODO: "). Reported in INFO/report mode only;
-      not blocking by default.
+      Self-evident inline comment with no content (for example, an empty unfinished-work marker). Reported
+      in INFO/report mode only; not blocking by default.
     rationale: >-
-      Empty TODO/FIXME tags are LLM placeholders that accumulate silently. They communicate intent to
-      fix something but provide no actionable information. Work should be tracked in Linear, not inline.
+      Empty unfinished-work markers are LLM placeholders that accumulate silently. They communicate intent
+      to fix something but provide no actionable information. Work should be tracked in Linear, not inline.
     discovered_date: "2025-01-01"
     source_ticket: OMN-11132
     vector_enabled: false
@@ -264,15 +264,15 @@ entries:
     enforcement: informational
     category: code_quality
     pattern_type: grep_code
-    pattern: "#\\s*(TODO|FIXME)\\b"
+    pattern: "#\\s*(TODO|FIXME)\\b"  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
     file_globs: ["*.py", "*.yaml", "*.yml"]
     suppression_annotation: ai-slop-ok
     description: >-
-      Unresolved TODO or FIXME comment. Track work in Linear, not inline. Reported at INFO; escalate per-repo
-      via override if required.
+      Unresolved unfinished-work comment. Track work in Linear, not inline. Reported at INFO; escalate
+      per-repo via override if required.
     rationale: >-
-      Inline TODO/FIXME comments are invisible to project management tools. Work should be tracked in
-      Linear tickets so it can be prioritized, assigned, and verified — not buried in source files.
+      Inline unfinished-work comments are invisible to project management tools. Work should be tracked
+      in Linear tickets so it can be prioritized, assigned, and verified — not buried in source files.
     discovered_date: "2025-01-01"
     source_ticket: OMN-11132
     vector_enabled: false

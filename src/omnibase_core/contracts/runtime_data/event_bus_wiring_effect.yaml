@@ -224,7 +224,7 @@ health_check:
 # These handlers are implemented by the NodeEventBusWiringEffect class or provided by the
 # runtime's built-in subscription handler executor. See docs/architecture/SUBSCRIPTION_HANDLERS.md.
 #
-# TODO: Implement subscription handler registration in the runtime:
+# TODO: Implement subscription handler registration in the runtime:  # onex-allow-todo-marker OMN-18148 reason="ticketed Core registry and contract-validation work"
 #   1. Create SubscriptionHandlerRegistry to map handler names to implementations
 #   2. Implement wire_all_subscriptions in NodeEventBusWiringEffect or runtime executor
 #   3. Implement wire_single_subscription for hot-reload support

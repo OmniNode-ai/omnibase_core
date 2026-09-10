@@ -11,7 +11,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from omnibase_core.cli.cli_hooks import hooks_group
+from omnibase_core.cli.cli_hooks import _write_mask, hooks_group
 from omnibase_core.enums.enum_hook_bit import _DEFAULT_MASK, EnumHookBit
 
 pytestmark = pytest.mark.unit
@@ -304,3 +304,22 @@ class TestEnvFileCreation:
         assert env_path.exists()
         mask = _mask_from_env(env_path)
         assert mask is not None
+
+
+def test_write_mask_preserves_primary_replace_error_when_cleanup_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cleanup failure must not replace the atomic write failure."""
+    env_path = tmp_path / ".env"
+
+    def fail_replace(_source: Path, _destination: Path) -> Path:
+        raise RuntimeError("replace failed")
+
+    def fail_unlink(_self: Path, *, missing_ok: bool = False) -> None:
+        raise OSError("cleanup failed")
+
+    monkeypatch.setattr(Path, "replace", fail_replace)
+    monkeypatch.setattr(Path, "unlink", fail_unlink)
+
+    with pytest.raises(RuntimeError, match="replace failed"):
+        _write_mask(env_path, 0)

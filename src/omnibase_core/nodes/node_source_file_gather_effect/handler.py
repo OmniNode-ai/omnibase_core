@@ -26,10 +26,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pathspec
-import yaml
-from pydantic import ValidationError
 
 from omnibase_core.enums.enum_ignore_pattern_source import EnumTraversalMode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.core.model_onex_ignore import ModelOnexIgnore
 from omnibase_core.models.nodes.source_file_gather.model_gathered_source_file import (
     ModelGatheredSourceFile,
@@ -42,6 +41,9 @@ from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_inpu
 )
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_output import (
     ModelSourceFileGatherOutput,
+)
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_document,
 )
 
 __all__ = ["NodeSourceFileGatherEffect"]
@@ -179,15 +181,13 @@ class NodeSourceFileGatherEffect:
             if onexignore.exists():
                 onexignore_model: ModelOnexIgnore | None
                 try:
-                    content = onexignore.read_text(encoding="utf-8")
-                    raw = yaml.safe_load(content) or {}
-                    onexignore_model = ModelOnexIgnore.model_validate(raw)
+                    onexignore_model = load_typed_yaml_document(
+                        onexignore, ModelOnexIgnore
+                    )
                 except (
                     OSError,
-                    TypeError,
-                    ValueError,
-                    ValidationError,
-                    yaml.YAMLError,
+                    UnicodeDecodeError,
+                    ModelOnexError,
                 ):
                     onexignore_model = None  # fallback-ok: unreadable/invalid .onexignore contributes no patterns
                 if onexignore_model is not None:

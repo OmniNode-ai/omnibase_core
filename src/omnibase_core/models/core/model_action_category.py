@@ -93,7 +93,4 @@ class ModelActionCategory(BaseModel):
         return list(cls._registry.values())
 
 
-try:
-    ModelActionCategory.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
-    pass
+ModelActionCategory.model_rebuild()

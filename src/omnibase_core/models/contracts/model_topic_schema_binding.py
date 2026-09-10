@@ -61,7 +61,7 @@ def parse_canonical_topic(topic: str) -> ModelCanonicalTopic:
     """
     match = _CANONICAL_TOPIC_RE.match(topic)
     if match is None:
-        raise ValueError(
+        raise ValueError(  # error-ok: public canonical-topic parser input contract
             f"Topic {topic!r} does not match canonical ONEX format "
             "onex.<kind>.<service>.<event>[.<event>...].v<N>"
         )
@@ -89,11 +89,13 @@ def build_versioned_topic(
         ValueError: on invalid kind, version, or segment characters.
     """
     if kind not in ("cmd", "evt", "dlq", "snapshot", "intent"):
-        raise ValueError(
+        raise ValueError(  # error-ok: public topic-builder input contract
             f"Invalid topic kind {kind!r}; expected cmd|evt|dlq|snapshot|intent"
         )
     if version < 1:
-        raise ValueError(f"Topic version must be >= 1, got {version}")
+        raise ValueError(  # error-ok: public topic-builder input contract
+            f"Topic version must be >= 1, got {version}"
+        )
     topic = f"onex.{kind}.{service}.{event}.v{version}"
     # Validate by round-tripping through the canonical parser.
     parse_canonical_topic(topic)

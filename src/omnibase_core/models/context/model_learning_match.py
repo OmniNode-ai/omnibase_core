@@ -17,10 +17,8 @@ class ModelLearningMatch(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    learning_id: str = (
-        Field(  # string-id-ok: external memory-system identifier, not an internal UUID
-            description="Stable identifier for this learning"
-        )
+    learning_id: str = (  # string-id-ok: external memory-system identifier, not an internal UUID
+        Field(description="Stable identifier for this learning")
     )
     summary: str = Field(description="One-to-two sentence learning summary")
     relevance_score: float = Field(

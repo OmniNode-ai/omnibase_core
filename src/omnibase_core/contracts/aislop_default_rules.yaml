@@ -23,9 +23,9 @@
 #     - name: my_custom_rule
 #       severity: WARNING
 #       pattern_type: regex_line
-#       pattern: "TODO\\(omn-"
+#       pattern: "TODO\\(omn-"  # onex-allow-todo-marker OMN-18142 reason="commented detector grammar"
 #       file_globs: ["*.py"]
-#       description: "Unresolved inline TODO with ticket reference"
+#       description: "Unresolved inline TODO with ticket reference"  # onex-allow-todo-marker OMN-18142 reason="commented detector example"
 
 rules:
   # ── Docstring rules (AST-based) ─────────────────────────────────────────────
@@ -89,12 +89,12 @@ rules:
     severity: INFO
     enabled: true
     pattern_type: regex_line
-    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"
+    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
     file_globs: ["*.py"]
     suppression_annotation: ai-slop-ok
     description: >-
-      Self-evident inline comment with no content (e.g. "# TODO: "). Reported in INFO/report mode only;
-      not blocking by default. #magic___^_^___line
+      Self-evident inline comment with no content (for example, an empty unfinished-work marker). Reported
+      in INFO/report mode only; not blocking by default. #magic___^_^___line
   # ── Code hygiene rules (from NodeAislopSweep) ───────────────────────────────
 
   - name: hardcoded_ip
@@ -169,9 +169,9 @@ rules:
     severity: INFO
     enabled: true
     pattern_type: grep_code
-    pattern: "#\\s*(TODO|FIXME)\\b"
+    pattern: "#\\s*(TODO|FIXME)\\b"  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
     file_globs: ["*.py", "*.yaml", "*.yml"]
     suppression_annotation: ai-slop-ok
     description: >-
-      Unresolved TODO or FIXME comment. Track work in Linear, not inline. Reported at INFO; escalate per-repo
-      via override if required.
+      Unresolved unfinished-work comment. Track work in Linear, not inline. Reported at INFO; escalate
+      per-repo via override if required.

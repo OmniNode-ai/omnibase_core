@@ -64,9 +64,7 @@ from omnibase_core.models.event_bus.model_consumer_group_scope import (
 )
 
 # Kafka's hard limit on consumer group ID length.
-KAFKA_CONSUMER_GROUP_MAX_LENGTH: Final[int] = (
-    255  # env-var-ok: Kafka wire-protocol limit, not configuration
-)
+KAFKA_CONSUMER_GROUP_MAX_LENGTH: Final[int] = 255  # env-var-ok: protocol limit
 
 # Infix markers. `.__t.` scopes a group to one topic; `.__i.` scopes it to one
 # instance/correlation. Both preserve the leading environment token.

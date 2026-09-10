@@ -33,6 +33,7 @@ class ModelGoldenChainProvenance(BaseModel):
         min_length=1,
         description="Provider the response was recorded from (e.g. zai, gemini, openrouter).",
     )
+    # string-id-ok: concrete provider model identifier, not a UUID
     model_id: str = Field(
         ...,
         min_length=1,
@@ -80,6 +81,7 @@ class ModelGoldenChainProvenance(BaseModel):
         min_length=1,
         description="UTC ISO-8601 timestamp the fixture was recorded.",
     )
+    # string-version-ok: serialized fixture-envelope wire field
     fixture_version: str = Field(
         ..., min_length=1, description="Schema version of the fixture envelope."
     )
@@ -95,7 +97,7 @@ class ModelGoldenChainFixture(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    fixture_version: str = Field(
+    fixture_version: str = Field(  # string-version-ok: serialized fixture-envelope wire field
         ...,
         min_length=1,
         description="Schema version of the fixture envelope (mirrors provenance.fixture_version).",

@@ -36,6 +36,7 @@ class TestModelSweepResult:
         assert result.repos_scanned == ()
         assert result.output_path is None
         assert result.schema_version == "1.0.0"
+        assert result.session_id == "session-001"
 
     def test_all_sweep_types_valid(self) -> None:
         for sweep_type in (

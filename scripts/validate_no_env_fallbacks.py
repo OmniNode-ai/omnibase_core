@@ -28,7 +28,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 _LOCALHOST_VARIANTS = (
     r"(?:localhost|127\.0\.0\.1"
-    r"|http://localhost|https://localhost"
+    r"|http://localhost|https://localhost"  # onex-allow-internal-ip OMN-17524 reason="detector regex"
     r"|bolt://localhost|redis://localhost"
     r"|postgresql://localhost|amqp://localhost"
     r"|http://127\.0\.0\.1|redis://127\.0\.0\.1|postgresql://127\.0\.0\.1)"
@@ -67,7 +67,7 @@ PYTHON_FALLBACK_PATTERNS: list[re.Pattern[str]] = [
 # Shell patterns
 # ---------------------------------------------------------------------------
 SHELL_FALLBACK_PATTERNS: list[re.Pattern[str]] = [
-    # ${VAR:-localhost} or ${VAR:-http://localhost:8080}
+    # ${VAR:-localhost} or ${VAR:-http://localhost:8080}  # onex-allow-internal-ip OMN-17524 reason="detector grammar"
     re.compile(
         rf"""\$\{{[A-Za-z_][A-Za-z0-9_]*:-[^}}]*{_LOCALHOST_VARIANTS}[^}}]*\}}"""
     ),

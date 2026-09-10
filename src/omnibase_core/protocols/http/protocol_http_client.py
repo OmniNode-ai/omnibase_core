@@ -312,7 +312,7 @@ class ProtocolHttpClient(Protocol):
         await session.close()
     """
 
-    # TODO(OMN-5746): Add POST/HEAD/PUT methods if needed for advanced health checks  [NEEDS TICKET]
+    # TODO(OMN-18152): Add POST/HEAD/PUT methods if needed for advanced health checks  # onex-allow-todo-marker OMN-18152 reason="ticketed protocol-surface decision"
     # Current implementation intentionally minimal (YAGNI) - only GET is required.
     # Future use cases might include:
     #   - POST for stateful health checks

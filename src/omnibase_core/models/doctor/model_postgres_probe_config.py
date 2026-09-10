@@ -71,14 +71,14 @@ class ModelPostgresProbeConfig(BaseModel):
         """
         host = expand_contract_env_refs(_HOST_CONTRACT_REF)
         if not host:
-            raise ValueError(
+            raise ValueError(  # error-ok: documented fail-closed overlay boundary
                 "POSTGRES_HOST is not bound by the active overlay; declare it in "
                 "the per-lane overlay so the contract reference "
                 f"{_HOST_CONTRACT_REF!r} resolves to a Postgres host."
             )
         port_str = expand_contract_env_refs(_PORT_CONTRACT_REF)
         if not port_str:
-            raise ValueError(
+            raise ValueError(  # error-ok: documented fail-closed overlay boundary
                 "POSTGRES_PORT is not bound by the active overlay; declare it in "
                 "the per-lane overlay so the contract reference "
                 f"{_PORT_CONTRACT_REF!r} resolves to a Postgres port."
@@ -86,7 +86,7 @@ class ModelPostgresProbeConfig(BaseModel):
         try:
             port = int(port_str)
         except ValueError as exc:
-            raise ValueError(
+            raise ValueError(  # error-ok: documented fail-closed overlay boundary
                 f"POSTGRES_PORT overlay value {port_str!r} is not a valid port integer."
             ) from exc
         return cls(host=host, port=port)

@@ -41,7 +41,7 @@ class ModelPhaseExecutionPlan(BaseModel):
         - ``docs/guides/PIPELINE_HOOK_REGISTRY.md`` for detailed documentation
     """
 
-    # TODO(OMN-5745): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-18151): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.  # onex-allow-todo-marker OMN-18151 reason="ticketed supported-major compatibility review"
     # Workaround for pytest-xdist class identity issues. See model_pipeline_hook.py
     # module docstring for detailed explanation.  [NEEDS TICKET]
     model_config = ConfigDict(

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+from contextlib import suppress
 from pathlib import Path
 
 import yaml
@@ -66,9 +67,12 @@ class ServiceStateDisk:
             os.close(fd)
             closed = True
             Path(tmp_path).rename(path)
-        except BaseException:
+        except (
+            BaseException
+        ):  # fallback-ok: close interrupted writes while preserving the primary failure
             if not closed:
-                os.close(fd)
+                with suppress(OSError):
+                    os.close(fd)
             raise
 
     async def delete(self, node_id: str, scope_id: str = "default") -> bool:

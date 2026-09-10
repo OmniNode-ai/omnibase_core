@@ -99,6 +99,24 @@ class TestContractLoaderWithIncludes:
         assert contract["config"]["nested"]["name"] == "level2"
         assert contract["config"]["nested"]["value"] == 42
 
+    def test_nested_includes_dispose_every_loader(
+        self, fixtures_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Each root and nested PyYAML loader is released after parsing."""
+        disposed_loaders: list[IncludeLoader] = []
+        original_dispose = IncludeLoader.dispose
+
+        def record_dispose(loader: IncludeLoader) -> None:
+            disposed_loaders.append(loader)
+            original_dispose(loader)
+
+        monkeypatch.setattr(IncludeLoader, "dispose", record_dispose)
+
+        contract = load_contract(fixtures_path / "nested_include.yaml")
+
+        assert contract["config"]["nested"]["value"] == 42
+        assert len(disposed_loaders) == 3
+
     def test_empty_include_returns_none(self, fixtures_path: Path) -> None:
         """Test that including an empty file results in None value."""
         contract = load_contract(fixtures_path / "empty_include.yaml")

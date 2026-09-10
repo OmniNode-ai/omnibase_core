@@ -16,6 +16,7 @@ class ModelLlmRouteResolvedEvent(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # string-id-ok: opaque routing decision key; the event contract accepts lexical decision-N values, not UUIDs
     routing_decision_id: str = Field(
         ..., description="Stable identifier for this routing decision."
     )
@@ -23,6 +24,7 @@ class ModelLlmRouteResolvedEvent(BaseModel):
     logical_model_key: str = Field(
         ..., description="Logical model key requested by policy."
     )
+    # string-id-ok: provider/registry model key, not a UUID
     served_model_id: str = Field(
         ..., description="Concrete served model id selected from the registry."
     )
