@@ -26,6 +26,8 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
         envelope_id: Unique envelope identifier (converted to string)
         envelope_timestamp: Envelope creation timestamp (ISO format string)
         correlation_id: Correlation ID for request tracing (converted to string, or None)
+        parent_envelope_id: envelope_id of the causing envelope (converted to
+            string, or None when this hop is a chain head)
         source_tool: Identifier of source tool (or None)
         target_tool: Identifier of target tool (or None)
         event_type: Dot-path routing key (or None)
@@ -48,6 +50,7 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
     envelope_id: str
     envelope_timestamp: str
     correlation_id: str | None
+    parent_envelope_id: str | None
     source_tool: str | None
     target_tool: str | None
     event_type: str | None

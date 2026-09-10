@@ -71,8 +71,12 @@ class TestModelEventEnvelopeInstantiation:
         assert envelope.request_id is None
         assert envelope.trace_id is None
         assert envelope.span_id is None
+        # OMN-18116: absent by default, which is the checkable statement that
+        # this envelope is a chain head rather than a hop with a lost edge.
+        assert envelope.parent_envelope_id is None
         assert envelope.onex_version == ModelSemVer(major=1, minor=0, patch=0)
-        assert envelope.envelope_version == ModelSemVer(major=2, minor=1, patch=0)
+        # 2.1.0 -> 2.2.0 (OMN-18116): the schema gained `parent_envelope_id`.
+        assert envelope.envelope_version == ModelSemVer(major=2, minor=2, patch=0)
 
     def test_instantiation_with_all_fields(self):
         """Test envelope creation with all fields provided."""
