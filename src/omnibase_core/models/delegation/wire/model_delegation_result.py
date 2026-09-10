@@ -35,6 +35,22 @@ class ModelDelegationResult(BaseModel):
         description="Name of the LLM model that produced the response.",
     )
     endpoint_url: str = Field(..., description="URL of the LLM endpoint used.")
+    route: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Selected backend route that produced this terminal result. Paired "
+            "with provider; absent is explicit legacy or pre-backend unknown."
+        ),
+    )
+    provider: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Declared provider identity for the selected route. Never inferred "
+            "from a post-terminal tenant overlay."
+        ),
+    )
     content: str = Field(..., description="The LLM-generated response content.")
     quality_passed: bool = Field(
         ...,
@@ -195,6 +211,19 @@ class ModelDelegationResult(BaseModel):
         if self.total_tokens != expected_total:
             msg = "total_tokens must equal prompt_tokens + completion_tokens"
             raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def validate_receipt_provenance_pair(self) -> Self:
+        """Require terminal route/provider provenance to be complete when present."""
+        if (self.route is None) != (self.provider is None):
+            msg = "route and provider must be provided together"
+            raise ValueError(msg)
+        if self.route is not None:
+            assert self.provider is not None
+            if not self.route.strip() or not self.provider.strip():
+                msg = "route and provider must be nonblank when provided"
+                raise ValueError(msg)
         return self
 
     @model_validator(mode="after")
