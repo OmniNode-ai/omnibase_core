@@ -11,6 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_budget_action import EnumBudgetAction
+from omnibase_core.enums.enum_credential_source import EnumCredentialSource
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     ModelDelegationRequest,
     validate_response_format,
@@ -253,6 +254,22 @@ class ModelInferenceResponseData(BaseModel):
         description=(
             "Declared provider for the route that produced this response. Never "
             "reconstructed from tenant configuration after execution."
+        ),
+    )
+    # OMN-18196: which credential actually served this call, stamped by the
+    # effect boundary from the binding it resolved. This is the ONLY place the
+    # fact exists first-hand; every downstream carrier copies it. A consumer
+    # must never re-derive it from ``model_used``, ``route``, ``provider`` or a
+    # tier name -- the same model is reachable on a customer key and on a house
+    # credential, which is exactly why the field exists. ``None`` is a response
+    # emitted before this field existed, NOT a call that ran without a
+    # credential; that case is ``EnumCredentialSource.NONE``.
+    credential_source: EnumCredentialSource | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Credential class the effect boundary resolved for this call. "
+            "Absent is explicit legacy provenance, not an absent credential."
         ),
     )
     # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
