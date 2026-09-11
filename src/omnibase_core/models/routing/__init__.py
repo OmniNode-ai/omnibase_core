@@ -63,6 +63,8 @@ from omnibase_core.models.routing.model_routing_policy import (
     ModelCiOverridePolicy,
     ModelRoutingPolicy,
 )
+from omnibase_core.models.routing.model_served_model_name import ModelServedModelName
+from omnibase_core.models.routing.model_served_model_ref import ModelServedModelRef
 from omnibase_core.models.routing.model_tier_attempt import ModelTierAttempt
 from omnibase_core.models.routing.model_tiered_resolution_config import (
     ModelTieredResolutionConfig,
@@ -86,6 +88,8 @@ __all__ = [
     "ModelHopConstraints",
     "ModelLlmRouteRejectedEvent",
     "ModelLlmRouteResolvedEvent",
+    "ModelServedModelRef",
+    "ModelServedModelName",
     "ModelPolicyBundle",
     "ModelRedactionPolicy",
     "ModelResolutionEvent",
