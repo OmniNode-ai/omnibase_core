@@ -276,9 +276,12 @@ jobs:
             if [ "$occ_state" = "MERGED" ]; then
               occ_sha="$(printf '%s' "$occ_json" | jq -r '.mergeCommit.oid // ""' 2>/dev/null || true)"
               occ_source_kind="merged"
-            else
+            elif [ "$occ_state" = "OPEN" ]; then
               occ_sha="$(printf '%s' "$occ_json" | jq -r '.headRefOid // ""' 2>/dev/null || true)"
               occ_source_kind="open-pr"
+            else
+              echo "::error::RECEIPT GATE FAILED: OCC PR #${occ_pr_num} is ${occ_state:-unavailable}; Evidence-Source OCC# references require OPEN or MERGED."
+              exit 1
             fi
             if [ -z "$occ_sha" ]; then
               echo "::error::RECEIPT GATE FAILED: OCC PR #${occ_pr_num} could not be resolved — OCC unavailable or PR not found. Cannot verify evidence (OMN-10419 invariant I8)."

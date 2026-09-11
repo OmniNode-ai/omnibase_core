@@ -555,21 +555,25 @@ class TestContractComplianceFailClosed:
         for event in ("pull_request", "merge_group", "push"):
             assert f"github.event_name == '{event}'" in condition, condition
 
-    def test_empty_pr_number_branch_fails_closed_not_open(self) -> None:
-        text = CI_YML.read_text(encoding="utf-8")
-        marker = 'if [ -z "${PR_NUMBER:-}" ]; then'
-        idx = text.index(marker)
-        # OMN-16346: bound the branch by its own terminator only. This used to
-        # slice a fixed `text[idx : idx + 400]` window first, which silently
-        # made the pin depend on how many COMMENT characters happen to sit
-        # between the `if` and the `exit 1` -- adding an explanatory comment
-        # inside the branch pushed `exit 1` past offset 400 and failed this
-        # test while the fail-closed property it guards was fully intact. The
-        # `\n          fi` split already bounds the branch exactly, so the
-        # character cap was never load-bearing, only brittle.
-        branch = text[idx:].split("\n          fi", 1)[0]
-        assert "exit 1" in branch, branch
-        assert "exit 0" not in branch, branch
+    def test_pr_resolution_is_delegated_to_the_fail_closed_evidence_resolver(
+        self,
+    ) -> None:
+        """The resolver owns push/merge-group PR admission after OMN-18157."""
+        workflow = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
+        steps = workflow["jobs"]["contract-compliance"]["steps"]
+        resolver = next(
+            step
+            for step in steps
+            if step.get("id") == "resolve_contract_compliance_evidence"
+        )
+        assert "resolve_contract_compliance_evidence.py" in resolver["run"]
+        assert '--event-name "${{ github.event_name }}"' in resolver["run"]
+        assert '--commit-sha "${{ github.sha }}"' in resolver["run"]
+        resolver_source = (
+            REPO_ROOT / "scripts/ci/resolve_contract_compliance_evidence.py"
+        ).read_text(encoding="utf-8")
+        assert "No PR number could be resolved" in resolver_source
+        assert "return 1" in resolver_source
 
 
 class TestContractComplianceNameDistinction:
