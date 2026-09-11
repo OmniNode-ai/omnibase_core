@@ -36,6 +36,7 @@ from omnibase_core.cli.cli_demo import (
     _get_scenario_path,
     _is_demo_scenario,
     _load_corpus,
+    _load_demo_yaml_mapping,
     _load_mock_responses,
     _write_markdown_report,
     demo,
@@ -52,6 +53,17 @@ from omnibase_core.models.demo import (
 
 # Mark all tests in this module as unit tests
 pytestmark = pytest.mark.unit
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [("null\n", None), ("{}\n", {})],
+)
+def test_demo_yaml_mapping_preserves_null_distinct_from_empty_mapping(
+    content: str, expected: dict[str, object] | None
+) -> None:
+    """A null demo document is absent; an empty mapping remains present."""
+    assert _load_demo_yaml_mapping(content, source="test:demo.yaml") == expected
 
 
 # =============================================================================

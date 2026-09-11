@@ -41,7 +41,7 @@ Prometheus Usage (when prometheus-client is installed):
         # Create a Prometheus backend
         backend = BackendMetricsPrometheus(
             prefix="myapp",
-            push_gateway_url="http://localhost:9091",  # Optional  # url-authority-ok: local Prometheus example
+            push_gateway_url="http://localhost:9091",  # Optional  # url-authority-ok: local Prometheus example # onex-allow-internal-ip OMN-17524 reason="documentation example"
         )
         backend.record_gauge("memory_usage", 1024.0)
         backend.push()  # Push to gateway if configured

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import pytest
 
+import omnibase_core.utils.util_runtime_ops_verb_loader as verb_loader
 from omnibase_core.validation.runtime_ops_verb_loader import (
     load_runtime_ops_verb_allowlist,
 )
@@ -14,6 +15,22 @@ from omnibase_core.validation.runtime_ops_verb_loader import (
 
 @pytest.mark.unit
 class TestRuntimeOpsVerbLoader:
+    def test_null_allowlist_preserves_public_validation_failure(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A present null governed document cannot be treated as an empty allowlist."""
+        verb_loader.load_runtime_ops_verb_allowlist.cache_clear()
+        monkeypatch.setattr(
+            verb_loader,
+            "load_typed_yaml_content_document",
+            lambda *_args, **_kwargs: None,
+        )
+
+        with pytest.raises(ValueError, match="must declare a non-empty"):
+            verb_loader.load_runtime_ops_verb_allowlist()
+
+        verb_loader.load_runtime_ops_verb_allowlist.cache_clear()
+
     def test_bundled_allowlist_contains_expected_verbs(self) -> None:
         allowlist = load_runtime_ops_verb_allowlist()
         assert allowlist == frozenset(

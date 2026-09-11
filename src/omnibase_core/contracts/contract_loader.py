@@ -74,6 +74,7 @@ See Also:
 
 import time
 from pathlib import Path
+from typing import Protocol, cast
 
 import yaml
 
@@ -90,6 +91,18 @@ DEFAULT_MAX_FILE_SIZE = 1024 * 1024  # 1MB
 
 # Default cache TTL (seconds). None = no expiration.
 DEFAULT_CACHE_TTL_SECONDS: int | None = None
+
+
+class _YamlDisposable(Protocol):
+    """Typed subset of PyYAML's loader cleanup API."""
+
+    def dispose(self) -> None: ...
+
+
+def _dispose_yaml_loader(loader: yaml.SafeLoader) -> None:
+    """Release a PyYAML loader through its untyped third-party boundary."""
+    disposable_loader = cast(_YamlDisposable, loader)
+    disposable_loader.dispose()
 
 
 class ContractLoaderCache:
@@ -567,7 +580,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
             current_depth=loader.current_depth + 1,
         )
         result = nested_loader.get_single_data()
-        nested_loader.dispose()
+        _dispose_yaml_loader(nested_loader)
         return result
     except YAML_PARSING_ERRORS as e:
         # boundary-ok: convert YAML syntax errors to structured ModelOnexError
@@ -701,7 +714,7 @@ def load_contract(
             current_depth=0,
         )
         result = loader.get_single_data()
-        loader.dispose()
+        _dispose_yaml_loader(loader)
 
         if result is None:
             return {}

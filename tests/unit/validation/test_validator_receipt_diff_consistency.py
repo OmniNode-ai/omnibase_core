@@ -17,11 +17,15 @@ normalization, and the CLI.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
 
 from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 from omnibase_core.validation.validator_receipt_diff_consistency import (
+    _load_receipt,
     check_diff_consistency,
     main,
     parse_name_status,
@@ -55,6 +59,17 @@ def _make_receipt(**overrides: object) -> ModelDodReceipt:
     }
     base.update(overrides)
     return ModelDodReceipt.model_validate(base)
+
+
+@pytest.mark.parametrize("content", ["null\n", "{}\n"])
+def test_absent_or_empty_mapping_receipt_is_skipped_as_invalid_receipt(
+    tmp_path: Path, content: str
+) -> None:
+    """Null and an invalid empty mapping remain outside this gate's scope."""
+    receipt_path = tmp_path / "receipt.yaml"
+    receipt_path.write_text(content, encoding="utf-8")
+
+    assert _load_receipt(receipt_path) is None
 
 
 # The #3551 free-text claim, verbatim to the OMN-13917 incident.

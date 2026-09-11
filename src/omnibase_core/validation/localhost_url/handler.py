@@ -40,6 +40,8 @@ loopback/LAN endpoint leaks).
 from __future__ import annotations
 
 import re
+import tokenize
+from io import StringIO
 from typing import Final
 from uuid import UUID
 
@@ -61,10 +63,9 @@ __all__ = ["HandlerLocalhostUrlCompute", "scan_source"]
 # ``(?![\w.-])`` is the precision boundary: it ensures the host is EXACTLY the
 # loopback host and not the prefix of a longer hostname — so
 # ``https://localhost-mirror.example.com`` (host ``localhost-mirror``) and
-# ``https://127.0.0.1.evil.com`` are NOT matched, while ``http://localhost:8000``,
-# ``http://localhost/metrics``, and ``https://127.0.0.1/api`` (and the bare
-# ``http://localhost`` at end of literal) all match. The host is captured in
-# group ``host`` for the finding.
+# ``https://127.0.0.1.evil.com`` are NOT matched, while a loopback URL with a
+# port, path, or no suffix all match. The host is captured in group ``host``
+# for the finding.
 _LOOPBACK_URL: Final[re.Pattern[str]] = re.compile(
     r"https?://(?P<host>localhost|127\.0\.0\.1)(?![\w.-])"
 )
@@ -74,12 +75,17 @@ _LOOPBACK_URL: Final[re.Pattern[str]] = re.compile(
 # validator — both guard loopback / LAN endpoint leaks).
 _SUPPRESSION_MARKER: Final[str] = "onex-allow-internal-ip"
 
-# A file whose content carries this exact marker anywhere is suppressed in full.
-# File-level escape hatch for documentation-heavy source whose subject IS
-# localhost-URL literals (e.g. a runbook documenting local dev endpoints, or this
-# validator's own corpus/provenance docs) — line markers there would pollute
-# rendered docs. Mirrors the private-IP validator's file-level convention.
-_FILE_SUPPRESSION_MARKER: Final[str] = "onex-allow-file-internal-ip"
+
+def _comment_carries_marker(line: str, marker: str) -> bool:
+    """Return whether a rule-local marker occurs in a source comment."""
+    try:
+        tokens = tokenize.generate_tokens(StringIO(line).readline)
+        return any(
+            token.type == tokenize.COMMENT and marker in token.string
+            for token in tokens
+        )
+    except tokenize.TokenError:
+        return False
 
 
 def scan_source(content: str, path: str = "<input>") -> ModelLocalhostUrlScanResult:
@@ -94,13 +100,8 @@ def scan_source(content: str, path: str = "<input>") -> ModelLocalhostUrlScanRes
     of dispatch backend (§1A).
     """
     findings: list[ModelLocalhostUrlFinding] = []
-    # File-level escape hatch: a documentation-heavy source whose subject IS
-    # localhost-URL literals suppresses the whole file with one marker, so the
-    # findings stay deterministic and the rendered docs stay clean.
-    if _FILE_SUPPRESSION_MARKER in content:
-        return ModelLocalhostUrlScanResult(path=path, flagged=False, findings=())
     for lineno, line in enumerate(content.splitlines(), start=1):
-        if _SUPPRESSION_MARKER in line:
+        if _comment_carries_marker(line, _SUPPRESSION_MARKER):
             continue
         for match in _LOOPBACK_URL.finditer(line):
             findings.append(

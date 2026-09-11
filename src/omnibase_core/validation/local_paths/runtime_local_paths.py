@@ -20,8 +20,8 @@ on the result topic; the runner aggregates findings and exits non-zero when any
 file is flagged. The COMPUTE handler itself never touches the filesystem.
 
 Suppression / skip semantics mirror the hand-authored ground truth
-(``validator_local_paths``): a ``# local-path-ok`` line is suppressed inside the
-handler; ``_SKIP_DIRS`` directories and non-text extensions are pruned at the
+(``validator_local_paths``): a source comment carrying ``# local-path-ok`` is
+suppressed inside the handler; ``_SKIP_DIRS`` directories and non-text extensions are pruned at the
 EFFECT boundary so they are never read.
 """
 

@@ -14,6 +14,8 @@ caller boundary (``scripts/ci/test_selection_loader.py`` for the legacy oracle,
 
 from __future__ import annotations
 
+from typing import Protocol, cast
+
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -38,12 +40,30 @@ class _DuplicateKeyRejectingLoader(yaml.SafeLoader):
     """
 
 
+class _YamlObjectConstructor(Protocol):
+    """Typed subset of PyYAML's loader API used at this parse boundary."""
+
+    def construct_object(self, node: yaml.Node, deep: bool = False) -> object: ...
+
+
+def _construct_yaml_object(
+    loader: yaml.SafeLoader, node: yaml.Node, *, deep: bool
+) -> object:
+    """Construct one YAML value through PyYAML's untyped loader boundary.
+
+    PyYAML can return every YAML value shape, so this narrow protocol exposes
+    ``object``. The existing Pydantic model validates the assembled mapping.
+    """
+    constructor = cast(_YamlObjectConstructor, loader)
+    return constructor.construct_object(node, deep=deep)
+
+
 def _construct_mapping_no_duplicates(
     loader: yaml.SafeLoader, node: yaml.MappingNode, deep: bool = False
 ) -> dict[object, object]:
     mapping: dict[object, object] = {}
     for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=True)
+        key = _construct_yaml_object(loader, key_node, deep=True)
         if key in mapping:
             # A yaml SafeLoader mapping constructor must raise a plain exception;
             # ValueError keeps parity with the ModelAdjacencyMap validator errors
@@ -55,7 +75,7 @@ def _construct_mapping_no_duplicates(
                 "last occurrence, which would drop a differing reverse_deps entry "
                 "unnoticed (OMN-14897). Remove the duplicate."
             )
-        mapping[key] = loader.construct_object(value_node, deep=True)
+        mapping[key] = _construct_yaml_object(loader, value_node, deep=True)
     return mapping
 
 

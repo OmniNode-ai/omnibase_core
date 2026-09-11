@@ -47,7 +47,9 @@ Ratchet, not allowlist
 ----------------------
 * Any violation NOT in the frozen baseline fails — new models are blocked on day one.
 * ``--enforce-modified <ref>`` also fails any *baselined* violation whose class body was
-  touched by the diff: you may not edit a broken model and leave it broken.
+  touched by the diff: you may not edit a broken model and leave it broken. The hook's
+  ``:worktree`` mode reads the staged snapshot during a normal pre-commit run and the
+  actual worktree during an explicit ``--all-files`` maintenance run.
 * ``--check-stale`` fails when a baselined FQN is now compliant/absent — the baseline
   may only shrink, never coast.
 * The only sanctioned suppression is an **expiring waiver** keyed to an open ticket AND
@@ -60,9 +62,9 @@ model cannot be born broken.
 
 Usage::
 
-    # pre-commit (staged files) — full-tree ratchet + modified-model enforcement
+    # pre-commit — full-tree ratchet + staged/worktree modified-model enforcement
     python -m omnibase_core.validators.pydantic_extra_forbid \
-        --enforce-modified :staged src/omnibase_core
+        --enforce-modified :worktree src/omnibase_core
 
     # CI — full scan, stale-entry enforcement, modified-model enforcement vs. dev
     python -m omnibase_core.validators.pydantic_extra_forbid \
@@ -82,6 +84,7 @@ import ast
 import importlib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Iterator, Sequence
@@ -89,8 +92,14 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 from types import ModuleType
 
-import yaml
-
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_document,
+)
+from omnibase_core.models.validation.model_extra_forbid_baseline import (
+    ModelExtraForbidBaseline,
+)
 from omnibase_core.models.validation.model_extra_forbid_finding import (
     ENGINE_RUNTIME,
     ENGINE_STATIC,
@@ -101,6 +110,9 @@ from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_UNRESOLVED,
     ModelExtraForbidFinding,
 )
+from omnibase_core.models.validation.model_extra_forbid_waiver_document import (
+    ModelExtraForbidWaiverDocument,
+)
 
 DEFAULT_SCAN_ROOT = Path("src/omnibase_core")
 DEFAULT_BASELINE_PATH = Path(__file__).with_name("extra_forbid_baseline.yaml")
@@ -108,6 +120,7 @@ DEFAULT_WAIVERS_PATH = Path(__file__).with_name("extra_forbid_waivers.yaml")
 
 COMPLIANT_EXTRA = "forbid"
 STAGED_REF = ":staged"
+WORKTREE_REF = ":worktree"
 # `extra=` declared, but as a non-literal (a constant/enum reference) the AST cannot
 # evaluate. Declared-but-unknowable is UNRESOLVED, never silently "implicit default".
 UNKNOWN_EXTRA = "<unknown>"
@@ -597,15 +610,10 @@ def load_baseline(path: Path) -> set[str]:
     is then treated as NEW.
     """
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (yaml.YAMLError, UnicodeDecodeError, OSError):
+        baseline = load_typed_yaml_document(path, ModelExtraForbidBaseline)
+    except (ModelOnexError, UnicodeDecodeError):
         return set()
-    if not isinstance(data, dict):
-        return set()
-    entries = data.get("violations") or []
-    if not isinstance(entries, list):
-        return set()
-    return {str(entry) for entry in entries if isinstance(entry, str)}
+    return set() if baseline is None else set(baseline.violations)
 
 
 def load_waivers(path: Path, today: date) -> tuple[set[str], list[str]]:
@@ -615,33 +623,26 @@ def load_waivers(path: Path, today: date) -> tuple[set[str], list[str]]:
     date. Anything missing, malformed, or expired is an ERROR (hard failure) — never a
     silent pass. That is what keeps a waiver from decaying into an allowlist entry.
     """
-    try:
-        raw = path.read_text(encoding="utf-8")
-    except OSError:
+    if not path.exists():
         return set(), []
     try:
-        data = yaml.safe_load(raw)
-    except yaml.YAMLError as exc:
+        document = load_typed_yaml_document(path, ModelExtraForbidWaiverDocument)
+    except ModelOnexError as exc:
         return set(), [f"waivers file is not valid YAML: {exc}"]
-    if not isinstance(data, dict):
+
+    if document is None:
         return set(), []
-    entries = data.get("waivers") or []
-    if not isinstance(entries, list):
-        return set(), ["waivers: expected a list under the 'waivers' key"]
 
     active: set[str] = set()
     errors: list[str] = []
-    for raw_entry in entries:
-        if not isinstance(raw_entry, dict):
-            errors.append(f"waiver entry is not a mapping: {raw_entry!r}")
-            continue
-        fqn = str(raw_entry.get("fqn", "")).strip()
-        ticket = str(raw_entry.get("ticket", "")).strip()
-        pr = str(raw_entry.get("pr", "")).strip()
-        expires_raw = raw_entry.get("expires_at")
+    for entry in document.waivers:
+        fqn = entry.fqn.strip()
+        ticket = entry.ticket.strip()
+        pr = entry.pr.strip()
+        expires_raw = entry.expires_at
 
         if not fqn:
-            errors.append(f"waiver entry missing 'fqn': {raw_entry!r}")
+            errors.append(f"waiver entry missing 'fqn': {entry!r}")
             continue
         if not ticket.startswith("OMN-") or not ticket[4:].isdigit():
             errors.append(f"waiver {fqn}: 'ticket' must be an OMN-NNNN reference")
@@ -716,25 +717,39 @@ def render_baseline(
 def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]]:
     """Map absolute file path -> changed line ranges for *ref*.
 
-    ``ref`` is either ``":staged"`` (pre-commit) or a git ref such as ``origin/dev``
-    (CI, diffed as ``<ref>...HEAD``). Raises ``RuntimeError`` on git failure — the
-    caller fails closed rather than silently skipping the check.
+    ``ref`` is either ``":staged"`` (direct staged CLI), ``":worktree"``
+    (the pre-commit hook), or a git ref such as ``origin/dev`` (CI, diffed as
+    ``<ref>...HEAD``). Worktree mode compares the complete scan root with ``HEAD`` so
+    the mandated ``--all-files`` maintenance invocation cannot mask an unstaged edit
+    behind the index. Raises ``ModelOnexError`` on git failure — the caller fails closed.
     """
     if ref == STAGED_REF:
         args = ["git", "diff", "--cached", "--unified=0", "--no-color"]
+    elif ref == WORKTREE_REF:
+        args = ["git", "diff", "HEAD", "--unified=0", "--no-color"]
     else:
         args = ["git", "diff", "--unified=0", "--no-color", f"{ref}...HEAD"]
 
+    env = dict(os.environ)
+    # The scope query is observational: do not acquire the index lock or refresh its
+    # stat cache while a hook validates a caller-owned staged snapshot.
+    env["GIT_OPTIONAL_LOCKS"] = "0"
     try:
         proc = subprocess.run(
-            args, cwd=cwd, capture_output=True, text=True, check=False
+            args, cwd=cwd, capture_output=True, text=True, check=False, env=env
         )
     except OSError as exc:
-        raise RuntimeError(f"could not run git: {exc}") from exc
+        raise ModelOnexError(
+            message=f"could not run git: {exc}",
+            error_code=EnumCoreErrorCode.FILE_OPERATION_ERROR,
+        ) from exc
     if proc.returncode != 0:
-        raise RuntimeError(
-            f"`{' '.join(args)}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip() or 'no stderr'}"
+        raise ModelOnexError(
+            message=(
+                f"`{' '.join(args)}` failed (exit {proc.returncode}): "
+                f"{proc.stderr.strip() or 'no stderr'}"
+            ),
+            error_code=EnumCoreErrorCode.FILE_OPERATION_ERROR,
         )
 
     try:
@@ -744,21 +759,36 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             capture_output=True,
             text=True,
             check=True,
+            env=env,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError(f"could not resolve the git worktree root: {exc}") from exc
+        raise ModelOnexError(
+            message=f"could not resolve the git worktree root: {exc}",
+            error_code=EnumCoreErrorCode.FILE_OPERATION_ERROR,
+        ) from exc
 
     root = Path(top)
     ranges: dict[Path, list[tuple[int, int]]] = {}
     current: Path | None = None
     for line in proc.stdout.splitlines():
         if line.startswith("+++ "):
-            target = line[4:].strip()
+            target = line[4:]
             if target == "/dev/null":
                 current = None
             else:
+                try:
+                    decoded = (
+                        ast.literal_eval(target) if target.startswith('"') else target
+                    )
+                except (SyntaxError, ValueError) as exc:
+                    raise ModelOnexError(
+                        message=f"could not decode git diff path {target!r}",
+                        error_code=EnumCoreErrorCode.PARSING_ERROR,
+                    ) from exc
                 current = (
-                    (root / target[2:]).resolve() if target.startswith("b/") else None
+                    (root / decoded[2:]).resolve()
+                    if isinstance(decoded, str) and decoded.startswith("b/")
+                    else None
                 )
         elif line.startswith("@@") and current is not None:
             span = _parse_hunk(line)
@@ -851,8 +881,9 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
         default=None,
         help=(
             "Also fail any BASELINED violation whose class body was touched by the "
-            f"diff. REF is a git ref (diffed as REF...HEAD) or '{STAGED_REF}' for the "
-            "staged diff. You may not edit a broken model and leave it broken."
+            f"diff. REF is a git ref (diffed as REF...HEAD), '{STAGED_REF}' for the "
+            f"staged diff, or '{WORKTREE_REF}' for the pre-commit worktree diff. You "
+            "may not edit a broken model and leave it broken."
         ),
     )
     parser.add_argument(
@@ -924,7 +955,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.enforce_modified:
         try:
             ranges = changed_line_ranges(args.enforce_modified, Path.cwd())
-        except RuntimeError as exc:
+        except ModelOnexError as exc:
             sys.stderr.write(
                 f"pydantic-extra-forbid: --enforce-modified could not read the diff, "
                 f"failing closed: {exc}\n"

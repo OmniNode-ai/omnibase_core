@@ -273,6 +273,24 @@ def test_onexignore_malformed_yaml_contributes_no_patterns(tmp_path: Path) -> No
     assert output.skipped == []
 
 
+@pytest.mark.parametrize("document", ["null\n", "{}\n"])
+def test_onexignore_null_and_empty_mapping_contribute_no_patterns(
+    tmp_path: Path, document: str
+) -> None:
+    """Null is absent while an empty mapping is a valid no-pattern document."""
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".onexignore").write_text(document, encoding="utf-8")
+    (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
+
+    output = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=str(tmp_path), include_patterns=["**/*.py"], ignore_file=str(tmp_path)
+        )
+    )
+
+    assert _file_names(output) == {"a.py"}
+
+
 def test_exclude_patterns_are_applied(tmp_path: Path) -> None:
     (tmp_path / "a.py").write_text("x = 1\n")
     (tmp_path / "b_skip.py").write_text("y = 2\n")

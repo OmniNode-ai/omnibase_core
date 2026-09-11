@@ -156,7 +156,7 @@ class UnionLegitimacyValidator:
             could potentially hide issues with malformed AST nodes or unexpected
             input types.
 
-            TODO: Consider adding optional debug logging for unexpected types
+            TODO: Consider adding optional debug logging for unexpected types  # onex-allow-todo-marker OMN-18155 reason="ticketed optional diagnostic decision"
             (e.g., when value is not str/None) to aid debugging malformed AST
             nodes if issues arise in future iterations. This could be controlled
             via a debug flag or environment variable to avoid noise in normal

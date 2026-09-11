@@ -58,7 +58,7 @@ class HandlerCapabilityCaching(BaseModel):
         Added as part of Mixin-to-Handler conversion (OMN-1112)
     """
 
-    # TODO(OMN-5741): Implement production-ready cache backend  [NEEDS TICKET]
+    # TODO(OMN-18150): Implement production-ready cache backend  # onex-allow-todo-marker OMN-18150 reason="ticketed cache backend design and implementation"
     # Current stub implementation stores in-memory dict without TTL enforcement.
     # Production implementation should use Redis/Memcached with proper TTL,
     # LRU eviction, and distributed cache support.

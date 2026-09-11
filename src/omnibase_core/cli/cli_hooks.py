@@ -7,6 +7,7 @@ from __future__ import annotations
 import difflib
 import os
 import tempfile
+from contextlib import suppress
 from pathlib import Path
 
 import click
@@ -63,12 +64,9 @@ def _write_mask(path: Path, mask: int) -> None:
         with os.fdopen(fd, "w") as f:
             f.write("\n".join(lines) + "\n")
         Path(tmp).replace(path)
-    except BaseException:
-        try:
+    except BaseException:  # fallback-ok: preserve the primary write failure
+        with suppress(OSError):
             Path(tmp).unlink()
-        except OSError:
-            # Preserve the original write/replace exception if temp cleanup fails.
-            pass
         raise
 
 

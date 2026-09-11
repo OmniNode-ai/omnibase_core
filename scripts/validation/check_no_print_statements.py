@@ -33,6 +33,8 @@ Reference:
 
 import ast
 import sys
+import tokenize
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -57,7 +59,7 @@ class PrintStatementDetector(ast.NodeVisitor):
             )
 
             # Check for print-ok comment
-            if self._has_print_ok_comment(line_num):
+            if self._has_print_ok_comment(node):
                 self.generic_visit(node)
                 return
 
@@ -76,20 +78,26 @@ class PrintStatementDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _has_print_ok_comment(self, line_num: int) -> bool:
-        """Check if line has a # print-ok: comment allowing the print."""
-        # Check same line
-        if line_num <= len(self.source_lines):
-            line = self.source_lines[line_num - 1]
-            if "# print-ok:" in line:
+    def _has_print_ok_comment(self, node: ast.Call) -> bool:
+        """Check the exact AST call span and its preceding line for a CLI marker."""
+        start = node.lineno
+        end = node.end_lineno or start
+        for line_num in range(start, end + 1):
+            if _line_has_print_ok_comment(self.source_lines[line_num - 1]):
                 return True
+        if start > 1:
+            return _line_has_print_ok_comment(self.source_lines[start - 2])
+        return False
 
-        # Check line above
-        if line_num > 1:
-            prev_line = self.source_lines[line_num - 2]
-            if "# print-ok:" in prev_line.strip():
-                return True
 
+def _line_has_print_ok_comment(line: str) -> bool:
+    """Return whether the print marker occurs in a Python comment token."""
+    try:
+        return any(
+            token.type == tokenize.COMMENT and "# print-ok:" in token.string
+            for token in tokenize.generate_tokens(StringIO(line).readline)
+        )
+    except tokenize.TokenError:
         return False
 
 

@@ -65,6 +65,13 @@ from omnibase_core.models.ticket.model_interface_provided import (
     InterfaceProvided,
     ModelInterfaceProvided,
 )
+from omnibase_core.models.ticket.model_package_only_deploy_binding import (
+    ModelPackageOnlyDeployBinding,
+    compute_package_only_manifest_sha256,
+)
+from omnibase_core.models.ticket.model_package_only_manifest_entry import (
+    ModelPackageOnlyManifestEntry,
+)
 from omnibase_core.models.ticket.model_proof_requirement import ModelProofRequirement
 from omnibase_core.models.ticket.model_requirement import (
     ModelRequirement,
@@ -122,6 +129,9 @@ __all__ = [
     "ModelInterfaceConsumed",
     "ModelInterfaceProvided",
     "ModelProofRequirement",
+    "ModelPackageOnlyDeployBinding",
+    "ModelPackageOnlyManifestEntry",
+    "compute_package_only_manifest_sha256",
     "ModelRequirement",
     "ModelVerificationStep",
     "ModelGate",

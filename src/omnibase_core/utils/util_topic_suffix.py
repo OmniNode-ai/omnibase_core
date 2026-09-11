@@ -137,7 +137,7 @@ def check_topic_suffix(suffix: str) -> UtilTopicSuffixCheck:
             is_valid=False,
             error=(
                 "Suffix must be lowercase. Use lowercase topic suffixes "
-                "(e.g., 'onex.evt.service.event.v1')"
+                "in the canonical onex.{kind}.{producer}.{event-name}.v{version} format."
             ),
         )
 

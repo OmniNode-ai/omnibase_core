@@ -63,7 +63,7 @@ logger = logging.getLogger(__name__)
 # configuration that would fail at runtime.
 #
 # Pattern Categories:
-#   - Incomplete markers: TODO, TBD, FIXME  # TODO_FORMAT_EXEMPT: documents placeholder pattern categories
+#   - Incomplete placeholder markers: reserved task tokens
 #   - Placeholder markers: PLACEHOLDER, REPLACE_ME, CHANGE_ME
 #   - Template markers: ${VAR_NAME}, {{variable}}, <PLACEHOLDER>
 #   - Empty/default markers: Empty strings, "default", "undefined"
@@ -112,8 +112,9 @@ _PLACEHOLDER_REGEX_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\{\{[^}]+\}\}"),  # {{variable}} style (Jinja/Mustache)
     re.compile(r"<[A-Z_]+>"),  # <PLACEHOLDER> style
     re.compile(
-        r"^\s*TODO\s*:", re.IGNORECASE
-    ),  # "TODO: description" style  # TODO_FORMAT_EXEMPT: regex pattern for placeholder detection
+        r"^\s*TODO\s*:",  # onex-allow-todo-marker OMN-18142 reason="placeholder detector grammar"
+        re.IGNORECASE,
+    ),  # placeholder-description style
 )
 
 # Critical fields that must not contain placeholder values
@@ -135,7 +136,7 @@ def _is_placeholder_value(  # stub-ok: docstring describes detection patterns
     Check if a string value is a placeholder that should be replaced.
 
     Detection covers:
-        - Exact match placeholders (TODO, PLACEHOLDER, etc.)
+        - Exact match placeholders (unfinished-work marker, PLACEHOLDER, etc.)
         - Template-style placeholders (${VAR}, {{var}}, <PLACEHOLDER>)
         - Whitespace-only or empty strings
 
@@ -171,7 +172,7 @@ class MergeValidator:
 
     Validation Checks:
         - Required overrides present: Placeholder values in base were overridden
-        - Placeholder values rejected: No TODO/PLACEHOLDER markers in critical fields
+        - Placeholder values rejected: No unfinished-work/PLACEHOLDER markers in critical fields
         - Dependency references resolve: All dependency names exist in merged contract
         - Handler name uniqueness: No duplicate handler names after merge
         - Capability consistency: Input/output capabilities are consistent
@@ -280,7 +281,7 @@ class MergeValidator:
         """
         Detect and reject placeholder values in critical fields.
 
-        Placeholder values like TODO, PLACEHOLDER, ${VAR}, or empty strings
+        Placeholder values such as unfinished-work markers, PLACEHOLDER, ${VAR}, or empty strings
         in critical fields indicate incomplete configuration that would fail
         at runtime.
 

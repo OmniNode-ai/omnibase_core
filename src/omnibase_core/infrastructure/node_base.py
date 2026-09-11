@@ -160,8 +160,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         self,
         contract_path: Path,
         node_id: UUID | None = None,
-        event_bus: object | None = None,
-        container: ModelONEXContainer | None = None,
+        event_bus: object
+        | None = None,  # fallback-ok: eventless local nodes are supported
+        container: ModelONEXContainer
+        | None = None,  # fallback-ok: omission creates the canonical empty container
         workflow_id: UUID | None = None,
         session_id: UUID | None = None,
         **kwargs: Any,

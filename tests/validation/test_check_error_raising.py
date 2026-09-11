@@ -434,6 +434,23 @@ def process():
         violations = check_file(temp_file)
         assert len(violations) == 0
 
+    @pytest.mark.parametrize(
+        "relative_path",
+        [
+            "src/omnibase_core/protocols/runtime/protocol_local_runtime_bus.py",
+            "src/omnibase_core/protocols/runtime/protocol_local_runtime_payload_model.py",
+            "src/omnibase_core/protocols/runtime/protocol_local_runtime_dump_model.py",
+        ],
+    )
+    def test_runtime_protocol_declarations_are_audited_stubs(
+        self,
+        relative_path: str,
+    ) -> None:
+        """Protocol declaration bodies use the checker-approved stub marker."""
+        repository_root = Path(__file__).parent.parent.parent
+
+        assert check_file(repository_root / relative_path) == []
+
     def test_skips_test_files(self, tmp_path: Path):
         """Test that test files in tests/ directory are skipped."""
         # Create a directory structure that includes "tests/" in the path

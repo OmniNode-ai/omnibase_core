@@ -329,6 +329,7 @@ class TestValidateTopicSuffixValid:
         assert result.is_valid is False
         assert result.error is not None
         assert "lowercase" in result.error.lower()
+        assert "onex.{kind}.{producer}.{event-name}.v{version}" in result.error
 
     def test_whitespace_stripped(self) -> None:
         """Test that leading/trailing whitespace is stripped."""

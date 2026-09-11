@@ -41,6 +41,7 @@ from omnibase_core.errors.exception_groups import (
     JSON_PARSING_ERRORS,
     YAML_PARSING_ERRORS,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.logging.logging_structured import emit_log_event_sync
 from omnibase_core.models.demo import (
     ModelDemoConfig,
@@ -51,6 +52,13 @@ from omnibase_core.models.demo import (
     ModelSampleResult,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_content_document,
+)
+from omnibase_core.models.validation.model_demo_yaml_document import (
+    ModelDemoYamlDocument,
+)
+from omnibase_core.types.type_json import StrictJsonType
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -67,6 +75,19 @@ MIN_NAME_COLUMN_WIDTH: int = 20
 # Maximum description length before truncation (truncate at -3 for "...")
 # Set high enough to show most descriptions fully while preventing layout issues
 MAX_DESCRIPTION_LENGTH: int = 140
+
+
+def _load_demo_yaml_mapping(
+    content: str, *, source: str = "cli demo YAML"
+) -> dict[str, StrictJsonType] | None:
+    try:
+        document = load_typed_yaml_content_document(
+            content, ModelDemoYamlDocument, source=source
+        )
+    except ModelOnexError:
+        return None
+    return None if document is None else document.root
+
 
 # Verdict thresholds for pass rate evaluation
 PASS_THRESHOLD: float = 1.0  # 100% pass rate required for PASS
@@ -154,8 +175,9 @@ def _extract_scenario_description(scenario_path: Path) -> str:
     contract_path = scenario_path / "contract.yaml"
     if contract_path.is_file():
         try:
-            with contract_path.open(encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = _load_demo_yaml_mapping(
+                contract_path.read_text(encoding="utf-8"), source=str(contract_path)
+            )
 
             if isinstance(data, dict):
                 # Check for metadata.description first
@@ -421,14 +443,16 @@ def _load_corpus(corpus_dir: Path, *, verbose: bool = False) -> list[dict[str, o
         if subdir.is_dir() and not subdir.name.startswith("."):
             for sample_file in sorted(subdir.glob("*.yaml")):
                 try:
-                    with sample_file.open(encoding="utf-8") as f:
-                        data = yaml.safe_load(f)
-                        if isinstance(data, dict):
-                            data["_source_file"] = str(
-                                sample_file.relative_to(corpus_dir)
-                            )
-                            data["_category"] = subdir.name
-                            samples.append(data)
+                    data = _load_demo_yaml_mapping(
+                        sample_file.read_text(encoding="utf-8"), source=str(sample_file)
+                    )
+                    if isinstance(data, dict):
+                        sample: dict[str, object] = dict(data)
+                        sample["_source_file"] = str(
+                            sample_file.relative_to(corpus_dir)
+                        )
+                        sample["_category"] = subdir.name
+                        samples.append(sample)
                 except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
                     # fallback-ok: skip unreadable or malformed corpus files
                     if verbose:
@@ -442,12 +466,14 @@ def _load_corpus(corpus_dir: Path, *, verbose: bool = False) -> list[dict[str, o
         if sample_file.name == "README.md":
             continue
         try:
-            with sample_file.open(encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-                if isinstance(data, dict):
-                    data["_source_file"] = sample_file.name
-                    data["_category"] = "root"
-                    samples.append(data)
+            data = _load_demo_yaml_mapping(
+                sample_file.read_text(encoding="utf-8"), source=str(sample_file)
+            )
+            if isinstance(data, dict):
+                root_sample: dict[str, object] = dict(data)
+                root_sample["_source_file"] = sample_file.name
+                root_sample["_category"] = "root"
+                samples.append(root_sample)
         except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
             # fallback-ok: skip unreadable or malformed corpus files
             if verbose:
@@ -899,8 +925,10 @@ def run_demo(
     invariants: dict[str, object] = {}
     if invariants_path.is_file():
         try:
-            with invariants_path.open(encoding="utf-8") as f:
-                invariants = yaml.safe_load(f) or {}
+            loaded_invariants = _load_demo_yaml_mapping(
+                invariants_path.read_text(encoding="utf-8"), source=str(invariants_path)
+            )
+            invariants = dict(loaded_invariants or {})
         except (*FILE_IO_ERRORS, *YAML_PARSING_ERRORS) as e:
             # fallback-ok: use empty invariants if file is unreadable or malformed
             if verbose:

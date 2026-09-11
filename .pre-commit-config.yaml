@@ -502,15 +502,17 @@ repos:
       # OMN-14515: every Pydantic model must resolve to an explicit extra="forbid".
       # ABSENCE IS A VIOLATION — Pydantic's default is extra="ignore", which SILENTLY
       # DROPS unknown fields (four live data-loss bugs: OMN-14490/14506/14513/14514).
-      # New models block outright; --enforce-modified :staged also blocks a BASELINED
-      # model whose body you just edited — touching it is your chance to fix it.
+      # New models block outright. The full-root ratchet remains; :worktree attributes
+      # modified baselined models from staged bytes in a normal hook run and from actual
+      # worktree bytes during the mandated --all-files maintenance check, without
+      # staging or changing the caller's staged content or index entries.
       # language: system so the validator runs in the repo venv and can introspect the
       # real cls.model_config (which Pydantic has already merged down the MRO) instead
       # of approximating inheritance statically.
       - id: pydantic-extra-forbid
         name: Pydantic extra="forbid" ratchet (OMN-14515)
         entry: uv run --frozen python -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified
-          :staged src/omnibase_core
+          :worktree src/omnibase_core
         language: system
         types: [python]
         files: ^src/omnibase_core/.*\.py$
@@ -1114,7 +1116,7 @@ repos:
       # Suppress legitimate lines with: # local-path-ok
       - id: check-local-paths
         name: No hardcoded local/machine-specific paths (OMN-9043)
-        entry: uv run python -m omnibase_core.validation.validator_local_paths
+        entry: uv run check-local-paths
         language: system
         types: [text]
         # OMN-17159: scripts/hooks/prepush_dispatch.sh is a VENDORED, byte-identical

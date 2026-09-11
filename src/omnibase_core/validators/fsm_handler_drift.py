@@ -52,24 +52,42 @@ from __future__ import annotations
 import argparse
 import ast
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-
-import yaml
 
 from omnibase_core.enums.enum_fsm_handler_drift import (
     EnumFsmHandlerDriftKind,
     EnumFsmHandlerDriftSeverity,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_content_document,
+)
+from omnibase_core.models.validation.model_fsm_contract_document import (
+    ModelFsmContractDocument,
+)
 from omnibase_core.models.validation.model_fsm_handler_drift_finding import (
     ModelFsmHandlerDriftFinding,
 )
+from omnibase_core.types.type_json import StrictJsonType
 
 # Default sub-directory containing the Python package tree relative to repo root.
 DEFAULT_SRC_SUBDIR = "src"
 
 _ERROR = EnumFsmHandlerDriftSeverity.ERROR
+
+
+def _load_fsm_document(
+    content: str, *, source: str = "FSM contract YAML"
+) -> dict[str, StrictJsonType] | None:
+    try:
+        document = load_typed_yaml_content_document(
+            content, ModelFsmContractDocument, source=source
+        )
+    except ModelOnexError:
+        return None
+    return None if document is None else document.root
 
 
 # --------------------------------------------------------------------------- #
@@ -91,7 +109,7 @@ class _FsmHandlerBinding:
 # --------------------------------------------------------------------------- #
 
 
-def _is_fsm_binding_contract(data: object) -> bool:
+def _is_fsm_binding_contract(data: Mapping[str, StrictJsonType]) -> bool:
     return (
         isinstance(data, dict)
         and isinstance(data.get("fsm_handler_binding"), list)
@@ -109,10 +127,12 @@ def discover_fsm_binding_contracts(root: Path) -> list[Path]:
         ):
             continue
         try:
-            data = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
-        except (yaml.YAMLError, UnicodeDecodeError, OSError):
+            data = _load_fsm_document(
+                contract_path.read_text(encoding="utf-8"), source=str(contract_path)
+            )
+        except (UnicodeDecodeError, OSError):
             continue
-        if _is_fsm_binding_contract(data):
+        if data is not None and _is_fsm_binding_contract(data):
             found.append(contract_path)
     return found
 
@@ -123,7 +143,7 @@ def discover_fsm_binding_contracts(root: Path) -> list[Path]:
 
 
 def _parse_bindings(
-    data: dict[str, object],
+    data: Mapping[str, StrictJsonType],
     contract_path: Path,
     node: str,
 ) -> tuple[list[_FsmHandlerBinding], list[ModelFsmHandlerDriftFinding]]:
@@ -370,7 +390,7 @@ def _extract_literal_symbol(
 
 
 def _normalize_contract_transitions(
-    state_machine: dict[str, object],
+    state_machine: Mapping[str, StrictJsonType],
     state_filter: frozenset[str],
 ) -> dict[tuple[str, str], str]:
     """Extract (from_state, trigger) -> to_state from contract YAML transitions.
@@ -403,7 +423,7 @@ def _normalize_contract_transitions(
 
 
 def _normalize_contract_guards(
-    state_machine: dict[str, object],
+    state_machine: Mapping[str, StrictJsonType],
     state_filter: frozenset[str],
 ) -> dict[tuple[str, str], tuple[str, str]]:
     """Extract (from_state, trigger) -> (field, required_value) guards from contract YAML.
@@ -789,11 +809,13 @@ def validate_contract(
 ) -> list[ModelFsmHandlerDriftFinding]:
     """Validate one contract's fsm_handler_binding entries."""
     try:
-        data = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
-    except (yaml.YAMLError, UnicodeDecodeError, OSError):
+        data = _load_fsm_document(
+            contract_path.read_text(encoding="utf-8"), source=str(contract_path)
+        )
+    except (UnicodeDecodeError, OSError):
         return []
 
-    if not _is_fsm_binding_contract(data):
+    if data is None or not _is_fsm_binding_contract(data):
         return []
 
     node_dir = contract_path.parent
@@ -803,8 +825,9 @@ def validate_contract(
     bindings, schema_errors = _parse_bindings(data, contract_path, node)
     all_findings.extend(schema_errors)
 
-    state_machine = data.get("state_machine")
-    if not isinstance(state_machine, dict) and bindings:
+    state_machine_raw = data.get("state_machine")
+    state_machine = state_machine_raw if isinstance(state_machine_raw, dict) else None
+    if state_machine is None and bindings:
         all_findings.append(
             ModelFsmHandlerDriftFinding(
                 severity=_ERROR,
@@ -873,7 +896,7 @@ def validate_contract(
             continue
 
         # 3. Normalize contract transitions (filtered by state_filter)
-        assert isinstance(state_machine, dict)  # guaranteed above
+        assert state_machine is not None  # guaranteed above
         contract_transitions = _normalize_contract_transitions(
             state_machine, binding.state_filter
         )

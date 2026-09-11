@@ -27,13 +27,13 @@ from pathlib import Path
 import pytest
 import yaml
 
+from omnibase_core.validation.demo_path_topic_index import DemoPathTopicIndex
 from omnibase_core.validation.validator_demo_path_topic_coherence import (
     RULE_HAND_AUTHORED_LITERAL,
     RULE_ORPHAN_CONSUMER,
     RULE_ORPHAN_PRODUCER,
     RULE_PUBLISH_SUBSCRIBE_MISMATCH,
     RULE_WIDGET_TOPIC_NO_PRODUCER,
-    DemoPathTopicRegistry,
     ValidatorDemoPathTopicCoherence,
     load_demo_path_contracts,
 )
@@ -127,12 +127,12 @@ class TestLoadDemoPathContracts:
 
 
 # ---------------------------------------------------------------------------
-# DemoPathTopicRegistry
+# DemoPathTopicIndex
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-class TestDemoPathTopicRegistry:
+class TestDemoPathTopicIndex:
     def test_publish_subscribe_match_succeeds(self, tmp_path: Path) -> None:
         _write_contract(
             tmp_path,
@@ -150,7 +150,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         # Every published topic has a subscriber — no mismatches
         mismatches = registry.find_publish_subscribe_mismatches()
@@ -167,7 +167,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         mismatches = registry.find_publish_subscribe_mismatches()
         assert len(mismatches) == 1
@@ -194,7 +194,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         # The infra topic is published but no subscriber uses the same exact string
         mismatches = registry.find_publish_subscribe_mismatches()
@@ -211,7 +211,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         orphans = registry.find_orphan_consumers()
         assert len(orphans) == 1
@@ -228,7 +228,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         orphans = registry.find_orphan_producers()
         assert len(orphans) == 1
@@ -247,7 +247,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         missing = registry.find_widget_topics_without_producers()
         assert len(missing) == 1
@@ -269,7 +269,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         missing = registry.find_widget_topics_without_producers()
         assert missing == []
@@ -295,7 +295,7 @@ class TestDemoPathTopicRegistry:
         )
 
         contracts = load_demo_path_contracts([tmp_path])
-        registry = DemoPathTopicRegistry.from_contracts(contracts)
+        registry = DemoPathTopicIndex.from_contracts(contracts)
 
         assert registry.find_publish_subscribe_mismatches() == []
         assert registry.find_orphan_consumers() == []
@@ -471,3 +471,21 @@ class TestValidatorDemoPathTopicCoherence:
         assert not result.is_valid
         # Exit code 1 = errors found
         assert validator.get_exit_code(result) == 1
+
+
+@pytest.mark.unit
+def test_demo_loader_skips_yaml_date_scalar(tmp_path: Path) -> None:
+    """A non-JSON YAML scalar retains the prior invalid-contract skip behavior."""
+    (tmp_path / "node").mkdir()
+    (tmp_path / "node" / "contract.yaml").write_text(
+        "metadata:\n  demo_path: true\ncreated: 2026-09-10\n", encoding="utf-8"
+    )
+    assert load_demo_path_contracts([tmp_path]) == []
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("content", ["null\n", "[]\n", "true\n"])
+def test_demo_loader_skips_non_mapping_roots(tmp_path: Path, content: str) -> None:
+    (tmp_path / "node").mkdir()
+    (tmp_path / "node" / "contract.yaml").write_text(content, encoding="utf-8")
+    assert load_demo_path_contracts([tmp_path]) == []

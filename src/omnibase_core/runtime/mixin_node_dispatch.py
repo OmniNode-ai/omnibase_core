@@ -42,7 +42,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -51,73 +51,19 @@ from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
+from omnibase_core.runtime.dispatch_entry import DispatchEntry
+from omnibase_core.runtime.dispatch_match import DispatchMatch
+from omnibase_core.runtime.dispatch_state import DispatchState
+from omnibase_core.types.type_node_dispatch import (
+    DispatcherCallable,
+    DlqTopicDeriver,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_node_kind import EnumNodeKind
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 __all__ = ["MixinNodeDispatch"]
-
-# A dispatcher is any callable the node registers; selection never invokes it, so
-# its precise signature is irrelevant to this mixin (execution lives elsewhere).
-_DispatcherCallable = Callable[..., object]
-
-# Injected DLQ-topic deriver: ``(event_type | None, original_topic) -> dlq_topic | None``.
-# The infra runtime injects ``message_dispatch_engine._derive_dlq_topic`` so the
-# NO_DISPATCHER tuple's ``dlq_topic`` element matches the live engine. When absent,
-# derivation yields ``None`` (the mixin never imports infra topic constants).
-DlqTopicDeriver = Callable[[str | None, str], str | None]
-
-
-class _NodeDispatchEntry:
-    """Selection metadata for one registered dispatcher (core-only mirror of the
-    engine's ``DispatchEntryInternal``, minus the execution-only fields)."""
-
-    __slots__ = (
-        "category",
-        "dispatcher",
-        "dispatcher_id",
-        "message_types",
-        "node_kind",
-        "payload_type_matcher",
-    )
-
-    def __init__(
-        self,
-        *,
-        dispatcher_id: str,
-        dispatcher: _DispatcherCallable,
-        category: EnumMessageCategory,
-        message_types: set[str] | None,
-        node_kind: EnumNodeKind | None,
-        payload_type_matcher: Callable[[object], bool] | None,
-    ) -> None:
-        self.dispatcher_id = dispatcher_id
-        self.dispatcher = dispatcher
-        self.category = category
-        self.message_types = (
-            set(message_types) if message_types is not None else None
-        )  # None means "all message types"
-        self.node_kind = node_kind
-        # None means "not type-scoped" — legacy string-only matching applies.
-        self.payload_type_matcher = payload_type_matcher
-
-
-class _NodeDispatchState:
-    """Per-instance selection table. Materialized lazily so an unused mixin is inert."""
-
-    __slots__ = ("dispatchers", "dlq_topic_deriver", "frozen", "routes")
-
-    def __init__(self) -> None:
-        self.routes: dict[str, ModelDispatchRoute] = {}
-        self.dispatchers: dict[str, _NodeDispatchEntry] = {}
-        self.frozen: bool = False
-        self.dlq_topic_deriver: DlqTopicDeriver | None = None
-
-
-class _NodeDispatchMatch(NamedTuple):
-    route_id: str
-    entry: _NodeDispatchEntry
 
 
 class MixinNodeDispatch:
@@ -132,24 +78,24 @@ class MixinNodeDispatch:
 
     # Class-level annotation only (no assignment) so mypy sees the attribute while
     # the value is materialized lazily via ``_state``. Mirrors MixinHandlerRouting.
-    _node_dispatch_state: _NodeDispatchState
+    _node_dispatch_state: DispatchState
 
     def __init__(self, **kwargs: object) -> None:
         """Cooperative MRO init. State is created here for standalone use and is
         also (re)materialized lazily so node subclasses that skip kwargs are safe."""
         super().__init__(**kwargs)
-        self._node_dispatch_state = _NodeDispatchState()
+        self._node_dispatch_state = DispatchState()
 
     # -- internal state access ------------------------------------------------
 
-    def _state(self) -> _NodeDispatchState:
+    def _state(self) -> DispatchState:
         """Return the selection table, materializing it on first use.
 
         Lazy creation keeps the mixin inert when a node never registers routes and
         tolerates instantiation paths that bypass ``__init__`` (defensive)."""
         state = getattr(self, "_node_dispatch_state", None)
         if state is None:
-            state = _NodeDispatchState()
+            state = DispatchState()
             self._node_dispatch_state = state
         return state
 
@@ -193,7 +139,7 @@ class MixinNodeDispatch:
     def register_dispatcher(
         self,
         dispatcher_id: str,
-        dispatcher: _DispatcherCallable,
+        dispatcher: DispatcherCallable,
         category: EnumMessageCategory,
         message_types: set[str] | None = None,
         node_kind: EnumNodeKind | None = None,
@@ -231,7 +177,7 @@ class MixinNodeDispatch:
                 message=f"Dispatcher with ID '{dispatcher_id}' is already registered.",
                 error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
             )
-        entry = _NodeDispatchEntry(
+        entry = DispatchEntry(
             dispatcher_id=dispatcher_id,
             dispatcher=dispatcher,
             category=category,
@@ -268,7 +214,7 @@ class MixinNodeDispatch:
 
     @staticmethod
     def _validate_route_dispatcher_category(
-        route: ModelDispatchRoute, entry: _NodeDispatchEntry
+        route: ModelDispatchRoute, entry: DispatchEntry
     ) -> None:
         """Reject routes whose declared category disagrees with their dispatcher."""
         if route.message_category == entry.category:
@@ -289,7 +235,7 @@ class MixinNodeDispatch:
         category: EnumMessageCategory,
         message_type: str,
         payload: object | None,
-    ) -> list[_NodeDispatchMatch]:
+    ) -> list[DispatchMatch]:
         """Port of the engine's ``_find_matching_dispatchers`` (selection only).
 
         Iterates routes in registration (insertion) order — the fan-out order the
@@ -298,7 +244,7 @@ class MixinNodeDispatch:
         the dispatcher's own message-type filter admits ``message_type``, and, for
         type-scoped dispatchers, the payload matches the declared event_model.
         """
-        matching: list[_NodeDispatchMatch] = []
+        matching: list[DispatchMatch] = []
         seen: set[str] = set()
         state = self._state()
         for route in state.routes.values():
@@ -338,12 +284,12 @@ class MixinNodeDispatch:
                 and not self._payload_matches(entry, payload)
             ):
                 continue
-            matching.append(_NodeDispatchMatch(route.route_id, entry))
+            matching.append(DispatchMatch(route.route_id, entry))
             seen.add(dispatcher_id)
         return matching
 
     @staticmethod
-    def _payload_matches(entry: _NodeDispatchEntry, payload: object | None) -> bool:
+    def _payload_matches(entry: DispatchEntry, payload: object | None) -> bool:
         """True when ``payload`` matches a type-scoped dispatcher's event_model.
 
         A raising matcher means "not my type" (never selected), mirroring the
@@ -355,7 +301,7 @@ class MixinNodeDispatch:
             return True
         try:
             return bool(matcher(payload))
-        except Exception:  # noqa: BLE001 — a raising matcher means "not my type"
+        except Exception:  # noqa: BLE001  # fallback-ok: a raising matcher means "not my type"
             return False
 
     async def dispatch(
@@ -482,7 +428,7 @@ class MixinNodeDispatch:
             return None
         try:
             return deriver(event_type, topic)
-        except Exception:  # noqa: BLE001 — DLQ derivation must never crash selection
+        except Exception:  # noqa: BLE001  # fallback-ok: optional DLQ derivation must not crash selection
             return None
 
     @staticmethod

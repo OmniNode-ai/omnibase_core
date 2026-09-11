@@ -22,16 +22,26 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 
-import yaml
-
-from omnibase_core.models.validation.model_occ_append_only_result import (
+from omnibase_core.enums.enum_append_only_violation_kind import (
     EnumAppendOnlyViolationKind,
+)
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
+    load_typed_yaml_content_document,
+)
+from omnibase_core.models.validation.model_append_only_violation import (
     ModelAppendOnlyViolation,
+)
+from omnibase_core.models.validation.model_occ_append_only_result import (
     ModelOccAppendOnlyResult,
 )
+from omnibase_core.models.validation.model_occ_contract_document import (
+    ModelOccContractDocument,
+)
+from omnibase_core.types.type_json import StrictJsonType
 from omnibase_core.validation.validator_receipt_gate import (
     ContractEntryNotFoundError,
     compute_contract_entry_sha256,
@@ -41,22 +51,41 @@ _APPEND_ONLY_VIOLATION = "APPEND_ONLY_VIOLATION"
 _RECEIPT_DIR_PREFIX = "drift/dod_receipts"
 
 
-def _entry_ids(contract: object) -> list[str]:
+class _InvalidContractDocumentError(ValueError):
+    """A present OCC contract is malformed or contains non-JSON YAML values."""
+
+
+def _parse_contract_document(
+    content: str, *, source: str = "OCC contract YAML"
+) -> dict[str, StrictJsonType]:
+    try:
+        document = load_typed_yaml_content_document(
+            content, ModelOccContractDocument, source=source
+        )
+    except (ModelOnexError, UnicodeDecodeError) as exc:
+        raise _InvalidContractDocumentError(str(exc)) from exc
+    if document is None:
+        raise _InvalidContractDocumentError(
+            f"OCC contract document is empty or YAML null: {source}"
+        )
+    return document.root
+
+
+def _entry_ids(contract: Mapping[str, object]) -> list[str]:
     ids: list[str] = []
-    if isinstance(contract, dict):
-        items = contract.get("dod_evidence", [])
-        if isinstance(items, list):
-            for item in items:
-                if isinstance(item, dict):
-                    item_id = item.get("id")
-                    if isinstance(item_id, str):
-                        ids.append(item_id)
+    items = contract.get("dod_evidence", [])
+    if isinstance(items, list):
+        for item in items:
+            if isinstance(item, dict):
+                item_id = item.get("id")
+                if isinstance(item_id, str):
+                    ids.append(item_id)
     return ids
 
 
 def evaluate_append_only(
-    base_contract: dict[str, object] | None,
-    head_contract: dict[str, object] | None,
+    base_contract: Mapping[str, object] | None,
+    head_contract: Mapping[str, object] | None,
     receipt_diff: Iterable[tuple[str, str]] = (),
 ) -> ModelOccAppendOnlyResult:
     """Evaluate the append-only invariant. Pure — no I/O.
@@ -72,7 +101,7 @@ def evaluate_append_only(
     violations: list[ModelAppendOnlyViolation] = []
 
     if base_contract is not None:
-        head = head_contract if isinstance(head_contract, dict) else {}
+        head = head_contract if head_contract is not None else {}
         head_ids = set(_entry_ids(head))
         for base_id in _entry_ids(base_contract):
             if base_id not in head_ids:
@@ -137,7 +166,7 @@ def evaluate_append_only(
 
 def _load_yaml_from_git(
     repo: Path, ref: str, rel_path: str
-) -> dict[str, object] | None:
+) -> dict[str, StrictJsonType] | None:
     proc = subprocess.run(
         ["git", "-C", str(repo), "show", f"{ref}:{rel_path}"],
         capture_output=True,
@@ -146,15 +175,13 @@ def _load_yaml_from_git(
     )
     if proc.returncode != 0:
         return None
-    parsed = yaml.safe_load(proc.stdout)
-    return parsed if isinstance(parsed, dict) else None
+    return _parse_contract_document(proc.stdout, source=f"git:{ref}:{rel_path}")
 
 
-def _load_yaml_file(path: Path) -> dict[str, object] | None:
+def _load_yaml_file(path: Path) -> dict[str, StrictJsonType] | None:
     if not path.is_file():
         return None
-    parsed = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return parsed if isinstance(parsed, dict) else None
+    return _parse_contract_document(path.read_text(encoding="utf-8"), source=str(path))
 
 
 def _receipt_diff_from_git(
@@ -196,11 +223,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     repo = Path(args.repo)
     contract_rel = f"contracts/{args.ticket_id}.yaml"
-    base_contract = _load_yaml_from_git(repo, args.base_ref, contract_rel)
-    head_contract = _load_yaml_file(repo / contract_rel)
-    receipt_diff = _receipt_diff_from_git(repo, args.base_ref, args.ticket_id)
-
-    result = evaluate_append_only(base_contract, head_contract, receipt_diff)
+    try:
+        base_contract = _load_yaml_from_git(repo, args.base_ref, contract_rel)
+        head_contract = _load_yaml_file(repo / contract_rel)
+        receipt_diff = _receipt_diff_from_git(repo, args.base_ref, args.ticket_id)
+        result = evaluate_append_only(base_contract, head_contract, receipt_diff)
+    except (_InvalidContractDocumentError, UnicodeDecodeError) as exc:
+        sys.stderr.write(f"invalid OCC contract document: {exc}\n")
+        return 2
     sys.stdout.write(f"{result.to_json()}\n")
     return 0 if result.ok else 1
 
@@ -210,7 +240,6 @@ if __name__ == "__main__":
 
 
 __all__ = [
-    "ModelOccAppendOnlyResult",
     "evaluate_append_only",
     "main",
 ]

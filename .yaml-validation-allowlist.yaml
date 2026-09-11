@@ -108,6 +108,17 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
+  - file: "src/omnibase_core/models/utils/model_util_typed_yaml_document_loader.py"
+    reason: >-
+      Additive lower-layer typed document boundary selected in KBI-305 (OMN-18038): parses raw YAML only
+      to preserve document null separately from an empty mapping, then immediately validates every present
+      value through the caller-supplied Pydantic model. It intentionally does not import util_safe_yaml_loader,
+      because adding new consumers to that shared utilities hub violates the import-ratchet. The public
+      path and content entry points wrap read, parse, and schema failures as ModelOnexError with source
+      context.
+    added: "2026-09-10"
+    review: "2026-12-13"
+
   - file: "src/omnibase_core/utils/util_dod_receipt_migration.py"
     reason: >-
       Legacy DoD receipt migration utility (OMN-9790). Pre-OMN-9786 receipts cannot validate against the
@@ -452,8 +463,35 @@ allowed_files:
     added: "2026-08-23"
     review: "2026-12-13"
 
-# Specific filenames that are allowed (matched by basename)
-# Allows the same utility to be used across different module paths (e.g., copied utilities)
+  - file: "scripts/validation/validate_precommit_fail_loud.py"
+    # Specific filenames that are allowed (matched by basename)
+    # Allows the same utility to be used across different module paths (e.g., copied utilities)
+    reason: >-
+      Standalone bootstrap meta-gate reads the complete pre-commit mapping to report missing configuration,
+      malformed root shape, and stage coverage without importing the project package; its public stderr/exit-1
+      behavior is exercised before dependency installation, so typed project loading is not available.
+    added: "2026-09-10"
+    review: "2026-12-13"
+  - file: "scripts/generate_llm_refs.py"
+    reason: >-
+      Standalone generator reads heterogeneous endpoint and model registry mappings before code generation;
+      it preserves its explicit top-level-mapping ValueError for malformed generator inputs.
+    added: "2026-09-10"
+    review: "2026-12-13"
+  - file: "scripts/validation/validate_precommit_pin_parity.py"
+    reason: >-
+      Standalone pin-parity bootstrap gate reads the full pre-commit mapping and must retain its missing,
+      non-mapping, and parity-specific stderr/exit behavior without project runtime imports.
+    added: "2026-09-10"
+    review: "2026-12-13"
+  - file: ".github/actions/deploy-gate/validate_pr_deploy_required.py"
+    reason: >-
+      GitHub deploy-gate action reads heterogeneous ticket contracts only to detect deploy evidence and
+      must fail closed as no evidence for malformed or unreadable documents without importing project
+      packages.
+    added: "2026-09-10"
+    review: "2026-12-13"
+
 allowed_filenames:
   - filename: "util_safe_yaml_loader.py"
     reason: >-

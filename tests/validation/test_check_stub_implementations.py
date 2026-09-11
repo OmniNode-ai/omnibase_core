@@ -9,12 +9,39 @@ Tests various stub patterns and exclusion scenarios to ensure
 accurate detection and proper handling of legitimate cases.
 """
 
+import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
 
 # Import would be: from scripts.validation.check_stub_implementations import ...
 # For testing purposes, we'll test the script execution
+_SCRIPT = (
+    Path(__file__).parents[2]
+    / "scripts"
+    / "validation"
+    / "check_stub_implementations.py"
+)
+_SPEC = importlib.util.spec_from_file_location("check_stub_implementations", _SCRIPT)
+if _SPEC is None or _SPEC.loader is None:
+    raise ImportError(f"Cannot load stub detector from {_SCRIPT}")
+_MODULE = importlib.util.module_from_spec(_SPEC)
+sys.modules["check_stub_implementations"] = _MODULE
+_SPEC.loader.exec_module(_MODULE)
+StubImplementationDetector = _MODULE.StubImplementationDetector
+
+
+def test_todo_marker_approval_is_line_local() -> None:
+    """A detector literal approval must not suppress a later real marker."""
+    from omnibase_core.validation.todo_marker.handler import scan_source
+
+    source = (
+        "# TODO detector literal # onex-allow-todo-marker OMN-17522 detector literal\n"
+        "# FIXME genuine unfinished work"
+    )
+
+    assert [finding.line for finding in scan_source(source).findings] == [2]
 
 
 class TestStubDetectionPatterns:
@@ -32,6 +59,22 @@ def stub_function():
 
         # This should be detected as a stub
         assert "pass" in code
+
+    def test_staleness_marker_is_not_a_generic_stub_synonym(self) -> None:
+        """A descriptive use of "stub" is not evidence of an unfinished function."""
+        tree = __import__("ast").parse(
+            'def describe() -> None:\n    """Describe the stub detector contract."""\n    return None\n'
+        )
+        detector = StubImplementationDetector("descriptive.py", [])
+        detector.visit(tree)
+        assert detector.issues == []
+
+    def test_todo_docstring_remains_a_real_violation(self) -> None:
+        """The narrower staleness rule must still reject a genuine TODO."""
+        source = 'def unfinished() -> None:\n    """TODO: provide an implementation."""\n    return None\n'
+        detector = StubImplementationDetector("unfinished.py", source.splitlines())
+        detector.visit(__import__("ast").parse(source))
+        assert [issue.issue_type for issue in detector.issues] == ["todo_in_docstring"]
 
     def test_detect_only_ellipsis(self, tmp_path: Path):
         """Test detection of functions with only ellipsis."""

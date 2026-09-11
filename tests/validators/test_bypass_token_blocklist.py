@@ -11,8 +11,10 @@ token → accepted).
 
 from __future__ import annotations
 
+import importlib.util
 import textwrap
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
@@ -24,6 +26,17 @@ from omnibase_core.validators.bypass_token_blocklist import (
     main,
     scan_tree,
 )
+
+
+def _load_security_validator(filename: str, module_name: str) -> ModuleType:
+    script = Path(__file__).parents[2] / "scripts" / "validation" / filename
+    spec = importlib.util.spec_from_file_location(module_name, script)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load security validator from {script}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 # ---------------------------------------------------------------------------
 # Canonical token list — the test is the single source of truth for "9 tokens".
@@ -147,6 +160,61 @@ class TestSuppression:
         text = f"Normal content\n{SUPPRESSION_TOKEN} user-approval-abc\n"
         findings = find_tokens_in_text(text, Path("clean.md"))
         assert not findings
+
+
+class TestSecurityValidatorSuppressionScope:
+    """Security validation accepts no whole-file bypass from marker prose."""
+
+    def test_security_markers_require_a_real_same_line_comment(self) -> None:
+        secret_module = _load_security_validator(
+            "validate-secrets.py", "omn17522_secret_comment"
+        )
+        env_module = _load_security_validator(
+            "validate-hardcoded-env-vars.py", "omn17522_env_comment"
+        )
+
+        assert not secret_module.BypassChecker.check_line_bypass(
+            'password = "live # secret-ok: not a comment"', "secret-ok:"
+        )
+        assert secret_module.BypassChecker.check_line_bypass(
+            'password = "fixture"  # secret-ok: fixture', "secret-ok:"
+        )
+        assert not env_module.BypassChecker.check_line_bypass(
+            'DATABASE_URL = "postgresql://live/# env-var-ok: not a comment"',
+            "env-var-ok:",
+        )
+        assert env_module.BypassChecker.check_line_bypass(
+            'DATABASE_URL = "fixture"  # env-var-ok: fixture', "env-var-ok:"
+        )
+
+    def test_secret_header_marker_does_not_hide_a_real_secret(
+        self, tmp_path: Path
+    ) -> None:
+        module = _load_security_validator("validate-secrets.py", "omn17522_secrets")
+        candidate = tmp_path / "candidate.py"
+        candidate.write_text('# secret-ok: prose only\npassword = "live-secret"\n')
+        validator = module.SecretValidator()
+        assert (
+            validator.validate_python_file(
+                candidate, candidate.read_text().splitlines()
+            )
+            is False
+        )
+        assert validator.violations
+
+    def test_env_header_marker_does_not_hide_a_real_setting(
+        self, tmp_path: Path
+    ) -> None:
+        module = _load_security_validator(
+            "validate-hardcoded-env-vars.py", "omn17522_env_vars"
+        )
+        candidate = tmp_path / "candidate.py"
+        candidate.write_text(
+            '# env-var-ok: prose only\nDATABASE_URL = "postgresql://live"\n'
+        )
+        validator = module.HardcodedEnvVarValidator()
+        assert validator.validate_python_file(candidate) is False
+        assert validator.violations
 
 
 # ---------------------------------------------------------------------------

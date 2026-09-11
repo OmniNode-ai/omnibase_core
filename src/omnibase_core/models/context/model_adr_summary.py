@@ -19,10 +19,8 @@ class ModelADRSummary(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    adr_id: str = (
-        Field(  # string-id-ok: ADR identifiers are human-readable slugs, not UUIDs
-            description="Stable ADR identifier (e.g. ADR-001)"
-        )
+    adr_id: str = (  # string-id-ok: ADR identifiers are human-readable slugs, not UUIDs
+        Field(description="Stable ADR identifier (e.g. ADR-001)")
     )
     title: str = Field(description="ADR title")
     decision: str = Field(description="One-sentence decision summary")

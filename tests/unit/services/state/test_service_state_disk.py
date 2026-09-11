@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -189,3 +190,65 @@ async def test_schema_mismatch_raises_corruption(tmp_path: Path) -> None:
     (state_dir / "state.yaml").write_text("just_a_string: true\n")
     with pytest.raises(StateCorruptionError):
         await store.get("bad_schema")
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_put_preserves_primary_write_error_when_close_also_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A secondary descriptor-close error cannot mask a failed write."""
+    store = ServiceStateDisk(state_root=tmp_path)
+    envelope = ModelStateEnvelope(
+        node_id="node_write_error",
+        data={"x": 1},
+        written_at=datetime.now(UTC),
+    )
+    real_write = os.write
+    real_close = os.close
+
+    def fail_write(fd: int, data: bytes) -> int:
+        del fd, data
+        raise RuntimeError("write failed")
+
+    closed_fds: list[int] = []
+
+    def record_close(fd: int) -> None:
+        closed_fds.append(fd)
+        real_close(fd)
+
+    monkeypatch.setattr(os, "write", fail_write)
+    monkeypatch.setattr(os, "close", record_close)
+
+    with pytest.raises(RuntimeError, match="write failed"):
+        await store.put(envelope)
+    assert closed_fds
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_put_preserves_primary_close_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A close failure remains visible while the recovery close is attempted."""
+    store = ServiceStateDisk(state_root=tmp_path)
+    envelope = ModelStateEnvelope(
+        node_id="node_close_error",
+        data={"x": 1},
+        written_at=datetime.now(UTC),
+    )
+    real_close = os.close
+    calls = 0
+
+    def fail_first_close(fd: int) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise OSError("close failed")
+        real_close(fd)
+
+    monkeypatch.setattr(os, "close", fail_first_close)
+
+    with pytest.raises(OSError, match="close failed"):
+        await store.put(envelope)
+    assert calls == 2

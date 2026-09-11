@@ -15,6 +15,8 @@ These regression tests prove the OCC merge-eligibility redesign:
 from __future__ import annotations
 
 import hashlib
+import os
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -25,7 +27,11 @@ from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_receipt_supersession import (
     ModelReceiptSupersession,
 )
-from omnibase_core.validation.validator_occ_append_only import evaluate_append_only
+from omnibase_core.validation.validator_occ_append_only import (
+    _parse_contract_document,
+    evaluate_append_only,
+    main,
+)
 from omnibase_core.validation.validator_occ_merge_eligibility import (
     EnumOccEligibilityReason,
     ModelOccEligibilityInput,
@@ -39,6 +45,7 @@ from omnibase_core.validation.validator_receipt_gate import (
 from omnibase_core.validation.validator_receipt_supersession import (
     resolve_supersession,
 )
+from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 TICKET = "OMN-13888"
 
@@ -795,3 +802,110 @@ def test_append_only_net_new_contract_passes() -> None:
     head = _contract(["a"])
     result = evaluate_append_only(None, head, [])
     assert result.ok is True
+
+
+@pytest.mark.unit
+def test_recursive_yaml_boundary_preserves_historical_entry_hash() -> None:
+    """The strict dynamic OCC boundary retains fields used by receipt hashing."""
+    contract = {
+        "schema_version": "1.0.0",
+        "ticket_id": TICKET,
+        "title": "historical contract",
+        "dod_evidence": [
+            {
+                "id": "historical-source",
+                "description": "source proof",
+                "checks": [{"check_type": "command", "check_value": "true"}],
+                "source": {"head": "abc", "base": "def"},
+                "status": "PASS",
+                "evidence_artifact": {"path": "drift/example.yaml"},
+                "cwd": None,
+            }
+        ],
+    }
+    expected = compute_contract_entry_sha256(contract, "historical-source")
+    parsed = _parse_contract_document(yaml.safe_dump(contract, sort_keys=False))
+    assert parsed is not None
+    assert compute_contract_entry_sha256(parsed, "historical-source") == expected
+
+
+@pytest.mark.unit
+def test_occ_boundary_rejects_yaml_date_before_hashing() -> None:
+    """YAML-only scalar values must fail rather than alter hash semantics."""
+    from omnibase_core.validation.validator_occ_append_only import (
+        _InvalidContractDocumentError,
+    )
+
+    with pytest.raises(_InvalidContractDocumentError):
+        _parse_contract_document("ticket_id: OMN-13888\ncreated: 2026-09-10\n")
+
+
+@pytest.mark.unit
+def test_occ_boundary_rejects_present_null_document() -> None:
+    """A null contract cannot be mistaken for a net-new contract."""
+    from omnibase_core.validation.validator_occ_append_only import (
+        _InvalidContractDocumentError,
+    )
+
+    with pytest.raises(_InvalidContractDocumentError, match="empty or YAML null"):
+        _parse_contract_document("null\n", source="git:dev:contracts/OMN-1.yaml")
+
+
+def _commit_contract_base(repo: Path, contract: str | None) -> None:
+    subprocess.run(
+        ["git", "init", "-q"],
+        cwd=repo,
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=repo,
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test"],
+        cwd=repo,
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+    if contract is not None:
+        (repo / "contracts").mkdir()
+        (repo / "contracts" / f"{TICKET}.yaml").write_text(contract, encoding="utf-8")
+        subprocess.run(
+            ["git", "add", "."],
+            cwd=repo,
+            check=True,
+            env=scrub_git_location_env(os.environ),
+        )
+    subprocess.run(
+        ["git", "commit", "--allow-empty", "-qm", "base"],
+        cwd=repo,
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+
+
+@pytest.mark.unit
+def test_main_returns_two_for_invalid_utf8_present_head_contract(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A present unreadable head contract is malformed, never a net-new pass."""
+    _commit_contract_base(tmp_path, "ticket_id: OMN-13888\ndod_evidence: []\n")
+    (tmp_path / "contracts" / f"{TICKET}.yaml").write_bytes(b"\xff")
+    assert (
+        main(["--repo", str(tmp_path), "--ticket-id", TICKET, "--base-ref", "HEAD"])
+        == 2
+    )
+    assert "invalid OCC contract document" in capsys.readouterr().err
+
+
+@pytest.mark.unit
+def test_main_allows_absent_contract_as_net_new(tmp_path: Path) -> None:
+    """An absent contract retains the established net-new append-only behavior."""
+    _commit_contract_base(tmp_path, None)
+    assert (
+        main(["--repo", str(tmp_path), "--ticket-id", TICKET, "--base-ref", "HEAD"])
+        == 0
+    )

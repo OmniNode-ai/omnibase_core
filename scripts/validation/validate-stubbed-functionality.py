@@ -11,7 +11,7 @@ This validator looks for patterns that indicate incomplete implementations:
 - NotImplementedError being raised
 - Pass statements followed by return (common stub pattern)
 - Always-success returns without meaningful logic
-- TODO/FIXME comments in production code
+- unfinished-work marker comments in production code
 - Methods that only contain docstrings
 
 Excludes:
@@ -150,11 +150,17 @@ class StubbedFunctionalityChecker(ast.NodeVisitor):
                     )
 
     def visit_Expr(self, node: ast.Expr) -> None:
-        """Check for TODO/FIXME comments in string literals."""
+        """Check for unfinished-work markers in string literals."""
         if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
             comment_text = node.value.value.upper()
             if any(
-                marker in comment_text for marker in ["TODO", "FIXME", "XXX", "HACK"]
+                marker in comment_text
+                for marker in [
+                    "TODO",  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
+                    "FIXME",  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
+                    "XXX",
+                    "HACK",  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
+                ]
             ):
                 self.issues.append(
                     (
@@ -276,7 +282,9 @@ class ONEXStubbedFunctionalityValidator:
             print("   Guidelines:")
             print("   • Replace NotImplementedError with actual implementation")
             print("   • Remove pass statements and add meaningful logic")
-            print("   • Replace TODO/FIXME comments with completed functionality")
+            print(
+                "   • Replace TODO/FIXME comments with completed functionality"  # onex-allow-todo-marker OMN-18142 reason="CLI guidance"
+            )
             print("   • Ensure functions perform their documented behavior")
         else:
             print(

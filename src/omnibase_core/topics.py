@@ -80,9 +80,19 @@ class TopicBase(StrEnum):
     # Savings estimation: cloud-vs-local counterfactual for projection/API consumers
     SAVINGS_ESTIMATED = "onex.evt.omnibase-infra.savings-estimated.v1"
     # Cost-projection snapshot topics (consumed by omnidash widgets in OMN-10282)
-    PROJECTION_COST_SUMMARY = "onex.snapshot.projection.cost.summary.v1"
+    PROJECTION_COST_SUMMARY = "onex.snapshot.projection.cost.summary.v1"  # onex-allow-topic-literal OMN-17524 canonical registry
     PROJECTION_COST_BY_REPO = "onex.snapshot.projection.cost.by_repo.v1"
     PROJECTION_COST_TOKEN_USAGE = "onex.snapshot.projection.cost.token_usage.v1"
+
+    # ======================================================================
+    # Local runtime harness topics (OMN-13420)
+    # ======================================================================
+    HARNESS_DELEGATION_REQUESTED = "onex.cmd.omnibase-core.harness-delegation-request.v1"  # onex-allow-topic-literal OMN-17524 canonical registry
+    HARNESS_DELEGATION_INFERRED = "onex.evt.omnibase-core.harness-delegation-infer.v1"  # onex-allow-topic-literal OMN-17524 canonical registry
+    HARNESS_DELEGATION_COMPLETED = "onex.evt.omnibase-core.harness-delegation-completed.v1"  # onex-allow-topic-literal OMN-17524 canonical registry
+    HARNESS_SEA_REQUESTED = "onex.cmd.omnibase-core.harness-sea-request.v1"  # onex-allow-topic-literal OMN-17524 canonical registry
+    HARNESS_SEA_INFERRED = "onex.evt.omnibase-core.harness-sea-infer.v1"  # onex-allow-topic-literal OMN-17524 canonical registry
+    HARNESS_SEA_COMPLETED = "onex.evt.omnibase-core.harness-sea-completed.v1"  # onex-allow-topic-literal OMN-17524 canonical registry
 
     # ==========================================================================
     # Hook adapter observability topics (migrated to ONEX format, OMN-1552)

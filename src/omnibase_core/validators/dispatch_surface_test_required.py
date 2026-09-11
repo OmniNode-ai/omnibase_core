@@ -92,7 +92,7 @@ REAL_DISPATCH_TEST_MARKERS: tuple[str, ...] = (
     "_materialize_envelope_with_bindings",
 )
 
-SUPPRESSION_TOKEN = "# dispatch-surface-test-ok:"
+SUPPRESSION_TOKEN = "# dispatch-surface-test-ok:"  # secret-ok: detector grammar token, not a credential; env-var-ok: validator grammar token, not configuration
 
 
 def _is_source(path: str) -> bool:
@@ -148,7 +148,7 @@ def _git_changed_files(base: str) -> list[str]:
     )
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr)
-        raise SystemExit(2)
+        raise SystemExit(2)  # error-ok: CLI reports an unavailable git comparison
     return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
@@ -220,4 +220,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())  # error-ok: CLI process exit boundary

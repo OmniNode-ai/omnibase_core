@@ -45,7 +45,7 @@ commands:
     output_schema_ref: "com.omninode.omnimemory.query.output.v1"
     invocation:
       invocation_type: "kafka_event"
-      topic: "onex.cmd.omnimemory.query.v1"  # onex-topic-doc-example
+      topic: "onex.cmd.omnimemory.query.v1"  # onex-topic-doc-example; onex-allow-topic-literal OMN-17524 contract fixture
     permissions:
       - "memory:read"
     risk: "low"
@@ -66,7 +66,7 @@ commands:
     output_schema_ref: "com.omninode.omnimemory.ingest.output.v1"
     invocation:
       invocation_type: "kafka_event"
-      topic: "onex.cmd.omnimemory.ingest.v1"  # onex-topic-doc-example
+      topic: "onex.cmd.omnimemory.ingest.v1"  # onex-topic-doc-example; onex-allow-topic-literal OMN-17524 contract fixture
     permissions:
       - "memory:write"
     risk: "medium"
@@ -84,7 +84,7 @@ commands:
     output_schema_ref: "com.omninode.omnimemory.purge.output.v1"
     invocation:
       invocation_type: "kafka_event"
-      topic: "onex.cmd.omnimemory.purge.v1"  # onex-topic-doc-example
+      topic: "onex.cmd.omnimemory.purge.v1"  # onex-topic-doc-example; onex-allow-topic-literal OMN-17524 contract fixture
     permissions:
       - "memory:admin"
     risk: "critical"

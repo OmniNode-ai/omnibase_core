@@ -20,10 +20,13 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.artifacts.artifact_store import (
+from omnibase_core.artifacts import (
     ARTIFACT_STORE_ROOT_ENV,
     RESTRICTED_ARTIFACT_KINDS,
     WRITER_VERSION,
+    ArtifactConfigurationError,
+    ArtifactIntegrityError,
+    ArtifactNotFoundError,
     ArtifactQuotaExceededError,
     ArtifactSecretDetectedError,
     ArtifactStore,
@@ -63,6 +66,21 @@ def _write(store: ArtifactStore, data: bytes = _PAYLOAD) -> ModelArtifactRef:
 
 
 @pytest.mark.unit
+def test_typed_artifact_errors_preserve_standard_catch_boundaries() -> None:
+    """Typed artifact errors remain compatible with existing standard catches."""
+    assert issubclass(ArtifactConfigurationError, ValueError)
+    assert issubclass(ArtifactIntegrityError, ValueError)
+    assert issubclass(ArtifactNotFoundError, FileNotFoundError)
+
+
+@pytest.mark.unit
+def test_secret_error_preserves_ref_identity() -> None:
+    """The typed error retains the exact content-addressed payload object."""
+    ref = ModelArtifactRef.from_bytes(b"secret payload")
+    error = ArtifactSecretDetectedError(ref)
+    assert error.ref is ref
+
+
 class TestArtifactStoreEnv:
     """Fail-fast store-root resolution (Operating Rule 8)."""
 
@@ -84,9 +102,9 @@ class TestArtifactStoreEnv:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv(ARTIFACT_STORE_ROOT_ENV, str(tmp_path))
-        with pytest.raises(ValueError, match="max_artifact_bytes"):
+        with pytest.raises(ArtifactConfigurationError, match="max_artifact_bytes"):
             ArtifactStore(max_artifact_bytes=-1)
-        with pytest.raises(ValueError, match="max_scope_bytes"):
+        with pytest.raises(ArtifactConfigurationError, match="max_scope_bytes"):
             ArtifactStore(max_scope_bytes=-1)
 
 
@@ -139,6 +157,27 @@ class TestArtifactStoreWrite:
     def test_empty_payload_supported(self, store: ArtifactStore) -> None:
         ref = _write(store, b"")
         assert store.read_blob(ref) == b""
+
+    def test_atomic_write_preserves_write_error_when_cleanup_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A failed temporary-file cleanup cannot replace the write failure."""
+        write_error = RuntimeError("replace failed")
+
+        def fail_replace(_source: Path, _target: Path) -> Path:
+            raise write_error
+
+        def fail_unlink(_path: Path, *, missing_ok: bool = False) -> None:
+            del missing_ok
+            raise OSError("cleanup failed")
+
+        monkeypatch.setattr(Path, "replace", fail_replace)
+        monkeypatch.setattr(Path, "unlink", fail_unlink)
+
+        with pytest.raises(RuntimeError, match="replace failed") as exc_info:
+            ArtifactStore._atomic_write(tmp_path / "destination", b"payload")
+
+        assert exc_info.value is write_error
 
 
 @pytest.mark.unit
@@ -405,7 +444,7 @@ class TestArtifactRedactionAndSecrets:
                 correlation_id=None,
             )
         # The blob never existed, so a read fails explicitly.
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(ArtifactNotFoundError):
             store.read(ref)
 
     def test_redaction_transform_records_itself(self, store: ArtifactStore) -> None:
@@ -430,7 +469,9 @@ class TestArtifactRedactionAndSecrets:
         assert ref == ModelArtifactRef.from_bytes(b"[REDACTED]")
 
     def test_redaction_transform_requires_name(self, store: ArtifactStore) -> None:
-        with pytest.raises(ValueError, match="redaction_transform_name"):
+        with pytest.raises(
+            ArtifactConfigurationError, match="redaction_transform_name"
+        ):
             store.write_blob(
                 b"data",
                 media_type="text/plain",
@@ -560,12 +601,12 @@ class TestArtifactStoreRead:
 
     def test_read_missing_raises(self, store: ArtifactStore) -> None:
         ref = ModelArtifactRef.from_bytes(b"never written")
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(ArtifactNotFoundError):
             store.read(ref)
 
     def test_read_blob_missing_raises(self, store: ArtifactStore) -> None:
         ref = ModelArtifactRef.from_bytes(b"never written")
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(ArtifactNotFoundError):
             store.read_blob(ref)
 
     def test_read_detects_corruption(
@@ -574,7 +615,7 @@ class TestArtifactStoreRead:
         ref = _write(store)
         blob_path = tmp_path / ref.hex_digest[:2] / ref.hex_digest
         blob_path.write_bytes(b"tampered bytes")
-        with pytest.raises(ValueError, match="hash mismatch"):
+        with pytest.raises(ArtifactIntegrityError, match="hash mismatch"):
             store.read(ref)
 
     def test_read_blob_detects_corruption(
@@ -583,12 +624,12 @@ class TestArtifactStoreRead:
         ref = _write(store)
         blob_path = tmp_path / ref.hex_digest[:2] / ref.hex_digest
         blob_path.write_bytes(b"tampered bytes")
-        with pytest.raises(ValueError, match="hash mismatch"):
+        with pytest.raises(ArtifactIntegrityError, match="hash mismatch"):
             store.read_blob(ref)
 
     def test_read_meta_missing_raises(self, store: ArtifactStore) -> None:
         ref = ModelArtifactRef.from_bytes(b"never written")
-        with pytest.raises(FileNotFoundError):
+        with pytest.raises(ArtifactNotFoundError):
             store.read_meta(ref)
 
     def test_read_chunks_roundtrip(self, store: ArtifactStore) -> None:
@@ -615,14 +656,14 @@ class TestArtifactStoreRead:
         ref = _write(store)
         blob_path = tmp_path / ref.hex_digest[:2] / ref.hex_digest
         blob_path.write_bytes(b"tampered")
-        with pytest.raises(ValueError, match="hash mismatch"):
+        with pytest.raises(ArtifactIntegrityError, match="hash mismatch"):
             list(store.read_chunks(ref))
 
     def test_read_chunks_rejects_nonpositive_chunk_size(
         self, store: ArtifactStore
     ) -> None:
         ref = _write(store)
-        with pytest.raises(ValueError, match="chunk_size"):
+        with pytest.raises(ArtifactConfigurationError, match="chunk_size"):
             list(store.read_chunks(ref, chunk_size=0))
 
 

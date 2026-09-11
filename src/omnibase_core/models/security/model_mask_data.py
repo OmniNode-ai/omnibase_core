@@ -90,7 +90,4 @@ class ModelMaskData(BaseModel):
         )
 
 
-try:
-    ModelMaskData.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
-    pass
+ModelMaskData.model_rebuild()

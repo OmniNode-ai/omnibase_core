@@ -82,7 +82,7 @@ def cli_port_openclaw(
     if analysis.confidence_level == "requires_manual_review":
         click.echo(
             "  WARNING: This skill requires manual review before use. "
-            "Check TODO markers in handler."
+            "Check unfinished-work markers in handler."
         )
 
     click.echo(f"\nTo install: onex install {pkg_dir}")
