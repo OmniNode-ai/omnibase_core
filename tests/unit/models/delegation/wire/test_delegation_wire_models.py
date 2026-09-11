@@ -16,6 +16,7 @@ from omnibase_core.models.delegation.wire import (
     TASK_DELEGATED_TOPIC_V1,
     EnumBudgetAction,
     EnumDelegationTerminalFailureCause,
+    EnumDelegationTrafficClass,
     EnumQualityScoreComparison,
     EnumTierCostType,
     ModelBaselineIntent,
@@ -28,6 +29,7 @@ from omnibase_core.models.delegation.wire import (
     ModelDelegationEventEnvelope,
     ModelDelegationFailed,
     ModelDelegationFallbackPolicy,
+    ModelDelegationProvenance,
     ModelDelegationRequest,
     ModelDelegationResult,
     ModelDelegationRoutingRule,
@@ -98,6 +100,22 @@ class TestModelDelegationRequest:
     def test_basic_construction(self) -> None:
         r = self._make()
         assert r.task_type == "test"
+
+    def test_provenance_is_optional_and_round_trips_when_declared(self) -> None:
+        legacy = self._make()
+        assert legacy.provenance is None
+        assert "provenance" not in legacy.model_dump()
+
+        provenance = ModelDelegationProvenance(
+            source="external-client",
+            traffic_class=EnumDelegationTrafficClass.SYNTHETIC,
+            source_surface="scheduled-chain-canary",
+            requested_by="chain-canary",
+        )
+        request = self._make(provenance=provenance)
+
+        assert request.provenance == provenance
+        assert ModelDelegationRequest.model_validate(request.model_dump()) == request
 
     def test_cloud_completion_shaping_defaults_are_backward_compatible(self) -> None:
         request = self._make()
@@ -375,6 +393,29 @@ class TestModelDelegationResult:
         )
         assert r.quality_passed is True
         assert r.escalation_count == 0
+
+    def test_terminal_preserves_typed_request_provenance(self) -> None:
+        provenance = ModelDelegationProvenance(
+            source="external-client",
+            traffic_class=EnumDelegationTrafficClass.SYNTHETIC,
+            source_surface="scheduled-chain-canary",
+            requested_by="chain-canary",
+        )
+        result = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+            provenance=provenance,
+        )
+
+        assert result.provenance == provenance
+        assert ModelDelegationResult.model_validate(result.model_dump()) == result
 
     def test_escalation_fields_default(self) -> None:
         r = ModelDelegationResult(
@@ -954,6 +995,28 @@ class TestModelDelegationResult:
                 total_tokens=6,
                 fallback_to_claude=False,
             )
+
+
+@pytest.mark.unit
+class TestModelDelegationProvenance:
+    def test_unclassified_is_distinct_from_organic_and_synthetic(self) -> None:
+        provenance = ModelDelegationProvenance(source="codex")
+
+        assert provenance.traffic_class is EnumDelegationTrafficClass.UNCLASSIFIED
+        assert provenance.traffic_class is not EnumDelegationTrafficClass.ORGANIC
+        assert provenance.traffic_class is not EnumDelegationTrafficClass.SYNTHETIC
+
+    def test_synthetic_requires_queryable_source_surface(self) -> None:
+        with pytest.raises(ValidationError, match="requires source_surface"):
+            ModelDelegationProvenance(
+                source="external-client",
+                traffic_class=EnumDelegationTrafficClass.SYNTHETIC,
+            )
+
+    @pytest.mark.parametrize("field_name", ["source_surface", "requested_by"])
+    def test_identifiers_reject_blank_or_padded_values(self, field_name: str) -> None:
+        with pytest.raises(ValidationError, match="nonblank and unpadded"):
+            ModelDelegationProvenance(source="codex", **{field_name: " "})
 
 
 @pytest.mark.unit

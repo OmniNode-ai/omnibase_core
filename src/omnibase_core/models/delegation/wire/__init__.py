@@ -22,6 +22,10 @@ from omnibase_core.models.delegation.wire.model_delegation_completed import (
 from omnibase_core.models.delegation.wire.model_delegation_failed import (
     ModelDelegationFailed,
 )
+from omnibase_core.models.delegation.wire.model_delegation_provenance import (
+    EnumDelegationTrafficClass,
+    ModelDelegationProvenance,
+)
 from omnibase_core.models.delegation.wire.model_delegation_result import (
     EnumDelegationTerminalFailureCause,
     EnumQualityScoreComparison,
@@ -83,6 +87,7 @@ __all__: list[str] = [
     "TASK_DELEGATED_TOPIC_V1",
     "EnumBudgetAction",
     "EnumDelegationTerminalFailureCause",
+    "EnumDelegationTrafficClass",
     "EnumDelegationRoutingDisposition",
     "EnumDelegationTerminalOutcome",
     "EnumDelegationUnroutedReason",
@@ -105,6 +110,7 @@ __all__: list[str] = [
     "ModelDelegationRequest",
     "ModelDelegationResult",
     "ModelDelegationProviderFailureCause",
+    "ModelDelegationProvenance",
     "ModelDelegationQualityGateRejection",
     "ModelDelegationTerminalCompletedV2",
     "ModelDelegationTerminalFailedRoutedV2",
