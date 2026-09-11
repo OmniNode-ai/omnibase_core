@@ -2,9 +2,32 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# Pre-push governed impacted-test selector (OMN-13973 / WS7 OMN-14655, D6a lane).
+# Governed impacted-test selector (OMN-13973 / WS7 OMN-14655, D6a lane).
 #
-# Runs the FAST LOCAL IMPACTED SUBSET of the unit suite once per `git push`,
+# ============================================================================
+# MANUAL INVOCATION ONLY as of 2026-09-11 (OMN-18176).
+#
+# This script is NO LONGER WIRED TO ANY GIT HOOK. The `prepush-smart-tests`
+# entry that invoked it at the pre-push stage was removed from
+# .pre-commit-config.yaml; see the retirement block at the foot of that file
+# for the measurement and the rollback. Hosted CI is the enforced merge gate
+# and runs the identical selection -- collected both directions on
+# 2026-09-11, the pre-push maximal set and CI's full-suite set are the same
+# 45,136 tests with zero difference either way.
+#
+# The script is RETAINED rather than deleted because other machinery depends
+# on it: the remote lab dispatcher (scripts/hooks/prepush_dispatch.sh), the
+# full-suite host guard, and seven modules under tests/scripts/ that pin its
+# content. Run it by hand when you want the local subset:
+#
+#     bash scripts/hooks/prepush_smart_tests.sh
+#
+# The CI-side selector (scripts/ci/detect_test_paths.py and its adjacency
+# config) is byte-unchanged and remains the authority for CI's own selection.
+# Everything below describes the behaviour of a manual run.
+# ============================================================================
+#
+# Runs the FAST LOCAL IMPACTED SUBSET of the unit suite,
 # using the SAME governed selector CI uses -- scripts/ci/detect_test_paths.py +
 # scripts/ci/test_selection_adjacency.yaml -- NOT a hand-typed `-k`. The selector
 # is fail-closed: it escalates to the full unit suite whenever it cannot prove
@@ -51,6 +74,11 @@
 #                        CI var name); default here is smart selection ON, because
 #                        the whole point of the local hook is the impacted subset.
 #   PREPUSH_FULL_SUITE   set non-empty to force the FULL suite.
+#
+# None of these variables is a bypass, and none of them re-wires this script to
+# a git hook: every one of them can only make a MANUAL run select MORE tests.
+# There is no environment variable that restores the retired pre-push leg
+# (OMN-18176). Restoring it means reverting that change's squash commit.
 
 set -euo pipefail
 

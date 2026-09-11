@@ -29,6 +29,17 @@
 #   pre-commit install --hook-type pre-push  # Install pre-push hooks
 #   pre-commit run --all-files            # Run all pre-commit hooks
 #   pre-commit run --all-files --hook-stage pre-push  # Run pre-push hooks
+#
+# PRE-PUSH SCOPE, as of 2026-09-11 (OMN-18176): pre-push is policy, type and
+# lint checks plus two named test exceptions. Nine hooks. The governed
+# impacted-test selector was retired from this stage -- hosted CI is the
+# enforced merge gate and runs the identical selection. The two hooks that
+# still reach a test runner, `pytest-protocol-uuid-enforcement` and
+# `verify-flip-bundle`, are deliberate exceptions and each carries an
+# annotation at its own definition giving its measured cost and the reason it
+# is kept. Do not remove either for consistency with the retirement. See the
+# retirement block at the foot of this file; plan of record
+# OmniNode-ai/knowledge-base-internal#328 phase 1.
 
 repos:
   # YAML formatting (standard across ecosystem)
@@ -231,6 +242,36 @@ repos:
       # Runs at PRE-PUSH (flip-discovery diffs the whole branch vs origin/dev, which is
       # present locally) — it does its OWN git discovery, so pass_filenames is false.
       # No committed flip in the diff -> exit 0.
+      #
+      # RETAINED TEST EXCEPTION #2 (OMN-18176, kb-internal#328 section 2.8).
+      # This gate reaches the test runner -- indirectly, through the
+      # parity_replay module the entry script imports -- and is DELIBERATELY
+      # KEPT at pre-push even though OMN-18176 retired the governed
+      # impacted-test selector from this stage. Do not remove it as an
+      # oversight or for consistency.
+      #
+      #   Measured cost 2026-09-09: 0.51 s at steady state, exit 0, reporting
+      #                             no canonical-shape flips to prove. The
+      #                             files: filter above means an unrelated
+      #                             push never starts it at all. It runs tests
+      #                             only when the push carries a newly
+      #                             canonicalised node, or burns an entry out
+      #                             of the parity-debt baseline. When it does
+      #                             fire the module records a 2026-07-28
+      #                             census of ~24 min for 22 proofs, ~65 s
+      #                             each.
+      #   Kept ON COST, NOT ON COVERAGE -- and the difference from exception
+      #                             #1 matters. CI runs this IDENTICAL gate in
+      #                             the import-layering job on every pull
+      #                             request except a docs-only diff, and a
+      #                             docs-only diff cannot contain a node flip.
+      #                             Retiring it would lose no property. It
+      #                             stays because it costs half a second at
+      #                             steady state and because phase 1's rule is
+      #                             to change nothing but the smart-tests hook.
+      #                             A later reader who wants exactly one rule
+      #                             can drop it at no loss of coverage; that is
+      #                             a decision, not a cleanup.
       - id: verify-flip-bundle
         name: canonical-shape flip-bundle seam gate (fail-closed, OMN-14809)
         entry: uv run python scripts/ci/verify_flip_bundle.py
@@ -1693,6 +1734,33 @@ repos:
       # Verifies protocol type annotations use UUID instead of str
       # Catches issues like / before CI
       # ~6s runtime - acceptable for pre-push but too slow for every commit
+      #
+      # RETAINED TEST EXCEPTION #1 (OMN-18176, kb-internal#328 section 2.8).
+      # This hook invokes the test runner and is DELIBERATELY KEPT at pre-push
+      # even though OMN-18176 retired the governed impacted-test selector from
+      # this stage. Do not remove it as an oversight or for consistency.
+      #
+      #   Measured cost 2026-09-09: 2.02 s of test-runner time, 4.4 s wall
+      #                             including environment resolution. One
+      #                             module, 45 tests. Unconditional -- it takes
+      #                             no file arguments and always runs.
+      #   Kept ON COVERAGE:         CI gates the same property only when the
+      #                             impacted-subset selector happens to pick
+      #                             this module up. ENABLE_SMART_TESTS is true
+      #                             for this repository, so an ordinary pull
+      #                             request runs the selector's output, not the
+      #                             full suite, and no workflow names this
+      #                             module or a marker unique to it. CI's
+      #                             coverage is therefore conditional on the
+      #                             diff; this hook's is unconditional on every
+      #                             push. Retiring it would trade a guaranteed
+      #                             check for a conditional one.
+      #   What it guards:           that identifier fields on the container and
+      #                             type protocols are typed as UUID rather
+      #                             than str, and that the models built on them
+      #                             validate, reject and serialise accordingly.
+      #                             It is the regression fence around the
+      #                             string-to-identifier migration.
       - id: pytest-protocol-uuid-enforcement
         name: Protocol UUID Enforcement Check
         entry: uv run pytest
@@ -1935,28 +2003,44 @@ repos:
         always_run: true
         stages: [pre-commit]
 
-  # Governed impacted-test selector at PRE-PUSH (OMN-13973 / WS7 OMN-14655, D6a).
-  # Runs the fast local IMPACTED SUBSET of the unit suite once per `git push`,
-  # via the SAME selector CI uses (scripts/ci/detect_test_paths.py +
-  # test_selection_adjacency.yaml, ENABLE_SMART_TESTS) -- never a hand-typed -k.
-  # Fail-closed: escalates to the full unit suite when it cannot prove narrowing
-  # is safe (shared module / pyproject deps / scripts/ci/ / >=8 modules / main).
-  # NET-NEGATIVE-SURFACE: retires the "run the whole suite by hand before every
-  # push" default (root CLAUDE.md Rule #4). This is a fast local mirror ADVISORY
-  # of the full CI suite -- NOT byte-parity with an enforced CI context (on CI
-  # the selector is behind ENABLE_SMART_TESTS off-by-default; the enforced gate
-  # is the full suite). FAIL-LOUD: hard-errors if base/selector/adjacency cannot
-  # resolve (plan section 3d.4); never a green skip.
-  - repo: local
-    hooks:
-      - id: prepush-smart-tests
-        name: Governed impacted-test selector (pre-push, OMN-13973)
-        entry: bash scripts/hooks/prepush_smart_tests.sh
-        language: system
-        pass_filenames: false
-        always_run: true
-        verbose: true
-        stages: [pre-push]
+# ---------------------------------------------------------------------------
+# RETIRED 2026-09-11 (OMN-18176): the governed impacted-test selector
+# `prepush-smart-tests` (OMN-13973 / WS7 OMN-14655) no longer runs at
+# pre-push. It ran `bash scripts/hooks/prepush_smart_tests.sh`, which
+# dispatched either the impacted subset or, fail-closed, the whole
+# `tests/` tree -- 45,136 collectable tests -- onto a lab host at five
+# budgeted cores, 1h13m to 2h13m per escalation.
+#
+# Why it went: hosted CI is the ENFORCED merge gate and runs the identical
+# selection. Measured in this worktree on 2026-09-11, two independent
+# collections diffed both directions:
+#
+#     pre-push maximal  `pytest tests/ --ignore=tests/integration`  45,136
+#     CI full suite     `pytest tests/ --ignore=tests/integration`  45,136
+#     in pre-push, not in CI ......................................       0
+#     in CI, not in pre-push ......................................       0
+#
+# Neither side applies a marker expression, so no test lost its only
+# execution path and there is nothing to re-home. The narrow path used the
+# same module CI's smart selection uses (scripts/ci/detect_test_paths.py),
+# so the local leg was a duplicate of CI's own selection, not a second
+# opinion. Honest limit: feedback moves later, not away.
+#
+# `scripts/hooks/prepush_smart_tests.sh` is RETAINED, not deleted -- the
+# remote dispatcher and seven modules under tests/scripts/ pin it. Its
+# header now states it is manual-invocation only. The CI-side selector is
+# byte-unchanged.
+#
+# Rollback is `git revert` of this change's squash commit. There is no
+# environment variable that turns the leg back on, deliberately: no
+# PREPUSH_* knob and no ENABLE_SMART_TESTS override restores it, and no
+# dual path exists. Plan of record: OmniNode-ai/knowledge-base-internal#328
+# phase 1. Precedents: OmniNode-ai/omnibase_infra#3415 and
+# OmniNode-ai/omnimarket#2463.
+#
+# The end state is asserted mechanically by
+# tests/ci/test_prepush_test_leg_retired_omn18176.py, not by this comment.
+# ---------------------------------------------------------------------------
 
 # Configuration
 default_install_hook_types: [pre-commit, pre-push, commit-msg]
