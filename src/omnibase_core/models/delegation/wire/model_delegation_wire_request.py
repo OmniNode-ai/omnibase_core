@@ -14,6 +14,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.delegation.wire.model_budget import ModelBudgetLimits
+from omnibase_core.models.delegation.wire.model_delegation_provenance import (
+    ModelDelegationProvenance,
+)
 
 EnumQualityContractMode = Literal["extend_task_class", "replace_task_class"]
 
@@ -158,6 +161,14 @@ class ModelDelegationRequest(BaseModel):
     source_file_path: str | None = Field(
         default=None,
         description="File context for the delegation, if any.",
+    )
+    provenance: ModelDelegationProvenance | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed ingress provenance carried unchanged into durable workflow state "
+            "and terminal evidence. None is explicit legacy/unclassified provenance."
+        ),
     )
     context_pack: str = Field(
         default="",

@@ -16,6 +16,9 @@ from omnibase_core.enums.enum_delegation_terminal_failure_cause import (
 from omnibase_core.enums.enum_quality_score_comparison import (
     EnumQualityScoreComparison,
 )
+from omnibase_core.models.delegation.wire.model_delegation_provenance import (
+    ModelDelegationProvenance,
+)
 
 
 class ModelDelegationResult(BaseModel):
@@ -49,6 +52,14 @@ class ModelDelegationResult(BaseModel):
         description=(
             "Declared provider identity for the selected route. Never inferred "
             "from a post-terminal tenant overlay."
+        ),
+    )
+    provenance: ModelDelegationProvenance | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed request provenance copied unchanged from delegation acceptance. "
+            "None is explicit legacy/unclassified provenance."
         ),
     )
     content: str = Field(..., description="The LLM-generated response content.")
