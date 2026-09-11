@@ -264,7 +264,106 @@ jobs:
       # instead of re-running its own resolution. The Python/uv setup steps
       # that only existed to run that duplicate check are removed with it.
 
+      # OMN-18179: this job used to arm auto-merge with no check for whether a
+      # human had already turned it off. It fires on `pull_request: opened` and
+      # again on `check_suite: completed` -- 57 of this repo's last 100 runs
+      # came from check_suite -- so an explicit `gh pr merge --disable-auto`
+      # could be undone by the next completing check suite and the PR would
+      # merge as soon as its checks went green. Converting to draft was the only
+      # durable pause. omnibase_core#1678 was armed on open at
+      # 2026-09-11T10:40:33Z, before the authorization ruling for that change
+      # reached the lane, and merged at 11:17:57Z; on the sibling repo
+      # omninode_infra#1310, a prod scale-down taking 13 Deployments to zero
+      # replicas, the same shape needed a manual draft conversion to contain.
+      #
+      # The rule is small: the most recent human decision wins. Re-arming by
+      # hand writes a fresh enable event after the disable, so automation
+      # resumes with no special case. The decision logic is pure and unit-tested
+      # in scripts/ci/check_auto_merge_hold.py.
+      - name: Check for a previously disabled auto-merge (OMN-18179)
+        id: hold_gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ needs.pre-check.outputs.pr }}
+        run: |
+          set -euo pipefail
+          owner="${GH_REPO%/*}"
+          name="${GH_REPO#*/}"
+          # Two measured API details this query depends on (2026-09-11):
+          #
+          # 1. itemTypes MUST list all three enable variants. Arming with an
+          #    explicit method -- `--squash --auto`, which is what this repo
+          #    uses -- emits AutoSquashEnabledEvent, NOT AutoMergeEnabledEvent.
+          #    A filter naming only the latter returns an empty enable history
+          #    for every PR this workflow has ever armed.
+          # 2. Do NOT read timelineItems.totalCount. It ignores the itemTypes
+          #    filter and returns the unfiltered timeline length: the query that
+          #    returned 2 filtered nodes for omninode_infra#1310 reported
+          #    totalCount 7, and 2 nodes / totalCount 13 for #1313.
+          #
+          # tests/unit/scripts/ci/test_auto_merge_hold_omn18179.py asserts this
+          # filter and the helper's event tuples stay in lockstep, and that the
+          # query never reads totalCount.
+          # shellcheck disable=SC2016 # GraphQL variables are interpreted by GitHub, not this shell.
+          if ! payload="$(gh api graphql \
+            -f query='
+              query($owner:String!,$name:String!,$pr:Int!){
+                repository(owner:$owner,name:$name){
+                  pullRequest(number:$pr){
+                    labels(first:100){nodes{name}}
+                    timelineItems(last:100, itemTypes:[
+                      AUTO_MERGE_ENABLED_EVENT,
+                      AUTO_SQUASH_ENABLED_EVENT,
+                      AUTO_REBASE_ENABLED_EVENT,
+                      AUTO_MERGE_DISABLED_EVENT
+                    ]){
+                      nodes{
+                        __typename
+                        ... on AutoMergeEnabledEvent{createdAt}
+                        ... on AutoSquashEnabledEvent{createdAt}
+                        ... on AutoRebaseEnabledEvent{createdAt}
+                        ... on AutoMergeDisabledEvent{createdAt reason}
+                      }
+                    }
+                  }
+                }
+              }' \
+            -f owner="$owner" \
+            -f name="$name" \
+            -F pr="$PR")"; then
+            echo "::warning::Could not read the auto-merge timeline for PR #${PR}; holding (OMN-18179)."
+            payload=""
+          fi
+
+          # A response whose shape is anything other than the expected array is
+          # "undetermined", never "empty and therefore safe" -- the helper
+          # distinguishes the two and fails closed on the former.
+          if [ -n "$payload" ]; then
+            pr_json="$(printf '%s' "$payload" | jq -c '.data.repository.pullRequest // {}')"
+            timeline_json="$(printf '%s' "$pr_json" | jq -c 'if (.timelineItems.nodes | type) == "array" then .timelineItems.nodes else null end')"
+            labels_json="$(printf '%s' "$pr_json" | jq -c 'if (.labels.nodes | type) == "array" then [.labels.nodes[].name] else null end')"
+          else
+            timeline_json="null"
+            labels_json="null"
+          fi
+
+          verdict="$(python3 scripts/ci/check_auto_merge_hold.py hold \
+            --timeline-json "$timeline_json" \
+            --labels-json "$labels_json")"
+          echo "auto-merge hold check for PR #${PR}: ${verdict}"
+
+          if [ "$verdict" = "hold" ]; then
+            echo "::warning::PR #${PR}: not arming auto-merge (OMN-18179)."
+            echo "Cause: a previous disable, the pause label, or a state that could not be read."
+            echo "Re-arm by hand to resume automatic arming."
+            echo "hold=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "hold=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Enable auto-merge
+        if: steps.hold_gate.outputs.hold != 'true'
         env:
           # OMN-17875: MUST be CROSS_REPO_PAT. GitHub completes an armed
           # auto-merge as the arming identity, and GITHUB_TOKEN-authored
@@ -318,6 +417,7 @@ jobs:
           fi
 
       - name: Enqueue armed PR and verify it entered the queue
+        if: steps.hold_gate.outputs.hold != 'true'
         env:
           # OMN-17875: this step MUTATES merge state twice — `gh pr
           # update-branch` pushes a merge commit onto the PR head branch, and
