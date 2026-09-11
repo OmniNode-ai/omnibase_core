@@ -5,10 +5,10 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_budget_action import EnumBudgetAction
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
@@ -84,6 +84,23 @@ class ModelInferenceIntent(BaseModel):
             "orchestrator can reject a late response from an earlier route."
         ),
     )
+    route: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Selected backend route that the inference effect is to execute. "
+            "Paired with provider; both are absent for legacy or pre-backend "
+            "events."
+        ),
+    )
+    provider: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Declared provider identity for the selected backend route. Paired "
+            "with route and never inferred after execution."
+        ),
+    )
     api_key_ref: str | None = Field(
         default=None,
         description=(
@@ -141,6 +158,19 @@ class ModelInferenceIntent(BaseModel):
         cls, response_format: dict[str, object] | None
     ) -> dict[str, object] | None:
         return validate_response_format(response_format)
+
+    @model_validator(mode="after")
+    def _validate_receipt_provenance_pair(self) -> Self:
+        """Require route/provider provenance to be complete when present."""
+        if (self.route is None) != (self.provider is None):
+            msg = "route and provider must be provided together"
+            raise ValueError(msg)
+        if self.route is not None:
+            assert self.provider is not None
+            if not self.route.strip() or not self.provider.strip():
+                msg = "route and provider must be nonblank when provided"
+                raise ValueError(msg)
+        return self
 
 
 class ModelQualityGateIntent(BaseModel):
@@ -209,6 +239,22 @@ class ModelInferenceResponseData(BaseModel):
         default="",
         description="Failure reason when inference could not produce content.",
     )
+    route: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Route actually selected for this inference response. Paired with "
+            "provider; absent is explicit unknown provenance."
+        ),
+    )
+    provider: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Declared provider for the route that produced this response. Never "
+            "reconstructed from tenant configuration after execution."
+        ),
+    )
     # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
     # OMN-14280 (OMN-14208 slice-2 A-now): round-tripped from ModelInferenceIntent
     # by the inference effect so the tenant that owned the call is auditable on
@@ -224,6 +270,19 @@ class ModelInferenceResponseData(BaseModel):
             ),
         )
     )
+
+    @model_validator(mode="after")
+    def _validate_receipt_provenance_pair(self) -> Self:
+        """Require route/provider provenance to be complete when present."""
+        if (self.route is None) != (self.provider is None):
+            msg = "route and provider must be provided together"
+            raise ValueError(msg)
+        if self.route is not None:
+            assert self.provider is not None
+            if not self.route.strip() or not self.provider.strip():
+                msg = "route and provider must be nonblank when provided"
+                raise ValueError(msg)
+        return self
 
 
 class ModelComplianceLoopResult(BaseModel):

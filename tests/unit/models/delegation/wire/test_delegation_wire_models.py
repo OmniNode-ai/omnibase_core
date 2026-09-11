@@ -392,6 +392,96 @@ class TestModelDelegationResult:
         assert r.terminal_failure_reason is None
         assert r.attempts_count == 1
 
+    def test_receipt_provenance_is_optional_and_complete_when_set(self) -> None:
+        legacy = ModelDelegationResult(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+        assert legacy.route is None
+        assert legacy.provider is None
+        assert "route" not in legacy.model_dump()
+        assert "provider" not in legacy.model_dump()
+
+        provenanced = legacy.model_copy(
+            update={"route": "byok-openrouter", "provider": "openrouter"}
+        )
+        assert (
+            ModelDelegationResult.model_validate(provenanced.model_dump())
+            == provenanced
+        )
+
+    @pytest.mark.parametrize(
+        ("route", "provider"),
+        [("byok-openrouter", None), (None, "openrouter"), (" ", "openrouter")],
+    )
+    def test_receipt_provenance_rejects_partial_or_blank_pair(
+        self, route: str | None, provider: str | None
+    ) -> None:
+        with pytest.raises(ValidationError, match="route and provider"):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                latency_ms=100,
+                fallback_to_claude=False,
+                route=route,
+                provider=provider,
+            )
+
+    def test_completed_and_failed_terminals_inherit_provenance_validation(self) -> None:
+        completed = ModelDelegationCompleted(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="result",
+            quality_passed=True,
+            quality_score=0.9,
+            latency_ms=100,
+            fallback_to_claude=False,
+            route="byok-openrouter",
+            provider="openrouter",
+        )
+        assert completed.route == "byok-openrouter"
+
+        failed = ModelDelegationFailed(
+            correlation_id=uuid.uuid4(),
+            task_type="test",
+            model_used="qwen3",
+            endpoint_url="http://localhost:8000",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+        )
+        assert failed.route is None
+
+        with pytest.raises(ValidationError, match="route and provider"):
+            ModelDelegationCompleted(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                latency_ms=100,
+                fallback_to_claude=False,
+                route="byok-openrouter",
+            )
+
     def test_structured_quality_evidence_defaults_for_release_compatibility(
         self,
     ) -> None:
@@ -1006,6 +1096,49 @@ class TestModelInferenceIntent:
         assert tenant_intent.tenant_id == "tenant-alpha"
         assert tenant_intent.model_dump()["tenant_id"] == "tenant-alpha"
 
+    def test_receipt_provenance_is_optional_and_complete_when_set(self) -> None:
+        legacy = ModelInferenceIntent(
+            base_url="http://localhost:8000",
+            model="qwen3",
+            system_prompt="You are helpful.",
+            prompt="Write a test",
+            max_tokens=512,
+            correlation_id=uuid.uuid4(),
+        )
+        assert legacy.route is None
+        assert legacy.provider is None
+        assert "route" not in legacy.model_dump()
+        assert "provider" not in legacy.model_dump()
+
+        provenanced = ModelInferenceIntent.model_validate(
+            {
+                **legacy.model_dump(),
+                "route": "byok-openrouter",
+                "provider": "openrouter",
+            }
+        )
+        assert provenanced.route == "byok-openrouter"
+        assert provenanced.provider == "openrouter"
+
+    @pytest.mark.parametrize(
+        ("route", "provider"),
+        [("byok-openrouter", None), (None, "openrouter"), ("", "openrouter")],
+    )
+    def test_receipt_provenance_rejects_partial_or_blank_pair(
+        self, route: str | None, provider: str | None
+    ) -> None:
+        with pytest.raises(ValidationError, match="route and provider"):
+            ModelInferenceIntent(
+                base_url="http://localhost:8000",
+                model="qwen3",
+                system_prompt="You are helpful.",
+                prompt="Write a test",
+                max_tokens=512,
+                correlation_id=uuid.uuid4(),
+                route=route,
+                provider=provider,
+            )
+
     def test_inference_attempt_id_is_optional_and_round_trips_as_uuid(self) -> None:
         correlation_id = uuid.uuid4()
         default_intent = ModelInferenceIntent(
@@ -1580,6 +1713,43 @@ class TestModelInferenceResponseData:
             tenant_id="tenant-alpha",
         )
         assert tenant_resp.tenant_id == "tenant-alpha"
+
+    def test_receipt_provenance_is_optional_and_round_trips_when_complete(self) -> None:
+        legacy = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="qwen3-14b",
+        )
+        assert legacy.route is None
+        assert legacy.provider is None
+        assert "route" not in legacy.model_dump()
+        assert "provider" not in legacy.model_dump()
+
+        provenanced = ModelInferenceResponseData(
+            correlation_id=uuid.uuid4(),
+            content="Generated response.",
+            model_used="nvidia/nemotron-3-ultra-550b-a55b:free",
+            route="byok-openrouter",
+            provider="openrouter",
+        )
+        assert provenanced.route == "byok-openrouter"
+        assert provenanced.provider == "openrouter"
+
+    @pytest.mark.parametrize(
+        ("route", "provider"),
+        [("byok-openrouter", None), (None, "openrouter"), ("", "openrouter")],
+    )
+    def test_receipt_provenance_rejects_partial_or_blank_pair(
+        self, route: str | None, provider: str | None
+    ) -> None:
+        with pytest.raises(ValidationError, match="route and provider"):
+            ModelInferenceResponseData(
+                correlation_id=uuid.uuid4(),
+                content="Generated response.",
+                model_used="qwen3-14b",
+                route=route,
+                provider=provider,
+            )
 
     def test_inference_attempt_id_is_optional_and_round_trips_as_uuid(self) -> None:
         default_resp = ModelInferenceResponseData(
