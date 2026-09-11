@@ -15,12 +15,24 @@ from omnibase_core.enums.enum_degraded_behavior import EnumDegradedBehavior
 from .model_cursor_contract import ModelCursorContract
 from .model_projection_base import ModelProjectionBase
 from .model_projection_contract import ModelProjectionContract
+from .model_upsert_plan import (
+    ALLOWED_WRITE_ATTESTATION_SQL,
+    SQL_EXPRESSION_SENTINEL_PREFIX,
+    WRITE_ATTESTATION_COLUMNS,
+    ModelUpsertPlan,
+    build_upsert_plan,
+)
 from .model_watermark import ModelProjectionWatermark
 
 __all__ = [
+    "ALLOWED_WRITE_ATTESTATION_SQL",
+    "SQL_EXPRESSION_SENTINEL_PREFIX",
+    "WRITE_ATTESTATION_COLUMNS",
     "EnumDegradedBehavior",
     "ModelCursorContract",
     "ModelProjectionBase",
     "ModelProjectionContract",
     "ModelProjectionWatermark",
+    "ModelUpsertPlan",
+    "build_upsert_plan",
 ]
