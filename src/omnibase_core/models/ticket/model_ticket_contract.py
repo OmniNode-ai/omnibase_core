@@ -80,6 +80,7 @@ _SEMVER_PATTERN: re.Pattern[str] = re.compile(
 # Security constraints (matching OCC values to prevent DoS)
 _MAX_STRING_LENGTH = 10000
 _MAX_LIST_ITEMS = 1000
+_MAX_DOD_EVIDENCE_ITEMS = 10000
 
 
 @allow_string_id(reason="External Linear ticket identifier (e.g., OMN-1807)")
@@ -182,7 +183,7 @@ class ModelTicketContract(BaseModel):
             "Definition of Done evidence items. Maps Linear DoD bullets "
             "to executable checks for automated verification."
         ),
-        max_length=_MAX_LIST_ITEMS,
+        max_length=_MAX_DOD_EVIDENCE_ITEMS,
     )
 
     # Contract completeness level (drives tooling decisions)

@@ -45,7 +45,10 @@ from omnibase_core.models.ticket import (
     VerificationKind,
     VerificationStep,
 )
-from omnibase_core.models.ticket.model_ticket_contract import _MAX_LIST_ITEMS
+from omnibase_core.models.ticket.model_ticket_contract import (
+    _MAX_DOD_EVIDENCE_ITEMS,
+    _MAX_LIST_ITEMS,
+)
 
 # =============================================================================
 # Fixtures
@@ -1298,7 +1301,6 @@ class TestListLengthCaps:
         capped_siblings = (
             "interfaces_touched",
             "evidence_requirements",
-            "dod_evidence",
             "requirements",
             "questions",
             "verification_steps",
@@ -1318,6 +1320,16 @@ class TestListLengthCaps:
             for name in capped_siblings
         }
         assert all(v == _MAX_LIST_ITEMS for v in max_lengths.values()), max_lengths
+
+        dod_evidence_max_length = next(
+            (
+                m.max_length
+                for m in contract_fields["dod_evidence"].metadata
+                if hasattr(m, "max_length")
+            ),
+            None,
+        )
+        assert dod_evidence_max_length == _MAX_DOD_EVIDENCE_ITEMS
 
 
 # =============================================================================
