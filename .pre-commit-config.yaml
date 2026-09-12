@@ -540,6 +540,31 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # OMN-18235: the dependency-cascade generator may not silently stop
+      # emitting its machine-readable provenance block. Clause 1 of the
+      # OMN-18233 verified-supersession predicate resolves against that block,
+      # so a generator that drops it makes the predicate unresolvable and puts
+      # every release-cascading ticket back behind a pull request that can
+      # never merge. The same assertions run in CI as part of the test suite;
+      # this hook is the local half, scoped to the one file that can break it
+      # so unrelated commits do not pay for it.
+      - id: cascade-provenance-block
+        name: Cascade bumps carry machine-readable provenance (OMN-18235)
+        entry: uv run --frozen pytest
+        language: system
+        files: ^\.github/workflows/dependency-cascade\.yml$
+        pass_filenames: false
+        args:
+          - tests/scripts/test_omn_18235_cascade_provenance_block.py
+          - -q
+          - --no-header
+          - --timeout=60
+          - -p
+          - no:rerunfailures
+          - -p
+          - no:testmon
+        stages: [pre-commit]
+
       # OMN-14515: every Pydantic model must resolve to an explicit extra="forbid".
       # ABSENCE IS A VIOLATION — Pydantic's default is extra="ignore", which SILENTLY
       # DROPS unknown fields (four live data-loss bugs: OMN-14490/14506/14513/14514).
