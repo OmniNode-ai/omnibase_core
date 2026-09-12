@@ -327,6 +327,35 @@ def test_yaml_round_trip_preserves_merged_fields() -> None:
     assert restored.title == "Round-trip test"
 
 
+@pytest.mark.unit
+def test_dod_evidence_ledger_accepts_live_occ_observation_volume() -> None:
+    """The OCC observation ledger can exceed the generic operational list cap."""
+
+    evidence_items = [
+        {
+            "id": f"occ-observation-run{i}-1",
+            "description": f"OCC observation append {i}",
+            "source": "generated",
+            "checks": [
+                {
+                    "check_type": "command",
+                    "check_value": f"gh api repos/OmniNode-ai/onex_change_control/commits/{i:040x} --jq .sha",
+                }
+            ],
+        }
+        for i in range(1003)
+    ]
+
+    contract = ModelTicketContract(
+        ticket_id="OMN-14888",
+        title="OCC observation evidence ledger",
+        dod_evidence=evidence_items,
+    )
+
+    assert len(contract.dod_evidence) == 1003
+    assert contract.dod_evidence[-1].id == "occ-observation-run1002-1"
+
+
 # ============================================================================
 # T6 — On-disk YAML sample (OMN-6238.yaml fields) loads without error
 # ============================================================================
