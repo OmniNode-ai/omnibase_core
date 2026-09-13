@@ -45,6 +45,14 @@ If a gate is missing or still running, the verdict is PENDING (poll again). At
 the caller's deadline, PENDING is converted to FAILURE (fail-closed): the
 required context always reaches a terminal state.
 
+External contexts are also PENDING while they are not strictly successful. A
+separate workflow can publish a completed non-success check-run for the same
+commit before its prerequisite/preflight state is repaired, then publish a
+newer successful check-run. The poller therefore gives that producer the same
+bounded window as an absent or running external context. Its final
+non-success state still fails closed at the caller's deadline; failures in this
+workflow's own jobs remain immediately terminal.
+
 Exit codes: ``0`` success, ``1`` failure, ``2`` pending.
 """
 
@@ -268,19 +276,33 @@ def _external_check_states(
     """Collapse ``commits/{sha}/check-runs`` rows to one entry per check-run name.
 
     That endpoint has no ``run_attempt`` field like the Actions jobs endpoint —
-    a rerun instead POSTs a new check-run row under the same name. Rows are
-    kept by latest ``started_at`` (lexicographic ISO-8601 compare; ties keep
-    array order, last wins) so a stale failed rerun can never outrank a fresh
-    success, mirroring the run-attempt dedup used for in-run jobs above.
+    a rerun instead POSTs a new check-run row under the same name. The payload
+    provides a unique numeric check-run ``id`` but not ``created_at``. Use the
+    ID as the conservative freshness surrogate, then ``completed_at``,
+    ``started_at``, and response index as deterministic tie-breakers. The API
+    does not promise a chronological order when timestamps are absent, but a
+    higher-ID queued/skipped row must still prevent an older success from
+    producing a false green. ``started_at`` alone is not safe because skipped
+    check-runs can omit it entirely.
     """
 
-    best: dict[str, tuple[str, JobState]] = {}
-    for raw in check_runs:
+    best: dict[str, tuple[tuple[int, str, str, int], JobState]] = {}
+    for response_index, raw in enumerate(check_runs):
         name = str(raw.get("name") or "")
         if not name:
             continue
         conclusion = raw.get("conclusion")
+        raw_id = raw.get("id")
+        check_run_id = (
+            raw_id
+            if isinstance(raw_id, int) and not isinstance(raw_id, bool)
+            else int(raw_id)
+            if isinstance(raw_id, str) and raw_id.isdecimal()
+            else -1
+        )
+        completed_at = str(raw.get("completed_at") or "")
         started_at = str(raw.get("started_at") or "")
+        freshness = (check_run_id, completed_at, started_at, response_index)
         state = JobState(
             name=name,
             status=str(raw.get("status") or ""),
@@ -288,9 +310,9 @@ def _external_check_states(
             run_attempt=1,
         )
         prev = best.get(name)
-        if prev is None or started_at >= prev[0]:
-            best[name] = (started_at, state)
-    return {name: state for name, (_started_at, state) in best.items()}
+        if prev is None or freshness >= prev[0]:
+            best[name] = (freshness, state)
+    return {name: state for name, (_freshness, state) in best.items()}
 
 
 def evaluate_external(
@@ -303,9 +325,10 @@ def evaluate_external(
     STRICT success-only, mirroring :data:`STRICT_SUCCESS_JOBS`: each name in
     ``expected`` must be present with ``status == 'completed'`` and
     ``conclusion == 'success'``. Absent, still-running, skipped, failed, and
-    cancelled are never a silent pass — absent/still-running is
-    missing-or-pending (poll again, fail-closed at the caller's deadline);
-    everything else present+completed+not-success is an immediate failure.
+    cancelled are never a silent pass. The two returned lists distinguish a
+    completed non-success snapshot from an absent/running snapshot; both are
+    retried by :func:`evaluate` until the poller's fail-closed deadline, since
+    a separate workflow can supersede its check-run for the same commit.
     """
 
     latest = _external_check_states(check_runs)
@@ -414,11 +437,18 @@ def evaluate(
         external_missing_or_pending,
     )
 
-    if sweep_failures or validator_not_success or external_failures:
+    # A completed non-success external context is evidence of a failed
+    # *snapshot*, but not necessarily a terminal producer verdict: its
+    # separate workflow may be reissued after a prerequisite/preflight repair
+    # and replace this row for the same commit. Keep polling it through the
+    # bounded deadline. In-run jobs belong to this fixed Actions run, so their
+    # failures (and strict validator failures) remain immediately fatal.
+    if sweep_failures or validator_not_success:
         return EXIT_FAILURE, _report("FAILURE", *args)
     if (
         gate_missing_or_pending
         or validator_missing_or_pending
+        or external_failures
         or external_missing_or_pending
     ):
         return EXIT_PENDING, _report("PENDING", *args)

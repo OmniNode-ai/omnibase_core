@@ -59,14 +59,18 @@ def _check_run(
     *,
     status: str = "completed",
     started_at: str = "",
+    check_run_id: int | None = None,
 ) -> dict:
     """Build a ``commits/{sha}/check-runs`` row (L4 external-context fixture)."""
-    return {
+    result = {
         "name": name,
         "status": status,
         "conclusion": conclusion,
         "started_at": started_at,
     }
+    if check_run_id is not None:
+        result["id"] = check_run_id
+    return result
 
 
 def _all_gates(conclusion: str = "success") -> list[dict]:
@@ -398,13 +402,13 @@ class TestCiSummaryGateCli:
         result = self._run(jobs, "--run-attempt", "2")
         assert result.returncode == EXIT_SUCCESS, result.stdout + result.stderr
 
-    def test_cli_external_check_runs_failure_exit_one(self) -> None:
+    def test_cli_external_check_runs_failure_is_pending_for_supersession(self) -> None:
         bad = [
             _check_run(EXPECTED_EXTERNAL_CONTEXTS[0], "failure"),
             _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
         ]
         result = self._run(_all_good(), external_runs=bad)
-        assert result.returncode == EXIT_FAILURE, result.stdout + result.stderr
+        assert result.returncode == EXIT_PENDING, result.stdout + result.stderr
 
     def test_cli_external_check_runs_empty_is_pending(self) -> None:
         result = self._run(_all_good(), external_runs=[])
@@ -481,11 +485,19 @@ class TestExpectedExternalContexts:
         assert failures == []
         assert sorted(missing) == sorted(EXPECTED_EXTERNAL_CONTEXTS)
 
-    def test_external_rerun_uses_latest_started_at(self) -> None:
+    def test_external_rerun_uses_latest_check_run_id(self) -> None:
         name = EXPECTED_EXTERNAL_CONTEXTS[0]
         runs = [
-            _check_run(name, "failure", started_at="2026-01-01T00:00:00Z"),
-            _check_run(name, "success", started_at="2026-01-01T01:00:00Z"),
+            _check_run(
+                name,
+                "failure",
+                check_run_id=100,
+            ),
+            _check_run(
+                name,
+                "success",
+                check_run_id=101,
+            ),
             _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
         ]
         failures, missing = evaluate_external(runs)
@@ -497,10 +509,77 @@ class TestExpectedExternalContexts:
     ) -> None:
         name = EXPECTED_EXTERNAL_CONTEXTS[0]
         runs = [
-            _check_run(name, "success", started_at="2026-01-01T00:00:00Z"),
-            _check_run(name, "failure", started_at="2026-01-01T01:00:00Z"),
+            _check_run(
+                name,
+                "success",
+                check_run_id=100,
+            ),
+            _check_run(
+                name,
+                "failure",
+                check_run_id=101,
+            ),
             _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
         ]
+        failures, _missing = evaluate_external(runs)
+        assert failures == [name]
+
+    def test_newer_skipped_context_without_started_at_supersedes_old_success(
+        self,
+    ) -> None:
+        """Skipped rows have no ``started_at`` but are still the latest state."""
+        name = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = [
+            _check_run(
+                name,
+                "success",
+                started_at="2026-09-04T07:58:00Z",
+                check_run_id=100,
+            ),
+            _check_run(
+                name,
+                "skipped",
+                check_run_id=101,
+            ),
+            _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
+        ]
+
+        failures, missing = evaluate_external(runs)
+        assert failures == [name]
+        assert missing == []
+        code, _ = evaluate(_all_good(), external_check_runs=runs)
+        assert code == EXIT_PENDING
+
+    def test_higher_id_queued_context_without_timestamps_blocks_stale_success(
+        self,
+    ) -> None:
+        """No timestamp is needed to keep a newer incomplete context non-green."""
+        name = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = [
+            _check_run(
+                name,
+                "success",
+                started_at="2026-09-04T07:58:00Z",
+                check_run_id=100,
+            ),
+            _check_run(name, None, status="queued", check_run_id=101),
+            _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
+        ]
+
+        failures, missing = evaluate_external(runs)
+        assert failures == []
+        assert missing == [name]
+        code, _ = evaluate(_all_good(), external_check_runs=runs)
+        assert code == EXIT_PENDING
+
+    def test_external_duplicate_id_tie_uses_response_order(self) -> None:
+        name = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = [
+            _check_run(name, "success", check_run_id=100),
+            _check_run(name, "failure", check_run_id=100),
+            _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
+        ]
+
         failures, _missing = evaluate_external(runs)
         assert failures == [name]
 
@@ -514,12 +593,67 @@ class TestExpectedExternalContexts:
         code, _ = evaluate(_all_good(), external_check_runs=runs)
         assert code == EXIT_SUCCESS
 
-    def test_full_evaluate_failure_when_external_context_red(self) -> None:
+    def test_full_evaluate_defers_completed_external_failure_for_supersession(
+        self,
+    ) -> None:
+        """Attempt-1 semantics: a red preflight-derived context is not final.
+
+        The external workflow can publish a fresh row for the same commit after
+        its preflight dependency is repaired. CI Summary must keep its bounded
+        poll loop alive long enough to observe that row.
+        """
+        runs = [_check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS]
+        runs[0] = _check_run(
+            EXPECTED_EXTERNAL_CONTEXTS[0],
+            "failure",
+            started_at="2026-09-04T07:59:44Z",
+        )
+        code, report = evaluate(_all_good(), external_check_runs=runs)
+        assert code == EXIT_PENDING
+        assert EXPECTED_EXTERNAL_CONTEXTS[0] in report
+
+        # The later external run for the same check name supersedes the stale
+        # completed failure and permits the normal all-green success verdict.
+        runs.append(
+            _check_run(
+                EXPECTED_EXTERNAL_CONTEXTS[0],
+                "success",
+                started_at="2026-09-04T08:02:00Z",
+            )
+        )
+        code, _ = evaluate(_all_good(), external_check_runs=runs)
+        assert code == EXIT_SUCCESS
+
+    def test_completed_external_failure_does_not_mask_in_run_fatal_failure(
+        self,
+    ) -> None:
+        """Only external snapshots wait; real failures in this run fail now."""
         runs = [_check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS]
         runs[0] = _check_run(EXPECTED_EXTERNAL_CONTEXTS[0], "failure")
-        code, report = evaluate(_all_good(), external_check_runs=runs)
+        jobs = _all_good()
+        jobs[0] = _job(GATE_JOBS[0], "failure")
+        code, _ = evaluate(jobs, external_check_runs=runs)
         assert code == EXIT_FAILURE
-        assert EXPECTED_EXTERNAL_CONTEXTS[0] in report
+
+    def test_ci_summary_workflow_fails_closed_when_pending_reaches_deadline(
+        self,
+    ) -> None:
+        """A sustained external failure remains non-green after the deadline."""
+        workflow = yaml.safe_load(CI_YML.read_text())
+        steps = workflow["jobs"]["ci-summary"]["steps"]
+        poll_step = next(
+            step["run"]
+            for step in steps
+            if step.get("name")
+            == "Poll run jobs and compute fail-closed CI Summary verdict"
+        )
+
+        assert (
+            "2) : ;;  # PENDING — gating jobs still running; keep polling" in poll_step
+        )
+        assert "deadline=$(( $(date +%s) + DEADLINE_MINUTES * 60 ))" in poll_step
+        assert "poll deadline (${DEADLINE_MINUTES}m) reached" in poll_step
+        assert "exit 1" in poll_step
 
 
 class TestContractComplianceFailClosed:

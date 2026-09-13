@@ -4232,19 +4232,48 @@ jobs:
           while true; do
             attempt=$((attempt + 1))
             fetch_ok=true
-            if ! gh api --paginate \
+            remaining=$(( deadline - $(date +%s) ))
+            if [ "${remaining}" -le 0 ]; then
+              echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached before GitHub API fetches completed — failing closed"
+              exit 1
+            fi
+            request_timeout="${remaining}"
+            if [ "${request_timeout}" -gt 60 ]; then
+              request_timeout=60
+            fi
+            if ! timeout "${request_timeout}s" gh api --paginate \
                 "repos/${GH_REPO}/actions/runs/${RUN_ID}/jobs?filter=all&per_page=100" \
                 --jq '.jobs[]' | jq -s '.' > jobs.json; then
               fetch_ok=false
             fi
-            if $fetch_ok && ! gh api --paginate \
-                "repos/${GH_REPO}/commits/${COMMIT_SHA}/check-runs?per_page=100" \
-                --jq '.check_runs[]' | jq -s '.' > external_check_runs.json; then
-              fetch_ok=false
+            if $fetch_ok; then
+              remaining=$(( deadline - $(date +%s) ))
+              if [ "${remaining}" -le 0 ]; then
+                fetch_ok=false
+              else
+                request_timeout="${remaining}"
+                if [ "${request_timeout}" -gt 60 ]; then
+                  request_timeout=60
+                fi
+                if ! timeout "${request_timeout}s" gh api --paginate \
+                    "repos/${GH_REPO}/commits/${COMMIT_SHA}/check-runs?per_page=100" \
+                    --jq '.check_runs[]' | jq -s '.' > external_check_runs.json; then
+                  fetch_ok=false
+                fi
+              fi
             fi
             if ! $fetch_ok; then
+              remaining=$(( deadline - $(date +%s) ))
+              if [ "${remaining}" -le 0 ]; then
+                echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached while GitHub API fetches were failing — failing closed"
+                exit 1
+              fi
+              sleep_seconds="${POLL_INTERVAL_SECONDS}"
+              if [ "${sleep_seconds}" -gt "${remaining}" ]; then
+                sleep_seconds="${remaining}"
+              fi
               echo "gh api fetch failed (attempt ${attempt}); retrying after ${POLL_INTERVAL_SECONDS}s"
-              sleep "${POLL_INTERVAL_SECONDS}"
+              sleep "${sleep_seconds}"
               continue
             fi
             python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json
@@ -4260,5 +4289,15 @@ jobs:
               python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --report-only || true
               exit 1
             fi
-            sleep "${POLL_INTERVAL_SECONDS}"
+            remaining=$(( deadline - $(date +%s) ))
+            if [ "${remaining}" -le 0 ]; then
+              echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached with gating jobs still pending — failing closed"
+              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --report-only || true
+              exit 1
+            fi
+            sleep_seconds="${POLL_INTERVAL_SECONDS}"
+            if [ "${sleep_seconds}" -gt "${remaining}" ]; then
+              sleep_seconds="${remaining}"
+            fi
+            sleep "${sleep_seconds}"
           done

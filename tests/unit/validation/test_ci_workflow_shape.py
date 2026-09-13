@@ -753,6 +753,35 @@ def test_ci_summary_is_hosted_no_needs_poller() -> None:
     )
 
 
+def test_ci_summary_fetch_retry_is_deadline_bounded() -> None:
+    """Persistent GitHub API failures must not outlive CI Summary's deadline."""
+    job = _ci_job("ci-summary")
+    poll_run = next(
+        str(step["run"])
+        for step in job["steps"]
+        if step.get("name")
+        == "Poll run jobs and compute fail-closed CI Summary verdict"
+    )
+    fetch_retry = poll_run[
+        poll_run.index("if ! $fetch_ok; then") : poll_run.index(
+            "python3 scripts/ci/ci_summary_gate.py"
+        )
+    ]
+    first_request = poll_run.index('timeout "${request_timeout}s" gh api --paginate')
+
+    assert poll_run.count('timeout "${request_timeout}s" gh api --paginate') == 2
+    assert poll_run.index("remaining=$(( deadline - $(date +%s) ))") < first_request
+    assert poll_run.index('request_timeout="${remaining}"') < first_request
+    assert 'if [ "${remaining}" -le 0 ]; then' in fetch_retry
+    assert (
+        "reached while GitHub API fetches were failing — failing closed" in fetch_retry
+    )
+    assert fetch_retry.index('if [ "${remaining}" -le 0 ]; then') < fetch_retry.index(
+        'sleep "${sleep_seconds}"'
+    )
+    assert 'sleep "${sleep_seconds}"' in fetch_retry
+
+
 _TIMEOUT_METHOD_RE = re.compile(r"--timeout-method=(\S+)")
 
 
