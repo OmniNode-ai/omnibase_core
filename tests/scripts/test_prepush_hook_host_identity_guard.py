@@ -49,9 +49,9 @@ Three assertion classes:
 
 from __future__ import annotations
 
+import inspect
 import json
 import os
-import platform
 import re
 import shutil
 import subprocess
@@ -63,8 +63,6 @@ import pytest
 from scripts.ci.test_selection_closure import TEST_UNIT_PREFIX
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-from tests.scripts._prepush_lab_isolation import network_free_lab_env
-
 HOOK_SCRIPT = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
 
 _GUARANTEED_NON_MATCHING_HOSTNAME = "definitely-not-a-gate-host-omn15059"
@@ -156,40 +154,16 @@ def test_the_escape_hatch_is_a_receipted_grant_not_an_env_var() -> None:
     )
 
 
-def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
+def test_guard_refuses_full_suite_escalation_on_non_200_host(tmp_path: Path) -> None:
     """Behavioral proof: force the full-suite escalation and a
     guaranteed-non-matching host; the hook must exit non-zero and must NEVER
     reach the actual pytest invocation."""
-    env = dict(os.environ)
-    env["PREPUSH_FULL_SUITE"] = "1"
-    env["PREPUSH_BASE_REF"] = "HEAD"
-    env["PREPUSH_200_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
-    env["PREPUSH_201_GATE_RUNNER_HOSTNAME"] = _GUARANTEED_NON_MATCHING_HOSTNAME
-    # OMN-16425: PREPUSH_ALLOW_LOCAL_FULL_SUITE leaking in from the outer
-    # process's ambient env (e.g. an operator's own degraded-host `git push`
-    # override) defeats this test's own assertion -- the hook takes the
-    # "DEGRADED-HOST OVERRIDE IN EFFECT" branch instead of refusing, and
-    # actually runs the real full suite as a subprocess of this already-
-    # running one (observed live: recursive full-suite spawns roughly every
-    # 1-2 minutes until the machine starved). Same stripping already used by
-    # _run_hook_forcing_full_suite below; this call site builds its own env
-    # inline and had been missed.
-    env.pop("PREPUSH_ALLOW_LOCAL_FULL_SUITE", None)
-    # OMN-16489: this test deliberately exercises FIRST-entry behavior, so the
-    # recursion sentinel an outer hook run exports must not leak in.
-    env.pop("ONEX_PREPUSH_HOOK_ACTIVE", None)
-    # OMN-16991/OMN-17159: hold the lab-dispatch leg network-free. Without it
-    # this test ships a real bundle to a lab host and starts the whole suite
-    # there. See _prepush_lab_isolation.
-    env.update(network_free_lab_env())
-    result = subprocess.run(
-        ["bash", str(HOOK_SCRIPT)],
-        cwd=REPO_ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-        timeout=180,
-        check=False,
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=True,
+        selected_paths=[],
+        extra_env=_governed_non_designated_host_env(),
+        require_non_designated_host=True,
     )
     assert result.returncode != 0, (
         "expected the host guard to refuse the full-suite escalation on a "
@@ -295,8 +269,7 @@ def _run_hook_with_stubbed_selection(
     is_full_suite: bool,
     selected_paths: list[str],
     extra_env: dict[str, str] | None = None,
-    isolate_lab: bool = True,
-    force_fit_local_capacity: bool = False,
+    require_non_designated_host: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     """Run the REAL hook end-to-end with a stubbed selector + stubbed pytest.
 
@@ -309,7 +282,11 @@ def _run_hook_with_stubbed_selection(
 
     The shim's controls deliberately use the ``OMN_TEST_`` prefix. A
     ``local_only`` invocation must accept no test, selector, placement, or
-    verdict control through ``PREPUSH_*``.
+    verdict control through ``PREPUSH_*``. Every real-hook invocation gets a
+    copied host table whose workroots live below ``tmp_path``; Git fetch is
+    witnessed and stubbed, and every executor transport is a witness stub.
+    Thus lock acquisition and the orphan reaper cannot reach production paths
+    even if a future test changes which branch it exercises.
     """
     selection_file = tmp_path / "selection.json"
     selection_file.write_text(
@@ -325,6 +302,19 @@ def _run_hook_with_stubbed_selection(
 
     stub_bin = tmp_path / "stub-bin"
     stub_bin.mkdir(parents=True, exist_ok=True)
+    workroot = tmp_path / "workroot"
+    host_table = tmp_path / "prepush_hosts.tsv"
+    local_host = _real_short_hostname().lower()
+    host_table.write_text(
+        "# hermetic test-only table; both HEAD and worktree reads map here\n"
+        f"local\tcapacity\t{local_host}\t-\t8\t/usr/bin/false\t0.0.0\t{workroot}\tlockdir\t1\t-\tdisabled\ttest local capacity row\n"
+        f"h200\tcapacity\ttest-h200\t-\t8\t/usr/bin/false\t0.0.0\t{workroot / 'h200'}\tlockdir\t1\t-\tauthorizing\ttest legacy h200 identity row\n"
+        f"h201c\tcapacity\ttest-h201c\t-\t8\t/usr/bin/false\t0.0.0\t{workroot / 'h201c'}\tlockdir\t1\t-\tauthorizing\ttest legacy gate-runner identity row\n"
+        f"h201\tcapacity\ttest-h201\tuser@test-h201\t8\t/usr/bin/false\t0.0.0\t{workroot / 'h201'}\tlockdir\t1\t-\tdisabled\ttest remote row\n"
+        f"h101\tcapacity\ttest-h101\tuser@test-h101\t8\t/usr/bin/false\t0.0.0\t{workroot / 'h101'}\tlockdir\t1\t-\tdisabled\ttest remote row\n"
+        f"h105\tcapacity\ttest-h105\tuser@test-h105\t8\t/usr/bin/false\t0.0.0\t{workroot / 'h105'}\tlockdir\t1\t-\tdisabled\ttest remote row\n",
+        encoding="utf-8",
+    )
     uv_stub = stub_bin / "uv"
     uv_stub.write_text(
         "#!/usr/bin/env bash\n"
@@ -362,10 +352,17 @@ def _run_hook_with_stubbed_selection(
     # separate witnesses. The hook may fetch its ordinary Git source base, but
     # local_only must not start an executor SSH/SCP probe, queue, or dispatch.
     real_git = shutil.which("git")
+    real_cat = shutil.which("cat")
     assert real_git is not None
+    assert real_cat is not None
     git_stub = stub_bin / "git"
     git_stub.write_text(
         "#!/usr/bin/env bash\n"
+        'for arg in "$@"; do\n'
+        '  if [ "$arg" = "HEAD:scripts/hooks/prepush_hosts.tsv" ]; then\n'
+        '    exec "$OMN_TEST_REAL_CAT" "$OMN_TEST_HOST_TABLE"\n'
+        "  fi\n"
+        "done\n"
         'if [ "${1:-}" = "fetch" ]; then\n'
         '  printf "fetch\\n" >> "$OMN_TEST_GIT_FETCH_WITNESS"\n'
         "  exit 0\n"
@@ -374,6 +371,16 @@ def _run_hook_with_stubbed_selection(
         encoding="utf-8",
     )
     git_stub.chmod(0o755)
+    cat_stub = stub_bin / "cat"
+    cat_stub.write_text(
+        "#!/usr/bin/env bash\n"
+        'if [ "${1:-}" = "$OMN_TEST_REAL_HOST_TABLE" ]; then\n'
+        '  exec "$OMN_TEST_REAL_CAT" "$OMN_TEST_HOST_TABLE"\n'
+        "fi\n"
+        'exec "$OMN_TEST_REAL_CAT" "$@"\n',
+        encoding="utf-8",
+    )
+    cat_stub.chmod(0o755)
     for transport in ("ssh", "scp"):
         transport_stub = stub_bin / transport
         transport_stub.write_text(
@@ -384,24 +391,24 @@ def _run_hook_with_stubbed_selection(
         )
         transport_stub.chmod(0o755)
 
-    # This Mac's shared load can legitimately exceed the production threshold
-    # while tests run. On Darwin, replace only the OS load reader with a
-    # witnessed, deterministic reading: this exercises the production probe
-    # command without using a PREPUSH_* production override. Linux uses
-    # /proc/loadavg and keeps its ordinary measurement.
-    if force_fit_local_capacity and platform.system() == "Darwin":
-        sysctl_stub = stub_bin / "sysctl"
-        sysctl_stub.write_text(
-            "#!/usr/bin/env bash\n"
-            'if [ "$*" = "-n vm.loadavg" ]; then\n'
-            '  printf "{ 0.10 0.10 0.10 }\\n"\n'
-            '  printf "load-probe\\n" >> "$OMN_TEST_LOCAL_CAPACITY_WITNESS"\n'
-            "  exit 0\n"
-            "fi\n"
-            'exec /usr/sbin/sysctl "$@"\n',
-            encoding="utf-8",
-        )
-        sysctl_stub.chmod(0o755)
+    # `host_load_ratio` invokes these POSIX snippets through `sh -c`. Witness
+    # both the real reaper call (then return no PIDs) and the real load probe
+    # (then supply a deterministic measured pair). This covers macOS and Linux
+    # without PREPUSH_* capacity overrides and prevents a test from reaping a
+    # live process on the developer machine.
+    sh_stub = stub_bin / "sh"
+    sh_stub.write_text(
+        "#!/usr/bin/env bash\n"
+        'if [ "${1:-}" = "-c" ]; then\n'
+        '  case "${2:-}" in\n'
+        '    *"ps -ww -Ao"*) printf "reaper\\n" >> "$OMN_TEST_REAPER_WITNESS"; exit 0 ;;\n'
+        '    *"getconf _NPROCESSORS_ONLN"*) printf "load-probe\\n" >> "$OMN_TEST_LOCAL_CAPACITY_WITNESS"; if [ "${OMN_TEST_LOAD_PROBE_EXIT:-0}" -ne 0 ]; then exit "$OMN_TEST_LOAD_PROBE_EXIT"; fi; printf "0.10 8\\n"; exit 0 ;;\n'
+        "  esac\n"
+        "fi\n"
+        'exec /bin/sh "$@"\n',
+        encoding="utf-8",
+    )
+    sh_stub.chmod(0o755)
 
     env = dict(os.environ)
     for name in tuple(env):
@@ -409,10 +416,16 @@ def _run_hook_with_stubbed_selection(
             env.pop(name)
     env["PATH"] = f"{stub_bin}{os.pathsep}{env['PATH']}"
     env["OMN_TEST_REAL_GIT"] = real_git
+    env["OMN_TEST_REAL_CAT"] = real_cat
+    env["OMN_TEST_HOST_TABLE"] = str(host_table)
+    env["OMN_TEST_REAL_HOST_TABLE"] = str(
+        REPO_ROOT / "scripts" / "hooks" / "prepush_hosts.tsv"
+    )
     env["OMN_TEST_SELECTION_JSON"] = str(selection_file)
     env["OMN_TEST_GIT_FETCH_WITNESS"] = str(tmp_path / "git-fetch.txt")
     env["OMN_TEST_EXECUTOR_WITNESS"] = str(tmp_path / "executor-transport.txt")
     env["OMN_TEST_LOCAL_CAPACITY_WITNESS"] = str(tmp_path / "local-capacity.txt")
+    env["OMN_TEST_REAPER_WITNESS"] = str(tmp_path / "reaper.txt")
     for leaky in (
         "ENABLE_SMART_TESTS",
         "PYTEST_ADDOPTS",
@@ -422,12 +435,18 @@ def _run_hook_with_stubbed_selection(
         "ONEX_PREPUSH_HOOK_ACTIVE",
     ):
         env.pop(leaky, None)
-    if isolate_lab:
-        # Governed-path tests remain network-free; local_only tests prove that
-        # they never reach this executor path without using its test override.
-        env.update(network_free_lab_env())
     if extra_env is not None:
         env.update(extra_env)
+    if require_non_designated_host:
+        _assert_no_authorizing_fixture_row_matches_local_host(host_table, env)
+    # Governed-path assertions may intentionally drive a placement refusal,
+    # but must never wait for a real host.  The picker's own closed "unknown
+    # slot" result keeps those rows unplaceable.  local_only cannot receive
+    # any PREPUSH override, so it relies exclusively on the transport stubs.
+    if env.get("PREPUSH_EXECUTION_SCOPE", "governed") != "local_only":
+        env.setdefault("PREPUSH_BASE_REF", "HEAD")
+        env["PREPUSH_SLOT_OVERRIDE_MAP"] = "no-such-host=unknown"
+        env.setdefault("PREPUSH_LOAD_OVERRIDE_REMOTE", "0.10 8")
 
     return subprocess.run(
         ["bash", str(HOOK_SCRIPT)],
@@ -614,6 +633,8 @@ def test_guard_refuses_selector_whole_tree_sentinel_when_flag_is_false(
         tmp_path,
         is_full_suite=False,
         selected_paths=[_SELECTOR_WHOLE_TREE_SENTINEL],
+        extra_env=_governed_non_designated_host_env(),
+        require_non_designated_host=True,
     )
     assert result.returncode != 0, (
         "expected the host guard to refuse the selector's fail-closed "
@@ -709,6 +730,8 @@ def test_guard_refuses_whole_suite_equivalent_selection_when_flag_is_false(
         tmp_path,
         is_full_suite=False,
         selected_paths=[_WHOLE_SUITE_SELECTION],
+        extra_env=_governed_non_designated_host_env(),
+        require_non_designated_host=True,
     )
     assert result.returncode != 0, (
         "expected the host guard to refuse a whole-suite-equivalent selection "
@@ -774,9 +797,7 @@ def test_local_only_scope_is_a_closed_typed_policy() -> None:
 def test_local_only_runs_the_selector_prescribed_full_suite_without_remote_io(
     tmp_path: Path,
 ) -> None:
-    """local_only needs a real local capacity reading and lock acquisition."""
-    if _local_only_lock_path().exists():
-        pytest.skip("local heavy-suite lock is held by an active local run")
+    """Every local_only result uses measured capacity and one temp-rooted lock."""
     git_fetch_witness = tmp_path / "git-fetch.txt"
     executor_witness = tmp_path / "executor-transport.txt"
     grant_witness = tmp_path / "grant.txt"
@@ -789,8 +810,6 @@ def test_local_only_runs_the_selector_prescribed_full_suite_without_remote_io(
             "PREPUSH_EXECUTION_SCOPE": "local_only",
             "OMN_TEST_GRANT_WITNESS": str(grant_witness),
         },
-        isolate_lab=False,
-        force_fit_local_capacity=True,
     )
 
     assert result.returncode == 0, result.stderr
@@ -800,59 +819,37 @@ def test_local_only_runs_the_selector_prescribed_full_suite_without_remote_io(
     assert git_fetch_witness.exists(), "the ordinary source-base fetch is permitted"
     assert not executor_witness.exists(), "no executor SSH/SCP may start"
     assert not grant_witness.exists(), "local_only must never consume a grant"
-    if platform.system() == "Darwin":
-        assert capacity_witness.exists(), "local_only must read local capacity"
+    assert capacity_witness.exists(), "local_only must read local capacity"
+    assert (tmp_path / "reaper.txt").exists(), "the reaper must be intercepted"
+    assert (tmp_path / "workroot").is_dir()
+    assert not (tmp_path / "workroot" / "LOCK").exists(), (
+        "the held lock must be released by the hook cleanup, inside tmp_path"
+    )
     assert "STUB-PYTEST-INVOKED" in result.stdout
     assert "pytest tests/ --ignore=tests/integration" in result.stdout
-
-
-def _local_only_lock_path() -> Path:
-    """Mirror the committed-table local workroot lookup without an override."""
-    host = (
-        subprocess.run(
-            ["hostname", "-s"],
-            capture_output=True,
-            check=True,
-            text=True,
-            timeout=60,
-        )
-        .stdout.strip()
-        .lower()
-    )
-    table = REPO_ROOT / "scripts" / "hooks" / "prepush_hosts.tsv"
-    for line in table.read_text(encoding="utf-8").splitlines():
-        if not line or line.startswith("#"):
-            continue
-        fields = line.split("\t")
-        if len(fields) >= 8 and fields[1] == "capacity" and fields[2] == host:
-            return Path(fields[7]) / "LOCK"
-    return REPO_ROOT / ".onex_state" / "prepush_distribution" / "LOCK"
 
 
 def test_local_only_refuses_when_its_exclusive_local_lock_cannot_be_acquired(
     tmp_path: Path,
 ) -> None:
-    """A real occupied mkdir lock refuses rather than routing off-box."""
-    lock_path = _local_only_lock_path()
+    """An occupied atomic mkdir lock under tmp_path refuses without routing."""
+    lock_path = tmp_path / "workroot" / "LOCK"
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        lock_path.mkdir()
-    except FileExistsError:
-        pytest.skip(f"local heavy-suite lock already held at {lock_path}")
+    lock_path.mkdir()
     try:
         result = _run_hook_with_stubbed_selection(
             tmp_path,
             is_full_suite=True,
             selected_paths=[],
             extra_env={"PREPUSH_EXECUTION_SCOPE": "local_only"},
-            isolate_lab=False,
-            force_fit_local_capacity=True,
         )
     finally:
         lock_path.rmdir()
 
     assert result.returncode != 0
-    assert "requires PREPUSH_EXECUTION_SCOPE=local_only" in result.stderr
+    assert "exclusive local heavy-suite slot is already held" in result.stderr
+    assert (tmp_path / "local-capacity.txt").exists()
+    assert (tmp_path / "reaper.txt").exists()
     assert not (tmp_path / "executor-transport.txt").exists()
     assert "STUB-PYTEST-INVOKED" not in result.stdout
 
@@ -861,8 +858,6 @@ def test_local_only_requires_a_real_local_pytest_pass_without_remote_io(
     tmp_path: Path,
 ) -> None:
     """A local test red remains a refusal; no verdict shortcut can satisfy it."""
-    if _local_only_lock_path().exists():
-        pytest.skip("local heavy-suite lock is held by an active local run")
     result = _run_hook_with_stubbed_selection(
         tmp_path,
         is_full_suite=True,
@@ -871,13 +866,56 @@ def test_local_only_requires_a_real_local_pytest_pass_without_remote_io(
             "PREPUSH_EXECUTION_SCOPE": "local_only",
             "OMN_TEST_PYTEST_EXIT": "23",
         },
-        isolate_lab=False,
-        force_fit_local_capacity=True,
     )
 
     assert result.returncode == 23
     assert "STUB-PYTEST-INVOKED" in result.stdout
     assert "ERROR: impacted tests failed (pytest exit 23)" in result.stderr
+    assert (tmp_path / "local-capacity.txt").exists()
+    assert (tmp_path / "reaper.txt").exists()
+    assert not (tmp_path / "executor-transport.txt").exists()
+
+
+def test_local_only_runs_a_narrow_selector_result_under_the_same_slot(
+    tmp_path: Path,
+) -> None:
+    """The narrow branch is not an unserialized exception to local_only."""
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=False,
+        selected_paths=[_NARROW_SELECTION],
+        extra_env={"PREPUSH_EXECUTION_SCOPE": "local_only"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "STUB-PYTEST-INVOKED" in result.stdout
+    assert _NARROW_SELECTION in result.stdout
+    assert (tmp_path / "local-capacity.txt").exists()
+    assert (tmp_path / "reaper.txt").exists()
+    assert (tmp_path / "workroot").is_dir()
+    assert not (tmp_path / "workroot" / "LOCK").exists()
+    assert not (tmp_path / "executor-transport.txt").exists()
+
+
+def test_local_only_refuses_a_narrow_selector_result_when_capacity_is_unproven(
+    tmp_path: Path,
+) -> None:
+    """A failed measurement must stop before the narrow pytest argv is reached."""
+    result = _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=False,
+        selected_paths=[_NARROW_SELECTION],
+        extra_env={
+            "PREPUSH_EXECUTION_SCOPE": "local_only",
+            "OMN_TEST_LOAD_PROBE_EXIT": "7",
+        },
+    )
+
+    assert result.returncode != 0
+    assert "local capacity could not be proven" in result.stderr
+    assert (tmp_path / "local-capacity.txt").exists()
+    assert (tmp_path / "reaper.txt").exists()
+    assert "STUB-PYTEST-INVOKED" not in result.stdout
     assert not (tmp_path / "executor-transport.txt").exists()
 
 
@@ -919,7 +957,6 @@ def test_local_only_rejects_every_selector_test_or_placement_override_before_exe
             name: value,
             "OMN_TEST_SELECTOR_WITNESS": str(selector_witness),
         },
-        isolate_lab=False,
     )
 
     assert result.returncode != 0
@@ -1010,16 +1047,26 @@ def _run_load_helper(
     *args: str, env_extra: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
     script = f'{_extract_load_helpers_source()}\n"$@"\n'
-    env = dict(os.environ)
-    env.update(env_extra or {})
-    return subprocess.run(
-        ["bash", "-c", script, "load-helper-test", *args],
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
-        env=env,
-    )
+    # The extracted remote branch includes an ssh-based reaper/probe. Keep this
+    # unit helper hermetic too: any remote attempt receives an immediate local
+    # failure, which is exactly the unmeasurable/rc=2 condition under test.
+    with tempfile.TemporaryDirectory() as tmp:
+        stub_bin = Path(tmp) / "stub-bin"
+        stub_bin.mkdir()
+        ssh_stub = stub_bin / "ssh"
+        ssh_stub.write_text("#!/usr/bin/env bash\nexit 255\n", encoding="utf-8")
+        ssh_stub.chmod(0o755)
+        env = dict(os.environ)
+        env.update(env_extra or {})
+        env["PATH"] = f"{stub_bin}{os.pathsep}{env['PATH']}"
+        return subprocess.run(
+            ["bash", "-c", script, "load-helper-test", *args],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+            env=env,
+        )
 
 
 def test_host_is_fit_true_under_threshold() -> None:
@@ -1067,69 +1114,20 @@ def test_host_load_ratio_computes_from_the_override_not_a_hardcoded_value() -> N
 
 
 def _run_hook_forcing_full_suite(
-    *, env_extra: dict[str, str], keep_env_override: bool = False
+    tmp_path: Path, *, env_extra: dict[str, str]
 ) -> subprocess.CompletedProcess[str]:
-    """Run the REAL hook with the full-suite escalation forced
-    (`PREPUSH_FULL_SUITE=1`) and the REAL governed selector (a fast, real `uv
-    run` invocation) -- but with a stub `uv` that intercepts only the eventual
-    `pytest` invocation, so the (potentially minutes-long) real test run never
-    happens while every decision up to and including `guard_full_suite_host`
-    is exercised for real."""
-    real_uv = shutil.which("uv")
-    assert real_uv is not None, "expected uv on PATH to run this test"
-
-    with tempfile.TemporaryDirectory() as tmp:
-        stub_bin = Path(tmp) / "stub-bin"
-        stub_bin.mkdir(parents=True, exist_ok=True)
-        uv_stub = stub_bin / "uv"
-        uv_stub.write_text(
-            "#!/usr/bin/env bash\n"
-            'case "$*" in\n'
-            "  *pytest*)\n"
-            '    echo "STUB-PYTEST-INVOKED $*"\n'
-            "    exit 0\n"
-            "    ;;\n"
-            "esac\n"
-            f'exec "{real_uv}" "$@"\n',
-            encoding="utf-8",
-        )
-        uv_stub.chmod(0o755)
-
-        env = dict(os.environ)
-        env["PATH"] = f"{stub_bin}{os.pathsep}{env['PATH']}"
-        env["PREPUSH_FULL_SUITE"] = "1"
-        env["PREPUSH_BASE_REF"] = "HEAD"
-        leaky_names = ["ONEX_PREPUSH_HOOK_ACTIVE"]
-        if not keep_env_override:
-            # OMN-16480: a PREPUSH_ALLOW_* value leaking in from the outer
-            # process is now a hard REFUSAL, so leaving one in place would make
-            # every test in this file fail on entry rather than on the behavior
-            # it is asserting. The one test that is ABOUT that refusal opts back
-            # in with keep_env_override=True.
-            leaky_names.append("PREPUSH_ALLOW_LOCAL_FULL_SUITE")
-        for leaky in leaky_names:
-            env.pop(leaky, None)
-        # OMN-16991: this harness runs the REAL hook with the heavy escalation
-        # forced. Since OMN-17159 wired the lab-dispatch leg into this repo,
-        # that is no longer a local-only decision -- without isolation the
-        # picker would ship a real git bundle to a lab host, take its exclusive
-        # slot and start the whole 45k-test suite there, naming THIS test
-        # process as the origin. See _prepush_lab_isolation.
-        env.update(network_free_lab_env())
-        env.update(env_extra)
-
-        return subprocess.run(
-            ["bash", str(HOOK_SCRIPT)],
-            cwd=REPO_ROOT,
-            env=env,
-            capture_output=True,
-            text=True,
-            timeout=120,
-            check=False,
-        )
+    """Exercise the real full branch through the one hermetic hook harness."""
+    return _run_hook_with_stubbed_selection(
+        tmp_path,
+        is_full_suite=True,
+        selected_paths=[],
+        extra_env=env_extra,
+    )
 
 
-def test_guard_refuses_known_good_host_that_is_over_the_load_threshold() -> None:
+def test_guard_refuses_known_good_host_that_is_over_the_load_threshold(
+    tmp_path: Path,
+) -> None:
     """The core OMN-16295 behavior: identity match is no longer sufficient.
 
     PREPUSH_LOAD_OVERRIDE_REMOTE is set (to an arbitrary fit value) so the
@@ -1137,6 +1135,7 @@ def test_guard_refuses_known_good_host_that_is_over_the_load_threshold() -> None
     about the SELF-host refusal, not about which remediation phrasing the
     other-host probe produces (that's covered by the two tests below)."""
     result = _run_hook_forcing_full_suite(
+        tmp_path,
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
@@ -1154,8 +1153,11 @@ def test_guard_refuses_known_good_host_that_is_over_the_load_threshold() -> None
     )
 
 
-def test_guard_allows_known_good_host_that_is_under_the_load_threshold() -> None:
+def test_guard_allows_known_good_host_that_is_under_the_load_threshold(
+    tmp_path: Path,
+) -> None:
     result = _run_hook_forcing_full_suite(
+        tmp_path,
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "2 24",
@@ -1301,10 +1303,11 @@ def test_the_reentrancy_check_is_called_on_the_contended_branch() -> None:
     )
 
 
-def test_guard_allows_the_201_gate_runner_identity_when_fit() -> None:
+def test_guard_allows_the_201_gate_runner_identity_when_fit(tmp_path: Path) -> None:
     """The .201 gate-runner is a valid execution host by identity, not just
     `.200` -- this is the routing half of OMN-16295."""
     result = _run_hook_forcing_full_suite(
+        tmp_path,
         env_extra={
             "PREPUSH_201_GATE_RUNNER_HOSTNAME": _real_short_hostname(),
             "PREPUSH_200_HOSTNAME": "definitely-not-this-host",
@@ -1318,7 +1321,7 @@ def test_guard_allows_the_201_gate_runner_identity_when_fit() -> None:
     assert "STUB-PYTEST-INVOKED" in result.stdout, result
 
 
-def test_the_inherited_env_override_is_refused_not_honored() -> None:
+def test_the_inherited_env_override_is_refused_not_honored(tmp_path: Path) -> None:
     """Behavioral inverse of the pre-OMN-16480 test that used to live here.
 
     The same invocation that once took the "DEGRADED-CAPACITY OVERRIDE IN
@@ -1327,12 +1330,12 @@ def test_the_inherited_env_override_is_refused_not_honored() -> None:
     happen even though the host would otherwise be designated -- the variable
     is not a weaker permission, it is a rejection."""
     result = _run_hook_forcing_full_suite(
+        tmp_path,
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
             "PREPUSH_ALLOW_LOCAL_FULL_SUITE": "1",
         },
-        keep_env_override=True,
     )
     assert result.returncode != 0, (
         f"expected the leaked override to be REFUSED, not honored: {result!r}"
@@ -1343,16 +1346,17 @@ def test_the_inherited_env_override_is_refused_not_honored() -> None:
     )
 
 
-def test_the_refusal_records_every_probed_host_and_its_verdict() -> None:
+def test_the_refusal_records_every_probed_host_and_its_verdict(tmp_path: Path) -> None:
     """The pre-OMN-17159 refusal interpolated ONE alternate host's load into a
     sentence. With a table of five rows the useful artifact is the whole probe
     trail: a refusal that names every host it considered, with the reason each
     was rejected, can be AUDITED rather than believed.
 
-    The lab leg is held network-free here (see network_free_lab_env), so every
-    row resolves to "slot unknown" and is skipped -- the fail-closed posture
+    The hermetic transport witness makes every placement row uncontactable, so
+    each resolves to "slot unknown" and is skipped -- the fail-closed posture
     the picker applies to any host it cannot prove idle."""
     result = _run_hook_forcing_full_suite(
+        tmp_path,
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
@@ -1367,7 +1371,7 @@ def test_the_refusal_records_every_probed_host_and_its_verdict() -> None:
         )
 
 
-def test_the_refusal_points_at_the_host_table_and_the_grant() -> None:
+def test_the_refusal_points_at_the_host_table_and_the_grant(tmp_path: Path) -> None:
     """A refusal must name its remediation. Both surfaces are load-bearing:
     the host table's header is how a new lab host gets added, the grant is the
     only sanctioned way to proceed on an unfit host.
@@ -1376,6 +1380,7 @@ def test_the_refusal_points_at_the_host_table_and_the_grant() -> None:
     procedure and the data it edits then cannot drift apart, and there is no
     second file to leave stale."""
     result = _run_hook_forcing_full_suite(
+        tmp_path,
         env_extra={
             "PREPUSH_200_HOSTNAME": _real_short_hostname(),
             "PREPUSH_LOAD_OVERRIDE_LOCAL": "50 24",
@@ -1392,23 +1397,66 @@ def _real_short_hostname() -> str:
     ).stdout.strip()
 
 
-def test_both_hook_harnesses_apply_the_lab_isolation() -> None:
-    """Every harness in this file that runs the REAL hook on a heavy path must
-    hold the lab leg network-free.
+def _governed_non_designated_host_env() -> dict[str, str]:
+    """Explicitly de-designate both legacy authorizing aliases for refusals."""
+    return {
+        "PREPUSH_200_HOSTNAME": _GUARANTEED_NON_MATCHING_HOSTNAME,
+        "PREPUSH_201_GATE_RUNNER_HOSTNAME": _GUARANTEED_NON_MATCHING_HOSTNAME,
+    }
 
-    This is a static check on purpose. The failure it guards is not a wrong
-    assertion -- it is a test that quietly spends an hour of a lab host's cores
-    and takes a slot real pushes are queued behind, which no behavioral
-    assertion in this file would notice. A new harness added without the
-    isolation is the realistic regression."""
-    text = Path(__file__).read_text(encoding="utf-8")
-    runs = text.count("str(HOOK_SCRIPT)")
-    isolations = text.count("network_free_lab_env()")
-    assert isolations >= runs, (
-        f"{runs} call sites run the real hook but only {isolations} apply the "
-        "lab isolation; a harness that reaches the picker unisolated will "
-        "dispatch a real suite to a lab host"
-    )
+
+def _assert_no_authorizing_fixture_row_matches_local_host(
+    host_table: Path, env: dict[str, str]
+) -> None:
+    """Pin the effective host identities consumed by the real dispatch helper.
+
+    ``prepush_row_hostname`` applies the two legacy aliases after reading the
+    row. A table that merely spells synthetic names is therefore insufficient:
+    the hook default can otherwise turn its ``h200`` row back into this Mac.
+    """
+    local_host = _real_short_hostname().lower()
+    effective_names = {
+        "h200": env.get("PREPUSH_200_HOSTNAME", ""),
+        "h201c": env.get("PREPUSH_201_GATE_RUNNER_HOSTNAME", ""),
+    }
+    for row in host_table.read_text(encoding="utf-8").splitlines():
+        if not row or row.startswith("#"):
+            continue
+        fields = row.split("\t")
+        if fields[11] != "authorizing":
+            continue
+        label, hostname = fields[0], fields[2]
+        effective_hostname = effective_names.get(label, hostname).lower()
+        assert effective_hostname != local_host, (
+            "the governed refusal fixture accidentally authorizes the real "
+            f"host through {label}: effective hostname={effective_hostname!r}, "
+            f"local hostname={local_host!r}"
+        )
+
+
+def test_hook_harness_is_temp_rooted_and_intercepts_all_external_actions() -> None:
+    """The reusable harness must make escape mechanically impossible.
+
+    Behavioral local_only tests above prove the rewritten table yields a real
+    temp-rooted mkdir lock, reaper witness, source-fetch witness, and no
+    executor witness. These source pins prevent a later helper refactor from
+    silently dropping one of those containment boundaries.
+    """
+    harness = Path(__file__).read_text(encoding="utf-8")
+    for required in (
+        'workroot = tmp_path / "workroot"',
+        'env["OMN_TEST_HOST_TABLE"]',
+        'env["OMN_TEST_GIT_FETCH_WITNESS"]',
+        'env["OMN_TEST_EXECUTOR_WITNESS"]',
+        'env["OMN_TEST_REAPER_WITNESS"]',
+        'for transport in ("ssh", "scp")',
+        'if [ "${1:-}" = "fetch" ]',
+        'if [ "$arg" = "HEAD:scripts/hooks/prepush_hosts.tsv" ]',
+    ):
+        assert required in harness, f"missing hermetic containment: {required}"
+    helper_source = inspect.getsource(_run_hook_with_stubbed_selection)
+    assert "isolate_lab" not in helper_source
+    assert "network_free_lab_env" not in helper_source
 
 
 def test_the_escalation_declares_the_integration_path_array() -> None:

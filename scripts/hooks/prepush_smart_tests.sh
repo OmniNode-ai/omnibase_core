@@ -466,15 +466,23 @@ prepush_lock_holder_is_ancestor() {
   return 1
 }
 
-# prepush_try_local_only_heavy_slot -- prove that this process may run the
-# selector-prescribed heavy suite locally. This is deliberately stricter than
-# the governed local path: local_only cannot turn an unmeasurable load or an
-# unusable/contended lock into an unserialized run, a grant, or a remote route.
-# It is a per-push decision only; it persists no verdict and returns with the
-# exclusive lock held for prepush_hook_cleanup to release after pytest exits.
-prepush_try_local_only_heavy_slot() {
-  local lw lock_rc=0
+# prepush_try_local_only_slot -- prove that this process may execute ANY
+# selector result locally. local_only is a placement policy for the complete
+# selector surface, not merely the heavyweight branches: a narrow result must
+# not become an unserialized exception. It cannot turn an unmeasurable load or
+# an unusable/contended lock into a grant, remote route, or persisted verdict.
+# The exclusive lock remains held until prepush_hook_cleanup releases it.
+prepush_try_local_only_slot() {
+  local host lc_host lw lock_rc=0
   PREPUSH_LOCAL_ONLY_REASON=""
+  PREPUSH_LOCAL_ONLY_HOST=""
+  host="$(hostname -s 2> /dev/null || true)"
+  if [ -z "$host" ]; then
+    PREPUSH_LOCAL_ONLY_REASON="local hostname could not be determined"
+    return 1
+  fi
+  lc_host="$(printf '%s' "$host" | tr '[:upper:]' '[:lower:]')"
+  PREPUSH_LC_HOST="$lc_host"
   if ! host_is_fit ""; then
     PREPUSH_LOCAL_ONLY_REASON="local capacity could not be proven"
     return 1
@@ -483,6 +491,7 @@ prepush_try_local_only_heavy_slot() {
   [ -n "$lw" ] || lw="${REPO_ROOT}/.onex_state/prepush_distribution"
   prepush_lock_acquire "$lw" || lock_rc=$?
   if [ "$lock_rc" -eq 0 ]; then
+    PREPUSH_LOCAL_ONLY_HOST="$host"
     return 0
   fi
   case "$lock_rc" in
@@ -499,6 +508,20 @@ guard_full_suite_host() {
   # refusal names the real cause. Default preserves the OMN-15059 wording for
   # the flag-driven escalation call sites, which pass no argument.
   heavy_what="${1:-heavy fail-closed full-suite escalation}"
+
+  # local_only acquired and retained the one exclusive local slot immediately
+  # after selector parsing, before either heavyweight branch can reach this
+  # guard. Do not re-measure or re-acquire here: doing so would either double
+  # lock or create a branch-specific exception to the closed local_only policy.
+  if [ "$PREPUSH_EXECUTION_SCOPE" = "local_only" ]; then
+    if [ "${PREPUSH_LOCAL_ONLY_LOCK_HELD:-0}" = "1" ]; then
+      log "LOCAL-ONLY EXECUTION SCOPE: ${heavy_what} is restricted to this host ('${PREPUSH_LOCAL_ONLY_HOST:-unknown}'); off-box probing, queueing, and dispatch are prohibited."
+      return 0
+    fi
+    die "${heavy_what} reached the local_only guard without its required exclusive local slot" \
+        "local_only must measure local capacity and acquire one exclusive slot before any selector result runs; retry the push after correcting the local execution boundary"
+  fi
+
   host="$(hostname -s 2>/dev/null || true)"
   if [ -z "$host" ]; then
     # Fail CLOSED (OMN-16489): see the routing note above PREPUSH_200_HOSTNAME.
@@ -530,18 +553,6 @@ guard_full_suite_host() {
   fi
   label="$(prepush_identity_label "$lc_host" || true)"
   designated="$(prepush_designated_hostnames)"
-
-  # OMN-17503: this must precede every dispatch_to_lab_host call. The picker
-  # probes remote hosts and dispatch_to_lab_host may queue or execute there;
-  # local_only instead permits only this process's unchanged pytest invocation.
-  if [ "$PREPUSH_EXECUTION_SCOPE" = "local_only" ]; then
-    if prepush_try_local_only_heavy_slot; then
-      log "LOCAL-ONLY EXECUTION SCOPE: ${heavy_what} is restricted to this host ('${host}'); off-box probing, queueing, and dispatch are prohibited."
-      return 0
-    fi
-    die "${heavy_what} requires PREPUSH_EXECUTION_SCOPE=local_only, but ${PREPUSH_LOCAL_ONLY_REASON:-local capacity could not be proven}" \
-        "local_only never falls through to an off-box host, a grant, or a persisted verdict. Free local capacity/slot and retry, or explicitly change the task execution boundary before using governed placement"
-  fi
 
   if [ -n "$label" ]; then
     # OMN-16295: identity alone is not enough -- this known-good host must
@@ -826,6 +837,21 @@ while IFS= read -r p; do
 done < <(read_sel selected_paths)
 
 log "selection: is_full_suite=${IS_FULL} reason=${REASON:-none} paths=[ ${PATHS_STR}] (feature-flag=${FLAG})"
+
+# local_only is a closed placement policy for the selector's complete output,
+# including an empty answer and a genuinely narrow answer.  Acquire its one
+# measured, exclusive local slot here -- after selection exists, but before any
+# branch can execute, skip on a verdict, or reach the heavyweight guard.  The
+# cleanup trap releases precisely this lock after the hook exits.  No failure
+# may continue into governed routing, grants, or remote dispatch.
+if [ "$PREPUSH_EXECUTION_SCOPE" = "local_only" ]; then
+  if ! prepush_try_local_only_slot; then
+    die "local_only selector result cannot run: ${PREPUSH_LOCAL_ONLY_REASON:-local capacity could not be proven}" \
+        "local_only never falls through to an off-box host, a grant, or a persisted verdict. Free local capacity/slot and retry, or explicitly change the task execution boundary before using governed placement"
+  fi
+  PREPUSH_LOCAL_ONLY_LOCK_HELD=1
+  log "LOCAL-ONLY EXECUTION SCOPE: selector result is restricted to this host ('${PREPUSH_LOCAL_ONLY_HOST}'); measured capacity and one exclusive local slot were acquired; off-box probing, queueing, and dispatch are prohibited."
+fi
 
 # Assemble the pytest target set. tests/integration is always ignored -- it needs
 # real services and stays a CI-only concern (plan section 2 CI-only).
