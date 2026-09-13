@@ -20,6 +20,10 @@ from omnibase_core.enums.enum_quality_score_comparison import (
 from omnibase_core.models.delegation.wire.model_delegation_provenance import (
     ModelDelegationProvenance,
 )
+from omnibase_core.models.delegation.wire.model_quality_gate import (
+    EnumQualityRuleEnforcement,
+    ModelQualityRuleEvaluation,
+)
 
 
 class ModelDelegationResult(BaseModel):
@@ -112,6 +116,19 @@ class ModelDelegationResult(BaseModel):
         description=(
             "Authoritative quality-gate failure details. Empty when no acceptance "
             "criterion failed or no quality gate ran."
+        ),
+    )
+    rule_evaluations: tuple[ModelQualityRuleEvaluation, ...] = Field(
+        default=(),
+        exclude_if=lambda value: not value,
+        description=(
+            "Per-rule quality-gate verdicts (OMN-18295): each declared check's "
+            "own result, the threshold it applied, and whether it was entitled "
+            "to veto. Carried for PASSING rules too, so a reader can tell a "
+            "rule that passed from one that never ran, and can see that a "
+            "'scored' miss did not decide an outcome the bar decided. Empty "
+            "when no quality gate ran, or when the producer predates this "
+            "field."
         ),
     )
     latency_ms: int = Field(
@@ -308,10 +325,50 @@ class ModelDelegationResult(BaseModel):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def validate_rule_evaluations(self) -> Self:
+        """Keep the per-rule record self-consistent and non-contradictory.
+
+        Two properties, both of them the reason OMN-18295 exists:
+
+        A rule appears at most ONCE. Two rows for the same rule are two
+        verdicts for one check, and a reader has no way to know which is the
+        gate's.
+
+        A ``blocking`` rule that FAILED cannot sit on a terminal that passed.
+        A blocking miss IS the verdict — that is what the enforcement class
+        means — so a terminal asserting both is the self-contradiction this
+        ticket opened on, in its structured form. A ``scored`` miss on a
+        passed terminal is the opposite: entirely legitimate, and the exact
+        shape delegation ``ca144d1a-ea03-475f-bc81-650ccfa0495e`` should have
+        had.
+        """
+        names = [evaluation.rule for evaluation in self.rule_evaluations]
+        if len(set(names)) != len(names):
+            msg = "rule_evaluations must record each rule at most once"
+            raise ValueError(msg)
+
+        if self.quality_passed:
+            vetoed = [
+                evaluation.rule
+                for evaluation in self.rule_evaluations
+                if not evaluation.passed
+                and evaluation.enforcement is EnumQualityRuleEnforcement.BLOCKING
+            ]
+            if vetoed:
+                msg = (
+                    "quality_passed result cannot carry a failed blocking rule: "
+                    f"{', '.join(sorted(vetoed))}"
+                )
+                raise ValueError(msg)
+        return self
+
 
 __all__: list[str] = [
     "EnumCredentialSource",
     "EnumDelegationTerminalFailureCause",
+    "EnumQualityRuleEnforcement",
     "EnumQualityScoreComparison",
     "ModelDelegationResult",
+    "ModelQualityRuleEvaluation",
 ]
