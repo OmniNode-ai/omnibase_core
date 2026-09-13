@@ -20,6 +20,10 @@ from omnibase_core.enums.enum_quality_score_comparison import (
 from omnibase_core.models.delegation.wire.model_delegation_provenance import (
     ModelDelegationProvenance,
 )
+from omnibase_core.models.delegation.wire.model_quality_gate import (
+    EnumQualityRuleEnforcement,
+    ModelQualityRuleEvaluation,
+)
 
 
 class ModelDelegationResult(BaseModel):
@@ -112,6 +116,19 @@ class ModelDelegationResult(BaseModel):
         description=(
             "Authoritative quality-gate failure details. Empty when no acceptance "
             "criterion failed or no quality gate ran."
+        ),
+    )
+    rule_evaluations: tuple[ModelQualityRuleEvaluation, ...] = Field(
+        default=(),
+        exclude_if=lambda value: not value,
+        description=(
+            "Per-rule quality-gate verdicts (OMN-18295): each declared check's "
+            "own result, the threshold it applied, and whether it was entitled "
+            "to veto. Carried for PASSING rules too, so a reader can tell a "
+            "rule that passed from one that never ran, and can see that a "
+            "'scored' miss did not decide an outcome the bar decided. Empty "
+            "when no quality gate ran, or when the producer predates this "
+            "field."
         ),
     )
     latency_ms: int = Field(
@@ -308,10 +325,46 @@ class ModelDelegationResult(BaseModel):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def validate_rule_evaluations(self) -> Self:
+        """Refuse a per-rule record that contradicts itself structurally.
+
+        A rule appears at most ONCE. Two rows for the same rule are two
+        verdicts for one check, and a reader has no way to know which is the
+        gate's.
+
+        What this deliberately does NOT refuse: a FAILED ``blocking`` rule on
+        a terminal whose ``quality_passed`` is true. That combination looks
+        like the self-contradiction this ticket opened on, and it was refused
+        here in the first draft of this model -- which two existing proofs
+        immediately falsified. ``enforcement`` records the authority a rule
+        holds WITHIN the heuristic band; it is not the only authority that can
+        decide a run. When the judge is unreachable, the deterministic
+        acceptance floor decides instead (``score_source ==
+        "deterministic_acceptance"``), and a run whose ``follows_codebase_
+        conventions`` and ``no_obvious_regressions`` checks both failed
+        completes on that floor -- correctly, by declared policy.
+
+        Refusing that pairing would have forced the producer to either drop
+        the record on the floor path or lie about the rules' verdicts. Both
+        are the failure OMN-18295 exists to remove: a receipt that cannot say
+        what actually happened. The record states the rules' own results; the
+        terminal's ``score_source`` and ``authority_source`` say which
+        authority decided. A reader needs both, and neither may be silently
+        edited to agree with the other.
+        """
+        names = [evaluation.rule for evaluation in self.rule_evaluations]
+        if len(set(names)) != len(names):
+            msg = "rule_evaluations must record each rule at most once"
+            raise ValueError(msg)
+        return self
+
 
 __all__: list[str] = [
     "EnumCredentialSource",
     "EnumDelegationTerminalFailureCause",
+    "EnumQualityRuleEnforcement",
     "EnumQualityScoreComparison",
     "ModelDelegationResult",
+    "ModelQualityRuleEvaluation",
 ]

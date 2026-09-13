@@ -67,8 +67,10 @@ from omnibase_core.models.delegation.wire.model_premium_counterfactual import (
 )
 from omnibase_core.models.delegation.wire.model_quality_gate import (
     EnumQualityGateCategory,
+    EnumQualityRuleEnforcement,
     ModelQualityGateInput,
     ModelQualityGateResult,
+    ModelQualityRuleEvaluation,
 )
 from omnibase_core.models.delegation.wire.model_routing_config import (
     EnumTierCostType,
@@ -95,6 +97,7 @@ __all__: list[str] = [
     "EnumDelegationUnroutedReason",
     "EnumQualityContractMode",
     "EnumQualityGateCategory",
+    "EnumQualityRuleEnforcement",
     "EnumQualityScoreComparison",
     "EnumTierCostType",
     "ModelBaselineIntent",
@@ -125,6 +128,7 @@ __all__: list[str] = [
     "ModelQualityGateInput",
     "ModelQualityGateIntent",
     "ModelQualityGateResult",
+    "ModelQualityRuleEvaluation",
     "ModelQualityBarEvaluation",
     "ModelRoutingIntent",
     "ModelRoutingTier",
