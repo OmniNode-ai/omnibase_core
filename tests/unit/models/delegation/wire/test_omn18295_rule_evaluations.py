@@ -167,20 +167,36 @@ class TestOneRuleDecides:
         assert result.quality_passed is True
         assert result.rule_evaluations[0].passed is False
 
-    def test_a_failed_blocking_rule_cannot_sit_on_a_passed_terminal(self) -> None:
-        """A blocking rule's miss IS the verdict; the two cannot disagree."""
-        with pytest.raises(ValidationError):
-            _result(
-                quality_passed=True,
-                rule_evaluations=(
-                    _rule(
-                        rule="accurate",
-                        enforcement="blocking",
-                        passed=False,
-                        detail="failed accurate",
-                    ),
+    def test_a_failed_blocking_rule_may_sit_on_a_passed_terminal(self) -> None:
+        """The case that falsified this model's first draft.
+
+        Refusing this pairing was the original design, and two existing proofs
+        immediately broke: when the judge is unreachable the DETERMINISTIC
+        acceptance floor decides, and a run whose blocking heuristics failed
+        completes on that floor by declared policy
+        (``test_judge_unavailable_deterministic_floor_omn13959``,
+        ``test_quality_gate_judge_combine_omn13470`` in omnimarket).
+
+        ``enforcement`` names the authority a rule holds within the heuristic
+        band. It is not the only authority that can decide a run, and the
+        record must be able to state what actually happened rather than being
+        edited into agreement with the verdict. Which authority decided is
+        carried by ``score_vs_required_bar`` and the terminal reason's
+        ``score_source``.
+        """
+        result = _result(
+            quality_passed=True,
+            rule_evaluations=(
+                _rule(
+                    rule="no_obvious_regressions",
+                    enforcement="blocking",
+                    passed=False,
+                    detail="failed no_obvious_regressions",
                 ),
-            )
+            ),
+        )
+        assert result.quality_passed is True
+        assert result.rule_evaluations[0].passed is False
 
     def test_a_failed_blocking_rule_is_at_home_on_a_failed_terminal(self) -> None:
         result = _result(

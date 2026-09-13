@@ -327,40 +327,36 @@ class ModelDelegationResult(BaseModel):
 
     @model_validator(mode="after")
     def validate_rule_evaluations(self) -> Self:
-        """Keep the per-rule record self-consistent and non-contradictory.
-
-        Two properties, both of them the reason OMN-18295 exists:
+        """Refuse a per-rule record that contradicts itself structurally.
 
         A rule appears at most ONCE. Two rows for the same rule are two
         verdicts for one check, and a reader has no way to know which is the
         gate's.
 
-        A ``blocking`` rule that FAILED cannot sit on a terminal that passed.
-        A blocking miss IS the verdict — that is what the enforcement class
-        means — so a terminal asserting both is the self-contradiction this
-        ticket opened on, in its structured form. A ``scored`` miss on a
-        passed terminal is the opposite: entirely legitimate, and the exact
-        shape delegation ``ca144d1a-ea03-475f-bc81-650ccfa0495e`` should have
-        had.
+        What this deliberately does NOT refuse: a FAILED ``blocking`` rule on
+        a terminal whose ``quality_passed`` is true. That combination looks
+        like the self-contradiction this ticket opened on, and it was refused
+        here in the first draft of this model -- which two existing proofs
+        immediately falsified. ``enforcement`` records the authority a rule
+        holds WITHIN the heuristic band; it is not the only authority that can
+        decide a run. When the judge is unreachable, the deterministic
+        acceptance floor decides instead (``score_source ==
+        "deterministic_acceptance"``), and a run whose ``follows_codebase_
+        conventions`` and ``no_obvious_regressions`` checks both failed
+        completes on that floor -- correctly, by declared policy.
+
+        Refusing that pairing would have forced the producer to either drop
+        the record on the floor path or lie about the rules' verdicts. Both
+        are the failure OMN-18295 exists to remove: a receipt that cannot say
+        what actually happened. The record states the rules' own results; the
+        terminal's ``score_source`` and ``authority_source`` say which
+        authority decided. A reader needs both, and neither may be silently
+        edited to agree with the other.
         """
         names = [evaluation.rule for evaluation in self.rule_evaluations]
         if len(set(names)) != len(names):
             msg = "rule_evaluations must record each rule at most once"
             raise ValueError(msg)
-
-        if self.quality_passed:
-            vetoed = [
-                evaluation.rule
-                for evaluation in self.rule_evaluations
-                if not evaluation.passed
-                and evaluation.enforcement is EnumQualityRuleEnforcement.BLOCKING
-            ]
-            if vetoed:
-                msg = (
-                    "quality_passed result cannot carry a failed blocking rule: "
-                    f"{', '.join(sorted(vetoed))}"
-                )
-                raise ValueError(msg)
         return self
 
 
