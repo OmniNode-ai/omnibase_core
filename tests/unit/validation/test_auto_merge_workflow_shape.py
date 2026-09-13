@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 from textwrap import dedent
@@ -32,6 +33,15 @@ def _step(name: str) -> dict[str, object]:
 def _job() -> dict[str, object]:
     data = yaml.safe_load(WORKFLOW_PATH.read_text())
     return data["jobs"]["auto-merge"]
+
+
+def _pre_check_step() -> dict[str, object]:
+    data = yaml.safe_load(WORKFLOW_PATH.read_text())
+    steps = data["jobs"]["pre-check"]["steps"]
+    for step in steps:
+        if step.get("name") == "Resolve PR number and author without checkout":
+            return step
+    raise AssertionError("resolver step not found in auto-merge.yml")
 
 
 def test_auto_merge_job_requires_occ_preflight_success() -> None:
@@ -68,6 +78,204 @@ def test_auto_merge_does_not_re_resolve_occ_against_heads_main() -> None:
         if isinstance(run, str):
             assert "onex_change_control/git/ref/heads/main" not in run
             assert "validator_occ_merge_eligibility" not in run
+
+
+@pytest.fixture
+def gh_resolver_stub_dir(tmp_path: Path) -> Path:
+    """Stub only the metadata reads used by the live resolver shell."""
+    stub = tmp_path / "gh"
+    stub.write_text(
+        dedent(
+            """\
+            #!/usr/bin/env bash
+            set -euo pipefail
+            args="$*"
+            case "$args" in
+              "pr view "*" --repo "*" --json author "*)
+                printf '%s\\n' "${STUB_ACTOR:-jonahgabriel}"
+                ;;
+              "pr view "*" --repo "*" --json baseRefName "*)
+                if [ "${STUB_UNREADABLE_BASE:-false}" = "true" ]; then
+                  echo "base lookup failed" >&2
+                  exit 73
+                fi
+                printf '%s\\n' "${STUB_BASE_REF}"
+                ;;
+              "repo view "*" --json defaultBranchRef "*)
+                printf '%s\\n' "${STUB_DEFAULT_BRANCH}"
+                ;;
+              *)
+                echo "unexpected gh invocation: $args" >&2
+                exit 99
+                ;;
+            esac
+            """
+        )
+    )
+    stub.chmod(0o755)
+    return tmp_path
+
+
+def _run_live_pre_check(
+    *,
+    gh_resolver_stub_dir: Path,
+    event_name: str,
+    base_ref: str,
+    default_branch: str = "dev",
+    check_suite_prs: str = "[]",
+    unreadable_base: bool = False,
+) -> tuple[subprocess.CompletedProcess[str], str]:
+    """Execute the deployed resolver Bash against deterministic metadata."""
+    step = _pre_check_step()
+    script = step.get("run")
+    assert isinstance(script, str)
+    output = gh_resolver_stub_dir / "github-output"
+    env = {
+        "PATH": f"{gh_resolver_stub_dir}:{os.environ['PATH']}",
+        "GH_TOKEN": "stub-token",
+        "GH_REPO": "OmniNode-ai/omnibase_core",
+        "EVENT_NAME": event_name,
+        "PR_FROM_PAYLOAD": "18163",
+        "PR_AUTHOR_FROM_PAYLOAD": "jonahgabriel",
+        "PR_FROM_DISPATCH": "18163",
+        "CHECK_SUITE_PRS": check_suite_prs,
+        "GITHUB_OUTPUT": str(output),
+        "STUB_ACTOR": "jonahgabriel",
+        "STUB_BASE_REF": base_ref,
+        "STUB_DEFAULT_BRANCH": default_branch,
+        "STUB_UNREADABLE_BASE": str(unreadable_base).lower(),
+    }
+    result = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    return result, output.read_text() if output.exists() else ""
+
+
+class TestAutoMergeResolverBaseGuard:
+    """OMN-18163 executable coverage of the live pre-check resolver."""
+
+    @pytest.mark.parametrize("event_name", ["pull_request", "pull_request_review"])
+    def test_feature_base_is_a_successful_no_enrollment(
+        self, gh_resolver_stub_dir: Path, event_name: str
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name=event_name,
+            base_ref="jonah/omn-16992-prereq-composition-currentdev-20260910",
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "skipping auto-merge enrollment for stacked PR" in result.stdout
+        assert output == "pr=18163\nactor=jonahgabriel\nskip=true\n"
+
+    def test_default_base_remains_eligible_for_enrollment(
+        self, gh_resolver_stub_dir: Path
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name="pull_request",
+            base_ref="dev",
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert output == "pr=18163\nactor=jonahgabriel\nskip=false\n"
+
+    def test_dispatch_uses_the_same_feature_base_guard(
+        self, gh_resolver_stub_dir: Path
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name="workflow_dispatch",
+            base_ref="jonah/omn-16992-prereq-composition-currentdev-20260910",
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert output == "pr=18163\nactor=jonahgabriel\nskip=true\n"
+
+    def test_check_suite_with_only_feature_base_remains_safe_noop(
+        self, gh_resolver_stub_dir: Path
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name="check_suite",
+            base_ref="jonah/omn-16992-prereq-composition-currentdev-20260910",
+            check_suite_prs='[{"number":18163}]',
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "check_suite has no PR targeting 'dev'; skipping" in result.stdout
+        assert output == "skip=true\npr=\nactor=\n"
+
+    @pytest.mark.parametrize(
+        ("base_ref", "default_branch", "expected_error"),
+        [
+            ("", "dev", "invalid base branch identity"),
+            ("dev", "null", "invalid repository default branch identity"),
+        ],
+    )
+    def test_check_suite_invalid_identity_fails_closed(
+        self,
+        gh_resolver_stub_dir: Path,
+        base_ref: str,
+        default_branch: str,
+        expected_error: str,
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name="check_suite",
+            base_ref=base_ref,
+            default_branch=default_branch,
+            check_suite_prs='[{"number":18163}]',
+        )
+
+        assert result.returncode != 0
+        assert expected_error in result.stdout
+        assert "skip=false" not in output
+
+    def test_unreadable_base_fails_before_enrollment(
+        self, gh_resolver_stub_dir: Path
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name="pull_request",
+            base_ref="dev",
+            unreadable_base=True,
+        )
+
+        assert result.returncode != 0
+        assert "base lookup failed" in result.stderr
+        assert "unable to resolve base branch" in result.stdout
+        assert "skip=false" not in output
+
+    @pytest.mark.parametrize(
+        ("base_ref", "default_branch", "expected_error"),
+        [
+            ("", "dev", "invalid base branch identity"),
+            ("dev", "", "invalid repository default branch identity"),
+            ("null", "null", "invalid base branch identity"),
+        ],
+    )
+    def test_empty_or_null_identity_fails_before_enrollment(
+        self,
+        gh_resolver_stub_dir: Path,
+        base_ref: str,
+        default_branch: str,
+        expected_error: str,
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name="pull_request",
+            base_ref=base_ref,
+            default_branch=default_branch,
+        )
+
+        assert result.returncode != 0
+        assert expected_error in result.stdout
+        assert "skip=false" not in output
 
 
 def test_enable_auto_merge_tries_bare_auto_first() -> None:
