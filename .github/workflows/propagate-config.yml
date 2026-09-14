@@ -25,12 +25,14 @@ on:
     paths:
       - .github/workflows/propagate-config.yml
       - .github/propagation-targets.yaml
+      - .pre-commit-hooks.yaml
       - scripts/propagate-config.sh
       - tests/scripts/test_propagate_config.py
   pull_request:
     paths:
       - .github/workflows/propagate-config.yml
       - .github/propagation-targets.yaml
+      - .pre-commit-hooks.yaml
       - scripts/propagate-config.sh
       - tests/scripts/test_propagate_config.py
   release:
@@ -154,9 +156,23 @@ jobs:
       - name: Install parser deps
         run: pip install pyyaml
 
+      # The per-repository GITHUB_TOKEN cannot read private sibling repos.
+      # Mint the same org installation identity as the live propagator, but
+      # restrict this dry-run job to read-only contents access.
+      - name: Mint cross-repo read token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          permission-contents: read
+
       - name: Execute dry-run
         env:
-          GITHUB_TOKEN: dry-run-token
+          # Cross-repo read access is required because dry-run resolves every
+          # private target's live default branch and fails closed on denial.
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PROPAGATION_NAME: normalization-symmetry-hook
           PROPAGATION_DRY_RUN: "1"
         run: bash scripts/propagate-config.sh

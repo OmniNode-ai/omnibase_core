@@ -232,6 +232,16 @@
   pass_filenames: false
   stages: [pre-commit]
 
+- id: normalization-symmetry
+  name: ONEX Producer/Consumer Normalization Symmetry (OMN-9333)
+  description: >
+    Compare normalization chains at producer and consumer call sites and reject divergent topic handling.
+  language: system
+  entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.checker_normalization_symmetry src
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]
+
 - id: check-receipt-honesty
   name: Receipt Honesty Gate (OMN-12791)
   description: >

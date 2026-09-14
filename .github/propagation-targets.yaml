@@ -9,7 +9,9 @@
 #   propagations:
 #     - name: stable identifier (matches what the workflow's PROPAGATION_NAME
 #             input routes on — must be unique)
-#       source: optional source file in omnibase_core that documents the entry
+#       source: required hook manifest in omnibase_core; the propagator copies
+#               the matching hook definition exactly
+#       tracking_issue: Linear ticket used in the generated PR title and body
 #       targets:
 #         - repo: OmniNode-ai/<name>
 #           path: file inside the target repo to edit
@@ -27,6 +29,7 @@
 propagations:
   - name: normalization-symmetry-hook
     source: .pre-commit-hooks.yaml
+    tracking_issue: OMN-9344
     targets:
       - repo: OmniNode-ai/omnibase_compat
         path: .pre-commit-config.yaml
@@ -73,6 +76,7 @@ propagations:
 
   - name: gitignore-baseline-hook
     source: .pre-commit-hooks.yaml
+    tracking_issue: OMN-18033
     targets:
       - repo: OmniNode-ai/omnibase_compat
         path: .pre-commit-config.yaml
