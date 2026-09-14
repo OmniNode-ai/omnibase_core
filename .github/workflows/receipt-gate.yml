@@ -59,11 +59,27 @@ permissions:
 jobs:
   verify:
     name: verify
+    # OMN-18205: the untrusted test is the FORK test, and only the fork test.
+    # This selector sent EVERY pull-request event to the public class,
+    # same-repo ones included, so every repository consuming this reusable had
+    # `verify / verify` pinned to GitHub-hosted runners regardless of its own
+    # routing shadow -- invisible on every routing surface, because the pin
+    # lives in a workflow file in a DIFFERENT repository. The 2026-09-14
+    # operator ruling forbids that for private repositories, and since the
+    # enterprise hosted-runner switch the placement does not run at all: the
+    # job queues with no runner assigned. Measured the same day in a private
+    # repository whose trusted shadow is the fleet pair, `pr-title` -- whose
+    # reusable has always used the fork test alone -- passed on a named fleet
+    # runner while this gate stayed hosted and wedged.
+    #
+    # A genuine fork pull request still resolves to
+    # OMNI_PUBLIC_PR_RUNS_ON_JSON, so the OMN-16683 boundary is unchanged.
     runs-on: >-
       ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
       }}
     timeout-minutes: 15
     # OMN-10419 invariant I9: disable GHA cache + artifact reuse so merge_group
