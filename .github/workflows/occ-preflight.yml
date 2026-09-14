@@ -55,9 +55,10 @@ jobs:
     name: eligibility
     runs-on: >-
       ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
       }}
     # OMN-16322: was 10. A cold self-hosted runner spends ~2m38s in "Set up job"
     # (image pull) and ~4m05s checking out omnibase_compat before the eligibility
