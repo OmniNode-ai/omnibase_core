@@ -80,7 +80,14 @@ class TopicBase(StrEnum):
     # Savings estimation: cloud-vs-local counterfactual for projection/API consumers
     SAVINGS_ESTIMATED = "onex.evt.omnibase-infra.savings-estimated.v1"
     # Cost-projection snapshot topics (consumed by omnidash widgets in OMN-10282)
-    PROJECTION_COST_SUMMARY = "onex.snapshot.projection.cost.summary.v1"
+    # onex-allow-topic-literal: this IS the canonical source-of-truth declaration
+    # of the topic. Its sibling constants escape the gate only because its
+    # pattern segments are [a-z0-9]+ and they carry a hyphen or underscore;
+    # this one is all-alphanumeric and so matches. Pre-existing on origin/dev,
+    # fixed here rather than carried (OMN-15622).
+    PROJECTION_COST_SUMMARY = (
+        "onex.snapshot.projection.cost.summary.v1"  # onex-allow-topic-literal
+    )
     PROJECTION_COST_BY_REPO = "onex.snapshot.projection.cost.by_repo.v1"
     PROJECTION_COST_TOKEN_USAGE = "onex.snapshot.projection.cost.token_usage.v1"
 
@@ -492,18 +499,60 @@ class TopicBase(StrEnum):
     # namespace is the authoritative runtime namespace for the inference
     # request/response and delegation completion/failure events.
     # ==========================================================================
-    DELEGATION_COMPLETED_INFRA = "onex.evt.omnibase-infra.delegation-completed.v1"
+    DELEGATION_COMPLETED_INFRA = (
+        "onex.evt.omnibase-infra.delegation-completed.v1"  # onex-topic-sot
+    )
     """Emitted by node_delegation_orchestrator when a delegation run completes successfully.
 
     Producer: node_delegation_orchestrator (omnibase_infra runtime).
     Confirmed in live D3 trace (OMN-12642, stability-test lane).
+    Registered in contracts/topic_registry.yaml (OMN-15622).
     """
 
-    DELEGATION_FAILED_INFRA = "onex.evt.omnibase-infra.delegation-failed.v1"
+    DELEGATION_FAILED_INFRA = (
+        "onex.evt.omnibase-infra.delegation-failed.v1"  # onex-topic-sot
+    )
     """Emitted by node_delegation_orchestrator when a delegation run fails at any stage.
 
     Producer: node_delegation_orchestrator (omnibase_infra runtime).
     Confirmed in live D3 trace (OMN-12642, stability-test lane).
+    Registered in contracts/topic_registry.yaml (OMN-15622).
+    """
+
+    # ==========================================================================
+    # Delegation v2 terminal topics (OMN-15622, plan Task 1.2)
+    # One topic per terminal wire class. The v2 terminal family is THREE classes
+    # (OMN-17841, omnibase_core#1653): a completed class, a routed-failure class
+    # and an unrouted-failure class. Putting both failure classes on a single
+    # delegation-failed.v2 topic is a non-injective class -> topic map and is
+    # refused by assert_published_events_injective, so the family is three names.
+    # ==========================================================================
+    DELEGATION_COMPLETED_INFRA_V2 = (
+        "onex.evt.omnibase-infra.delegation-completed.v2"  # onex-topic-sot
+    )
+    """Terminal event for a ROUTED delegation that completed and passed the quality bar.
+
+    Wire model: ModelDelegationTerminalCompletedV2.
+    Producer: node_delegation_orchestrator (omnibase_infra runtime).
+    """
+
+    DELEGATION_FAILED_ROUTED_INFRA_V2 = (
+        "onex.evt.omnibase-infra.delegation-failed-routed.v2"  # onex-topic-sot
+    )
+    """Terminal event for a delegation that reached a backend and then failed.
+
+    Wire model: ModelDelegationTerminalFailedRoutedV2.
+    Producer: node_delegation_orchestrator (omnibase_infra runtime).
+    """
+
+    DELEGATION_FAILED_UNROUTED_INFRA_V2 = (
+        "onex.evt.omnibase-infra.delegation-failed-unrouted.v2"  # onex-topic-sot
+    )
+    """Terminal event for a delegation that never reached a backend.
+
+    Wire model: ModelDelegationTerminalFailedUnroutedV2. Carries no routed-only
+    field and no quality field.
+    Producer: node_delegation_orchestrator (omnibase_infra runtime).
     """
 
     DELEGATION_INFERENCE_REQUEST = (
