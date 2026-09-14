@@ -70,16 +70,48 @@ if merge_method not in supported_merge_methods:
     )
     sys.exit(5)
 
+source = match.get("source")
+if not isinstance(source, str) or not source:
+    sys.stderr.write(f"ERROR: propagation '{name}' must declare a source file\n")
+    sys.exit(6)
+source_path = pathlib.Path(source)
+if not source_path.is_file():
+    sys.stderr.write(f"ERROR: propagation source not found: {source}\n")
+    sys.exit(6)
+source_hooks = yaml.safe_load(source_path.read_text()) or []
+if not isinstance(source_hooks, list):
+    sys.stderr.write(f"ERROR: propagation source must contain a hook list: {source}\n")
+    sys.exit(6)
+
+tracking_issue = match.get("tracking_issue")
+if not isinstance(tracking_issue, str) or not tracking_issue:
+    sys.stderr.write(f"ERROR: propagation '{name}' must declare tracking_issue\n")
+    sys.exit(7)
+
+targets = []
 for target in match.get("targets") or []:
     op = target.get("operation")
     if op not in supported_ops:
         sys.stderr.write(f"ERROR: unsupported operation '{op}' (supported: {sorted(supported_ops)})\n")
         sys.exit(4)
+    hook_id = target.get("hook_id")
+    hook = next(
+        (candidate for candidate in source_hooks if candidate.get("id") == hook_id),
+        None,
+    )
+    if hook is None:
+        sys.stderr.write(
+            f"ERROR: hook '{hook_id}' is not declared in propagation source {source}\n"
+        )
+        sys.exit(8)
+    targets.append({**target, "hook": hook})
 
 print(json.dumps({
     "auto_merge": bool(match.get("auto_merge", False)),
     "merge_method": merge_method,
-    "targets": match.get("targets") or [],
+    "source": source,
+    "tracking_issue": tracking_issue,
+    "targets": targets,
 }))
 PY
 }
@@ -89,6 +121,8 @@ PROPAGATION_JSON="$(emit_targets)"
 AUTO_MERGE="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["auto_merge"])' "$PROPAGATION_JSON")"
 MERGE_METHOD="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["merge_method"])' "$PROPAGATION_JSON")"
 TARGET_COUNT="$(python3 -c 'import json,sys;print(len(json.loads(sys.argv[1])["targets"]))' "$PROPAGATION_JSON")"
+SOURCE_FILE="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["source"])' "$PROPAGATION_JSON")"
+TRACKING_ISSUE="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["tracking_issue"])' "$PROPAGATION_JSON")"
 
 echo "Propagation: $PROPAGATION_NAME"
 echo "Targets: $TARGET_COUNT"
@@ -96,13 +130,31 @@ echo "Auto-merge: $AUTO_MERGE (method=$MERGE_METHOD)"
 
 BRANCH="bot/propagate-${PROPAGATION_NAME}-${RELEASE_TAG}"
 
+resolve_default_branch() {
+  local repo="$1"
+  local branch
+  if ! branch="$(gh api "repos/${repo}" --jq '.default_branch' 2>/dev/null)"; then
+    echo "ERROR: failed to resolve default branch for ${repo}; refusing to proceed" >&2
+    return 1
+  fi
+  if [[ -z "$branch" || "$branch" == "null" ]]; then
+    echo "ERROR: empty default branch for ${repo}; refusing to proceed" >&2
+    return 1
+  fi
+  printf '%s\n' "$branch"
+}
+
 for i in $(seq 0 $((TARGET_COUNT - 1))); do
   REPO="$(python3 -c 'import json,sys,os;print(json.loads(sys.argv[1])["targets"][int(os.environ["IDX"])]["repo"])' "$PROPAGATION_JSON" IDX="$i" 2>/dev/null \
     || python3 -c 'import json,sys;i=int(sys.argv[2]);print(json.loads(sys.argv[1])["targets"][i]["repo"])' "$PROPAGATION_JSON" "$i")"
   FILE_PATH="$(python3 -c 'import json,sys;i=int(sys.argv[2]);print(json.loads(sys.argv[1])["targets"][i]["path"])' "$PROPAGATION_JSON" "$i")"
   HOOK_ID="$(python3 -c 'import json,sys;i=int(sys.argv[2]);print(json.loads(sys.argv[1])["targets"][i]["hook_id"])' "$PROPAGATION_JSON" "$i")"
+  HOOK_JSON="$(python3 -c 'import json,sys;i=int(sys.argv[2]);print(json.dumps(json.loads(sys.argv[1])["targets"][i]["hook"]))' "$PROPAGATION_JSON" "$i")"
+  DEFAULT_BRANCH="$(resolve_default_branch "$REPO")"
 
-  TITLE="chore(ci): propagate ${PROPAGATION_NAME} to ${FILE_PATH} [bot] [OMN-9344]"
+  APPEND_SNIPPET="$(python3 -c 'import json,sys,yaml; print(yaml.safe_dump([{"repo": "local", "hooks": [json.loads(sys.argv[1])]}], sort_keys=False).rstrip())' "$HOOK_JSON")"
+
+  TITLE="chore(ci): propagate ${PROPAGATION_NAME} to ${FILE_PATH} [bot] [${TRACKING_ISSUE}]"
   BODY=$(cat <<EOF
 Automated config propagation emitted by \`omnibase_core/propagate-config.yml\`.
 
@@ -110,7 +162,7 @@ Automated config propagation emitted by \`omnibase_core/propagate-config.yml\`.
 - Hook ID: \`${HOOK_ID}\`
 - Release tag: \`${RELEASE_TAG}\`
 - Source: https://github.com/OmniNode-ai/omnibase_core/releases/tag/${RELEASE_TAG}
-- Tracking: OMN-9344
+- Tracking: ${TRACKING_ISSUE}
 
 Idempotent — if the hook already exists in \`${FILE_PATH}\`, the bot skips this repo.
 EOF
@@ -118,7 +170,9 @@ EOF
 
   if [[ "$DRY_RUN" == "1" ]]; then
     echo "DRY_RUN: gh pr list --repo ${REPO} --state open --search \"propagate ${PROPAGATION_NAME}\" (dedup check)"
-    echo "DRY_RUN: gh pr create --repo ${REPO} --head ${BRANCH} --base main --title \"${TITLE}\""
+    echo "DRY_RUN: append canonical hook ${HOOK_ID} from ${SOURCE_FILE} to ${REPO}:${FILE_PATH}"
+    printf '%s\n' "$APPEND_SNIPPET"
+    echo "DRY_RUN: gh pr create --repo ${REPO} --head ${BRANCH} --base ${DEFAULT_BRANCH} --title \"${TITLE}\""
     if [[ "$AUTO_MERGE" == "True" || "$AUTO_MERGE" == "true" ]]; then
       # Per OMN-8838: always arm auto-merge via GraphQL enablePullRequestAutoMerge
       # (never `gh pr merge --auto` — it silently picks the wrong method).
@@ -149,7 +203,7 @@ EOF
   # gh repo clone uses GITHUB_TOKEN for the initial clone, but subsequent
   # git push requires git credentials configured separately.
   gh auth setup-git
-  gh repo clone "$REPO" downstream -- --depth=5
+  gh repo clone "$REPO" downstream -- --depth=5 --branch "$DEFAULT_BRANCH"
   cd downstream
 
   # Dedup: skip if an open bot PR for this propagation already exists. Each
@@ -182,18 +236,8 @@ EOF
     continue
   fi
 
-  # Append hook block. The exact snippet lives in the source repo so the
-  # script stays minimal; shell here just wires it up.
-  APPEND_SNIPPET="$(cat <<SNIPPET
-  - repo: local
-    hooks:
-      - id: ${HOOK_ID}
-        name: ${HOOK_ID}
-        entry: uv run python -m omnibase_core.validators.${HOOK_ID}
-        language: system
-        pass_filenames: false
-SNIPPET
-)"
+  # Append the exact canonical hook mapping loaded from the declared source.
+  # The shell only wraps it as a local-repo pre-commit entry.
   printf '\n%s\n' "$APPEND_SNIPPET" >> "$FILE_PATH"
 
   git config user.name "onex-propagate-bot"
@@ -203,7 +247,7 @@ SNIPPET
   git commit -m "chore(ci): propagate ${PROPAGATION_NAME} [bot]"
   git push -u origin "$BRANCH" --force-with-lease
 
-  PR_URL="$(gh pr create --repo "$REPO" --head "$BRANCH" --base main \
+  PR_URL="$(gh pr create --repo "$REPO" --head "$BRANCH" --base "$DEFAULT_BRANCH" \
     --title "$TITLE" --body "$BODY")"
   echo "Created: $PR_URL"
 

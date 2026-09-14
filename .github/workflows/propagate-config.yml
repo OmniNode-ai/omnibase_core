@@ -25,12 +25,14 @@ on:
     paths:
       - .github/workflows/propagate-config.yml
       - .github/propagation-targets.yaml
+      - .pre-commit-hooks.yaml
       - scripts/propagate-config.sh
       - tests/scripts/test_propagate_config.py
   pull_request:
     paths:
       - .github/workflows/propagate-config.yml
       - .github/propagation-targets.yaml
+      - .pre-commit-hooks.yaml
       - scripts/propagate-config.sh
       - tests/scripts/test_propagate_config.py
   release:
@@ -156,7 +158,9 @@ jobs:
 
       - name: Execute dry-run
         env:
-          GITHUB_TOKEN: dry-run-token
+          # Read-only token is required because dry-run resolves each target's
+          # live default branch and fails closed if GitHub cannot answer.
+          GITHUB_TOKEN: ${{ github.token }}
           PROPAGATION_NAME: normalization-symmetry-hook
           PROPAGATION_DRY_RUN: "1"
         run: bash scripts/propagate-config.sh
