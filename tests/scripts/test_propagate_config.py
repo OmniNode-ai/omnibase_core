@@ -24,6 +24,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "scripts" / "propagate-config.sh"
+WORKFLOW = REPO_ROOT / ".github" / "workflows" / "propagate-config.yml"
 
 
 def _write_targets(tmp_path: Path, body: str) -> Path:
@@ -104,6 +105,18 @@ def _run(
         env=env,
         check=False,
     )
+
+
+@pytest.mark.unit
+def test_dry_run_uses_cross_repo_read_token() -> None:
+    """The repository token cannot resolve private sibling default branches."""
+    workflow = yaml.safe_load(WORKFLOW.read_text())
+    steps = workflow["jobs"]["dry-run-ci-check"]["steps"]
+    mint = next(step for step in steps if step.get("id") == "app-token")
+    execute = next(step for step in steps if step.get("name") == "Execute dry-run")
+
+    assert mint["with"]["permission-contents"] == "read"
+    assert execute["env"]["GITHUB_TOKEN"] == "${{ steps.app-token.outputs.token }}"
 
 
 @pytest.mark.unit
