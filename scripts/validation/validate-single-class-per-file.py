@@ -19,7 +19,7 @@ import argparse
 import ast
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 _DELEGATION_TERMINAL_V2_PATH = (
     Path(__file__).resolve().parents[2]
@@ -30,6 +30,11 @@ _DELEGATION_TERMINAL_V2_PATH = (
     / "wire"
     / "model_delegation_terminal_v2.py"
 )
+
+
+def _write(message: str, stream: TextIO) -> None:
+    """Write one diagnostic line while preserving CLI output contracts."""
+    stream.write(f"{message}\n")
 
 
 class ClassDefinitionDetector(ast.NodeVisitor):
@@ -151,9 +156,9 @@ def check_file(filepath: Path) -> dict[str, Any]:
     except SyntaxError:
         # Skip files with syntax errors (they'll be caught by other tools)
         return {"valid": True, "skipped": True, "reason": "syntax_error"}
-    except Exception as e:
-        print(f"Error processing {filepath}: {e}", file=sys.stderr)
-        return {"valid": True, "skipped": True, "reason": f"error: {e}"}
+    except (OSError, UnicodeError, ValueError) as exc:
+        _write(f"Error processing {filepath}: {exc}", sys.stderr)
+        return {"valid": True, "skipped": True, "reason": f"error: {exc}"}
 
 
 def should_exclude_file(filepath: Path) -> bool:
@@ -280,7 +285,7 @@ def main() -> int:
                     files_to_check.append(py_file)
 
     if not files_to_check:
-        print("No Python files found to check")
+        _write("No Python files found to check", sys.stdout)
         return 0
 
     total_violations = 0
@@ -291,51 +296,63 @@ def main() -> int:
 
         if result.get("skipped"):
             if args.verbose:
-                print(f"Skipped {filepath}: {result.get('reason', 'unknown')}")
+                _write(
+                    f"Skipped {filepath}: {result.get('reason', 'unknown')}",
+                    sys.stdout,
+                )
             continue
 
         if not result["valid"]:
             total_violations += 1
             files_with_violations.append((filepath, result))
 
-            print(f"\n{filepath}:")
-            print(f"  {result['message']}")
+            _write(f"\n{filepath}:", sys.stdout)
+            _write(f"  {result['message']}", sys.stdout)
 
             if result.get("non_enum_classes"):
-                print("  Non-enum classes:")
+                _write("  Non-enum classes:", sys.stdout)
                 for line, name in result["non_enum_classes"]:
-                    print(f"    Line {line}: {name}")
+                    _write(f"    Line {line}: {name}", sys.stdout)
 
             if result.get("enum_classes"):
-                print("  Enums:")
+                _write("  Enums:", sys.stdout)
                 for line, name in result["enum_classes"]:
-                    print(f"    Line {line}: {name}")
+                    _write(f"    Line {line}: {name}", sys.stdout)
 
         elif args.verbose and result["classes"]:
             class_count = len(result["classes"])
             note = result.get("note", "")
             if note:
-                print(f"✓ {filepath}: {class_count} class(es) - {note}")
+                _write(f"✓ {filepath}: {class_count} class(es) - {note}", sys.stdout)
             else:
-                print(f"✓ {filepath}: {class_count} class(es)")
+                _write(f"✓ {filepath}: {class_count} class(es)", sys.stdout)
 
     if total_violations > 0:
-        print(
-            f"\n❌ Found {total_violations} file(s) violating single-class-per-file rule"
+        _write(
+            f"\n❌ Found {total_violations} file(s) violating single-class-per-file rule",
+            sys.stdout,
         )
-        print("\nGuidance:")
-        print("  - Split files with multiple non-enum classes into separate files")
-        print("  - Each class should have its own file with matching name")
-        print("  - Multiple enums in one file are acceptable (enum collections)")
-        print("\nExamples:")
-        print("  ❌ node_orchestrator.py with 11 classes")
-        print("  ✓ node_orchestrator.py (main class only)")
-        print("  ✓ model_orchestrator_input.py (separate file)")
-        print("  ✓ enum_workflow_states.py (multiple enums OK)")
+        _write("\nGuidance:", sys.stdout)
+        _write(
+            "  - Split files with multiple non-enum classes into separate files",
+            sys.stdout,
+        )
+        _write("  - Each class should have its own file with matching name", sys.stdout)
+        _write(
+            "  - Multiple enums in one file are acceptable (enum collections)",
+            sys.stdout,
+        )
+        _write("\nExamples:", sys.stdout)
+        _write("  ❌ node_orchestrator.py with 11 classes", sys.stdout)
+        _write("  ✓ node_orchestrator.py (main class only)", sys.stdout)
+        _write("  ✓ model_orchestrator_input.py (separate file)", sys.stdout)
+        _write("  ✓ enum_workflow_states.py (multiple enums OK)", sys.stdout)
         return 1
 
     if args.verbose:
-        print(f"\n✓ Checked {len(files_to_check)} files - no violations found")
+        _write(
+            f"\n✓ Checked {len(files_to_check)} files - no violations found", sys.stdout
+        )
 
     return 0
 
