@@ -22,5 +22,5 @@ class ModelEnvReadFinding:
         return (
             f"{self.path}:{self.line}:{self.col}: "
             f"os.environ/os.getenv read of {self.var_name!r} "
-            f"outside KEEP_ALLOWLIST"
+            "outside the typed bootstrap boundary"
         )

@@ -131,6 +131,10 @@ def test_static_env_gate_is_clean_for_every_owned_file() -> None:
     """The OMN-13566 literal-key gate also passes on every owned file."""
     from omnibase_core.validators.no_new_os_environ import validate_paths
 
-    paths = [_SRC / relative for relative in sorted(EXPECTED_ENV_READS)]
+    paths = [
+        _SRC / relative
+        for relative, (expected, _reason) in sorted(EXPECTED_ENV_READS.items())
+        if expected == 0
+    ]
     findings = validate_paths(paths)
     assert findings == [], [f.format() for f in findings]

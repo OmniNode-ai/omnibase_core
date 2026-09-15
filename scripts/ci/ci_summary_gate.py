@@ -164,7 +164,7 @@ SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
     "Pydantic Patterns",  # pydantic-patterns
     "AI Slop Patterns",  # aislop-patterns
     "Doc-Content Scan",  # doc-content-scan
-    "No New os.environ Reads (OMN-13566)",  # no-new-os-environ
+    "Typed Bootstrap Environment Boundary (OMN-17744)",  # typed-bootstrap-environment-boundary
     "SPDX Headers",  # spdx-headers
     "Duplicate Registry Ids",  # duplicate-registry-ids (OMN-14401)
     "Hardcoded Topic Validator",  # hardcoded-topic-validator (OMN-14430)
