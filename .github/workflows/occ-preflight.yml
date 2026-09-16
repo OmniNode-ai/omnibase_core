@@ -24,6 +24,9 @@
 #   contracts-dir:  path to ticket contract YAMLs relative to OCC checkout (default: contracts)
 #   receipts-dir:   path to ModelDodReceipt YAMLs relative to OCC checkout (default: drift/dod_receipts)
 #   core-ref:       omnibase_core ref to checkout for the validator source (default: dev)
+#   eligibility-deadline-seconds:      bounded wait for the evidence-source stamp/companion
+#                                      merge (OMN-17864; default: 1500)
+#   eligibility-poll-interval-seconds: poll cadence for the above (default: 30)
 
 name: occ-preflight
 
@@ -45,6 +48,26 @@ on:
         type: string
         required: false
         default: dev
+      eligibility-deadline-seconds:
+        # OMN-17864: mirrors the OMN-15214 "OCC Companion Merged Gate" job's
+        # own DEADLINE_SECONDS, which every CI run already pays for
+        # unconditionally in this same run (scripts/ci/check_occ_companion_merged.py).
+        # Giving this job the identical bounded wait for the identical fact
+        # (live PR body -> evidence-source stamp -> cited companion merged)
+        # adds NO additional wall clock to the critical path -- it only
+        # removes the early, spurious red this job used to return in 2-8s
+        # while the fact was still resolving. See
+        # scripts/ci/occ_preflight_wait.py module docstring for the
+        # measurement (53/53 early-concluding PRs failed; 0 succeeded).
+        description: Bounded wait (seconds) for the evidence-source stamp / cited companion to merge before failing closed.
+        type: number
+        required: false
+        default: 1500
+      eligibility-poll-interval-seconds:
+        description: Poll cadence (seconds) for eligibility-deadline-seconds -- mirrors the OMN-15214 gate's own POLL_INTERVAL_SECONDS.
+        type: number
+        required: false
+        default: 30
 
 permissions:
   contents: read
@@ -60,19 +83,29 @@ jobs:
         && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
       }}
-    # OMN-16322: was 10. A cold self-hosted runner spends ~2m38s in "Set up job"
-    # (image pull) and ~4m05s checking out omnibase_compat before the eligibility
-    # check even starts, so the job lands at ~9-10m wall and trips the timeout
-    # DURING results upload -- after every step, including "Complete job", has
+    # OMN-16322: was 10, raised to 15 for the cold-runner start cost. A cold
+    # self-hosted runner spends ~2m38s in "Set up job" (image pull) and
+    # ~4m05s checking out omnibase_compat before the eligibility check even
+    # starts, so the job lands at ~9-10m wall and trips the timeout DURING
+    # results upload -- after every step, including "Complete job", has
     # already succeeded. GitHub stamps a timed-out job `cancelled`, and both
     # CI Summary and GitHub's own required-check semantics fail closed on
     # `cancelled`, so a job that logged "OCC eligibility: PASS" still blocks the
     # PR. Measured on the sibling inlined copy (onex_change_control#6714):
     # attempt 1 = 10m35s cancelled, attempt 2 = 10m25s cancelled (cancel arrived
-    # at exactly T+600s), attempt 3 on a warm runner = 1m44s success. 15m covers
-    # the observed 647-840s cold tail with headroom; it does not mask a hang,
-    # because the work itself completes in ~104s warm.
-    timeout-minutes: 15
+    # at exactly T+600s), attempt 3 on a warm runner = 1m44s success. 15m covered
+    # the observed 647-840s cold tail with headroom.
+    #
+    # OMN-17864: raised again, 15 -> 30, to make room for the new bounded wait
+    # in "Resolve Evidence-Source" (up to eligibility-deadline-seconds, default
+    # 1500s = 25m). 30m preserves the full OMN-16322 cold-start headroom ON TOP
+    # of the 25-minute wait. The job timeout MUST exceed the deadline input, or
+    # the wait is killed mid-flight and the job is stamped `cancelled` --
+    # exactly the OMN-16322 failure shape, reintroduced by a different cause.
+    # tests/ci/test_occ_preflight_wait_workflow_shape_omn17864.py pins this
+    # relationship so a future edit that lowers either value out of step is
+    # caught mechanically rather than live.
+    timeout-minutes: 30
     # I2: Disable GHA cache so merge_group re-fires fully.
     # A stale PASS from a prior PR-open run cannot satisfy the gate on a new merge_group event.
     env:
@@ -224,48 +257,45 @@ jobs:
 
       # I1: Resolve Evidence-Source to an exact OCC SHA before checkout.
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
+      #
+      # OMN-17864: bounded wait, driven by scripts/ci/occ_preflight_wait.py.
+      # The old inline bash below `exit 1`'d in 2-8s whenever the evidence-source
+      # stamp had not landed yet or the cited companion had not merged yet --
+      # both TRANSIENT (measured: 53/53 PRs whose first run concluded before
+      # their companion merged concluded FAILURE; see the module docstring).
+      # This step now polls the identical fact for up to
+      # eligibility-deadline-seconds (default 1500s), reading the LIVE PR body
+      # via the API on every poll -- never the triggering event payload, since
+      # occ-autobind PATCHes the stamp onto the body AFTER the event fires.
+      # That live-body read mirrors check_occ_companion_merged.py exactly.
+      # This budget is the same one the OMN-15214 "OCC Companion Merged Gate"
+      # job already pays for the identical fact in this same CI run, so it
+      # adds no additional wall clock to the critical path -- see the module
+      # docstring for the full accounting. Once this step exits 0, the
+      # eligibility validator further below still runs unconditionally and its
+      # verdict is terminal in both directions: a genuine ineligibility fails
+      # on the poll that observes it, exactly as before this change.
       - name: Resolve Evidence-Source
         id: resolve_evidence_source
         if: steps.event_scope.outputs.required == 'true' && steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          DEADLINE_SECONDS: ${{ inputs.eligibility-deadline-seconds }}
+          POLL_INTERVAL_SECONDS: ${{ inputs.eligibility-poll-interval-seconds }}
         run: |
           set -euo pipefail
 
-          pr_body="$(cat /tmp/pr_body.txt 2>/dev/null || true)"
-          evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//; s/^[[:space:]]+//; s/[[:space:]]+$//' || true)"
+          pr_number="$(cat /tmp/pr_number.txt 2>/dev/null || true)"
 
-          if [ -z "$evidence_source" ]; then
-            echo "::error::OCC PREFLIGHT FAILED: PR body is missing required 'Evidence-Source:' line. Add one of: 'Evidence-Source: OCC#<PR-number>' or 'Evidence-Source: <occ-sha>'"
-            exit 1
-          fi
-
-          if printf '%s' "$evidence_source" | grep -qiE '^OCC#[0-9]+$'; then
-            occ_pr_num="$(printf '%s' "$evidence_source" | sed -E 's/^OCC#//i')"
-            occ_json="$(gh pr view "$occ_pr_num" --repo "OmniNode-ai/onex_change_control" --json state,headRefOid,mergeCommit 2>/dev/null || true)"
-            occ_state="$(printf '%s' "$occ_json" | jq -r '.state // ""' 2>/dev/null || true)"
-            if [ "$occ_state" = "MERGED" ]; then
-              occ_sha="$(printf '%s' "$occ_json" | jq -r '.mergeCommit.oid // ""' 2>/dev/null || true)"
-            else
-              occ_sha="$(printf '%s' "$occ_json" | jq -r '.headRefOid // ""' 2>/dev/null || true)"
-            fi
-            if [ -z "$occ_sha" ]; then
-              echo "::error::OCC PREFLIGHT FAILED: OCC PR #${occ_pr_num} could not be resolved — OCC unavailable or PR not found."
-              exit 1
-            fi
-          elif printf '%s' "$evidence_source" | grep -qiE '^[0-9a-f]{7,40}$'; then
-            occ_sha="$(gh api "repos/OmniNode-ai/onex_change_control/commits/${evidence_source}" --jq '.sha' 2>/dev/null || true)"
-            if [ -z "$occ_sha" ]; then
-              echo "::error::OCC PREFLIGHT FAILED: Evidence-Source SHA could not be canonicalized to a full OCC commit SHA."
-              exit 1
-            fi
-          else
-            echo "::error::OCC PREFLIGHT FAILED: Evidence-Source value '${evidence_source}' is not a valid OCC#<number> or hex SHA."
-            exit 1
-          fi
-
-          echo "sha=${occ_sha}" >> "$GITHUB_OUTPUT"
-          echo "::notice::Evidence-Source resolved to OCC SHA: ${occ_sha}"
+          python3 scripts/ci/occ_preflight_wait.py \
+            --repo "$GH_REPO" \
+            --pr-number "$pr_number" \
+            --event-name "$EVENT_NAME" \
+            --deadline-seconds "$DEADLINE_SECONDS" \
+            --poll-interval-seconds "$POLL_INTERVAL_SECONDS" \
+            --github-output-path "$GITHUB_OUTPUT"
 
       # I3: OCC's own PRs use in-tree checkout; other repos check out pinned OCC evidence.
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
