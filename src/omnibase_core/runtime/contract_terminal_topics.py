@@ -16,8 +16,8 @@ declares its failure terminal at site 3 and nowhere else, so every lane-side
 delegation failure published a terminal the caller was not listening to: the
 caller waited out its whole ``--timeout`` and reported a timeout for a run the
 lane had already answered (OMN-18445; five dogfood runs on the ``.201`` dev lane,
-2026-09-16T16:45Z-16:49Z, each with the lane's ``delegate-skill-failed`` publish
-inside the caller's own 200s window).
+2026-09-16T16:45Z-16:49Z, each with the lane's failure-terminal publish inside
+the caller's own 200s window).
 
 The outcome travels WITH the topic rather than being re-derived from each
 message, because the two answer different questions. A payload's ``status`` says
