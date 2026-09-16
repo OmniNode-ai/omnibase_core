@@ -163,11 +163,17 @@ jobs:
         run: |
           SHORT="${NEW_SHA:0:12}"
           BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
-          git config user.name "onex-pin-bump-bot"
-          git config user.email "bot@omninode.ai"
+          # OMN-18273: commit as the App this job already mints a token for. The
+          # previous identity resolved to no GitHub account, so the commit rendered
+          # unlinked and named neither a bot nor a run. The numeric prefix on the
+          # address is what links it to the App account.
+          git config user.name "onexbot-occ-writer[bot]"
+          git config user.email "307849072+onexbot-occ-writer[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add -A
-          git commit -m "chore(ci): bump omnibase_core pin to ${SHORT} [bot] [OMN-9050]"
+          git commit -m "chore(ci): bump omnibase_core pin to ${SHORT} [bot] [OMN-9050]" \
+            --trailer "Onex-Workflow: ${GITHUB_WORKFLOW}" \
+            --trailer "Onex-Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           git push -u origin "$BRANCH" --force-with-lease
 
       - name: Open PR + enable auto-merge
