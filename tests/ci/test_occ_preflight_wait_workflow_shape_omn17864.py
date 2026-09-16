@@ -201,3 +201,37 @@ def test_omnibase_core_checkout_precedes_the_resolve_evidence_source_step() -> N
             "the early omnibase_core checkout must honor the core-ref input, "
             f"got: {with_block.get('ref')!r}"
         )
+
+
+def test_occ_preflight_wait_checkout_path_is_workspace_relative() -> None:
+    """``actions/checkout`` refuses a ``path`` that resolves outside
+    ``GITHUB_WORKSPACE`` ("Repository path ... is not under ..."), so an
+    absolute root such as ``${{ runner.temp }}`` makes the step fail on the
+    first EXTERNAL caller that reaches it -- the only callers it exists to
+    serve, since omnibase_core's own local callers skip it on the
+    ``hashFiles`` guard and therefore never exercise the path at all. The
+    proven cross-repo checkouts further down this job
+    (``.occ-preflight-deps/omnibase_compat`` and
+    ``.occ-preflight-deps/omnibase_core``) are workspace-relative for the
+    same reason; this one must be too."""
+    steps = _eligibility_job()["steps"]
+    resolve_idx = _step_index("resolve_evidence_source")
+    core_checkouts = [
+        step
+        for step in steps[:resolve_idx]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+        and isinstance(step.get("with"), dict)
+        and step["with"].get("repository") == "OmniNode-ai/omnibase_core"
+    ]
+    assert core_checkouts, "expected the pre-resolve omnibase_core checkout to exist"
+    for step in core_checkouts:
+        path_value = str(step["with"].get("path", ""))
+        assert path_value, "the pre-resolve omnibase_core checkout must declare a path"
+        assert not path_value.startswith("/"), (
+            f"checkout path {path_value!r} is absolute; actions/checkout rejects "
+            "any path outside GITHUB_WORKSPACE"
+        )
+        assert "runner.temp" not in path_value and "RUNNER_TEMP" not in path_value, (
+            f"checkout path {path_value!r} resolves outside GITHUB_WORKSPACE; "
+            "actions/checkout rejects it"
+        )

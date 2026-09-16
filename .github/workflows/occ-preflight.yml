@@ -274,7 +274,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_core
-          path: ${{ runner.temp }}/occ-preflight-core
+          # actions/checkout REFUSES a path outside GITHUB_WORKSPACE, so this is
+          # workspace-relative, mirroring the proven .occ-preflight-deps/ checkouts
+          # further down this job. A distinct leaf keeps it from colliding with the
+          # later validator checkout, which cleans the path it is given.
+          path: .occ-preflight-deps/omnibase_core_wait
           ref: ${{ inputs.core-ref }}
           fetch-depth: 1
           persist-credentials: false
@@ -321,7 +325,7 @@ jobs:
           if [ -f "$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py" ]; then
             wait_script="$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py"
           else
-            wait_script="$RUNNER_TEMP/occ-preflight-core/scripts/ci/occ_preflight_wait.py"
+            wait_script="$GITHUB_WORKSPACE/.occ-preflight-deps/omnibase_core_wait/scripts/ci/occ_preflight_wait.py"
           fi
 
           python3 "$wait_script" \
