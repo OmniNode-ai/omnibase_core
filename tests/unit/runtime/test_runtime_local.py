@@ -28,9 +28,13 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_terminal_outcome import EnumTerminalOutcome
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.model_contract_terminal_topic import (
+    ModelContractTerminalTopic,
+)
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
     ProtocolLocalRuntimeBus,
 )
@@ -1168,7 +1172,13 @@ async def test_terminal_event_uses_result_classifier(
         state_root=tmp_path / "state",
     )
 
-    runtime._on_terminal_event({"status": status})
+    runtime._on_terminal_event(
+        {"status": status},
+        ModelContractTerminalTopic(
+            topic="onex.evt.test.terminal.v1",
+            outcome=EnumTerminalOutcome.SUCCESS,
+        ),
+    )
 
     assert runtime._result == EnumWorkflowResult.FAILED
 

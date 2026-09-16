@@ -35,9 +35,13 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_terminal_outcome import EnumTerminalOutcome
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
+from omnibase_core.models.runtime.model_contract_terminal_topic import (
+    ModelContractTerminalTopic,
+)
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
     ProtocolLocalRuntimeBus,
     UnsubscribeCallback,
@@ -51,6 +55,7 @@ from omnibase_core.protocols.runtime.protocol_local_runtime_message import (
 from omnibase_core.protocols.runtime.protocol_local_runtime_payload_model import (
     ProtocolLocalRuntimePayloadModel,
 )
+from omnibase_core.runtime.contract_terminal_topics import resolve_terminal_topics
 
 logger = logging.getLogger(__name__)
 
@@ -398,8 +403,28 @@ class RuntimeLocal:
         return declared == {wanted}
 
     # ONEX_EXCLUDE: dict_str_any — event bus payload
-    def _on_terminal_event(self, payload: RawWorkflowMap) -> None:
-        """Callback invoked when a message arrives on the terminal_event topic."""
+    def _on_terminal_event(
+        self, payload: RawWorkflowMap, declared: ModelContractTerminalTopic
+    ) -> None:
+        """Callback invoked when a message arrives on a declared terminal topic.
+
+        ``declared`` is the contract's own statement about the topic that
+        delivered this record (OMN-18445). It is consulted BEFORE the payload,
+        and only in the one direction that can fail closed: a record on the
+        topic the contract names as its FAILURE terminal is a failure, whatever
+        the payload declares or omits. The un-enveloped failure shape observed
+        under OMN-15468 carries no ``status`` field at all, and the status
+        heuristics below read a missing failure marker as success — so deriving
+        this run's verdict from that payload alone would report the lane's
+        explicit failure as a completed delegation.
+
+        The success half is NOT treated symmetrically. A contract naming a
+        success terminal has not promised that everything published there
+        succeeded, and OMN-17567 is the live proof: a FAILED delegation landed
+        on the success topic with ``status`` under the envelope payload. So a
+        record on a SUCCESS or UNSPECIFIED topic keeps going through the same
+        status reading it always did.
+        """
         self._record_event("(terminal)")
         if not self._terminal_correlation_matches(payload):
             self._record_event("(terminal:foreign)")
@@ -414,8 +439,24 @@ class RuntimeLocal:
             logger.warning("Duplicate terminal event received — ignoring (first wins).")
             return
 
-        declared = self._terminal_status_declarations(payload)
-        if not declared and self._is_envelope_shaped(payload):
+        if declared.outcome is EnumTerminalOutcome.FAILURE:
+            self._record_event("(terminal:failure-topic)")
+            logger.info(
+                "RuntimeLocal: terminal event received on the contract's declared "
+                "failure terminal '%s' (correlation=%s) — this run FAILED",
+                declared.topic,
+                payload.get("correlation_id", "(none)"),
+            )
+            self._last_error = (
+                f"lane published a failure terminal to '{declared.topic}'"
+            )
+            self._terminal_payload = payload
+            self._result = EnumWorkflowResult.FAILED
+            self._terminal_received.set()
+            return
+
+        statuses = self._terminal_status_declarations(payload)
+        if not statuses and self._is_envelope_shaped(payload):
             msg = (
                 "RuntimeLocal: terminal envelope declares no status at either "
                 "the envelope or the payload level — this run's outcome is "
@@ -432,10 +473,10 @@ class RuntimeLocal:
 
         logger.info(
             "RuntimeLocal: terminal event received (status=%s)",
-            "/".join(sorted(declared)) if declared else "(absent)",
+            "/".join(sorted(statuses)) if statuses else "(absent)",
         )
         self._terminal_payload = payload
-        self._result = self._classify_terminal(payload, declared)
+        self._result = self._classify_terminal(payload, statuses)
 
         self._terminal_received.set()
 
@@ -477,6 +518,22 @@ class RuntimeLocal:
             if isinstance(raw, str) and raw.strip():
                 declared.add(raw.strip().lower())
         return declared
+
+    def _declared_terminal_for(self, topic: str) -> ModelContractTerminalTopic:
+        """The contract's declaration for ``topic``, or an unspecified one.
+
+        A caller that resolved a topic by another route (the single-handler
+        path reads ``terminal_event`` directly) still needs the contract's
+        statement about it. A topic the contract does not declare gets
+        :attr:`EnumTerminalOutcome.UNSPECIFIED`, which is exactly the
+        payload-decides behaviour that predates OMN-18445.
+        """
+        for declared in resolve_terminal_topics(self._contract):
+            if declared.topic == topic:
+                return declared
+        return ModelContractTerminalTopic(
+            topic=topic, outcome=EnumTerminalOutcome.UNSPECIFIED
+        )
 
     # ONEX_EXCLUDE: dict_str_any — event bus payload
     def _classify_terminal(
@@ -788,13 +845,15 @@ class RuntimeLocal:
         terminal topics via ``publish_topics``—don't receive duplicates.
         """
 
+        declared_terminal = self._declared_terminal_for(terminal_topic)
+
         async def _on_terminal_msg(msg: ProtocolLocalRuntimeMessage) -> None:
             """Adapt async bus callback to sync terminal handler."""
             decoded: object = (
                 json.loads(msg.value) if isinstance(msg.value, bytes) else {}
             )
             payload = decoded if isinstance(decoded, dict) else {}
-            self._on_terminal_event(cast("RawWorkflowMap", payload))
+            self._on_terminal_event(cast("RawWorkflowMap", payload), declared_terminal)
 
         await bus.subscribe(
             terminal_topic,
@@ -1291,11 +1350,17 @@ class RuntimeLocal:
             event_bus_spec.get("subscribe_topics", [])
         )
         publish_topics = self._as_string_list(event_bus_spec.get("publish_topics", []))
-        terminal_topic = self._contract.get("terminal_event")
-        if not isinstance(terminal_topic, str) or not terminal_topic:
+        # OMN-18445: every terminal the contract declares, not only the success
+        # one. ``node_delegate_skill_orchestrator`` declares its failure terminal
+        # under ``runtime_dispatch.terminal_events`` and nowhere else, so reading
+        # ``terminal_event`` alone left the caller subscribed to exactly one half
+        # of the pair and a lane-side failure was indistinguishable from silence.
+        terminal_topics = resolve_terminal_topics(self._contract)
+        if not terminal_topics:
             logger.error("RuntimeLocal: event-driven workflow missing terminal_event")
             self._result = EnumWorkflowResult.FAILED
             return
+        terminal_topic_names = frozenset(declared.topic for declared in terminal_topics)
         if not subscribe_topics:
             logger.error(
                 "RuntimeLocal: event-driven mode requires non-empty "
@@ -1489,7 +1554,7 @@ class RuntimeLocal:
                 def _make_result_cb(
                     output_topic: str,
                 ) -> Callable[[object], None] | None:
-                    if output_topic != terminal_topic:
+                    if output_topic not in terminal_topic_names:
                         return None
 
                     def _cb(result: object) -> None:
@@ -1549,13 +1614,26 @@ class RuntimeLocal:
                 )
                 unsubscribe_handles.append(unsub)
 
-        # --- 5. Subscribe to the declared terminal event only ---
-        async def _on_terminal_msg(msg: ProtocolLocalRuntimeMessage) -> None:
-            decoded: object = (
-                json.loads(msg.value) if isinstance(msg.value, bytes) else {}
-            )
-            payload = decoded if isinstance(decoded, dict) else {}
-            self._on_terminal_event(cast("RawWorkflowMap", payload))
+        # --- 5. Subscribe to every declared terminal event ---
+        def _terminal_listener(
+            declared: ModelContractTerminalTopic,
+        ) -> Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]]:
+            """Bind one declared terminal to its own callback.
+
+            The binding is what carries the contract's success-vs-failure
+            statement into ``_on_terminal_event``: the bus message protocol
+            declares only ``value``, so the delivering topic is not readable
+            from the record itself and must be closed over here.
+            """
+
+            async def _on_terminal_msg(msg: ProtocolLocalRuntimeMessage) -> None:
+                decoded: object = (
+                    json.loads(msg.value) if isinstance(msg.value, bytes) else {}
+                )
+                payload = decoded if isinstance(decoded, dict) else {}
+                self._on_terminal_event(cast("RawWorkflowMap", payload), declared)
+
+            return _on_terminal_msg
 
         # OMN-17304 AC5 / OMN-15660: no run may inherit another run's committed
         # offset on the terminal topic. The shared runtime-local group id is
@@ -1578,12 +1656,54 @@ class RuntimeLocal:
             terminal_group_node = (
                 f"{TERMINAL_CONSUMER_NODE_NAME}_run_{self.run_id.hex[:12]}"
             )
-        unsub = await bus.subscribe(
-            terminal_topic,
-            on_message=_on_terminal_msg,
-            group_id=derive_runtime_local_group_id(terminal_group_node),
-        )
-        unsubscribe_handles.append(unsub)
+        # The FIRST declared terminal keeps the group id it has always had, so
+        # the MSK IAM pattern that authorizes today's delegations is unchanged;
+        # each additional terminal gets its own group under the same prefix,
+        # because two members of one group declaring different subscriptions is
+        # a coordinator hazard, not a saving.
+        for index, declared_terminal in enumerate(terminal_topics):
+            group_node = (
+                terminal_group_node if index == 0 else f"{terminal_group_node}_t{index}"
+            )
+            try:
+                unsub = await bus.subscribe(
+                    declared_terminal.topic,
+                    on_message=_terminal_listener(declared_terminal),
+                    group_id=derive_runtime_local_group_id(group_node),
+                )
+            except Exception:  # fallback-ok: an unwatchable ADDITIONAL terminal degrades coverage, it does not fail the run
+                # The FIRST declared terminal is the one this runtime has always
+                # watched, so a failure to subscribe to it stays fatal — nothing
+                # about its handling changes here. Every LATER terminal is new
+                # coverage, and coverage that cannot be obtained must not take
+                # a working delegation down with it: the broker may not yet
+                # authorize this client to read the topic, which is exactly the
+                # state the `.201` dev lane was in when this landed
+                # (``TopicAuthorizationFailedError`` on the failure terminal for
+                # identity ``dev-cli-stickybeatz-studio``, 2026-09-16T18:18Z).
+                #
+                # It is recorded rather than swallowed. A run that later times
+                # out would otherwise report the same undifferentiated silence
+                # this ticket exists to remove, with no way to tell "the lane
+                # said nothing" from "the lane answered where I could not
+                # listen".
+                if index == 0:
+                    raise
+                self._record_event(f"(terminal:unwatchable:{declared_terminal.topic})")
+                self._last_error = (
+                    f"could not watch the contract's declared "
+                    f"{declared_terminal.outcome.value} terminal "
+                    f"'{declared_terminal.topic}' — a terminal published there "
+                    f"will not reach this run"
+                )
+                logger.warning("RuntimeLocal: %s", self._last_error, exc_info=True)
+                continue
+            unsubscribe_handles.append(unsub)
+            logger.info(
+                "RuntimeLocal: watching terminal '%s' (declared %s)",
+                declared_terminal.topic,
+                declared_terminal.outcome.value,
+            )
 
         # --- 6. Publish the initial command ---
         # The payload and its correlation id were resolved in step 3b, before
