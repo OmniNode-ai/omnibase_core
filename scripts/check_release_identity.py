@@ -29,6 +29,13 @@ greater than the highest published version (latest ``v*`` / bare-semver tag).
 A docs-only / tests-only / CI-only diff (no ``src/**`` change) is exempt: the
 published wheel is unaffected, so no bump is required.
 
+"Published" means published ON A LINEAGE THIS TREE DESCENDS FROM -- the tags
+reachable from the evaluated commit, not every tag that happens to exist when
+the job runs (OMN-18443, see ``_published_tags``). Both halves of the
+comparison then come from the same commit, so a release cut by a peer PR while
+this one sat in CI cannot retroactively refuse a tree that was correctly
+versioned when it was computed.
+
 Modes
 -----
 * ``--base <ref>``    Compare the working tree against ``<ref>`` (e.g. ``origin/dev``)
@@ -87,13 +94,67 @@ def _git(args: list[str]) -> str:
     ).stdout.strip()
 
 
+def _repo_is_shallow() -> bool:
+    """Return True when this checkout may be missing commit ancestry."""
+    return _git(["rev-parse", "--is-shallow-repository"]) == "true"
+
+
+def _published_tags(anchor: str = "HEAD") -> list[str]:
+    """Return the published tags THIS TREE DESCENDS FROM (OMN-18443).
+
+    The gate compares a VERSION READ FROM A TREE against a SET OF PUBLISHED
+    RELEASES, and those two facts must come from the same clock. Listing every
+    tag that exists reads a second clock.
+
+    On a ``pull_request`` event GitHub hands the runner ``refs/pull/N/merge`` --
+    the merge commit it computed when the PR was last synchronized -- so the
+    ``pyproject.toml`` this gate reads is pinned at TRIGGER time, while
+    ``actions/checkout`` fetches ``+refs/tags/*:refs/tags/*`` at RUN time.
+    ``git tag --list`` therefore compared a trigger-time tree against a run-time
+    tag list, and refused correctly-versioned trees whenever a peer released in
+    between.
+
+    Measured in the sibling repo, where a release-on-merge cadence makes the
+    window wide enough to hit daily: omnimarket#2601 (job 104902570663,
+    2026-09-16) checked out ``Merge edc2efc8 into aa51cad2`` declaring 0.4.107,
+    whose highest reachable release is v0.4.106 -- correctly versioned -- while
+    the tag list in that same job carried v0.4.107 and v0.4.108, both cut from
+    merges the tree does not contain. omnibase_core releases on a tag push
+    rather than on every merge, so the window here is narrower; it is not
+    absent, and it is the same collector.
+
+    Anchoring on ``git tag --merged`` restores the one-clock comparison without
+    weakening the invariant: a release cut on a lineage this tree does not
+    contain cannot be aliased BY this tree, because the branch never authored
+    that version and a three-way merge takes the base branch's newer value on
+    the way in. A release the tree DOES descend from is still compared.
+
+    Fail-CLOSED on unknowable ancestry: ``git tag --merged`` needs the tagged
+    commits' ancestry present, and a shallow clone can omit it and return FEWER
+    tags -- the permissive direction. ``_git`` here also swallows a non-zero
+    exit and returns an empty string, so a failed ``--merged`` is
+    indistinguishable from a genuinely tag-less ancestry. Both cases fall back
+    to the full tag list, which is the strictly stricter answer.
+
+    Args:
+        anchor: The commit whose reachable tags count as published.
+
+    Returns:
+        Raw tag lines, exactly as ``git tag`` emits them.
+    """
+    if _repo_is_shallow():
+        return _git(["tag", "--list"]).splitlines()
+    out = _git(["tag", "--merged", anchor]) or _git(["tag", "--list"])
+    return out.splitlines()
+
+
 def _latest_published_version() -> Version | None:
     """Return the highest published semver tag, or None if there are no tags."""
-    out = _git(["tag", "--list"])
-    if not out:
+    tags = _published_tags()
+    if not tags:
         return None
     best: Version | None = None
-    for line in out.splitlines():
+    for line in tags:
         tag = line.strip()
         candidate = tag[1:] if tag.startswith("v") else tag
         try:

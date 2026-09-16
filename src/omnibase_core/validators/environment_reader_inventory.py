@@ -102,7 +102,6 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "tests/integration/models/agents/test_agent_yaml_validation.py",
         "tests/integration/test_validation_integration.py",
         "tests/performance/conftest.py",
-        "tests/scripts/test_check_release_identity.py",
         "tests/scripts/test_deterministic_skills_hook_omni_home_preflight.py",
         "tests/scripts/test_prepush_actor_fallback.py",
         "tests/scripts/test_prepush_hook_host_identity_guard.py",
