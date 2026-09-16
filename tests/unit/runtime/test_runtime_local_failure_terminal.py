@@ -523,3 +523,105 @@ def test_resolver_reads_all_three_declaration_sites_success_first() -> None:
 def test_resolver_returns_nothing_for_a_contract_with_no_terminal() -> None:
     """Empty is the caller's decision to make, exactly as ``.get()`` was."""
     assert resolve_terminal_topics({"name": "no_terminal"}) == ()
+
+
+# ---------------------------------------------------------------------------
+# A terminal the broker will not let this client read.
+# ---------------------------------------------------------------------------
+
+
+class _RefusingBus(_Bus):
+    """A broker that authorizes one terminal topic and refuses the other.
+
+    The live state of the ``.201`` dev lane when this landed: identity
+    ``dev-cli-stickybeatz-studio`` held a read grant on the completed terminal
+    and none on the failed one, so the first run that tried to watch both got
+    ``TopicAuthorizationFailedError`` from the second subscribe.
+    """
+
+    def __init__(self, broker: _Broker, *, refuse: str) -> None:
+        super().__init__(broker)
+        self.refuse = refuse
+        self.refused: list[str] = []
+
+    async def subscribe(
+        self,
+        topic: str,
+        *,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+        group_id: str,
+    ) -> Callable[[], Awaitable[None]]:
+        if topic == self.refuse:
+            self.refused.append(topic)
+            raise PermissionError(f"topic {topic} is not authorized for this client")
+        return await super().subscribe(topic, on_message=on_message, group_id=group_id)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_an_unwatchable_extra_terminal_does_not_break_the_delegation(
+    tmp_path: Path,
+) -> None:
+    """New coverage that cannot be obtained must not take a working run down.
+
+    Watching a second topic is an improvement on a lane that permits it. On a
+    lane that does not, the run must still do everything it did before —
+    otherwise this change converts a class of silent timeouts into a class of
+    delegations that cannot run at all.
+    """
+    broker = _Broker()
+    correlation_id = uuid.uuid4()
+    run_dir = tmp_path / "run"
+    bus = _RefusingBus(broker, refuse=_FAILURE_TOPIC)
+    runtime = _build_runtime(run_dir, correlation_id=correlation_id, timeout=5)
+    _bind(runtime, bus)
+
+    success = {
+        "envelope_id": str(uuid.uuid4()),
+        "correlation_id": str(correlation_id),
+        "payload": {"correlation_id": str(correlation_id), "status": "success"},
+    }
+    publisher = asyncio.create_task(
+        _publish_after(broker, _SUCCESS_TOPIC, success, delay=0.05)
+    )
+    result = await runtime.run_async()
+    await publisher
+
+    assert result is EnumWorkflowResult.COMPLETED
+    assert bus.refused == [_FAILURE_TOPIC]
+    # Recorded, not swallowed: a later timeout must be able to say which
+    # terminal it was unable to listen on.
+    assert runtime._events_received.get(f"(terminal:unwatchable:{_FAILURE_TOPIC})") == 1
+    assert runtime._last_error is not None
+    assert _FAILURE_TOPIC in runtime._last_error
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_an_unwatchable_first_terminal_is_still_fatal(tmp_path: Path) -> None:
+    """Counter-assertion: the terminal this runtime always watched stays fatal.
+
+    Degrading on the FIRST declared terminal would mean a run that watches
+    nothing at all and then sits out its whole timeout, which is a worse
+    failure than the one being fixed. It propagates instead, and ``run_async``
+    records it as FAILED the way it always has — immediately, not at the
+    timeout, and with no unwatchable-terminal diagnostic, because nothing was
+    degraded here.
+    """
+    broker = _Broker()
+    run_dir = tmp_path / "run"
+    bus = _RefusingBus(broker, refuse=_SUCCESS_TOPIC)
+    runtime = _build_runtime(run_dir, correlation_id=uuid.uuid4(), timeout=30)
+    _bind(runtime, bus)
+
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    result = await runtime.run_async()
+    elapsed = loop.time() - started
+
+    assert result is EnumWorkflowResult.FAILED
+    assert elapsed < 5.0, "a fatal subscribe must not be paid for at the timeout"
+    assert bus.refused == [_SUCCESS_TOPIC]
+    assert not any(
+        key.startswith("(terminal:unwatchable") for key in runtime._events_received
+    )

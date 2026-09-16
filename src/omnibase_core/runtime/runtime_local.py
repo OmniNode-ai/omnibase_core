@@ -1665,11 +1665,39 @@ class RuntimeLocal:
             group_node = (
                 terminal_group_node if index == 0 else f"{terminal_group_node}_t{index}"
             )
-            unsub = await bus.subscribe(
-                declared_terminal.topic,
-                on_message=_terminal_listener(declared_terminal),
-                group_id=derive_runtime_local_group_id(group_node),
-            )
+            try:
+                unsub = await bus.subscribe(
+                    declared_terminal.topic,
+                    on_message=_terminal_listener(declared_terminal),
+                    group_id=derive_runtime_local_group_id(group_node),
+                )
+            except Exception:  # fallback-ok: an unwatchable ADDITIONAL terminal degrades coverage, it does not fail the run
+                # The FIRST declared terminal is the one this runtime has always
+                # watched, so a failure to subscribe to it stays fatal — nothing
+                # about its handling changes here. Every LATER terminal is new
+                # coverage, and coverage that cannot be obtained must not take
+                # a working delegation down with it: the broker may not yet
+                # authorize this client to read the topic, which is exactly the
+                # state the `.201` dev lane was in when this landed
+                # (``TopicAuthorizationFailedError`` on the failure terminal for
+                # identity ``dev-cli-stickybeatz-studio``, 2026-09-16T18:18Z).
+                #
+                # It is recorded rather than swallowed. A run that later times
+                # out would otherwise report the same undifferentiated silence
+                # this ticket exists to remove, with no way to tell "the lane
+                # said nothing" from "the lane answered where I could not
+                # listen".
+                if index == 0:
+                    raise
+                self._record_event(f"(terminal:unwatchable:{declared_terminal.topic})")
+                self._last_error = (
+                    f"could not watch the contract's declared "
+                    f"{declared_terminal.outcome.value} terminal "
+                    f"'{declared_terminal.topic}' — a terminal published there "
+                    f"will not reach this run"
+                )
+                logger.warning("RuntimeLocal: %s", self._last_error, exc_info=True)
+                continue
             unsubscribe_handles.append(unsub)
             logger.info(
                 "RuntimeLocal: watching terminal '%s' (declared %s)",
