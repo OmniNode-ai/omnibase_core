@@ -255,6 +255,34 @@ jobs:
             : > /tmp/pr_number.txt
           fi
 
+      # OMN-17864 follow-up: the wait driver below used to be invoked by a
+      # workspace-relative path (`python3 scripts/ci/occ_preflight_wait.py`).
+      # That only resolves for omnibase_core's own 41 local
+      # `uses: ./.github/workflows/occ-preflight.yml` callers, where
+      # GITHUB_WORKSPACE already IS the omnibase_core checkout ("Check out PR
+      # head", above). For every EXTERNAL caller, GITHUB_WORKSPACE is the
+      # CALLER's repository, which has no such file -- an unconditional hard
+      # fail (exit 2, "No such file or directory") in ~8s, live-confirmed on
+      # omniclaude#2201 job 104912265991. This checkout fetches the module
+      # into a path OUTSIDE the workspace so it resolves for every caller;
+      # the `hashFiles` guard skips it when the file is already present
+      # locally (omnibase_core's own PRs), so a PR to omnibase_core that
+      # edits this very module continues to test its own edit rather than
+      # silently running the core-ref default instead.
+      - name: Check out omnibase_core (for occ_preflight_wait.py)
+        if: steps.event_scope.outputs.required == 'true' && steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control' && ! hashFiles('scripts/ci/occ_preflight_wait.py')
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_core
+          # actions/checkout REFUSES a path outside GITHUB_WORKSPACE, so this is
+          # workspace-relative, mirroring the proven .occ-preflight-deps/ checkouts
+          # further down this job. A distinct leaf keeps it from colliding with the
+          # later validator checkout, which cleans the path it is given.
+          path: .occ-preflight-deps/omnibase_core_wait
+          ref: ${{ inputs.core-ref }}
+          fetch-depth: 1
+          persist-credentials: false
+
       # I1: Resolve Evidence-Source to an exact OCC SHA before checkout.
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.
       #
@@ -289,7 +317,18 @@ jobs:
 
           pr_number="$(cat /tmp/pr_number.txt 2>/dev/null || true)"
 
-          python3 scripts/ci/occ_preflight_wait.py \
+          # Resolve an ABSOLUTE path to occ_preflight_wait.py: the local
+          # workspace copy when this repo IS omnibase_core (self-referential
+          # PRs that edit this module test their own edit), otherwise the
+          # early checkout above -- never a bare workspace-relative path,
+          # which resolves only by accident for the local-caller case.
+          if [ -f "$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py" ]; then
+            wait_script="$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py"
+          else
+            wait_script="$GITHUB_WORKSPACE/.occ-preflight-deps/omnibase_core_wait/scripts/ci/occ_preflight_wait.py"
+          fi
+
+          python3 "$wait_script" \
             --repo "$GH_REPO" \
             --pr-number "$pr_number" \
             --event-name "$EVENT_NAME" \

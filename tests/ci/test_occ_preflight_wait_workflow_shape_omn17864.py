@@ -21,7 +21,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "occ-preflight.yml"
 
 
-def _workflow() -> dict[str, Any]:
+def _workflow() -> dict[Any, Any]:
+    # PyYAML (YAML 1.1) parses the bare `on:` top-level key as the boolean
+    # True, not the string "on" -- the return type reflects that the parsed
+    # mapping can carry a non-str key, which `_workflow_call_inputs` below
+    # relies on directly.
     data = yaml.safe_load(WORKFLOW_PATH.read_text())
     assert isinstance(data, dict)
     return data
@@ -126,3 +130,108 @@ def test_resolve_evidence_source_step_passes_the_workflow_call_inputs_through() 
         "resolve_evidence_source must pass inputs.eligibility-poll-interval-seconds "
         "through to the driver (e.g. via a POLL_INTERVAL_SECONDS env binding)"
     )
+
+
+def _step_index(step_id: str) -> int:
+    steps = _eligibility_job()["steps"]
+    for idx, step in enumerate(steps):
+        if step.get("id") == step_id:
+            return idx
+    raise AssertionError(f"eligibility job has no step with id {step_id!r}")
+
+
+def test_resolve_evidence_source_invokes_occ_preflight_wait_by_absolute_path() -> None:
+    """OMN-17864 follow-up: for every EXTERNAL caller of this reusable
+    workflow, GITHUB_WORKSPACE is the CALLER's checkout, which has no
+    scripts/ci/occ_preflight_wait.py. A workspace-relative invocation
+    (``python3 scripts/ci/occ_preflight_wait.py``) resolves only by accident,
+    for omnibase_core's own 41 local ``uses: ./...`` callers -- every other
+    repo hard-fails with 'No such file or directory' (live evidence:
+    omniclaude#2201, job 104912265991, exit code 2 in 8s). The invocation
+    must resolve the module from an absolute path, never bare
+    workspace-relative text."""
+    run_block = str(_resolve_evidence_source_step().get("run", ""))
+    assert "python3 scripts/ci/occ_preflight_wait.py" not in run_block, (
+        "resolve_evidence_source must not invoke occ_preflight_wait.py by a "
+        "bare workspace-relative path -- that only resolves inside "
+        "omnibase_core's own checkout and hard-fails for every external "
+        "caller of this reusable workflow"
+    )
+    assert (
+        "RUNNER_TEMP" in run_block
+        or "runner.temp" in run_block
+        or "GITHUB_WORKSPACE" in run_block
+    ), (
+        "resolve_evidence_source must resolve occ_preflight_wait.py from an "
+        "absolute path (rooted at RUNNER_TEMP or GITHUB_WORKSPACE), not a "
+        "bare relative one"
+    )
+
+
+def test_omnibase_core_checkout_precedes_the_resolve_evidence_source_step() -> None:
+    """A checkout of OmniNode-ai/omnibase_core (at the core-ref input) must
+    happen BEFORE the step that invokes occ_preflight_wait.py, so an
+    external caller's workspace has a copy of the module to run. The later
+    'Check out omnibase_core (for eligibility validator)' step exists only
+    to install the validator package and runs AFTER resolve_evidence_source
+    -- it does not satisfy this requirement."""
+    steps = _eligibility_job()["steps"]
+    resolve_idx = _step_index("resolve_evidence_source")
+
+    def _is_omnibase_core_checkout(step: dict[str, Any]) -> bool:
+        uses = str(step.get("uses", ""))
+        if not uses.startswith("actions/checkout@"):
+            return False
+        with_block = step.get("with", {})
+        if not isinstance(with_block, dict):
+            return False
+        return with_block.get("repository") == "OmniNode-ai/omnibase_core"
+
+    preceding_core_checkouts = [
+        step for step in steps[:resolve_idx] if _is_omnibase_core_checkout(step)
+    ]
+    assert preceding_core_checkouts, (
+        "no 'actions/checkout' step targeting OmniNode-ai/omnibase_core precedes "
+        "'resolve_evidence_source' -- an external caller's workspace has no "
+        "copy of scripts/ci/occ_preflight_wait.py to run without one"
+    )
+    for step in preceding_core_checkouts:
+        with_block = step["with"]
+        assert with_block.get("ref") == "${{ inputs.core-ref }}", (
+            "the early omnibase_core checkout must honor the core-ref input, "
+            f"got: {with_block.get('ref')!r}"
+        )
+
+
+def test_occ_preflight_wait_checkout_path_is_workspace_relative() -> None:
+    """``actions/checkout`` refuses a ``path`` that resolves outside
+    ``GITHUB_WORKSPACE`` ("Repository path ... is not under ..."), so an
+    absolute root such as ``${{ runner.temp }}`` makes the step fail on the
+    first EXTERNAL caller that reaches it -- the only callers it exists to
+    serve, since omnibase_core's own local callers skip it on the
+    ``hashFiles`` guard and therefore never exercise the path at all. The
+    proven cross-repo checkouts further down this job
+    (``.occ-preflight-deps/omnibase_compat`` and
+    ``.occ-preflight-deps/omnibase_core``) are workspace-relative for the
+    same reason; this one must be too."""
+    steps = _eligibility_job()["steps"]
+    resolve_idx = _step_index("resolve_evidence_source")
+    core_checkouts = [
+        step
+        for step in steps[:resolve_idx]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+        and isinstance(step.get("with"), dict)
+        and step["with"].get("repository") == "OmniNode-ai/omnibase_core"
+    ]
+    assert core_checkouts, "expected the pre-resolve omnibase_core checkout to exist"
+    for step in core_checkouts:
+        path_value = str(step["with"].get("path", ""))
+        assert path_value, "the pre-resolve omnibase_core checkout must declare a path"
+        assert not path_value.startswith("/"), (
+            f"checkout path {path_value!r} is absolute; actions/checkout rejects "
+            "any path outside GITHUB_WORKSPACE"
+        )
+        assert "runner.temp" not in path_value and "RUNNER_TEMP" not in path_value, (
+            f"checkout path {path_value!r} resolves outside GITHUB_WORKSPACE; "
+            "actions/checkout rejects it"
+        )
