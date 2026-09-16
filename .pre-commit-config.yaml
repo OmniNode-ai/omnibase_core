@@ -378,6 +378,12 @@ repos:
         language: script
         pass_filenames: true
         stages: [commit-msg]
+      - id: strip-ai-coauthor-trailer
+        name: Strip AI-generated Co-Authored-By trailers from commit messages
+        entry: perl -i -ne 'print unless /^co-authored-by:.*claude.*noreply\@anthropic\.com/i'
+        language: system
+        pass_filenames: true
+        stages: [commit-msg]
 
       # Required-Check Skip-Vector Guard (OMN-14863, fan-out from OMN-14854
       # omniclaude canary). Fails closed on a path-scoped required-check
