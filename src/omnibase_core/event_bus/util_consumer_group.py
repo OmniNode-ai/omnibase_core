@@ -44,7 +44,6 @@ wrongly accept the OMN-15639 defect name (which *contains* ``onex.`` but does no
 from __future__ import annotations
 
 import hashlib
-import os
 import re
 from functools import lru_cache
 from importlib import resources
@@ -75,7 +74,17 @@ INSTANCE_SCOPE_INFIX: Final[str] = ".__i."
 
 # Environment variable naming the deployment environment. Allowlisted in
 # omnibase_core.validators.no_new_os_environ.
-ENVIRONMENT_ENV_VAR: Final[str] = "ENVIRONMENT"
+#
+# This is ``ONEX_ENVIRONMENT`` and not ``ENVIRONMENT`` because that is the key a
+# deployed runtime actually carries: it is what
+# ``ModelEnvironment.to_environment_dict()`` exports, what every onex-dev,
+# onex-prod and onex-lab manifest sets, and what the runtime Dockerfile defaults.
+# No manifest in the fleet sets a bare ``ENVIRONMENT``. Reading that name meant
+# the token silently fell back to ``local`` inside a managed cluster and the
+# derived group ids were authorized by no MSK IAM pattern — OMN-15639's failure
+# mode surviving its own fix under a ``local.`` prefix instead of the original
+# ``runtime-local-`` one. Section F of the AC3 gate is what now refuses that.
+ENVIRONMENT_ENV_VAR: Final[str] = "ONEX_ENVIRONMENT"
 DEFAULT_ENVIRONMENT: Final[str] = "local"
 
 _IAM_PATTERNS_PACKAGE: Final[str] = "omnibase_core.contracts"
@@ -152,14 +161,24 @@ def _truncate_with_hash(value: str, *, hash_input: str) -> str:
 def resolve_environment_token() -> str:
     """Resolve the environment token that leads every identity-derived group ID.
 
-    Reads ``ENVIRONMENT`` and normalizes it. Falls back to ``"local"``, which is
-    deliberately NOT an MSK-managed environment: an unset ``ENVIRONMENT`` must not
+    Reads ``ONEX_ENVIRONMENT`` and normalizes it. Falls back to ``"local"``, which is
+    deliberately NOT an MSK-managed environment: an unset environment must not
     silently masquerade as a managed one.
 
     Returns:
         The normalized environment token.
     """
-    raw = os.environ.get(ENVIRONMENT_ENV_VAR, "").strip() or DEFAULT_ENVIRONMENT
+    # Imported in-function: the typed bootstrap is the only sanctioned raw
+    # process-environment boundary (OMN-17744), and importing it lazily keeps
+    # this module's import graph free of the models package at module scope.
+    from omnibase_core.models.bootstrap.model_environment_bootstrap import (
+        ModelEnvironmentBootstrap,
+    )
+
+    captured = ModelEnvironmentBootstrap.capture_process_environment(
+        declared_keys=(ENVIRONMENT_ENV_VAR,),
+    ).environment
+    raw = (captured.optional(ENVIRONMENT_ENV_VAR) or "").strip() or DEFAULT_ENVIRONMENT
     return normalize_kafka_identifier(raw)
 
 

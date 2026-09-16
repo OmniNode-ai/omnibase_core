@@ -50,6 +50,7 @@ from omnibase_core.enums.enum_consumer_group_purpose import EnumConsumerGroupPur
 from omnibase_core.enums.enum_reserved_group_prefix import EnumReservedGroupPrefix
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.util_consumer_group import (
+    ENVIRONMENT_ENV_VAR,
     compute_consumer_group_id,
     compute_pattern_set_digest,
     derive_prefixed_group_id,
@@ -266,7 +267,7 @@ def _real_producer_group_names(
     """
     import importlib
 
-    monkeypatch.setenv("ENVIRONMENT", env)
+    monkeypatch.setenv(ENVIRONMENT_ENV_VAR, env)
 
     names: dict[str, str] = {}
     for module_name in _validator_runtime_modules():
@@ -372,7 +373,7 @@ def test_scoped_names_stay_authorized(
     monkeypatch: pytest.MonkeyPatch, env: str
 ) -> None:
     """Topic and instance scoping must not displace the leading environment token."""
-    monkeypatch.setenv("ENVIRONMENT", env)
+    monkeypatch.setenv(ENVIRONMENT_ENV_VAR, env)
     scoped = derive_service_group_id(
         "delegate_skill",
         service="omnimarket",
@@ -522,7 +523,6 @@ def test_pinned_pattern_file_is_git_tracked_and_ships_in_the_wheel() -> None:
     tracked YAML under the package ships in the wheel; being tracked is the whole
     remaining condition.
     """
-    import os
     import subprocess
 
     from omnibase_core.validators.no_unguarded_git_subprocess import (
@@ -538,9 +538,124 @@ def test_pinned_pattern_file_is_git_tracked_and_ships_in_the_wheel() -> None:
         cwd=repo_root,
         capture_output=True,
         check=False,
-        env=scrub_git_location_env(os.environ),
+        env=scrub_git_location_env(),
     )
     assert tracked.returncode == 0, (
         f"{resource_path} is not tracked by git — it would be missing from a fresh "
         f"checkout and from the wheel. stderr: {tracked.stderr.decode().strip()}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# F — environment RESOLUTION (the half B assumes)
+# ---------------------------------------------------------------------------
+#
+# Section B proves: *given* a managed environment token, every minted name is
+# authorized. It establishes that by calling ``monkeypatch.setenv`` with the
+# variable the resolver reads, so it can never discover that no deployment sets
+# that variable. That gap is not hypothetical — it shipped. On onex-dev
+# (dev-system ``i-06169517a92b45f86``) the runtime pod carries
+# ``ONEX_ENVIRONMENT=onex-dev`` and no ``ENVIRONMENT`` at all, so
+# ``resolve_environment_token()`` returned the ``local`` fallback and
+# ``derive_service_group_id("HandlerDelegateSkill", service="omnibase_core")``
+# minted ``local.omnibase_core.handlerdelegateskill.consume.v1`` — matched by
+# none of the pinned patterns. The OMN-15639 defect survived its own fix under a
+# different prefix, with section B green the whole time.
+#
+# These assertions close that half: they exercise the resolver against the
+# process environment a deployed runtime actually has, and they anchor the
+# variable name to core's own declaration of a runtime environment rather than
+# restating a literal (a literal compared against itself is the vacuity this
+# gate exists to refuse).
+
+
+@pytest.mark.unit
+def test_resolver_reads_the_variable_core_declares_for_a_runtime() -> None:
+    """The resolver's variable is one ``ModelEnvironment`` actually exports.
+
+    ``ModelEnvironment.to_environment_dict()`` is core's own statement of the
+    environment a runtime process is given. Reading a variable absent from that
+    mapping means the resolver reads a name nothing sets, which is precisely the
+    failure this section exists to catch. Anchoring here makes the assertion
+    two-sided: renaming either the resolver's variable or the exported key
+    breaks it.
+    """
+    from omnibase_core.event_bus.util_consumer_group import ENVIRONMENT_ENV_VAR
+    from omnibase_core.models.core.model_environment import ModelEnvironment
+
+    exported = ModelEnvironment(
+        name="onex-dev", display_name="onex-dev"
+    ).to_environment_dict()
+
+    assert ENVIRONMENT_ENV_VAR in exported, (
+        f"resolve_environment_token() reads {ENVIRONMENT_ENV_VAR!r}, which "
+        f"ModelEnvironment.to_environment_dict() does not export "
+        f"({sorted(exported)}). A resolver bound to a variable no runtime sets "
+        f"silently falls back to the unmanaged default and mints unauthorized "
+        f"consumer-group names."
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("env", load_managed_environments())
+def test_deployed_environment_resolves_to_an_authorized_name(
+    monkeypatch: pytest.MonkeyPatch, env: str
+) -> None:
+    """A pod carrying only the deployed env var mints an authorized name.
+
+    This is the live onex-dev shape: the deployment's configmap key is set and
+    nothing else is. RED before OMN-15639's resolver fix, because the token fell
+    back to ``local``.
+    """
+    from omnibase_core.event_bus.util_consumer_group import (
+        ENVIRONMENT_ENV_VAR,
+        resolve_environment_token,
+    )
+    from omnibase_core.models.core.model_environment import ModelEnvironment
+
+    for stale in ("ENVIRONMENT", "ONEX_ENVIRONMENT"):
+        monkeypatch.delenv(stale, raising=False)
+    for key, value in (
+        ModelEnvironment(name=env, display_name=env).to_environment_dict().items()
+    ):
+        monkeypatch.setenv(key, value)
+
+    assert resolve_environment_token() == env, (
+        f"a runtime given exactly the environment {ModelEnvironment.__name__} "
+        f"exports for {env!r} resolved the token "
+        f"{resolve_environment_token()!r} instead — the resolver is reading "
+        f"{ENVIRONMENT_ENV_VAR!r}, which that environment does not carry."
+    )
+
+    minted = derive_service_group_id("HandlerDelegateSkill", service="omnibase_core")
+    assert is_authorized_group_name(minted), (
+        f"group {minted!r} minted by a pod deployed into {env!r} is matched by no "
+        f"pattern in {list(load_authorized_group_patterns())}. This is the "
+        f"OMN-15639 failure mode: GroupAuthorizationFailedError before publish."
+    )
+
+
+@pytest.mark.unit
+def test_unset_environment_stays_unmanaged_and_unauthorized(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Negative control: an unset environment must not masquerade as managed.
+
+    Without this, the assertion above could be satisfied by defaulting the
+    resolver to a managed token, which would authorize names on a process that
+    never declared where it runs. The fallback is deliberately unmanaged and its
+    names are deliberately unauthorized — fail-closed, not fail-open.
+    """
+    from omnibase_core.event_bus.util_consumer_group import (
+        DEFAULT_ENVIRONMENT,
+        resolve_environment_token,
+    )
+
+    for stale in ("ENVIRONMENT", "ONEX_ENVIRONMENT"):
+        monkeypatch.delenv(stale, raising=False)
+
+    assert resolve_environment_token() == DEFAULT_ENVIRONMENT
+    assert DEFAULT_ENVIRONMENT not in load_managed_environments()
+    assert not is_authorized_group_name(
+        derive_service_group_id("HandlerDelegateSkill", service="omnibase_core")
     )
