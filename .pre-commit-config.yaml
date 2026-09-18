@@ -2020,6 +2020,50 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+  # --------------------------------------------------------------------------
+  # detect-secrets -- the LOCAL half of the .secrets.baseline gate (OMN-18669)
+  #
+  # This repository has carried `.secrets.baseline` and judged it in CI only.
+  # A CI-only secrets gate finds the credential AFTER it has been pushed to a
+  # remote, which is real exposure under CLAUDE.md rule 22 and the expensive
+  # kind -- the remedy is a rotation and a consumer sweep, not an amend. The
+  # local half refuses the commit before the value ever leaves the machine.
+  #
+  # Same tool, same pin, same baseline and the SAME exclusions as the
+  # `detect-secrets` job in CI, deliberately: if the two selections differ, a
+  # commit passes locally and the required check fails, or worse, the reverse.
+  # Change them together or not at all.
+  #
+  # `--no-verify` is not optional (OMN-15063): without it several plugins call
+  # the live vendor API to "verify" each match and silently drop anything that
+  # comes back VERIFIED_FALSE, so a negative or uncertain network answer
+  # removes a finding. Never remove this flag without re-proving the miss is
+  # fixed another way.
+  #
+  # This hook does NOT rewrite the baseline: measured 2026-09-18, a line shift
+  # above a tracked finding left the committed file byte-identical, so it
+  # reintroduces none of the per-PR churn OMN-18521 removed. A genuinely new
+  # finding blocks, and is approved by auditing it into the baseline on
+  # purpose -- never by loosening this hook.
+  # --------------------------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        name: detect-secrets (judged against .secrets.baseline, OMN-18669)
+        args: ['--baseline', '.secrets.baseline', '--no-verify']
+        exclude: |
+          (?x)^(
+            uv\.lock|
+            \.venv/.*|
+            tests/fixtures/.*|
+            \.secrets\.baseline|
+            \.github/workflows/.*\.yml|
+            url_authority_baseline\.json|
+            canonical_inference_baseline\.json|
+            extra_forbid_baseline\.yaml
+          )$
+
 # ---------------------------------------------------------------------------
 # RETIRED 2026-09-11 (OMN-18176): the governed impacted-test selector
 # `prepush-smart-tests` (OMN-13973 / WS7 OMN-14655) no longer runs at
