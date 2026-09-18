@@ -268,6 +268,32 @@ class TestCiSummaryGate:
         assert code == EXIT_PENDING
         assert _all_good()[-1]["name"] in report
 
+    def test_runner_route_job_is_strict_and_fails_closed(self) -> None:
+        # OMN-18031: the per-run runner routing decision. Registration in BOTH
+        # tuples is half the mechanism — routing is deliberately INERT while
+        # this repo's trusted seam reads '["ubuntu-latest"]', so deleting the
+        # `route` job from ci.yml changes no job's PLACEMENT and would be
+        # invisible on a green run without this anchor. Same shape as the
+        # companion-merged pin above: FAILURE on red, FAILURE on skip, PENDING
+        # on absent — never a vacuous green.
+        gate = "Runner Route (OMN-18031) / route"
+        assert gate in GATE_JOBS
+        assert gate in STRICT_SUCCESS_JOBS
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        jobs.append(_job(gate, "failure"))
+        code, report = evaluate(jobs)
+        assert code == EXIT_FAILURE
+        assert gate in report
+        # A skip must fail closed — the job is unconditional in ci.yml.
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        jobs.append(_job(gate, "skipped"))
+        code, _ = evaluate(jobs)
+        assert code == EXIT_FAILURE
+        # Absent entirely → PENDING (completeness anchor), never a vacuous green.
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        code, _ = evaluate(jobs)
+        assert code == EXIT_PENDING
+
     def test_neutral_conclusion_is_fail_closed(self) -> None:
         jobs = _all_good() + [_job("Some New Job", "neutral")]
         code, _ = evaluate(jobs)

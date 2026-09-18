@@ -70,6 +70,23 @@ GATE_JOBS: tuple[str, ...] = (
     "Contract Compliance Check",  # contract-compliance job (NOT "Contract Compliance")
     "Cross-repo boundary validation",  # boundary-validation job
     "OCC Companion Merged Gate (OMN-15214)",  # occ-companion-merged — cited OCC evidence must be MERGED before product merge (OMN-15222 port)
+    # OMN-18031: the per-run runner routing decision (ci.yml `route`, a `uses:`
+    # job, so the jobs API reports it as "<caller display name> / <inner job
+    # name>"). THIS LINE IS HALF THE MECHANISM, on the identical reasoning as
+    # the companion-merged entry above: the default-deny sweep below already
+    # fails when a present job FAILS, but an unregistered job that is `skipped`
+    # or ABSENT yields SUCCESS. Without this entry, deleting `route` from
+    # ci.yml would silently retire per-run routing on a fully green run — and
+    # because routing is deliberately INERT while this repo's trusted seam
+    # reads '["ubuntu-latest"]', nothing about job PLACEMENT would change to
+    # reveal it. That is the exact silent-retirement shape this tuple exists
+    # for, and it is worse here than elsewhere: the only observable difference
+    # between "routing works and chose hosted" and "routing is gone" is a
+    # decision artifact nobody is required to read. The job is unconditional in
+    # ci.yml (no `needs:`, no `if:`), so a skip is anomalous and never a
+    # legitimate opt-out — hence the paired STRICT_SUCCESS_JOBS entry below.
+    # Renaming either half of the name string breaks this registration.
+    "Runner Route (OMN-18031) / route",
 )
 
 # OMN-15222 (port of the omnibase_infra OMN-15214 canary, mirroring omniclaude's
@@ -81,6 +98,10 @@ GATE_JOBS: tuple[str, ...] = (
 STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
     {
         "OCC Companion Merged Gate (OMN-15214)",
+        # OMN-18031: paired with the GATE_JOBS entry above. GATE_JOBS' anchor
+        # accepts ``skipped`` as complete, so this is the half that makes a
+        # SKIPPED (or CANCELLED) route job fail closed rather than pass.
+        "Runner Route (OMN-18031) / route",
     }
 )
 
