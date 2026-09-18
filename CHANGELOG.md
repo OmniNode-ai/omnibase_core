@@ -1,3 +1,18 @@
+## v0.47.17 (2026-09-18)
+
+### Release
+- Cut omnibase_core from dev at 0.47.17 under the release-trains roll-out. dev was ALREADY at 0.47.17 against a published v0.47.16, so this release edits no version and no dependency pin; it is this changelog entry plus the tag.
+- 2 release-relevant commits since v0.47.16, both already merged to dev under their own required contexts. Nothing speculative is included.
+
+### Release-train premise, stated rather than implied
+- **Green CI on the candidate's gating commit.** Every required context on `omnibase_core@dev` reported success for the gating commit of `4bbfd5319d57` — resolved from the merged pull request's head, because required contexts are PR-time gates that never report on a squash-merge commit.
+- **Ancestry.** `main` is an ancestor of `dev` (main-only 0, dev-only 4), so the release fast-forward can succeed.
+- **No lab premise, and why that is honest.** This repo has no lab lane of its own and reaches the lab only vendored into an omnibase_infra candidate, so no receipt is keyed by one of its shas. A cut here is a PyPI publish plus a `main` fast-forward, never a deploy, and the repos that DO reach a runtime pick this release up through governed pin bumps that carry their own lab receipt.
+- **Premise verified locally rather than by the release train.** The train cannot currently read branch protection: its App installation lacks the `administration` permission, so its own premise refuses every repo. That grant is an org-level decision and is tracked as a pending decision in the work ledger. The premise above was resolved with the same code path against the live repositories rather than skipped.
+
+### Staging only, verified from parsed YAML
+- The production deploy workflow declares `workflow_dispatch` and no push trigger, so a `main` fast-forward cannot reach it, and no omnibase_core workflow references it. Of this repo's main/release/tag-triggered workflows, none carries a production signature.
+
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
 ## v0.47.7 (2026-09-09)
