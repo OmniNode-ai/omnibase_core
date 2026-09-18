@@ -2920,6 +2920,27 @@ jobs:
   # API-STABLE check_name: "Quality Gate"
   # This is the single required check for branch protection (replaces 6+ individual checks).
   # Individual Phase 1 job names can change without updating branch protection rules.
+  # Secrets-baseline wiring gate (OMN-18669).
+  #
+  # A repository carrying `.secrets.baseline` must also carry a pre-commit hook
+  # AND a CI workflow that read it. The file on its own blocks nothing, proves
+  # nothing, and looks exactly like a repository that is protected; measured
+  # 2026-09-18, one registry repo was in that state with 47 unapproved findings.
+  #
+  # Called as a JOB HERE rather than as its own workflow file, deliberately: the
+  # pull-request-workflow-ratchet (C7 / OMN-14907) count-locks PR-triggered
+  # workflow FILES, and a new gate that costs a net-new file would have to retire
+  # another gate to pay for itself. A job inside the existing consolidated
+  # workflow costs no file and still fails the merge through quality-gate below.
+  #
+  # Pinned to the same omniclaude SHA as the `secrets-baseline-wired` hook in
+  # .pre-commit-config.yaml. The reusable checks its validator out at
+  # github.job_workflow_sha -- i.e. this very SHA -- so local and CI cannot
+  # diverge, and advancing the gate is those two lines changed together.
+  secrets-baseline-wiring:
+    name: secrets-baseline-wiring
+    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@42b994826519e8d6bc21d0ca915803084c7c3955
+
   quality-gate:
     name: Quality Gate
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
@@ -2952,7 +2973,7 @@ jobs:
     # job itself stays `if: always()` so it is never a skip-vector; the step
     # below re-derives docs_only itself before ever admitting a `skipped` leaf
     # as passing, mirroring tests-gate's per-upstream skip policy (OMN-15315).
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, typed-bootstrap-environment-boundary, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers, zone-filter]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, secrets-baseline-wiring, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, typed-bootstrap-environment-boundary, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers, zone-filter]
     if: always()
 
     steps:
@@ -3006,6 +3027,7 @@ jobs:
           echo "| Node Purity Check | $purity |" >> $GITHUB_STEP_SUMMARY
           echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secrets Baseline Wiring | ${{ needs.secrets-baseline-wiring.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| SDK Boundary Guard | $sdk_boundary |" >> $GITHUB_STEP_SUMMARY
           echo "| Contract-Config Compliance | $contract_config |" >> $GITHUB_STEP_SUMMARY
           echo "| Breaking-Schema-Change (OMN-12621) | $breaking_schema |" >> $GITHUB_STEP_SUMMARY
@@ -3051,7 +3073,8 @@ jobs:
             "aislop=${{ needs.aislop-patterns.result }}" \
             "doc_content=${{ needs.doc-content-scan.result }}" \
             "typed_bootstrap_environment_boundary=${{ needs.typed-bootstrap-environment-boundary.result }}" \
-            "spdx_headers=${{ needs.spdx-headers.result }}"; do
+            "spdx_headers=${{ needs.spdx-headers.result }}" \
+            "secrets_wiring=${{ needs.secrets-baseline-wiring.result }}"; do
             NAME="${check%%=*}"
             RESULT="${check#*=}"
             case "$RESULT" in

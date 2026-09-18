@@ -2064,6 +2064,22 @@ repos:
             extra_forbid_baseline\.yaml
           )$
 
+  # --------------------------------------------------------------------------
+  # secrets-baseline wiring gate (OMN-18669)
+  #
+  # The detect-secrets hook above is worth exactly as much as the wiring around
+  # it. A repository can carry .secrets.baseline and read it from nowhere: the
+  # file is present, the repo looks protected, and nothing is checking. This
+  # refuses that state — the baseline owes a pre-commit reader AND a CI reader,
+  # and it is the local half of the same gate .github/workflows/
+  # secrets-baseline-wiring.yml runs in CI, pinned to the same omniclaude SHA so
+  # the two verdicts cannot diverge. Advancing it is those two lines, together.
+  # --------------------------------------------------------------------------
+  - repo: https://github.com/OmniNode-ai/omniclaude
+    rev: 42b994826519e8d6bc21d0ca915803084c7c3955  # pragma: allowlist secret
+    hooks:
+      - id: secrets-baseline-wired
+
 # ---------------------------------------------------------------------------
 # RETIRED 2026-09-11 (OMN-18176): the governed impacted-test selector
 # `prepush-smart-tests` (OMN-13973 / WS7 OMN-14655) no longer runs at
