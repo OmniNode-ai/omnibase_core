@@ -87,6 +87,67 @@ jobs:
   #   4. Branch protection uses stable gate names (Quality Gate, Tests Gate)
   # =============================================================================
 
+  # ===========================================================================
+  # Per-run runner routing (OMN-18031)
+  # ===========================================================================
+  # Decides ONCE PER RUN which runs-on label set the consuming job below should
+  # use, from live org-runner capacity and the most recent lab load record. The
+  # decision itself is an ONEX COMPUTE node (`node_ci_runner_route_compute` in
+  # omnibase_infra); this repo vendors NO routing module and NO policy file, and
+  # the cross-repo reusable it calls is pinned to an immutable commit sha.
+  #
+  # THE SEAM IS READ AS A CEILING AND NEVER WRITTEN. Routing can only ever
+  # DOWNGRADE from what `OMNI_TRUSTED_CI_RUNS_ON_JSON` already allows, never
+  # widen past it, and nothing in this job or the workflow it calls writes any
+  # Actions variable at any scope (CLAUDE.md rule 14, single-owner).
+  #
+  # IT IS INERT ON ARRIVAL AND THAT IS THE HEADLINE. Read live on 2026-09-18,
+  # omnibase_core's own repo-scoped `OMNI_TRUSTED_CI_RUNS_ON_JSON` is
+  # '["ubuntu-latest"]' and `OMNI_PUBLIC_PR_RUNS_ON_JSON` is the same, so the
+  # decision is `seam_ceiling_hosted` on every event and the consumer below
+  # lands byte-identically to where it lands today. NOTHING MOVES ONTO THE LAB
+  # AS A RESULT OF THIS JOB. Changing placement means changing the seam, which
+  # is a separate single-owner claim (OMN-16682) and is not this change.
+  #
+  # ONE CONSUMER IS WIRED: `lint`. It runs on EVERY event (no `if:`, no
+  # zone-filter dependency), so the consumer is exercised on every single run,
+  # which is what turns "the wiring resolves" from an assumption into a
+  # per-run observation; it is not container-backed and needs no lab/tailnet
+  # reachability, so its placement is genuinely free to move when the seam one
+  # day allows it; and it is deliberately NOT one of the digest-frozen
+  # AUDITED_GUARD_JOB_EXECUTION_CONTRACTS jobs, so wiring it does not require
+  # re-baselining an audited execution-contract digest in the same change.
+  # EVERY OTHER JOB IN THIS FILE KEEPS ITS OMNI_RUNNER_SELECTOR_V1 EXPRESSION
+  # UNTOUCHED and moves only on separate evidence.
+  #
+  # FAIL-CLOSED ON ANY PROBE ERROR. The reusable's decide step carries a floor
+  # that emits hosted labels when the decision cannot be computed at all, so a
+  # probe fault degrades to today's placement rather than to an empty `runs-on`
+  # (which would make the consumer fail to SCHEDULE — a failure with no log to
+  # read). If the route job itself goes red, `lint` is skipped, and because
+  # "Code Quality" is a SPEC_REQUIRED_VALIDATOR_JOBS member in
+  # scripts/ci/ci_summary_gate.py a skipped `lint` fails the required
+  # `CI Summary` context. Both directions end closed; neither ends silent.
+  #
+  # Registered in scripts/ci/ci_summary_gate.py as
+  # "Runner Route (OMN-18031) / route", in BOTH `GATE_JOBS` (so an ABSENT job
+  # is PENDING → fail-closed at the poller's deadline) and
+  # `STRICT_SUCCESS_JOBS` (so a SKIPPED job is FAILURE, not a pass). THAT
+  # REGISTRATION IS HALF THE MECHANISM: this job is unconditional, and without
+  # both entries deleting it from this file would silently retire per-run
+  # routing on a fully green run — and because routing is deliberately inert at
+  # the current seam value, no job's PLACEMENT would change to reveal it. The
+  # name is the "<caller display name> / <inner job name>" shape the jobs API
+  # reports for a `uses:` job; renaming either half breaks the registration.
+  route:
+    name: Runner Route (OMN-18031)
+    uses: OmniNode-ai/omniclaude/.github/workflows/route-runner-reusable.yml@b6ba84ef6c9ba3f220204c3d672de1da5131132c
+    with:
+      workflow_path: .github/workflows/ci.yml
+    secrets:
+      RUNNER_FLEET_STATUS_TOKEN: ${{ secrets.RUNNER_FLEET_STATUS_TOKEN }}
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
+
   # ---------------------------------------------------------------------------
   # Phase 1 - Quick Validation Jobs (all run in parallel)
   # ---------------------------------------------------------------------------
@@ -94,14 +155,17 @@ jobs:
   # Phase 1 validation job - runs in parallel with pyright, exports-validation
   # Must complete before test-parallel starts (fail-fast optimization)
   lint:
+    # `needs: route` is load-bearing twice (OMN-18031): without the edge the
+    # `runs-on` expression below resolves to nothing and this job fails to
+    # SCHEDULE rather than to FAIL, which does not surface as a red check; and
+    # the route job is fail-closed, so a probe fault yields hosted labels here
+    # rather than a red gate. `zone-filter` is deliberately NOT added — this is
+    # a spec-required validator and must stay ungated on docs-only diffs.
+    needs: [route]
     name: Code Quality
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    if: always()
+    # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
+    runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
     timeout-minutes: 10
 
     steps:
