@@ -163,6 +163,7 @@ jobs:
     # a spec-required validator and must stay ungated on docs-only diffs.
     needs: [route]
     name: Code Quality
+    if: always()
     # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
     runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
     timeout-minutes: 10
