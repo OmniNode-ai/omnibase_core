@@ -4,6 +4,36 @@ on:
   pull_request:
     types: [closed]
 
+# OMN-18658: this job used to delegate to the shared
+# `auto-tag-reusable.yml@main`, which pushed the release tag with the job's
+# default workflow GITHUB_TOKEN. A GITHUB_TOKEN push delivers no push event, so
+# `release.yml` -- whose only automatic trigger is `push: tags: ['v[0-9]*...']`
+# -- never started, the tag sat unconsumed, and every cut needed a hand
+# `workflow_dispatch`. Both v0.47.17 here and omnibase_spi v0.23.4 were
+# dispatched by hand on 2026-09-17 for exactly this reason.
+#
+# An App-token push DOES start push-driven CI in this org (omni_home/CLAUDE.md,
+# corrected 2026-09-16 under OMN-18273; live proof: omnibase_spi run
+# 35134173847, `event: push`, `actor: onexbot-occ-writer[bot]`). Two conditions
+# make that true, and both are properties of this job rather than of the token:
+#
+#   1. the checkout does not persist credentials. A default `actions/checkout`
+#      writes a basic-auth `http.<origin>.extraheader` carrying the workflow
+#      token, and that header OVERRIDES any credential in the remote URL -- the
+#      confound that produced the wrong org-wide finding in August.
+#   2. the mint fails closed. No `|| secrets.GITHUB_TOKEN` fallback anywhere in
+#      the job: a fallback silently restores the workflow token, the push is
+#      suppressed again, and the job still reports success.
+#
+# Why this is inlined here rather than fixed in the shared reusable: the caller
+# pins that reusable at `@main`, and this repo's `main` is release-synced
+# (OMN-16289) -- it only advances when a release publishes. A fix landed in the
+# reusable would therefore not be live for the NEXT cut, only the one after it,
+# which is the cut this ticket exists to stop hand-dispatching. The reusable
+# also cannot see the org App credentials without every caller passing them,
+# and four other repositories (omnibase_infra, omnimarket, omnimemory,
+# omniintelligence) still consume it. It is left intact for them.
+
 jobs:
   auto-tag:
     if: >-
@@ -12,6 +42,106 @@ jobs:
        startsWith(github.event.pull_request.title, 'release:') ||
        startsWith(github.event.pull_request.title, 'chore: release') ||
        startsWith(github.event.pull_request.title, 'chore(release)'))
-    uses: OmniNode-ai/omnibase_core/.github/workflows/auto-tag-reusable.yml@main
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
     permissions:
-      contents: write
+      contents: read
+    steps:
+      # Condition 1. `persist-credentials: false` is load-bearing, not hygiene:
+      # with the default `true`, checkout v7 writes the workflow token into a
+      # separate credential file and includes it through `includeIf.gitdir`, so
+      # it overrides the App credential in the push URL below and the push
+      # authenticates as github-actions[bot] again.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Extract version from pyproject.toml
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION=$(grep -m1 '^version' pyproject.toml | sed 's/.*"\(.*\)".*/\1/')
+          if [ -z "$VERSION" ]; then
+            echo "::error::could not read a version from pyproject.toml"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Detected version: $VERSION (tag: v$VERSION)"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          set -euo pipefail
+          if git rev-parse "refs/tags/${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag ${{ steps.version.outputs.tag }} already exists — skipping"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Condition 2. `actions/create-github-app-token` fails the step when it
+      # cannot mint, which fails the job. There is deliberately no `||`
+      # expression joining this output to `secrets.GITHUB_TOKEN`: an unmintable
+      # token must stop the tag from being pushed at all, because a tag pushed
+      # with the workflow token is worse than no tag -- it is unconsumable and
+      # cannot be re-pushed without deleting it first.
+      #
+      # `permission-*` REPLACES the installation's permission set with exactly
+      # what is listed (OMN-16289). Both scopes are required: `contents` to
+      # create the ref, `workflows` because a release commit can legitimately
+      # carry changes under .github/workflows/ and GitHub refuses a push that
+      # introduces them without it.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-workflows: write
+
+      - name: Create and push tag
+        if: steps.check.outputs.exists == 'false'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          # Belt-and-braces on the fail-closed mint. The action above already
+          # fails the step when it cannot mint, but an empty token here would
+          # otherwise produce an unauthenticated push whose failure mode is a
+          # confusing 403 rather than a named one.
+          if [ -z "${APP_TOKEN}" ]; then
+            echo "::error::onexbot-occ-writer token is empty; refusing to push ${TAG}"
+            exit 1
+          fi
+
+          # An annotated tag carries a tagger identity. Use the App's real
+          # account address -- the numeric prefix is what links it to the bot
+          # account; a fabricated address renders unlinked and proves nothing
+          # (OMN-18273 AC-4).
+          git config user.name "onexbot-occ-writer[bot]"
+          git config user.email "307849072+onexbot-occ-writer[bot]@users.noreply.github.com"
+
+          git tag "${TAG}" -m "Release ${TAG}"
+
+          # The credential travels in the remote URL for this one command. With
+          # `persist-credentials: false` above there is no `extraheader` left to
+          # override it, which is the whole point of the pair.
+          git push \
+            "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "refs/tags/${TAG}"
+
+          echo "Pushed tag ${TAG} as onexbot-occ-writer[bot]"
+          echo "release.yml is expected to start from this push, with event=push and no workflow_dispatch"
