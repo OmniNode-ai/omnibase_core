@@ -69,9 +69,6 @@ classification:
     pre_commit: backlog
     ci_workflow: backlog
     tracking: OMN-9048
-  detect-secrets:
-    pre_commit: backlog
-    tracking: OMN-9048
   hardcoded-local-paths:
     ci_workflow: backlog
     tracking: OMN-9048
@@ -127,9 +124,6 @@ gaps:
     kind: MISSING_CI_WORKFLOW
   - repo: omnibase_core
     validator: bandit-security
-    kind: MISSING_PRE_COMMIT
-  - repo: omnibase_core
-    validator: detect-secrets
     kind: MISSING_PRE_COMMIT
   - repo: omnibase_core
     validator: hardcoded-local-paths
