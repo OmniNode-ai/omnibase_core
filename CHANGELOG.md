@@ -5,12 +5,14 @@
 - 5 release-relevant commit(s) merged since v0.47.17.
 - Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
 
-### Included Since v0.47.17
-- ci(OMN-14160): add call-occ-autobind caller to omnibase_core (#1713)
-- feat(OMN-18278): declare delegation output contracts (#1715)
-- fix(OMN-18033): make the gitignore-baseline hook propagable to targets (#1710)
-- fix(OMN-16849): reconcile OMN-16851/#1712 against the 2026-08-28 boundary ruling (#1714)
-- fix(OMN-16851): retire OMNI_HOME from omnibase_core's product-facing paths (#1712)
+### Features
+- Declared the delegation output contracts, together with contract, budget and deliverable-span evidence and typed refusal models (#1715).
+
+### Changes
+- Added the change-control evidence-source autobind caller to this repository (#1713).
+- Made the gitignore-baseline hook propagable to its targets (#1710).
+- Reconciled the product-facing path retirement against the 2026-08-28 boundary ruling (#1714).
+- Retired an internal-only workspace environment variable from this repository's product-facing paths (#1712).
 
 ## v0.47.17 (2026-09-18)
 
