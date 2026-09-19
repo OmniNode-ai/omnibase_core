@@ -1,3 +1,19 @@
+## v0.47.18 (2026-09-19)
+
+### Release
+- Cut omnibase-core from dev at 0.47.18 by the scheduled release train.
+- 5 release-relevant commit(s) merged since v0.47.17.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Features
+- Declared the delegation output contracts, together with contract, budget and deliverable-span evidence and typed refusal models (#1715).
+
+### Changes
+- Added the change-control evidence-source autobind caller to this repository (#1713).
+- Made the gitignore-baseline hook propagable to its targets (#1710).
+- Reconciled the product-facing path retirement against the 2026-08-28 boundary ruling (#1714).
+- Retired an internal-only workspace environment variable from this repository's product-facing paths (#1712).
+
 ## v0.47.17 (2026-09-18)
 
 ### Release
