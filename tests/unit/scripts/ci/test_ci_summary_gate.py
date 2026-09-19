@@ -744,6 +744,33 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "audit, structurally cannot be a merge gate (same class as "
         "auto-tag-on-merge)."
     ),
+    ("call-occ-autobind.yml", "occ-autobind"): (
+        "thin uses: caller of omniclaude's call-occ-autobind-reusable.yml "
+        "(OMN-14160 fan-out) -- it PUBLISHES a Kafka command for the .201 "
+        "dev-lane effects runtime to consume out of band and validates no PR "
+        "content, so it cannot gate a merge and must not be treated as though "
+        "it does. Deliberately absent from .github/required-checks.yaml and "
+        "NOT added to EXPECTED_EXTERNAL_CONTEXTS: asserting it there would "
+        "make this poller treat a publisher as de facto required, and a "
+        "transient broker outage would then block every merge in the "
+        "repository. Self-declared non-required by the "
+        "pull-request-workflow-budget.yaml waiver on this same workflow file, "
+        "the same classification the kb-doc-gate.yml caller carries below. "
+        "Being non-required is also precisely why this job may carry a "
+        "job-level `if:` where the sibling occ-companion-effect caller may "
+        "not (OMN-15120/OMN-14864: a skipped `uses:` job produces no check "
+        "run at all)."
+    ),
+    ("call-occ-autobind.yml", "occ-autobind-manual-replay"): (
+        "OMN-14993 manual replay entrypoint, gated to `github.event_name == "
+        "'workflow_dispatch'` -- it is skipped on every pull_request event and "
+        "is reachable only by an operator dispatching it by hand for a named "
+        "PR. Structurally cannot gate a merge, the same class as the "
+        "closed-PR-only jobs in auto-tag-on-merge.yml and "
+        "todo-audit-on-merge.yml above. It is enumerated here rather than "
+        "omitted because this audit walks every job in a PR-triggered "
+        "workflow file, not only the ones a pull_request event can start."
+    ),
     ("kb-doc-gate.yml", "kb-doc-gate"): (
         "thin uses: caller of omniclaude's kb-doc-gate-reusable.yml (OMN-16589 "
         "pilot, transition mode) -- self-declared non-required per the "

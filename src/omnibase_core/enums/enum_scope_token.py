@@ -9,7 +9,7 @@ current working directory (and related runtime state) during predicate
 evaluation. The registry is the ONLY authoritative source of machine-specific
 path knowledge; tokens are stable cross-machine identifiers.
 
-Token resolution order: cwd → git remote → OMNI_HOME env → registry lookup.
+Token resolution order: cwd → git remote → OMNIBASE_PATH env → registry lookup.
 """
 
 from enum import Enum, unique
@@ -31,8 +31,8 @@ class EnumScopeToken(UtilStrValueHelper, str, Enum):
 
     Attributes:
         OMNINODE_REPO:   Any OmniNode-managed git repository.
-        OMNINODE_WORKTREE: A git worktree under $OMNI_HOME/omni_worktrees/.
-        OMNINODE_HOME:   The canonical omni_home registry root.
+        OMNINODE_WORKTREE: A git worktree under $OMNIBASE_PATH/omni_worktrees/.
+        OMNINODE_HOME:   The canonical multi-repo registry root.
         EXTERNAL_REPO:   Any non-OmniNode repository.
         UNKNOWN:         Could not resolve cwd to a known topology class.
 
@@ -45,10 +45,10 @@ class EnumScopeToken(UtilStrValueHelper, str, Enum):
     """Any OmniNode-managed git repository (clone or worktree)."""
 
     OMNINODE_WORKTREE = "omninode_worktree"
-    """A git worktree under $OMNI_HOME/omni_worktrees/."""
+    """A git worktree under $OMNIBASE_PATH/omni_worktrees/."""
 
     OMNINODE_HOME = "omninode_home"
-    """The canonical omni_home registry root ($OMNI_HOME)."""
+    """The canonical multi-repo registry root ($OMNIBASE_PATH)."""
 
     EXTERNAL_REPO = "external_repo"
     """Any repository not managed by OmniNode tooling."""

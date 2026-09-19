@@ -194,6 +194,34 @@ waivers:
       this repository with nothing naming it and no gate reading it -- the OMN-18775 inventory counted
       5 advisory settings and 1 unenforced pull-request-reachable verification job here, none of which
       any check could have refused.
+  - workflow_file: call-occ-autobind.yml
+    ticket: OMN-14160
+    expires: "2026-11-30"
+    justification: >-
+      The OCC-autobind born-path caller, fanned out to this repository at last. OMN-14160's own Fix section
+      names omnibase_core FIRST among six destinations; the 2026-07-24 fan-out reached the other five
+      and skipped this one, and the ticket was marked Done anyway. Same shape as the three waivers above:
+      a thin `uses:` caller of an omniclaude-hosted reusable, own concurrency group, no interaction with
+      ci.yml's job graph. It is NOT a required status check and is deliberately absent from .github/required-checks.yaml
+      -- it publishes a Kafka command for the .201 dev-lane effects runtime to consume out of band and
+      can never block a merge, which is also why it can safely carry a job-level `if:` where the sibling
+      companion-effect caller cannot (OMN-15120/OMN-14864). Waived rather than budget-bumped so the count
+      lock stays flat. The OMN-16281 structural closure (fold the caller into ci.yml as a job) is blocked
+      here by exactly the obstacle OMN-16359 already owns for the sibling caller: this workflow's pull_request
+      surface is deliberately wider than ci.yml's -- `[opened, synchronize, reopened, ready_for_review]`
+      with no `branches:` filter, closing the OMN-14987 draft-PR gap and the stacked-PR vector -- and
+      it additionally carries a workflow_dispatch manual-replay job (OMN-14993) that ci.yml has no trigger
+      for at all. Reconcile that gap under OMN-16359 and both callers close together.
+    retires: >-
+      The status quo in which this repository was the single fleet holdout with no autobind caller, and
+      was therefore indistinguishable from a repository whose minter is broken. Measured 2026-09-19 over
+      the last 200 change-control PRs: seven repositories receive autobind-flavoured evidence companions
+      and omnibase_core receives zero, against five companion-effect mints for this same repository over
+      the same window -- so the zero was this missing caller, not an unreachable minter. The cost it retires
+      is concrete: with nothing binding the evidence-source trailer, an unstamped omnibase_core PR burns
+      the full 1500-second occ-preflight eligibility budget and fails closed, and this repository instantiates
+      the preflight reusable in 43 workflows, so one unstamped PR replicates that one fact dozens of times
+      (live occurrence: omnibase_core#1709, 26 eligibility failures at the deadline to the second).
 metadata:
   generated_by: "C7 / OMN-14907, 2026-07-21"
   baseline_ref: "origin/dev@d09128fc"
@@ -207,3 +235,4 @@ metadata:
     - OMN-14990  # origin ticket for the call-occ-companion-effect.yml waiver
     - OMN-16359  # bounded renewal + structural-closure ticket for the call-occ-companion-effect.yml waiver -- do not renew a third time
     - OMN-16589  # kb-doc-gate.yml waiver -- P1 pilot wiring of the org-wide KB doc gate
+    - OMN-14160  # call-occ-autobind.yml waiver -- the fan-out destination the 2026-07-24 pass skipped

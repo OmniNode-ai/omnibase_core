@@ -19,6 +19,13 @@
 #           hook_id: identifier used for idempotency + the hook's `id:` field
 #       auto_merge: true|false — arm gh pr merge --auto on every PR
 #       merge_method: queue_default | squash | merge | rebase
+#       pin_source_dependency: optional distribution name. A propagated hook
+#               runs in an isolated pre-commit environment, so a hook that
+#               imports omnibase_core must carry it as a dependency. When set,
+#               the propagator appends
+#                 <name> @ git+https://github.com/<source repo>.git@<sha>
+#               to the hook's additional_dependencies, pinned to the source
+#               commit the propagation ran from (OMN-18033).
 #
 # Add a new propagation by appending a top-level entry. Add or remove target
 # repos by editing the `targets` list. No code changes required — the bot
@@ -126,5 +133,6 @@ propagations:
         path: .pre-commit-config.yaml
         operation: append_hook_entry
         hook_id: validate-gitignore-baseline
+    pin_source_dependency: omnibase-core
     auto_merge: true
     merge_method: queue_default

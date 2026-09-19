@@ -37,7 +37,6 @@ CI and skips only on a local machine; a definitive 404 fails everywhere.
 from __future__ import annotations
 
 import json
-import os
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -46,6 +45,10 @@ from typing import NamedTuple
 
 import pytest
 import yaml
+
+from omnibase_core.models.bootstrap.model_environment_bootstrap import (
+    ModelEnvironmentBootstrap,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
@@ -129,7 +132,18 @@ def _resolve_ref_live(repo: str, path: str, ref: str) -> tuple[bool | None, str]
         "Accept": "application/vnd.github+json",
         "User-Agent": "omnibase-core-uses-ref-resolution-gate (OMN-14990)",
     }
-    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    # OMN-17744 / OMN-14160: the raw process-environment pair this replaces was
+    # the only such read in this module and sat on the environment-reader
+    # inventory with disposition `migrate-to-typed-bootstrap-injection`. It is
+    # migrated here rather than left in place: the inventory keeps the CI job
+    # green, but the pre-commit boundary hook refuses any TOUCHED inventoried
+    # file, so this read blocked every edit to this module while reporting
+    # nothing wrong in CI. Declaring the two keys is also the honest statement
+    # of what this helper reads.
+    bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
+        declared_keys=("GH_TOKEN", "GITHUB_TOKEN"),
+    ).environment
+    token = bootstrap.optional("GH_TOKEN") or bootstrap.optional("GITHUB_TOKEN")
     if token:
         headers["Authorization"] = f"Bearer {token}"
     request = urllib.request.Request(url, headers=headers)  # noqa: S310 - fixed https host
@@ -226,16 +240,32 @@ def test_real_tree_extraction_is_nonempty() -> None:
 
 
 @pytest.mark.unit
-def test_occ_companion_effect_pin_is_dev_not_main() -> None:
-    """OMN-14941 F1 regression pin, carried into omnibase_core (OMN-14990):
-    the occ-companion-effect reusable exists only on omniclaude dev; an
-    @main pin is a parse-time 404 on every PR (the E1 failure class)."""
+def test_occ_born_path_pins_are_dev_not_main() -> None:
+    """OMN-14941 F1 regression pin, carried into omnibase_core (OMN-14990 for
+    the companion-effect caller, OMN-14160 for the autobind caller).
+
+    Both OCC born-path reusables are pinned `@dev`, which is the ref every
+    sibling caller on the fleet pins. An `@main` pin was a parse-time 404 on
+    every PR when the original omnibase_infra caller shipped -- the E1 failure
+    class, in which the workflow never runs and the publisher never fires.
+
+    This assertion is an exact-equality map on purpose. A subset check would
+    let a THIRD born-path caller land unpinned and unnoticed, which is the
+    shape of the omission this repository spent fourteen months carrying: the
+    autobind caller was simply absent, and nothing here said a word about it.
+    Adding a born-path caller means adding its expected pin on this line.
+
+    OMN-14812 tracks re-pinning to `@main` or a main SHA now that both
+    reusables also resolve there (re-verified 2026-09-19). That is a fleet-wide
+    change across seven callers and updates this map when it happens.
+    """
     refs = _extract_cross_repo_uses(WORKFLOWS_DIR)
     occ_pins = {
         r.path: r.ref for r in refs if r.repo == "omniclaude" and "call-occ-" in r.path
     }
     assert occ_pins == {
         ".github/workflows/call-occ-companion-effect-reusable.yml": "dev",
+        ".github/workflows/call-occ-autobind-reusable.yml": "dev",
     }
 
 

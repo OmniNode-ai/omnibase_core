@@ -68,6 +68,7 @@ _CLEAN_FIXTURES: tuple[str, ...] = (
     "Point the client at 192.0.2.10 (TEST-NET-1) in the example.",  # c-base-doc-ip-192-0-2
     "Webhooks post to https://hooks.example.com/ingest.",  # c-base-example-com
     "Artifacts go under $OMNI_HOME/omni_worktrees/out.log.",  # c-base-env-var-path
+    "Artifacts go under $OMNIBASE_PATH/omni_worktrees/out.log.",  # c-base-env-var-path-omnibase
     "Try 198.51.100.42 (TEST-NET-2) for the second example.",  # c-mut-doc-ip-198-51-100
     "The third example uses 203.0.113.7 (TEST-NET-3).",  # c-mut-doc-ip-203-0-113
     "Connect to ${ONEX_HOST} resolved from the overlay.",  # c-mut-env-var-braced

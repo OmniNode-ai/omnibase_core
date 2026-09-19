@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from importlib import resources
 from pathlib import Path
 
 import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads architecture-handshakes spec
@@ -45,7 +46,8 @@ import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads architecture-handshak
 # Constants
 # ---------------------------------------------------------------------------
 
-_SPEC_RELATIVE_PATH = Path("architecture-handshakes") / "gitignore-baseline.yaml"
+_SPEC_FILENAME = "gitignore-baseline.yaml"
+_SPEC_RELATIVE_PATH = Path("architecture-handshakes") / _SPEC_FILENAME
 _SUPPRESSION_MARKER = "# gitignore-ok:"
 _VALIDATOR_NAME = "gitignore_baseline"
 
@@ -69,7 +71,18 @@ def _locate_spec(repo_root: Path) -> Path:
         if candidate.exists():
             return candidate
 
-    msg = f"gitignore-baseline.yaml not found. Searched: {repo_root / _SPEC_RELATIVE_PATH} and parents of {here}"
+    # Third: the copy shipped inside the wheel (OMN-18033). Downstream repos run
+    # this validator from an isolated pre-commit environment, where neither the
+    # target repo nor site-packages holds architecture-handshakes/ — without the
+    # packaged spec the hook cannot run anywhere but omnibase_core itself.
+    packaged = Path(str(resources.files("omnibase_core"))) / "data" / _SPEC_FILENAME
+    if packaged.exists():
+        return packaged
+
+    msg = (
+        f"gitignore-baseline.yaml not found. Searched: "
+        f"{repo_root / _SPEC_RELATIVE_PATH}, parents of {here}, and {packaged}"
+    )
     raise FileNotFoundError(msg)  # error-ok: validator CLI; not a node handler
 
 

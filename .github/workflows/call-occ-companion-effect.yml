@@ -16,10 +16,28 @@
 # `Evidence-Source: OCC#<n>` onto this PR. Only this path produces
 # `occ:machine-minted` + `minted_by_node=true`.
 #
-# NOT call-occ-autobind.yml: OMN-14941 explicitly supersedes resurrecting the
-# legacy occ-autobind path for infra/core ("net-negative-surface: the
-# contract's own note targets retiring OccCompanionEmitter"). omnibase_core
-# gets only the current canonical born path, not the path being retired.
+# SUPERSEDED 2026-09-19 (OMN-14160). This paragraph used to read: "NOT
+# call-occ-autobind.yml: OMN-14941 explicitly supersedes resurrecting the legacy
+# occ-autobind path for infra/core ... omnibase_core gets only the current
+# canonical born path, not the path being retired." It is quoted rather than
+# deleted because it was a real decision, correctly recorded, and OMN-14160 asks
+# for the answer either way.
+#
+# Its premise lapsed the day after it was written and nobody revisited it. On
+# 2026-07-24 the OMN-14160 fan-out wired call-occ-autobind.yml into FIVE
+# repositories that already carried this companion-effect caller — omniclaude,
+# omnimemory, omninode_infra, omnibase_spi, omnidash — and omnibase_spi's landed
+# under OMN-15012 as "OCC autobind + companion-effect callers", both, on purpose.
+# A path fanned out to five more repositories the day after it was called retired
+# is not being retired, and omnibase_core became the sole holdout by omission.
+#
+# The two paths are NOT substitutes, which is what made the holdout cost real:
+# this caller mints an OCC companion, while the autobind caller is what binds the
+# evidence-source trailer onto the product PR body. omnibase_core's own numbers
+# over the last 200 change-control PRs are the discriminator — 5 companion-effect
+# mints against 0 autobind mints, so the zero was the missing caller and not an
+# unreachable minter. `.github/workflows/call-occ-autobind.yml` now exists here;
+# read its header for the full record.
 #
 # TRIGGER COVERAGE (OMN-14987, applied here from the start rather than
 # patched in later the way omnibase_infra had to): opened/synchronize alone

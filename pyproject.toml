@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.47.17"
+version = "0.47.18"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -220,6 +220,14 @@ onex-change-control = { git = "https://github.com/OmniNode-ai/onex_change_contro
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnibase_core"]
 
+# OMN-18033: the gitignore-baseline spec is repo-root governance data, but the
+# validator that reads it is propagated to downstream repos and runs there from
+# an isolated pre-commit environment, where architecture-handshakes/ does not
+# exist. Ship the one source file inside the wheel rather than copying it into
+# twelve repos that would then drift.
+[tool.hatch.build.targets.wheel.force-include]
+"architecture-handshakes/gitignore-baseline.yaml" = "omnibase_core/data/gitignore-baseline.yaml"
+
 [tool.hatch.build]
 # Include YAML contract files in the wheel for PyPI installs (OMN-6484)
 # and the generated feature-flag catalog JSON (OMN-7776).
@@ -395,6 +403,7 @@ ignore = [
 "scripts/ci/check_import_ratchet.py" = ["T201"]  # CLI output for import-layering growth-ratchet gate (OMN-14340)
 "scripts/ci/check_occ_companion_merged.py" = ["T201"]  # CLI verdict/annotation output for the OCC companion-merged gate (OMN-15222)
 "scripts/ci/occ_preflight_wait.py" = ["T201"]  # CLI verdict/annotation output for the occ-preflight bounded wait (OMN-17864)
+"scripts/ci/occ_manual_replay_precheck.py" = ["T201"]  # CLI refusal/eligibility output for the OCC manual-replay precheck (OMN-14160, OMN-14993); the GHA step reads stdout/stderr and tests/ci/test_occ_manual_replay_entrypoint.py asserts on both
 "scripts/ci/canonical_handler_shape.py" = ["T201", "BLE001"]  # CLI output + fail-closed catches for canonical handler-shape ratchet gate (OMN-14355)
 "scripts/ci/rsd_provenance_stamp.py" = ["T201"]  # CLI output for RSD provenance-stamp gate (OMN-15011)
 "scripts/hooks/prepush_override_grant.py" = ["T201"]  # CLI output for the single-use pre-push override grant (OMN-16480, ported by OMN-17159)

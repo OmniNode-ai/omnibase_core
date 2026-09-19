@@ -12,6 +12,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from omnibase_core.enums.enum_budget_action import EnumBudgetAction
 from omnibase_core.enums.enum_credential_source import EnumCredentialSource
+from omnibase_core.enums.enum_delegation_output_shape import EnumDelegationOutputShape
+from omnibase_core.models.delegation.wire.model_delegation_contract_evidence import (
+    ModelDelegationContractEvidence,
+)
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     ModelDelegationRequest,
     validate_response_format,
@@ -168,6 +172,30 @@ class ModelInferenceIntent(BaseModel):
             "request fields through an untyped options mapping."
         ),
     )
+    response_contract_sha256: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        min_length=64,
+        max_length=64,
+        description=(
+            "Canonical declared contract hash supplied to the provider boundary "
+            "for an evidence-bearing outbound request."
+        ),
+    )
+    response_contract_output_shape: EnumDelegationOutputShape | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description="Declared output shape corresponding to response_contract_sha256.",
+    )
+    response_contract_instruction: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        min_length=1,
+        description=(
+            "Exact contract instruction that the adapter must find in its final "
+            "outbound provider payload before it may record conveyed=true."
+        ),
+    )
     # string-id-ok: tenant identity is a named slug (e.g. "omninode"), not a UUID.
     # OMN-14280 (OMN-14208 slice-2 A-now): the orchestrator stamps the workflow
     # tenant onto the inference intent so the inference effect can independently
@@ -208,6 +236,19 @@ class ModelInferenceIntent(BaseModel):
             if not self.route.strip() or not self.provider.strip():
                 msg = "route and provider must be nonblank when provided"
                 raise ValueError(msg)
+        declaration = (
+            self.response_contract_sha256,
+            self.response_contract_output_shape,
+            self.response_contract_instruction,
+        )
+        if any(value is None for value in declaration) and any(
+            value is not None for value in declaration
+        ):
+            msg = (
+                "response contract hash, output shape and instruction must be "
+                "provided together"
+            )
+            raise ValueError(msg)
         return self
 
 
@@ -246,6 +287,15 @@ class ModelInferenceResponseData(BaseModel):
     """Response data returned by the LLM inference effect."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
+
+    response_contract_evidence: ModelDelegationContractEvidence | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Provider-boundary evidence recorded after the outbound request was "
+            "constructed and sent; never inferred from a gate pass."
+        ),
+    )
 
     correlation_id: UUID = Field(..., description="Workflow correlation ID.")
     inference_attempt_id: UUID | None = Field(
