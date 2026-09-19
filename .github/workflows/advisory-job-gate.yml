@@ -1,0 +1,56 @@
+---
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# advisory-job-gate.yml
+#
+# THE NO-NEW-ADVISORY-JOB GATE, called here. OMN-18796, epic OMN-18775.
+#
+# Two refusals, both about a check that runs and cannot fail: a setting that
+# swallows a job's or a step's own failure and is neither in the census
+# baseline nor annotated with a ticket and a reason, and a verification-shaped
+# job a pull request can reach that sits in neither of this repository's
+# enforcement surfaces. The OMN-18775 inventory counted 64 of the first across
+# six repositories and found jobs of the second shape running on every pull
+# request, 30 of 30 green, in a way that carries no information.
+#
+# This file is a thin caller. The validator, its per-repository census
+# baseline and every rule live in the omniclaude reusable; nothing here holds
+# policy, a baseline or an allowlist, and the reusable declares no inputs on
+# purpose so a caller has no surface through which to soften a refusal.
+#
+# PINNED BY FULL COMMIT SHA, never a branch. The reusable checks the validator
+# AND its baseline out at `github.job_workflow_sha`, so this one pin fixes all
+# three together. A branch pin would let a re-run of an already-reviewed run
+# resolve a different validator, which is the failure mode a re-run of a
+# branch-name sibling checkout produces elsewhere on this fleet.
+#
+# NO `paths:` AND NO `branches:` FILTER, deliberately. This context is asserted
+# on this repository's enforcement surface, and an asserted context that can be
+# legitimately absent on some pull-request shape does not fail that shape -- it
+# wedges it, because the poller waits on a context nothing will mint until its
+# deadline converts the whole verdict to a failure.
+#
+# `secrets: inherit` IS LOAD-BEARING. Reading a branch's required status checks
+# needs `administration: read`, which the workflow token does not carry, so the
+# reusable mints an installation token from the organisation App. Without the
+# secrets that mint fails and the gate fails closed -- the correct reading: a
+# gate that cannot resolve the enforcement surface has not passed, it has not
+# run.
+
+name: Advisory Job Gate
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  advisory-job-gate:
+    uses: OmniNode-ai/omniclaude/.github/workflows/advisory-job-gate-reusable.yml@a956b7d2ec8cbd280962b851f705d536a64583d9
+    secrets: inherit

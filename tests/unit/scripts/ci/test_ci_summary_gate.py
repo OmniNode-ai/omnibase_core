@@ -473,10 +473,17 @@ class TestExpectedExternalContexts:
         assert missing == []
 
     def test_absent_context_is_missing_not_failure(self) -> None:
-        runs = [_check_run(EXPECTED_EXTERNAL_CONTEXTS[0], "success")]
+        # Every context but one reports green; the one left out must come back
+        # PENDING, never a pass. Written over the whole tuple rather than over
+        # two hardcoded indices so that registering a new L4 context does not
+        # turn this pin red for a reason that has nothing to do with it.
+        absent = EXPECTED_EXTERNAL_CONTEXTS[1]
+        runs = [
+            _check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS if n != absent
+        ]
         failures, missing = evaluate_external(runs)
         assert failures == []
-        assert missing == [EXPECTED_EXTERNAL_CONTEXTS[1]]
+        assert missing == [absent]
 
     def test_failed_context_is_a_failure(self) -> None:
         runs = [_check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS]
@@ -515,7 +522,11 @@ class TestExpectedExternalContexts:
         runs = [
             _check_run(name, "failure", started_at="2026-01-01T00:00:00Z"),
             _check_run(name, "success", started_at="2026-01-01T01:00:00Z"),
-            _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
+            *(
+                _check_run(n, "success")
+                for n in EXPECTED_EXTERNAL_CONTEXTS
+                if n != name
+            ),
         ]
         failures, missing = evaluate_external(runs)
         assert failures == []
@@ -632,7 +643,14 @@ class TestContractComplianceNameDistinction:
 _OCC_PREFLIGHT_CONTEXT = "occ-preflight / eligibility"
 
 EXTERNAL_CONTEXT_FILES: frozenset[str] = frozenset(
-    {"check-db-ownership.yml", "check-llm-refs-drift.yml"}
+    {
+        "check-db-ownership.yml",
+        "check-llm-refs-drift.yml",
+        # OMN-18796: the advisory-job gate's caller. Its job resolves to the L4
+        # context "advisory-job-gate / advisory-job-gate", so it is classified
+        # by EXPECTED_EXTERNAL_CONTEXTS and not by a direct-required row.
+        "advisory-job-gate.yml",
+    }
 )
 
 # (file, job_key) -> literal required-status-check context name(s) that job
