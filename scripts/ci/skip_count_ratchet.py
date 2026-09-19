@@ -191,7 +191,10 @@ class BaselineEntry:
             mode=mode,
             max_skips=max_skips,
             baseline_collected=baseline_collected,
-            node_ids=frozenset(str(i) for i in node_ids),
+            # Canonicalised on load, the same way an observed id is, so the
+            # comparison never depends on which rootdir the baseline happened
+            # to be measured under. See canonical_node_id.
+            node_ids=frozenset(canonical_node_id(str(i)) for i in node_ids),
         )
 
 
@@ -208,11 +211,43 @@ class Observation:
         return len(self.skipped)
 
 
+#: JUnit dotted paths are emitted relative to pytest's ROOTDIR, and this
+#: repository resolves two different rootdirs depending on how the suite was
+#: invoked -- `tests/` for `pytest tests/ --splits 40` (the full-suite job),
+#: and the repository root for some runner invocations, which prefixes every
+#: id with an extra `tests.` segment. The two forms name the SAME test, so a
+#: raw set difference between a baseline recorded under one and an observation
+#: emitted under the other reports every id as new while the count is
+#: unchanged -- "GREW by 60 (60 observed against a baseline of 60)", which is
+#: a contradiction on its face and the signature of this mismatch.
+_ROOTDIR_PREFIX = "tests."
+
+
+def canonical_node_id(raw: str) -> str:
+    """Strip the rootdir-dependent leading segment from a node id.
+
+    Normalisation, never relaxation: it is applied identically to the observed
+    set and to the baseline, it removes only a leading ``tests.`` segment, and
+    it collapses no two distinct tests onto one id (``tests.`` is not a real
+    package under the tests tree, so no id legitimately begins with it twice).
+    A genuinely new skip is still new after stripping, and the count bar is
+    untouched.
+
+    The 2026-09-19 baseline entry for ``omnibase_core/test-parallel`` already
+    records this comparison, performed by hand: "confirmed by diffing the old
+    and new node_ids with the `tests.` prefix stripped: the sets are
+    identical". This function is that diff, done by the gate instead of by a
+    person, so the gate stops depending on which invocation produced the
+    report it is reading.
+    """
+    return raw[len(_ROOTDIR_PREFIX) :] if raw.startswith(_ROOTDIR_PREFIX) else raw
+
+
 def node_id(testcase: ET.Element) -> str:
-    """The stable identity of a test case across runs and splits."""
+    """The stable identity of a test case across runs, splits and rootdirs."""
     classname = (testcase.get("classname") or "").strip()
     name = (testcase.get("name") or "").strip()
-    return f"{classname}::{name}" if classname else name
+    return canonical_node_id(f"{classname}::{name}" if classname else name)
 
 
 def observe(paths: list[Path]) -> Observation:
