@@ -3,6 +3,13 @@
 
 """Canonical delegation wire DTOs (graduated from omnibase_compat, OMN-12126)."""
 
+from omnibase_core.enums.enum_delegation_budget_refusal_reason import (
+    EnumDelegationBudgetRefusalReason,
+)
+from omnibase_core.enums.enum_delegation_output_refusal_reason import (
+    EnumDelegationOutputRefusalReason,
+)
+from omnibase_core.enums.enum_delegation_output_shape import EnumDelegationOutputShape
 from omnibase_core.models.delegation.wire.model_bifrost_delegation_config import (
     ModelBifrostDelegationConfig,
     ModelDelegationBackendConfig,
@@ -16,11 +23,23 @@ from omnibase_core.models.delegation.wire.model_budget import (
     EnumBudgetAction,
     ModelBudgetLimits,
 )
+from omnibase_core.models.delegation.wire.model_delegation_budget_evidence import (
+    ModelDelegationBudgetEvidence,
+)
+from omnibase_core.models.delegation.wire.model_delegation_budget_refusal import (
+    ModelDelegationBudgetRefusal,
+)
 from omnibase_core.models.delegation.wire.model_delegation_completed import (
     ModelDelegationCompleted,
 )
+from omnibase_core.models.delegation.wire.model_delegation_contract_evidence import (
+    ModelDelegationContractEvidence,
+)
 from omnibase_core.models.delegation.wire.model_delegation_failed import (
     ModelDelegationFailed,
+)
+from omnibase_core.models.delegation.wire.model_delegation_output_refusal import (
+    ModelDelegationOutputRefusal,
 )
 from omnibase_core.models.delegation.wire.model_delegation_provenance import (
     EnumDelegationTrafficClass,
@@ -93,6 +112,9 @@ __all__: list[str] = [
     "EnumDelegationTerminalFailureCause",
     "EnumDelegationTrafficClass",
     "EnumDelegationRoutingDisposition",
+    "EnumDelegationOutputShape",
+    "EnumDelegationOutputRefusalReason",
+    "EnumDelegationBudgetRefusalReason",
     "EnumDelegationTerminalOutcome",
     "EnumDelegationUnroutedReason",
     "EnumQualityContractMode",
@@ -112,6 +134,10 @@ __all__: list[str] = [
     "ModelDelegationFailed",
     "ModelDelegationFailoverConfig",
     "ModelDelegationFallbackPolicy",
+    "ModelDelegationBudgetEvidence",
+    "ModelDelegationBudgetRefusal",
+    "ModelDelegationContractEvidence",
+    "ModelDelegationOutputRefusal",
     "ModelDelegationRequest",
     "ModelDelegationResult",
     "ModelDelegationProviderFailureCause",

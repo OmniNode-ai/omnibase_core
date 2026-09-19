@@ -17,6 +17,18 @@ from omnibase_core.enums.enum_delegation_terminal_failure_cause import (
 from omnibase_core.enums.enum_quality_score_comparison import (
     EnumQualityScoreComparison,
 )
+from omnibase_core.models.delegation.wire.model_delegation_budget_evidence import (
+    ModelDelegationBudgetEvidence,
+)
+from omnibase_core.models.delegation.wire.model_delegation_budget_refusal import (
+    ModelDelegationBudgetRefusal,
+)
+from omnibase_core.models.delegation.wire.model_delegation_contract_evidence import (
+    ModelDelegationContractEvidence,
+)
+from omnibase_core.models.delegation.wire.model_delegation_output_refusal import (
+    ModelDelegationOutputRefusal,
+)
 from omnibase_core.models.delegation.wire.model_delegation_provenance import (
     ModelDelegationProvenance,
 )
@@ -82,6 +94,47 @@ class ModelDelegationResult(BaseModel):
         ),
     )
     content: str = Field(..., description="The LLM-generated response content.")
+    response_contract_evidence: ModelDelegationContractEvidence | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Observed response-contract conveyance and validation evidence. Absent "
+            "only when this delegation declared no response contract."
+        ),
+    )
+    budget_evidence: ModelDelegationBudgetEvidence | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Declared and executed task-class timeout evidence. An omitted CLI "
+            "timeout is represented inside the block as null, never by omitting it."
+        ),
+    )
+    budget_refusal: ModelDelegationBudgetRefusal | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed pre-dispatch timeout refusal. It is mutually exclusive with "
+            "budget_evidence because no execution occurred."
+        ),
+    )
+    output_refusal: ModelDelegationOutputRefusal | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed refusal when a declared response contract cannot locate a "
+            "safe deliverable."
+        ),
+    )
+    preamble_chars: int | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        ge=0,
+        description=(
+            "Raw response characters removed before returning content. Content is "
+            "the extracted deliverable, never the raw provider payload."
+        ),
+    )
     quality_passed: bool = Field(
         ...,
         description="Whether the quality gate accepted the response.",
@@ -274,6 +327,9 @@ class ModelDelegationResult(BaseModel):
         """Reject incomplete or contradictory structured terminal evidence."""
         if any(not item.strip() for item in self.failed_acceptance_criteria):
             msg = "failed_acceptance_criteria entries must not be blank"
+            raise ValueError(msg)
+        if self.budget_evidence is not None and self.budget_refusal is not None:
+            msg = "budget_evidence and budget_refusal are mutually exclusive"
             raise ValueError(msg)
 
         required_bar = self.required_quality_bar

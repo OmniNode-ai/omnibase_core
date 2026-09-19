@@ -250,6 +250,15 @@ class ModelDelegationRequest(BaseModel):
             "It is never sent to the inference provider."
         ),
     )
+    requested_timeout_seconds: int | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        ge=1,
+        description=(
+            "Requested handler execution timeout. The task-class ceiling decides "
+            "whether dispatch may proceed."
+        ),
+    )
     system_prompt: str | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
