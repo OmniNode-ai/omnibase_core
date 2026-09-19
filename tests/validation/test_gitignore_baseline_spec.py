@@ -73,7 +73,7 @@ PUBLIC_REPO_HYGIENE_REQUIRED_PATTERNS = [
     ".repowise-workspace.yaml",
     ".evidence/",
     "docs/evidence/",
-    "merge-sweep/",
+    "/merge-sweep/",
 ]
 
 PYTHON_REQUIRED_PATTERNS = [
@@ -309,4 +309,134 @@ def test_metadata_references_the_hygiene_ticket(spec: dict[str, Any]) -> None:
     related = spec["metadata"].get("related_tickets", [])
     assert "OMN-18016" in related, (
         "metadata.related_tickets must name the ticket that added the block"
+    )
+
+
+# ---------------------------------------------------------------------------
+# OMN-18859: a bare directory pattern matches at ANY depth, so it can swallow
+# a real, tracked package directory and silently drop it from a git-stripped
+# wheel build. This has now happened twice through this one spec.
+# ---------------------------------------------------------------------------
+
+# Directory patterns that are DELIBERATELY unanchored, each because the thing
+# it names is a tooling artifact that legitimately appears at any depth and
+# never names a real package directory. An entry here is a reviewed decision,
+# not a waiver: adding one is how a future author says "this word cannot
+# collide with source", and a reviewer can disagree.
+#
+# Everything else must be root-anchored. The two incidents both involved a
+# plain English word with no leading dot -- exactly the shape most likely to
+# also name a real directory inside src/.
+DEPTH_MATCHING_BY_DESIGN = {
+    # CPython bytecode caches; hatchling prunes these structurally anyway.
+    "__pycache__/",
+    # Tool caches, always dot-prefixed, never importable package names.
+    ".pytest_cache/",
+    ".mypy_cache/",
+    ".ruff_cache/",
+    ".idea/",
+    ".vscode/",
+    ".claude_scratch/",
+    ".repowise-workspace/",
+    ".evidence/",
+    # Coverage HTML output.
+    "htmlcov/",
+    # Build outputs. A package directory literally named build/ or dist/
+    # would itself be a defect, and these must be caught at any depth
+    # because a nested sub-project produces them in its own subtree.
+    "dist/",
+    "build/",
+    # Test-runner outputs, produced wherever the runner is invoked.
+    "test-results/",
+    "playwright-report/",
+}
+
+
+def _directory_patterns(spec: dict[str, Any]) -> list[tuple[str, str]]:
+    """Return (section, pattern) for every directory pattern in the spec.
+
+    A directory pattern is one ending in ``/``. Negations (``!``) and
+    wildcard patterns (``*.egg-info/``) are excluded: a negation re-includes
+    rather than excludes, and a wildcard directory pattern is depth-matching
+    by construction -- anchoring it would change what it means rather than
+    where it applies.
+    """
+    out: list[tuple[str, str]] = []
+    for section, block in spec["managed_blocks"].items():
+        for pattern in block["patterns"]:
+            if not pattern.endswith("/"):
+                continue
+            if pattern.startswith("!") or "*" in pattern:
+                continue
+            out.append((section, pattern))
+    return out
+
+
+def test_every_plain_directory_pattern_is_root_anchored(spec: dict[str, Any]) -> None:
+    """RED before the OMN-18859 fix, GREEN after.
+
+    A bare ``merge-sweep/`` matched this repo family's real, git-tracked
+    ``src/omnimarket/adapters/codex/skills/merge-sweep/`` package directory.
+    ``stage_workspace.sh`` stages siblings without ``.git``, and hatchling
+    applies ``.gitignore`` as an exclude filter regardless of whether ``.git``
+    is present, so the tracked ``SKILL.md`` under it was dropped from the
+    wheel while the staged source kept it. The OMN-14631 content-parity gate
+    then correctly reported the wheel as drifted, and every
+    ``BUILD_SOURCE=workspace`` build on the .201 dev lane failed.
+
+    This is the SECOND time. The first was a bare ``env/`` colliding with
+    ``omnibase_compat``'s real ``src/omnibase_compat/env/`` submodule, fixed
+    by anchoring ``/.venv/``, ``/venv/`` and ``/env/`` -- but only those
+    three, which is why it recurred. A third occurrence is now a red test
+    here rather than a live-lane outage found by hand.
+    """
+    unanchored = [
+        (section, pattern)
+        for section, pattern in _directory_patterns(spec)
+        if not pattern.startswith("/")
+        and "/" not in pattern[:-1]
+        and pattern not in DEPTH_MATCHING_BY_DESIGN
+    ]
+    assert not unanchored, (
+        "these directory patterns are unanchored, so they match a directory of "
+        f"that name at ANY depth and can swallow a real package directory: "
+        f"{unanchored}. Anchor each to '/<name>/', or, if the name genuinely "
+        "cannot collide with source, add it to DEPTH_MATCHING_BY_DESIGN with a "
+        "reason (OMN-18859)."
+    )
+
+
+def test_the_allowlist_only_names_patterns_the_spec_declares(
+    spec: dict[str, Any],
+) -> None:
+    """The allowlist must not accumulate entries for patterns that are gone.
+
+    A stale entry silently re-permits an unanchored pattern if that name is
+    ever reintroduced, which would defeat the test above without anyone
+    editing it.
+    """
+    declared = {pattern for _section, pattern in _directory_patterns(spec)}
+    stale = sorted(DEPTH_MATCHING_BY_DESIGN - declared)
+    assert not stale, (
+        f"DEPTH_MATCHING_BY_DESIGN names patterns the spec no longer declares: "
+        f"{stale}. Remove them so the exemption cannot silently return."
+    )
+
+
+def test_the_hygiene_block_anchors_merge_sweep(spec: dict[str, Any]) -> None:
+    """The specific regression, pinned by name (OMN-18859).
+
+    Positive control for the generic test above: if someone reverts the
+    anchor while also adding ``merge-sweep/`` to the allowlist, the generic
+    test would go quiet and this one would not.
+    """
+    patterns = spec["managed_blocks"]["public_repo_hygiene"]["patterns"]
+    assert "/merge-sweep/" in patterns, (
+        "the hygiene block must anchor the merge-sweep rule to the repo root; "
+        "a bare 'merge-sweep/' matches omnimarket's real "
+        "src/omnimarket/adapters/codex/skills/merge-sweep/ package directory "
+        "and drops it from the wheel (OMN-18859)"
+    )
+    assert "merge-sweep/" not in patterns, (
+        "the unanchored form must not be declared alongside the anchored one"
     )
