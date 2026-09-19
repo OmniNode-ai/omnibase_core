@@ -92,7 +92,6 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "src/omnibase_core/validation/validator_skill_backing_node.py",
         "src/omnibase_core/validators/no_unguarded_git_subprocess.py",
         "tests/analysis/test_consumer_graph.py",
-        "tests/ci/test_workflow_uses_refs_resolve.py",
         "tests/conftest.py",
         "tests/fixtures/validation/exports/star_import.py",
         "tests/fixtures/validation/exports/syntax_error.py",
