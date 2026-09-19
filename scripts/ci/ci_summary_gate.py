@@ -153,6 +153,18 @@ SOFT_ALLOWLIST: frozenset[str] = frozenset(
 EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
     "DB ownership CI twin (B1)",
     "LLM refs drift check (OMN-11932)",
+    # OMN-18796 (epic OMN-18775): the no-new-advisory-job gate, called from
+    # .github/workflows/advisory-job-gate.yml against the omniclaude reusable
+    # pinned by commit. Registered HERE rather than in live branch protection
+    # because this repository's own committed snapshot records that no agent
+    # may mutate required_status_checks
+    # (tests/unit/scripts/ci/fixtures/required_status_checks_snapshot.json,
+    # `_meta.note`); L4 is a first-class enforcement surface under the required
+    # "CI Summary" umbrella and carries the same merge-blocking force without a
+    # live branch-protection write. The caller carries no `paths:` and no
+    # `branches:` filter, so it reports on every pull-request shape and cannot
+    # be legitimately absent -- the admission condition this tuple requires.
+    "advisory-job-gate / advisory-job-gate",
 )
 
 # Spec-required validator covering jobs (OMN-14127 load-bearing property).

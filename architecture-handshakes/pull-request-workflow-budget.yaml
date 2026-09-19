@@ -174,6 +174,26 @@ waivers:
       The status quo where a new or regrown non-KB-canonical markdown doc in this repo had zero mechanical
       prevention -- human code review was the only backstop against re-growing content that the Wave-1/Wave-2
       KB migration already moved to the knowledge-base repo.
+  - workflow_file: advisory-job-gate.yml
+    ticket: OMN-18796
+    expires: "2026-11-30"
+    justification: >-
+      The no-new-advisory-job gate (OMN-18777, epic OMN-18775), fanned out to this repository. Thin `uses:`
+      caller of an omniclaude-hosted reusable pinned by full commit sha -- own concurrency group, no interaction
+      with ci.yml's job graph -- exactly the shape of the two waivers above. It refuses a new `continue-on-error:
+      true` that neither the committed census baseline nor a `# advisory-ok:` annotation names, and a
+      new pull-request-reachable verification job that sits in neither of this repository's enforcement
+      surfaces. Its context is asserted in EXPECTED_EXTERNAL_CONTEXTS in the same change, so it blocks
+      a merge rather than reporting advisory-green, which is the failure class the epic exists to close.
+      Waived rather than budget-bumped so the count lock stays flat. The natural closure is the OMN-16281
+      pattern -- fold the caller into ci.yml as a job -- which is available here because the reusable
+      needs no trigger surface wider than ci.yml's own; it is not taken in this change only because the
+      fan-out lands the identical caller shape in five repositories at once.
+    retires: >-
+      The status quo in which a new advisory setting or a new never-enforced verification job lands in
+      this repository with nothing naming it and no gate reading it -- the OMN-18775 inventory counted
+      5 advisory settings and 1 unenforced pull-request-reachable verification job here, none of which
+      any check could have refused.
 metadata:
   generated_by: "C7 / OMN-14907, 2026-07-21"
   baseline_ref: "origin/dev@d09128fc"
