@@ -15,6 +15,9 @@ from pydantic import ValidationError
 from omnibase_core.models.delegation.wire import (
     TASK_DELEGATED_TOPIC_V1,
     EnumBudgetAction,
+    EnumDelegationBudgetRefusalReason,
+    EnumDelegationOutputRefusalReason,
+    EnumDelegationOutputShape,
     EnumDelegationTerminalFailureCause,
     EnumDelegationTrafficClass,
     EnumQualityScoreComparison,
@@ -24,11 +27,16 @@ from omnibase_core.models.delegation.wire import (
     ModelBudgetLimits,
     ModelComplianceLoopResult,
     ModelDelegationBackendConfig,
+    ModelDelegationBudgetEvidence,
+    ModelDelegationBudgetRefusal,
     ModelDelegationCompleted,
     ModelDelegationConfig,
+    ModelDelegationContractEvidence,
+    ModelDelegationDeliverableEvidence,
     ModelDelegationEventEnvelope,
     ModelDelegationFailed,
     ModelDelegationFallbackPolicy,
+    ModelDelegationOutputRefusal,
     ModelDelegationProvenance,
     ModelDelegationRequest,
     ModelDelegationResult,
@@ -166,6 +174,15 @@ class TestModelDelegationRequest:
             ModelDelegationRequest.model_validate_json(request.model_dump_json())
             == request
         )
+
+    def test_requested_timeout_round_trips_when_declared(self) -> None:
+        request = self._make(requested_timeout_seconds=241)
+        assert request.requested_timeout_seconds == 241
+        assert request.model_dump()["requested_timeout_seconds"] == 241
+
+    def test_requested_timeout_rejects_non_positive_value(self) -> None:
+        with pytest.raises(ValidationError):
+            self._make(requested_timeout_seconds=0)
 
     @pytest.mark.parametrize("temperature", [-0.01, 2.01])
     def test_cloud_completion_shaping_rejects_invalid_temperature(
@@ -1882,3 +1899,109 @@ class TestModelQualityGateIntent:
         )
         with pytest.raises(ValidationError):
             ModelQualityGateIntent(intent="wrong", payload=gate_input)
+
+
+@pytest.mark.unit
+class TestDelegationOutputContractEvidence:
+    def test_contract_evidence_requires_explicit_conveyance_and_validation(
+        self,
+    ) -> None:
+        evidence = ModelDelegationContractEvidence(
+            conveyed=True,
+            validated=False,
+            output_shape=EnumDelegationOutputShape.JSON,
+            contract_sha256="a" * 64,
+            channel="system_prompt",
+        )
+        assert evidence.conveyed is True
+        assert evidence.validated is False
+
+        with pytest.raises(ValidationError):
+            ModelDelegationContractEvidence(  # type: ignore[call-arg]
+                output_shape=EnumDelegationOutputShape.JSON,
+                contract_sha256="a" * 64,
+                channel="system_prompt",
+            )
+
+    def test_budget_evidence_requires_each_declared_limit(self) -> None:
+        evidence = ModelDelegationBudgetEvidence(
+            requested_timeout_seconds=None,
+            task_class_timeout_ceiling_seconds=240,
+            execution_timeout_seconds=240,
+            terminal_delivery_margin_seconds=60,
+        )
+        assert evidence.requested_timeout_seconds is None
+        with pytest.raises(ValidationError):
+            ModelDelegationBudgetEvidence(  # type: ignore[call-arg]
+                requested_timeout_seconds=None,
+                task_class_timeout_ceiling_seconds=240,
+                execution_timeout_seconds=240,
+            )
+        with pytest.raises(ValidationError, match="cannot exceed"):
+            ModelDelegationBudgetEvidence(
+                requested_timeout_seconds=240,
+                task_class_timeout_ceiling_seconds=240,
+                execution_timeout_seconds=241,
+                terminal_delivery_margin_seconds=60,
+            )
+
+    def test_budget_refusal_requires_request_above_ceiling(self) -> None:
+        refusal = ModelDelegationBudgetRefusal(
+            reason=EnumDelegationBudgetRefusalReason.TIMEOUT_EXCEEDS_TASK_CLASS_CEILING,
+            task_type="summarization",
+            requested_timeout_seconds=241,
+            task_class_timeout_ceiling_seconds=240,
+        )
+        assert refusal.requested_timeout_seconds == 241
+
+        with pytest.raises(ValidationError):
+            ModelDelegationBudgetRefusal(
+                reason=EnumDelegationBudgetRefusalReason.TIMEOUT_EXCEEDS_TASK_CLASS_CEILING,
+                task_type="summarization",
+                requested_timeout_seconds=240,
+                task_class_timeout_ceiling_seconds=240,
+            )
+
+    def test_output_refusal_is_a_typed_shape_bound_terminal_fact(self) -> None:
+        refusal = ModelDelegationOutputRefusal(
+            reason=EnumDelegationOutputRefusalReason.AMBIGUOUS_UNMARKED_DELIVERABLE,
+            output_shape=EnumDelegationOutputShape.MARKDOWN,
+            contract_failure_reasons=(),
+        )
+
+        assert (
+            refusal.reason
+            is EnumDelegationOutputRefusalReason.AMBIGUOUS_UNMARKED_DELIVERABLE
+        )
+        assert refusal.contract_failure_reasons == ()
+
+        with pytest.raises(ValidationError):
+            ModelDelegationOutputRefusal(
+                reason=EnumDelegationOutputRefusalReason.NO_SCHEMA_CONFORMING_JSON,
+                output_shape=EnumDelegationOutputShape.JSON,
+            )
+
+    def test_deliverable_evidence_requires_a_real_raw_span(self) -> None:
+        evidence = ModelDelegationDeliverableEvidence(
+            output_shape=EnumDelegationOutputShape.PLAIN_TEXT,
+            contract_sha256="a" * 64,
+            deliverable_sha256="b" * 64,
+            deliverable_chars=12,
+            preamble_chars=9,
+            raw_chars=21,
+            deliverable_start=9,
+            deliverable_end=21,
+        )
+        assert evidence.deliverable_end == 21
+
+        with pytest.raises(ValidationError):
+            ModelDelegationDeliverableEvidence(
+                output_shape=EnumDelegationOutputShape.PLAIN_TEXT,
+                contract_sha256="a" * 64,
+                deliverable_sha256="b" * 64,
+                deliverable_chars=12,
+                preamble_chars=9,
+                raw_chars=21,
+                deliverable_start=8,
+                deliverable_end=21,
+            )

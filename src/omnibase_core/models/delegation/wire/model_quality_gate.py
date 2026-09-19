@@ -14,6 +14,9 @@ from omnibase_core.enums.enum_quality_gate_result import EnumQualityGateResult
 from omnibase_core.enums.enum_quality_rule_enforcement import (
     EnumQualityRuleEnforcement,
 )
+from omnibase_core.models.delegation.wire.model_delegation_deliverable_evidence import (
+    ModelDelegationDeliverableEvidence,
+)
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     EnumQualityContractMode,
     validate_response_contract,
@@ -69,6 +72,14 @@ class ModelQualityGateInput(BaseModel):
     acceptance_criteria: tuple[str, ...] = Field(
         default=(),
         description="Request-level quality checks enforced by the quality gate.",
+    )
+    deliverable_evidence: ModelDelegationDeliverableEvidence | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Exact declared-contract extraction evidence. It is required when a "
+            "cleaned text deliverable reaches the gate without its raw marker."
+        ),
     )
     response_contract: dict[str, object] | None = Field(
         default=None,
