@@ -24,7 +24,7 @@
 
 schema_version:
   major: 1
-  minor: 1
+  minor: 2
   patch: 0
 
 # Managed block definitions.
@@ -96,6 +96,11 @@ managed_blocks:
       scratch and workspace-index trees that keep landing in PUBLIC
       repositories. Companion to the OMN-18014 public-repo hygiene gate.
 
+      Directory patterns intended for the repo ROOT are root-anchored with a
+      leading slash (OMN-18364). An unanchored directory pattern matches at
+      any depth and will silently strip a nested, tracked, packaged source
+      directory of the same name out of a git-aware wheel build.
+
       READ 4.9 OF THE OMN-17992 PREVENTION PLAN BEFORE TRUSTING THIS BLOCK.
       An ignore file does not untrack an existing path and does not stop a
       forced add. Five repos are clean of these classes with no ignore rule at
@@ -127,6 +132,16 @@ managed_blocks:
       - ".repowise-workspace.yaml"
       - ".evidence/"
       - "docs/evidence/"
+      # ROOT-ANCHORED (OMN-18364) — do NOT drop the leading slash. A bare
+      # "merge-sweep/" matches a directory of that name at ANY depth, and this
+      # block is repo-root agent-scratch hygiene only. Unanchored, it matched
+      # omnimarket's TRACKED packaged source directory
+      # src/omnimarket/adapters/codex/skills/merge-sweep/; hatchling excludes
+      # VCS-ignored files from the wheel, so SKILL.md vanished from the built
+      # wheel while staying in the source tree, and the OMN-14631 workspace
+      # content-parity gate then hard-failed every BUILD_SOURCE=workspace
+      # runtime image build. Same failure class as the OMN-14636 "/env/" fix
+      # above.
       - "/merge-sweep/"
 
 
@@ -134,7 +149,7 @@ managed_blocks:
 
 metadata:
   generated_by: "manually authored (OMN-12451)"
-  last_updated: "2026-09-07"
+  last_updated: "2026-09-19"
   next_review: "on any new pattern addition — single source of truth, change propagates via OMN-12450
     pin-bump bot"
   related_tickets:
@@ -142,3 +157,4 @@ metadata:
     - OMN-12451  # this spec file
     - OMN-12452  # T2 validator + CI wiring
     - OMN-18016  # public-repo-hygiene managed block (epic OMN-17992)
+    - OMN-18364  # root-anchor merge-sweep/ (unanchored form stripped a tracked packaged source dir from the omnimarket wheel)
