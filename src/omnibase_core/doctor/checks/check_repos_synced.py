@@ -13,20 +13,23 @@ from omnibase_core.models.bootstrap.model_environment_bootstrap import (
 )
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
-_OMNIBASE_PATH_KEY = "OMNIBASE_PATH"
+# Internal orchestration (OMN-16849 boundary ruling, operator, 2026-08-28):
+# this walks the OPERATOR's own multi-repo registry checkout, which no
+# customer has. Keys on OMNI_HOME, never the customer-facing OMNIBASE_PATH.
+_OMNI_HOME_KEY = "OMNI_HOME"
 
 
-def _get_omnibase_path() -> Path | None:
-    """Return the multi-repo registry root from OMNIBASE_PATH, or None if unset.
+def _get_omni_home() -> Path | None:
+    """Return the operator's multi-repo registry root from OMNI_HOME, or None if unset.
 
     Reads through the typed bootstrap boundary (OMN-17744) rather than raw
     ``os.environ``. No default: an unset var means "skip this check" (below),
-    never a silently-wrong hardcoded home-directory layout (OMN-16851).
+    never a silently-wrong hardcoded home-directory layout.
     """
     bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
-        declared_keys=(_OMNIBASE_PATH_KEY,)
+        declared_keys=(_OMNI_HOME_KEY,)
     )
-    raw = bootstrap.environment.optional(_OMNIBASE_PATH_KEY)
+    raw = bootstrap.environment.optional(_OMNI_HOME_KEY)
     return Path(raw) if raw else None
 
 
@@ -39,24 +42,24 @@ class CheckReposSynced(DoctorCheckBase):
         start = time.monotonic()
         behind: list[str] = []
         checked = 0
-        omnibase_path = _get_omnibase_path()
-        if omnibase_path is None:
+        omni_home = _get_omni_home()
+        if omni_home is None:
             return ModelDoctorCheckResult(
                 name=self.check_name,
                 category=self.category,
                 status=EnumHealthStatusValue.UNKNOWN,
-                message="Skipped: OMNIBASE_PATH not set",
+                message="Skipped: OMNI_HOME not set",
                 duration_ms=int((time.monotonic() - start) * 1000),
             )
-        if not omnibase_path.exists():
+        if not omni_home.exists():
             return ModelDoctorCheckResult(
                 name=self.check_name,
                 category=self.category,
                 status=EnumHealthStatusValue.UNKNOWN,
-                message=f"Skipped: OMNIBASE_PATH not found ({omnibase_path})",
+                message=f"Skipped: OMNI_HOME not found ({omni_home})",
                 duration_ms=int((time.monotonic() - start) * 1000),
             )
-        for child in omnibase_path.iterdir():
+        for child in omni_home.iterdir():
             if not child.is_dir() or not (child / ".git").exists():
                 continue
             checked += 1
