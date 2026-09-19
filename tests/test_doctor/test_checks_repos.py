@@ -10,21 +10,45 @@ from omnibase_core.doctor.checks.check_repos_synced import CheckReposSynced
 pytestmark = pytest.mark.unit
 from omnibase_core.doctor.checks.check_stale_worktrees import CheckStaleWorktrees
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
+from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 
 
-def test_repos_synced_all_clean():
+def test_repos_synced_all_clean(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OMNIBASE_PATH", "/some/registry")
     with patch("subprocess.run") as mock_run:
         # git rev-parse returns same hash for HEAD and origin/main
         mock_run.return_value.returncode = 0
         mock_run.return_value.stdout = "abc123\n"
-        with patch("pathlib.Path.iterdir") as mock_iter:
-            mock_dir = MagicMock()
-            mock_dir.is_dir.return_value = True
-            mock_dir.name = "omnibase_core"
-            mock_dir.__truediv__ = lambda self, x: MagicMock(exists=lambda: True)
-            mock_iter.return_value = [mock_dir]
-            result = CheckReposSynced().run()
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("pathlib.Path.iterdir") as mock_iter:
+                mock_dir = MagicMock()
+                mock_dir.is_dir.return_value = True
+                mock_dir.name = "omnibase_core"
+                mock_dir.__truediv__ = lambda self, x: MagicMock(exists=lambda: True)
+                mock_iter.return_value = [mock_dir]
+                result = CheckReposSynced().run()
     assert result.category == EnumDoctorCategory.REPOS
+    assert result.status != EnumHealthStatusValue.UNKNOWN
+
+
+def test_repos_synced_skipped_when_omnibase_path_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("OMNIBASE_PATH", raising=False)
+    result = CheckReposSynced().run()
+    assert result.status == EnumHealthStatusValue.UNKNOWN
+    assert "OMNIBASE_PATH not set" in result.message
+
+
+def test_repos_synced_skipped_when_legacy_omni_home_set_instead(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """OMN-16849 clean break: OMNI_HOME alone must not satisfy this check."""
+    monkeypatch.delenv("OMNIBASE_PATH", raising=False)
+    monkeypatch.setenv("OMNI_HOME", "/some/legacy/registry")
+    result = CheckReposSynced().run()
+    assert result.status == EnumHealthStatusValue.UNKNOWN
+    assert "OMNIBASE_PATH not set" in result.message
 
 
 def test_stale_worktrees_none():

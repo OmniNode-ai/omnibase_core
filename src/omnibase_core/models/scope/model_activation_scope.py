@@ -18,7 +18,7 @@ Plugin manifest example:
 
     activation_scope:
       requires_tokens: [omninode_repo]
-      requires_env: [OMNI_HOME]
+      requires_env: [OMNIBASE_PATH]
       requires_integrations:
         linear:
           workspace: omninode
@@ -65,7 +65,7 @@ class ModelActivationScope(BaseModel):
 
         activation_scope:
           requires_tokens: [omninode_repo]
-          requires_env: [OMNI_HOME, ONEX_STATE_DIR]
+          requires_env: [OMNIBASE_PATH, ONEX_STATE_DIR]
           requires_integrations:
             linear:
               workspace: omninode
