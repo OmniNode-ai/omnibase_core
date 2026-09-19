@@ -70,9 +70,11 @@ _PYTHON_LINES = [
     "__pycache__/",
     "*.py[cod]",
     "*$py.class",
-    ".venv/",
-    "venv/",
-    "env/",
+    # Root-anchored (OMN-14636): a bare `env/` matches a directory at any depth
+    # and drops a real src/<pkg>/env/ package from a git-stripped wheel build.
+    "/.venv/",
+    "/venv/",
+    "/env/",
     ".pytest_cache/",
     ".mypy_cache/",
     ".ruff_cache/",
