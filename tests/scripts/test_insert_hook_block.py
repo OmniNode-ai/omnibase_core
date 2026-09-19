@@ -191,3 +191,27 @@ def test_print_block_does_not_touch_the_target(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert cfg.read_text() == TARGET
     assert _hook_ids("repos:\n" + result.stdout) == ["validate-gitignore-baseline"]
+
+
+@pytest.mark.unit
+def test_rendered_sequences_are_indented_under_their_key() -> None:
+    """yaml.safe_dump's indentless sequence fails omninode_infra's yamllint.
+
+    Every .pre-commit-config.yaml in the fleet indents the sequence under
+    `hooks:`; the indentless form is valid yaml but a lint failure there
+    ("wrong indentation: expected 8 but found 6"), which turns the bot's own
+    PR red in the repo it is trying to help.
+    """
+    block = insert_hook_block.render_block(HOOK, None).split("\n")
+    hooks_at = next(i for i, line in enumerate(block) if line.strip() == "hooks:")
+    hooks_indent = len(block[hooks_at]) - len(block[hooks_at].lstrip())
+    item = block[hooks_at + 1]
+    item_indent = len(item) - len(item.lstrip())
+    assert item.lstrip().startswith("- id:"), item
+    assert item_indent > hooks_indent, f"sequence not indented: {item!r}"
+
+
+@pytest.mark.unit
+def test_indented_block_still_parses_to_the_declared_hook() -> None:
+    parsed = yaml.safe_load(insert_hook_block.render_block(HOOK, None))
+    assert parsed[0]["hooks"][0] == HOOK

@@ -32,6 +32,20 @@ _TOP_LEVEL_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*:")
 _LIST_ITEM = re.compile(r"^([ ]*)- ")
 
 
+class _IndentedDumper(yaml.SafeDumper):
+    """Indent sequences under their key, the way every target already writes them.
+
+    yaml.safe_dump emits an indentless sequence — `hooks:` then `- id:` at the
+    same column. Every .pre-commit-config.yaml in the fleet indents it, and
+    omninode_infra's yamllint fails the indentless form outright (`wrong
+    indentation: expected 8 but found 6`). Matching the house style is what
+    keeps the bot's diff reviewable as well as valid.
+    """
+
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
+        return super().increase_indent(flow, False)
+
+
 def render_block(hook: dict[str, object], pin: str | None) -> str:
     """Render the hook as a `- repo: local` block, optionally pinning its dependency.
 
@@ -48,7 +62,11 @@ def render_block(hook: dict[str, object], pin: str | None) -> str:
         if pin not in existing:
             existing.append(pin)
         entry["additional_dependencies"] = existing
-    return yaml.safe_dump([{"repo": "local", "hooks": [entry]}], sort_keys=False).rstrip()
+    return yaml.dump(
+        [{"repo": "local", "hooks": [entry]}],
+        Dumper=_IndentedDumper,
+        sort_keys=False,
+    ).rstrip()
 
 
 def insert(config_text: str, block: str) -> str:
