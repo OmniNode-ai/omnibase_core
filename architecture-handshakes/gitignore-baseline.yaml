@@ -127,7 +127,7 @@ managed_blocks:
       - ".repowise-workspace.yaml"
       - ".evidence/"
       - "docs/evidence/"
-      - "merge-sweep/"
+      - "/merge-sweep/"
 
 
 # Metadata

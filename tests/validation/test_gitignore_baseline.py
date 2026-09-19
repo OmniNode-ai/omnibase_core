@@ -99,7 +99,7 @@ _PUBLIC_REPO_HYGIENE_LINES = [
     ".repowise-workspace.yaml",
     ".evidence/",
     "docs/evidence/",
-    "merge-sweep/",
+    "/merge-sweep/",
     "# === end onex-managed: public_repo_hygiene ===",
 ]
 _HYGIENE_BLOCK = "\n".join(_PUBLIC_REPO_HYGIENE_LINES)
