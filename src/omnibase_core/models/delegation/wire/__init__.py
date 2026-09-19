@@ -35,6 +35,9 @@ from omnibase_core.models.delegation.wire.model_delegation_completed import (
 from omnibase_core.models.delegation.wire.model_delegation_contract_evidence import (
     ModelDelegationContractEvidence,
 )
+from omnibase_core.models.delegation.wire.model_delegation_deliverable_evidence import (
+    ModelDelegationDeliverableEvidence,
+)
 from omnibase_core.models.delegation.wire.model_delegation_failed import (
     ModelDelegationFailed,
 )
@@ -137,6 +140,7 @@ __all__: list[str] = [
     "ModelDelegationBudgetEvidence",
     "ModelDelegationBudgetRefusal",
     "ModelDelegationContractEvidence",
+    "ModelDelegationDeliverableEvidence",
     "ModelDelegationOutputRefusal",
     "ModelDelegationRequest",
     "ModelDelegationResult",

@@ -32,6 +32,7 @@ from omnibase_core.models.delegation.wire import (
     ModelDelegationCompleted,
     ModelDelegationConfig,
     ModelDelegationContractEvidence,
+    ModelDelegationDeliverableEvidence,
     ModelDelegationEventEnvelope,
     ModelDelegationFailed,
     ModelDelegationFallbackPolicy,
@@ -1978,4 +1979,29 @@ class TestDelegationOutputContractEvidence:
             ModelDelegationOutputRefusal(
                 reason=EnumDelegationOutputRefusalReason.NO_SCHEMA_CONFORMING_JSON,
                 output_shape=EnumDelegationOutputShape.JSON,
+            )
+
+    def test_deliverable_evidence_requires_a_real_raw_span(self) -> None:
+        evidence = ModelDelegationDeliverableEvidence(
+            output_shape=EnumDelegationOutputShape.PLAIN_TEXT,
+            contract_sha256="a" * 64,
+            deliverable_sha256="b" * 64,
+            deliverable_chars=12,
+            preamble_chars=9,
+            raw_chars=21,
+            deliverable_start=9,
+            deliverable_end=21,
+        )
+        assert evidence.deliverable_end == 21
+
+        with pytest.raises(ValidationError):
+            ModelDelegationDeliverableEvidence(
+                output_shape=EnumDelegationOutputShape.PLAIN_TEXT,
+                contract_sha256="a" * 64,
+                deliverable_sha256="b" * 64,
+                deliverable_chars=12,
+                preamble_chars=9,
+                raw_chars=21,
+                deliverable_start=8,
+                deliverable_end=21,
             )
