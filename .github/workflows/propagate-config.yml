@@ -124,6 +124,8 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PROPAGATION_NAME: ${{ steps.name.outputs.name }}
           PROPAGATION_RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+          # Commit a pin_source_dependency hook is pinned to (OMN-18033).
+          PROPAGATION_SOURCE_SHA: ${{ github.sha }}
         run: bash scripts/propagate-config.sh
 
   dry-run-ci-check:
@@ -175,4 +177,5 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           PROPAGATION_NAME: normalization-symmetry-hook
           PROPAGATION_DRY_RUN: "1"
+          PROPAGATION_SOURCE_SHA: ${{ github.sha }}
         run: bash scripts/propagate-config.sh

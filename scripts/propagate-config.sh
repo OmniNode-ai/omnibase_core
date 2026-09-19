@@ -30,6 +30,7 @@ set -euo pipefail
 : "${PROPAGATION_NAME:?PROPAGATION_NAME must be set (e.g. normalization-symmetry-hook)}"
 : "${GITHUB_TOKEN:?GITHUB_TOKEN must be set}"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGETS_FILE="${PROPAGATION_TARGETS_FILE:-.github/propagation-targets.yaml}"
 DRY_RUN="${PROPAGATION_DRY_RUN:-0}"
 RELEASE_TAG="${PROPAGATION_RELEASE_TAG:-unknown}"
@@ -106,9 +107,17 @@ for target in match.get("targets") or []:
         sys.exit(8)
     targets.append({**target, "hook": hook})
 
+pin_dependency = match.get("pin_source_dependency", "")
+if pin_dependency and not isinstance(pin_dependency, str):
+    sys.stderr.write(
+        f"ERROR: pin_source_dependency in '{name}' must be a distribution name\n"
+    )
+    sys.exit(9)
+
 print(json.dumps({
     "auto_merge": bool(match.get("auto_merge", False)),
     "merge_method": merge_method,
+    "pin_dependency": pin_dependency,
     "source": source,
     "tracking_issue": tracking_issue,
     "targets": targets,
@@ -123,6 +132,29 @@ MERGE_METHOD="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["merge
 TARGET_COUNT="$(python3 -c 'import json,sys;print(len(json.loads(sys.argv[1])["targets"]))' "$PROPAGATION_JSON")"
 SOURCE_FILE="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["source"])' "$PROPAGATION_JSON")"
 TRACKING_ISSUE="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["tracking_issue"])' "$PROPAGATION_JSON")"
+PIN_DEPENDENCY="$(python3 -c 'import json,sys;print(json.loads(sys.argv[1])["pin_dependency"])' "$PROPAGATION_JSON")"
+
+# A propagated hook runs in an isolated pre-commit environment: `language:
+# python` builds an empty venv, so a hook that imports omnibase_core needs the
+# dependency travelling with it or every commit in the target dies with
+# ModuleNotFoundError (OMN-18033). The pin is resolved here rather than stored
+# in the manifest so it names the exact source commit being propagated.
+PIN=""
+if [[ -n "$PIN_DEPENDENCY" ]]; then
+  SOURCE_REPO="${GITHUB_REPOSITORY:-OmniNode-ai/omnibase_core}"
+  SOURCE_SHA="${PROPAGATION_SOURCE_SHA:-${GITHUB_SHA:-}}"
+  if [[ -z "$SOURCE_SHA" ]]; then
+    SOURCE_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
+  fi
+  if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "ERROR: propagation '${PROPAGATION_NAME}' declares pin_source_dependency" >&2
+    echo "       but no 40-char source sha is resolvable (got '${SOURCE_SHA}')." >&2
+    echo "       Set PROPAGATION_SOURCE_SHA; refusing to propagate an unpinned hook." >&2
+    exit 10
+  fi
+  PIN="${PIN_DEPENDENCY} @ git+https://github.com/${SOURCE_REPO}.git@${SOURCE_SHA}"
+  echo "Pinned dependency: ${PIN}"
+fi
 
 echo "Propagation: $PROPAGATION_NAME"
 echo "Targets: $TARGET_COUNT"
@@ -152,7 +184,8 @@ for i in $(seq 0 $((TARGET_COUNT - 1))); do
   HOOK_JSON="$(python3 -c 'import json,sys;i=int(sys.argv[2]);print(json.dumps(json.loads(sys.argv[1])["targets"][i]["hook"]))' "$PROPAGATION_JSON" "$i")"
   DEFAULT_BRANCH="$(resolve_default_branch "$REPO")"
 
-  APPEND_SNIPPET="$(python3 -c 'import json,sys,yaml; print(yaml.safe_dump([{"repo": "local", "hooks": [json.loads(sys.argv[1])]}], sort_keys=False).rstrip())' "$HOOK_JSON")"
+  APPEND_SNIPPET="$(python3 "${SCRIPT_DIR}/insert_hook_block.py" --print-block \
+    --hook-json "$HOOK_JSON" --pin "$PIN")"
 
   TITLE="chore(ci): propagate ${PROPAGATION_NAME} to ${FILE_PATH} [bot] [${TRACKING_ISSUE}]"
   BODY=$(cat <<EOF
@@ -236,9 +269,18 @@ EOF
     continue
   fi
 
-  # Append the exact canonical hook mapping loaded from the declared source.
-  # The shell only wraps it as a local-repo pre-commit entry.
-  printf '\n%s\n' "$APPEND_SNIPPET" >> "$FILE_PATH"
+  # Place the canonical hook mapping inside the target's repos: list. An
+  # end-of-file append put it at column 0 after whatever top-level keys the
+  # target keeps below repos: (ci:, fail_fast:, default_stages:), which is not
+  # valid yaml in any current target — see scripts/insert_hook_block.py.
+  if ! python3 "${SCRIPT_DIR}/insert_hook_block.py" "$FILE_PATH" \
+      --hook-json "$HOOK_JSON" --pin "$PIN"; then
+    echo "ERROR: refusing to commit ${REPO}:${FILE_PATH} — insertion failed" >&2
+    popd >/dev/null
+    rm -rf "$TMPDIR"
+    trap - EXIT
+    continue
+  fi
 
   git config user.name "onex-propagate-bot"
   git config user.email "bot@omninode.ai"

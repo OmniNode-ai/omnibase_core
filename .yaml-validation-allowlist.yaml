@@ -452,6 +452,18 @@ allowed_files:
     added: "2026-08-23"
     review: "2026-12-13"
 
+  - file: "scripts/insert_hook_block.py"
+    reason: >-
+      Cross-repo config propagator, target-config write guard (OMN-18033). The helper edits a DOWNSTREAM
+      repo's .pre-commit-config.yaml as text — a yaml round-trip would reformat the whole file and make
+      the bot's PR unreviewable — and then parses the result once with yaml.safe_load purely to refuse
+      a write that pre-commit could not load. The schema being asserted is pre-commit's own, not an ONEX
+      model, and the documents belong to twelve other repositories, so no Pydantic model applies: the
+      parse IS the check. Nothing downstream of it consumes the parsed data beyond reading back the inserted
+      hook id.
+    added: "2026-09-19"
+    review: "2026-12-13"
+
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)
 allowed_filenames:
