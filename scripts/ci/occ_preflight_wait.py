@@ -49,6 +49,34 @@ elapsed time changes that. Only ``stamp_absent`` and ``companion_unmerged``
 are genuinely retryable, and even those convert to ``DEADLINE`` (also a hard
 failure) once ``elapsed_seconds >= deadline_seconds``.
 
+The one exemption (OMN-18848)
+-----------------------------
+``stamp_absent`` is retryable only while a stamp can still arrive. For a
+post-release version bump -- a manifest-and-lockfile diff with no behavioural
+claim -- no changed file CAN be RED-derivable, so the OCC autobind producer
+DECLINES to mint and no stamp is ever coming. This gate polled the full 1500s
+and failed closed with ``stamp_absent`` anyway, because it never read the
+producer's outcome at all (live: omnimarket#2685, job 105923152940), which
+made every PR the release Dependency Cascade opens unmergeable.
+
+When the producer's terminal outcome for THIS head SHA is ``DECLINED`` with a
+reason beginning ``skip:DEPENDENCY_PIN_ONLY``, and only then, the missing
+stamp resolves to :attr:`EnumPreflightWaitOutcome.NOT_REQUIRED` instead. This
+is emphatically NOT a skip token: nothing in the PR body is read for it. The
+producer classifies the DIFF itself and records the verdict on an
+``occ-autobind / outcome`` check-run bound to the PR's current head SHA, so an
+author cannot assert it and a new commit invalidates it (the new SHA carries
+no outcome, and the gate is back on its ordinary wait-then-fail path). The
+token set is a cross-repo contract with omnimarket's producer and its
+Companion Merged Gate -- see
+``omnimarket/scripts/ci/check_occ_companion_merged.py``'s
+``AUTOBIND_NO_COMPANION_REQUIRED_REASONS``.
+
+The read of that check-run fails OPEN and only open: an unreadable check-run
+list yields ``None``, which leaves every existing branch exactly as it was.
+Evidence written by another repo's runtime must never be able to fail this
+gate on its own.
+
 A ``merge_group`` (or any non-``pull_request``) event always ``PROCEED``s
 immediately, never waits. Invariant I2 in ``occ-preflight.yml``'s own header
 requires a ``merge_group`` run to re-validate fully against the pinned
@@ -65,6 +93,7 @@ import re
 import subprocess  # fixed argv, no shell, trusted gh binary
 import sys
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Final, Protocol
@@ -91,11 +120,33 @@ HEX_SHA_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{7,40}$")
 
 _ENFORCED_EVENT: Final[str] = "pull_request"
 
+# OMN-18069 -- the autobind producer's terminal outcome, posted as a check-run
+# on the product PR's own head SHA. The name and the marker prefix are a
+# cross-repo contract; changing either is a two-repo change. Mirrors
+# check_occ_companion_merged.AUTOBIND_OUTCOME_{CHECK_NAME,MARKER_PREFIX}.
+AUTOBIND_OUTCOME_CHECK_NAME: Final[str] = "occ-autobind / outcome"
+AUTOBIND_OUTCOME_MARKER_PREFIX: Final[str] = "occ-autobind-outcome:"
+AUTOBIND_OUTCOME_DECLINED: Final[str] = "DECLINED"
+
+# OMN-18848 -- the one DECLINED reason that means "this PR owes no companion",
+# as opposed to "this PR owes evidence nobody has written yet". See the module
+# docstring. Mirrors check_occ_companion_merged.
+# AUTOBIND_NO_COMPANION_REQUIRED_REASONS byte-for-byte; the two must move
+# together or the fleet's definition of the exemption splits in silence.
+AUTOBIND_NO_COMPANION_REQUIRED_REASONS: Final[tuple[str, ...]] = (
+    "skip:DEPENDENCY_PIN_ONLY",
+)
+
 
 class EnumPreflightWaitOutcome(StrEnum):
     """One value per terminal or poll-again branch of :func:`decide_preflight_wait`."""
 
     PROCEED = "proceed"
+    # OMN-18848: the producer classified this head's diff as dependency-pin-only,
+    # so no OCC companion exists or will. Terminal, and a PASS -- distinct from
+    # PROCEED because there is no OCC SHA to pin and nothing downstream to check
+    # out against.
+    NOT_REQUIRED = "not_required"
     WAIT = "wait"
     FAIL_NOW = "fail_now"
     DEADLINE = "deadline"
@@ -129,6 +180,71 @@ def parse_evidence_source(pr_body: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
+def is_no_companion_required(reason: str) -> bool:
+    """Whether a DECLINED ``reason=`` names a verdict that needs no companion.
+
+    OMN-18848. Matched on the reason TOKEN the producer writes at the start of
+    the field, never on the prose after it, so rewording a message cannot
+    silently change a verdict -- and, more sharply, so a message that
+    *describes* the classifier refusing ("classifier refused
+    skip:DEPENDENCY_PIN_ONLY because a source file changed") cannot read as the
+    classifier accepting. This predicate returning ``True`` is the only path on
+    which a PR with no evidence stamp is allowed past this gate.
+    """
+    return any(
+        reason.strip().startswith(marker)
+        for marker in AUTOBIND_NO_COMPANION_REQUIRED_REASONS
+    )
+
+
+def read_autobind_outcome_from_check_runs(
+    check_runs: Sequence[object],
+) -> tuple[str, str] | None:
+    """``(outcome, reason)`` from the newest completed autobind outcome run.
+
+    OMN-18069/OMN-18848. The producer writes a machine-readable first line into
+    the check-run summary::
+
+        occ-autobind-outcome: DECLINED repo=... pr=... correlation_id=... reason=...
+
+    ``None`` when no such completed check-run is present, or when its summary
+    carries no marker line -- the ordinary case for a PR whose autobind has not
+    reported yet.
+    """
+    # Typed Sequence[object] rather than a list of dicts because the live
+    # caller hands this straight-from-JSON data: the per-element isinstance
+    # guard below is a real runtime check, not a redundant one.
+    latest: dict[str, object] | None = None
+    for run in check_runs:
+        if not isinstance(run, dict):
+            continue
+        if str(run.get("name") or "") != AUTOBIND_OUTCOME_CHECK_NAME:
+            continue
+        if str(run.get("status") or "") != "completed":
+            continue
+        if latest is None or str(run.get("completed_at") or "") >= str(
+            latest.get("completed_at") or ""
+        ):
+            latest = run
+    if latest is None:
+        return None
+
+    output = latest.get("output")
+    summary = str(output.get("summary") or "") if isinstance(output, dict) else ""
+    for line in summary.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith(AUTOBIND_OUTCOME_MARKER_PREFIX):
+            continue
+        payload = stripped[len(AUTOBIND_OUTCOME_MARKER_PREFIX) :].strip()
+        if not payload:
+            break
+        outcome = payload.split(None, 1)[0]
+        marker = "reason="
+        reason = payload.split(marker, 1)[1].strip() if marker in payload else ""
+        return outcome, reason
+    return None
+
+
 def _wait_or_deadline(
     *, reason: str, detail: str, elapsed_seconds: int, deadline_seconds: int
 ) -> ModelPreflightWaitDecision:
@@ -157,6 +273,7 @@ def decide_preflight_wait(
     elapsed_seconds: int,
     deadline_seconds: int,
     event_name: str,
+    autobind_outcome: tuple[str, str] | None = None,
 ) -> ModelPreflightWaitDecision:
     """Pure verdict for one poll iteration.
 
@@ -168,6 +285,12 @@ def decide_preflight_wait(
 
     ``cited_sha_is_ancestor`` is only consulted when the stamp is SHA-shaped;
     it is ignored otherwise.
+
+    ``autobind_outcome`` is the OCC autobind producer's ``(outcome, reason)``
+    for the PR's CURRENT head SHA, or ``None`` when no outcome was recorded or
+    the check-run list could not be read. It is consulted in the
+    ``stamp is None`` branch and nowhere else (OMN-18848): a PR that DOES cite
+    evidence is evaluated on that evidence whatever the producer said.
     """
     if event_name != _ENFORCED_EVENT:
         return ModelPreflightWaitDecision(
@@ -192,6 +315,30 @@ def decide_preflight_wait(
 
     stamp = parse_evidence_source(pr_body)
     if stamp is None:
+        # OMN-18848: the one shape in which a missing stamp is not a pending
+        # one. Nothing here is asserted by the PR -- the producer classified
+        # this head's DIFF and recorded the verdict on a head-SHA-bound
+        # check-run. Fail-open on the read: `autobind_outcome is None` falls
+        # straight through to the unchanged wait path below.
+        if autobind_outcome is not None:
+            outcome_word, outcome_reason = autobind_outcome
+            if outcome_word.strip().upper() == AUTOBIND_OUTCOME_DECLINED and (
+                is_no_companion_required(outcome_reason)
+            ):
+                return ModelPreflightWaitDecision(
+                    outcome=EnumPreflightWaitOutcome.NOT_REQUIRED,
+                    reason="no_companion_required",
+                    detail=(
+                        "the occ-autobind producer classified this head's diff as "
+                        "dependency-pin-only (reason "
+                        f"'{outcome_reason.strip()}'), so no OCC evidence "
+                        "companion exists or will be minted for it. The verdict "
+                        "is DERIVED from the diff by the producer, never asserted "
+                        "in the PR body, and it is bound to this head SHA -- a "
+                        "new commit carries no outcome and re-opens this gate "
+                        "(OMN-18848)"
+                    ),
+                )
         return _wait_or_deadline(
             reason="stamp_absent",
             detail=(
@@ -293,6 +440,10 @@ class GhPort(Protocol):
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
     ) -> bool: ...
 
+    def read_autobind_outcome(
+        self, *, repo: str, pr_number: str
+    ) -> tuple[str, str] | None: ...
+
 
 class GhCli:
     """:class:`GhPort` backed by the ``gh`` binary."""
@@ -371,6 +522,60 @@ class GhCli:
         text = raw.strip() if raw is not None else ""
         return text or None
 
+    def read_autobind_outcome(
+        self, *, repo: str, pr_number: str
+    ) -> tuple[str, str] | None:
+        """The producer's ``(outcome, reason)`` for the PR's CURRENT head SHA.
+
+        Head-SHA-bound by construction (OMN-18848): the head is re-read live on
+        every poll and the check-runs are fetched for that SHA alone, so an
+        outcome recorded against an earlier commit is invisible here.
+
+        Fail-OPEN, and only here: a failed head read, a failed or unparseable
+        check-run read, and an absent outcome all return ``None``, which leaves
+        :func:`decide_preflight_wait` on its existing path. This read can only
+        ever turn a doomed 1500s wait into an immediate pass; it must never be
+        able to change any other verdict, because the evidence it reads is
+        written by a different repo's runtime and an outage there would
+        otherwise become an outage here.
+        """
+        raw = self._run(
+            [
+                "gh",
+                "pr",
+                "view",
+                pr_number,
+                "--repo",
+                repo,
+                "--json",
+                "headRefOid",
+                "--jq",
+                ".headRefOid",
+            ]
+        )
+        head_sha = raw.strip() if raw is not None else ""
+        if not head_sha or head_sha == "null":
+            return None
+
+        raw_runs = self._run(
+            [
+                "gh",
+                "api",
+                f"repos/{repo}/commits/{head_sha}/check-runs?per_page=100",
+                "--jq",
+                ".check_runs",
+            ]
+        )
+        if raw_runs is None:
+            return None
+        try:
+            data = json.loads(raw_runs)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(data, list):
+            return None
+        return read_autobind_outcome_from_check_runs(data)
+
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
     ) -> bool:
@@ -391,23 +596,32 @@ class GhCli:
 
 def _resolve_facts(
     client: GhPort, *, repo: str, pr_number: str, occ_repo: str
-) -> tuple[str | None, str | None, bool, str]:
+) -> tuple[str | None, str | None, bool, str, tuple[str, str] | None]:
     """One round of live reads. Returns (pr_body, companion_state,
-    cited_sha_is_ancestor, resolved_sha)."""
+    cited_sha_is_ancestor, resolved_sha, autobind_outcome)."""
     pr_body = client.read_pr_body(repo=repo, pr_number=pr_number)
     if pr_body is None:
-        return None, None, False, ""
+        return None, None, False, "", None
 
     stamp = parse_evidence_source(pr_body)
     if stamp is None:
-        return pr_body, None, False, ""
+        # Read the producer outcome ONLY on the branch that can consult it
+        # (OMN-18848), so a PR that already carries a stamp pays no extra API
+        # calls and cannot have its verdict touched by this read.
+        return (
+            pr_body,
+            None,
+            False,
+            "",
+            client.read_autobind_outcome(repo=repo, pr_number=pr_number),
+        )
 
     occ_ref = OCC_PR_REF_RE.match(stamp)
     if occ_ref is not None:
         state, sha = client.read_companion(
             occ_repo=occ_repo, pr_number=occ_ref.group(1)
         )
-        return pr_body, state, False, sha
+        return pr_body, state, False, sha, None
 
     if HEX_SHA_RE.match(stamp.lower()) is not None:
         canonical = client.canonicalize_sha(occ_repo=occ_repo, sha=stamp)
@@ -415,10 +629,10 @@ def _resolve_facts(
         is_ancestor = client.sha_is_ancestor(
             occ_repo=occ_repo, sha=resolved_sha, branches=OCC_DURABLE_BRANCHES
         )
-        return pr_body, None, is_ancestor, resolved_sha
+        return pr_body, None, is_ancestor, resolved_sha, None
 
     # Malformed; decide_preflight_wait reports this itself from pr_body.
-    return pr_body, None, False, ""
+    return pr_body, None, False, "", None
 
 
 def _write_github_output(name: str, value: str, *, github_output_path: str) -> None:
@@ -465,7 +679,13 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
 
     while True:
         elapsed = int(time.monotonic() - start)
-        pr_body, companion_state, cited_sha_is_ancestor, resolved_sha = _resolve_facts(
+        (
+            pr_body,
+            companion_state,
+            cited_sha_is_ancestor,
+            resolved_sha,
+            autobind_outcome,
+        ) = _resolve_facts(
             client, repo=args.repo, pr_number=args.pr_number, occ_repo=args.occ_repo
         )
         decision = decide_preflight_wait(
@@ -475,10 +695,23 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
             elapsed_seconds=elapsed,
             deadline_seconds=args.deadline_seconds,
             event_name=args.event_name,
+            autobind_outcome=autobind_outcome,
         )
         print(
             f"occ-preflight wait: [{decision.outcome.value}] {decision.reason} -- {decision.detail}"
         )
+
+        if decision.outcome is EnumPreflightWaitOutcome.NOT_REQUIRED:
+            # No `sha` output by design: there is no OCC companion to pin, and
+            # emitting one would hand the downstream checkout a ref it must not
+            # have. The downstream eligibility steps read this flag and skip.
+            _write_github_output(
+                "evidence_not_required",
+                "true",
+                github_output_path=args.github_output_path,
+            )
+            print(f"::notice::{decision.detail}")
+            return EXIT_OK
 
         if decision.outcome is EnumPreflightWaitOutcome.PROCEED:
             if resolved_sha:
