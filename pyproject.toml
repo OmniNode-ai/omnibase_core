@@ -403,6 +403,7 @@ ignore = [
 "scripts/ci/check_import_ratchet.py" = ["T201"]  # CLI output for import-layering growth-ratchet gate (OMN-14340)
 "scripts/ci/check_occ_companion_merged.py" = ["T201"]  # CLI verdict/annotation output for the OCC companion-merged gate (OMN-15222)
 "scripts/ci/occ_preflight_wait.py" = ["T201"]  # CLI verdict/annotation output for the occ-preflight bounded wait (OMN-17864)
+"scripts/ci/occ_manual_replay_precheck.py" = ["T201"]  # CLI refusal/eligibility output for the OCC manual-replay precheck (OMN-14160, OMN-14993); the GHA step reads stdout/stderr and tests/ci/test_occ_manual_replay_entrypoint.py asserts on both
 "scripts/ci/canonical_handler_shape.py" = ["T201", "BLE001"]  # CLI output + fail-closed catches for canonical handler-shape ratchet gate (OMN-14355)
 "scripts/ci/rsd_provenance_stamp.py" = ["T201"]  # CLI output for RSD provenance-stamp gate (OMN-15011)
 "scripts/hooks/prepush_override_grant.py" = ["T201"]  # CLI output for the single-use pre-push override grant (OMN-16480, ported by OMN-17159)

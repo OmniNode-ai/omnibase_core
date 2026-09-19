@@ -409,3 +409,77 @@ def test_selftest_mode_passes_and_is_what_the_pre_commit_hook_runs() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     hook_config = (REPO_ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8")
     assert "skip_count_ratchet.py --selftest" in hook_config
+
+
+def _toggle_prefix(node_id: str) -> str:
+    """Render a baseline id under the OTHER rootdir than the one it was
+    recorded in: add the leading ``tests.`` segment when it is absent, drop it
+    when it is present. Deriving the synthetic report this way keeps the test
+    honest whichever form the shipped baseline happens to carry -- the unit
+    entry was re-recorded prefixed on 2026-09-19, the integration entry was
+    not, and hard-coding either would silently stop exercising one of them.
+    """
+    return (
+        node_id[len("tests.") :] if node_id.startswith("tests.") else "tests." + node_id
+    )
+
+
+# ------------------------------------------------- rootdir-invariance (OMN-14160)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("suite", [SUITE_INTEGRATION, SUITE_UNIT])
+def test_rootdir_prefix_difference_alone_is_not_a_grown_skip_set(
+    suite: str, tmp_path: Path
+) -> None:
+    """A `tests.` prefix difference names the same tests and must not read as growth.
+
+    JUnit dotted paths are relative to pytest's rootdir, and this repository
+    resolves two of them: `tests/` for the full-suite invocation
+    (`pytest tests/ --splits 40`), and the repository root for some runner
+    invocations, which prefixes every id with an extra `tests.` segment.
+
+    Before this was normalised the two forms had zero overlap, so a baseline
+    recorded under one and a report emitted under the other produced the
+    self-contradicting verdict this test refuses: "the skipped set GREW by 60
+    test(s) (delta +60; 60 observed against a baseline of 60)" -- every id new
+    while the count had not moved. Measured live on omnibase_core#1713
+    (OMN-14160) against the baseline landed the same morning by OMN-16851
+    (#1712), which recorded the prefixed form; `pytest tests/ ... --junitxml`
+    emits the un-prefixed one, so the first full-suite run to read that
+    baseline failed closed on a formatting difference.
+
+    The negative case is the test above: a genuinely added skip still fails.
+    """
+    prefixed = [(_toggle_prefix(i), True) for i in _baseline_ids(suite)]
+    junit = tmp_path / "j.xml"
+    junit.write_text(_junit(prefixed, _baseline_collected(suite)), encoding="utf-8")
+    result = _run("--baseline", str(BASELINE), "--suite", suite, "--junit", str(junit))
+    assert result.returncode == 0, (
+        "a rootdir prefix difference must not read as a grown skip set:\n"
+        + result.stdout
+        + result.stderr
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("suite", [SUITE_INTEGRATION, SUITE_UNIT])
+def test_added_skip_still_fails_when_the_report_carries_the_rootdir_prefix(
+    suite: str, tmp_path: Path
+) -> None:
+    """The normalisation must not become a hole: growth is still refused under it.
+
+    Same prefixed report as the test above plus one id that is in no baseline.
+    If stripping the prefix had been implemented as "ignore ids that do not
+    match", this would pass and the gate would be decorative.
+    """
+    cases = [(_toggle_prefix(i), True) for i in _baseline_ids(suite)]
+    cases.append(("tests.unit.synthetic.test_never_runs::test_added", True))
+    junit = tmp_path / "j.xml"
+    junit.write_text(_junit(cases, _baseline_collected(suite)), encoding="utf-8")
+    result = _run("--baseline", str(BASELINE), "--suite", suite, "--junit", str(junit))
+    assert result.returncode != 0, (
+        "an added skip must still fail even when the report is prefixed:\n"
+        + result.stdout
+    )
+    assert "unit.synthetic.test_never_runs::test_added" in result.stdout
