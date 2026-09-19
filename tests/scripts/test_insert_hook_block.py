@@ -215,3 +215,48 @@ def test_rendered_sequences_are_indented_under_their_key() -> None:
 def test_indented_block_still_parses_to_the_declared_hook() -> None:
     parsed = yaml.safe_load(insert_hook_block.render_block(HOOK, None))
     assert parsed[0]["hooks"][0] == HOOK
+
+
+@pytest.mark.unit
+def test_multiline_values_render_as_literal_block_scalars() -> None:
+    """yamlfmt re-folds a quoted multi-line scalar and injects its own marker.
+
+    onex_change_control's contamination gate (OMN-15479) refuses a committed
+    value containing `#magic___^_^___line`, which is exactly what the target's
+    formatter produced from the hook's folded description. A literal block
+    scalar is not re-folded.
+    """
+    # The shape the real hook has: a folded description ending in a blank line.
+    hook = {**HOOK, "description": "line one\nline two\n\n"}
+    rendered = insert_hook_block.render_block(hook, None)
+    description_line = next(
+        line for line in rendered.split("\n") if line.strip().startswith("description:")
+    )
+    assert description_line.rstrip().endswith(("|", "|-", "|+")), description_line
+    assert yaml.safe_load(rendered)[0]["hooks"][0]["description"] == hook["description"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "description",
+    ["one\ntwo\n", "one\ntwo", "two\n\n", "single line", "trailing space \nx"],
+)
+def test_render_round_trips_every_description_shape(description: str) -> None:
+    """PyYAML does not round-trip every string through a literal block scalar.
+
+    A value ending in exactly one newline emits `|` and parses back without it,
+    so render_block verifies its own output and falls back rather than
+    propagating a block whose content differs from the declared hook.
+    """
+    hook = {**HOOK, "description": description}
+    parsed = yaml.safe_load(insert_hook_block.render_block(hook, None))
+    assert parsed[0]["hooks"][0] == hook
+
+
+@pytest.mark.unit
+def test_single_line_values_stay_plain() -> None:
+    rendered = insert_hook_block.render_block(HOOK, None)
+    name_line = next(
+        line for line in rendered.split("\n") if line.strip().startswith("name:")
+    )
+    assert "|" not in name_line, name_line

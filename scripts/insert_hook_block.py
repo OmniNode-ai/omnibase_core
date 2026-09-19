@@ -32,18 +32,44 @@ _TOP_LEVEL_KEY = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*:")
 _LIST_ITEM = re.compile(r"^([ ]*)- ")
 
 
-class _IndentedDumper(yaml.SafeDumper):
+class _IndentBase(yaml.SafeDumper):
     """Indent sequences under their key, the way every target already writes them.
 
     yaml.safe_dump emits an indentless sequence — `hooks:` then `- id:` at the
     same column. Every .pre-commit-config.yaml in the fleet indents it, and
     omninode_infra's yamllint fails the indentless form outright (`wrong
-    indentation: expected 8 but found 6`). Matching the house style is what
-    keeps the bot's diff reviewable as well as valid.
+    indentation: expected 8 but found 6`).
     """
 
     def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
         return super().increase_indent(flow, False)
+
+
+def _literal_str(dumper: yaml.SafeDumper, data: str) -> yaml.ScalarNode:
+    """Emit any multi-line value as a literal block scalar.
+
+    A hook `description` is a folded multi-line string. yamlfmt re-folds a
+    quoted multi-line scalar and injects its own `#magic___^_^___line` marker
+    into the value, which onex_change_control's yamlfmt contamination gate
+    (OMN-15479) refuses outright — correctly, since the marker lands inside
+    committed content. A literal block scalar is not re-folded.
+    """
+    if "\n" in data:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+class _IndentedDumper(_IndentBase):
+    """Indented, preferring literal block scalars for multi-line values."""
+
+
+class _PlainDumper(_IndentBase):
+    """Indented, with PyYAML's default scalar styles — the fallback."""
+
+
+# add_representer copies the map onto the class it is called on, so _PlainDumper
+# keeps the default string representer.
+_IndentedDumper.add_representer(str, _literal_str)
 
 
 def render_block(hook: dict[str, object], pin: str | None) -> str:
@@ -62,11 +88,18 @@ def render_block(hook: dict[str, object], pin: str | None) -> str:
         if pin not in existing:
             existing.append(pin)
         entry["additional_dependencies"] = existing
-    return yaml.dump(
-        [{"repo": "local", "hooks": [entry]}],
-        Dumper=_IndentedDumper,
-        sort_keys=False,
-    ).rstrip()
+    payload = [{"repo": "local", "hooks": [entry]}]
+    # Literal block scalars survive the target's formatter, but PyYAML does not
+    # round-trip every string through one: a value ending in exactly one newline
+    # emits `|` and parses back without it. Content fidelity outranks the style,
+    # so the rendering is verified and falls back, and a form that cannot
+    # reproduce the declared hook is refused outright rather than propagated.
+    for dumper in (_IndentedDumper, _PlainDumper):
+        rendered = yaml.dump(payload, Dumper=dumper, sort_keys=False).rstrip()
+        if yaml.safe_load(rendered) == payload:
+            return str(rendered)
+    msg = "no yaml rendering of this hook round-trips to the declared mapping"
+    raise ValueError(msg)
 
 
 def insert(config_text: str, block: str) -> str:
