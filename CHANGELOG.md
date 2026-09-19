@@ -1,3 +1,17 @@
+## v0.47.18 (2026-09-19)
+
+### Release
+- Cut omnibase-core from dev at 0.47.18 by the scheduled release train.
+- 5 release-relevant commit(s) merged since v0.47.17.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.17
+- ci(OMN-14160): add call-occ-autobind caller to omnibase_core (#1713)
+- feat(OMN-18278): declare delegation output contracts (#1715)
+- fix(OMN-18033): make the gitignore-baseline hook propagable to targets (#1710)
+- fix(OMN-16849): reconcile OMN-16851/#1712 against the 2026-08-28 boundary ruling (#1714)
+- fix(OMN-16851): retire OMNI_HOME from omnibase_core's product-facing paths (#1712)
+
 ## v0.47.17 (2026-09-18)
 
 ### Release
