@@ -14,7 +14,7 @@ from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 
 
 def test_repos_synced_all_clean(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("OMNIBASE_PATH", "/some/registry")
+    monkeypatch.setenv("OMNI_HOME", "/some/registry")
     with patch("subprocess.run") as mock_run:
         # git rev-parse returns same hash for HEAD and origin/main
         mock_run.return_value.returncode = 0
@@ -31,24 +31,28 @@ def test_repos_synced_all_clean(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result.status != EnumHealthStatusValue.UNKNOWN
 
 
-def test_repos_synced_skipped_when_omnibase_path_unset(
+def test_repos_synced_skipped_when_omni_home_unset(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delenv("OMNIBASE_PATH", raising=False)
+    monkeypatch.delenv("OMNI_HOME", raising=False)
     result = CheckReposSynced().run()
     assert result.status == EnumHealthStatusValue.UNKNOWN
-    assert "OMNIBASE_PATH not set" in result.message
+    assert "OMNI_HOME not set" in result.message
 
 
-def test_repos_synced_skipped_when_legacy_omni_home_set_instead(
+def test_repos_synced_skipped_when_customer_facing_omnibase_path_set_instead(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """OMN-16849 clean break: OMNI_HOME alone must not satisfy this check."""
-    monkeypatch.delenv("OMNIBASE_PATH", raising=False)
-    monkeypatch.setenv("OMNI_HOME", "/some/legacy/registry")
+    """OMN-16849 boundary ruling (2026-08-28): this walks the OPERATOR's own
+    registry checkout, which no customer has -- OMNIBASE_PATH alone must
+    NOT satisfy it. This is the OMN-16851/#1712 regression this test exists
+    to catch.
+    """
+    monkeypatch.delenv("OMNI_HOME", raising=False)
+    monkeypatch.setenv("OMNIBASE_PATH", "/some/customer/registry")
     result = CheckReposSynced().run()
     assert result.status == EnumHealthStatusValue.UNKNOWN
-    assert "OMNIBASE_PATH not set" in result.message
+    assert "OMNI_HOME not set" in result.message
 
 
 def test_stale_worktrees_none():

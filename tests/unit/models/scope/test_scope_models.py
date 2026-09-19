@@ -223,20 +223,20 @@ class TestModelActivationScope:
         assert not scope.is_unrestricted()
 
     def test_with_env_not_unrestricted(self) -> None:
-        scope = ModelActivationScope(requires_env=["OMNIBASE_PATH"])
+        scope = ModelActivationScope(requires_env=["OMNI_HOME"])
         assert not scope.is_unrestricted()
 
     def test_yaml_round_trip(self) -> None:
         data = {
             "requires_tokens": ["omninode_repo", "omninode_worktree"],
-            "requires_env": ["OMNIBASE_PATH", "ONEX_STATE_DIR"],
+            "requires_env": ["OMNI_HOME", "ONEX_STATE_DIR"],
             "requires_integrations": {"linear": {"workspace": "omninode"}},
         }
         raw = yaml.safe_dump(data)
         loaded = yaml.safe_load(raw)
         scope = ModelActivationScope.model_validate(loaded)
         assert EnumScopeToken.OMNINODE_REPO in scope.requires_tokens
-        assert "OMNIBASE_PATH" in scope.requires_env
+        assert "OMNI_HOME" in scope.requires_env
         assert "linear" in scope.requires_integrations
 
     def test_extra_fields_forbidden(self) -> None:
@@ -367,7 +367,7 @@ class TestModelUnavailableBehavior:
 HOOK_YAML = """
 activation:
   requires_tokens: [omninode_repo]
-  requires_env: [OMNIBASE_PATH]
+  requires_env: [OMNI_HOME]
 applicability:
   applies_when:
     repo:
@@ -420,7 +420,7 @@ class TestModelEnforcementScope:
 
         # Activation
         assert EnumScopeToken.OMNINODE_REPO in scope.activation.requires_tokens
-        assert "OMNIBASE_PATH" in scope.activation.requires_env
+        assert "OMNI_HOME" in scope.activation.requires_env
 
         # Applicability
         assert scope.applicability.applies_when.repo is not None
