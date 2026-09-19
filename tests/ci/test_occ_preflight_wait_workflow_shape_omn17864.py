@@ -235,3 +235,66 @@ def test_occ_preflight_wait_checkout_path_is_workspace_relative() -> None:
             f"checkout path {path_value!r} resolves outside GITHUB_WORKSPACE; "
             "actions/checkout rejects it"
         )
+
+
+# ---------------------------------------------------------------------------
+# OMN-18848: the derived dependency-pin-only exemption.
+#
+# `resolve_evidence_source` now emits `evidence_not_required=true` when the
+# autobind producer classified this head's diff as dependency-pin-only. Every
+# step AFTER it must honour that output, exactly as every step honours the
+# OMN-13762 `bot_exempt` one. A step that misses the condition runs with no OCC
+# checkout and fails confusingly -- which is the whole failure this pins.
+# ---------------------------------------------------------------------------
+
+PIN_ONLY_CONDITION = (
+    "steps.resolve_evidence_source.outputs.evidence_not_required != 'true'"
+)
+BOT_EXEMPT_CONDITION = "steps.bot_exempt.outputs.exempt != 'true'"
+
+
+def _steps_after_resolve_evidence_source() -> list[dict[str, Any]]:
+    steps = _eligibility_job()["steps"]
+    return list(steps[_step_index("resolve_evidence_source") + 1 :])
+
+
+def test_every_step_after_resolve_evidence_source_honors_the_pin_only_exemption() -> (
+    None
+):
+    later = _steps_after_resolve_evidence_source()
+    assert later, "expected steps after resolve_evidence_source"
+    missing = [
+        str(step.get("name", step.get("uses", "<unnamed>")))
+        for step in later
+        if PIN_ONLY_CONDITION not in str(step.get("if", ""))
+    ]
+    assert not missing, (
+        "these eligibility steps run AFTER resolve_evidence_source but do not "
+        f"carry {PIN_ONLY_CONDITION!r}: {missing}. A dependency-pin-only PR has "
+        "no OCC evidence to check out, so an unguarded step fails confusingly "
+        "instead of passing the gate (OMN-18848)"
+    )
+
+
+def test_pin_only_exemption_is_paired_with_the_bot_exempt_one() -> None:
+    """The two exemptions are parallel mechanisms and must gate the same set of
+    steps; a step guarded by only one of them is drift."""
+    for step in _steps_after_resolve_evidence_source():
+        condition = str(step.get("if", ""))
+        if BOT_EXEMPT_CONDITION in condition:
+            assert PIN_ONLY_CONDITION in condition, (
+                f"step {step.get('name')!r} honours the OMN-13762 bot exemption "
+                "but not the OMN-18848 pin-only one"
+            )
+
+
+def test_resolve_evidence_source_itself_is_not_gated_on_its_own_output() -> None:
+    """The producing step cannot depend on the output it produces, and the
+    steps BEFORE it have no such output to read."""
+    steps = _eligibility_job()["steps"]
+    resolve_idx = _step_index("resolve_evidence_source")
+    for step in steps[: resolve_idx + 1]:
+        assert PIN_ONLY_CONDITION not in str(step.get("if", "")), (
+            f"step {step.get('name')!r} runs at or before resolve_evidence_source "
+            "and cannot read its output"
+        )
