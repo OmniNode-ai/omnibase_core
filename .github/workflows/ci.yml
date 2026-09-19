@@ -3926,6 +3926,175 @@ jobs:
           echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> "$GITHUB_STEP_SUMMARY"
           echo "Test matrix result: unit=$parallel integration=$integration"
 
+  # ============================================================================
+  # OMN-18790 — skip-count baseline ratchet (epic OMN-18775, ported from the
+  # omnibase_infra OMN-18776 landing, squash 77ea8d01)
+  #
+  # A skipped test reports nothing, and a SET of tests that skips on every run
+  # reports nothing repeatedly while looking identical to a green suite.
+  # Measured 2026-09-18 on this repo: `Integration Tests (Split n/4)` skipped 17
+  # and `Tests (Split n/m)` skipped 60, and both id SETS were byte-identical
+  # across five consecutive runs. Perfect stability is the diagnostic — it is a
+  # fixed set of tests that never runs, and nothing notices when it grows.
+  #
+  # This job refuses the GROWTH of those sets against
+  # config/skip_count_baseline.yaml. The integration suite is compared by COUNT
+  # (its command is a fixed `pytest tests/integration/ --splits 4`, so the
+  # collected set does not vary); the unit suite is compared by NODE IDS,
+  # because it sits behind scripts/ci/detect_test_paths.py with
+  # ENABLE_SMART_TESTS live and a narrowed selection would otherwise produce a
+  # misleading ratchet-candidate verdict. Both premises are recorded with their
+  # provenance in the baseline file.
+  #
+  # Registered in GATE_JOBS *and* STRICT_SUCCESS_JOBS (scripts/ci/ci_summary_gate.py).
+  # THOSE LINES ARE HALF THE MECHANISM: `CI Summary` is this repo's required
+  # context, and its default-deny sweep already fails when a present job FAILS —
+  # but an unregistered job that is `skipped` or ABSENT yields SUCCESS, which is
+  # the silent-retirement shape this gate exists to close. The job is
+  # unconditional (`if: always()`), so a skip is anomalous and never a
+  # legitimate opt-out. Deliberately NOT added to branch protection as a raw
+  # required context: that would block every in-flight PR whose run predates the
+  # job, and the umbrella registration is enforcement-equivalent.
+  # ============================================================================
+  skip-count-ratchet:
+    name: "Skip Count Ratchet (OMN-18776)"
+    needs: [test-parallel, tests-integration, tests-gate]
+    if: always()
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    steps:
+      # Both matrices legitimately do not run on a docs-only diff or a draft PR,
+      # and `Tests Gate` (registered, strict) already owns the verdict on every
+      # ILLEGITIMATE skip of them — it re-evaluates the docs-only precondition
+      # itself and fails closed when it does not hold. Re-deriving that
+      # judgement here would fork it. This job therefore states the reason and
+      # stops, rather than inventing a second opinion or failing a docs-only PR
+      # on artifacts that were never meant to exist.
+      - name: Decide whether there is a run to ratchet
+        id: decide
+        env:
+          UNIT_RESULT: ${{ needs.test-parallel.result }}
+          INT_RESULT: ${{ needs.tests-integration.result }}
+        run: |
+          ran() { [ "$1" = "success" ] || [ "$1" = "failure" ]; }
+          if ran "$UNIT_RESULT" || ran "$INT_RESULT"; then
+            echo "ratchet=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ratchet=false" >> "$GITHUB_OUTPUT"
+            echo "Neither test matrix produced JUnit reports (unit=$UNIT_RESULT"
+            echo "integration=$INT_RESULT). The verdict on whether that skip was"
+            echo "legitimate belongs to Tests Gate, which is registered and"
+            echo "strict. This job does not fork it."
+          fi
+          echo "unit=$UNIT_RESULT" >> "$GITHUB_OUTPUT"
+          echo "integration=$INT_RESULT" >> "$GITHUB_OUTPUT"
+          echo "Unit matrix: $UNIT_RESULT / integration matrix: $INT_RESULT"
+
+      - name: Checkout code
+        if: steps.decide.outputs.ratchet == 'true'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        if: steps.decide.outputs.ratchet == 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      # Retried inside the step rather than by letting a download step fail
+      # softly and trying again. The artifact service flakes, but a gate whose
+      # input fetch is allowed to fail softly is a gate that passes when it
+      # could not read anything — the whole failure class this job refuses.
+      # Three attempts, then red. This job carries no advisory setting at job
+      # or step level, deliberately and by test.
+      - name: Download this run's JUnit reports
+        if: steps.decide.outputs.ratchet == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in 1 2 3; do
+            if gh run download "${{ github.run_id }}" \
+                 --repo "${{ github.repository }}" \
+                 --pattern 'test-results-*' \
+                 --pattern 'junit-int-*' \
+                 --dir junit-reports; then
+              echo "JUnit reports downloaded on attempt ${attempt}."
+              exit 0
+            fi
+            echo "Artifact download attempt ${attempt} failed."
+            rm -rf junit-reports
+            sleep $((attempt * 10))
+          done
+          echo "::error::could not download this run's JUnit reports after 3 attempts."
+          echo "Failing closed: a gate that cannot read its input has not passed."
+          exit 1
+
+      # Fail-closed: a matrix that ran and produced no parsable report is an
+      # uploader defect (the OMN-18542 shape: an upload pattern silently
+      # matching nothing), and a gate that treated it as "nothing to check"
+      # would be the very false-green this closes. Every step here is blocking,
+      # by construction and by test.
+      - name: Enforce the skip-count baseline (OMN-18790)
+        if: steps.decide.outputs.ratchet == 'true'
+        env:
+          UNIT_RESULT: ${{ steps.decide.outputs.unit }}
+          INT_RESULT: ${{ steps.decide.outputs.integration }}
+        run: |
+          echo "================================================================"
+          echo "Skip Count Ratchet (OMN-18776)"
+          echo "A test that is collected and never executed proves nothing. This"
+          echo "gate refuses the growth of that set against a recorded baseline."
+          echo "Lowering the bar is an edit to config/skip_count_baseline.yaml."
+          echo "================================================================"
+          ran() { [ "$1" = "success" ] || [ "$1" = "failure" ]; }
+          status=0
+
+          if ran "$INT_RESULT"; then
+            mapfile -t int_reports < <(find junit-reports -name 'junit-int-*.xml' -type f | sort)
+            if [ "${#int_reports[@]}" -eq 0 ]; then
+              echo "::error::the integration matrix ran but produced no JUnit report to read."
+              echo "That is an uploader defect, not an empty result -- failing closed."
+              status=1
+            else
+              echo "Reading ${#int_reports[@]} integration JUnit report(s)."
+              uv run --no-project --with 'pyyaml>=6.0.2,<7.0.0' \
+                python scripts/ci/skip_count_ratchet.py \
+                --suite omnibase_core/tests-integration \
+                --junit "${int_reports[@]}" || status=1
+            fi
+          else
+            echo "Integration matrix result: $INT_RESULT -- no reports expected."
+          fi
+
+          if ran "$UNIT_RESULT"; then
+            mapfile -t unit_reports < <(find junit-reports -name 'junit-*.xml' -type f -not -name 'junit-int-*.xml' | sort)
+            if [ "${#unit_reports[@]}" -eq 0 ]; then
+              echo "::error::the unit matrix ran but produced no JUnit report to read."
+              echo "That is an uploader defect, not an empty result -- failing closed."
+              status=1
+            else
+              echo "Reading ${#unit_reports[@]} unit JUnit report(s)."
+              uv run --no-project --with 'pyyaml>=6.0.2,<7.0.0' \
+                python scripts/ci/skip_count_ratchet.py \
+                --suite omnibase_core/test-parallel \
+                --junit "${unit_reports[@]}" || status=1
+            fi
+          else
+            echo "Unit matrix result: $UNIT_RESULT -- no reports expected."
+          fi
+
+          exit "$status"
+
   # CI Summary - final aggregator for all gates (OMN-2226)
   # Cross-repo boundary validation (OMN-6576, OMN-10978)
   # Blocking mode: boundary parity is an architectural CI gate.

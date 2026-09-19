@@ -87,6 +87,22 @@ GATE_JOBS: tuple[str, ...] = (
     # legitimate opt-out — hence the paired STRICT_SUCCESS_JOBS entry below.
     # Renaming either half of the name string breaks this registration.
     "Runner Route (OMN-18031) / route",
+    # OMN-18790: the skip-count baseline ratchet (epic OMN-18775, ported from
+    # omnibase_infra's OMN-18776). THIS LINE IS HALF THE MECHANISM, on the
+    # identical reasoning as the two entries above: the default-deny sweep below
+    # already fails CI Summary when a present job FAILS, but an unregistered job
+    # that is `skipped` or ABSENT yields SUCCESS. The failure mode it closes is
+    # itself silent and measured -- this repo's integration matrix skipped the
+    # same 17 tests and its unit matrix the same 60, byte-identical id sets
+    # across five consecutive runs on 2026-09-18 -- so a gate that could be
+    # silently deleted would reproduce the exact shape it exists to refuse. The
+    # job is unconditional in ci.yml (`if: always()`), so a skip is anomalous
+    # and never a legitimate opt-out -- hence the paired STRICT_SUCCESS_JOBS
+    # entry below. It is deliberately NOT a raw branch-protection context:
+    # adding one would block every in-flight PR whose run predates the job, and
+    # this registration is enforcement-equivalent. Renaming the string breaks
+    # the registration. Pinned by tests/ci/test_skip_count_ratchet_omn18790.py.
+    "Skip Count Ratchet (OMN-18776)",  # skip-count-ratchet
 )
 
 # OMN-15222 (port of the omnibase_infra OMN-15214 canary, mirroring omniclaude's
@@ -102,6 +118,15 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
         # accepts ``skipped`` as complete, so this is the half that makes a
         # SKIPPED (or CANCELLED) route job fail closed rather than pass.
         "Runner Route (OMN-18031) / route",
+        # OMN-18790: paired with the GATE_JOBS entry above, same reasoning --
+        # GATE_JOBS' completeness anchor accepts ``skipped`` as complete, so
+        # this is the half that makes a SKIPPED (or CANCELLED) ratchet job fail
+        # closed rather than pass. The job is `if: always()` in ci.yml and
+        # decides internally whether there is a run to ratchet, so it reaches
+        # `success` even on a docs-only diff; a `skipped` conclusion means the
+        # job was removed or wedged, never that the check legitimately opted
+        # out.
+        "Skip Count Ratchet (OMN-18776)",
     }
 )
 
