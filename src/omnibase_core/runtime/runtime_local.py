@@ -27,8 +27,9 @@ import logging
 import uuid
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Final, cast
+from typing import Final, cast, get_args
 
 import yaml
 from pydantic import BaseModel
@@ -64,6 +65,69 @@ RUNTIME_LOCAL_SERVICE: Final[str] = "omnibase_core"
 
 # Node name for the subscription that watches the declared terminal event.
 TERMINAL_CONSUMER_NODE_NAME: Final[str] = "runtime_local_terminal"
+
+# OMN-18852. The OPTIONAL wire field a command model may declare to record the
+# instant its record actually reached the bus, so a consumer can derive queue
+# wait as `received_at - published_at`.
+#
+# This is resolved from the PUBLISHED MODEL'S OWN FIELDS and nothing else. It is
+# deliberately not keyed on a topic string or a model name: `omnibase_core` sits
+# BELOW `omnimarket` in the layering (compat -> core -> spi -> infra, with
+# omnimarket above), so the runtime cannot import, name, or type against
+# `ModelDelegateSkillRequest`. A model that declares the field opts in by
+# declaring it; every model that does not is published byte-for-byte as before.
+PUBLISH_INSTANT_FIELD: Final[str] = "published_at"
+
+
+def _declares_publish_instant(model_cls: type[BaseModel]) -> bool:
+    """Whether ``model_cls`` declares an optional datetime publish-instant field.
+
+    The annotation is checked, not merely the field's presence. ``model_copy``
+    bypasses validation by design, so stamping a ``datetime`` into a field some
+    unrelated model happens to have named ``published_at`` with a different type
+    would write an un-validatable value the model itself would have refused.
+    """
+    field = model_cls.model_fields.get(PUBLISH_INSTANT_FIELD)
+    if field is None:
+        return False
+    annotation = field.annotation
+    # `datetime | None` -> (datetime, NoneType); a bare `datetime` -> ().
+    candidates = get_args(annotation) or (annotation,)
+    return any(candidate is datetime for candidate in candidates)
+
+
+def _stamp_publish_instant(payload: object) -> object:
+    """Return ``payload`` carrying the instant it is being published, if it can.
+
+    Called at the publish seam and nowhere earlier. Between a command model's
+    construction and its publish sit the runtime's ``bus.subscribe`` calls —
+    real consumer-group joins against a broker, measured at ~17 s on a
+    Kafka-backed lane (CLI start 20:07:58Z against its own record published
+    20:08:15Z). A stamp taken at construction would therefore inflate every
+    reported queue wait by that join time, and the field's contract states that
+    an unstamped request reports queue wait as NOT MEASURED rather than zero
+    precisely so a wrong measurement is never preferred to an absent one.
+
+    Three refusals, each deliberate:
+
+    * a non-Pydantic payload is returned untouched — there is nothing to stamp;
+    * a model not declaring the field is returned untouched, so its serialized
+      bytes are identical to what this runtime published before this change;
+    * a value the caller already supplied WINS and is never overwritten, because
+      a caller that knows its own publish instant knows it better than this
+      seam does.
+    """
+    if not isinstance(payload, BaseModel):
+        return payload
+    if not _declares_publish_instant(type(payload)):
+        return payload
+    if getattr(payload, PUBLISH_INSTANT_FIELD, None) is not None:
+        return payload
+    # Timezone-aware UTC: producer and consumer are separate processes and need
+    # not share a local zone, and the consuming validator refuses a naive value.
+    # `model_copy` rather than assignment because these command models are
+    # frozen by convention (`ConfigDict(frozen=True)`).
+    return payload.model_copy(update={PUBLISH_INSTANT_FIELD: datetime.now(UTC)})
 
 
 def derive_runtime_local_group_id(node_name: str) -> str:
@@ -1709,8 +1773,14 @@ class RuntimeLocal:
         # The payload and its correlation id were resolved in step 3b, before
         # any subscription, so the terminal watcher's correlation predicate is
         # already armed when the topic can first deliver.
+        #
+        # OMN-18852: the publish instant is stamped HERE, after every
+        # subscription above has joined, because this is the only point at
+        # which "when did this record reach the wire" is true. See
+        # `_stamp_publish_instant` for why an earlier stamp is worse than none.
         model_payload: ProtocolLocalRuntimePayloadModel = cast(
-            "ProtocolLocalRuntimePayloadModel", initial_payload
+            "ProtocolLocalRuntimePayloadModel",
+            _stamp_publish_instant(initial_payload),
         )
         await bus.publish(
             subscribe_topics[0],
