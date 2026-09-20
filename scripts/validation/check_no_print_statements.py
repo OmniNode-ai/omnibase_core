@@ -56,8 +56,8 @@ class PrintStatementDetector(ast.NodeVisitor):
                 else ""
             )
 
-            # Check for print-ok comment
-            if self._has_print_ok_comment(line_num):
+            # Check for print-ok comment anywhere on the call's source span
+            if self._has_print_ok_comment(line_num, node.end_lineno):
                 self.generic_visit(node)
                 return
 
@@ -76,18 +76,34 @@ class PrintStatementDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _has_print_ok_comment(self, line_num: int) -> bool:
-        """Check if line has a # print-ok: comment allowing the print."""
-        # Check same line
-        if line_num <= len(self.source_lines):
-            line = self.source_lines[line_num - 1]
-            if "# print-ok:" in line:
-                return True
+    def _has_print_ok_comment(
+        self, line_num: int, end_line_num: int | None = None
+    ) -> bool:
+        """Check whether a ``# print-ok:`` comment allows the print at ``line_num``.
 
-        # Check line above
-        if line_num > 1:
-            prev_line = self.source_lines[line_num - 2]
-            if "# print-ok:" in prev_line.strip():
+        A call is attributed to its opening ``print(`` line, but a formatter
+        wraps a long call across several lines and puts the trailing comment on
+        the CLOSING-paren line. Reading only the opening line and the line above
+        made that annotation invisible, so a correctly annotated multi-line call
+        was reported as a blocking error (OMN-18899).
+
+        The whole source span of the call is read instead: ``line_num`` through
+        ``end_line_num`` (the AST node's ``end_lineno``), plus the line above the
+        call for the comment-on-preceding-line form. A single-line call has
+        ``end_line_num == line_num``, so its behavior is unchanged.
+        """
+        last_line = max(line_num, end_line_num or line_num)
+
+        # Check the line above the call
+        if line_num > 1 and "# print-ok:" in self.source_lines[line_num - 2].strip():
+            return True
+
+        # Check every line of the call, opening through closing paren
+        for candidate in range(line_num, last_line + 1):
+            if (
+                candidate <= len(self.source_lines)
+                and "# print-ok:" in self.source_lines[candidate - 1]
+            ):
                 return True
 
         return False
