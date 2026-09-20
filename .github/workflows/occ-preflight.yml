@@ -68,6 +68,28 @@ on:
         type: number
         required: false
         default: 30
+      terminal-decline-fast-exit:
+        # OMN-18647, CANARY-SCOPED ON PURPOSE. When the occ-autobind producer
+        # has TERMINALLY declined to mint for this head SHA, the wait ends in
+        # seconds with the producer's own reason instead of polling to the
+        # 1500s deadline and reporting `stamp_absent` -- a reason that names a
+        # symptom and sends the author looking for an outage that is not
+        # happening. Measured 2026-09-20: six PRs, ~25 minutes of runner time
+        # each, and one hand-authored companion raced an in-flight mint into a
+        # supersession-binding collision that evicted a consumer for four and
+        # a half hours (OMN-18881).
+        #
+        # Defaults FALSE so that merging this changes nothing for any caller.
+        # Exactly one caller sets it true (see the follow-up on OMN-18647,
+        # which removes this input and the script flag together once the
+        # canary readback holds). It is NOT a bypass: it can only shorten a
+        # wait that was going to fail, every fail-closed branch is identical
+        # in both positions, and no PR passes this gate that would not have
+        # passed it before.
+        description: End the wait immediately on a TERMINAL occ-autobind decline for this head SHA, instead of polling to the deadline (OMN-18647).
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -312,6 +334,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           DEADLINE_SECONDS: ${{ inputs.eligibility-deadline-seconds }}
           POLL_INTERVAL_SECONDS: ${{ inputs.eligibility-poll-interval-seconds }}
+          TERMINAL_DECLINE_FAST_EXIT: ${{ inputs.terminal-decline-fast-exit }}
         run: |
           set -euo pipefail
 
@@ -328,13 +351,22 @@ jobs:
             wait_script="$GITHUB_WORKSPACE/.occ-preflight-deps/omnibase_core_wait/scripts/ci/occ_preflight_wait.py"
           fi
 
+          # OMN-18647: the flag is PASSED only when the caller asked for it,
+          # so a caller on the default runs an argv byte-identical to the one
+          # it ran before this input existed.
+          fast_exit_flag=""
+          if [ "$TERMINAL_DECLINE_FAST_EXIT" = "true" ]; then
+            fast_exit_flag="--terminal-decline-fast-exit"
+          fi
+
           python3 "$wait_script" \
             --repo "$GH_REPO" \
             --pr-number "$pr_number" \
             --event-name "$EVENT_NAME" \
             --deadline-seconds "$DEADLINE_SECONDS" \
             --poll-interval-seconds "$POLL_INTERVAL_SECONDS" \
-            --github-output-path "$GITHUB_OUTPUT"
+            --github-output-path "$GITHUB_OUTPUT" \
+            ${fast_exit_flag}
 
       # I3: OCC's own PRs use in-tree checkout; other repos check out pinned OCC evidence.
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.

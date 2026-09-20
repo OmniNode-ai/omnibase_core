@@ -33,6 +33,8 @@ from scripts.ci.occ_preflight_wait import (
     AUTOBIND_NO_COMPANION_REQUIRED_REASONS,
     EXIT_ERROR,
     EXIT_OK,
+    EnumAutobindReadStatus,
+    ModelAutobindOutcomeRead,
     main,
     read_autobind_outcome_from_check_runs,
 )
@@ -106,11 +108,19 @@ class _FakeGh:
 
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str
-    ) -> tuple[str, str] | None:
+    ) -> ModelAutobindOutcomeRead:
+        # OMN-18647 retyped this port to a tri-state so a read that FAILED is
+        # distinguishable from a producer that has not reported. Both still
+        # fail this probe closed; only the message differs.
         if not self.head_sha:
-            return None
-        return read_autobind_outcome_from_check_runs(
+            return ModelAutobindOutcomeRead(status=EnumAutobindReadStatus.UNREADABLE)
+        parsed = read_autobind_outcome_from_check_runs(
             self.check_runs_by_sha.get(self.head_sha, [])
+        )
+        if parsed is None:
+            return ModelAutobindOutcomeRead(status=EnumAutobindReadStatus.ABSENT)
+        return ModelAutobindOutcomeRead(
+            status=EnumAutobindReadStatus.READ, outcome=parsed[0], reason=parsed[1]
         )
 
 
