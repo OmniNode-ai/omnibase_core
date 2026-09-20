@@ -1,0 +1,81 @@
+---
+# Hook ids the `precommit-suite` job in ci.yml does NOT run.
+#
+# Every other hook in .pre-commit-config.yaml runs on every pull request, so a
+# hook added to the configuration is enforced by default. That is the direction
+# that matters: the drift this job exists to stop happened because nothing
+# remote ever re-asserted a local hook's verdict.
+#
+# THIS FILE DELIBERATELY DOES NOT LIVE IN .github/workflows/. The
+# validator-requirements consumer resolves CI coverage by substring-matching
+# every validator's keywords against the concatenated text of
+# .github/workflows/*.y*ml (validator_requirements_consumer.py, `_load_ci_haystack`
+# and `_any_substring`). A list of hook ids sitting in a workflow file is
+# therefore read as those validators HAVING a CI workflow, which is the exact
+# opposite of what an exclusion list means. Measured while writing this: an
+# earlier draft embedded the list in ci.yml and six entries flipped to
+# "no longer reproduced", offering to record CI coverage for six validators this
+# job skips. Keep the list out of that directory.
+#
+# Removing a line is how the job widens, and the change that removes one is the
+# change that turns that hook green. tests/ci/test_precommit_suite_job_omn18899.py
+# asserts every id here still names a hook that exists, so an exclusion cannot
+# outlive what it excuses.
+
+# (1) Red on the default branch today. Measured 2026-09-20 over the whole tree:
+# 119 hooks reported, 17 failed, and these are 16 of those 17. Each is real
+# debt with a size recorded in the diagnosis; none is a hook that cannot pass.
+- validate-string-versions
+- validate-no-manual-yaml
+- check-stub-implementations
+- check-no-fallbacks
+- check-error-raising
+- onex-single-class-per-file
+- validate-secrets
+- validate-hardcoded-env-vars
+- check-local-paths
+- check-local-paths-compute
+- check-private-ip-compute
+- check-todo-fixme-marker-compute
+- check-localhost-url-compute
+- check-hardcoded-topic-compute
+- validate-exception-handling
+- no-hardcoded-topics
+
+# (2) The seventeenth, and not debt. check-release-identity refuses a packaged
+# source change that is not ahead of the latest published version, which is the
+# ordinary mid-cycle state of the default branch between releases. It would fail
+# this job on almost every pull request while reporting nothing about the pull
+# request. Its own CI job already gates it where the question is meaningful.
+- check-release-identity
+
+# (3) Green, but sourced from a private repository. pre-commit installs a hook
+# environment by cloning its repo with plain git, carrying no credential of its
+# own — unlike `actions/checkout`, which can be handed a token. Running these
+# would make the job depend on credential resolution, and a gate that cannot
+# resolve its own inputs has not passed, it has not run. pre-commit installs
+# environments only for the hooks it will execute, so a skipped hook is never
+# cloned.
+#
+# Residual, stated: these three have no assertion from this job. Covering them
+# means arranging a credential for pre-commit's own clone, which is a separate
+# decision with its own blast radius.
+- no-untracked-todos
+- kb-doc-gate
+- secrets-baseline-wired
+
+# (4) Green locally, cannot run here, and ALREADY MIRRORED so nothing is lost.
+# validate-deterministic-skill-routing reads the skills tree out of the sibling
+# omniclaude clone, resolved from OMNI_HOME, which exists on a developer machine
+# and not on a runner. It refuses rather than skipping, deliberately, because a
+# silent local skip would be a false green (WS7/OMN-14671) — so it fails this
+# job with `cannot run: omniclaude skills root not found` rather than passing
+# vacuously. Measured on this pull request's first run of this job: 98 hooks
+# passed and this was the only failure.
+#
+# It is excluded rather than wired because the property is already gated: the
+# `check-deterministic-skills` job in ci.yml checks the sibling repository out
+# to `_external/omniclaude` and runs the same validator against it. Duplicating
+# that checkout here would buy no coverage. This exclusion is the one entry that
+# does NOT represent a gap.
+- validate-deterministic-skill-routing
