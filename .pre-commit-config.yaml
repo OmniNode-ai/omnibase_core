@@ -1939,12 +1939,25 @@ repos:
           session files. See OMN-4569."
         stages: [pre-commit]
 
+      # OMN-18899: the argv below is byte-identical to the one the
+      # `typed-bootstrap-environment-boundary` job in ci.yml runs, and
+      # tests/ci/test_typed_bootstrap_hook_ci_parity_omn18899.py reads both out
+      # of their own files and fails if they ever diverge. The hook previously
+      # ran the validator in strict mode over the staged files while CI ran it
+      # in inventory mode over all four roots, so the two verdicts disagreed by
+      # construction: CI was green against the OMN-17744 debt register while a
+      # whole-tree local run was red on all 321 registered findings.
+      #
+      # `--inventory` needs the whole corpus, not a file subset. It fails closed
+      # on an inventory entry no scan reached, so handing it staged filenames
+      # would report every unstaged entry as stale and refuse every commit.
+      # Hence `pass_filenames: false` — the roots come from the validator.
       - id: typed-bootstrap-environment-boundary
         name: Typed bootstrap is the only raw process-environment boundary (OMN-17744)
-        entry: uv run python -m omnibase_core.validators.no_new_os_environ
+        entry: uv run python -m omnibase_core.validators.no_new_os_environ --all --inventory
         language: system
         types: [python]
-        pass_filenames: true
+        pass_filenames: false
         stages: [pre-commit]
 
       # OMN-5063: Block untyped metadata dict fields
