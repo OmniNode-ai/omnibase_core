@@ -104,6 +104,29 @@ GATE_JOBS: tuple[str, ...] = (
     # this registration is enforcement-equivalent. Renaming the string breaks
     # the registration. Pinned by tests/ci/test_skip_count_ratchet_omn18790.py.
     "Skip Count Ratchet (OMN-18776)",  # skip-count-ratchet
+    # OMN-18865: the pre-merge wheel content-parity gate (ci.yml
+    # `wheel-content-parity`). It is an ORDINARY job running a pinned
+    # composite action, NOT a `uses:` job, so the jobs API reports its own
+    # display name as a SINGLE segment -- unlike the `route` entry above,
+    # which is a reusable and therefore reads as "<caller> / <inner job>".
+    #
+    # THE STRING MUST BE THE CHECK-RUN NAME, and this repository's own suite
+    # cannot tell you when it is not. The tests here compare this tuple
+    # against ci.yml and against the committed snapshot; neither knows what
+    # GitHub will actually name the run. A stale " / wheel-content-parity"
+    # suffix survived here from an earlier reusable-workflow design of this
+    # same gate and passed all 64 tests. It was caught only by reading the
+    # live check-run name off an open pull request, which is the one thing
+    # that can catch it, and had it merged the poller would have waited for a
+    # context nothing mints and wedged `dev` at the deadline. Verify against a
+    # live run before changing this string.
+    #
+    # Registered on the identical reasoning as the `route` entry above: the
+    # default-deny sweep already fails when a present job FAILS, but an
+    # unregistered job that is `skipped` or ABSENT yields SUCCESS -- so
+    # without this entry, deleting it from ci.yml would silently retire the
+    # proof on a fully green run.
+    "Wheel Content Parity (OMN-18865)",
 )
 
 # OMN-15222 (port of the omnibase_infra OMN-15214 canary, mirroring omniclaude's
@@ -114,6 +137,13 @@ GATE_JOBS: tuple[str, ...] = (
 # un-enforcement and must fail closed, not pass.
 STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
     {
+        # OMN-18865: paired with the GATE_JOBS entry above, same reasoning --
+        # GATE_JOBS' completeness anchor accepts ``skipped`` as complete, so
+        # this is the half that makes a SKIPPED (or CANCELLED) parity job fail
+        # closed rather than pass. The job carries no `if:` and no `needs:`,
+        # so it always runs to a terminal conclusion and a `skipped` here is a
+        # failure-to-run, never a legitimate absence.
+        "Wheel Content Parity (OMN-18865)",
         "OCC Companion Merged Gate (OMN-15214)",
         # OMN-18031: paired with the GATE_JOBS entry above. GATE_JOBS' anchor
         # accepts ``skipped`` as complete, so this is the half that makes a

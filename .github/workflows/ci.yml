@@ -148,6 +148,59 @@ jobs:
       RUNNER_FLEET_STATUS_TOKEN: ${{ secrets.RUNNER_FLEET_STATUS_TOKEN }}
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
 
+  # OMN-18865: the pre-merge twin of the OMN-14631 workspace content-parity
+  # gate. It proves this repository's built wheel carries byte-for-byte the
+  # tracked source tree under src/omnibase_core, plus whatever this repo
+  # declares force-included into that package from outside src/.
+  #
+  # WHY IT IS HERE RATHER THAN ONLY ON THE LAB. #1710 added a hatch
+  # force-include on 2026-09-19. It was GREEN here, and from 15:37Z it failed
+  # every BUILD_SOURCE=workspace runtime image build with
+  # `differing files (1 total): ['data/gitignore-baseline.yaml']`, leaving the
+  # .201 dev lane unable to rebuild at all until omnibase_infra#3846 taught
+  # the gate to resolve the mapping. Nothing in this repository looked at what
+  # its own wheel contained, so a packaging change could not be judged where
+  # it was written.
+  #
+  # IT IS A JOB IN THIS FILE, not a workflow of its own, deliberately: the
+  # OMN-14907 net-negative-surface ratchet locks the count of
+  # pull_request-triggered workflow files, and its own header says a gate
+  # belongs inside ci.yml rather than taking a slot. That is also why it is
+  # registered in GATE_JOBS + STRICT_SUCCESS_JOBS rather than in
+  # EXPECTED_EXTERNAL_CONTEXTS -- the in-run poller can see it here.
+  #
+  # The comparison is NOT copied into this repository: it lives once, in the
+  # omnibase_infra image gate, and the ACTION carries it. An action's
+  # repository is checked out at the ref pinned below, so one pin fixes the
+  # action and the comparison together, never a branch.
+  #
+  # A CI-TIME ACTION IS NOT A RUNTIME DEPENDENCY, so rule 7's layering is
+  # untouched: nothing is added to this project's metadata, lock file or
+  # import graph, and the fetched files die with the runner. This repository
+  # already calls omniclaude actions and reusables the same way, `route`
+  # above included.
+  wheel-content-parity:
+    # `needs: route` is load-bearing exactly as it is on `lint` below: without
+    # the edge the `runs-on` expression resolves to nothing and this job fails
+    # to SCHEDULE rather than to FAIL, which does not surface as a red check.
+    # The route job is fail-closed and yields hosted labels on a probe fault
+    # rather than redding this gate. No `zone-filter` and no `if:` -- this job
+    # is asserted in GATE_JOBS and STRICT_SUCCESS_JOBS, so a skip is a
+    # failure-to-run, and a packaging change can arrive on any diff shape.
+    needs: [route]
+    name: Wheel Content Parity (OMN-18865)
+    # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
+    runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Judge wheel content parity
+        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@5b0898a938202e499e8b2ce491f9fab65adeeb44
+        with:
+          package: omnibase_core
+
   # ---------------------------------------------------------------------------
   # Phase 1 - Quick Validation Jobs (all run in parallel)
   # ---------------------------------------------------------------------------
