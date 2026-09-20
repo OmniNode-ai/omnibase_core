@@ -132,10 +132,12 @@ class TestSkipListIsHonest:
 
         Measured on 2026-09-20: 17 hooks red over the whole tree, of which 16
         are debt and one (`check-release-identity`) asks a question that is
-        meaningless on a pull request, plus three green hooks sourced from a
-        private repository the workflow token cannot clone. Twenty entries.
-        The list is expected to shrink; growing it means a hook stopped being
-        enforced, which is a decision, not a cleanup. Lowering this number when
-        entries are removed is the ratchet working.
+        meaningless on a pull request; three green hooks sourced from a private
+        repository pre-commit's own clone cannot authenticate to; and one
+        (`validate-deterministic-skill-routing`) that needs a sibling clone a
+        runner does not have and is already mirrored by its own CI job.
+        Twenty-one entries. The list is expected to shrink; growing it means a
+        hook stopped being enforced, which is a decision, not a cleanup.
+        Lowering this number when entries are removed is the ratchet working.
         """
-        assert len(_skipped_ids()) <= 20
+        assert len(_skipped_ids()) <= 21

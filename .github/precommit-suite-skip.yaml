@@ -50,15 +50,32 @@
 - check-release-identity
 
 # (3) Green, but sourced from a private repository. pre-commit installs a hook
-# environment by cloning its repo, and the workflow token can read only this
-# repository, so running these would make the job depend on credential
-# resolution. A gate that cannot resolve its own inputs has not passed, it has
-# not run. pre-commit installs environments only for the hooks it will execute,
-# so a skipped hook is never cloned.
+# environment by cloning its repo with plain git, carrying no credential of its
+# own — unlike `actions/checkout`, which can be handed a token. Running these
+# would make the job depend on credential resolution, and a gate that cannot
+# resolve its own inputs has not passed, it has not run. pre-commit installs
+# environments only for the hooks it will execute, so a skipped hook is never
+# cloned.
 #
 # Residual, stated: these three have no assertion from this job. Covering them
-# means giving the job an installation token, which is a separate decision with
-# its own blast radius.
+# means arranging a credential for pre-commit's own clone, which is a separate
+# decision with its own blast radius.
 - no-untracked-todos
 - kb-doc-gate
 - secrets-baseline-wired
+
+# (4) Green locally, cannot run here, and ALREADY MIRRORED so nothing is lost.
+# validate-deterministic-skill-routing reads the skills tree out of the sibling
+# omniclaude clone, resolved from OMNI_HOME, which exists on a developer machine
+# and not on a runner. It refuses rather than skipping, deliberately, because a
+# silent local skip would be a false green (WS7/OMN-14671) — so it fails this
+# job with `cannot run: omniclaude skills root not found` rather than passing
+# vacuously. Measured on this pull request's first run of this job: 98 hooks
+# passed and this was the only failure.
+#
+# It is excluded rather than wired because the property is already gated: the
+# `check-deterministic-skills` job in ci.yml checks the sibling repository out
+# to `_external/omniclaude` and runs the same validator against it. Duplicating
+# that checkout here would buy no coverage. This exclusion is the one entry that
+# does NOT represent a gap.
+- validate-deterministic-skill-routing
