@@ -1,3 +1,13 @@
+## v0.47.20 (2026-09-20)
+
+### Release
+- Cut omnibase-core from dev at 0.47.20 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.19.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.19
+- feat(OMN-18920): a frozen delivery-context model for the dispatch protocol to reference (#1728)
+
 ## v0.47.19 (2026-09-20)
 
 ### Release
