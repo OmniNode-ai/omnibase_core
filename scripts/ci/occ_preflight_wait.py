@@ -111,6 +111,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Final, Protocol
+from urllib.parse import quote
 
 EXIT_OK: Final[int] = 0
 EXIT_ERROR: Final[int] = 1
@@ -151,6 +152,47 @@ AUTOBIND_NO_COMPANION_REQUIRED_REASONS: Final[tuple[str, ...]] = (
     "skip:DEPENDENCY_PIN_ONLY",
 )
 
+# OMN-18647 -- the DECLINED reasons on which the producer has TERMINALLY stood
+# down for this head SHA: it will not mint, now or on any later poll, and the
+# only path forward is a hand-authored companion on the OMN-15247 path.
+#
+# An ALLOWLIST, deliberately, and the direction of the asymmetry is the whole
+# point. Reading an in-flight mint as terminal tells a lane to hand-author a
+# companion into a live race: that is OMN-18881, where OCC#10524 collided with
+# an in-flight mint, raised SupersessionCheckBindingError 166 times and evicted
+# the node_occ_companion_effect consumer for four and a half hours. A reason
+# this set does not name keeps waiting, which costs runner minutes and nothing
+# else. `skip:LEASE_HELD` in particular is a SECOND PRODUCER MINTING RIGHT NOW
+# and must never appear here.
+AUTOBIND_TERMINAL_DECLINE_REASONS: Final[tuple[str, ...]] = (
+    "skip:NO_RED_DERIVABLE_CHECK",
+    "skip:DEFER_HAND_AUTHORED",
+)
+
+
+class EnumAutobindReadStatus(StrEnum):
+    """Why :meth:`GhPort.read_autobind_outcome` has, or has not, an outcome.
+
+    OMN-18647. The three are not interchangeable and collapsing them is the
+    defect this enum exists to remove: ABSENT means the producer has not
+    reported yet (wait), UNREADABLE means we could not ask (wait, but say so
+    -- never infer a verdict from a failed read), and READ means the producer
+    reported and the verdict is in hand.
+    """
+
+    READ = "read"
+    ABSENT = "absent"
+    UNREADABLE = "unreadable"
+
+
+@dataclass(frozen=True)
+class ModelAutobindOutcomeRead:
+    """One read of the head-SHA-bound ``occ-autobind / outcome`` check-run."""
+
+    status: EnumAutobindReadStatus
+    outcome: str = ""
+    reason: str = ""
+
 
 class EnumPreflightWaitOutcome(StrEnum):
     """One value per terminal or poll-again branch of :func:`decide_preflight_wait`."""
@@ -164,6 +206,11 @@ class EnumPreflightWaitOutcome(StrEnum):
     WAIT = "wait"
     FAIL_NOW = "fail_now"
     DEADLINE = "deadline"
+    # OMN-18647: the producer declined TERMINALLY for this head SHA. A
+    # failure, like FAIL_NOW, but a distinct token because the remedy is
+    # distinct: nothing is broken, and a hand-authored companion is the
+    # designed path rather than a workaround.
+    DECLINED_TERMINAL = "declined_terminal"
 
 
 @dataclass(frozen=True)
@@ -185,6 +232,7 @@ class ModelPreflightWaitDecision:
         return self.outcome in (
             EnumPreflightWaitOutcome.FAIL_NOW,
             EnumPreflightWaitOutcome.DEADLINE,
+            EnumPreflightWaitOutcome.DECLINED_TERMINAL,
         )
 
 
@@ -208,6 +256,26 @@ def is_no_companion_required(reason: str) -> bool:
     return any(
         reason.strip().startswith(marker)
         for marker in AUTOBIND_NO_COMPANION_REQUIRED_REASONS
+    )
+
+
+def is_terminal_decline(reason: str) -> bool:
+    """Whether a DECLINED ``reason=`` names a verdict that will never mint.
+
+    OMN-18647. Matched on the reason TOKEN at the START of the field, exactly
+    as :func:`is_no_companion_required` is and for the same reason: a message
+    that DESCRIBES a token ("considered skip:NO_RED_DERIVABLE_CHECK and
+    rejected that classification") must not read as the producer declaring it.
+
+    Returning ``True`` shortens a 1500 s wait to seconds. Returning ``False``
+    costs runner time and nothing else, so every uncertain input returns
+    ``False`` -- including the live mislabel, a ``no-op: ... already bound to
+    OCC#N`` reason the producer writes as DECLINED on a path that in fact
+    succeeded.
+    """
+    stripped = reason.strip()
+    return any(
+        stripped.startswith(marker) for marker in AUTOBIND_TERMINAL_DECLINE_REASONS
     )
 
 
@@ -285,14 +353,24 @@ def check_no_companion_required(
     ``True`` is returned only for an affirmative DECLINED whose reason token is
     the pin-only one, recorded against the PR's CURRENT head SHA.
     """
-    outcome = client.read_autobind_outcome(repo=repo, pr_number=pr_number)
-    if outcome is None:
+    read = client.read_autobind_outcome(repo=repo, pr_number=pr_number)
+    if read.status is EnumAutobindReadStatus.UNREADABLE:
+        # OMN-18647 split this out of the absent case below. Both fail closed
+        # and neither is a verdict, but a gate that cannot say which one it
+        # hit sends its reader looking for the wrong thing.
+        return False, (
+            "the occ-autobind outcome check-run for this PR's current head "
+            "SHA could not be READ (transport error, rate limit or malformed "
+            "response); that is not the same as the producer having declined "
+            "and is never read as one, so no exemption applies"
+        )
+    if read.status is EnumAutobindReadStatus.ABSENT:
         return False, (
             "no completed occ-autobind outcome is recorded against this PR's "
             "current head SHA (an outcome posted against an earlier commit is "
             "deliberately invisible here), so no exemption applies"
         )
-    outcome_word, outcome_reason = outcome
+    outcome_word, outcome_reason = read.outcome, read.reason
     if outcome_word.strip().upper() != AUTOBIND_OUTCOME_DECLINED:
         return False, (
             f"the occ-autobind outcome for this head is '{outcome_word.strip()}', "
@@ -344,6 +422,8 @@ def decide_preflight_wait(
     deadline_seconds: int,
     event_name: str,
     autobind_outcome: tuple[str, str] | None = None,
+    autobind_read_failed: bool = False,
+    terminal_decline_fast_exit: bool = False,
 ) -> ModelPreflightWaitDecision:
     """Pure verdict for one poll iteration.
 
@@ -361,6 +441,16 @@ def decide_preflight_wait(
     the check-run list could not be read. It is consulted in the
     ``stamp is None`` branch and nowhere else (OMN-18848): a PR that DOES cite
     evidence is evaluated on that evidence whatever the producer said.
+
+    ``autobind_read_failed`` says the producer's surface could not be READ
+    (rate limit, 5xx, malformed JSON), as against not having reported yet.
+    OMN-18647: the two produce the same wait and different text, and neither
+    is ever a decline -- a verdict is never inferred from a failed read.
+
+    ``terminal_decline_fast_exit`` gates every OMN-18647 behaviour. Left at
+    its default, this function returns today's verdict and today's text for
+    every input, which is what keeps the canary caller the ONLY caller whose
+    behaviour moves until the follow-up removes the flag fleet-wide.
     """
     if event_name != _ENFORCED_EVENT:
         return ModelPreflightWaitDecision(
@@ -409,11 +499,63 @@ def decide_preflight_wait(
                         "(OMN-18848)"
                     ),
                 )
+
+            # OMN-18647. The producer has stood down for this head SHA. No
+            # later poll changes that, so the 1500s budget buys nothing and
+            # the author reads a timeout instead of the reason.
+            if terminal_decline_fast_exit and (
+                outcome_word.strip().upper() == AUTOBIND_OUTCOME_DECLINED
+                and is_terminal_decline(outcome_reason)
+            ):
+                return ModelPreflightWaitDecision(
+                    outcome=EnumPreflightWaitOutcome.DECLINED_TERMINAL,
+                    reason="autobind_declined_terminal",
+                    detail=(
+                        "the occ-autobind producer TERMINALLY declined to mint a "
+                        f"companion for this head SHA: {outcome_reason.strip()}. "
+                        "No later poll changes this verdict, so this gate stops "
+                        "now rather than spending its remaining budget. A "
+                        "hand-authored OCC companion on the OMN-15247 path is "
+                        "the designed remedy and is SAFE to author now -- the "
+                        "producer has stood down for this head SHA, so there is "
+                        "no in-flight mint to collide with (contrast OMN-18881). "
+                        "It must be signed by a different lane than the one that "
+                        "authored the ticket, and a new commit re-opens this "
+                        "gate with a fresh verdict (OMN-18647)"
+                    ),
+                )
+
+        if terminal_decline_fast_exit and autobind_read_failed:
+            # Distinct from "the producer has not reported yet". Same wait,
+            # same fail-closed deadline, honest text: an unreadable surface is
+            # never evidence of a verdict in either direction.
+            return _wait_or_deadline(
+                reason="autobind_outcome_unreadable",
+                detail=(
+                    "the occ-autobind outcome check-run for this head SHA could "
+                    "not be READ (transport error, rate limit or malformed "
+                    "response) -- this is not the same as the producer not "
+                    "having reported, and it is never read as a decline. Waiting "
+                    "and failing closed; do NOT hand-author a companion on this "
+                    "signal, because an unreadable surface cannot rule out an "
+                    "in-flight mint (OMN-18881)"
+                ),
+                elapsed_seconds=elapsed_seconds,
+                deadline_seconds=deadline_seconds,
+            )
+
+        in_flight_warning = (
+            " -- hand-authoring a companion now is UNSAFE while a mint may be "
+            "in flight: it collides with the producer's own mint and can evict "
+            "the companion consumer (OMN-18881). Wait for a terminal outcome"
+            if terminal_decline_fast_exit
+            else ""
+        )
         return _wait_or_deadline(
             reason="stamp_absent",
             detail=(
                 "PR body has no evidence-source stamp line yet (the occ-autobind "
-                "mint may still be in flight)"
+                f"mint may still be in flight){in_flight_warning}"
             ),
             elapsed_seconds=elapsed_seconds,
             deadline_seconds=deadline_seconds,
@@ -512,7 +654,7 @@ class GhPort(Protocol):
 
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str
-    ) -> tuple[str, str] | None: ...
+    ) -> ModelAutobindOutcomeRead: ...
 
 
 class GhCli:
@@ -594,20 +736,27 @@ class GhCli:
 
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str
-    ) -> tuple[str, str] | None:
-        """The producer's ``(outcome, reason)`` for the PR's CURRENT head SHA.
+    ) -> ModelAutobindOutcomeRead:
+        """The producer's outcome for the PR's CURRENT head SHA.
 
         Head-SHA-bound by construction (OMN-18848): the head is re-read live on
         every poll and the check-runs are fetched for that SHA alone, so an
         outcome recorded against an earlier commit is invisible here.
 
-        Fail-OPEN, and only here: a failed head read, a failed or unparseable
-        check-run read, and an absent outcome all return ``None``, which leaves
-        :func:`decide_preflight_wait` on its existing path. This read can only
-        ever turn a doomed 1500s wait into an immediate pass; it must never be
-        able to change any other verdict, because the evidence it reads is
-        written by a different repo's runtime and an outage there would
-        otherwise become an outage here.
+        Fail-SAFE, in the sense that matters: a failed head read and a failed
+        or unparseable check-run read report UNREADABLE, an absent outcome
+        reports ABSENT, and both leave :func:`decide_preflight_wait` waiting.
+        OMN-18647 separates the two only so the job log can say which
+        happened -- no verdict is ever inferred from a read that failed,
+        because the evidence is written by a different repo's runtime and an
+        outage there must not become a verdict here.
+
+        Selected SERVER-SIDE by check name rather than by scanning a page of
+        results (OMN-18647). omnibase_infra#3874 carried 233 check-runs on
+        2026-09-20 with its ``occ-autobind / outcome`` on page 2, so the
+        previous single ``per_page=100`` page reported ABSENT for a PR whose
+        outcome existed -- an arm that fires on the outcome is worth nothing
+        on exactly the busy PRs that need it.
         """
         raw = self._run(
             [
@@ -625,26 +774,34 @@ class GhCli:
         )
         head_sha = raw.strip() if raw is not None else ""
         if not head_sha or head_sha == "null":
-            return None
+            return ModelAutobindOutcomeRead(status=EnumAutobindReadStatus.UNREADABLE)
 
         raw_runs = self._run(
             [
                 "gh",
                 "api",
-                f"repos/{repo}/commits/{head_sha}/check-runs?per_page=100",
+                f"repos/{repo}/commits/{head_sha}/check-runs"
+                f"?check_name={quote(AUTOBIND_OUTCOME_CHECK_NAME, safe='')}"
+                "&per_page=100",
                 "--jq",
                 ".check_runs",
             ]
         )
         if raw_runs is None:
-            return None
+            return ModelAutobindOutcomeRead(status=EnumAutobindReadStatus.UNREADABLE)
         try:
             data = json.loads(raw_runs)
         except json.JSONDecodeError:
-            return None
+            return ModelAutobindOutcomeRead(status=EnumAutobindReadStatus.UNREADABLE)
         if not isinstance(data, list):
-            return None
-        return read_autobind_outcome_from_check_runs(data)
+            return ModelAutobindOutcomeRead(status=EnumAutobindReadStatus.UNREADABLE)
+        parsed = read_autobind_outcome_from_check_runs(data)
+        if parsed is None:
+            return ModelAutobindOutcomeRead(status=EnumAutobindReadStatus.ABSENT)
+        outcome, reason = parsed
+        return ModelAutobindOutcomeRead(
+            status=EnumAutobindReadStatus.READ, outcome=outcome, reason=reason
+        )
 
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
@@ -664,14 +821,19 @@ class GhCli:
         return False
 
 
+_AUTOBIND_NOT_CONSULTED: Final[ModelAutobindOutcomeRead] = ModelAutobindOutcomeRead(
+    status=EnumAutobindReadStatus.ABSENT
+)
+
+
 def _resolve_facts(
     client: GhPort, *, repo: str, pr_number: str, occ_repo: str
-) -> tuple[str | None, str | None, bool, str, tuple[str, str] | None]:
+) -> tuple[str | None, str | None, bool, str, ModelAutobindOutcomeRead]:
     """One round of live reads. Returns (pr_body, companion_state,
-    cited_sha_is_ancestor, resolved_sha, autobind_outcome)."""
+    cited_sha_is_ancestor, resolved_sha, autobind)."""
     pr_body = client.read_pr_body(repo=repo, pr_number=pr_number)
     if pr_body is None:
-        return None, None, False, "", None
+        return None, None, False, "", _AUTOBIND_NOT_CONSULTED
 
     stamp = parse_evidence_source(pr_body)
     if stamp is None:
@@ -691,7 +853,7 @@ def _resolve_facts(
         state, sha = client.read_companion(
             occ_repo=occ_repo, pr_number=occ_ref.group(1)
         )
-        return pr_body, state, False, sha, None
+        return pr_body, state, False, sha, _AUTOBIND_NOT_CONSULTED
 
     if HEX_SHA_RE.match(stamp.lower()) is not None:
         canonical = client.canonicalize_sha(occ_repo=occ_repo, sha=stamp)
@@ -699,10 +861,10 @@ def _resolve_facts(
         is_ancestor = client.sha_is_ancestor(
             occ_repo=occ_repo, sha=resolved_sha, branches=OCC_DURABLE_BRANCHES
         )
-        return pr_body, None, is_ancestor, resolved_sha, None
+        return pr_body, None, is_ancestor, resolved_sha, _AUTOBIND_NOT_CONSULTED
 
     # Malformed; decide_preflight_wait reports this itself from pr_body.
-    return pr_body, None, False, "", None
+    return pr_body, None, False, "", _AUTOBIND_NOT_CONSULTED
 
 
 def _write_github_output(name: str, value: str, *, github_output_path: str) -> None:
@@ -746,6 +908,20 @@ def _build_parser() -> argparse.ArgumentParser:
             "indeterminate outcome."
         ),
     )
+    # OMN-18647. Off unless the caller asks for it, so the one pinned canary
+    # caller is the only caller whose behaviour moves. NOT a bypass and NOT a
+    # kill switch: it can only ever shorten a wait that was going to fail, and
+    # every fail-closed branch is identical in both positions. The follow-up
+    # that takes the fleet over deletes this flag and its workflow input.
+    parser.add_argument(
+        "--terminal-decline-fast-exit",
+        action="store_true",
+        help=(
+            "End the wait immediately when the occ-autobind producer has "
+            "TERMINALLY declined to mint for this head SHA, instead of "
+            "polling to the deadline and reporting stamp_absent."
+        ),
+    )
     return parser
 
 
@@ -781,7 +957,7 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
             companion_state,
             cited_sha_is_ancestor,
             resolved_sha,
-            autobind_outcome,
+            autobind,
         ) = _resolve_facts(
             client, repo=args.repo, pr_number=args.pr_number, occ_repo=args.occ_repo
         )
@@ -792,7 +968,13 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
             elapsed_seconds=elapsed,
             deadline_seconds=args.deadline_seconds,
             event_name=args.event_name,
-            autobind_outcome=autobind_outcome,
+            autobind_outcome=(
+                (autobind.outcome, autobind.reason)
+                if autobind.status is EnumAutobindReadStatus.READ
+                else None
+            ),
+            autobind_read_failed=(autobind.status is EnumAutobindReadStatus.UNREADABLE),
+            terminal_decline_fast_exit=args.terminal_decline_fast_exit,
         )
         print(
             f"occ-preflight wait: [{decision.outcome.value}] {decision.reason} -- {decision.detail}"
