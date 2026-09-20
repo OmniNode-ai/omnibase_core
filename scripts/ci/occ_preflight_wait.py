@@ -77,6 +77,20 @@ list yields ``None``, which leaves every existing branch exactly as it was.
 Evidence written by another repo's runtime must never be able to fail this
 gate on its own.
 
+The third consumer (OMN-18882)
+------------------------------
+``.github/workflows/receipt-gate.yml`` is a third gate in the same family and
+hard-fails the identical PR on its own missing-``Evidence-Source`` check
+(measured on omnimarket#2701 at 10:38:18Z). It is a bash gate with no Python
+process of its own, so it drives this module's
+``--check-no-companion-required`` one-shot probe over
+:func:`check_no_companion_required`. That probe reuses this module's token
+set, predicate and check-run reader unchanged -- the token is defined once, in
+one place, for every gate in the family. Its ONLY difference is direction of
+failure: it fails CLOSED, because its caller's existing behaviour is a hard
+failure rather than a poll, so an unreadable outcome must leave that hard
+failure standing rather than waive it.
+
 A ``merge_group`` (or any non-``pull_request``) event always ``PROCEED``s
 immediately, never waits. Invariant I2 in ``occ-preflight.yml``'s own header
 requires a ``merge_group`` run to re-validate fully against the pinned
@@ -243,6 +257,62 @@ def read_autobind_outcome_from_check_runs(
         reason = payload.split(marker, 1)[1].strip() if marker in payload else ""
         return outcome, reason
     return None
+
+
+def check_no_companion_required(
+    *, repo: str, pr_number: str, client: GhPort
+) -> tuple[bool, str]:
+    """Whether the producer affirmatively declined a companion for this head.
+
+    OMN-18882. The bounded wait above is one consumer of the exemption; the
+    Receipt Gate (``.github/workflows/receipt-gate.yml``) is another, and it is
+    a bash gate with no Python process of its own, so it needs a decisive
+    process-level answer rather than an importable predicate. This function --
+    and the ``--check-no-companion-required`` CLI mode over it -- is that
+    answer, resolved through the SAME
+    :data:`AUTOBIND_NO_COMPANION_REQUIRED_REASONS`,
+    :func:`is_no_companion_required` and
+    :func:`read_autobind_outcome_from_check_runs` the wait uses. The token is
+    defined once, here, for every gate in the family; a gate re-spelling it in
+    its own bash is how the fleet's definition of the exemption splits in
+    silence.
+
+    Unlike the wait's read, this one fails CLOSED, because the caller's
+    existing behaviour is a hard failure rather than a poll: an unresolvable
+    head, an unreadable check-run list, an absent outcome, an outcome on a
+    different SHA and every non-pin reason all return ``False``, which leaves
+    the Receipt Gate's ``Evidence-Source`` hard fail exactly where it was.
+    ``True`` is returned only for an affirmative DECLINED whose reason token is
+    the pin-only one, recorded against the PR's CURRENT head SHA.
+    """
+    outcome = client.read_autobind_outcome(repo=repo, pr_number=pr_number)
+    if outcome is None:
+        return False, (
+            "no completed occ-autobind outcome is recorded against this PR's "
+            "current head SHA (an outcome posted against an earlier commit is "
+            "deliberately invisible here), so no exemption applies"
+        )
+    outcome_word, outcome_reason = outcome
+    if outcome_word.strip().upper() != AUTOBIND_OUTCOME_DECLINED:
+        return False, (
+            f"the occ-autobind outcome for this head is '{outcome_word.strip()}', "
+            f"not {AUTOBIND_OUTCOME_DECLINED}; only a decline can mean no "
+            "companion is owed"
+        )
+    if not is_no_companion_required(outcome_reason):
+        return False, (
+            f"the occ-autobind outcome for this head is DECLINED with reason "
+            f"'{outcome_reason.strip()}', which is not the dependency-pin-only "
+            "verdict; this PR still owes an evidence citation"
+        )
+    return True, (
+        "the occ-autobind producer classified this head's diff as "
+        f"dependency-pin-only (reason '{outcome_reason.strip()}'), so no OCC "
+        "evidence companion exists or will be minted for it. The verdict is "
+        "DERIVED from the diff by the producer, never asserted in the PR body, "
+        "and it is bound to this head SHA -- a new commit carries no outcome "
+        "and re-opens this gate (OMN-18848)"
+    )
 
 
 def _wait_or_deadline(
@@ -665,6 +735,17 @@ def _build_parser() -> argparse.ArgumentParser:
         default="",
         help="Value of $GITHUB_OUTPUT, resolved by the caller and passed explicitly.",
     )
+    parser.add_argument(
+        "--check-no-companion-required",
+        action="store_true",
+        help=(
+            "OMN-18882 one-shot probe, for gates that are not this wait: exit 0 "
+            "iff the occ-autobind producer recorded a dependency-pin-only "
+            "DECLINE against the PR's CURRENT head SHA, else exit 1. Never "
+            "polls, never reads the PR body, and fails closed on every "
+            "indeterminate outcome."
+        ),
+    )
     return parser
 
 
@@ -675,6 +756,22 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
         return EXIT_ERROR
 
     client: GhPort = gh if gh is not None else GhCli()
+
+    if args.check_no_companion_required:
+        # OMN-18882: the one-shot probe the Receipt Gate drives. Terminal in
+        # one read -- no poll loop, because by the time that gate runs this
+        # run has already paid the OMN-15214 budget for the same fact.
+        exempt, detail = check_no_companion_required(
+            repo=args.repo, pr_number=args.pr_number, client=client
+        )
+        print(f"occ-autobind no-companion-required: {str(exempt).lower()} -- {detail}")
+        if not exempt:
+            return EXIT_ERROR
+        _write_github_output(
+            "evidence_not_required", "true", github_output_path=args.github_output_path
+        )
+        return EXIT_OK
+
     start = time.monotonic()
 
     while True:

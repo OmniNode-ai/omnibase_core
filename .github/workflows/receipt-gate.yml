@@ -17,6 +17,12 @@
 #                   since this workflow checks that repo out at that path.
 #   receipts-dir:   path to ModelDodReceipt YAMLs, relative to the
 #                   onex_change_control checkout (default: drift/dod_receipts).
+#   core-ref:       omnibase_core ref checked out to supply
+#                   scripts/ci/occ_preflight_wait.py, which resolves the
+#                   OMN-18848 dependency-pin-only exemption (default: dev).
+#                   omnibase_core's main is release-synced and lags dev, so it
+#                   is not a safe default for a module that moves with the
+#                   cross-repo autobind contract.
 #
 # Evidence-Source pinning (OMN-10419 / T6a):
 #   PRs opened after this workflow's merge SHA must include a line in the PR body:
@@ -51,6 +57,11 @@ on:
         type: string
         required: false
         default: legacy
+      core-ref:
+        description: omnibase_core ref to check out for the shared occ_preflight_wait.py probe.
+        type: string
+        required: false
+        default: dev
 
 permissions:
   contents: read
@@ -189,6 +200,31 @@ jobs:
           fi
           echo "exempt=${exempt}" >> "$GITHUB_OUTPUT"
 
+      # OMN-18882: make scripts/ci/occ_preflight_wait.py available BEFORE the
+      # step that needs it, mirroring occ-preflight.yml's own early checkout.
+      # For omnibase_core's own PRs GITHUB_WORKSPACE already IS the module's
+      # repository, so the `hashFiles` guard skips this and a PR editing the
+      # module tests its OWN edit rather than silently running the core-ref
+      # default. For every EXTERNAL caller GITHUB_WORKSPACE is the CALLER's
+      # repository, which carries no such file, and without this step the probe
+      # below cannot run at all.
+      #
+      # The path is workspace-relative because actions/checkout REFUSES a path
+      # outside GITHUB_WORKSPACE, and the leaf is distinct from both
+      # occ-preflight.yml's `.occ-preflight-deps/omnibase_core_wait` and this
+      # workflow's own later `.receipt-gate-deps/omnibase_core` (pinned to a
+      # different ref): actions/checkout CLEANS the path it is given, so a
+      # shared leaf lets one gate wipe another's checkout mid-run.
+      - name: Check out omnibase_core (for occ_preflight_wait.py)
+        if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control' && ! hashFiles('scripts/ci/occ_preflight_wait.py')
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_core
+          path: .receipt-gate-deps/omnibase_core_wait
+          ref: ${{ inputs.core-ref }}
+          fetch-depth: 1
+          persist-credentials: false
+
       # OMN-10419: Resolve Evidence-Source commit-ish to an exact OCC SHA before
       # checking out onex_change_control. Accepts two forms:
       #   OCC#<number> — open PR head SHA (resolved via GitHub API)
@@ -203,6 +239,7 @@ jobs:
         if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
           PR_CREATED_AT: ${{ github.event.pull_request.created_at }}
@@ -276,6 +313,53 @@ jobs:
             exit 0
           fi
 
+          # OMN-18882: the dependency-pin-only exemption, the third gate in the
+          # OMN-18848 family to honour it. A post-release version bump (manifest
+          # + lockfile, edits confined to version/dependency-pin keys) carries no
+          # behavioural claim, so the occ-autobind producer correctly DECLINES to
+          # mint a companion for it -- which makes the Evidence-Source citation
+          # demanded below impossible to satisfy, forever (measured on
+          # omnimarket#2701 at 10:38:18Z).
+          #
+          # This is NOT a skip token. Nothing in the PR body is read for it: the
+          # producer classifies the DIFF and records the verdict on an
+          # `occ-autobind / outcome` check-run bound to the PR's CURRENT head
+          # SHA. An author cannot assert it, and a new commit invalidates it --
+          # the new SHA carries no outcome and this gate returns to its ordinary
+          # hard fail.
+          #
+          # The verdict is resolved through scripts/ci/occ_preflight_wait.py, the
+          # single module that defines the reason token
+          # (AUTOBIND_NO_COMPANION_REQUIRED_REASONS) for every gate in the
+          # family. Do not re-spell the token here: two copies of it is how the
+          # fleet's definition of the exemption splits in silence.
+          #
+          # Fails CLOSED in every other shape. The probe exits non-zero on an
+          # unresolvable head SHA, an unreadable check-run list, an absent
+          # outcome, an outcome recorded against a different SHA, and every
+          # non-pin reason -- and a non-zero exit inside this `if` condition
+          # leaves the hard fail below exactly where it was.
+          if [ -z "$evidence_source" ]; then
+            # Resolve an ABSOLUTE path to the probe: the in-tree copy when this
+            # repo IS omnibase_core (a self-referential PR tests its own edit),
+            # otherwise the early checkout above. Never a bare workspace-relative
+            # path, which resolves only by accident for local callers.
+            if [ -f "$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py" ]; then
+              pin_probe="$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py"
+            else
+              pin_probe="$GITHUB_WORKSPACE/.receipt-gate-deps/omnibase_core_wait/scripts/ci/occ_preflight_wait.py"
+            fi
+
+            if [ -f "$pin_probe" ] && python3 "$pin_probe" \
+                 --check-no-companion-required \
+                 --repo "$GH_REPO" \
+                 --pr-number "$resolved_pr_num"; then
+              echo "::notice::Evidence-Source not required: the occ-autobind producer classified this head's diff as dependency-pin-only, so no OCC evidence companion exists or will be minted for it (OMN-18848/OMN-18882). The verdict is DERIVED from the diff by the producer, never asserted in the PR body, and is bound to this head SHA -- a new commit re-opens this gate."
+              echo "evidence_not_required=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
           # If no Evidence-Source line present, hard fail.
           if [ -z "$evidence_source" ]; then
             echo "::error::RECEIPT GATE FAILED: PR body is missing required 'Evidence-Source:' line (OMN-10419). Add one of: 'Evidence-Source: OCC#<PR-number>' or 'Evidence-Source: <occ-sha>'"
@@ -342,8 +426,18 @@ jobs:
       # back to main; any real SHA pins the checkout to that exact commit.
       # onex_change_control PRs are the only exception and validate evidence
       # inside the PR checkout to avoid circular "already on main" dependency.
+      # OMN-18882: the second exemption, exactly parallel to bot_exempt above
+      # and gating exactly the same steps. `evidence_not_required` is a DERIVED
+      # verdict, read off an `occ-autobind / outcome` check-run bound to the
+      # PR's CURRENT head SHA -- it is NOT a token anyone can write in a PR
+      # body, nothing in the body is read for it, and a new commit invalidates
+      # it because the new SHA carries no outcome and this gate returns to its
+      # ordinary hard fail. A dependency-pin-only PR has no OCC evidence to
+      # check out, so every step from here down must honour the flag;
+      # tests/ci/test_receipt_gate_pin_only_workflow_shape_omn18882.py pins that
+      # exhaustively so a newly added step cannot silently miss it.
       - name: Check out onex_change_control (for contracts + receipts)
-        if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/onex_change_control
@@ -355,7 +449,7 @@ jobs:
       # at the pinned OCC SHA. A valid commit-ish with no contract for this
       # ticket (e.g., predates the ticket) is a hard FAIL.
       - name: Assert contract exists at pinned OCC SHA
-        if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -408,13 +502,13 @@ jobs:
           exit "$fail"
 
       - name: Set up Python 3.13
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
       - name: Install uv
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         uses: astral-sh/setup-uv@v7
 
       # OMN-12565: Runner Python write-contract preflight.
@@ -431,7 +525,7 @@ jobs:
       # on a fresh runner). This preflight asserts that contract up front and
       # fails loudly if it is violated, before any install or gate step runs.
       - name: Preflight runner Python write contract
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         env:
           RECEIPT_GATE_VENV: ${{ github.workspace }}/.receipt-gate-venv
         run: |
@@ -467,7 +561,7 @@ jobs:
       # fallback where omnibase-core's published package references a git+https
       # URL for omnibase-compat that no longer resolves.
       - name: Check out omnibase_compat (transitive dep)
-        if: "steps.bot_exempt.outputs.exempt != 'true' && ! hashFiles('./src/omnibase_compat/__init__.py') && ! hashFiles('./omnibase_compat/pyproject.toml')"
+        if: "steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true' && ! hashFiles('./src/omnibase_compat/__init__.py') && ! hashFiles('./omnibase_compat/pyproject.toml')"
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_compat
@@ -487,7 +581,7 @@ jobs:
       # not the calling workflow's own YAML, so pinning callers' `uses:` to a
       # SHA alone would not have propagated a Python source-level fix).
       - name: Check out omnibase_core (for receipt-gate deps)
-        if: "steps.bot_exempt.outputs.exempt != 'true' && ! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
+        if: "steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true' && ! hashFiles('./src/omnibase_core/__init__.py') && ! hashFiles('./omnibase_core/pyproject.toml')"
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_core
@@ -496,7 +590,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install omnibase_core
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         # Install from the PR's in-tree checkout (omnibase_core repo itself),
         # or a sibling checkout, or the .receipt-gate-deps source checkouts.
         # Never fall back to PyPI — the published package has a broken transitive
@@ -635,7 +729,7 @@ jobs:
           echo "RECEIPT_GATE_PY=$venv_py" >> "$GITHUB_ENV"
 
       - name: Verify receipt_gate_cli importable
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         # Fail-fast check: the preceding install step claims success, but if uv
         # silently substituted a PyPI wheel for omnibase-core (OMN-9198), the
         # installed package won't contain recent modules. Catch that here so the
@@ -649,7 +743,7 @@ jobs:
 
       - name: Resolve PR snapshot
         id: resolve_body
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         # Resolve mutable GitHub state exactly once. All eligibility checks below
         # consume these files plus the pinned OCC SHA; they do not re-fetch PR
         # metadata or move the evidence ref during validation.
@@ -719,7 +813,7 @@ jobs:
 
       - name: Resolve evidence snapshot
         id: evidence
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         run: |
           set -euo pipefail
           repo_short="${GITHUB_REPOSITORY##*/}"
@@ -759,7 +853,7 @@ jobs:
       # Evidence-Source, reusing its /tmp/occ_sha.txt output and this job's
       # /tmp/pr_body.txt.
       - name: Validate Evidence-Commit binding
-        if: steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true' && github.repository != 'OmniNode-ai/onex_change_control'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -769,7 +863,7 @@ jobs:
             --occ-sha-file /tmp/occ_sha.txt
 
       - name: Run OCC Eligibility
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         run: |
           set -euo pipefail
           PR_TITLE="$(cat /tmp/pr_title.txt)"
@@ -804,7 +898,7 @@ jobs:
             | tee /tmp/occ_eligibility.json
 
       - name: Run Receipt-Gate
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.resolve_evidence_source.outputs.evidence_not_required != 'true'
         run: |
           set -euo pipefail
           PR_BODY="$(cat /tmp/pr_body.txt)"
