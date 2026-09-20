@@ -5,8 +5,8 @@
 - 1 release-relevant commit(s) merged since v0.47.18.
 - Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
 
-### Included Since v0.47.18
-- feat(OMN-18852): stamp the delegate-skill command at its true publish instant (#1720)
+### Changes
+- Stamped the delegate-skill command with its true publish instant, so a consumer reads when the command was actually published rather than when it was constructed (#1720).
 
 ## v0.47.18 (2026-09-19)
 
