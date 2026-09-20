@@ -1718,6 +1718,95 @@ jobs:
         run: |
           .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all --inventory
 
+  # The pre-commit suite, re-asserted remotely (OMN-18899).
+  #
+  # No workflow in this repository ran `pre-commit run --all-files`, and that
+  # absence is the whole drift mechanism. Measured over the whole tree on
+  # 2026-09-20: 119 hooks reported and 19 failed, of which 14 had no CI mirror
+  # of any kind. A check-only hook that nothing re-asserts on a pull request is
+  # advisory in practice, and one already red on files a lane did not touch
+  # teaches that lane to read past it. Two of those 19 were red for seven
+  # months and nine months respectively, and both were found by reading the
+  # hooks rather than by any gate firing.
+  #
+  # This job does NOT replace the ~50 single-shard leaf jobs under
+  # `quality-gate`, which stay as they are. Those cover the hooks that have a
+  # mirror; this covers the ones that do not, in one job rather than fourteen.
+  # Measured hook time for the whole suite on the census tree: 369 seconds.
+  #
+  # Enforcement: this job is inside ci.yml, so the required `CI Summary`
+  # context fails on it through that gate's default-deny sweep over every
+  # present-and-completed job in its own run
+  # (scripts/ci/ci_summary_gate.py, `sweep_failures`). It needs no entry in
+  # GATE_JOBS, no `needs:` edge and no allowlist change; a `SOFT_ALLOWLIST`
+  # entry is what would make it advisory, and it has none.
+  #
+  # Unconditional: no `if:`, no `needs:`, no `paths:` filter. A gate that can
+  # be legitimately absent on some pull-request shape does not fail that
+  # shape.
+  #
+  # The excluded hook ids, and the reason for each, are in
+  # .github/precommit-suite-skip.yaml. Everything not named there runs, so a
+  # newly added hook is enforced without anyone remembering to widen a list.
+  # Removing a line from that file is how this job widens, and OMN-18899 is the
+  # ticket that does it.
+  #
+  # That file is deliberately NOT under .github/workflows/. The
+  # validator-requirements consumer resolves CI coverage by substring-matching
+  # validator keywords against the concatenated text of every workflow file, so
+  # a list of hook ids living in one reads as those validators HAVING CI
+  # coverage — the opposite of what the list means. Its own header carries the
+  # measurement.
+  precommit-suite:
+    name: Pre-commit Suite (OMN-18899)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          save-cache: false
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Cache pre-commit hook environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: precommit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run the pre-commit suite
+        run: |
+          set -euo pipefail
+          skip_file=.github/precommit-suite-skip.yaml
+          SKIP="$(uv run python -c "import sys, yaml; print(','.join(yaml.safe_load(open(sys.argv[1]))))" "$skip_file")"
+          if [ -z "$SKIP" ]; then
+            echo "::error::$skip_file resolved to no hook ids; refusing to guess a scope"
+            exit 1
+          fi
+          export SKIP
+          echo "skipping: $SKIP"
+          uv run pre-commit run --all-files --show-diff-on-failure
+
   # Duplicate registry id guard (OMN-14401). Rejects config/registry YAML files
   # declaring duplicate ids over a key that is not guaranteed unique (the
   # OMN-14395/OMN-14396 bug shape). MUST run as a job in THIS workflow file —
