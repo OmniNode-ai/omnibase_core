@@ -170,18 +170,36 @@ jobs:
   # EXPECTED_EXTERNAL_CONTEXTS -- the in-run poller can see it here.
   #
   # The comparison is NOT copied into this repository: it lives once, in the
-  # image gate, and the reusable resolves the workflow and the scripts
-  # together at the single pinned commit below, never a branch.
+  # omnibase_infra image gate, and the ACTION carries it. An action's
+  # repository is checked out at the ref pinned below, so one pin fixes the
+  # action and the comparison together, never a branch.
   #
-  # A CI-TIME CHECKOUT IS NOT A RUNTIME DEPENDENCY, so rule 7's layering is
+  # A CI-TIME ACTION IS NOT A RUNTIME DEPENDENCY, so rule 7's layering is
   # untouched: nothing is added to this project's metadata, lock file or
   # import graph, and the fetched files die with the runner. This repository
-  # already calls omniclaude reusables the same way, including `route` above.
+  # already calls omniclaude actions and reusables the same way, `route`
+  # above included.
   wheel-content-parity:
+    # `needs: route` is load-bearing exactly as it is on `lint` below: without
+    # the edge the `runs-on` expression resolves to nothing and this job fails
+    # to SCHEDULE rather than to FAIL, which does not surface as a red check.
+    # The route job is fail-closed and yields hosted labels on a probe fault
+    # rather than redding this gate. No `zone-filter` and no `if:` -- this job
+    # is asserted in GATE_JOBS and STRICT_SUCCESS_JOBS, so a skip is a
+    # failure-to-run, and a packaging change can arrive on any diff shape.
+    needs: [route]
     name: Wheel Content Parity (OMN-18865)
-    uses: OmniNode-ai/omnibase_infra/.github/workflows/wheel-content-parity-reusable.yml@344d834bbe372704019e30e7f8bc6d3e4a9a0c8f
-    with:
-      package: omnibase_core
+    # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
+    runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Judge wheel content parity
+        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@62337b2fdc3235efe6eb63acdf3c2ce40c02b206
+        with:
+          package: omnibase_core
 
   # ---------------------------------------------------------------------------
   # Phase 1 - Quick Validation Jobs (all run in parallel)
