@@ -20,6 +20,11 @@ from omnibase_core.models.dispatch import ModelMessageDeliveryContext
 
 pytestmark = pytest.mark.unit
 
+# Placed under tests/unit/models/dispatch/ to mirror the source tree, and
+# NOT at the tests/ root: `test_detect_test_paths` pins the always-run set to
+# exactly the non-unit test tree, so a unit test sitting at the root silently
+# widens what every CI run executes. CI caught this on the first push.
+
 
 def test_it_is_importable_from_the_dispatch_package_and_frozen() -> None:
     """AC1. Frozen is asserted, not declared in a docstring.
@@ -96,7 +101,7 @@ def test_this_step_is_inert_nothing_imports_it_yet() -> None:
         scrub_git_location_env,
     )
 
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = Path(__file__).resolve().parents[4]
     # env= is not optional here (OMN-14891): git exports GIT_DIR and
     # GIT_WORK_TREE into every hook environment and they OVERRIDE `cwd=`, so
     # under a pre-push hook this walk would silently search the wrong tree
@@ -116,5 +121,5 @@ def test_this_step_is_inert_nothing_imports_it_yet() -> None:
     assert referencing == {
         "src/omnibase_core/models/dispatch/__init__.py",
         "src/omnibase_core/models/dispatch/model_message_delivery_context.py",
-        "tests/test_omn18920_message_delivery_context.py",
+        "tests/unit/models/dispatch/test_omn18920_message_delivery_context.py",
     }, sorted(referencing)
