@@ -832,3 +832,166 @@ def foo():
         violations = check_file(test_file)
         # "print-okay:" is not "print-ok:", so should be flagged
         assert len(violations) == 1
+
+
+@pytest.mark.unit
+class TestMultiLinePrintOkSuppression:
+    """The annotation is honored anywhere on a multi-line call (OMN-18899).
+
+    A call is attributed to its opening line, but a formatter wraps a long call
+    and puts the trailing comment on the closing-paren line. Reading only the
+    opening line and the line above made a correctly annotated call report as a
+    blocking error. Five such sites existed in this repository, every one of
+    them already annotated.
+    """
+
+    def test_annotation_on_closing_paren_line_suppresses(self) -> None:
+        """The exact defect shape: annotation on the closing-paren line."""
+        source = """
+def main() -> int:
+    print(
+        "usage: thing <file>"
+    )  # print-ok: CLI output
+    return 1
+"""
+        source_lines = source.splitlines()
+        import ast
+
+        detector = PrintStatementDetector("cli.py", source_lines)
+        detector.visit(ast.parse(source))
+        assert detector.violations == []
+
+    def test_annotation_on_interior_argument_line_suppresses(self) -> None:
+        """An annotation on a wrapped argument line is part of the call span."""
+        source = """
+def main() -> int:
+    print(
+        "usage: thing <file>",  # print-ok: CLI output
+        file=sys.stdout,
+    )
+    return 1
+"""
+        source_lines = source.splitlines()
+        import ast
+
+        detector = PrintStatementDetector("cli.py", source_lines)
+        detector.visit(ast.parse(source))
+        assert detector.violations == []
+
+    def test_unannotated_multiline_call_is_still_an_error(self) -> None:
+        """Negative control: widening the read must not suppress everything."""
+        source = """
+def main() -> int:
+    print(
+        "leaked diagnostic"
+    )
+    return 1
+"""
+        source_lines = source.splitlines()
+        import ast
+
+        detector = PrintStatementDetector("cli.py", source_lines)
+        detector.visit(ast.parse(source))
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["severity"] == "error"
+        assert detector.violations[0]["line"] == 3
+
+    def test_annotation_below_the_closing_paren_does_not_suppress(self) -> None:
+        """The span ends at the closing paren; a later line is out of scope."""
+        source = """
+def main() -> int:
+    print(
+        "leaked diagnostic"
+    )
+    # print-ok: this annotation belongs to nothing
+    return 1
+"""
+        source_lines = source.splitlines()
+        import ast
+
+        detector = PrintStatementDetector("cli.py", source_lines)
+        detector.visit(ast.parse(source))
+        assert len(detector.violations) == 1
+
+    def test_single_line_behavior_is_unchanged(self) -> None:
+        """A single-line call has end_lineno == lineno; both forms still work."""
+        source = """
+def main() -> int:
+    print("a")  # print-ok: CLI output
+    # print-ok: CLI output
+    print("b")
+    print("c")
+    return 1
+"""
+        source_lines = source.splitlines()
+        import ast
+
+        detector = PrintStatementDetector("cli.py", source_lines)
+        detector.visit(ast.parse(source))
+        assert len(detector.violations) == 1
+        assert detector.violations[0]["line"] == 6
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(120)
+class TestHookScopeIsClean:
+    """The hook's own file scope carries no blocking finding (OMN-18899).
+
+    The hook has no job in this repository's CI workflows, so nothing
+    re-asserted its verdict on a pull request and the tree drifted red while
+    every developer read past it. This test is that missing assertion: it
+    resolves the hook's declared scope from the configuration rather than from
+    a copied path list, so widening the hook widens the test with it.
+    """
+
+    #: The directory the declared include pattern is anchored to. Walking the
+    #: filesystem rather than asking git keeps this test free of a subprocess
+    #: whose environment a git hook can retarget (OMN-14891) and free of a raw
+    #: process-environment read (OMN-17744).
+    SCOPE_ROOT = "src"
+
+    def test_no_blocking_errors_in_declared_scope(self) -> None:
+        import re
+
+        import yaml
+
+        repo_root = SCRIPTS_DIR.parent.parent
+        config = yaml.safe_load(
+            (repo_root / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+        )
+        hooks = [
+            hook
+            for repo in config["repos"]
+            for hook in repo.get("hooks", [])
+            if hook["id"] == "check-no-print-statements"
+        ]
+        assert len(hooks) == 1, "hook id is not declared exactly once"
+        files_pattern = hooks[0]["files"]
+        # If the hook is ever widened past this root the walk below would stop
+        # covering it, so fail loudly here rather than silently under-reading.
+        assert files_pattern.startswith(f"^{self.SCOPE_ROOT}/"), (
+            f"hook scope moved off {self.SCOPE_ROOT}/: {files_pattern}"
+        )
+        include = re.compile(files_pattern)
+        exclude = re.compile(hooks[0]["exclude"])
+
+        candidates = sorted(
+            path.relative_to(repo_root).as_posix()
+            for path in (repo_root / self.SCOPE_ROOT).rglob("*.py")
+            if "__pycache__" not in path.parts
+        )
+        scope = [
+            path
+            for path in candidates
+            if include.search(path) and not exclude.search(path)
+        ]
+        # Positive control: an empty scope would make the assertion vacuous.
+        assert len(scope) > 100, f"hook scope resolved to {len(scope)} files"
+
+        blocking = [
+            f"{path}:{violation['line']} {violation['code']}"
+            for path in scope
+            for violation in check_file(repo_root / path)
+            if violation["severity"] == "error"
+        ]
+        assert blocking == []
