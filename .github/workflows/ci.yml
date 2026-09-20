@@ -148,6 +148,41 @@ jobs:
       RUNNER_FLEET_STATUS_TOKEN: ${{ secrets.RUNNER_FLEET_STATUS_TOKEN }}
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
 
+  # OMN-18865: the pre-merge twin of the OMN-14631 workspace content-parity
+  # gate. It proves this repository's built wheel carries byte-for-byte the
+  # tracked source tree under src/omnibase_core, plus whatever this repo
+  # declares force-included into that package from outside src/.
+  #
+  # WHY IT IS HERE RATHER THAN ONLY ON THE LAB. #1710 added a hatch
+  # force-include on 2026-09-19. It was GREEN here, and from 15:37Z it failed
+  # every BUILD_SOURCE=workspace runtime image build with
+  # `differing files (1 total): ['data/gitignore-baseline.yaml']`, leaving the
+  # .201 dev lane unable to rebuild at all until omnibase_infra#3846 taught
+  # the gate to resolve the mapping. Nothing in this repository looked at what
+  # its own wheel contained, so a packaging change could not be judged where
+  # it was written.
+  #
+  # IT IS A JOB IN THIS FILE, not a workflow of its own, deliberately: the
+  # OMN-14907 net-negative-surface ratchet locks the count of
+  # pull_request-triggered workflow files, and its own header says a gate
+  # belongs inside ci.yml rather than taking a slot. That is also why it is
+  # registered in GATE_JOBS + STRICT_SUCCESS_JOBS rather than in
+  # EXPECTED_EXTERNAL_CONTEXTS -- the in-run poller can see it here.
+  #
+  # The comparison is NOT copied into this repository: it lives once, in the
+  # image gate, and the reusable resolves the workflow and the scripts
+  # together at the single pinned commit below, never a branch.
+  #
+  # A CI-TIME CHECKOUT IS NOT A RUNTIME DEPENDENCY, so rule 7's layering is
+  # untouched: nothing is added to this project's metadata, lock file or
+  # import graph, and the fetched files die with the runner. This repository
+  # already calls omniclaude reusables the same way, including `route` above.
+  wheel-content-parity:
+    name: Wheel Content Parity (OMN-18865)
+    uses: OmniNode-ai/omnibase_infra/.github/workflows/wheel-content-parity-reusable.yml@344d834bbe372704019e30e7f8bc6d3e4a9a0c8f
+    with:
+      package: omnibase_core
+
   # ---------------------------------------------------------------------------
   # Phase 1 - Quick Validation Jobs (all run in parallel)
   # ---------------------------------------------------------------------------
