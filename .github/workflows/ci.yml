@@ -194,7 +194,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Judge wheel content parity
         uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@5b0898a938202e499e8b2ce491f9fab65adeeb44
