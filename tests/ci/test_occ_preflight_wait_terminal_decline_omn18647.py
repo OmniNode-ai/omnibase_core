@@ -87,6 +87,20 @@ MISLABELLED_SUCCESS = (
     "companion was pushed)"
 )
 
+# Live, 2026-09-20T11:56:20Z, on THIS change's own pull request
+# (omnibase_core#1724, head 8ca0290e). The SECOND mislabel shape, and the
+# sharper one: the producer reports DECLINED on the path where it SUCCEEDED
+# in authoring a companion, naming the companion it just created. Reading
+# this as terminal would fail the very PRs autobind has served correctly.
+MISLABELLED_AUTHORED = (
+    "authored OCC companion Evidence-Source: OCC#10542 for OMN-18647 on "
+    "OmniNode-ai/omnibase_core#1724 (product head "
+    "8ca0290e783f55afbcb819ccafc8949a584b136b, branch "  # pragma: allowlist secret
+    "auto/omninode-ai-omnibase_core-pr-1724-occ-autobind) | OCC companion "
+    "NOT verified: no OCC companion verifier wired; fail-closed (cannot "
+    "prove the companion was pushed)"
+)
+
 NO_STAMP_BODY = "A PR description carrying no evidence-source stamp."
 
 
@@ -231,6 +245,20 @@ def test_mislabelled_success_decline_is_not_terminal() -> None:
     assert not is_terminal_decline(MISLABELLED_SUCCESS)
 
 
+def test_mislabelled_authored_companion_decline_is_not_terminal() -> None:
+    """The second live mislabel, reproduced on this change's own pull request.
+
+    The producer emitted DECLINED with a reason beginning ``authored OCC
+    companion`` while having just authored OCC#10542. The stamp lands on the
+    body moments later, so the correct verdict is to wait for it. An
+    allowlist gives that for free; a denylist of "reasons that look
+    permanent" would have failed this PR on its own change.
+    """
+    decision = _decide(autobind=_read("DECLINED", MISLABELLED_AUTHORED))
+    assert decision.outcome is EnumPreflightWaitOutcome.WAIT
+    assert not is_terminal_decline(MISLABELLED_AUTHORED)
+
+
 def test_in_flight_wait_text_warns_that_hand_authoring_is_unsafe() -> None:
     """Arm 2's text. The waiter is the surface a lane reads before deciding to
     hand-author, so the unsafe window must be named where that decision is
@@ -359,7 +387,13 @@ def test_predicate_matches_the_token_at_the_start_never_prose_about_it() -> None
 
 @pytest.mark.parametrize(
     "reason",
-    [TERMINAL_NO_RED, TERMINAL_DEFER, IN_FLIGHT_LEASE_HELD, MISLABELLED_SUCCESS],
+    [
+        TERMINAL_NO_RED,
+        TERMINAL_DEFER,
+        IN_FLIGHT_LEASE_HELD,
+        MISLABELLED_SUCCESS,
+        MISLABELLED_AUTHORED,
+    ],
 )
 def test_flag_off_keeps_every_decline_on_the_old_waiting_path(reason: str) -> None:
     """The canary is only a canary if every un-pinned caller is unchanged.
