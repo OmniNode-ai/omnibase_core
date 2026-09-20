@@ -1,3 +1,13 @@
+## v0.47.20 (2026-09-20)
+
+### Release
+- Cut omnibase-core from dev at 0.47.20 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.19.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Changes
+- Added a frozen delivery-context model carrying topic, partition, offset and an optional broker timestamp, for the dispatch protocol to reference. It is deliberately inert: nothing imports it and a test asserts that by walking the tree (#1728).
+
 ## v0.47.19 (2026-09-20)
 
 ### Release
