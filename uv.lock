@@ -862,7 +862,7 @@ wheels = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.47.18"
+version = "0.47.19"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },

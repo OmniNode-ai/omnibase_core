@@ -1,3 +1,13 @@
+## v0.47.19 (2026-09-20)
+
+### Release
+- Cut omnibase-core from dev at 0.47.19 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.18.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Changes
+- Stamped the delegate-skill command with its true publish instant, so a consumer reads when the command was actually published rather than when it was constructed (#1720).
+
 ## v0.47.18 (2026-09-19)
 
 ### Release
