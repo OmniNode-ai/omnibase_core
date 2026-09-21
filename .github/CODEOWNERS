@@ -2,28 +2,28 @@
 # See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owners for everything in the repo
-* @OmniNode-ai/core-team
+* @OmniNode-ai/platform
 
 # CI/CD workflow changes require platform team review
 # CRITICAL: Protects transport import validation on protected branches
 # See the CI-workflow-modification risk record in the OmniNode knowledge base.
-/.github/workflows/ @OmniNode-ai/platform-team
+/.github/workflows/ @OmniNode-ai/platform
 
 # GitHub configuration (dependabot, issue templates, etc.)
-/.github/ @OmniNode-ai/platform-team
+/.github/ @OmniNode-ai/platform
 
 # Architecture decisions require architecture review
-/docs/decisions/ @OmniNode-ai/architecture-team @OmniNode-ai/core-team
+/docs/decisions/ @OmniNode-ai/platform-leads @OmniNode-ai/platform
 
 # Core infrastructure changes require careful review
-/src/omnibase_core/container/ @OmniNode-ai/core-team
-/src/omnibase_core/nodes/ @OmniNode-ai/core-team
-/src/omnibase_core/infrastructure/ @OmniNode-ai/core-team
+/src/omnibase_core/container/ @OmniNode-ai/platform
+/src/omnibase_core/nodes/ @OmniNode-ai/platform
+/src/omnibase_core/infrastructure/ @OmniNode-ai/platform
 
 # Protocol and model changes affect API stability
-/src/omnibase_core/models/ @OmniNode-ai/core-team
-/src/omnibase_core/protocols/ @OmniNode-ai/core-team
+/src/omnibase_core/models/ @OmniNode-ai/platform
+/src/omnibase_core/protocols/ @OmniNode-ai/platform
 
 # Build and dependency configuration
-pyproject.toml @OmniNode-ai/platform-team @OmniNode-ai/core-team
-poetry.lock @OmniNode-ai/platform-team
+pyproject.toml @OmniNode-ai/platform
+poetry.lock @OmniNode-ai/platform
