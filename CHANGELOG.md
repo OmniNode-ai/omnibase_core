@@ -6,9 +6,9 @@
 - Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
 
 ### Included Since v0.47.20
-- feat(OMN-19060): give a gate-decided exhaustion a cause it can land on (#1735)
-- fix(OMN-19050): a FAIL supersede receipt no longer latches a receipt key forever (#1736)
-- feat(OMN-18996): deliver core delegation source slice (#1730)
+- feat(OMN-19060): give a gate-decided exhaustion a cause it can land on (#1735) <!-- doc-content-ok: generated release note retains the audited inclusion ticket -->
+- fix(OMN-19050): a FAIL supersede receipt no longer latches a receipt key forever (#1736) <!-- doc-content-ok: generated release note retains the audited inclusion ticket -->
+- feat(OMN-18996): deliver core delegation source slice (#1730) <!-- doc-content-ok: generated release note retains the audited inclusion ticket -->
 
 ## v0.47.21
 
