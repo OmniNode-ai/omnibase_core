@@ -543,6 +543,28 @@ class TestExternalContextEventContracts:
             actual[event_name] = tuple(emitted)
         assert actual == EXTERNAL_CONTEXTS_BY_EVENT
 
+    def test_l4_producers_retrigger_when_ci_summary_retriggers_on_pr_edit(self) -> None:
+        """A body evidence update must replace a stale L4 preflight verdict."""
+
+        ci_document = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
+        ci_pull_request = _on_block(ci_document)["pull_request"]
+        assert isinstance(ci_pull_request, dict)
+        assert "edited" in ci_pull_request["types"]
+
+        expected_default_activities = {"opened", "synchronize", "reopened", "edited"}
+        for context in (
+            "DB ownership CI twin (B1)",
+            "LLM refs drift check (OMN-11932)",
+        ):
+            document = yaml.safe_load(
+                (
+                    WORKFLOWS_DIR / EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS[context]
+                ).read_text(encoding="utf-8")
+            )
+            pull_request = _on_block(document)["pull_request"]
+            assert isinstance(pull_request, dict)
+            assert expected_default_activities <= set(pull_request["types"])
+
 
 class TestExpectedExternalContexts:
     """L4 EXPECTED_EXTERNAL_CONTEXTS (enforce-everything gate audit).
