@@ -4626,6 +4626,11 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          # L4 producers have different trigger contracts. Pass the event
+          # explicitly so ci_summary_gate selects only producers that could
+          # have emitted a check-run for this CI event; omitted/unknown events
+          # fail closed in the gate rather than silently selecting no contexts.
+          EVENT_NAME: ${{ github.event_name }}
           # L4 EXPECTED_EXTERNAL_CONTEXTS (scripts/ci/ci_summary_gate.py) live in
           # OTHER workflow files, so they are resolved against
           # commits/{sha}/check-runs rather than this run's own job list.
@@ -4672,7 +4677,7 @@ jobs:
               sleep "${POLL_INTERVAL_SECONDS}"
               continue
             fi
-            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json
+            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --event-name "${EVENT_NAME}"
             rc=$?
             case "${rc}" in
               0) echo "::notice::CI Summary = SUCCESS (all gating jobs provably passed)"; exit 0 ;;
@@ -4682,7 +4687,7 @@ jobs:
             esac
             if [ "$(date +%s)" -ge "${deadline}" ]; then
               echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached with gating jobs still pending — failing closed"
-              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --report-only || true
+              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --event-name "${EVENT_NAME}" --report-only || true
               exit 1
             fi
             sleep "${POLL_INTERVAL_SECONDS}"
