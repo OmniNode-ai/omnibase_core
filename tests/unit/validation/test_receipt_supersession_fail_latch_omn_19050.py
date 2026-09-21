@@ -50,6 +50,7 @@ from omnibase_core.validation.validator_receipt_honesty import (
     check_receipt_honesty,
 )
 from omnibase_core.validation.validator_receipt_supersession import (
+    _sequence_key,
     resolve_supersession,
 )
 
@@ -381,3 +382,32 @@ def test_pass_carrying_deferral_vocabulary_is_still_refused() -> None:
     violations = check_receipt_honesty(receipt)
 
     assert any(v.rule is EnumHonestyRule.PENDING_IN_PASS for v in violations)
+
+
+# The cross-repo contract, spelled once on this side too. OCC's
+# `_supersede_sequence` in scripts/validation/check_receipt_hardening.py must
+# return exactly this for the same input, and that repo's OMN-19050 test
+# module pins the identical table from its own side. The duplication is
+# deliberate: onex_change_control pins omnibase-core from the registry, so it
+# cannot import this helper until the pin carries this release. Both ends
+# asserting the same literal table is what keeps them from drifting in the
+# meantime -- a gate that validates one record while the merge is decided by
+# another is a silent gate.
+SEQUENCE_CONTRACT: list[tuple[str, tuple[int, ...] | None]] = [
+    ("2751", (2751,)),
+    ("2751.0002", (2751, 2)),
+    ("0001", (1,)),
+    ("9999.0010.0003", (9999, 10, 3)),
+    ("2010-head", None),
+    ("", None),
+    ("abc", None),
+]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(("token", "expected"), SEQUENCE_CONTRACT)
+def test_sequence_key_matches_the_cross_repo_contract(
+    token: str, expected: tuple[int, ...] | None
+) -> None:
+    """The eligibility resolver and the OCC hardening gate must agree."""
+    assert _sequence_key(token) == expected
