@@ -1,3 +1,15 @@
+## v0.47.22 (2026-09-21)
+
+### Release
+- Cut omnibase-core from dev at 0.47.22 by the scheduled release train.
+- 3 release-relevant commit(s) merged since v0.47.20.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.20
+- feat(OMN-19060): give a gate-decided exhaustion a cause it can land on (#1735)
+- fix(OMN-19050): a FAIL supersede receipt no longer latches a receipt key forever (#1736)
+- feat(OMN-18996): deliver core delegation source slice (#1730)
+
 ## v0.47.21
 
 ### Changes
