@@ -231,6 +231,7 @@ def test_record_fixture_writes_provenance_stamped_fixture(tmp_path: Path) -> Non
         env={"OMN_RECORD_GOLDEN": "1"},  # local, no CI markers
     )
     assert out.is_file()
+    assert fixture.provenance.model_id.root == _MODEL
     assert fixture.provenance.request_hash == canonical_request_hash(_payload())
     assert fixture.provenance.routing_contract_hash.startswith("sha256:")
     assert fixture.provenance.routing_overlay_hash == "none"

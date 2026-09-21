@@ -48,9 +48,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.validation.model_precommit_config import ModelPrecommitConfig
-from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+import yaml
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = REPO_ROOT / ".pre-commit-config.yaml"
@@ -63,6 +62,24 @@ CONFIG_PATH = REPO_ROOT / ".pre-commit-config.yaml"
 # omnibase_core git-SHA (see module docstring). The `--self-test` mode keeps the
 # comparator honest until the first real pair is added.
 PIN_PAIRS: tuple[tuple[str, str, str, str], ...] = ()
+
+
+class ModelPrecommitConfig(BaseModel):
+    """Standalone typed projection of the consumed pre-commit configuration."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    repos: tuple[dict[str, object], ...] = Field(default_factory=tuple)
+    default_install_hook_types: tuple[str, ...] = Field(default_factory=tuple)
+    default_stages: tuple[str, ...] = Field(default_factory=tuple)
+    fail_fast: bool | None = None
+    ci: dict[str, object] | None = None
+
+    @classmethod
+    def from_yaml(cls, content: str) -> ModelPrecommitConfig:
+        """Parse YAML then validate the complete consumed schema without Core imports."""
+        return cls.model_validate(yaml.safe_load(content))
+
 
 _CI_PIN_RE = re.compile(
     r"omnibase-core\s*@\s*git\+https://github\.com/OmniNode-ai/omnibase_core"
@@ -211,10 +228,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        config = load_yaml_content_as_model(
-            CONFIG_PATH.read_text(encoding="utf-8"), ModelPrecommitConfig
+        config = ModelPrecommitConfig.from_yaml(
+            CONFIG_PATH.read_text(encoding="utf-8")
         ).model_dump(mode="python")
-    except (OSError, ModelOnexError) as exc:
+    except (OSError, ValidationError, yaml.YAMLError) as exc:
         print(f"ERROR: {CONFIG_PATH} did not validate: {exc}", file=sys.stderr)
         return 1
 
