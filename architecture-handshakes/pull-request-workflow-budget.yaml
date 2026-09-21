@@ -137,9 +137,18 @@ waivers:
   # filters `branches: [main, dev]`. Structural migration is scoped to
   # OMN-16359 and requires reconciling that trigger-surface gap first (see
   # ticket for the two options considered).
+  #
+  # OMN-16359 renewal (2026-09-21): the prior renewal above (2026-08-21) said
+  # not to renew a third time without landing the migration or getting an
+  # explicit operator call. This is that call. Operator ruling at 2026-09-21
+  # ~14:45Z, recorded in docs/tracking/ROLLING_WORK_LEDGER.md:3524 item (c):
+  # "omnibase_core workflow-budget waiver OMN-16359 renewed seven days,
+  # migration scheduled separately." Renewed expires 2026-09-20 ->
+  # 2026-09-27 (seven days). The structural migration into ci.yml remains
+  # scheduled separately and is NOT landed in this change.
   - workflow_file: call-occ-companion-effect.yml
     ticket: OMN-16359
-    expires: "2026-09-20"
+    expires: "2026-09-27"
     justification: >-
       Fan-out of the proven omnibase_infra OCC-companion-effect born-path caller (OMN-14941 canary, PR
       #2394, discriminating readback passed on infra#2393 -> OCC#4618). Thin `uses:` caller of an omniclaude-hosted
