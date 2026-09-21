@@ -43,7 +43,7 @@ class ModelNodeServiceConfig(BaseModel):
     with support for Docker, Kubernetes, and compose file generation.
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     node_name: str = Field(
         default=..., description="Name of the ONEX node", min_length=1
@@ -181,7 +181,7 @@ class ModelNodeServiceConfig(BaseModel):
         # A container health-check curls its OWN in-container endpoint; localhost is
         # the correct, intentional loopback target (the container probing itself),
         # not a leaked external endpoint.
-        url = f"http://localhost:{self.network.port}{self.health_check.check_path}"  # url-authority-ok: container self health-check
+        url = f"http://localhost:{self.network.port}{self.health_check.check_path}"  # onex-allow-internal-ip: container self health-check  # url-authority-ok: container self-health resolves its declared port and check path
         return ["curl", "-f", url]
 
     def supports_scaling(self) -> bool:
@@ -264,7 +264,6 @@ class ModelNodeServiceConfig(BaseModel):
             ModelNodeServiceConfig configured for NodeRegistry service
         """
         node_registry_defaults = {
-            "node_name": "node_registry",
             "docker_image": "onex/node-registry",
             "network": ModelNetworkConfig(port=8081),
             "monitoring": ModelMonitoringConfig(prometheus_port=9091),

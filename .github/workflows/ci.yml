@@ -7,12 +7,11 @@ on:
   push:
     branches: [main, dev, "hotfix/**"]
   pull_request:
-    branches: [main, dev]
     # OMN-16215: default types (opened/synchronize/reopened) don't retrigger
     # on a draft->ready flip. `ready_for_review` ensures undrafting a dev PR
     # fires a full CI evaluation against the current head without requiring a
     # new push -- see test-parallel's/tests-integration's `if:` below.
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   merge_group:
     branches: [main, dev]
   workflow_dispatch:
@@ -147,6 +146,21 @@ jobs:
     secrets:
       RUNNER_FLEET_STATUS_TOKEN: ${{ secrets.RUNNER_FLEET_STATUS_TOKEN }}
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
+
+  # OMN-16359: migrated from call-occ-companion-effect.yml. This remains a
+  # required composed context, so it MUST NOT gain a job-level `if:`: even a
+  # dependency-bot/ticketless skip must be produced by the invoked reusable.
+  # The job-level concurrency is the retired caller's literal group; CI's
+  # workflow-level group differs and must not silently change cancellation.
+  occ-companion-effect:
+    concurrency:
+      group: OCC Companion Effect Publisher-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev
+    # pragma: allowlist secret -- `secrets: inherit` is GHA syntax, not a secret.
+    secrets: inherit
+    with:
+      lane: dev
 
   # OMN-18865: the pre-merge twin of the OMN-14631 workspace content-parity
   # gate. It proves this repository's built wheel carries byte-for-byte the

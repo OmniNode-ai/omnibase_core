@@ -242,6 +242,15 @@ class ModelDelegationRequest(BaseModel):
             ),
         )
     )
+    no_escalation: bool = Field(
+        default=False,
+        exclude_if=lambda value: not value,
+        description=(
+            "Dogfood fault-route policy marker. Trusted consumer-side route "
+            "validation accepts true only for a declared pinned dogfood route; "
+            "ordinary requests remain false."
+        ),
+    )
     response_contract: dict[str, object] | None = Field(
         default=None,
         exclude_if=lambda value: value is None,

@@ -38,7 +38,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.validation.model_precommit_config import ModelPrecommitConfig
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = REPO_ROOT / ".pre-commit-config.yaml"
@@ -185,9 +187,12 @@ def main() -> int:
         print(f"ERROR: {CONFIG_PATH} not found", file=sys.stderr)
         return 1
 
-    config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
-    if not isinstance(config, dict):
-        print(f"ERROR: {CONFIG_PATH} did not parse to a mapping", file=sys.stderr)
+    try:
+        config = load_yaml_content_as_model(
+            CONFIG_PATH.read_text(encoding="utf-8"), ModelPrecommitConfig
+        ).model_dump(mode="python")
+    except (OSError, ModelOnexError) as exc:
+        print(f"ERROR: {CONFIG_PATH} did not validate: {exc}", file=sys.stderr)
         return 1
 
     violations = check_fail_loud(config) + check_stage_coverage(config)

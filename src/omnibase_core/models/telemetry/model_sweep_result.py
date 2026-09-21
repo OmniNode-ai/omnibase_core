@@ -7,8 +7,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelSweepResult(BaseModel):
@@ -20,8 +23,10 @@ class ModelSweepResult(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    # string-version-ok: wire schema guard; semver string is the correct wire type here
-    schema_version: str = "1.0.0"
+    schema_version: ModelSemVer = Field(
+        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0),
+        description="Semantic version of the sweep-result wire schema.",
+    )
     sweep_type: Literal[
         "aislop",
         "coverage",
@@ -31,7 +36,7 @@ class ModelSweepResult(BaseModel):
         "runtime",
         "data_flow",
     ]
-    session_id: str
+    session_id: UUID
     correlation_id: str
     ran_at: datetime
     duration_seconds: float

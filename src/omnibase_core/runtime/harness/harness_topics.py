@@ -11,19 +11,15 @@ identifiers, not environment-tunable settings.
 
 from __future__ import annotations
 
-# env-var-ok: fixed canonical topic identifiers, not environment-tunable settings
-DELEGATION_COMMAND_TOPIC = "onex.cmd.omnibase-core.harness-delegation-request.v1"
-# env-var-ok: fixed canonical topic identifier
-DELEGATION_INFER_TOPIC = "onex.evt.omnibase-core.harness-delegation-infer.v1"
-# env-var-ok: fixed canonical topic identifier
-DELEGATION_COMPLETED_TOPIC = "onex.evt.omnibase-core.harness-delegation-completed.v1"
+from omnibase_core.topics import TopicBase
 
-# env-var-ok: fixed canonical topic identifier
-SEA_COMMAND_TOPIC = "onex.cmd.omnibase-core.harness-sea-request.v1"
-# env-var-ok: fixed canonical topic identifier
-SEA_INFER_TOPIC = "onex.evt.omnibase-core.harness-sea-infer.v1"
-# env-var-ok: fixed canonical topic identifier
-SEA_COMPLETED_TOPIC = "onex.evt.omnibase-core.harness-sea-completed.v1"
+DELEGATION_COMMAND_TOPIC = TopicBase.HARNESS_DELEGATION_COMMAND
+DELEGATION_INFER_TOPIC = TopicBase.HARNESS_DELEGATION_INFER
+DELEGATION_COMPLETED_TOPIC = TopicBase.HARNESS_DELEGATION_COMPLETED
+
+SEA_COMMAND_TOPIC = TopicBase.HARNESS_SEA_COMMAND
+SEA_INFER_TOPIC = TopicBase.HARNESS_SEA_INFER
+SEA_COMPLETED_TOPIC = TopicBase.HARNESS_SEA_COMPLETED
 
 
 def infer_topic(workflow: str) -> str:

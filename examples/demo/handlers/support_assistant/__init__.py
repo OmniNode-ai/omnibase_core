@@ -31,10 +31,9 @@ Example:
         from examples.demo.handlers.support_assistant import (
             SupportAssistantHandler,
             LocalLLMClient,
-            LOCAL_CONFIG,
         )
 
-        client = LocalLLMClient.from_config(LOCAL_CONFIG)
+        client = LocalLLMClient(endpoint_url="https://llm.example.test:8000")
         # Register in container and use handler
 
 Note:
@@ -68,9 +67,6 @@ if TYPE_CHECKING:
         ANTHROPIC_CONFIG as ANTHROPIC_CONFIG,
     )
     from examples.demo.handlers.support_assistant.model_config import (
-        LOCAL_CONFIG as LOCAL_CONFIG,
-    )
-    from examples.demo.handlers.support_assistant.model_config import (
         OPENAI_CONFIG as OPENAI_CONFIG,
     )
     from examples.demo.handlers.support_assistant.model_config import (
@@ -91,7 +87,6 @@ __all__ = [
     "ModelConfig",
     "OPENAI_CONFIG",
     "ANTHROPIC_CONFIG",
-    "LOCAL_CONFIG",
     "SupportRequest",
     "SupportResponse",
     # Protocol
@@ -112,7 +107,6 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "ModelConfig": ("model_config", "ModelConfig"),
     "OPENAI_CONFIG": ("model_config", "OPENAI_CONFIG"),
     "ANTHROPIC_CONFIG": ("model_config", "ANTHROPIC_CONFIG"),
-    "LOCAL_CONFIG": ("model_config", "LOCAL_CONFIG"),
     "SupportRequest": ("model_support_request", "SupportRequest"),
     "SupportResponse": ("model_support_response", "SupportResponse"),
     # Protocol

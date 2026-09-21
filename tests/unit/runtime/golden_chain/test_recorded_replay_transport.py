@@ -176,7 +176,7 @@ def test_load_fixture_roundtrip(tmp_path: Path) -> None:
     p = tmp_path / "ok.json"
     p.write_text(json.dumps(fx.model_dump(mode="json")))
     loaded = load_fixture(p)
-    assert loaded.provenance.model_id == _MODEL
+    assert loaded.provenance.model_id.root == _MODEL
     transport = RecordedReplayInferenceTransport([loaded])
     with transport as client:
         resp = client.post(_ENDPOINT, json=_payload(), headers={}, timeout=30.0)

@@ -29,6 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from omnibase_core.enums.enum_cutover_criterion import EnumCutoverCriterion
 from omnibase_core.enums.enum_migration_phase import EnumMigrationPhase
 from omnibase_core.enums.enum_topic_schema_delta import EnumTopicSchemaDelta
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_topic_schema_binding import (
     ModelTopicSchemaBinding,
     detect_breaking_delta,
@@ -140,8 +141,12 @@ class ModelTopicMigrationContract(BaseModel):
             )
 
         # Both topics must be canonical (parse or raise).
-        parse_canonical_topic(self.old_binding.topic)
-        parse_canonical_topic(self.new_binding.topic)
+        try:
+            parse_canonical_topic(self.old_binding.topic)
+            parse_canonical_topic(self.new_binding.topic)
+        except ModelOnexError as exc:
+            # Pydantic requires ValueError to render a model ValidationError.
+            raise ValueError(str(exc)) from exc
         return self
 
     @property

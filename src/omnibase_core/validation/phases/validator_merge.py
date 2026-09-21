@@ -38,6 +38,7 @@ Related:
 import logging
 import re
 from collections.abc import Sequence
+from typing import Final
 
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_contract_validation_error_code import (
@@ -63,7 +64,7 @@ logger = logging.getLogger(__name__)
 # configuration that would fail at runtime.
 #
 # Pattern Categories:
-#   - Incomplete markers: TODO, TBD, FIXME  # TODO_FORMAT_EXEMPT: documents placeholder pattern categories
+#   - Incomplete markers: TODO, TBD, FIXME  # TODO_FORMAT_EXEMPT: documents placeholder pattern categories  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
 #   - Placeholder markers: PLACEHOLDER, REPLACE_ME, CHANGE_ME
 #   - Template markers: ${VAR_NAME}, {{variable}}, <PLACEHOLDER>
 #   - Empty/default markers: Empty strings, "default", "undefined"
@@ -84,9 +85,9 @@ logger = logging.getLogger(__name__)
 # version, input_model, and output_model in production contracts).
 _PLACEHOLDER_EXACT_PATTERNS: frozenset[str] = frozenset(
     {
-        "todo",
+        "todo",  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
         "tbd",
-        "fixme",
+        "fixme",  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
         "placeholder",
         "replace_me",
         "change_me",
@@ -106,14 +107,16 @@ _PLACEHOLDER_EXACT_PATTERNS: frozenset[str] = frozenset(
     }
 )
 
+_INCOMPLETE_MARKER_PATTERN: Final[str] = (
+    r"^\s*TODO\s*:"  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
+)
+
 # Regex patterns for template-style placeholders
 _PLACEHOLDER_REGEX_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\$\{[^}]+\}"),  # ${VAR_NAME} style
     re.compile(r"\{\{[^}]+\}\}"),  # {{variable}} style (Jinja/Mustache)
     re.compile(r"<[A-Z_]+>"),  # <PLACEHOLDER> style
-    re.compile(
-        r"^\s*TODO\s*:", re.IGNORECASE
-    ),  # "TODO: description" style  # TODO_FORMAT_EXEMPT: regex pattern for placeholder detection
+    re.compile(_INCOMPLETE_MARKER_PATTERN, re.IGNORECASE),
 )
 
 # Critical fields that must not contain placeholder values
@@ -135,7 +138,7 @@ def _is_placeholder_value(  # stub-ok: docstring describes detection patterns
     Check if a string value is a placeholder that should be replaced.
 
     Detection covers:
-        - Exact match placeholders (TODO, PLACEHOLDER, etc.)
+        - Exact match placeholders (TODO, PLACEHOLDER, etc.)  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
         - Template-style placeholders (${VAR}, {{var}}, <PLACEHOLDER>)
         - Whitespace-only or empty strings
 
@@ -171,7 +174,7 @@ class MergeValidator:
 
     Validation Checks:
         - Required overrides present: Placeholder values in base were overridden
-        - Placeholder values rejected: No TODO/PLACEHOLDER markers in critical fields
+        - Placeholder values rejected: No TODO/PLACEHOLDER markers in critical fields  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
         - Dependency references resolve: All dependency names exist in merged contract
         - Handler name uniqueness: No duplicate handler names after merge
         - Capability consistency: Input/output capabilities are consistent
@@ -280,7 +283,7 @@ class MergeValidator:
         """
         Detect and reject placeholder values in critical fields.
 
-        Placeholder values like TODO, PLACEHOLDER, ${VAR}, or empty strings
+        Placeholder values like TODO, PLACEHOLDER, ${VAR}, or empty strings  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
         in critical fields indicate incomplete configuration that would fail
         at runtime.
 

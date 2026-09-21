@@ -17,7 +17,10 @@
 #   ast_check            — named AST visitor check identifier
 #   semantic             — description used for vector-similarity search (vector_enabled required)
 
-version: "1.0.0"
+version:
+  major: 1
+  minor: 0
+  patch: 0
 last_updated: "2026-05-24T00:00:00+00:00"
 
 entries:
@@ -121,15 +124,14 @@ entries:
     enforcement: informational
     category: code_quality
     pattern_type: regex_line
-    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"
+    pattern: "#\\s*(TODO|FIXME|HACK|XXX|NOTE):\\s*$"  # onex-allow-todo-marker OMN-18931 reason="the rule's literal subject is marker detection"
     file_globs: ["*.py"]
     suppression_annotation: ai-slop-ok
-    description: >-
-      Self-evident inline comment with no content (e.g. "# TODO: "). Reported in INFO/report mode only;
-      not blocking by default.
-    rationale: >-
-      Empty TODO/FIXME tags are LLM placeholders that accumulate silently. They communicate intent to
-      fix something but provide no actionable information. Work should be tracked in Linear, not inline.
+    description: 'Self-evident inline comment with no content (e.g. "# TODO: "). Reported in INFO/report
+      mode only; not blocking by default.'  # onex-allow-todo-marker OMN-18931 reason="the rule's literal subject is marker detection"
+    rationale: 'Empty TODO/FIXME tags are LLM placeholders that accumulate silently. They communicate
+      intent to fix something but provide no actionable information. Work should be tracked in Linear,
+      not inline.'  # onex-allow-todo-marker OMN-18931 reason="the rule's literal subject is marker detection"
     discovered_date: "2025-01-01"
     source_ticket: OMN-11132
     vector_enabled: false
@@ -264,15 +266,13 @@ entries:
     enforcement: informational
     category: code_quality
     pattern_type: grep_code
-    pattern: "#\\s*(TODO|FIXME)\\b"
+    pattern: "#\\s*(TODO|FIXME)\\b"  # onex-allow-todo-marker OMN-18931 reason="the rule's literal subject is marker detection"
     file_globs: ["*.py", "*.yaml", "*.yml"]
     suppression_annotation: ai-slop-ok
-    description: >-
-      Unresolved TODO or FIXME comment. Track work in Linear, not inline. Reported at INFO; escalate per-repo
-      via override if required.
-    rationale: >-
-      Inline TODO/FIXME comments are invisible to project management tools. Work should be tracked in
-      Linear tickets so it can be prioritized, assigned, and verified — not buried in source files.
+    description: 'Unresolved TODO or FIXME comment. Track work in Linear, not inline. Reported at INFO;
+      escalate per-repo via override if required.'  # onex-allow-todo-marker OMN-18931 reason="the rule's literal subject is marker detection"
+    rationale: 'Inline TODO/FIXME comments are invisible to project management tools. Work should be tracked
+      in Linear tickets so it can be prioritized, assigned, and verified — not buried in source files.'  # onex-allow-todo-marker OMN-18931 reason="the rule's literal subject is marker detection"
     discovered_date: "2025-01-01"
     source_ticket: OMN-11132
     vector_enabled: false

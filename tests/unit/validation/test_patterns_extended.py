@@ -37,6 +37,44 @@ if TYPE_CHECKING:
 class TestPydanticPatternCheckerExtended:
     """Extended tests for PydanticPatternChecker."""
 
+    def test_checker_allows_only_declared_route_label_ids(self) -> None:
+        """Route/backend labels stay scalar without weakening UUID enforcement."""
+        semantic = ast.parse(
+            """
+from pydantic import BaseModel
+
+class ModelDelegationFirstInferenceIdentity(BaseModel):
+    backend_id: str
+    model_id: str
+"""
+        )
+        checker = PydanticPatternChecker(
+            "src/omnibase_infra/models/delegation/model_delegation_first_inference_identity.py"
+        )
+        checker.visit(semantic)
+        assert checker.issues == []
+
+        same_name_other_file = PydanticPatternChecker("src/other/identity.py")
+        same_name_other_file.visit(semantic)
+        assert same_name_other_file.issues == [
+            "Line 5: Field 'backend_id' should use UUID type instead of str",
+            "Line 6: Field 'model_id' should use UUID type instead of str",
+        ]
+
+        uuid_entity = ast.parse(
+            """
+from pydantic import BaseModel
+
+class ModelUnrelatedEntity(BaseModel):
+    node_id: str
+"""
+        )
+        checker = PydanticPatternChecker("test.py")
+        checker.visit(uuid_entity)
+        assert checker.issues == [
+            "Line 5: Field 'node_id' should use UUID type instead of str"
+        ]
+
     def test_checker_detects_id_fields_with_str(self) -> None:
         """Test checker detects ID fields using str instead of UUID."""
         code = """

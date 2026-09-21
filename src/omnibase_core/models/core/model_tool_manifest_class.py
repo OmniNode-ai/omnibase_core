@@ -338,6 +338,7 @@ try:
     from omnibase_core.models.core.model_tool_testing import ModelToolTesting
     from omnibase_core.models.core.model_tool_version import ModelToolVersion
 
-    ModelToolManifest.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
+    ModelToolManifest.model_rebuild(raise_errors=False)
+except ImportError:
+    # Circular imports can defer forward-reference resolution to the importer.
     pass

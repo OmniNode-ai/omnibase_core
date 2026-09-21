@@ -169,17 +169,15 @@ class ModelCliResultMetadata(BaseModel):
         if isinstance(v, EnumRetentionPolicy):
             return v
         if isinstance(v, str):
-            try:
-                return EnumRetentionPolicy(v)
-            except ValueError:
-                # Try uppercase
-                try:
-                    return EnumRetentionPolicy(v.upper())
-                except ValueError:
-                    raise ModelOnexError(
-                        message=f"Invalid retention policy: {v}",
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    )
+            retention_policy = EnumRetentionPolicy._value2member_map_.get(v)
+            if retention_policy is None:
+                retention_policy = EnumRetentionPolicy.__members__.get(v.upper())
+            if retention_policy is not None:
+                return retention_policy
+            raise ModelOnexError(
+                message=f"Invalid retention policy: {v}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         raise ModelOnexError(
             message=f"Invalid retention policy type: {type(v)}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -324,7 +322,7 @@ class ModelCliResultMetadata(BaseModel):
         return data
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=True,
         validate_assignment=True,
     )

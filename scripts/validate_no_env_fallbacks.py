@@ -28,10 +28,10 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 _LOCALHOST_VARIANTS = (
     r"(?:localhost|127\.0\.0\.1"
-    r"|http://localhost|https://localhost"
-    r"|bolt://localhost|redis://localhost"
-    r"|postgresql://localhost|amqp://localhost"
-    r"|http://127\.0\.0\.1|redis://127\.0\.0\.1|postgresql://127\.0\.0\.1)"
+    r"|http://localhost|https://localhost"  # onex-allow-internal-ip: validator pattern
+    r"|bolt://localhost|redis://localhost"  # onex-allow-internal-ip: validator pattern
+    r"|postgresql://localhost|amqp://localhost"  # onex-allow-internal-ip: validator pattern
+    r"|http://127\.0\.0\.1|redis://127\.0\.0\.1|postgresql://127\.0\.0\.1)"  # onex-allow-internal-ip: validator pattern
 )
 _PRIV_IP = r"192\.168\.\d{1,3}\.\d{1,3}"
 
@@ -67,7 +67,7 @@ PYTHON_FALLBACK_PATTERNS: list[re.Pattern[str]] = [
 # Shell patterns
 # ---------------------------------------------------------------------------
 SHELL_FALLBACK_PATTERNS: list[re.Pattern[str]] = [
-    # ${VAR:-localhost} or ${VAR:-http://localhost:8080}
+    # ${VAR:-localhost} or ${VAR:-http://localhost:8080}  # onex-allow-internal-ip: validator pattern
     re.compile(
         rf"""\$\{{[A-Za-z_][A-Za-z0-9_]*:-[^}}]*{_LOCALHOST_VARIANTS}[^}}]*\}}"""
     ),
@@ -242,20 +242,20 @@ def main() -> int:
         violations = run(scan_roots, repo_root)
 
     if violations:
-        print(
+        sys.stdout.write(
             f"FAIL: {len(violations)} localhost/hardcoded-endpoint fallback(s) found:\n"
         )
         for filepath, lineno, line_text in violations:
-            print(f"  {filepath}:{lineno}")
-            print(f"    {line_text}\n")
-        print(
+            sys.stdout.write(f"  {filepath}:{lineno}\n")
+            sys.stdout.write(f"    {line_text}\n\n")
+        sys.stdout.write(
             'Fix: Replace with os.environ["VAR"] (fail-fast, no default) or raise explicitly.\n'
             "Annotate justified exceptions with  # fallback-ok: <reason>  on the same line.\n"
             "[OMN-10741]"
         )
         return 1
 
-    print("PASS: No localhost/hardcoded-endpoint fallbacks found.")
+    sys.stdout.write("PASS: No localhost/hardcoded-endpoint fallbacks found.\n")
     return 0
 
 

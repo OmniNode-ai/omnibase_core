@@ -254,11 +254,11 @@ class RecordedReplayInferenceTransport:
                     "requires a CONCRETE model_id to select a trusted fixture.",
                 )
             model_matches = [
-                f for f in endpoint_matches if f.provenance.model_id == model
+                f for f in endpoint_matches if f.provenance.model_id.root == model
             ]
             if not model_matches:
                 recorded_models = sorted(
-                    {f.provenance.model_id for f in endpoint_matches}
+                    {f.provenance.model_id.root for f in endpoint_matches}
                 )
                 raise GoldenChainReplayError(
                     EnumGoldenChainFailureClass.REQUEST_HASH_MISMATCH,
@@ -271,12 +271,12 @@ class RecordedReplayInferenceTransport:
         # Concrete-model cross-check: the recorded provenance model must match the
         # model the live path actually resolved (defense beyond the hash, and a
         # second guard on the strict-hash path).
-        if model and model != fixture.provenance.model_id:
+        if model and model != fixture.provenance.model_id.root:
             raise GoldenChainReplayError(
                 EnumGoldenChainFailureClass.REQUEST_HASH_MISMATCH,
                 f"live path resolved model {model!r} but the fixture for endpoint "
                 f"{url!r} was recorded against concrete model "
-                f"{fixture.provenance.model_id!r}. Re-record if the backend changed.",
+                f"{fixture.provenance.model_id.root!r}. Re-record if the backend changed.",
             )
 
         completion = _extract_completion_text(fixture.raw_response).strip()

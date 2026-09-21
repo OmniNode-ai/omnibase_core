@@ -336,7 +336,7 @@ def test_baselined_violation_passes(
         "mod_old",
         "from pydantic import BaseModel\n\nclass ModelLegacy(BaseModel):\n    f: str\n",
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelLegacy"
     exit_code = main(
@@ -364,7 +364,7 @@ def test_stale_baseline_entry_fails_check_stale(
         "class ModelNowFixed(BaseModel):\n"
         '    model_config = ConfigDict(extra="forbid")\n',
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelNowFixed"
     exit_code = main(
@@ -442,7 +442,7 @@ def test_active_waiver_suppresses_a_new_violation(tmp_path: Path) -> None:
         "mod_waived",
         "from pydantic import BaseModel\n\nclass ModelInFlight(BaseModel):\n    f: str\n",
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelInFlight"
     waivers = tmp_path / "waivers.yaml"
@@ -478,7 +478,7 @@ def test_expired_waiver_is_a_hard_failure(
         "mod_expired",
         "from pydantic import BaseModel\n\nclass ModelStale(BaseModel):\n    f: str\n",
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelStale"
     waivers = tmp_path / "waivers.yaml"
@@ -595,7 +595,7 @@ def test_modifying_a_baselined_model_fails(
     _git(git_repo, "add", "-A")
     _git(git_repo, "commit", "-qm", "seed")
 
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     prefix = module_for_path(module)[0]
     baseline = _write_baseline(

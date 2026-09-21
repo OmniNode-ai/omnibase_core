@@ -11,6 +11,12 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_credential_source import EnumCredentialSource
+from omnibase_core.enums.enum_delegation_content_verdict import (
+    EnumDelegationContentVerdict,
+)
+from omnibase_core.enums.enum_delegation_operational_outcome import (
+    EnumDelegationOperationalOutcome,
+)
 from omnibase_core.enums.enum_delegation_terminal_failure_cause import (
     EnumDelegationTerminalFailureCause,
 )
@@ -94,6 +100,22 @@ class ModelDelegationResult(BaseModel):
         ),
     )
     content: str = Field(..., description="The LLM-generated response content.")
+    operational_outcome: EnumDelegationOperationalOutcome | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed runtime disposition for this terminal. Absent only for "
+            "terminals produced before OMN-18928."
+        ),
+    )
+    content_verdict: EnumDelegationContentVerdict | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Verdict on final returned content, independent of the runtime "
+            "disposition. Absent only for terminals produced before OMN-18928."
+        ),
+    )
     response_contract_evidence: ModelDelegationContractEvidence | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
@@ -139,11 +161,15 @@ class ModelDelegationResult(BaseModel):
         ...,
         description="Whether the quality gate accepted the response.",
     )
-    quality_score: float = Field(
-        ...,
+    quality_score: float | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
         ge=0.0,
         le=1.0,
-        description="Quality score from 0.0 to 1.0.",
+        description=(
+            "Quality score from 0.0 to 1.0 when a final response reached the "
+            "quality gate. Absent when no response was available to score."
+        ),
     )
     required_quality_bar: float | None = Field(
         default=None,
@@ -245,8 +271,11 @@ class ModelDelegationResult(BaseModel):
     )
     attempts_count: int = Field(
         default=1,
-        ge=1,
-        description="Total delegation attempts including the initial attempt.",
+        ge=0,
+        description=(
+            "Total inference calls. Zero is reserved for an explicit "
+            "pre-inference boundary refusal; omitted legacy terminals retain one."
+        ),
     )
     cumulative_attempt_cost: float = Field(
         default=0.0,
@@ -325,6 +354,124 @@ class ModelDelegationResult(BaseModel):
     @model_validator(mode="after")
     def validate_structured_terminal_evidence(self) -> Self:
         """Reject incomplete or contradictory structured terminal evidence."""
+        if (self.operational_outcome is None) != (self.content_verdict is None):
+            msg = "operational_outcome and content_verdict must be provided together"
+            raise ValueError(msg)
+
+        if self.attempts_count == 0:
+            if (
+                self.operational_outcome
+                is not EnumDelegationOperationalOutcome.BOUNDARY_FAILURE
+            ):
+                msg = "zero attempts requires boundary_failure outcome"
+                raise ValueError(msg)
+            if self.content_verdict is not EnumDelegationContentVerdict.NOT_APPLICABLE:
+                msg = "zero attempts requires not_applicable content verdict"
+                raise ValueError(msg)
+            if self.quality_score is not None:
+                msg = "zero attempts cannot carry quality_score"
+                raise ValueError(msg)
+            if self.terminal_failure_cause is not None:
+                msg = "zero attempts cannot claim a provider failure cause"
+                raise ValueError(msg)
+
+        if self.operational_outcome is not None:
+            assert self.content_verdict is not None
+            if self.operational_outcome is EnumDelegationOperationalOutcome.COMPLETED:
+                if not self.quality_passed:
+                    msg = "completed outcome requires quality_passed=true"
+                    raise ValueError(msg)
+                if self.content_verdict is EnumDelegationContentVerdict.NOT_APPLICABLE:
+                    msg = "completed outcome requires final content verdict"
+                    raise ValueError(msg)
+
+            if (
+                self.quality_passed
+                and self.content_verdict is not EnumDelegationContentVerdict.USABLE
+            ):
+                msg = "quality_passed requires usable content verdict"
+                raise ValueError(msg)
+
+            no_response_outcomes = {
+                EnumDelegationOperationalOutcome.PROVIDER_QUOTA,
+                EnumDelegationOperationalOutcome.PROVIDER_UNAVAILABLE,
+                EnumDelegationOperationalOutcome.TIMEOUT,
+                EnumDelegationOperationalOutcome.CANCELLED,
+                EnumDelegationOperationalOutcome.BOUNDARY_FAILURE,
+                EnumDelegationOperationalOutcome.INFERENCE_FAILED,
+            }
+            if self.operational_outcome in no_response_outcomes:
+                if self.quality_passed:
+                    msg = "no-response outcome cannot claim quality_passed"
+                    raise ValueError(msg)
+                if (
+                    self.content_verdict
+                    is not EnumDelegationContentVerdict.NOT_APPLICABLE
+                ):
+                    msg = "no-response outcome requires not_applicable content verdict"
+                    raise ValueError(msg)
+                if self.quality_score is not None:
+                    msg = "no-response outcome cannot carry quality_score"
+                    raise ValueError(msg)
+                if self.required_quality_bar is not None:
+                    msg = "no-response outcome cannot carry quality bar"
+                    raise ValueError(msg)
+            if (
+                self.operational_outcome
+                is EnumDelegationOperationalOutcome.PROVIDER_QUOTA
+            ):
+                if (
+                    self.terminal_failure_cause
+                    is not EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+                ):
+                    msg = "quota outcome requires provider_quota_exhausted cause"
+                    raise ValueError(msg)
+            if self.operational_outcome is EnumDelegationOperationalOutcome.REFUSED:
+                if self.quality_passed:
+                    msg = "refused outcome cannot claim quality_passed"
+                    raise ValueError(msg)
+                if (
+                    self.content_verdict
+                    is not EnumDelegationContentVerdict.NOT_APPLICABLE
+                ):
+                    msg = "refused outcome requires not_applicable content verdict"
+                    raise ValueError(msg)
+            if (
+                self.content_verdict
+                in {
+                    EnumDelegationContentVerdict.USABLE,
+                    EnumDelegationContentVerdict.UNUSABLE,
+                }
+                and self.quality_score is None
+            ):
+                msg = "evaluated content requires quality_score"
+                raise ValueError(msg)
+            if (
+                self.operational_outcome
+                is EnumDelegationOperationalOutcome.SCHEMA_REJECTED
+            ):
+                if self.quality_passed:
+                    msg = "rejected content outcome cannot claim quality_passed"
+                    raise ValueError(msg)
+                if self.content_verdict is not EnumDelegationContentVerdict.UNUSABLE:
+                    msg = "rejected content outcome requires unusable content verdict"
+                    raise ValueError(msg)
+                if self.quality_score is None:
+                    msg = "rejected content outcome requires quality_score"
+                    raise ValueError(msg)
+            if (
+                self.operational_outcome
+                is EnumDelegationOperationalOutcome.QUALITY_REJECTED
+            ):
+                if self.quality_passed:
+                    msg = "rejected content outcome cannot claim quality_passed"
+                    raise ValueError(msg)
+                if self.content_verdict is not EnumDelegationContentVerdict.UNUSABLE:
+                    msg = "rejected content outcome requires unusable content verdict"
+                    raise ValueError(msg)
+                if self.quality_score is None:
+                    msg = "rejected content outcome requires quality_score"
+                    raise ValueError(msg)
         if any(not item.strip() for item in self.failed_acceptance_criteria):
             msg = "failed_acceptance_criteria entries must not be blank"
             raise ValueError(msg)
@@ -342,6 +489,9 @@ class ModelDelegationResult(BaseModel):
             raise ValueError(msg)
 
         if required_bar is not None and comparison is not None:
+            if self.quality_score is None:
+                msg = "quality_score is required when a quality bar was evaluated"
+                raise ValueError(msg)
             expected = (
                 EnumQualityScoreComparison.BELOW_BAR
                 if self.quality_score < required_bar

@@ -28,7 +28,10 @@ import re
 import sys
 from pathlib import Path
 
-import yaml
+from omnibase_core.models.validation.model_llm_reference_codegen_inputs import (
+    ModelLlmReferenceCodegenInputs,
+)
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 OMNI_HOME = Path(os.environ["OMNI_HOME"])
 
@@ -58,12 +61,10 @@ def _to_enum_name(value: str) -> str:
     return name
 
 
-def _load_yaml(path: Path) -> dict:  # type: ignore[type-arg]
+def _load_yaml(path: Path) -> dict[str, object]:
     with open(path) as f:
-        data = yaml.safe_load(f)
-    if not isinstance(data, dict):
-        raise ValueError(f"Expected mapping at top level of {path}")
-    return data
+        data = load_yaml_content_as_model(f.read(), ModelLlmReferenceCodegenInputs)
+    return data.model_dump(mode="python")
 
 
 def _generate(endpoints_yaml: Path, registry_yaml: Path) -> str:
@@ -141,21 +142,22 @@ def main() -> None:
 
     if args.check:
         if not OUTPUT_PATH.exists():
-            print(
-                f"DRIFT: {OUTPUT_PATH} does not exist. Run generate_llm_refs.py to create it."
+            sys.stdout.write(
+                f"DRIFT: {OUTPUT_PATH} does not exist. Run generate_llm_refs.py to create it.\n"
             )
             sys.exit(1)
         on_disk = OUTPUT_PATH.read_text()
         if generated != on_disk:
-            print(
+            sys.stdout.write(
                 f"DRIFT: {OUTPUT_PATH} is out of date.\n"
                 "Run: uv run python scripts/generate_llm_refs.py"
+                "\n"
             )
             sys.exit(1)
-        print("OK: constants_llm_refs.py matches source YAMLs.")
+        sys.stdout.write("OK: constants_llm_refs.py matches source YAMLs.\n")
     else:
         OUTPUT_PATH.write_text(generated)
-        print(f"Written: {OUTPUT_PATH}")
+        sys.stdout.write(f"Written: {OUTPUT_PATH}\n")
 
 
 if __name__ == "__main__":

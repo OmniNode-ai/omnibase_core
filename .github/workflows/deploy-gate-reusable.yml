@@ -81,7 +81,19 @@ jobs:
           sparse-checkout: |
             scripts/deploy-gate/checkout-occ-contracts.sh
             .github/actions/deploy-gate/validate_pr_deploy_required.py
+            .github/actions/deploy-gate/models/
           sparse-checkout-cone-mode: false
+
+      - name: Set up deploy-gate validator Python
+        if: github.event_name != 'merge_group'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install deploy-gate validator dependencies
+        if: github.event_name != 'merge_group'
+        shell: bash
+        run: python -m pip install "pyyaml>=6,<7" "pydantic>=2.12.5,<3"
 
       - name: Resolve deploy-gate OCC evidence source
         if: github.event_name != 'merge_group'

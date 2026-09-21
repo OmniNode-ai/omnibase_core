@@ -1281,18 +1281,21 @@ class TestGenerateReversePatch:
 
         assert patch.description == "old desc"
 
-    def test_non_patchable_scalar_raises_value_error(self) -> None:
-        """Scalar changes at non-patchable paths raise ValueError."""
+    def test_non_patchable_scalar_raises_typed_error(self) -> None:
+        """Scalar changes at non-patchable paths raise a typed error."""
         from omnibase_core.contracts.contract_diff_computer import (
             generate_reverse_patch,
         )
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.errors.model_onex_error import ModelOnexError
 
         before = SampleContract(name="test", version=1)
         after = SampleContract(name="test", version=2)
         diff = compute_contract_diff(before, after)
 
-        with pytest.raises(ValueError, match="Non-reversible paths"):
+        with pytest.raises(ModelOnexError, match="Non-reversible paths") as exc_info:
             generate_reverse_patch(diff)
+        assert exc_info.value.error_code == EnumCoreErrorCode.UNSUPPORTED_OPERATION
 
     def test_extends_uses_before_contract_name(self) -> None:
         """The returned patch's extends.profile equals before_contract_name."""

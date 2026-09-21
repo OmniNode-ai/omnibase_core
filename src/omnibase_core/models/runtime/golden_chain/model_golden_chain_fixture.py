@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.routing.model_served_model_name import ModelServedModelName
+
 
 class ModelGoldenChainProvenance(BaseModel):
     """Full provenance bundle stamped on every recorded golden-chain fixture.
@@ -33,9 +35,8 @@ class ModelGoldenChainProvenance(BaseModel):
         min_length=1,
         description="Provider the response was recorded from (e.g. zai, gemini, openrouter).",
     )
-    model_id: str = Field(
+    model_id: ModelServedModelName = Field(
         ...,
-        min_length=1,
         description="CONCRETE resolved model id (never a delegation tier name).",
     )
     endpoint_ref: str = Field(

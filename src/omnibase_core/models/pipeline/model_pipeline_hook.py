@@ -59,8 +59,8 @@ the object and constructs a new instance. This works regardless of class identit
 
 .. note::
     This workaround may become unnecessary in future Pydantic versions if they
-    implement identity-agnostic validation for frozen models. See TODO comments
-    in ConfigDict definitions.
+    implement identity-agnostic validation for frozen models. See the
+    ticket-referenced ConfigDict annotations.
 """
 
 from typing import Literal
@@ -86,7 +86,7 @@ class ModelPipelineHook(BaseModel):
     (frozen=True) and can be safely shared across threads.
     """
 
-    # TODO(OMN-5745): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.
+    # TODO(OMN-5745): [pydantic-v3] Re-evaluate from_attributes=True when Pydantic v3 is released.  # onex-allow-todo-marker OMN-5745 reason="external Pydantic-v3 follow-up; current xdist behavior is covered"
     # This workaround addresses pytest-xdist class identity issues where frozen models
     # nested in other models fail isinstance() validation across worker processes.
     # If Pydantic v3 implements identity-agnostic validation for frozen models, this

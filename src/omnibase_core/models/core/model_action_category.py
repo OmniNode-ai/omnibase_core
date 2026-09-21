@@ -9,7 +9,7 @@ Defines the categories of node actions as a proper Pydantic model.
 
 from typing import ClassVar
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -21,6 +21,8 @@ class ModelActionCategory(BaseModel):
 
     Replaces simple string enum with structured category definitions.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(default=..., description="Category name identifier")
     display_name: str = Field(default=..., description="Human-readable category name")
@@ -91,9 +93,3 @@ class ModelActionCategory(BaseModel):
     def get_all_registered(cls) -> list["ModelActionCategory"]:
         """Get all registered categories."""
         return list(cls._registry.values())
-
-
-try:
-    ModelActionCategory.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
-    pass
