@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from omnibase_core.models.validation.model_demo_path_contract import DemoPathContract
+from omnibase_core.models.validation.model_demo_path_contract import (
+    ModelDemoPathContract,
+)
 
 
 @dataclass
@@ -19,7 +21,9 @@ class DemoPathTopicRegistry:
     widget_topics: set[str] = field(default_factory=set)
 
     @classmethod
-    def from_contracts(cls, contracts: list[DemoPathContract]) -> DemoPathTopicRegistry:
+    def from_contracts(
+        cls, contracts: list[ModelDemoPathContract]
+    ) -> DemoPathTopicRegistry:
         registry = cls()
         for contract in contracts:
             for topic in contract.publish_topics:

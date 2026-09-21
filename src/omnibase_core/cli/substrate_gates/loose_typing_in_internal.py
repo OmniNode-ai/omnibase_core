@@ -173,7 +173,7 @@ class LooseTypingInInternalGate(BaseGateCheck):
                 is_banned_kwargs_annotation = _is_object_name(ann)
             if ann is not None and not is_banned_kwargs_annotation:
                 is_banned_kwargs_annotation = _is_dict_like_any(ann)
-            if is_banned_kwargs_annotation:
+            if ann is not None and is_banned_kwargs_annotation:
                 if not has_allow_annotation(source_lines, lineno):
                     violations.append(
                         GateViolation(

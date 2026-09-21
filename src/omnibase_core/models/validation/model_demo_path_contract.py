@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 @dataclass(frozen=True)
-class DemoPathContract:
+class ModelDemoPathContract:
     """Parsed representation of a single demo-path contract.yaml."""
 
     name: str
@@ -20,4 +20,4 @@ class DemoPathContract:
     widget_topics: frozenset[str]
 
 
-__all__ = ["DemoPathContract"]
+__all__ = ["ModelDemoPathContract"]

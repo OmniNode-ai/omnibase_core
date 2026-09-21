@@ -14,7 +14,7 @@ This implementation does not use Any types.
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import ClassVar, cast
 
 from pydantic import field_validator
 
@@ -103,7 +103,7 @@ class MixinNodeTypeValidator:
                 return cls._ARCH_TO_NODE_TYPE[v.lower()]
             node_type = EnumNodeType._value2member_map_.get(v.upper())
             if node_type is not None:
-                return node_type
+                return cast(EnumNodeType, node_type)
             raise ModelOnexError(
                 message=f"Invalid node_type: {v}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

@@ -227,9 +227,6 @@ def load_waivers(path: Path, today: date) -> tuple[set[str], list[str]]:
     active: set[str] = set()
     errors: list[str] = []
     for raw_entry in entries:
-        if not isinstance(raw_entry, dict):
-            errors.append(f"waiver entry is not a mapping: {raw_entry!r}")
-            continue
         fqn = str(raw_entry.get("fqn", "")).strip()
         ticket = str(raw_entry.get("ticket", "")).strip()
         pr = str(raw_entry.get("pr", "")).strip()

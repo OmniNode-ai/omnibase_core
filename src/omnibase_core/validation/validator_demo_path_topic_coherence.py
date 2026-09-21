@@ -61,7 +61,9 @@ from omnibase_core.models.common.model_validation_metadata import (
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.validation.model_demo_path_contract import DemoPathContract
+from omnibase_core.models.validation.model_demo_path_contract import (
+    ModelDemoPathContract,
+)
 from omnibase_core.models.validation.model_demo_path_yaml_contract import (
     ModelDemoPathYamlContract,
 )
@@ -93,11 +95,11 @@ _ONEX_TOPIC_LITERAL: re.Pattern[str] = re.compile(
 # ---------------------------------------------------------------------------
 
 
-def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
+def load_demo_path_contracts(repo_roots: list[Path]) -> list[ModelDemoPathContract]:
     """Scan ``repo_roots`` for contract.yaml files with ``metadata.demo_path: true``.
 
     Walks each root recursively, reads every ``contract.yaml``, and returns
-    ``DemoPathContract`` instances for those with the demo_path marker set.
+    ``ModelDemoPathContract`` instances for those with the demo_path marker set.
 
     Args:
         repo_roots: Directories to scan.  Each root is walked recursively.
@@ -105,7 +107,7 @@ def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
     Returns:
         List of parsed demo-path contracts (may be empty).
     """
-    contracts: list[DemoPathContract] = []
+    contracts: list[ModelDemoPathContract] = []
 
     for root in repo_roots:
         if not root.is_dir():
@@ -137,7 +139,7 @@ def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
                 continue
 
             contracts.append(
-                DemoPathContract(
+                ModelDemoPathContract(
                     name=contract_path.parent.name,
                     contract_path=contract_path,
                     subscribe_topics=frozenset(parsed.subscribe_topics),
