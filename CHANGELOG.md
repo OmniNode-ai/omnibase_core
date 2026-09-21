@@ -1,3 +1,8 @@
+## v0.47.21
+
+### Changes
+- Added typed delegation terminal outcome and content verdict fields for K1.
+
 ## v0.47.20 (2026-09-20)
 
 ### Release

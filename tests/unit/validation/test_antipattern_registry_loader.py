@@ -10,6 +10,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_registry import (
     ModelAntipatternRegistry,
 )
@@ -153,8 +155,9 @@ class TestResolveAntipatterns:
                 }
             )
         )
-        with pytest.raises(ValueError, match="nonexistent_rule"):
+        with pytest.raises(ModelOnexError, match="nonexistent_rule") as exc_info:
             resolve_antipatterns(tmp_path)
+        assert exc_info.value.error_code == EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED
 
     def test_custom_entries_appended(self, tmp_path: Path) -> None:
         overrides_dir = tmp_path / ".onex"

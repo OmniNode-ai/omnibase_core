@@ -8,9 +8,11 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_cutover_criterion import EnumCutoverCriterion
 from omnibase_core.enums.enum_migration_phase import EnumMigrationPhase
 from omnibase_core.enums.enum_topic_schema_delta import EnumTopicSchemaDelta
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_topic_migration_contract import (
     ModelTopicMigrationContract,
 )
@@ -47,8 +49,9 @@ class TestTopicParsingAndBuilder:
         assert parsed.topic_major == 2
 
     def test_parse_rejects_non_canonical(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ModelOnexError) as exc_info:
             parse_canonical_topic("not-a-topic")
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_INPUT
 
     def test_build_versioned_topic(self) -> None:
         assert (
@@ -57,8 +60,9 @@ class TestTopicParsingAndBuilder:
         )
 
     def test_build_versioned_topic_rejects_bad_version(self) -> None:
-        with pytest.raises(ValueError):
+        with pytest.raises(ModelOnexError) as exc_info:
             build_versioned_topic("payments", "payment-captured", 0)
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
 
 
 # ---------------------------------------------------------------------------

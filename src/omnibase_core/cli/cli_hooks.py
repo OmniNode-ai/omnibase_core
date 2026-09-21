@@ -63,13 +63,19 @@ def _write_mask(path: Path, mask: int) -> None:
         with os.fdopen(fd, "w") as f:
             f.write("\n".join(lines) + "\n")
         Path(tmp).replace(path)
-    except BaseException:
-        try:
-            Path(tmp).unlink()
-        except OSError:
-            # Preserve the original write/replace exception if temp cleanup fails.
-            pass
+    except BaseException as write_error:
+        _record_temp_cleanup_failure(Path(tmp), write_error)
         raise
+
+
+def _record_temp_cleanup_failure(temp_path: Path, write_error: BaseException) -> None:
+    """Attach a cleanup failure to the already-primary atomic-write failure."""
+    try:
+        temp_path.unlink()
+    except OSError as cleanup_error:
+        write_error.add_note(
+            f"Temporary mask file cleanup failed for {temp_path}: {cleanup_error}"
+        )
 
 
 def _resolve_name(name: str) -> EnumHookBit:

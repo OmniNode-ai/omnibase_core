@@ -8,7 +8,7 @@ Covers the acceptance criteria:
   - override disable (enabled=False removes an entry)
   - override severity
   - custom append
-  - malformed override raises ValidationError
+  - malformed override raises ModelOnexError with a typed validation code
 """
 
 from __future__ import annotations
@@ -17,8 +17,9 @@ from pathlib import Path
 
 import pytest
 import yaml
-from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_override_config import (
     ModelAntipatternOverrideConfig,
 )
@@ -71,7 +72,9 @@ class TestLoadRepoOverrides:
         assert len(result.overrides) == 1
         assert result.overrides[0].name == "hardcoded_ip"
 
-    def test_malformed_override_raises_validation_error(self, tmp_path: Path) -> None:
+    def test_malformed_override_raises_typed_validation_error(
+        self, tmp_path: Path
+    ) -> None:
         onex_dir = tmp_path / ".onex"
         onex_dir.mkdir()
         (onex_dir / "antipattern-overrides.yaml").write_text(
@@ -86,10 +89,13 @@ class TestLoadRepoOverrides:
                 }
             )
         )
-        with pytest.raises(ValidationError):
+        with pytest.raises(ModelOnexError) as exc_info:
             load_repo_overrides(tmp_path)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
-    def test_unknown_extra_field_raises_validation_error(self, tmp_path: Path) -> None:
+    def test_unknown_extra_field_raises_typed_validation_error(
+        self, tmp_path: Path
+    ) -> None:
         onex_dir = tmp_path / ".onex"
         onex_dir.mkdir()
         (onex_dir / "antipattern-overrides.yaml").write_text(
@@ -99,8 +105,9 @@ class TestLoadRepoOverrides:
                 }
             )
         )
-        with pytest.raises(ValidationError):
+        with pytest.raises(ModelOnexError) as exc_info:
             load_repo_overrides(tmp_path)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
 @pytest.mark.unit
@@ -179,8 +186,9 @@ class TestMergeAntipatterns:
                 "overrides": [{"name": "nonexistent_rule_xyz", "severity": "ERROR"}],
             }
         )
-        with pytest.raises(ValueError, match="nonexistent_rule_xyz"):
+        with pytest.raises(ModelOnexError, match="nonexistent_rule_xyz") as exc_info:
             merge_antipatterns(defaults, config)
+        assert exc_info.value.error_code == EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED
 
 
 @pytest.mark.unit
@@ -237,7 +245,7 @@ class TestResolveAntipatterns:
         names = {e.name for e in result.entries}
         assert "repo_specific_rule" in names
 
-    def test_malformed_override_file_raises_validation_error(
+    def test_malformed_override_file_raises_typed_validation_error(
         self, tmp_path: Path
     ) -> None:
         onex_dir = tmp_path / ".onex"
@@ -247,5 +255,6 @@ class TestResolveAntipatterns:
                 {"overrides": [{"name": "hardcoded_ip", "severity": "BAD_VALUE"}]}
             )
         )
-        with pytest.raises(ValidationError):
+        with pytest.raises(ModelOnexError) as exc_info:
             resolve_antipatterns(tmp_path)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR

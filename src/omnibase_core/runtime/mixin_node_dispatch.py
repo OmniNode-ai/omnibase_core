@@ -42,7 +42,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -51,73 +51,21 @@ from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
+from omnibase_core.runtime.dispatch_entry import (
+    _DispatcherCallable,
+    _NodeDispatchEntry,
+)
+from omnibase_core.runtime.dispatch_match import _NodeDispatchMatch
+from omnibase_core.runtime.dispatch_state import (
+    DlqTopicDeriver,
+    _NodeDispatchState,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_node_kind import EnumNodeKind
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 __all__ = ["MixinNodeDispatch"]
-
-# A dispatcher is any callable the node registers; selection never invokes it, so
-# its precise signature is irrelevant to this mixin (execution lives elsewhere).
-_DispatcherCallable = Callable[..., object]
-
-# Injected DLQ-topic deriver: ``(event_type | None, original_topic) -> dlq_topic | None``.
-# The infra runtime injects ``message_dispatch_engine._derive_dlq_topic`` so the
-# NO_DISPATCHER tuple's ``dlq_topic`` element matches the live engine. When absent,
-# derivation yields ``None`` (the mixin never imports infra topic constants).
-DlqTopicDeriver = Callable[[str | None, str], str | None]
-
-
-class _NodeDispatchEntry:
-    """Selection metadata for one registered dispatcher (core-only mirror of the
-    engine's ``DispatchEntryInternal``, minus the execution-only fields)."""
-
-    __slots__ = (
-        "category",
-        "dispatcher",
-        "dispatcher_id",
-        "message_types",
-        "node_kind",
-        "payload_type_matcher",
-    )
-
-    def __init__(
-        self,
-        *,
-        dispatcher_id: str,
-        dispatcher: _DispatcherCallable,
-        category: EnumMessageCategory,
-        message_types: set[str] | None,
-        node_kind: EnumNodeKind | None,
-        payload_type_matcher: Callable[[object], bool] | None,
-    ) -> None:
-        self.dispatcher_id = dispatcher_id
-        self.dispatcher = dispatcher
-        self.category = category
-        self.message_types = (
-            set(message_types) if message_types is not None else None
-        )  # None means "all message types"
-        self.node_kind = node_kind
-        # None means "not type-scoped" — legacy string-only matching applies.
-        self.payload_type_matcher = payload_type_matcher
-
-
-class _NodeDispatchState:
-    """Per-instance selection table. Materialized lazily so an unused mixin is inert."""
-
-    __slots__ = ("dispatchers", "dlq_topic_deriver", "frozen", "routes")
-
-    def __init__(self) -> None:
-        self.routes: dict[str, ModelDispatchRoute] = {}
-        self.dispatchers: dict[str, _NodeDispatchEntry] = {}
-        self.frozen: bool = False
-        self.dlq_topic_deriver: DlqTopicDeriver | None = None
-
-
-class _NodeDispatchMatch(NamedTuple):
-    route_id: str
-    entry: _NodeDispatchEntry
 
 
 class MixinNodeDispatch:
@@ -346,16 +294,16 @@ class MixinNodeDispatch:
     def _payload_matches(entry: _NodeDispatchEntry, payload: object | None) -> bool:
         """True when ``payload`` matches a type-scoped dispatcher's event_model.
 
-        A raising matcher means "not my type" (never selected), mirroring the
-        engine — a malformed/wrong-type payload never selects a type-scoped
-        dispatcher. Callers only invoke this when a matcher is present.
+        A type validation error means "not my type" (never selected), mirroring
+        the engine. Unexpected matcher failures propagate to preserve the
+        dispatch registration fault rather than silently selecting no route.
         """
         matcher = entry.payload_type_matcher
         if matcher is None:
             return True
         try:
             return bool(matcher(payload))
-        except Exception:  # noqa: BLE001 — a raising matcher means "not my type"
+        except (TypeError, ValueError):
             return False
 
     async def dispatch(
@@ -482,8 +430,12 @@ class MixinNodeDispatch:
             return None
         try:
             return deriver(event_type, topic)
-        except Exception:  # noqa: BLE001 — DLQ derivation must never crash selection
-            return None
+        except Exception as error:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message="Injected DLQ topic deriver failed",
+                context={"event_type": event_type, "topic": topic},
+            ) from error
 
     @staticmethod
     def _extract_routing_inputs(envelope: object) -> tuple[object | None, object]:

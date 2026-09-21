@@ -38,7 +38,6 @@ __all__ = [
     "load_config_from_contract",
     "OPENAI_CONFIG",
     "ANTHROPIC_CONFIG",
-    "LOCAL_CONFIG",
 ]
 
 
@@ -64,8 +63,7 @@ class _LocalProviderConfig(BaseModel):  # type: ignore[explicit-any]
     model_name: str
     temperature: float = 0.7
     max_tokens: int = 500
-    endpoint_env: str = "LOCAL_LLM_ENDPOINT"
-    default_endpoint: str = "http://localhost:8000"  # url-authority-ok: local demo default  # fallback-ok: local demo default
+    endpoint_env: str
 
 
 # NOTE(OMN-1201): Pydantic BaseModel uses Any internally in model fields. Safe for example models.
@@ -132,7 +130,7 @@ class ModelConfig(BaseModel):  # type: ignore[explicit-any]
             config = ModelConfig(
                 provider="local",
                 model_name="qwen2.5-coder-14b",
-                endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),  # url-authority-ok: local demo example
+                endpoint_url=os.environ["LOCAL_LLM_ENDPOINT"],
             )
     """
 
@@ -218,8 +216,12 @@ def load_config_from_contract(
     provider_config = contract.metadata.provider_config
     if provider == "local":
         local_cfg = provider_config.local
-        # Local provider uses endpoint_env and default_endpoint from contract
-        endpoint_url = os.getenv(local_cfg.endpoint_env, local_cfg.default_endpoint)
+        endpoint_url = os.getenv(local_cfg.endpoint_env)
+        if endpoint_url is None:
+            raise ValueError(
+                f"Missing required local endpoint environment variable: "
+                f"{local_cfg.endpoint_env}"
+            )
         return ModelConfig(
             provider=provider,
             model_name=local_cfg.model_name,
@@ -269,13 +271,4 @@ ANTHROPIC_CONFIG = ModelConfig(
     model_name="claude-sonnet-4-20250514",  # Claude Sonnet 4, version 2025-05-14
     temperature=0.7,
     api_key_env="ANTHROPIC_API_KEY",
-)
-
-# Local provider configuration - uses localhost by default.
-# Set LOCAL_LLM_ENDPOINT environment variable to override.
-# NOTE: Do not hardcode LAN IPs; use environment variables for custom endpoints.
-LOCAL_CONFIG = ModelConfig(
-    provider="local",
-    model_name="qwen2.5-coder-14b",  # Qwen 2.5 Coder 14B - optimized for code tasks
-    endpoint_url=os.getenv("LOCAL_LLM_ENDPOINT", "http://localhost:8000"),  # url-authority-ok: local demo default  # fallback-ok: local demo default
 )

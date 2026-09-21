@@ -464,33 +464,27 @@ class TestNodeBaseSignatureSnapshot:
         )
 
     def test_node_base_init_event_bus_optional(self) -> None:
-        """Verify event_bus parameter is optional with None default.
-
-        Pre-refactor: event_bus defaults to None.
-        """
+        """Verify event_bus omission uses a sentinel distinct from explicit None."""
         from omnibase_core.infrastructure.node_base import NodeBase
 
         sig = inspect.signature(NodeBase.__init__)
         event_bus_param = sig.parameters["event_bus"]
 
-        assert event_bus_param.default is None, (
-            "NodeBase.__init__ event_bus should default to None. "
-            f"Got default: {event_bus_param.default}"
+        assert event_bus_param.default not in (None, inspect.Parameter.empty), (
+            "NodeBase.__init__ event_bus must use an omission sentinel so an "
+            "explicit None is distinguishable from an omitted dependency."
         )
 
     def test_node_base_init_container_optional(self) -> None:
-        """Verify container parameter is optional with None default.
-
-        Pre-refactor: container defaults to None (NodeBase creates one if not provided).
-        """
+        """Verify container omission uses a sentinel distinct from explicit None."""
         from omnibase_core.infrastructure.node_base import NodeBase
 
         sig = inspect.signature(NodeBase.__init__)
         container_param = sig.parameters["container"]
 
-        assert container_param.default is None, (
-            "NodeBase.__init__ container should default to None. "
-            f"Got default: {container_param.default}"
+        assert container_param.default not in (None, inspect.Parameter.empty), (
+            "NodeBase.__init__ container must use an omission sentinel so an "
+            "explicit None is distinguishable from an omitted dependency."
         )
 
     def test_node_base_init_workflow_id_optional(self) -> None:

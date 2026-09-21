@@ -6,6 +6,12 @@
 from omnibase_core.enums.enum_delegation_budget_refusal_reason import (
     EnumDelegationBudgetRefusalReason,
 )
+from omnibase_core.enums.enum_delegation_content_verdict import (
+    EnumDelegationContentVerdict,
+)
+from omnibase_core.enums.enum_delegation_operational_outcome import (
+    EnumDelegationOperationalOutcome,
+)
 from omnibase_core.enums.enum_delegation_output_refusal_reason import (
     EnumDelegationOutputRefusalReason,
 )
@@ -118,6 +124,8 @@ __all__: list[str] = [
     "EnumDelegationOutputShape",
     "EnumDelegationOutputRefusalReason",
     "EnumDelegationBudgetRefusalReason",
+    "EnumDelegationContentVerdict",
+    "EnumDelegationOperationalOutcome",
     "EnumDelegationTerminalOutcome",
     "EnumDelegationUnroutedReason",
     "EnumQualityContractMode",

@@ -56,11 +56,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
-
 from omnibase_core.enums.enum_fsm_handler_drift import (
     EnumFsmHandlerDriftKind,
     EnumFsmHandlerDriftSeverity,
+)
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.validation.model_fsm_binding_contract_document import (
+    ModelFsmBindingContractDocument,
 )
 from omnibase_core.models.validation.model_fsm_handler_drift_finding import (
     ModelFsmHandlerDriftFinding,
@@ -109,8 +111,10 @@ def discover_fsm_binding_contracts(root: Path) -> list[Path]:
         ):
             continue
         try:
-            data = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
-        except (yaml.YAMLError, UnicodeDecodeError, OSError):
+            data = ModelFsmBindingContractDocument.from_yaml(
+                contract_path.read_text(encoding="utf-8")
+            ).model_dump(mode="python")
+        except (ModelOnexError, UnicodeDecodeError, OSError, ValueError):
             continue
         if _is_fsm_binding_contract(data):
             found.append(contract_path)
@@ -789,8 +793,10 @@ def validate_contract(
 ) -> list[ModelFsmHandlerDriftFinding]:
     """Validate one contract's fsm_handler_binding entries."""
     try:
-        data = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
-    except (yaml.YAMLError, UnicodeDecodeError, OSError):
+        data = ModelFsmBindingContractDocument.from_yaml(
+            contract_path.read_text(encoding="utf-8")
+        ).model_dump(mode="python")
+    except (ModelOnexError, UnicodeDecodeError, OSError, ValueError):
         return []
 
     if not _is_fsm_binding_contract(data):

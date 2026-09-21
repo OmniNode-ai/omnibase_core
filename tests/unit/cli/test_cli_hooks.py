@@ -11,7 +11,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from omnibase_core.cli.cli_hooks import hooks_group
+from omnibase_core.cli.cli_hooks import _record_temp_cleanup_failure, hooks_group
 from omnibase_core.enums.enum_hook_bit import _DEFAULT_MASK, EnumHookBit
 
 pytestmark = pytest.mark.unit
@@ -37,6 +37,18 @@ def _mask_from_env(path: Path) -> int | None:
         if line.startswith("ONEX_HOOKS_MASK="):
             return int(line.split("=", 1)[1], 0)
     return None
+
+
+def test_temp_cleanup_failure_is_attached_to_primary_write_failure(
+    tmp_path: Path,
+) -> None:
+    """Atomic-write cleanup remains observable without replacing the write error."""
+    primary_error = OSError("replace failed")
+    with mock.patch.object(Path, "unlink", side_effect=OSError("unlink failed")):
+        _record_temp_cleanup_failure(tmp_path / ".env_tmp_", primary_error)
+
+    assert primary_error.__notes__ is not None
+    assert "unlink failed" in primary_error.__notes__[0]
 
 
 # ---------------------------------------------------------------------------

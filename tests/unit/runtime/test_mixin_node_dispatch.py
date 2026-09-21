@@ -199,7 +199,7 @@ async def test_no_dispatcher_uses_injected_deriver() -> None:
 
 
 @pytest.mark.asyncio
-async def test_deriver_raise_is_swallowed_to_none() -> None:
+async def test_deriver_failure_is_reported_as_configuration_error() -> None:
     mixin = MixinNodeDispatch()
     _register_single(mixin, topic_pattern="onex.evt.other.*.v1")
 
@@ -209,11 +209,10 @@ async def test_deriver_raise_is_swallowed_to_none() -> None:
     mixin.set_dlq_topic_deriver(_bad)
     mixin.freeze()
 
-    result = await mixin.dispatch(
-        _EVENTS_TOPIC, _envelope(event_type=None, payload=_AlphaPayload())
-    )
-    assert _selection_tuple(result)[0] == "no_dispatcher"
-    assert _selection_tuple(result)[4] is None
+    with pytest.raises(ModelOnexError, match="Injected DLQ topic deriver failed"):
+        await mixin.dispatch(
+            _EVENTS_TOPIC, _envelope(event_type=None, payload=_AlphaPayload())
+        )
 
 
 # ---------------------------------------------------------------------------

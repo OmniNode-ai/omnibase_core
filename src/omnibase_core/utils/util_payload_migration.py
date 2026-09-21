@@ -300,15 +300,11 @@ def _prepare_dict_for_conversion(
         and isinstance(data.get(node_type_key), str)
     ):
         node_type_value = data.get(node_type_key)
-        try:
-            data[node_type_key] = EnumNodeKind(node_type_value)
-        except ValueError:
-            # Try uppercase conversion
-            try:
-                data[node_type_key] = EnumNodeKind[str(node_type_value).upper()]
-            except KeyError:
-                # Leave as-is; Pydantic will handle the validation error
-                pass
+        node_kind = EnumNodeKind._value2member_map_.get(node_type_value)
+        if node_kind is None:
+            node_kind = EnumNodeKind.__members__.get(str(node_type_value).upper())
+        if node_kind is not None:
+            data[node_type_key] = node_kind
 
     return data
 

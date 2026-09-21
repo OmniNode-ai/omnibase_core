@@ -125,10 +125,7 @@ class ModelYamlValue(BaseModel):
 
 
 # Rebuild model to resolve forward references for self-referential fields
-try:
-    ModelYamlValue.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
-    pass
+ModelYamlValue.model_rebuild(raise_errors=False)
 
 
 __all__ = ["ModelYamlValue"]

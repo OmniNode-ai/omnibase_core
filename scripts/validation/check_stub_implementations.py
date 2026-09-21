@@ -12,7 +12,7 @@ Detection Patterns:
     - Functions/methods containing only 'pass'
     - Functions/methods containing only '...' (Ellipsis)
     - Functions/methods that only raise NotImplementedError
-    - Functions/methods with TODO/FIXME comments suggesting incomplete work
+    - Functions/methods with TODO/FIXME comments suggesting incomplete work  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
     - Empty function bodies (docstring + pass/ellipsis)
 
 Exclusions (Legitimate Cases):
@@ -43,6 +43,13 @@ import ast
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+_WORK_ITEM_MARKERS = (
+    "TODO",  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
+    "FIXME",  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
+    "XXX",
+    "STUB",
+)
 
 try:
     import yaml
@@ -349,18 +356,15 @@ class StubImplementationDetector(ast.NodeVisitor):
 
         # Pattern 6: staleness markers (to-do/fix-me) in docstring or comments  # TODO_FORMAT_EXEMPT: describes stub detection pattern
         if docstring:
-            if any(
-                marker in docstring.upper()
-                for marker in ["TODO", "FIXME", "XXX", "STUB"]
-            ):
+            if any(marker in docstring.upper() for marker in _WORK_ITEM_MARKERS):
                 # Check if the function has a stub-ok comment
                 if not self._has_stub_ok_comment(node.lineno):
                     self._add_issue(
                         node.lineno,
                         func_name,
                         "todo_in_docstring",
-                        "Function docstring contains TODO/FIXME marker",
-                        "Complete the implementation and remove TODO/FIXME markers",
+                        "Function docstring contains TODO/FIXME marker",  # onex-allow-todo-marker OMN-18931 reason="validator diagnostic vocabulary, not unfinished work"
+                        "Complete the implementation and remove TODO/FIXME markers",  # onex-allow-todo-marker OMN-18931 reason="validator diagnostic vocabulary, not unfinished work"
                     )
 
     def _is_ellipsis(self, stmt: ast.stmt) -> bool:
@@ -521,7 +525,7 @@ class StubImplementationChecker:
             print("       ...  # Stub")
             print()
             print("   def validate(value):")
-            print("       raise NotImplementedError('TODO: implement validation')")
+            print("       raise NotImplementedError('implement validation')")
             print()
             print("✅ GOOD Examples:")
             print("   def process_data(data):")
@@ -541,7 +545,7 @@ class StubImplementationChecker:
             print("💡 Tips:")
             print("   • Replace pass/... with actual implementation logic")
             print("   • Replace NotImplementedError with working code")
-            print("   • Remove TODO/FIXME comments after implementation")
+            print("   • Remove unfinished-work comments after implementation")
             print("   • Use '# stub-ok' comment to exclude legitimate stubs")
             print("   • Protocol/ABC classes are automatically excluded")
 

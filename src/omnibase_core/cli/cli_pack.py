@@ -186,11 +186,12 @@ def cli_pack(
     # Step 2: Validate contract.yaml
     contract_path = node_dir / "contract.yaml"
     contract = _validate_contract(contract_path)
-    contract_version = (
-        contract.get("contract_version")
-        or contract.get("node_version")
-        or contract.get("version", "?")
-    )
+    contract_version: object = "?"
+    for version_key in ("contract_version", "node_version", "version"):
+        candidate_version = contract.get(version_key)
+        if candidate_version:
+            contract_version = candidate_version
+            break
     if isinstance(contract_version, dict):
         contract_version = f"{contract_version.get('major', '?')}.{contract_version.get('minor', '?')}.{contract_version.get('patch', '?')}"
     if verbose:

@@ -805,13 +805,13 @@ gates:
   - name: "occ-companion-effect / Publish occ-companion-effect command"
     mode: REQUIRED
     branch: dev
-    producer_kind: cross_repo
-    caller_workflow: call-occ-companion-effect.yml
-    caller_job: occ-companion-effect
-    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev"
+    producer_kind: local
+    workflow: ci.yml
+    job_path: ["occ-companion-effect"]
     skip_semantics: neutral_ok
     rationale: "OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
-      contexts.md): the caller job 'occ-companion-effect' previously had its own job-level `if: github.actor
+      contexts.md), migrated into ci.yml by OMN-16359 without changing the reusable call or composed context
+      name: the former caller job 'occ-companion-effect' previously had its own job-level `if: github.actor
       != 'dependabot[bot]' && github.actor != 'renovate[bot]' && (contains(...OMN-...))` -- vector-3 (ungated
       caller if). A skipped CALLER job never invokes the reusable at all, so no check run under this composed
       context is ever created -- permanently PENDING, not a neutral skip. This was the live cause of omnibase_core#1548

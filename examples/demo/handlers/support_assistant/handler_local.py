@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-# onex-allow-file-internal-ip OMN-13480 reason="this is a demo LocalLLMClient whose entire subject IS a local/self-hosted LLM endpoint; the docstring example and DEFAULT_ENDPOINT constant intentionally show a localhost vLLM URL as illustrative demonstration data, not a production runtime endpoint"
-
 """Local LLM client implementation using httpx.  # ai-slop-ok: pre-existing boilerplate, suppressed per OMN-4405
 
 This module provides a ProtocolLLMClient implementation for local/self-hosted
@@ -11,15 +9,15 @@ Example:
     Using with local vLLM server::
 
         client = LocalLLMClient(
-            endpoint_url="http://localhost:8000",  # url-authority-ok: local demo endpoint
+            endpoint_url="https://llm.example.test:8000",
             model_name="qwen2.5-14b",
         )
         response = await client.complete("Hello, how are you?")
 
     Using with environment variables::
 
-        # Set LOCAL_LLM_ENDPOINT=http://your-server:8000
-        client = LocalLLMClient()  # Uses env var or defaults to localhost
+        # Set LOCAL_LLM_ENDPOINT=https://llm.example.test:8000
+        client = LocalLLMClient()  # Uses the explicitly configured endpoint.
 
     Using with env-var-driven endpoint::
 
@@ -43,8 +41,6 @@ from examples.demo.handlers.support_assistant.protocol_llm_client import (
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
-# Default config - use localhost; override via LOCAL_LLM_ENDPOINT
-DEFAULT_ENDPOINT = "http://localhost:8000"  # url-authority-ok: local demo default
 DEFAULT_MODEL = "qwen2.5-14b"
 DEFAULT_TIMEOUT = 60.0
 
@@ -74,17 +70,21 @@ class LocalLLMClient:
         """Initialize the local LLM client.
 
         Args:
-            endpoint_url: Base URL of the LLM server.
-                Defaults to environment variable LOCAL_LLM_ENDPOINT or DEFAULT_ENDPOINT.
+            endpoint_url: Base URL of the LLM server. When omitted, the
+                LOCAL_LLM_ENDPOINT environment variable is required.
             model_name: Model identifier.
                 Defaults to environment variable LOCAL_LLM_MODEL or DEFAULT_MODEL.
             temperature: Sampling temperature (0.0 to 2.0).
             max_tokens: Maximum tokens to generate.
             timeout: Request timeout in seconds.
         """
-        self.endpoint_url = (
-            endpoint_url or os.getenv("LOCAL_LLM_ENDPOINT") or DEFAULT_ENDPOINT
-        )
+        self.endpoint_url = endpoint_url or os.getenv("LOCAL_LLM_ENDPOINT")
+        if self.endpoint_url is None:
+            raise ModelOnexError(
+                message="LOCAL_LLM_ENDPOINT is required when endpoint_url is omitted",
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                context={"required_environment_variable": "LOCAL_LLM_ENDPOINT"},
+            )
         self.model_name = model_name or os.getenv("LOCAL_LLM_MODEL") or DEFAULT_MODEL
 
         # Validate temperature range (OpenAI-compatible range is 0.0-2.0)
@@ -216,8 +216,8 @@ class LocalLLMClient:
 
             return False
 
-        except Exception:
-            # boundary-ok: health check must gracefully handle all errors
+        except httpx.HTTPError:
+            # boundary-ok: a transport failure makes the endpoint unhealthy
             return False
 
 

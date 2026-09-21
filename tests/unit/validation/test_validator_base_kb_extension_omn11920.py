@@ -70,7 +70,7 @@ def _make_registry(
     version: str = "1.0.0",
 ) -> ModelAntipatternRegistry:
     return ModelAntipatternRegistry(
-        version=version,
+        version=ModelSemVer.parse(version),
         last_updated=datetime(2026, 5, 24, tzinfo=UTC),
         entries=entries,
     )

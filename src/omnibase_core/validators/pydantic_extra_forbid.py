@@ -78,436 +78,38 @@ DoD reference: OMN-14515 (parent OMN-14208).
 from __future__ import annotations
 
 import argparse
-import ast
-import importlib
-import importlib.util
 import json
 import subprocess
 import sys
 from collections.abc import Iterator, Sequence
 from datetime import UTC, date, datetime
 from pathlib import Path
-from types import ModuleType
 
-import yaml
-
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.validation.model_extra_forbid_baseline import (
+    ModelExtraForbidBaseline,
+)
 from omnibase_core.models.validation.model_extra_forbid_finding import (
     ENGINE_RUNTIME,
     ENGINE_STATIC,
-    STATUS_EXPLICIT_ALLOW,
-    STATUS_EXPLICIT_FORBID,
-    STATUS_EXPLICIT_IGNORE,
-    STATUS_IMPLICIT_DEFAULT,
-    STATUS_UNRESOLVED,
     ModelExtraForbidFinding,
 )
+from omnibase_core.models.validation.model_violation_waivers_document import (
+    ModelViolationWaiversDocument,
+)
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 DEFAULT_SCAN_ROOT = Path("src/omnibase_core")
 DEFAULT_BASELINE_PATH = Path(__file__).with_name("extra_forbid_baseline.yaml")
 DEFAULT_WAIVERS_PATH = Path(__file__).with_name("extra_forbid_waivers.yaml")
 
-COMPLIANT_EXTRA = "forbid"
 STAGED_REF = ":staged"
-# `extra=` declared, but as a non-literal (a constant/enum reference) the AST cannot
-# evaluate. Declared-but-unknowable is UNRESOLVED, never silently "implicit default".
-UNKNOWN_EXTRA = "<unknown>"
-
-# Pydantic model roots. A class whose static base chain reaches one of these is a model.
-_PYDANTIC_MODEL_BASES: frozenset[str] = frozenset(
-    {"BaseModel", "BaseSettings", "RootModel"}
+from omnibase_core.validation.pydantic_module_index import (
+    parse_module as _parse_module,
 )
-# RootModel rejects `extra` outright (PydanticUserError), so it cannot comply and is exempt.
-_EXEMPT_BASES: frozenset[str] = frozenset({"RootModel"})
-
-_STATUS_BY_EXTRA: dict[str, str] = {
-    "forbid": STATUS_EXPLICIT_FORBID,
-    "ignore": STATUS_EXPLICIT_IGNORE,
-    "allow": STATUS_EXPLICIT_ALLOW,
-}
-
-
-# ---------------------------------------------------------------------------
-# Module <-> path resolution (extractor bug #4: path-format mismatch)
-# ---------------------------------------------------------------------------
-def module_for_path(path: Path) -> tuple[str, Path]:
-    """Return the dotted module name for *path* and the sys.path root it hangs off.
-
-    Anchors on the ``src/`` root when there is one, and only otherwise falls back to
-    walking up while ``__init__.py`` exists. The ``src/`` anchor is required because
-    the ``__init__.py`` walk is WRONG for an implicit namespace package — e.g.
-    ``src/omnibase_core/models/registry/`` has no ``__init__.py``, and the walk would
-    resolve its modules to bare top-level names, breaking both the import and the FQN.
-
-    Always operates on resolved absolute paths — the relative/absolute mismatch is one
-    of the four known extractor bugs.
-    """
-    resolved = path.resolve()
-    parts_list = resolved.parts
-    src_indices = [i for i, part in enumerate(parts_list) if part == "src"]
-
-    if src_indices:
-        root = Path(*parts_list[: src_indices[-1] + 1])
-        parts = list(parts_list[src_indices[-1] + 1 : -1])
-    else:
-        parts = []
-        directory = resolved.parent
-        while (directory / "__init__.py").exists():
-            parts.insert(0, directory.name)
-            directory = directory.parent
-        root = directory
-
-    stem = resolved.stem
-    if stem != "__init__":
-        parts.append(stem)
-    return ".".join(parts), root
-
-
-# ---------------------------------------------------------------------------
-# Static AST engine
-# ---------------------------------------------------------------------------
-class _ModuleIndex:
-    """Parsed view of one module: its classes and its import bindings."""
-
-    __slots__ = ("classes", "imports", "module", "path")
-
-    def __init__(self, path: Path, module: str, tree: ast.Module) -> None:
-        self.path = path
-        self.module = module
-        self.classes: dict[str, ast.ClassDef] = {}
-        # local binding name -> (defining module, original class name)
-        self.imports: dict[str, tuple[str, str]] = {}
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
-                self.classes.setdefault(node.name, node)
-
-        package = module.rsplit(".", 1)[0] if "." in module else ""
-        for node in tree.body:
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    self.imports[alias.asname or alias.name.split(".")[0]] = (
-                        alias.name,
-                        "",
-                    )
-            elif isinstance(node, ast.ImportFrom):
-                source = _absolute_import_module(node, package)
-                if source is None:
-                    continue
-                for alias in node.names:
-                    self.imports[alias.asname or alias.name] = (source, alias.name)
-
-
-def _absolute_import_module(node: ast.ImportFrom, package: str) -> str | None:
-    """Resolve a possibly-relative ``from ... import`` to an absolute dotted module."""
-    if not node.level:
-        return node.module
-    parts = package.split(".") if package else []
-    if node.level - 1 > len(parts):
-        return None
-    base = parts[: len(parts) - (node.level - 1)]
-    if node.module:
-        base = base + node.module.split(".")
-    return ".".join(base) if base else None
-
-
-class _StaticResolver:
-    """Resolves a class's effective ``extra`` by walking bases through the import graph."""
-
-    def __init__(self, roots: Sequence[Path]) -> None:
-        self._by_module: dict[str, _ModuleIndex | None] = {}
-        self._sys_roots: list[Path] = []
-        for root in roots:
-            resolved = root.resolve()
-            base = resolved if resolved.is_dir() else resolved.parent
-            _, sys_root = module_for_path(base / "__probe__.py")
-            if sys_root not in self._sys_roots:
-                self._sys_roots.append(sys_root)
-
-    # -- module loading -----------------------------------------------------
-    def index_for_path(self, path: Path) -> _ModuleIndex | None:
-        module, sys_root = module_for_path(path)
-        if sys_root not in self._sys_roots:
-            self._sys_roots.append(sys_root)
-        cached = self._by_module.get(module)
-        if cached is not None:
-            return cached
-        index = _parse_module(path, module)
-        self._by_module[module] = index
-        return index
-
-    def _index_for_module(self, module: str) -> _ModuleIndex | None:
-        if module in self._by_module:
-            return self._by_module[module]
-        self._by_module[module] = None  # cycle guard / negative cache
-        path = self._locate(module)
-        if path is None:
-            return None
-        index = _parse_module(path, module)
-        self._by_module[module] = index
-        return index
-
-    def _locate(self, module: str) -> Path | None:
-        relative = Path(*module.split("."))
-        for root in self._sys_roots:
-            candidate = root / relative.with_suffix(".py")
-            if candidate.is_file():
-                return candidate
-            package_init = root / relative / "__init__.py"
-            if package_init.is_file():
-                return package_init
-        return None
-
-    # -- resolution ---------------------------------------------------------
-    def is_pydantic_model(self, module: str, node: ast.ClassDef) -> bool:
-        return self._reaches_model_base(module, node, set())
-
-    def is_exempt(self, module: str, node: ast.ClassDef) -> bool:
-        for base_module, base_name, base_node in self._bases(module, node):
-            if base_name in _EXEMPT_BASES:
-                return True
-            if base_node is not None and self.is_exempt(base_module, base_node):
-                return True
-        return False
-
-    def _reaches_model_base(
-        self, module: str, node: ast.ClassDef, seen: set[tuple[str, str]]
-    ) -> bool:
-        key = (module, node.name)
-        if key in seen:
-            return False
-        seen.add(key)
-        for base_module, base_name, base_node in self._bases(module, node):
-            if base_name in _PYDANTIC_MODEL_BASES:
-                return True
-            if base_node is not None and self._reaches_model_base(
-                base_module, base_node, seen
-            ):
-                return True
-        return False
-
-    def resolve_extra(
-        self, module: str, node: ast.ClassDef, seen: set[tuple[str, str]] | None = None
-    ) -> tuple[str, str | None]:
-        """Return ``(status, effective_extra)`` for a class, walking bases in MRO order."""
-        seen = seen if seen is not None else set()
-        key = (module, node.name)
-        if key in seen:
-            return STATUS_UNRESOLVED, None
-        seen.add(key)
-
-        own = _extra_from_class(node)
-        if own is not None:
-            return _STATUS_BY_EXTRA.get(own, STATUS_UNRESOLVED), own
-
-        unresolved_base = False
-        for base_module, base_name, base_node in self._bases(module, node):
-            if base_name in _PYDANTIC_MODEL_BASES:
-                continue  # pydantic's own root: contributes the implicit default only
-            if base_node is None:
-                unresolved_base = True
-                continue
-            status, extra = self.resolve_extra(base_module, base_node, seen)
-            if extra is not None:
-                return status, extra
-            if status == STATUS_UNRESOLVED:
-                unresolved_base = True
-
-        if unresolved_base:
-            return STATUS_UNRESOLVED, None
-        return STATUS_IMPLICIT_DEFAULT, None
-
-    def _bases(
-        self, module: str, node: ast.ClassDef
-    ) -> list[tuple[str, str, ast.ClassDef | None]]:
-        """Return ``(defining_module, base_name, base_node|None)`` for each base."""
-        out: list[tuple[str, str, ast.ClassDef | None]] = []
-        index = self._by_module.get(module)
-        for base in node.bases:
-            name = _base_name(base)
-            if name is None:
-                continue
-            simple = name.rsplit(".", maxsplit=1)[-1]
-            if simple in _PYDANTIC_MODEL_BASES:
-                out.append((module, simple, None))
-                continue
-            if simple in {"Generic", "ABC", "Protocol", "object"}:
-                continue
-
-            target_module: str | None = None
-            target_name = simple
-            if index is not None:
-                binding = index.imports.get(simple)
-                if binding is not None:
-                    bound_module, bound_name = binding
-                    target_module = bound_module
-                    target_name = bound_name or simple
-                elif simple in index.classes:
-                    out.append((module, simple, index.classes[simple]))
-                    continue
-
-            if target_module is None:
-                out.append((module, simple, None))
-                continue
-            if target_name in _PYDANTIC_MODEL_BASES:
-                out.append((target_module, target_name, None))
-                continue
-
-            base_index = self._index_for_module(target_module)
-            base_node = (
-                base_index.classes.get(target_name) if base_index is not None else None
-            )
-            out.append((target_module, target_name, base_node))
-        return out
-
-
-def _parse_module(path: Path, module: str) -> _ModuleIndex | None:
-    try:
-        source = path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(path))
-    except (OSError, UnicodeDecodeError, SyntaxError, ValueError):
-        return None
-    return _ModuleIndex(path, module, tree)
-
-
-def _base_name(node: ast.expr) -> str | None:
-    if isinstance(node, ast.Name):
-        return node.id
-    if isinstance(node, ast.Attribute):
-        parent = _base_name(node.value)
-        return f"{parent}.{node.attr}" if parent else node.attr
-    if isinstance(node, ast.Subscript):  # e.g. Generic[T], ModelBase[T]
-        return _base_name(node.value)
-    if isinstance(node, ast.Call):
-        return _base_name(node.func)
-    return None
-
-
-def _extra_from_class(node: ast.ClassDef) -> str | None:
-    """Extract an ``extra`` declared on the class itself, or None if it declares none.
-
-    Covers all three declaration forms (extractor bugs #1-#3):
-    class keyword arg, ``model_config = ConfigDict(...)`` / ``= {...}`` as either an
-    ``Assign`` or an ``AnnAssign``, and the legacy pydantic-v1 nested ``class Config``.
-    """
-    # (bug #3) class keyword argument: class Foo(Base, extra="forbid")
-    for keyword in node.keywords:
-        if keyword.arg == "extra":
-            return _literal_str(keyword.value) or UNKNOWN_EXTRA
-
-    for stmt in node.body:
-        # (bug #1) model_config as Assign OR AnnAssign
-        value_node: ast.expr | None = None
-        if isinstance(stmt, ast.Assign):
-            if any(
-                isinstance(t, ast.Name) and t.id == "model_config" for t in stmt.targets
-            ):
-                value_node = stmt.value
-        elif isinstance(stmt, ast.AnnAssign):
-            if (
-                isinstance(stmt.target, ast.Name)
-                and stmt.target.id == "model_config"
-                and stmt.value is not None
-            ):
-                value_node = stmt.value
-
-        if value_node is not None:
-            extra = _extra_from_config_value(value_node)
-            if extra is not None:
-                return extra
-
-        # legacy pydantic v1: class Config: extra = "forbid"
-        if isinstance(stmt, ast.ClassDef) and stmt.name == "Config":
-            for inner in stmt.body:
-                if isinstance(inner, ast.Assign) and any(
-                    isinstance(t, ast.Name) and t.id == "extra" for t in inner.targets
-                ):
-                    return _literal_str(inner.value) or UNKNOWN_EXTRA
-    return None
-
-
-def _extra_from_config_value(node: ast.expr) -> str | None:
-    """Read ``extra`` out of a ``ConfigDict(...)`` call or a plain dict literal (bug #2)."""
-    if isinstance(node, ast.Call):
-        for keyword in node.keywords:
-            if keyword.arg == "extra":
-                return _literal_str(keyword.value) or UNKNOWN_EXTRA
-        return None
-    if isinstance(node, ast.Dict):
-        for key, value in zip(node.keys, node.values, strict=False):
-            if isinstance(key, ast.Constant) and key.value == "extra":
-                return _literal_str(value) or UNKNOWN_EXTRA
-    return None
-
-
-def _literal_str(node: ast.expr) -> str | None:
-    if isinstance(node, ast.Constant) and isinstance(node.value, str):
-        return node.value
-    # e.g. extra=EnumExtra.FORBID.value or a module constant — not statically knowable.
-    return None
-
-
-# ---------------------------------------------------------------------------
-# Runtime engine (authoritative): read the real, MRO-merged cls.model_config
-# ---------------------------------------------------------------------------
-class _RuntimeResolver:
-    """Imports modules and reads Pydantic's own merged ``model_config``."""
-
-    def __init__(self) -> None:
-        self._modules: dict[str, ModuleType] = {}
-        self._failed: set[str] = set()
-        self.import_failures: dict[str, str] = {}
-
-    def load(self, path: Path) -> ModuleType | None:
-        module_name, sys_root = module_for_path(path)
-        if not module_name or module_name in self._failed:
-            return None
-        if module_name in self._modules:
-            return self._modules[module_name]
-
-        root = str(sys_root)
-        if root not in sys.path:
-            sys.path.insert(0, root)
-        try:
-            module = importlib.import_module(module_name)
-        except (KeyboardInterrupt, SystemExit):
-            # Cancellation signals must always propagate (repo decorator contract);
-            # never swallow them into the static-fallback path.
-            raise
-        except Exception as exc:  # noqa: BLE001  # fallback-ok: import failure -> static-engine fallback
-            # Intentional swallow: an unimportable module falls back to the static AST
-            # engine (recorded in import_failures), it does not fail the whole scan.
-            self._failed.add(module_name)
-            self.import_failures[module_name] = f"{type(exc).__name__}: {exc}"
-            return None
-        self._modules[module_name] = module
-        return module
-
-    def verdict(
-        self, module: ModuleType, class_name: str
-    ) -> tuple[str, str | None, bool] | None:
-        """Return ``(status, effective_extra, exempt)``, or None if this is not a model.
-
-        ``cls.model_config`` is Pydantic's own config, already merged down the MRO — so
-        a model inheriting ``extra="forbid"`` from a compliant base reads back as
-        ``forbid`` here, with no hand-rolled MRO walk to get wrong.
-        """
-        from pydantic import BaseModel, RootModel
-
-        obj = getattr(module, class_name, None)
-        if not isinstance(obj, type) or not issubclass(obj, BaseModel):
-            return None
-        # The class may be a re-export from another module; only judge it where it lives.
-        if getattr(obj, "__module__", None) != getattr(module, "__name__", None):
-            return None
-        if obj is BaseModel or issubclass(obj, RootModel):
-            # Exempt: RootModel cannot carry `extra` at all. The status is unused —
-            # the caller skips on the exempt flag.
-            return STATUS_EXPLICIT_FORBID, None, True
-
-        extra = obj.model_config.get("extra")
-        if extra is None:
-            return STATUS_IMPLICIT_DEFAULT, None, False
-        return _STATUS_BY_EXTRA.get(str(extra), STATUS_UNRESOLVED), str(extra), False
+from omnibase_core.validation.pydantic_runtime_resolver import _RuntimeResolver
+from omnibase_core.validation.pydantic_static_resolver import _StaticResolver
 
 
 # ---------------------------------------------------------------------------
@@ -597,15 +199,12 @@ def load_baseline(path: Path) -> set[str]:
     is then treated as NEW.
     """
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except (yaml.YAMLError, UnicodeDecodeError, OSError):
+        data = load_yaml_content_as_model(
+            path.read_text(encoding="utf-8"), ModelExtraForbidBaseline
+        )
+    except (ModelOnexError, UnicodeDecodeError, OSError):
         return set()
-    if not isinstance(data, dict):
-        return set()
-    entries = data.get("violations") or []
-    if not isinstance(entries, list):
-        return set()
-    return {str(entry) for entry in entries if isinstance(entry, str)}
+    return set(data.violations)
 
 
 def load_waivers(path: Path, today: date) -> tuple[set[str], list[str]]:
@@ -620,21 +219,14 @@ def load_waivers(path: Path, today: date) -> tuple[set[str], list[str]]:
     except OSError:
         return set(), []
     try:
-        data = yaml.safe_load(raw)
-    except yaml.YAMLError as exc:
+        data = load_yaml_content_as_model(raw, ModelViolationWaiversDocument)
+    except ModelOnexError as exc:
         return set(), [f"waivers file is not valid YAML: {exc}"]
-    if not isinstance(data, dict):
-        return set(), []
-    entries = data.get("waivers") or []
-    if not isinstance(entries, list):
-        return set(), ["waivers: expected a list under the 'waivers' key"]
+    entries = data.waivers
 
     active: set[str] = set()
     errors: list[str] = []
     for raw_entry in entries:
-        if not isinstance(raw_entry, dict):
-            errors.append(f"waiver entry is not a mapping: {raw_entry!r}")
-            continue
         fqn = str(raw_entry.get("fqn", "")).strip()
         ticket = str(raw_entry.get("ticket", "")).strip()
         pr = str(raw_entry.get("pr", "")).strip()
@@ -717,7 +309,7 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
     """Map absolute file path -> changed line ranges for *ref*.
 
     ``ref`` is either ``":staged"`` (pre-commit) or a git ref such as ``origin/dev``
-    (CI, diffed as ``<ref>...HEAD``). Raises ``RuntimeError`` on git failure — the
+    (CI, diffed as ``<ref>...HEAD``). Raises ``ModelOnexError`` on git failure — the
     caller fails closed rather than silently skipping the check.
     """
     if ref == STAGED_REF:
@@ -730,11 +322,17 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             args, cwd=cwd, capture_output=True, text=True, check=False
         )
     except OSError as exc:
-        raise RuntimeError(f"could not run git: {exc}") from exc
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message=f"could not run git: {exc}",
+        ) from exc
     if proc.returncode != 0:
-        raise RuntimeError(
-            f"`{' '.join(args)}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip() or 'no stderr'}"
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message=(
+                f"`{' '.join(args)}` failed (exit {proc.returncode}): "
+                f"{proc.stderr.strip() or 'no stderr'}"
+            ),
         )
 
     try:
@@ -746,7 +344,10 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             check=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError(f"could not resolve the git worktree root: {exc}") from exc
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message=f"could not resolve the git worktree root: {exc}",
+        ) from exc
 
     root = Path(top)
     ranges: dict[Path, list[tuple[int, int]]] = {}
@@ -924,7 +525,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.enforce_modified:
         try:
             ranges = changed_line_ranges(args.enforce_modified, Path.cwd())
-        except RuntimeError as exc:
+        except ModelOnexError as exc:
             sys.stderr.write(
                 f"pydantic-extra-forbid: --enforce-modified could not read the diff, "
                 f"failing closed: {exc}\n"

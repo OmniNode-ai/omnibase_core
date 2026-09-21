@@ -146,6 +146,33 @@ waivers:
   # migration scheduled separately." Renewed expires 2026-09-20 ->
   # 2026-09-27 (seven days). The structural migration into ci.yml remains
   # scheduled separately and is NOT landed in this change.
+  #
+  # RESTORED 2026-09-21 (same change as the renewal above). omnibase_core#1730
+  # ("feat(OMN-18996): deliver core delegation source slice", unrelated to
+  # workflow governance) merged to dev at 0e051b49 from a stale branch whose
+  # tree predated this whole renewal chain, and its squash diff DELETED both
+  # this waiver entry AND .github/workflows/call-occ-companion-effect.yml
+  # outright -- collateral damage, not a migration (ci.yml's own diff in that
+  # merge gained only 18 lines, nowhere near this caller's ~150-line reusable
+  # invocation). Between 0e051b49 and this restoring merge, the
+  # "occ-companion-effect / Publish occ-companion-effect command" required
+  # dev branch-protection context (.github/required-checks.yaml) had no
+  # producing workflow left to fire it -- worse than WAIVER_EXPIRED, because
+  # that at least clears on renewal; an absent required check never clears on
+  # its own. This entry and the workflow file are restored byte-for-byte from
+  # the pre-deletion dev head (origin/dev@0e051b49~1, i.e. HEAD~1 of the
+  # deleting merge) rather than from the older OMN-16359 renewal commit
+  # d3069b2d: three commits landed on the workflow file between d3069b2d and
+  # the deletion (0149fc61 OMN-14160, b2348e12 OMN-18334, 53055e39 OMN-18012),
+  # and the last of those added the `secrets: inherit` / KAFKA_SASL_* wiring
+  # the publisher now requires because the dev-lane broker enabled SASL on
+  # 2026-09-07 -- restoring the older byte-identical d3069b2d text would have
+  # reintroduced a *different*, silent failure (the publisher fail-fasting on
+  # the declared SASL lane with no credentials), not a clean revert. See
+  # OMN-18996 for the collateral-deletion comment and OMN-18906 for the
+  # missing-gate follow-up (a PR deleting/renaming a workflow that produces a
+  # required-checks.yaml / branch-protection context should be refused,
+  # #1730 is the falsifier).
   - workflow_file: call-occ-companion-effect.yml
     ticket: OMN-16359
     expires: "2026-09-27"

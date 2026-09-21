@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.overlays.contract_env_ref import expand_contract_env_refs
 
 __all__ = ["ModelPostgresProbeConfig"]
@@ -71,22 +73,31 @@ class ModelPostgresProbeConfig(BaseModel):
         """
         host = expand_contract_env_refs(_HOST_CONTRACT_REF)
         if not host:
-            raise ValueError(
-                "POSTGRES_HOST is not bound by the active overlay; declare it in "
-                "the per-lane overlay so the contract reference "
-                f"{_HOST_CONTRACT_REF!r} resolves to a Postgres host."
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=(
+                    "POSTGRES_HOST is not bound by the active overlay; declare it in "
+                    "the per-lane overlay so the contract reference "
+                    f"{_HOST_CONTRACT_REF!r} resolves to a Postgres host."
+                ),
             )
         port_str = expand_contract_env_refs(_PORT_CONTRACT_REF)
         if not port_str:
-            raise ValueError(
-                "POSTGRES_PORT is not bound by the active overlay; declare it in "
-                "the per-lane overlay so the contract reference "
-                f"{_PORT_CONTRACT_REF!r} resolves to a Postgres port."
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message=(
+                    "POSTGRES_PORT is not bound by the active overlay; declare it in "
+                    "the per-lane overlay so the contract reference "
+                    f"{_PORT_CONTRACT_REF!r} resolves to a Postgres port."
+                ),
             )
         try:
             port = int(port_str)
         except ValueError as exc:
-            raise ValueError(
-                f"POSTGRES_PORT overlay value {port_str!r} is not a valid port integer."
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                message=(
+                    f"POSTGRES_PORT overlay value {port_str!r} is not a valid port integer."
+                ),
             ) from exc
         return cls(host=host, port=port)

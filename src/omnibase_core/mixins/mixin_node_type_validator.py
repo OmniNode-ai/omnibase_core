@@ -14,7 +14,7 @@ This implementation does not use Any types.
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import ClassVar, cast
 
 from pydantic import field_validator
 
@@ -101,25 +101,21 @@ class MixinNodeTypeValidator:
             # Try architecture type mapping first (lowercase)
             if v.lower() in cls._ARCH_TO_NODE_TYPE:
                 return cls._ARCH_TO_NODE_TYPE[v.lower()]
-            # Try exact match first, then uppercase (for case-insensitive YAML support)
-            try:
-                return EnumNodeType(v)
-            except ValueError:
-                try:
-                    return EnumNodeType(v.upper())
-                except ValueError as e:
-                    raise ModelOnexError(
-                        message=f"Invalid node_type: {v}",
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        details=ModelErrorContext.with_context(
-                            {
-                                "error_type": ModelSchemaValue.from_value("valueerror"),
-                                "validation_context": ModelSchemaValue.from_value(
-                                    "model_validation",
-                                ),
-                            },
+            node_type = EnumNodeType._value2member_map_.get(v.upper())
+            if node_type is not None:
+                return cast(EnumNodeType, node_type)
+            raise ModelOnexError(
+                message=f"Invalid node_type: {v}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation",
                         ),
-                    ) from e
+                    },
+                ),
+            )
 
         # Invalid type
         raise ModelOnexError(

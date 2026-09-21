@@ -17,6 +17,56 @@ __all__ = ["PythonASTValidator"]
 class PythonASTValidator(ast.NodeVisitor):
     """AST visitor to validate ID and version field types in Python files."""
 
+    _SEMANTIC_STRING_FIELDS: frozenset[tuple[str, str, str]] = frozenset(
+        {
+            (
+                "src/omnibase_core/models/context/model_adr_summary.py",
+                "ModelADRSummary",
+                "adr_id",
+            ),
+            (
+                "src/omnibase_core/models/artifacts/model_artifact_metadata.py",
+                "ModelArtifactMetadata",
+                "writer_version",
+            ),
+            (
+                "src/omnibase_core/models/context/model_context_provenance.py",
+                "ModelContextProvenance",
+                "source_id",
+            ),
+            (
+                "src/omnibase_core/models/dispatch/model_dispatch_result.py",
+                "ModelDispatchResult",
+                "dispatcher_id",
+            ),
+            (
+                "src/omnibase_core/models/runtime/golden_chain/model_golden_chain_fixture.py",
+                "ModelGoldenChainFixture",
+                "fixture_version",
+            ),
+            (
+                "src/omnibase_core/models/runtime/golden_chain/model_golden_chain_fixture.py",
+                "ModelGoldenChainProvenance",
+                "fixture_version",
+            ),
+            (
+                "src/omnibase_core/models/validation/model_llm_reference_codegen_inputs.py",
+                "ModelLlmReferenceCodegenInputs",
+                "pricing_manifest_version",
+            ),
+            (
+                "src/omnibase_core/models/context/model_learning_match.py",
+                "ModelLearningMatch",
+                "learning_id",
+            ),
+            (
+                "src/omnibase_core/models/dashboard/model_renderer_theme_contract.py",
+                "ModelRendererThemeContract",
+                "theme_id",
+            ),
+        }
+    )
+
     def __init__(self, file_path: str, source_lines: list[str] | None = None):
         self.file_path = file_path
         self.violations: list[ValidationViolation] = []
@@ -24,6 +74,7 @@ class PythonASTValidator(ast.NodeVisitor):
         self.current_call_func: str | None = None  # Track current function being called
         # Store source lines for inline comment checking
         self.source_lines = source_lines or []
+        self.class_names: list[str] = []
 
         # Bypass comment patterns for inline exemptions
         self.id_bypass_patterns = [
@@ -170,6 +221,24 @@ class PythonASTValidator(ast.NodeVisitor):
             "version",  # Generic version field in TypedDicts - serialization boundary only
             "id",  # Generic ID field in TypedDicts - serialization boundary only
         }
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Track the owning model for exact semantic-field classification."""
+        self.class_names.append(node.name)
+        self.generic_visit(node)
+        self.class_names.pop()
+
+    def _is_semantic_string_field(self, field_name: str) -> bool:
+        """Return whether this exact source model field is a scalar domain reference."""
+        if not self.class_names:
+            return False
+        source_path = self.file_path.replace("\\", "/")
+        return any(
+            source_path.endswith(path)
+            and self.class_names[-1] == class_name
+            and field_name == allowed_field
+            for path, class_name, allowed_field in self._SEMANTIC_STRING_FIELDS
+        )
 
     def visit_Import(self, node: ast.Import) -> None:
         """Track imports to understand what types are available."""
@@ -319,6 +388,8 @@ class PythonASTValidator(ast.NodeVisitor):
         """Check if a field annotation violates ID/version typing rules."""
         # Skip exceptions
         if field_name in self.exceptions:
+            return
+        if self._is_semantic_string_field(field_name):
             return
 
         annotation_str = self._get_annotation_string(annotation)

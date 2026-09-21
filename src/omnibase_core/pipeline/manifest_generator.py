@@ -166,7 +166,8 @@ class ManifestGenerator:
             on_manifest_built: Optional list of callbacks invoked when manifest is built.
                 Each callback receives the completed ModelExecutionManifest.
                 Callbacks are invoked synchronously after build() completes.
-                Exceptions in callbacks are caught and logged as warnings.
+                Callback exceptions propagate so a required observer cannot lose
+                a manifest without a caller-visible failure.
 
         .. versionchanged:: 0.5.0
             Added ``on_manifest_built`` parameter for corpus capture integration (OMN-1203)
@@ -228,9 +229,8 @@ class ManifestGenerator:
         Register a callback to be invoked when the manifest is built.
 
         Callbacks are invoked synchronously after ``build()`` creates the manifest.
-        Multiple callbacks are invoked in registration order. Exceptions in
-        callbacks are caught and logged as warnings (they do not prevent
-        subsequent callbacks or the return of the manifest).
+        Multiple callbacks are invoked in registration order. A callback failure
+        propagates to the caller and prevents later callbacks from running.
 
         Args:
             callback: A callable that receives the completed ModelExecutionManifest.
@@ -708,15 +708,7 @@ class ManifestGenerator:
         # Invoke on_manifest_built callbacks (OMN-1203: corpus capture hook)
         # Snapshot the list to prevent modification during iteration
         for callback in list(self._on_manifest_built):
-            try:
-                callback(manifest)
-            except Exception as e:  # noqa: BLE001  # callback-resilience-ok: callbacks must not crash manifest build
-                # callback-resilience-ok: callbacks must not crash manifest build
-                warnings.warn(
-                    f"on_manifest_built callback failed: {e!r}. "
-                    "Manifest was built successfully but callback raised an exception.",
-                    stacklevel=2,
-                )
+            callback(manifest)
 
         return manifest
 

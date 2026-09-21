@@ -11,6 +11,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_antipattern_entry import (
     ModelAntipatternEntry,
 )
@@ -157,7 +158,7 @@ class TestModelAntipatternEntry:
 class TestModelAntipatternRegistry:
     def _make_registry(self, **overrides: object) -> ModelAntipatternRegistry:
         defaults: dict[str, object] = {
-            "version": "1.0.0",
+            "version": ModelSemVer(major=1, minor=0, patch=0),
             "last_updated": datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC),
             "entries": (_make_entry(),),
         }
@@ -166,14 +167,14 @@ class TestModelAntipatternRegistry:
 
     def test_basic_registry(self) -> None:
         reg = self._make_registry()
-        assert reg.version == "1.0.0"
+        assert str(reg.version) == "1.0.0"
         assert len(reg.entries) == 1
         assert isinstance(reg.entries, tuple)
 
     def test_registry_is_frozen(self) -> None:
         reg = self._make_registry()
         with pytest.raises(Exception):
-            reg.version = "2.0.0"  # type: ignore[misc]
+            reg.version = ModelSemVer(major=2, minor=0, patch=0)  # type: ignore[misc]
 
     def test_extra_fields_forbidden(self) -> None:
         with pytest.raises(ValidationError):

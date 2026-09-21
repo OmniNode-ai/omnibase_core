@@ -27,13 +27,13 @@ from pathlib import Path
 import pytest
 import yaml
 
+from omnibase_core.validation.demo_path_topic_registry import DemoPathTopicRegistry
 from omnibase_core.validation.validator_demo_path_topic_coherence import (
     RULE_HAND_AUTHORED_LITERAL,
     RULE_ORPHAN_CONSUMER,
     RULE_ORPHAN_PRODUCER,
     RULE_PUBLISH_SUBSCRIBE_MISMATCH,
     RULE_WIDGET_TOPIC_NO_PRODUCER,
-    DemoPathTopicRegistry,
     ValidatorDemoPathTopicCoherence,
     load_demo_path_contracts,
 )
@@ -124,6 +124,13 @@ class TestLoadDemoPathContracts:
 
         contracts = load_demo_path_contracts([repo_a, repo_b])
         assert len(contracts) == 2
+
+    def test_invalid_demo_topic_shape_is_not_loaded(self, tmp_path: Path) -> None:
+        contract = _minimal_contract()
+        contract["event_bus"]["subscribe_topics"] = "not-a-topic-list"
+        _write_contract(tmp_path, "node_invalid", contract)
+
+        assert load_demo_path_contracts([tmp_path]) == []
 
 
 # ---------------------------------------------------------------------------

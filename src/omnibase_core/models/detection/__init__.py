@@ -17,7 +17,7 @@ try:
         ModelHealthCheck,  # noqa: F401
     )
 
-    ModelServiceDetectionConfig.model_rebuild()
-except Exception:  # noqa: BLE001  # init-errors-ok: model_rebuild may fail during circular import resolution
-    # init-errors-ok: may fail during circular import, safe to ignore
+    ModelServiceDetectionConfig.model_rebuild(raise_errors=False)
+except ImportError:
+    # The model is rebuilt by the importing module once the health types load.
     pass

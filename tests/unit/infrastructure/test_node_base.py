@@ -127,6 +127,16 @@ class MockToolNoMethods:
 class TestNodeBaseInitialization:
     """Test NodeBase initialization and setup."""
 
+    def test_explicit_none_dependencies_are_rejected(self, tmp_path) -> None:
+        """Omission permits contract defaults; explicit None cannot bypass DI."""
+        contract_path = tmp_path / "test_contract.yaml"
+
+        with pytest.raises(ModelOnexError, match="event_bus must be omitted"):
+            NodeBase(contract_path=contract_path, event_bus=None)  # type: ignore[arg-type]
+
+        with pytest.raises(ModelOnexError, match="container must be omitted"):
+            NodeBase(contract_path=contract_path, container=None)  # type: ignore[arg-type]
+
     def test_should_initialize_with_valid_contract_path(self, tmp_path, mock_container):
         """Test NodeBase creation with valid contract path."""
         contract_path = tmp_path / "test_contract.yaml"
