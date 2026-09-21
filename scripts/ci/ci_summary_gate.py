@@ -1007,6 +1007,7 @@ def main(argv: list[str] | None = None) -> int:
         external_contexts = external_contexts_for_event(args.event_name)
     except ValueError as error:
         parser.error(str(error))
+        return EXIT_FAILURE
     code, report = evaluate(
         jobs,
         run_attempt=args.run_attempt,
