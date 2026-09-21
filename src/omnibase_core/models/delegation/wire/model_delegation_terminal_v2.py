@@ -67,6 +67,32 @@ class ModelDelegationProviderFailureCause(BaseModel):
     kind: Literal["provider"]
     cause: EnumDelegationTerminalFailureCause
 
+    @model_validator(mode="after")
+    def validate_cause_is_a_provider_cause(self) -> Self:
+        """Refuse a provider-kind failure whose cause says the gate decided it.
+
+        This union already separates the two subsystems structurally: a
+        provider fault is this branch, and a gate refusal is
+        ``ModelDelegationQualityGateRejection``, which carries no cause because
+        there is no provider status to name. OMN-19004 added
+        ``QUALITY_GATE_REFUSED`` to the cause vocabulary so a gate-decided run
+        has somewhere truthful to land, and that made a third, contradictory
+        spelling reachable here -- a provider-kind failure asserting the gate
+        decided it.
+
+        Refused at construction rather than left for a reader to reconcile. A
+        widening that also widens the branch it was meant to be distinguished
+        from has moved the ambiguity rather than removed it, which is the shape
+        of defect this member exists to close.
+        """
+        if self.cause is EnumDelegationTerminalFailureCause.QUALITY_GATE_REFUSED:
+            msg = (
+                "provider failure cause cannot be quality_gate_refused; a run "
+                "the quality gate decided is a quality_gate_rejection branch"
+            )
+            raise ValueError(msg)
+        return self
+
 
 class ModelDelegationQualityGateRejection(BaseModel):
     """A routed terminal failed the quality gate after provider completion."""
