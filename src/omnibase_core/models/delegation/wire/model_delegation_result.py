@@ -377,6 +377,18 @@ class ModelDelegationResult(BaseModel):
 
         if self.operational_outcome is not None:
             assert self.content_verdict is not None
+            construction_failed = (
+                self.operational_outcome
+                is EnumDelegationOperationalOutcome.TERMINAL_CONSTRUCTION_FAILED
+            )
+            if (
+                self.content_verdict is EnumDelegationContentVerdict.UNDETERMINED
+                and not construction_failed
+            ):
+                msg = (
+                    "undetermined content verdict requires construction failure outcome"
+                )
+                raise ValueError(msg)
             if self.operational_outcome is EnumDelegationOperationalOutcome.COMPLETED:
                 if not self.quality_passed:
                     msg = "completed outcome requires quality_passed=true"
@@ -387,10 +399,40 @@ class ModelDelegationResult(BaseModel):
 
             if (
                 self.quality_passed
+                and not construction_failed
                 and self.content_verdict is not EnumDelegationContentVerdict.USABLE
             ):
                 msg = "quality_passed requires usable content verdict"
                 raise ValueError(msg)
+
+            if construction_failed:
+                if (
+                    self.content_verdict
+                    is not EnumDelegationContentVerdict.UNDETERMINED
+                ):
+                    msg = "construction failure requires undetermined content verdict"
+                    raise ValueError(msg)
+                if self.terminal_failure_reason != "terminal_construction_failed":
+                    msg = "construction failure requires stable terminal_failure_reason"
+                    raise ValueError(msg)
+                if self.quality_score is not None:
+                    msg = "construction failure cannot carry quality_score"
+                    raise ValueError(msg)
+                if (
+                    self.required_quality_bar is not None
+                    or self.score_vs_required_bar is not None
+                ):
+                    msg = "construction failure cannot carry quality-bar evidence"
+                    raise ValueError(msg)
+                if self.failed_acceptance_criteria or self.rule_evaluations:
+                    msg = "construction failure cannot carry quality-rule evidence"
+                    raise ValueError(msg)
+                if self.response_contract_evidence is not None:
+                    msg = "construction failure cannot carry response-contract evidence"
+                    raise ValueError(msg)
+                if self.terminal_failure_cause is not None:
+                    msg = "construction failure cannot claim provider failure cause"
+                    raise ValueError(msg)
 
             no_response_outcomes = {
                 EnumDelegationOperationalOutcome.PROVIDER_QUOTA,
