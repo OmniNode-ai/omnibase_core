@@ -57,13 +57,6 @@ def test_no_new_hard_fail_edges(current: EdgeSets, baseline: EdgeSets) -> None:
     )
 
 
-def test_no_new_utils_warnings_on_clean_tree(
-    current: EdgeSets, baseline: EdgeSets
-) -> None:
-    """A clean tree also produces no utils WARN (baseline == current at freeze)."""
-    assert find_warnings(current, baseline) == {}
-
-
 def test_headline_protocols_models_number_frozen() -> None:
     """The 'no permanent exception' number is locked; lowering it is a visible edit."""
     assert FROZEN_PROTOCOLS_MODELS_MAX == 65

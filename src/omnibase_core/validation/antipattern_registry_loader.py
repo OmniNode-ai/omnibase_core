@@ -14,8 +14,6 @@ from __future__ import annotations
 import importlib.resources
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_entry import (
@@ -32,19 +30,6 @@ from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 _CONTRACTS_PKG = "omnibase_core.contracts"
 _DEFAULT_YAML = "antipattern_registry.yaml"
 _OVERRIDES_PATH = ".onex/antipattern-overrides.yaml"
-
-
-def _load_typed_yaml[ModelT: BaseModel](
-    content: str, model_cls: type[ModelT]
-) -> ModelT:
-    """Load through the shared validator while preserving legacy exception types."""
-    try:
-        return load_yaml_content_as_model(content, model_cls)
-    except ModelOnexError as error:
-        original_error = error.__context__
-        if original_error is not None:
-            raise original_error from error
-        raise
 
 
 def load_default_antipatterns() -> ModelAntipatternRegistry:
@@ -65,7 +50,7 @@ def load_default_antipatterns() -> ModelAntipatternRegistry:
                 f"Cannot locate {_DEFAULT_YAML}; tried importlib.resources and {fallback}"
             ) from exc
 
-    return _load_typed_yaml(raw, ModelAntipatternRegistry)
+    return load_yaml_content_as_model(raw, ModelAntipatternRegistry)
 
 
 # Keep legacy name as an alias so existing callers (OMN-11911 tests) continue to work
@@ -76,12 +61,12 @@ def load_repo_overrides(repo_root: Path) -> ModelAntipatternOverrideConfig | Non
     """Load per-repo overrides from <repo_root>/.onex/antipattern-overrides.yaml.
 
     Returns None if the file does not exist.
-    Raises ValidationError if the file exists but is malformed.
+    Raises ModelOnexError if the file exists but is malformed.
     """
     config_path = repo_root / _OVERRIDES_PATH
     if not config_path.exists():
         return None
-    return _load_typed_yaml(
+    return load_yaml_content_as_model(
         config_path.read_text(encoding="utf-8"), ModelAntipatternOverrideConfig
     )
 
@@ -95,7 +80,7 @@ def merge_antipatterns(
     Override semantics (mirrors aislop_rule_loader.merge_rules):
     - Override fields that are None → keep the default value.
     - enabled=False → entry is excluded from the merged registry.
-    - Unknown name → ValueError (prevents silent typos).
+    - Unknown name → ModelOnexError with REGISTRY_VALIDATION_FAILED.
     - custom_entries are appended after merging overrides.
     """
     if overrides is None:
