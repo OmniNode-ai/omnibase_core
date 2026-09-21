@@ -327,19 +327,17 @@ def has_deploy_evidence(contract_path: Path) -> bool:
     """Return True if the ticket contract has at least one deploy DoD evidence item."""
     if not contract_path.exists():
         return False
-    import yaml
+    from models.deploy_evidence_contract import ModelDeployEvidenceContract
 
     try:
         with contract_path.open(encoding="utf-8") as fh:
-            data = yaml.safe_load(fh)
-    except (yaml.YAMLError, OSError):
+            contract = ModelDeployEvidenceContract.from_yaml(fh.read())
+    except (ValueError, OSError):
         return False
 
-    dod_evidence = data.get("dod_evidence", []) if isinstance(data, dict) else []
-    for item in dod_evidence:
-        checks = item.get("checks", []) if isinstance(item, dict) else []
-        for check in checks:
-            value = check.get("check_value", "") if isinstance(check, dict) else ""
+    for item in contract.dod_evidence:
+        for check in item.checks:
+            value = check.check_value
             if isinstance(value, str):
                 if any(kw in value.lower() for kw in DEPLOY_KEYWORDS):
                     return True
@@ -506,9 +504,9 @@ def main(argv: list[str] | None = None) -> int:
                 if resolution.evidence_ticket:
                     fh.write(f"evidence_ticket={resolution.evidence_ticket}\n")
         if resolution.passed:
-            print(f"::notice::{resolution.message}")
+            sys.stdout.write(f"::notice::{resolution.message}\n")
         else:
-            print(f"::error::{resolution.message}")
+            sys.stdout.write(f"::error::{resolution.message}\n")
         return 0 if resolution.passed else 1
 
     result = validate_pr_deploy_gate(
@@ -518,9 +516,9 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if result.passed:
-        print(f"::notice::{result.message}")
+        sys.stdout.write(f"::notice::{result.message}\n")
     else:
-        print(f"::error::{result.message}")
+        sys.stdout.write(f"::error::{result.message}\n")
 
     return 0 if result.passed else 1
 

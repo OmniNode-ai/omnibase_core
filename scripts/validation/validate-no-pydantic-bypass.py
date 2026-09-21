@@ -62,7 +62,7 @@ ALLOWED_PATTERNS = [
 ]
 
 # Files with existing violations (technical debt) - tracked in GitHub issues
-# TODO(OMN-5694): Fix object.__setattr__() usage outside __init__/validators
+# TODO(OMN-5694): Fix object.__setattr__() usage outside __init__/validators.  # onex-allow-todo-marker OMN-5694 reason="existing bypass debt is separately tracked"
 EXCLUDED_FILES = [
     "src/omnibase_core/models/metadata/node_info/model_node_core.py",  # Lines 123, 147
     "src/omnibase_core/infrastructure/node_core_base.py",  # Lines 379, 401

@@ -13,6 +13,8 @@ import json
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.errors import ModelOnexError
+
 
 @pytest.mark.unit
 class TestModelConfigBasics:
@@ -260,17 +262,16 @@ class TestPredefinedConfigs:
         assert ANTHROPIC_CONFIG.temperature == 0.7
         assert ANTHROPIC_CONFIG.api_key_env == "ANTHROPIC_API_KEY"
 
-    def test_local_config_exists(self):
-        """LOCAL_CONFIG is defined and valid.
+    def test_local_config_requires_explicit_endpoint(self, monkeypatch):
+        """The local demo client fails closed without configured endpoint authority."""
+        from examples.demo.handlers.support_assistant.handler_local import (
+            LocalLLMClient,
+        )
 
-        Note: endpoint_url uses LOCAL_LLM_ENDPOINT env var with default http://localhost:8000.
-        """
-        from examples.demo.handlers.support_assistant.model_config import LOCAL_CONFIG
+        monkeypatch.delenv("LOCAL_LLM_ENDPOINT", raising=False)
 
-        assert LOCAL_CONFIG.provider == "local"
-        assert LOCAL_CONFIG.model_name == "qwen2.5-coder-14b"
-        # endpoint_url uses env var LOCAL_LLM_ENDPOINT with default http://localhost:8000
-        assert LOCAL_CONFIG.endpoint_url is not None
+        with pytest.raises(ModelOnexError, match="LOCAL_LLM_ENDPOINT is required"):
+            LocalLLMClient()
 
 
 @pytest.mark.unit
@@ -360,7 +361,6 @@ metadata:
       temperature: 0.6
       max_tokens: 300
       endpoint_env: "TEST_LOCAL_ENDPOINT"
-      default_endpoint: "http://localhost:9999"
 """
         contract_path = tmp_path / "test_contract.yaml"
         contract_path.write_text(contract_content)
@@ -397,7 +397,6 @@ metadata:
       temperature: 0.5
       max_tokens: 400
       endpoint_env: "LOCAL_ENDPOINT"
-      default_endpoint: "http://localhost:8000"
 """
         contract_path = tmp_path / "test_contract.yaml"
         contract_path.write_text(contract_content)
@@ -410,8 +409,10 @@ metadata:
         assert config.max_tokens == 750
         assert config.api_key_env == "MY_ANTHROPIC_KEY"
 
-    def test_load_local_config_from_contract(self, tmp_path, monkeypatch):
-        """Load local config from contract with endpoint from env var."""
+    def test_load_local_config_requires_declared_endpoint_environment(
+        self, tmp_path, monkeypatch
+    ):
+        """Local contract configuration fails closed without its endpoint value."""
         from examples.demo.handlers.support_assistant.model_config import (
             load_config_from_contract,
         )
@@ -437,19 +438,15 @@ metadata:
       temperature: 0.3
       max_tokens: 250
       endpoint_env: "TEST_LOCAL_VAR"
-      default_endpoint: "http://127.0.0.1:7777"
 """
         contract_path = tmp_path / "test_contract.yaml"
         contract_path.write_text(contract_content)
 
-        config = load_config_from_contract("local", contract_path=contract_path)
-
-        assert config.provider == "local"
-        assert config.model_name == "qwen-test-model"
-        assert config.temperature == 0.3
-        assert config.max_tokens == 250
-        # Should use default_endpoint since env var is not set
-        assert config.endpoint_url == "http://127.0.0.1:7777"
+        with pytest.raises(
+            ValueError,
+            match="Missing required local endpoint environment variable: TEST_LOCAL_VAR",
+        ):
+            load_config_from_contract("local", contract_path=contract_path)
 
     def test_load_local_config_uses_env_var(self, tmp_path, monkeypatch):
         """Local config uses endpoint from environment variable when set."""
@@ -458,7 +455,7 @@ metadata:
         )
 
         # Set the env var
-        monkeypatch.setenv("CUSTOM_LOCAL_ENDPOINT", "http://192.168.1.100:8080")
+        monkeypatch.setenv("CUSTOM_LOCAL_ENDPOINT", "https://llm.example.test:8080")
 
         contract_content = """
 metadata:
@@ -478,15 +475,13 @@ metadata:
       temperature: 0.5
       max_tokens: 400
       endpoint_env: "CUSTOM_LOCAL_ENDPOINT"
-      default_endpoint: "http://localhost:8000"
 """
         contract_path = tmp_path / "test_contract.yaml"
         contract_path.write_text(contract_content)
 
         config = load_config_from_contract("local", contract_path=contract_path)
 
-        # Should use env var value, not default
-        assert config.endpoint_url == "http://192.168.1.100:8080"
+        assert config.endpoint_url == "https://llm.example.test:8080"
 
     def test_load_config_file_not_found(self, tmp_path):
         """FileNotFoundError raised when contract file not found."""

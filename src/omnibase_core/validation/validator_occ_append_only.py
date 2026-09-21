@@ -25,11 +25,16 @@ import sys
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
-import yaml
-
-from omnibase_core.models.validation.model_occ_append_only_result import (
+from omnibase_core.enums.enum_append_only_violation_kind import (
     EnumAppendOnlyViolationKind,
+)
+from omnibase_core.models.validation.model_append_only_violation import (
     ModelAppendOnlyViolation,
+)
+from omnibase_core.models.validation.model_occ_append_only_contract import (
+    ModelOccAppendOnlyContract,
+)
+from omnibase_core.models.validation.model_occ_append_only_result import (
     ModelOccAppendOnlyResult,
 )
 from omnibase_core.validation.validator_receipt_gate import (
@@ -146,15 +151,15 @@ def _load_yaml_from_git(
     )
     if proc.returncode != 0:
         return None
-    parsed = yaml.safe_load(proc.stdout)
-    return parsed if isinstance(parsed, dict) else None
+    parsed = ModelOccAppendOnlyContract.from_yaml(proc.stdout)
+    return parsed.model_dump(mode="python")
 
 
 def _load_yaml_file(path: Path) -> dict[str, object] | None:
     if not path.is_file():
         return None
-    parsed = yaml.safe_load(path.read_text(encoding="utf-8"))
-    return parsed if isinstance(parsed, dict) else None
+    parsed = ModelOccAppendOnlyContract.from_yaml(path.read_text(encoding="utf-8"))
+    return parsed.model_dump(mode="python")
 
 
 def _receipt_diff_from_git(

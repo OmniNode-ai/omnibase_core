@@ -131,6 +131,7 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "tests/unit/services/replay/test_service_config_override_injector.py",
         "tests/unit/test_git_env_isolation.py",
         "tests/unit/validation/pin_hygiene/test_handler_pin_hygiene_compute.py",
+        "tests/unit/validation/test_deploy_gate_sparse_checkout.py",
         "tests/unit/validation/test_release_sync_main_dispatch.py",
         "tests/unit/validation/test_release_workflow_shape.py",
         "tests/unit/validation/test_validator_dispatch_report_anchors.py",

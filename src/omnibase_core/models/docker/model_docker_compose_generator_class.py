@@ -6,7 +6,6 @@
 Generator for Docker Compose configurations from ONEX service schemas.
 """
 
-from types import ModuleType
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -22,28 +21,6 @@ if TYPE_CHECKING:
     from omnibase_core.models.services.model_node_service_config import (
         ModelNodeServiceConfig,
     )
-
-
-# Import with fallback handling
-yaml_module: ModuleType | None
-try:
-    import yaml
-
-    HAS_YAML = True
-    yaml_module = yaml
-except ImportError:
-    HAS_YAML = False
-    yaml_module = None
-
-json_module: ModuleType | None
-try:
-    import json
-
-    HAS_JSON = True
-    json_module = json
-except ImportError:
-    HAS_JSON = False
-    json_module = None
 
 
 class ModelDockerComposeGenerator:

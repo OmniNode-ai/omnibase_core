@@ -648,13 +648,12 @@ class TestManifestGeneratorCallbacks:
 
         assert invocation_order == [1, 2, 3]
 
-    def test_callback_exception_logged_not_raised(
+    def test_callback_exception_propagates_and_stops_later_callbacks(
         self,
         sample_node_identity: ModelNodeIdentity,
         sample_contract_identity: ModelContractIdentity,
     ) -> None:
-        """Test that callback exceptions are caught and logged as warnings."""
-        import warnings
+        """A required callback fault is visible to the manifest caller."""
 
         callback_after_error_invoked = False
 
@@ -671,21 +670,10 @@ class TestManifestGeneratorCallbacks:
             on_manifest_built=[failing_callback, callback_after_error],
         )
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            manifest = generator.build()
+        with pytest.raises(ValueError, match="Callback intentionally failed"):
+            generator.build()
 
-            # Should emit a warning about the failed callback
-            assert len(w) == 1
-            assert "on_manifest_built callback failed" in str(w[0].message)
-            assert "Callback intentionally failed" in str(w[0].message)
-
-        # Manifest should still be returned successfully
-        assert manifest is not None
-        assert manifest.manifest_id == generator.manifest_id
-
-        # Subsequent callback should still be invoked
-        assert callback_after_error_invoked is True
+        assert callback_after_error_invoked is False
 
     def test_callback_at_init(
         self,

@@ -27,6 +27,7 @@ from omnibase_core.enums.enum_golden_chain_failure_class import (
     EnumGoldenChainFailureClass,
 )
 from omnibase_core.errors.error_golden_chain_replay import GoldenChainReplayError
+from omnibase_core.models.routing.model_served_model_name import ModelServedModelName
 from omnibase_core.models.runtime.golden_chain.model_golden_chain_fixture import (
     ModelGoldenChainFixture,
     ModelGoldenChainProvenance,
@@ -104,7 +105,7 @@ def build_provenance(
     )
     return ModelGoldenChainProvenance(
         provider=provider,
-        model_id=model_id,
+        model_id=ModelServedModelName(root=model_id),
         endpoint_ref=endpoint_ref,
         endpoint=endpoint,
         request_hash=canonical_request_hash(request_payload),

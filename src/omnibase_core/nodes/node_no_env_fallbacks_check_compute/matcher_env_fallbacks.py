@@ -44,10 +44,10 @@ _REMEDIATION: Final[str] = (
 # ---------------------------------------------------------------------------
 _LOCALHOST_VARIANTS = (
     r"(?:localhost|127\.0\.0\.1"
-    r"|http://localhost|https://localhost"
-    r"|bolt://localhost|redis://localhost"
-    r"|postgresql://localhost|amqp://localhost"
-    r"|http://127\.0\.0\.1|redis://127\.0\.0\.1|postgresql://127\.0\.0\.1)"
+    r"|http://localhost|https://localhost"  # onex-allow-internal-ip: validator pattern
+    r"|bolt://localhost|redis://localhost"  # onex-allow-internal-ip: validator pattern
+    r"|postgresql://localhost|amqp://localhost"  # onex-allow-internal-ip: validator pattern
+    r"|http://127\.0\.0\.1|redis://127\.0\.0\.1|postgresql://127\.0\.0\.1)"  # onex-allow-internal-ip: validator pattern
 )
 _PRIV_IP = r"192\.168\.\d{1,3}\.\d{1,3}"
 

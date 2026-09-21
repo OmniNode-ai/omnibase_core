@@ -54,6 +54,35 @@ from omnibase_core.runtime.harness.harness_cli import (
     run_workflow,
 )
 from omnibase_core.runtime.harness.harness_cli import main as cli_main
+from omnibase_core.runtime.harness.harness_topics import (
+    DELEGATION_COMMAND_TOPIC,
+    DELEGATION_COMPLETED_TOPIC,
+    DELEGATION_INFER_TOPIC,
+    SEA_COMMAND_TOPIC,
+    SEA_COMPLETED_TOPIC,
+    SEA_INFER_TOPIC,
+)
+from omnibase_core.topics import TopicBase
+
+
+@pytest.mark.unit
+def test_harness_topics_resolve_from_canonical_event_registry() -> None:
+    """The harness exposes registry-backed aliases for every wire hop."""
+    assert (
+        DELEGATION_COMMAND_TOPIC,
+        DELEGATION_INFER_TOPIC,
+        DELEGATION_COMPLETED_TOPIC,
+        SEA_COMMAND_TOPIC,
+        SEA_INFER_TOPIC,
+        SEA_COMPLETED_TOPIC,
+    ) == (
+        TopicBase.HARNESS_DELEGATION_COMMAND,
+        TopicBase.HARNESS_DELEGATION_INFER,
+        TopicBase.HARNESS_DELEGATION_COMPLETED,
+        TopicBase.HARNESS_SEA_COMMAND,
+        TopicBase.HARNESS_SEA_INFER,
+        TopicBase.HARNESS_SEA_COMPLETED,
+    )
 
 
 @pytest.mark.unit

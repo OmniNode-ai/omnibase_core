@@ -156,11 +156,9 @@ class UnionLegitimacyValidator:
             could potentially hide issues with malformed AST nodes or unexpected
             input types.
 
-            TODO: Consider adding optional debug logging for unexpected types
-            (e.g., when value is not str/None) to aid debugging malformed AST
-            nodes if issues arise in future iterations. This could be controlled
-            via a debug flag or environment variable to avoid noise in normal
-            operation.
+            Unexpected values are normalized through ``str()`` at this boundary;
+            callers that need stricter AST diagnostics must validate their input
+            before invoking this helper.
         """
         if value is None:
             return ""

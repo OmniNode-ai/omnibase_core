@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.doctor.model_postgres_probe_config import (
     ModelPostgresProbeConfig,
 )
@@ -67,8 +69,11 @@ class TestPostgresProbeOverlayResolution:
         """Unset host binding fails closed instead of defaulting to localhost."""
         monkeypatch.delenv("POSTGRES_HOST", raising=False)
         monkeypatch.setenv("POSTGRES_PORT", "5432")
-        with pytest.raises(ValueError, match="POSTGRES_HOST is not bound"):
+        with pytest.raises(
+            ModelOnexError, match="POSTGRES_HOST is not bound"
+        ) as exc_info:
             ModelPostgresProbeConfig.from_overlay()
+        assert exc_info.value.error_code == EnumCoreErrorCode.CONFIGURATION_ERROR
 
     def test_port_fails_closed_when_overlay_unbound(
         self, monkeypatch: pytest.MonkeyPatch
@@ -76,8 +81,11 @@ class TestPostgresProbeOverlayResolution:
         """Unset port binding fails closed instead of defaulting."""
         monkeypatch.setenv("POSTGRES_HOST", "somehost")
         monkeypatch.delenv("POSTGRES_PORT", raising=False)
-        with pytest.raises(ValueError, match="POSTGRES_PORT is not bound"):
+        with pytest.raises(
+            ModelOnexError, match="POSTGRES_PORT is not bound"
+        ) as exc_info:
             ModelPostgresProbeConfig.from_overlay()
+        assert exc_info.value.error_code == EnumCoreErrorCode.CONFIGURATION_ERROR
 
     def test_port_fails_closed_on_non_integer_overlay_value(
         self, monkeypatch: pytest.MonkeyPatch
@@ -85,5 +93,8 @@ class TestPostgresProbeOverlayResolution:
         """A non-integer overlay-bound port fails closed with a clear error."""
         monkeypatch.setenv("POSTGRES_HOST", "somehost")
         monkeypatch.setenv("POSTGRES_PORT", "not-a-port")
-        with pytest.raises(ValueError, match="not a valid port integer"):
+        with pytest.raises(
+            ModelOnexError, match="not a valid port integer"
+        ) as exc_info:
             ModelPostgresProbeConfig.from_overlay()
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER

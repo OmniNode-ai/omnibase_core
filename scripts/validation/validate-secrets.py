@@ -30,6 +30,8 @@ import sys
 from pathlib import Path
 from typing import Final, NamedTuple
 
+_PLACEHOLDER_WORK_ITEM = "TODO"  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
+
 
 class BypassChecker:
     """Unified bypass comment detection for security validators.
@@ -386,7 +388,12 @@ class PythonSecretValidator(ast.NodeVisitor):
         if isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
             # Ignore empty strings and placeholder patterns
             value = value_node.value
-            if not value or value in ["", "YOUR_KEY_HERE", "CHANGEME", "TODO"]:
+            if not value or value in [
+                "",
+                "YOUR_KEY_HERE",
+                "CHANGEME",
+                _PLACEHOLDER_WORK_ITEM,
+            ]:
                 return False
             # Ignore very short strings (< 3 chars) - likely not real secrets
             if len(value) < 3:

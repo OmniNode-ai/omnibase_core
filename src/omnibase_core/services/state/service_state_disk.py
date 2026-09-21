@@ -66,7 +66,9 @@ class ServiceStateDisk:
             os.close(fd)
             closed = True
             Path(tmp_path).rename(path)
-        except BaseException:
+        except (
+            BaseException
+        ):  # fallback-ok: close the descriptor before re-raising cancellation
             if not closed:
                 os.close(fd)
             raise

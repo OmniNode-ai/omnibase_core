@@ -16,11 +16,17 @@ from omnibase_core.artifacts.artifact_store import (
     DEFAULT_READ_CHUNK_BYTES,
     RESTRICTED_ARTIFACT_KINDS,
     WRITER_VERSION,
-    ArtifactQuotaExceededError,
-    ArtifactSecretDetectedError,
     ArtifactStore,
+)
+from omnibase_core.artifacts.secret_detector import SecretDetector
+from omnibase_core.errors.error_artifact_quota_exceeded import (
+    ArtifactQuotaExceededError,
+)
+from omnibase_core.errors.error_artifact_secret_detected import (
+    ArtifactSecretDetectedError,
+)
+from omnibase_core.errors.error_artifact_unauthorized import (
     ArtifactUnauthorizedError,
-    SecretDetector,
 )
 
 __all__ = [

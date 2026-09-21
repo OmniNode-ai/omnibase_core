@@ -126,7 +126,7 @@ class TestResolveRulesFromRegistry:
         )
 
         empty = ModelAntipatternRegistry(
-            version="0.0.0",
+            version={"major": 0, "minor": 0, "patch": 0},
             last_updated=datetime(2026, 1, 1),
             entries=(),
         )

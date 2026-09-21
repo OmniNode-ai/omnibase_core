@@ -75,15 +75,15 @@ jobs:
 
       - name: Fail-loud meta-gate (exit-0-on-missing / stages coverage)
         run: |
-          uv run --no-project --with pyyaml \
+          uv run --no-project --with pyyaml --with pydantic \
             python3 scripts/validation/validate_precommit_fail_loud.py
 
       - name: Pin-parity self-test (comparator liveness)
         run: |
-          uv run --no-project --with pyyaml \
+          uv run --no-project --with pyyaml --with pydantic \
             python3 scripts/validation/validate_precommit_pin_parity.py --self-test
 
       - name: Pin-parity check (pre-commit rev vs CI-pinned SHA)
         run: |
-          uv run --no-project --with pyyaml \
+          uv run --no-project --with pyyaml --with pydantic \
             python3 scripts/validation/validate_precommit_pin_parity.py

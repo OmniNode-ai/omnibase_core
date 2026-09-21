@@ -76,7 +76,7 @@ class ModelRendererThemeContract(BaseModel):
         ...,
         description=(
             "Stable, namespaced theme identifier "
-            "(e.g. 'onex.theme.dark.v1', 'onex.theme.light.v1')"
+            "(e.g. 'onex.theme.dark.v1', 'onex.theme.light.v1')"  # onex-allow-topic-literal OMN-18931 reason="field documentation examples, not runtime topics"
         ),
         min_length=1,
     )

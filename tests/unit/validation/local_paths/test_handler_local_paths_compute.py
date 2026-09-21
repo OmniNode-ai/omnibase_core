@@ -36,13 +36,13 @@ from omnibase_core.validation.validator_local_paths import (
 # ValidatorLocalPaths per-line logic, so the corpus cannot drift from the ground
 # truth. Mirrors the G1 acceptance corpus used during generation.
 _VIOLATION_LINES: tuple[str, ...] = (
-    '"/Users/alice/Code/project"  # comment',  # test-literal-ok: corpus violation fixture
-    'Path("/Volumes/DISK/Code/worktrees")',  # test-literal-ok: corpus violation fixture
-    'CACHE = "/home/runner/.cache/onex"',  # test-literal-ok: corpus violation fixture
-    r'WIN = "C:\Users\bob\Documents"',  # test-literal-ok: corpus violation fixture
-    'WIN = "c:/Users/bob/Documents"',  # test-literal-ok: corpus violation fixture
-    'subprocess.run(["cp", "/Users/dev/file", "d"])',  # test-literal-ok: corpus violation fixture
-    'import os\nB = "/Users/ci/workspace/repo"\n',  # test-literal-ok: corpus violation fixture (2nd line)
+    '"/Users/alice/Code/project"  # comment',  # test-literal-ok: corpus violation fixture  # local-path-ok
+    'Path("/Volumes/DISK/Code/worktrees")',  # test-literal-ok: corpus violation fixture  # local-path-ok
+    'CACHE = "/home/runner/.cache/onex"',  # test-literal-ok: corpus violation fixture  # local-path-ok
+    r'WIN = "C:\Users\bob\Documents"',  # test-literal-ok: corpus violation fixture  # local-path-ok
+    'WIN = "c:/Users/bob/Documents"',  # test-literal-ok: corpus violation fixture  # local-path-ok
+    'subprocess.run(["cp", "/Users/dev/file", "d"])',  # test-literal-ok: corpus violation fixture  # local-path-ok
+    'import os\nB = "/Users/ci/workspace/repo"\n',  # test-literal-ok: corpus violation fixture (2nd line)  # local-path-ok
 )
 _CLEAN_LINES: tuple[str, ...] = (
     'CONFIG = Path(__file__).parent / "c.yaml"',
@@ -108,7 +108,7 @@ def test_equivalence_with_ground_truth(source: str) -> None:
 @pytest.mark.unit
 def test_findings_are_stably_ordered() -> None:
     # two violations on two lines -> findings in (line, column) order
-    src = '"/Users/a/x/"\n"/Volumes/D/y/"'  # test-literal-ok: ordering fixture
+    src = '"/Users/a/x/"\n"/Volumes/D/y/"'  # test-literal-ok: ordering fixture  # local-path-ok
     findings = scan_source(src).findings
     assert [f.line for f in findings] == [1, 2]
 
@@ -127,7 +127,7 @@ async def test_handler_returns_compute_result_over_envelope() -> None:
     handler = HandlerLocalPathsCompute()
     envelope: ModelEventEnvelope[ModelLocalPathScanInput] = ModelEventEnvelope(
         payload=ModelLocalPathScanInput(
-            content='X = "/Users/jonah/x/"',  # test-literal-ok: handler fixture
+            content='X = "/Users/jonah/x/"',  # test-literal-ok: handler fixture  # local-path-ok
             path="t.py",
         )
     )
@@ -154,7 +154,7 @@ async def test_runner_dispatches_over_in_memory_bus() -> None:
         results = await runner.scan_inputs(
             [
                 ModelLocalPathScanInput(
-                    content='X = "/Users/jonah/x/"',  # test-literal-ok: bus fixture
+                    content='X = "/Users/jonah/x/"',  # test-literal-ok: bus fixture  # local-path-ok
                     path="v.py",
                 ),
                 ModelLocalPathScanInput(content="X = 1", path="c.py"),

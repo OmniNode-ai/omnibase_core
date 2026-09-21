@@ -135,10 +135,7 @@ def check_topic_suffix(suffix: str) -> UtilTopicSuffixCheck:
     if stripped != stripped.lower():
         return UtilTopicSuffixCheck(
             is_valid=False,
-            error=(
-                "Suffix must be lowercase. Use lowercase topic suffixes "
-                "(e.g., 'onex.evt.service.event.v1')"
-            ),
+            error=("Suffix must be lowercase. Use lowercase topic suffixes."),
         )
 
     # Split into segments for validation (input is already lowercase)

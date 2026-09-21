@@ -192,6 +192,81 @@ def test_line_marker_suppresses_only_that_line() -> None:
 
 
 @pytest.mark.unit
+def test_marked_multiline_single_quoted_yaml_scalar_is_suppressed() -> None:
+    src = (
+        "rule:\n"
+        "  description: 'Explains TODO and FIXME marker vocabulary\n"
+        "    for this validation rule.'  # onex-allow-todo-marker approved\n"
+    )
+
+    assert scan_source(src, path="rule.yaml").findings == ()
+
+
+@pytest.mark.unit
+def test_unmarked_multiline_single_quoted_yaml_scalar_is_flagged() -> None:
+    src = "description: 'Explains TODO marker vocabulary\n  for this rule.'\n"
+
+    findings = scan_source(src, path="rule.yaml").findings
+
+    assert [(finding.line, finding.marker) for finding in findings] == [(1, "TODO")]
+
+
+@pytest.mark.unit
+def test_yaml_scalar_suppression_does_not_cross_into_adjacent_scalar() -> None:
+    src = (
+        "first: 'Explains TODO marker vocabulary\n"
+        "  for this rule.'  # onex-allow-todo-marker approved\n"
+        "second: 'Contains FIXME marker vocabulary\n"
+        "  without an annotation.'\n"
+    )
+
+    findings = scan_source(src, path="rule.yml").findings
+
+    assert [(finding.line, finding.marker) for finding in findings] == [(3, "FIXME")]
+
+
+@pytest.mark.unit
+def test_yaml_scalar_suppression_handles_doubled_quotes_and_fails_closed_unclosed() -> (
+    None
+):
+    marked = (
+        "description: 'Explains ''TODO'' marker vocabulary\n"
+        "  safely.'  # onex-allow-todo-marker approved\n"
+    )
+    unclosed = "description: 'Explains TODO marker vocabulary\n"
+
+    assert scan_source(marked, path="rule.yaml").findings == ()
+    assert [
+        (finding.line, finding.marker)
+        for finding in scan_source(unclosed, path="rule.yaml").findings
+    ] == [(1, "TODO")]
+
+
+@pytest.mark.unit
+def test_yaml_scalar_text_cannot_act_as_a_suppression_directive() -> None:
+    src = (
+        "description: 'Explains TODO marker vocabulary\n"
+        "  and the literal onex-allow-todo-marker directive.'\n"
+    )
+
+    findings = scan_source(src, path="rule.yaml").findings
+
+    assert [(finding.line, finding.marker) for finding in findings] == [(1, "TODO")]
+
+
+@pytest.mark.unit
+def test_python_does_not_inherit_yaml_scalar_suppression() -> None:
+    src = (
+        f"{_HASH} {_TODO}: literal vocabulary\n"
+        f"{_HASH} onex-allow-todo-marker approved\n"
+    )
+
+    findings = scan_source(src, path="rule.py").findings
+
+    assert [(finding.line, finding.marker) for finding in findings] == [(1, _TODO)]
+
+
+@pytest.mark.unit
 def test_file_marker_suppresses_the_whole_file() -> None:
     # A documentation-heavy file whose subject IS the marker token: one file-level
     # marker suppresses every finding so rendered docs stay clean.

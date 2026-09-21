@@ -20,6 +20,21 @@ import ast
 class PydanticPatternChecker(ast.NodeVisitor):
     """Check for proper Pydantic patterns and anti-patterns."""
 
+    _SEMANTIC_STRING_ID_FIELDS: frozenset[tuple[str, str, str]] = frozenset(
+        {
+            (
+                "src/omnibase_infra/models/delegation/model_delegation_first_inference_identity.py",
+                "ModelDelegationFirstInferenceIdentity",
+                "backend_id",
+            ),
+            (
+                "src/omnibase_infra/models/delegation/model_delegation_first_inference_identity.py",
+                "ModelDelegationFirstInferenceIdentity",
+                "model_id",
+            ),
+        }
+    )
+
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.issues: list[str] = []
@@ -65,7 +80,11 @@ class PydanticPatternChecker(ast.NodeVisitor):
                 annotation = item.annotation
 
                 # Check for string ID fields that should be UUID
-                if field_name.endswith("_id") and self._is_str_annotation(annotation):
+                if (
+                    field_name.endswith("_id")
+                    and self._is_str_annotation(annotation)
+                    and not self._is_semantic_string_id_field(class_name, field_name)
+                ):
                     self.issues.append(
                         f"Line {item.lineno}: Field '{field_name}' should use UUID type instead of str",
                     )
@@ -85,6 +104,16 @@ class PydanticPatternChecker(ast.NodeVisitor):
                     self.issues.append(
                         f"Line {item.lineno}: Field '{field_name}' might reference an entity - consider using ID + display_name pattern",
                     )
+
+    def _is_semantic_string_id_field(self, class_name: str, field_name: str) -> bool:
+        """Return whether this exact source model field is a scalar route label."""
+        source_path = self.file_path.replace("\\", "/")
+        return any(
+            source_path.endswith(path)
+            and class_name == allowed_class
+            and field_name == allowed_field
+            for path, allowed_class, allowed_field in self._SEMANTIC_STRING_ID_FIELDS
+        )
 
     def _is_str_annotation(self, annotation: ast.AST) -> bool:
         """Check if annotation is str type."""

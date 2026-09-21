@@ -21,9 +21,7 @@ class SilentExceptPassGate(BaseGateCheck):
     """Detect ExceptHandler nodes whose body is solely [Pass].
 
     Banned forms (any type annotation, including bare except):
-      except:           pass
-      except Exception: pass
-      except (A, B):    pass
+      a bare exception handler whose only statement is a no-op
 
     Allowed:
       - body has any statement other than a lone Pass

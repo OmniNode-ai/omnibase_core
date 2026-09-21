@@ -168,9 +168,12 @@ class LooseTypingInInternalGate(BaseGateCheck):
             kwarg = args.kwarg
             ann = kwarg.annotation
             lineno = kwarg.lineno if hasattr(kwarg, "lineno") else func.lineno
-            if ann is not None and (
-                _is_any_name(ann) or _is_object_name(ann) or _is_dict_like_any(ann)
-            ):
+            is_banned_kwargs_annotation = ann is not None and _is_any_name(ann)
+            if ann is not None and not is_banned_kwargs_annotation:
+                is_banned_kwargs_annotation = _is_object_name(ann)
+            if ann is not None and not is_banned_kwargs_annotation:
+                is_banned_kwargs_annotation = _is_dict_like_any(ann)
+            if ann is not None and is_banned_kwargs_annotation:
                 if not has_allow_annotation(source_lines, lineno):
                     violations.append(
                         GateViolation(

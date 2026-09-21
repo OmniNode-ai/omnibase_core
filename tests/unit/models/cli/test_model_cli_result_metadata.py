@@ -415,6 +415,16 @@ class TestModelCliResultMetadata:
         assert "test_id" in metadata.custom_metadata
         assert metadata.custom_metadata["test_id"].raw_value == "12345"
 
+    def test_legacy_labels_are_normalized_but_unknown_fields_are_rejected(self):
+        """The explicit legacy transform remains valid under strict schema input."""
+        metadata = ModelCliResultMetadata.model_validate(
+            {"labels": {"framework": "pytest"}}
+        )
+
+        assert metadata.labels == {"framework": "pytest"}
+        with pytest.raises(ValidationError):
+            ModelCliResultMetadata.model_validate({"unexpected": "rejected"})
+
     def test_model_round_trip(self):
         """Test serialization -> deserialization round trip."""
         version = ModelSemVer(major=1, minor=2, patch=3)

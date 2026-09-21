@@ -77,6 +77,8 @@ from omnibase_core.protocols import (
 # Alternative name for ProtocolWorkflowReducer
 WorkflowReducerInterface = ProtocolWorkflowReducer
 
+_UNSET_DEPENDENCY = object()
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.logging_structured import (
@@ -160,8 +162,8 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         self,
         contract_path: Path,
         node_id: UUID | None = None,
-        event_bus: object | None = None,
-        container: ModelONEXContainer | None = None,
+        event_bus: object = _UNSET_DEPENDENCY,
+        container: ModelONEXContainer | object = _UNSET_DEPENDENCY,
         workflow_id: UUID | None = None,
         session_id: UUID | None = None,
         **kwargs: Any,
@@ -172,12 +174,34 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         Args:
             contract_path: Path to the contract file
             node_id: Optional node identifier (derived from contract if not provided)
-            event_bus: Optional event bus for event emission and subscriptions
-            container: Optional pre-created ModelONEXContainer (created from contract if not provided)
+            event_bus: Injected event bus, or omitted when the contract has no bus.
+                An explicit None is rejected to prevent a silent DI bypass.
+            container: Injected ModelONEXContainer, or omitted to create the
+                contract-defined container. An explicit None is rejected.
             workflow_id: Optional workflow identifier for orchestration tracking
             session_id: Optional session identifier for correlation
             **kwargs: Additional initialization parameters
         """
+        if event_bus is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message="event_bus must be omitted or an injected bus instance",
+            )
+        if container is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message="container must be omitted or an injected ModelONEXContainer",
+            )
+
+        resolved_event_bus: object | None = (
+            None if event_bus is _UNSET_DEPENDENCY else event_bus
+        )
+        resolved_container: ModelONEXContainer | None = (
+            None
+            if container is _UNSET_DEPENDENCY
+            else cast("ModelONEXContainer", container)
+        )
+
         # Generate identifiers
         self.workflow_id = workflow_id or uuid4()
         self.session_id = session_id or uuid4()
@@ -195,8 +219,8 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             self._load_contract_and_initialize(
                 contract_path,
                 node_id,
-                event_bus,
-                container,
+                resolved_event_bus,
+                resolved_container,
             )
 
             # Initialize reducer state

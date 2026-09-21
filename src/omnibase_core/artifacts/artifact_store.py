@@ -44,18 +44,29 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 import tempfile
 from collections.abc import Callable, Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
+from omnibase_core.artifacts.secret_detector import SecretDetector
 from omnibase_core.enums.artifacts.enum_artifact_redaction_state import (
     EnumArtifactRedactionState,
 )
 from omnibase_core.enums.artifacts.enum_artifact_retention_class import (
     EnumArtifactRetentionClass,
 )
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_artifact_quota_exceeded import (
+    ArtifactQuotaExceededError,
+)
+from omnibase_core.errors.error_artifact_secret_detected import (
+    ArtifactSecretDetectedError,
+)
+from omnibase_core.errors.error_artifact_unauthorized import (
+    ArtifactUnauthorizedError,
+)
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.artifacts.model_artifact_auth_context import (
     ModelArtifactAuthContext,
 )
@@ -69,11 +80,7 @@ __all__ = [
     "DEFAULT_READ_CHUNK_BYTES",
     "RESTRICTED_ARTIFACT_KINDS",
     "WRITER_VERSION",
-    "ArtifactQuotaExceededError",
-    "ArtifactSecretDetectedError",
     "ArtifactStore",
-    "ArtifactUnauthorizedError",
-    "SecretDetector",
 ]
 
 ARTIFACT_STORE_ROOT_ENV = "ONEX_ARTIFACT_STORE_ROOT"
@@ -101,59 +108,6 @@ RESTRICTED_ARTIFACT_KINDS: frozenset[str] = frozenset(
 RedactionTransform = Callable[[bytes], bytes]
 
 
-class ArtifactQuotaExceededError(Exception):
-    """Raised when a write would exceed a per-write or per-scope size quota.
-
-    No bytes are persisted when this is raised — the write fails closed with no
-    silent truncation.
-    """
-
-
-class ArtifactSecretDetectedError(Exception):
-    """Raised when a secret is detected in bytes submitted for a raw write.
-
-    The raw bytes are refused and never persisted; a ``secret_detected``
-    sidecar is recorded instead so the detection is auditable.
-    """
-
-    def __init__(self, ref: ModelArtifactRef) -> None:
-        self.ref = ref
-        super().__init__(
-            f"secret detected in artifact {ref.ref}; raw write refused "
-            "(secret_detected sidecar recorded)"
-        )
-
-
-class ArtifactUnauthorizedError(Exception):
-    """Raised when a restricted artifact is read without sufficient authorization."""
-
-
-# Default secret patterns. Deliberately conservative — high-signal token shapes
-# only — so the gate does not false-positive on ordinary tool output.
-_DEFAULT_SECRET_PATTERNS: tuple[re.Pattern[bytes], ...] = (
-    re.compile(rb"AKIA[0-9A-Z]{16}"),  # AWS access key id
-    re.compile(rb"-----BEGIN [A-Z ]*PRIVATE KEY-----"),  # PEM private key
-    re.compile(rb"ghp_[0-9A-Za-z]{36}"),  # GitHub personal access token
-    re.compile(rb"xox[baprs]-[0-9A-Za-z-]{10,}"),  # Slack token
-    re.compile(rb"sk-[0-9A-Za-z]{20,}"),  # OpenAI-style secret key
-)
-
-
-class SecretDetector:
-    """Pattern-based secret detector for the raw-write gate.
-
-    Stateless and deterministic. Callers may supply their own patterns; the
-    default set targets high-signal credential shapes only.
-    """
-
-    def __init__(self, patterns: tuple[re.Pattern[bytes], ...] | None = None) -> None:
-        self._patterns = patterns if patterns is not None else _DEFAULT_SECRET_PATTERNS
-
-    def contains_secret(self, data: bytes) -> bool:
-        """Return whether ``data`` matches any configured secret pattern."""
-        return any(pattern.search(data) for pattern in self._patterns)
-
-
 class ArtifactStore:
     """Content-addressed blob store with typed metadata sidecars.
 
@@ -174,10 +128,16 @@ class ArtifactStore:
         self._root = Path(os.environ[ARTIFACT_STORE_ROOT_ENV])
         if max_artifact_bytes is not None and max_artifact_bytes < 0:
             msg = f"max_artifact_bytes must be >= 0, got {max_artifact_bytes}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                message=msg,
+            )
         if max_scope_bytes is not None and max_scope_bytes < 0:
             msg = f"max_scope_bytes must be >= 0, got {max_scope_bytes}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                message=msg,
+            )
         self._max_artifact_bytes = max_artifact_bytes
         self._max_scope_bytes = max_scope_bytes
         self._secret_detector = secret_detector or SecretDetector()
@@ -225,11 +185,14 @@ class ArtifactStore:
         Raises:
             ArtifactQuotaExceededError: a quota would be exceeded.
             ArtifactSecretDetectedError: a secret was detected in the bytes.
-            ValueError: redaction_transform supplied without a name.
+            ModelOnexError: redaction_transform supplied without a name.
         """
         if redaction_transform is not None and not redaction_transform_name:
             msg = "redaction_transform_name is required when redaction_transform is set"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                message=msg,
+            )
 
         if redaction_transform is not None:
             stored_bytes = redaction_transform(data)
@@ -265,7 +228,7 @@ class ArtifactStore:
                 restricted=is_restricted,
                 size_bytes=len(stored_bytes),
             )
-            raise ArtifactSecretDetectedError(secret_ref)
+            raise ArtifactSecretDetectedError(secret_ref.ref)
 
         ref = ModelArtifactRef.from_bytes(stored_bytes)
         blob_path = self._blob_path(ref)
@@ -323,10 +286,10 @@ class ArtifactStore:
         no blob was ever persisted for it.
 
         Raises:
-            FileNotFoundError: no blob/sidecar exists for ``artifact_ref``.
+            ModelOnexError: the blob or sidecar is missing or corrupted.
             ArtifactUnauthorizedError: artifact is restricted and ``auth_context``
                 does not authorize its kind.
-            ValueError: stored bytes do not hash to ``artifact_ref`` (corruption).
+            ModelOnexError: stored bytes do not hash to ``artifact_ref`` (corruption).
         """
         meta = self.read_meta(artifact_ref)
         self._enforce_read_auth(artifact_ref, meta, auth_context)
@@ -334,7 +297,10 @@ class ArtifactStore:
         blob_path = self._blob_path(artifact_ref)
         if not blob_path.is_file():
             msg = f"no artifact blob for {artifact_ref.ref}"
-            raise FileNotFoundError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=msg,
+            )
         data = blob_path.read_bytes()
         self._verify_hash(artifact_ref, data)
         return data
@@ -350,18 +316,21 @@ class ArtifactStore:
 
         Applies the same restricted-tier auth gate as :meth:`read`, then yields
         chunks while hash-verifying the full stream. The final hash check
-        happens after the last chunk; a mismatch raises :class:`ValueError`
+        happens after the last chunk; a mismatch raises :class:`ModelOnexError`
         once the stream is exhausted.
 
         Raises:
-            FileNotFoundError: no blob/sidecar exists for ``artifact_ref``.
+            ModelOnexError: the blob or sidecar is missing or corrupted.
             ArtifactUnauthorizedError: artifact is restricted and unauthorized.
-            ValueError: ``chunk_size`` <= 0, or the streamed bytes do not hash
+            ModelOnexError: ``chunk_size`` <= 0, or the streamed bytes do not hash
                 to ``artifact_ref``.
         """
         if chunk_size <= 0:
             msg = f"chunk_size must be > 0, got {chunk_size}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                message=msg,
+            )
 
         meta = self.read_meta(artifact_ref)
         self._enforce_read_auth(artifact_ref, meta, auth_context)
@@ -369,7 +338,10 @@ class ArtifactStore:
         blob_path = self._blob_path(artifact_ref)
         if not blob_path.is_file():
             msg = f"no artifact blob for {artifact_ref.ref}"
-            raise FileNotFoundError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=msg,
+            )
 
         hasher = hashlib.sha256()
         with blob_path.open("rb") as handle:
@@ -385,7 +357,10 @@ class ArtifactStore:
                 f"artifact hash mismatch for {artifact_ref.ref}: streamed bytes "
                 f"hash to {actual} (on-disk corruption or tampering)"
             )
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+            )
 
     def read_blob(self, ref: ModelArtifactRef) -> bytes:
         """Return the blob bytes for ``ref``, hash-verified (no auth gate).
@@ -395,13 +370,15 @@ class ArtifactStore:
         ``auth_context``; this method does not enforce the restricted-tier gate.
 
         Raises:
-            FileNotFoundError: if no blob exists for ``ref``.
-            ValueError: if the stored bytes do not hash to ``ref``.
+            ModelOnexError: if no blob exists or the stored bytes do not hash to ``ref``.
         """
         blob_path = self._blob_path(ref)
         if not blob_path.is_file():
             msg = f"no artifact blob for {ref.ref}"
-            raise FileNotFoundError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=msg,
+            )
         data = blob_path.read_bytes()
         self._verify_hash(ref, data)
         return data
@@ -410,18 +387,23 @@ class ArtifactStore:
         """Return the typed sidecar metadata for ``ref``.
 
         Raises:
-            FileNotFoundError: if no sidecar exists for ``ref``.
-            ValueError: if the sidecar is not a JSON object or fails validation.
+            ModelOnexError: if no sidecar exists or its object shape is invalid.
         """
         meta_path = self._meta_path(ref)
         if not meta_path.is_file():
             msg = f"no artifact sidecar for {ref.ref}"
-            raise FileNotFoundError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=msg,
+            )
         raw = meta_path.read_bytes()
         loaded: object = json.loads(raw)
         if not isinstance(loaded, dict):
             msg = f"artifact sidecar for {ref.ref} is not a JSON object"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+            )
         return ModelArtifactMetadata.model_validate(loaded)
 
     def scope_size_bytes(self, scope_ref: str | None) -> int:
@@ -540,7 +522,10 @@ class ArtifactStore:
                 f"artifact hash mismatch for {ref.ref}: stored bytes hash to "
                 f"{actual.ref} (on-disk corruption or tampering)"
             )
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                message=msg,
+            )
 
     @staticmethod
     def _serialize_meta(meta: ModelArtifactMetadata) -> bytes:
@@ -573,6 +558,8 @@ class ArtifactStore:
             with os.fdopen(fd, "wb") as handle:
                 handle.write(data)
             tmp_path.replace(dest)
-        except BaseException:
+        except (
+            BaseException
+        ):  # fallback-ok: clean the temporary file before re-raising cancellation
             tmp_path.unlink(missing_ok=True)  # cleanup-resilience-ok: remove temp file
             raise

@@ -60,6 +60,18 @@ class TopicBase(StrEnum):
     ROUTING_COMPLETED = "onex.evt.omninode.routing-completed.v1"
     ROUTING_FAILED = "onex.evt.omninode.routing-failed.v1"
 
+    # ======================================================================
+    # Core-resident local runtime harness topics (OMN-13420)
+    # ======================================================================
+    HARNESS_DELEGATION_COMMAND = "onex.cmd.omnibase-core.harness-delegation-request.v1"
+    HARNESS_DELEGATION_INFER = "onex.evt.omnibase-core.harness-delegation-infer.v1"
+    HARNESS_DELEGATION_COMPLETED = (
+        "onex.evt.omnibase-core.harness-delegation-completed.v1"
+    )
+    HARNESS_SEA_COMMAND = "onex.cmd.omnibase-core.harness-sea-request.v1"
+    HARNESS_SEA_INFER = "onex.evt.omnibase-core.harness-sea-infer.v1"
+    HARNESS_SEA_COMPLETED = "onex.evt.omnibase-core.harness-sea-completed.v1"
+
     # ==========================================================================
     # Cross-service topics (omniclaude → omniintelligence)
     # ==========================================================================

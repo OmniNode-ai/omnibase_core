@@ -4,17 +4,19 @@
 """Unit tests for ModelSweepResult."""
 
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.telemetry.model_sweep_result import ModelSweepResult
 
 
 def _make_sweep(**overrides: object) -> ModelSweepResult:
     defaults: dict[str, object] = {
         "sweep_type": "compliance",
-        "session_id": "session-001",
+        "session_id": uuid4(),
         "correlation_id": "corr-001",
         "ran_at": datetime(2026, 5, 25, 12, 0, 0, tzinfo=UTC),
         "duration_seconds": 12.5,
@@ -35,7 +37,7 @@ class TestModelSweepResult:
         assert result.warning_count == 0
         assert result.repos_scanned == ()
         assert result.output_path is None
-        assert result.schema_version == "1.0.0"
+        assert result.schema_version == ModelSemVer(major=1, minor=0, patch=0)
 
     def test_all_sweep_types_valid(self) -> None:
         for sweep_type in (

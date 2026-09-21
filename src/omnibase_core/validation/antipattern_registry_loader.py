@@ -14,8 +14,8 @@ from __future__ import annotations
 import importlib.resources
 from pathlib import Path
 
-import yaml
-
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_entry import (
     ModelAntipatternEntry,
 )
@@ -25,6 +25,7 @@ from omnibase_core.models.validation.model_antipattern_override_config import (
 from omnibase_core.models.validation.model_antipattern_registry import (
     ModelAntipatternRegistry,
 )
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 _CONTRACTS_PKG = "omnibase_core.contracts"
 _DEFAULT_YAML = "antipattern_registry.yaml"
@@ -49,8 +50,7 @@ def load_default_antipatterns() -> ModelAntipatternRegistry:
                 f"Cannot locate {_DEFAULT_YAML}; tried importlib.resources and {fallback}"
             ) from exc
 
-    data = yaml.safe_load(raw)
-    return ModelAntipatternRegistry.model_validate(data)
+    return load_yaml_content_as_model(raw, ModelAntipatternRegistry)
 
 
 # Keep legacy name as an alias so existing callers (OMN-11911 tests) continue to work
@@ -61,13 +61,14 @@ def load_repo_overrides(repo_root: Path) -> ModelAntipatternOverrideConfig | Non
     """Load per-repo overrides from <repo_root>/.onex/antipattern-overrides.yaml.
 
     Returns None if the file does not exist.
-    Raises ValidationError if the file exists but is malformed.
+    Raises ModelOnexError if the file exists but is malformed.
     """
     config_path = repo_root / _OVERRIDES_PATH
     if not config_path.exists():
         return None
-    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
-    return ModelAntipatternOverrideConfig.model_validate(data)
+    return load_yaml_content_as_model(
+        config_path.read_text(encoding="utf-8"), ModelAntipatternOverrideConfig
+    )
 
 
 def merge_antipatterns(
@@ -79,7 +80,7 @@ def merge_antipatterns(
     Override semantics (mirrors aislop_rule_loader.merge_rules):
     - Override fields that are None → keep the default value.
     - enabled=False → entry is excluded from the merged registry.
-    - Unknown name → ValueError (prevents silent typos).
+    - Unknown name → ModelOnexError with REGISTRY_VALIDATION_FAILED.
     - custom_entries are appended after merging overrides.
     """
     if overrides is None:
@@ -95,8 +96,9 @@ def merge_antipatterns(
     for name in override_by_name:
         if name not in default_by_name:
             known = sorted(default_by_name)
-            raise ValueError(
-                f"Unknown antipattern name '{name}' in overrides. Known: {known}"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED,
+                message=f"Unknown antipattern name '{name}' in overrides. Known: {known}",
             )
 
     # Apply field overrides; entries with enabled=False are dropped
