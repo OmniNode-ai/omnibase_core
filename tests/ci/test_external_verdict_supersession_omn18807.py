@@ -382,7 +382,9 @@ class TestTheCliHandsTheGateAClock:
         self, flag: str, capsys: pytest.CaptureFixture[str]
     ) -> None:
         with pytest.raises((SystemExit, argparse.ArgumentError)):
-            gate.main(["--jobs-file", "-", flag, _z(NOW)])
+            gate.main(
+                ["--jobs-file", "-", "--event-name", "pull_request", flag, _z(NOW)]
+            )
         captured = capsys.readouterr()
         assert "unrecognized arguments" in captured.err or "invalid" in captured.err
 
@@ -401,7 +403,15 @@ class TestTheCliHandsTheGateAClock:
 
         monkeypatch.setattr(gate, "evaluate", _spy)
         before = datetime.now(UTC)
-        gate.main(["--jobs-file", str(jobs), "--report-only"])
+        gate.main(
+            [
+                "--jobs-file",
+                str(jobs),
+                "--report-only",
+                "--event-name",
+                "pull_request",
+            ]
+        )
         after = datetime.now(UTC)
 
         assert len(seen) == 1
