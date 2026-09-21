@@ -16,6 +16,9 @@ on:
     branches: [main, develop, dev, "hotfix/**"]
   pull_request:
     branches: [main, develop, dev]
+    # CI Summary runs again when the Evidence-Source PR body is updated. Keep
+    # this asserted L4 producer aligned so a stale preflight skip is replaced.
+    types: [opened, edited, synchronize, reopened]
   workflow_dispatch:
 
 env:

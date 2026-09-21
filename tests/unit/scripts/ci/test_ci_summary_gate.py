@@ -26,6 +26,7 @@ from scripts.ci.ci_summary_gate import (
     EXIT_PENDING,
     EXIT_SUCCESS,
     EXPECTED_EXTERNAL_CONTEXTS,
+    EXTERNAL_CONTEXTS_BY_EVENT,
     GATE_JOBS,
     SOFT_ALLOWLIST,
     SPEC_REQUIRED_VALIDATOR_JOBS,
@@ -33,6 +34,7 @@ from scripts.ci.ci_summary_gate import (
     drop_superseded_skips,
     evaluate,
     evaluate_external,
+    external_contexts_for_event,
 )
 
 pytestmark = pytest.mark.unit
@@ -41,6 +43,12 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 CI_YML = WORKFLOWS_DIR / "ci.yml"
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+
+EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS: dict[str, str] = {
+    "DB ownership CI twin (B1)": "check-db-ownership.yml",
+    "LLM refs drift check (OMN-11932)": "check-llm-refs-drift.yml",
+    "advisory-job-gate / advisory-job-gate": "advisory-job-gate.yml",
+}
 
 
 def _job(
@@ -363,6 +371,7 @@ class TestCiSummaryGateCli:
         payload: object,
         *extra: str,
         external_runs: list[dict] | None = None,
+        event_name: str = "pull_request",
     ) -> subprocess.CompletedProcess[str]:
         # Default to both L4 EXPECTED_EXTERNAL_CONTEXTS green so existing
         # jobs-only scenarios keep their original SUCCESS/FAILURE/PENDING
@@ -386,6 +395,8 @@ class TestCiSummaryGateCli:
                     "-",
                     "--external-check-runs-file",
                     str(tmp_path),
+                    "--event-name",
+                    event_name,
                     *extra,
                 ],
                 input=json.dumps(payload),
@@ -435,6 +446,26 @@ class TestCiSummaryGateCli:
         result = self._run(_all_good(), external_runs=bad)
         assert result.returncode == EXIT_FAILURE, result.stdout + result.stderr
 
+    def test_cli_push_requires_only_producers_that_fire_on_push(self) -> None:
+        push_contexts = EXTERNAL_CONTEXTS_BY_EVENT["push"]
+        result = self._run(
+            _all_good(),
+            event_name="push",
+            external_runs=[_check_run(name, "success") for name in push_contexts],
+        )
+        assert result.returncode == EXIT_SUCCESS, result.stdout + result.stderr
+        assert "L4 event/context contract: push:" in result.stdout
+
+    def test_cli_pull_request_requires_advisory_context(self) -> None:
+        result = self._run(
+            _all_good(),
+            external_runs=[
+                _check_run(name, "success")
+                for name in EXTERNAL_CONTEXTS_BY_EVENT["push"]
+            ],
+        )
+        assert result.returncode == EXIT_PENDING, result.stdout + result.stderr
+
     def test_cli_external_check_runs_empty_is_pending(self) -> None:
         result = self._run(_all_good(), external_runs=[])
         assert result.returncode == EXIT_PENDING, result.stdout + result.stderr
@@ -447,7 +478,14 @@ class TestCiSummaryGateCli:
         # SUCCESS -- this is the CLI-level guard against the wiring silently
         # regressing back to "L4 never actually enforced."
         result = subprocess.run(
-            [sys.executable, "scripts/ci/ci_summary_gate.py", "--jobs-file", "-"],
+            [
+                sys.executable,
+                "scripts/ci/ci_summary_gate.py",
+                "--jobs-file",
+                "-",
+                "--event-name",
+                "pull_request",
+            ],
             input=json.dumps(_all_good()),
             capture_output=True,
             text=True,
@@ -455,6 +493,77 @@ class TestCiSummaryGateCli:
             check=False,
         )
         assert result.returncode == EXIT_PENDING, result.stdout + result.stderr
+
+    def test_cli_event_name_is_required_and_unknown_events_fail_closed(self) -> None:
+        missing = subprocess.run(
+            [sys.executable, "scripts/ci/ci_summary_gate.py", "--jobs-file", "-"],
+            input=json.dumps(_all_good()),
+            capture_output=True,
+            text=True,
+            cwd=REPO_ROOT,
+            check=False,
+        )
+        unknown = self._run(_all_good(), event_name="repository_dispatch")
+        assert missing.returncode == 2
+        assert unknown.returncode == 2
+
+
+class TestExternalContextEventContracts:
+    """L4 contexts apply only to the CI events their producers emit."""
+
+    @pytest.mark.parametrize(
+        ("event_name", "expected"),
+        [
+            ("pull_request", EXPECTED_EXTERNAL_CONTEXTS),
+            ("push", EXPECTED_EXTERNAL_CONTEXTS[:2]),
+            ("workflow_dispatch", EXPECTED_EXTERNAL_CONTEXTS[:2]),
+            ("merge_group", ()),
+            ("schedule", ()),
+        ],
+    )
+    def test_event_contracts_are_explicit(
+        self, event_name: str, expected: tuple[str, ...]
+    ) -> None:
+        assert external_contexts_for_event(event_name) == expected
+
+    def test_unknown_event_fails_closed(self) -> None:
+        with pytest.raises(ValueError, match="unsupported CI event"):
+            external_contexts_for_event("repository_dispatch")
+
+    def test_event_map_matches_live_producer_triggers(self) -> None:
+        """An L4 entry applies exactly where its producer can emit it."""
+
+        actual: dict[str, tuple[str, ...]] = {}
+        for event_name in EXTERNAL_CONTEXTS_BY_EVENT:
+            emitted = []
+            for context, filename in EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS.items():
+                document = yaml.safe_load((WORKFLOWS_DIR / filename).read_text())
+                if event_name in _on_block(document):
+                    emitted.append(context)
+            actual[event_name] = tuple(emitted)
+        assert actual == EXTERNAL_CONTEXTS_BY_EVENT
+
+    def test_l4_producers_retrigger_when_ci_summary_retriggers_on_pr_edit(self) -> None:
+        """A body evidence update must replace a stale L4 preflight verdict."""
+
+        ci_document = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
+        ci_pull_request = _on_block(ci_document)["pull_request"]
+        assert isinstance(ci_pull_request, dict)
+        assert "edited" in ci_pull_request["types"]
+
+        expected_default_activities = {"opened", "synchronize", "reopened", "edited"}
+        for context in (
+            "DB ownership CI twin (B1)",
+            "LLM refs drift check (OMN-11932)",
+        ):
+            document = yaml.safe_load(
+                (
+                    WORKFLOWS_DIR / EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS[context]
+                ).read_text(encoding="utf-8")
+            )
+            pull_request = _on_block(document)["pull_request"]
+            assert isinstance(pull_request, dict)
+            assert expected_default_activities <= set(pull_request["types"])
 
 
 class TestExpectedExternalContexts:

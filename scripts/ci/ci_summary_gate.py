@@ -223,6 +223,41 @@ EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
     "advisory-job-gate / advisory-job-gate",
 )
 
+# The L4 producers do not share an event contract. The CI Summary poller runs
+# on more event shapes than any individual producer, so treating the union as
+# required for every event turns a producer that cannot fire into a permanent
+# pending verdict. These maps state the live producer contracts explicitly.
+#
+# `merge_group` and `schedule` deliberately have no external contexts: none of
+# the three producer workflows fires on either event today. This is an explicit,
+# tested applicability decision, not an absence that is read as a pass. An
+# unknown event is rejected by `external_contexts_for_event`.
+_DB_AND_LLM_EXTERNAL_CONTEXTS: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS[:2]
+EXTERNAL_CONTEXTS_BY_EVENT: dict[str, tuple[str, ...]] = {
+    "pull_request": EXPECTED_EXTERNAL_CONTEXTS,
+    "push": _DB_AND_LLM_EXTERNAL_CONTEXTS,
+    "merge_group": (),
+    "workflow_dispatch": _DB_AND_LLM_EXTERNAL_CONTEXTS,
+    "schedule": (),
+}
+
+
+def external_contexts_for_event(event_name: str) -> tuple[str, ...]:
+    """Return the L4 contexts whose producer actually fires for ``event_name``.
+
+    The caller passes GitHub's event name explicitly. Missing or unknown events
+    fail closed rather than defaulting to an empty applicability set, which
+    would turn a poller wiring regression into a green verdict.
+    """
+
+    try:
+        return EXTERNAL_CONTEXTS_BY_EVENT[event_name]
+    except KeyError as error:
+        raise ValueError(
+            f"unsupported CI event for L4 contexts: {event_name!r}"
+        ) from error
+
+
 # Spec-required validator covering jobs (OMN-14127 load-bearing property).
 #
 # These are the ci.yml jobs the operator-locked rollup-coverage spec
@@ -959,14 +994,25 @@ def main(argv: list[str] | None = None) -> int:
         "EXPECTED_EXTERNAL_CONTEXTS (default: none supplied -> treated as "
         "all-missing, i.e. PENDING until supplied).",
     )
+    parser.add_argument(
+        "--event-name",
+        required=True,
+        help="GitHub event name selecting the L4 external-context contract.",
+    )
     args = parser.parse_args(argv)
 
     jobs = _load_jobs(args.jobs_file)
     external_check_runs = _load_check_runs(args.external_check_runs_file)
+    try:
+        external_contexts = external_contexts_for_event(args.event_name)
+    except ValueError as error:
+        parser.error(str(error))
+        return EXIT_FAILURE
     code, report = evaluate(
         jobs,
         run_attempt=args.run_attempt,
         external_check_runs=external_check_runs,
+        external_contexts=external_contexts,
         # The observation time the OMN-17864 / OMN-18355 windows are measured
         # against. It is the process's own wall clock and has NO CLI surface --
         # deliberately, because a caller-assertable time would let a long-dead
@@ -982,6 +1028,8 @@ def main(argv: list[str] | None = None) -> int:
         # test green.
         now=datetime.now(UTC),
     )
+    selected = ", ".join(external_contexts) or "<none: no producer for this event>"
+    print(f"L4 event/context contract: {args.event_name}: {selected}")  # noqa: T201
     print(report)  # noqa: T201 — CLI verdict report to stdout for the poll loop
     if args.report_only:
         return EXIT_SUCCESS
