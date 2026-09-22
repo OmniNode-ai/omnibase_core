@@ -99,6 +99,9 @@ _PUBLIC_REPO_HYGIENE_LINES = [
     ".repowise-workspace.yaml",
     ".evidence/",
     "docs/evidence/",
+    # Root-anchored (OMN-18364): a bare `merge-sweep/` matches a directory at
+    # any depth and dropped omnimarket's tracked, packaged
+    # src/omnimarket/adapters/codex/skills/merge-sweep/ out of its wheel.
     "/merge-sweep/",
     "# === end onex-managed: public_repo_hygiene ===",
 ]
