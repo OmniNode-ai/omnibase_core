@@ -508,6 +508,7 @@ def wait_for_no_companion_required(
     poll_interval_seconds: int = DEFAULT_NO_COMPANION_POLL_INTERVAL_SECONDS,
     sleep: Callable[[float], object] = time.sleep,
     monotonic: Callable[[], float] = time.monotonic,
+    emit: Callable[[str], object] = print,
 ) -> tuple[bool, str]:
     """Whether the producer affirmatively declined a companion for this head.
 
@@ -543,6 +544,12 @@ def wait_for_no_companion_required(
     *sleep* and *monotonic* are injected so the tests drive the deadline
     deterministically instead of spending real seconds; the defaults are the
     real clock and nothing in the live path passes anything else.
+
+    Every poll it spends is ANNOUNCED through *emit*. A gate that silently
+    waits is indistinguishable in a job log from the one-shot read this
+    replaces, so the one thing a reader needs to know -- that the probe is
+    waiting for the producer rather than having already refused -- would be
+    invisible exactly when someone is debugging a slow or missing outcome.
     """
     start = monotonic()
     last = classify_no_companion_required(
@@ -567,6 +574,10 @@ def wait_for_no_companion_required(
                 "companion is owed -- if the producer is simply slow, re-run "
                 "this job once its outcome check-run is present)"
             )
+        emit(
+            f"occ-autobind no-companion-required: waiting "
+            f"({elapsed}s/{deadline_seconds}s) -- {last.detail}"
+        )
         sleep(poll_interval_seconds)
         last = classify_no_companion_required(
             client.read_autobind_outcome(repo=repo, pr_number=pr_number)

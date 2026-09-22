@@ -143,10 +143,15 @@ def _read(run: dict[str, Any]) -> ModelAutobindOutcomeRead:
 
 
 def _wait(
-    gh: _ScriptedGh, *, deadline_seconds: int = 180, tick_seconds: float = 5.0
+    gh: _ScriptedGh,
+    *,
+    deadline_seconds: int = 180,
+    tick_seconds: float = 5.0,
+    emitted: list[str] | None = None,
 ) -> tuple[bool, str]:
     """Drive the real wait on a fake clock that advances only when it sleeps."""
     clock = {"now": 0.0}
+    sink = emitted if emitted is not None else []
 
     def _sleep(seconds: float) -> None:
         gh.sleep(seconds)
@@ -160,6 +165,7 @@ def _wait(
         poll_interval_seconds=5,
         sleep=_sleep,
         monotonic=lambda: clock["now"],
+        emit=sink.append,
     )
 
 
@@ -336,6 +342,33 @@ def test_the_timeout_exits_non_zero_through_the_cli(tmp_path: Any) -> None:
         "a timed-out probe must write no output; the workflow reads that "
         "output as permission to skip the evidence requirement"
     )
+
+
+def test_every_poll_it_spends_is_announced() -> None:
+    """A gate that waits silently reads, in a job log, exactly like the
+    one-shot probe this replaces -- so the one fact a reader debugging a slow
+    producer needs (that it is WAITING, not that it has already refused) would
+    be invisible precisely when it matters. Each poll says so, with its
+    elapsed budget."""
+    emitted: list[str] = []
+    gh = _ScriptedGh([ABSENT, ABSENT, _read(PIN_ONLY_RUN)])
+    exempt, _ = _wait(gh, emitted=emitted)
+
+    assert exempt is True
+    assert len(emitted) == 2, "one line per poll actually spent"
+    assert all("waiting" in line for line in emitted)
+    assert "0s/180s" in emitted[0] and "5s/180s" in emitted[1], (
+        "each line must carry the elapsed budget, or a reader cannot tell a "
+        "wait that is about to expire from one that just began"
+    )
+
+
+def test_a_terminal_first_read_announces_no_wait() -> None:
+    """Nothing is printed about waiting when nothing waited."""
+    emitted: list[str] = []
+    gh = _ScriptedGh([_read(PIN_ONLY_RUN)])
+    _wait(gh, emitted=emitted)
+    assert emitted == []
 
 
 def test_the_wait_is_bounded_and_does_not_poll_forever() -> None:
