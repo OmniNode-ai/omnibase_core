@@ -9,6 +9,9 @@ from typing import Self
 
 from pydantic import model_validator
 
+from omnibase_core.enums.enum_delegation_operational_outcome import (
+    EnumDelegationOperationalOutcome,
+)
 from omnibase_core.models.delegation.wire.model_delegation_result import (
     ModelDelegationResult,
 )
@@ -25,7 +28,11 @@ class ModelDelegationFailed(ModelDelegationResult):
     @model_validator(mode="after")
     def validate_failed_terminal_truth(self) -> Self:
         """Keep the failed topic identity consistent with its payload."""
-        if self.quality_passed:
+        if (
+            self.quality_passed
+            and self.operational_outcome
+            is not EnumDelegationOperationalOutcome.TERMINAL_CONSTRUCTION_FAILED
+        ):
             msg = "failed delegation requires quality_passed=false"
             raise ValueError(msg)
         return self
