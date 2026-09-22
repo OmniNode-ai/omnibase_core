@@ -83,13 +83,46 @@ The third consumer (OMN-18882)
 hard-fails the identical PR on its own missing-``Evidence-Source`` check
 (measured on omnimarket#2701 at 10:38:18Z). It is a bash gate with no Python
 process of its own, so it drives this module's
-``--check-no-companion-required`` one-shot probe over
-:func:`check_no_companion_required`. That probe reuses this module's token
+``--check-no-companion-required`` probe over
+:func:`wait_for_no_companion_required`. That probe reuses this module's token
 set, predicate and check-run reader unchanged -- the token is defined once, in
 one place, for every gate in the family. Its ONLY difference is direction of
 failure: it fails CLOSED, because its caller's existing behaviour is a hard
 failure rather than a poll, so an unreadable outcome must leave that hard
 failure standing rather than waive it.
+
+That probe is BOUNDED-WAITING, not one-shot (OMN-19164)
+-------------------------------------------------------
+OMN-18882 landed it as a single read, on the premise that "by the time that
+gate runs, this run has already paid the OMN-15214 budget for the same fact".
+That premise is false and was measured false: the Receipt Gate job and the
+autobind producer are triggered by the SAME event and run CONCURRENTLY, and
+the gate is the faster of the two. On ``omnimarket#2775`` head
+``96fd645574c5ab9271913021fc53af770a361166`` the gate read at 07:44:06Z, hard
+failed, and the producer posted its ``skip:DEPENDENCY_PIN_ONLY`` decline at
+07:44:12Z -- six seconds too late. On ``#2776`` the same two events landed in
+the other order and the identical PR class passed. Across 24 sampled bump PRs
+in two repos every failure was this race and the near-miss margin was 1-4
+seconds, so which way a post-release bump resolved was decided by runner
+scheduling.
+
+The fix is ORDERING, NOT PERMISSION, and the distinction is the whole design:
+
+* "no outcome recorded YET" and "no outcome will EVER be recorded" were one
+  state, and resolving a not-yet-known premise as a refusal is what made a
+  correct exemption unreachable. They are now two states -- see
+  :class:`EnumNoCompanionProbeVerdict` -- and only the first one waits.
+* Nothing about WHAT qualifies moved. The head-SHA binding, the ``DECLINED``
+  requirement and the pin-only token set are untouched, so an outcome posted
+  against an earlier commit is still invisible and an author still cannot
+  assert anything.
+* A verdict that IS in hand is terminal on the first read. A MINTED outcome,
+  or a decline for any other reason, means a companion is genuinely owed; no
+  later poll changes that, and waiting on it would buy nothing but delay.
+* The deadline fails CLOSED, under
+  :attr:`EnumNoCompanionProbeVerdict.INDETERMINATE`'s own detail text naming
+  the elapsed budget -- distinct from the absent-outcome text, so a lost race
+  and a genuine no-outcome case are told apart on the PR (AC3).
 
 A ``merge_group`` (or any non-``pull_request``) event always ``PROCEED``s
 immediately, never waits. Invariant I2 in ``occ-preflight.yml``'s own header
@@ -107,7 +140,7 @@ import re
 import subprocess  # fixed argv, no shell, trusted gh binary
 import sys
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Final, Protocol
@@ -126,6 +159,18 @@ OCC_DURABLE_BRANCHES: Final[tuple[str, ...]] = ("dev", "main")
 # See module docstring -- this is not a new number, it is the existing one.
 DEFAULT_DEADLINE_SECONDS: Final[int] = 1500
 DEFAULT_POLL_INTERVAL_SECONDS: Final[int] = 30
+
+# OMN-19164 -- the Receipt Gate probe's own budget, deliberately NOT the 1500s
+# one above. That budget belongs to a gate whose job is to wait for a human or
+# a mint; this one waits only for a producer that is already running in the
+# same event, and every second of it is spent on a PR that will hard fail if
+# the wait expires. The numbers are sized from measurement, not taste: the
+# producer posted its outcome 25s after PR open while the gate read at 19s
+# (omnimarket#2775), and the widest observed producer latency on a first run
+# was ~97s (omnibase_infra#3942). 180s is a little under twice that, and 5s
+# resolves a 1-4s race without busy-polling the check-runs API.
+DEFAULT_NO_COMPANION_DEADLINE_SECONDS: Final[int] = 180
+DEFAULT_NO_COMPANION_POLL_INTERVAL_SECONDS: Final[int] = 5
 
 EVIDENCE_SOURCE_RE: Final[re.Pattern[str]] = re.compile(
     r"^Evidence-Source:\s+(\S.*)$", re.IGNORECASE | re.MULTILINE
@@ -192,6 +237,48 @@ class ModelAutobindOutcomeRead:
     status: EnumAutobindReadStatus
     outcome: str = ""
     reason: str = ""
+
+
+class EnumNoCompanionProbeVerdict(StrEnum):
+    """One read's verdict in the Receipt Gate's pin-only probe (OMN-19164).
+
+    The three-way split IS the fix. OMN-18882 had two outcomes, exempt and
+    not-exempt, which forced "the producer has not reported yet" to be
+    reported as "the producer says you owe evidence" -- a not-yet-known
+    premise resolved as a refusal, which is how a correct exemption became
+    unreachable on the PR class it was written for.
+
+    ``INDETERMINATE`` is the only verdict that waits, and waiting is all it
+    does: it is not a pass, it never becomes one on the deadline, and the
+    caller that runs out of budget holding it fails exactly as it did before
+    this ticket. ``NOT_EXEMPT`` is a verdict the producer actually reached,
+    so it is terminal on the first read -- re-polling a MINTED outcome or a
+    non-pin decline delays a PR that genuinely owes evidence.
+    """
+
+    EXEMPT = "exempt"
+    NOT_EXEMPT = "not_exempt"
+    INDETERMINATE = "indeterminate"
+
+
+@dataclass(frozen=True)
+class ModelNoCompanionProbeRead:
+    """One classification of one :class:`ModelAutobindOutcomeRead`.
+
+    A frozen dataclass rather than a Pydantic model to match every other
+    verdict type in this module: it is a CI entrypoint that must import under
+    a bare ``python3`` on a runner with no project environment, so it takes no
+    third-party import. ``detail`` is the sentence the job log prints, and it
+    is part of the contract -- AC3 turns on the timeout text differing from
+    the absent-outcome text.
+    """
+
+    verdict: EnumNoCompanionProbeVerdict
+    detail: str
+
+    @property
+    def is_terminal(self) -> bool:
+        return self.verdict is not EnumNoCompanionProbeVerdict.INDETERMINATE
 
 
 class EnumPreflightWaitOutcome(StrEnum):
@@ -327,8 +414,101 @@ def read_autobind_outcome_from_check_runs(
     return None
 
 
-def check_no_companion_required(
-    *, repo: str, pr_number: str, client: GhPort
+def classify_no_companion_required(
+    read: ModelAutobindOutcomeRead,
+) -> ModelNoCompanionProbeRead:
+    """Pure verdict for ONE read of the head-SHA-bound autobind outcome.
+
+    OMN-19164 split this out of the live probe so every branch is decided by a
+    function with no clock, no network and no sleep, exhaustively unit-tested
+    -- the same pure-function/polling-driver split
+    :func:`decide_preflight_wait` already uses, and the reason a verdict here
+    is falsifiable by a unit test rather than by a live lane.
+
+    Which reads WAIT and which are terminal is the substance:
+
+    ``ABSENT``
+        The producer has not reported against this head yet. It is running in
+        the same event as the caller and is routinely the slower of the two,
+        so this is the race and the only ordinary reason to poll.
+    ``UNREADABLE``
+        We could not ask -- transport error, rate limit, malformed response.
+        Also INDETERMINATE, because a failed read is not a verdict and must
+        never be read as one; a transient 502 that resolves on the next poll
+        is the same shape as the race and deserves the same budget. It fails
+        closed on the deadline exactly as before.
+    ``READ`` and not ``DECLINED``
+        The producer MINTED, so a companion exists and is owed. Terminal.
+    ``READ``, ``DECLINED``, non-pin reason
+        A verdict the producer reached: this PR still owes a citation. No
+        later poll changes it. Terminal.
+    ``READ``, ``DECLINED``, pin-only reason
+        The exemption, unchanged from OMN-18882 in every particular.
+    """
+    if read.status is EnumAutobindReadStatus.UNREADABLE:
+        # OMN-18647 split this out of the absent case below. Both are
+        # indeterminate and neither is a verdict, but a gate that cannot say
+        # which one it hit sends its reader looking for the wrong thing.
+        return ModelNoCompanionProbeRead(
+            verdict=EnumNoCompanionProbeVerdict.INDETERMINATE,
+            detail=(
+                "the occ-autobind outcome check-run for this PR's current head "
+                "SHA could not be READ (transport error, rate limit or malformed "
+                "response); that is not the same as the producer having declined "
+                "and is never read as one"
+            ),
+        )
+    if read.status is EnumAutobindReadStatus.ABSENT:
+        return ModelNoCompanionProbeRead(
+            verdict=EnumNoCompanionProbeVerdict.INDETERMINATE,
+            detail=(
+                "no completed occ-autobind outcome is recorded against this PR's "
+                "current head SHA yet (an outcome posted against an earlier "
+                "commit is deliberately invisible here)"
+            ),
+        )
+    outcome_word, outcome_reason = read.outcome, read.reason
+    if outcome_word.strip().upper() != AUTOBIND_OUTCOME_DECLINED:
+        return ModelNoCompanionProbeRead(
+            verdict=EnumNoCompanionProbeVerdict.NOT_EXEMPT,
+            detail=(
+                f"the occ-autobind outcome for this head is "
+                f"'{outcome_word.strip()}', not {AUTOBIND_OUTCOME_DECLINED}; only "
+                "a decline can mean no companion is owed"
+            ),
+        )
+    if not is_no_companion_required(outcome_reason):
+        return ModelNoCompanionProbeRead(
+            verdict=EnumNoCompanionProbeVerdict.NOT_EXEMPT,
+            detail=(
+                f"the occ-autobind outcome for this head is DECLINED with reason "
+                f"'{outcome_reason.strip()}', which is not the dependency-pin-only "
+                "verdict; this PR still owes an evidence citation"
+            ),
+        )
+    return ModelNoCompanionProbeRead(
+        verdict=EnumNoCompanionProbeVerdict.EXEMPT,
+        detail=(
+            "the occ-autobind producer classified this head's diff as "
+            f"dependency-pin-only (reason '{outcome_reason.strip()}'), so no OCC "
+            "evidence companion exists or will be minted for it. The verdict is "
+            "DERIVED from the diff by the producer, never asserted in the PR "
+            "body, and it is bound to this head SHA -- a new commit carries no "
+            "outcome and re-opens this gate (OMN-18848)"
+        ),
+    )
+
+
+def wait_for_no_companion_required(
+    *,
+    repo: str,
+    pr_number: str,
+    client: GhPort,
+    deadline_seconds: int = DEFAULT_NO_COMPANION_DEADLINE_SECONDS,
+    poll_interval_seconds: int = DEFAULT_NO_COMPANION_POLL_INTERVAL_SECONDS,
+    sleep: Callable[[float], object] = time.sleep,
+    monotonic: Callable[[], float] = time.monotonic,
+    emit: Callable[[str], object] = print,
 ) -> tuple[bool, str]:
     """Whether the producer affirmatively declined a companion for this head.
 
@@ -345,52 +525,63 @@ def check_no_companion_required(
     its own bash is how the fleet's definition of the exemption splits in
     silence.
 
-    Unlike the wait's read, this one fails CLOSED, because the caller's
+    Polls :func:`classify_no_companion_required` until it reaches a terminal
+    verdict or *deadline_seconds* elapses, whichever comes first. The client's
+    read re-resolves the PR's head on EVERY poll, so a commit landing mid-wait
+    is read against its own new SHA rather than the one this call started on
+    -- the head-SHA binding holds across the wait, it is not a snapshot taken
+    at entry.
+
+    Unlike the module's main wait, this one fails CLOSED, because the caller's
     existing behaviour is a hard failure rather than a poll: an unresolvable
     head, an unreadable check-run list, an absent outcome, an outcome on a
-    different SHA and every non-pin reason all return ``False``, which leaves
-    the Receipt Gate's ``Evidence-Source`` hard fail exactly where it was.
-    ``True`` is returned only for an affirmative DECLINED whose reason token is
-    the pin-only one, recorded against the PR's CURRENT head SHA.
+    different SHA, every non-pin reason and an expired budget all return
+    ``False``, which leaves the Receipt Gate's ``Evidence-Source`` hard fail
+    exactly where it was. ``True`` is returned only for an affirmative
+    DECLINED whose reason token is the pin-only one, recorded against the PR's
+    CURRENT head SHA.
+
+    *sleep* and *monotonic* are injected so the tests drive the deadline
+    deterministically instead of spending real seconds; the defaults are the
+    real clock and nothing in the live path passes anything else.
+
+    Every poll it spends is ANNOUNCED through *emit*. A gate that silently
+    waits is indistinguishable in a job log from the one-shot read this
+    replaces, so the one thing a reader needs to know -- that the probe is
+    waiting for the producer rather than having already refused -- would be
+    invisible exactly when someone is debugging a slow or missing outcome.
     """
-    read = client.read_autobind_outcome(repo=repo, pr_number=pr_number)
-    if read.status is EnumAutobindReadStatus.UNREADABLE:
-        # OMN-18647 split this out of the absent case below. Both fail closed
-        # and neither is a verdict, but a gate that cannot say which one it
-        # hit sends its reader looking for the wrong thing.
-        return False, (
-            "the occ-autobind outcome check-run for this PR's current head "
-            "SHA could not be READ (transport error, rate limit or malformed "
-            "response); that is not the same as the producer having declined "
-            "and is never read as one, so no exemption applies"
-        )
-    if read.status is EnumAutobindReadStatus.ABSENT:
-        return False, (
-            "no completed occ-autobind outcome is recorded against this PR's "
-            "current head SHA (an outcome posted against an earlier commit is "
-            "deliberately invisible here), so no exemption applies"
-        )
-    outcome_word, outcome_reason = read.outcome, read.reason
-    if outcome_word.strip().upper() != AUTOBIND_OUTCOME_DECLINED:
-        return False, (
-            f"the occ-autobind outcome for this head is '{outcome_word.strip()}', "
-            f"not {AUTOBIND_OUTCOME_DECLINED}; only a decline can mean no "
-            "companion is owed"
-        )
-    if not is_no_companion_required(outcome_reason):
-        return False, (
-            f"the occ-autobind outcome for this head is DECLINED with reason "
-            f"'{outcome_reason.strip()}', which is not the dependency-pin-only "
-            "verdict; this PR still owes an evidence citation"
-        )
-    return True, (
-        "the occ-autobind producer classified this head's diff as "
-        f"dependency-pin-only (reason '{outcome_reason.strip()}'), so no OCC "
-        "evidence companion exists or will be minted for it. The verdict is "
-        "DERIVED from the diff by the producer, never asserted in the PR body, "
-        "and it is bound to this head SHA -- a new commit carries no outcome "
-        "and re-opens this gate (OMN-18848)"
+    start = monotonic()
+    last = classify_no_companion_required(
+        client.read_autobind_outcome(repo=repo, pr_number=pr_number)
     )
+    while True:
+        if last.verdict is EnumNoCompanionProbeVerdict.EXEMPT:
+            return True, last.detail
+        if last.verdict is EnumNoCompanionProbeVerdict.NOT_EXEMPT:
+            return False, f"{last.detail}, so no exemption applies"
+
+        elapsed = int(monotonic() - start)
+        if elapsed >= deadline_seconds:
+            # AC3: the deadline's own sentence, distinct from the
+            # absent-outcome one it quotes, so a LOST RACE and a producer that
+            # never reports are distinguishable in the job log. Both fail; a
+            # reader who cannot tell them apart chases the wrong remedy.
+            return False, (
+                f"{last.detail}; waited {elapsed}s of a {deadline_seconds}s "
+                "budget for the producer to report and it did not, so no "
+                "exemption applies (OMN-19164 timeout, NOT a verdict that a "
+                "companion is owed -- if the producer is simply slow, re-run "
+                "this job once its outcome check-run is present)"
+            )
+        emit(
+            f"occ-autobind no-companion-required: waiting "
+            f"({elapsed}s/{deadline_seconds}s) -- {last.detail}"
+        )
+        sleep(poll_interval_seconds)
+        last = classify_no_companion_required(
+            client.read_autobind_outcome(repo=repo, pr_number=pr_number)
+        )
 
 
 def _wait_or_deadline(
@@ -901,12 +1092,35 @@ def _build_parser() -> argparse.ArgumentParser:
         "--check-no-companion-required",
         action="store_true",
         help=(
-            "OMN-18882 one-shot probe, for gates that are not this wait: exit 0 "
-            "iff the occ-autobind producer recorded a dependency-pin-only "
-            "DECLINE against the PR's CURRENT head SHA, else exit 1. Never "
-            "polls, never reads the PR body, and fails closed on every "
-            "indeterminate outcome."
+            "OMN-18882 probe, for gates that are not this wait: exit 0 iff the "
+            "occ-autobind producer recorded a dependency-pin-only DECLINE "
+            "against the PR's CURRENT head SHA, else exit 1. Never reads the "
+            "PR body, and fails closed on every indeterminate outcome. "
+            "OMN-19164: bounded-waits for the producer to report rather than "
+            "reading once, because the gate driving it and the producer run "
+            "concurrently off the same event."
         ),
+    )
+    # OMN-19164. Knobs on the WAIT, never on the verdict: neither can admit a
+    # PR the probe would otherwise refuse, because a shorter budget can only
+    # reach the same fail-closed timeout sooner and a longer one can only
+    # spend more seconds before the identical refusal. Deliberately NOT a
+    # skip, allowlist or override input (AC5); the parser declares no such
+    # option and a test reads these option strings to keep it that way.
+    parser.add_argument(
+        "--no-companion-deadline-seconds",
+        type=int,
+        default=DEFAULT_NO_COMPANION_DEADLINE_SECONDS,
+        help=(
+            "Budget for --check-no-companion-required to wait for the "
+            "producer's head-SHA-bound outcome before failing closed."
+        ),
+    )
+    parser.add_argument(
+        "--no-companion-poll-interval-seconds",
+        type=int,
+        default=DEFAULT_NO_COMPANION_POLL_INTERVAL_SECONDS,
+        help="Seconds between --check-no-companion-required polls.",
     )
     # OMN-18647. Off unless the caller asks for it, so the one pinned canary
     # caller is the only caller whose behaviour moves. NOT a bypass and NOT a
@@ -934,11 +1148,17 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
     client: GhPort = gh if gh is not None else GhCli()
 
     if args.check_no_companion_required:
-        # OMN-18882: the one-shot probe the Receipt Gate drives. Terminal in
-        # one read -- no poll loop, because by the time that gate runs this
-        # run has already paid the OMN-15214 budget for the same fact.
-        exempt, detail = check_no_companion_required(
-            repo=args.repo, pr_number=args.pr_number, client=client
+        # OMN-18882: the probe the Receipt Gate drives. OMN-19164 made it a
+        # bounded wait: the premise this once carried -- that the outcome is
+        # already recorded by the time this gate runs -- was measured FALSE on
+        # omnimarket#2775, where the producer posted six seconds after the
+        # gate had already hard failed. It still fails closed on the deadline.
+        exempt, detail = wait_for_no_companion_required(
+            repo=args.repo,
+            pr_number=args.pr_number,
+            client=client,
+            deadline_seconds=args.no_companion_deadline_seconds,
+            poll_interval_seconds=args.no_companion_poll_interval_seconds,
         )
         print(f"occ-autobind no-companion-required: {str(exempt).lower()} -- {detail}")
         if not exempt:

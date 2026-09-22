@@ -18,8 +18,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import pathspec
 import pytest
 import yaml
+from pathspec.patterns.gitwildmatch import GitWildMatchPattern
 
 SPEC_PATH = (
     Path(__file__).resolve().parent.parent.parent
@@ -73,6 +75,8 @@ PUBLIC_REPO_HYGIENE_REQUIRED_PATTERNS = [
     ".repowise-workspace.yaml",
     ".evidence/",
     "docs/evidence/",
+    # Root-anchored (OMN-18364). See
+    # test_hygiene_block_does_not_ignore_nested_packaged_source below for why.
     "/merge-sweep/",
 ]
 
@@ -439,4 +443,100 @@ def test_the_hygiene_block_anchors_merge_sweep(spec: dict[str, Any]) -> None:
     )
     assert "merge-sweep/" not in patterns, (
         "the unanchored form must not be declared alongside the anchored one"
+    )
+
+
+# ---------------------------------------------------------------------------
+# OMN-18364 — the hygiene block's directory patterns must be root-anchored.
+# ---------------------------------------------------------------------------
+
+# The shape that broke: omnimarket ships an agent skill as PACKAGED SOURCE at
+# src/omnimarket/adapters/codex/skills/merge-sweep/SKILL.md. It is tracked, it
+# is part of the wheel, and it is nested — not repo-root scratch.
+_NESTED_PACKAGED_SOURCE_PATH = (
+    "src/omnimarket/adapters/codex/skills/merge-sweep/SKILL.md"
+)
+
+# The shape the block is actually FOR: repo-root agent scratch.
+_ROOT_SCRATCH_PATHS = [
+    "merge-sweep/run-2026-09-19.json",
+    "merge-sweep/state.db",
+]
+
+
+def _hygiene_spec(spec: dict[str, Any]) -> pathspec.PathSpec:
+    """Compile the shipped hygiene patterns with git's own wildmatch dialect."""
+    patterns = spec["managed_blocks"]["public_repo_hygiene"]["patterns"]
+    return pathspec.PathSpec.from_lines(GitWildMatchPattern, patterns)
+
+
+def test_hygiene_block_does_not_ignore_nested_packaged_source(
+    spec: dict[str, Any],
+) -> None:
+    """A nested packaged ``merge-sweep/`` source dir must NOT be ignored.
+
+    Measured regression (OMN-18364, 2026-09-19): the block shipped
+    ``merge-sweep/`` unanchored, which git matches at ANY depth. omnimarket
+    adopted the managed block in omnimarket#2670 (commit 61187c8c1) and its
+    tracked ``src/omnimarket/adapters/codex/skills/merge-sweep/SKILL.md``
+    became VCS-ignored. Hatchling excludes VCS-ignored files from the wheel,
+    so the file was present in the staged source tree and absent from the
+    built wheel, and the OMN-14631 workspace content-parity gate hard-failed
+    every ``BUILD_SOURCE=workspace`` runtime image build with
+    ``INSTALLED CONTENT DRIFT for 'omnimarket'``. That blocked
+    ``deliver-dev-candidate-to-staging`` run 35473178811.
+
+    Same failure class as the OMN-14636 ``/env/`` root-anchoring fix in the
+    python block. Do not un-anchor this pattern.
+    """
+    matched = _hygiene_spec(spec).match_file(_NESTED_PACKAGED_SOURCE_PATH)
+    assert not matched, (
+        f"the public_repo_hygiene block ignores {_NESTED_PACKAGED_SOURCE_PATH!r}, "
+        "a nested packaged source path. Some directory pattern in the block is "
+        "unanchored and is matching at depth; root-anchor it with a leading "
+        "slash (OMN-18364)."
+    )
+
+
+def test_hygiene_block_still_ignores_repo_root_merge_sweep(
+    spec: dict[str, Any],
+) -> None:
+    """Positive control: the block keeps its repo-root hygiene intent.
+
+    Without this, the test above would pass just as well if the pattern were
+    deleted outright, which is not the fix.
+    """
+    compiled = _hygiene_spec(spec)
+    for path in _ROOT_SCRATCH_PATHS:
+        assert compiled.match_file(path), (
+            f"the public_repo_hygiene block no longer ignores {path!r}. "
+            "Root-anchoring the pattern must not delete its hygiene intent "
+            "(OMN-18364)."
+        )
+
+
+def test_hygiene_dotless_directory_patterns_are_root_anchored(
+    spec: dict[str, Any],
+) -> None:
+    """Every plain, dot-less directory pattern carries a leading slash.
+
+    Scope, stated rather than implied: this asserts over patterns whose name
+    does not begin with a dot. A leading dot is not a valid Python identifier,
+    so a ``.claude_scratch/``-shaped entry can never be an importable packaged
+    source directory and cannot reproduce the OMN-18364 wheel-stripping
+    failure; those are left unanchored as shipped. A dot-less ``name/`` can,
+    and ``merge-sweep/`` did. Patterns containing a mid-string slash
+    (``docs/evidence/``) are already anchored by git's own rule.
+    """
+    patterns = spec["managed_blocks"]["public_repo_hygiene"]["patterns"]
+    offenders = [
+        p
+        for p in patterns
+        if p.endswith("/") and not p.startswith(("/", "!", ".")) and "/" not in p[:-1]
+    ]
+    assert not offenders, (
+        f"unanchored dot-less directory patterns in public_repo_hygiene: "
+        f"{offenders}. Each matches a directory of that name at ANY depth and "
+        "will strip a nested tracked source directory out of a git-aware "
+        "wheel build (OMN-18364)."
     )

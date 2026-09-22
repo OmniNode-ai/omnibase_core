@@ -16,6 +16,7 @@ class EnumDelegationContentVerdict(StrEnum):
     USABLE = "usable"
     UNUSABLE = "unusable"
     NOT_APPLICABLE = "not_applicable"
+    UNDETERMINED = "undetermined"
 
 
 __all__ = ["EnumDelegationContentVerdict"]

@@ -27,6 +27,7 @@ class EnumDelegationOperationalOutcome(StrEnum):
     CANCELLED = "cancelled"
     BOUNDARY_FAILURE = "boundary_failure"
     INFERENCE_FAILED = "inference_failed"
+    TERMINAL_CONSTRUCTION_FAILED = "terminal_construction_failed"
 
 
 __all__ = ["EnumDelegationOperationalOutcome"]
