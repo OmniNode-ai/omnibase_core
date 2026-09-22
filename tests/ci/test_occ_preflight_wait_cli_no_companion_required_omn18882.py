@@ -124,7 +124,25 @@ class _FakeGh:
         )
 
 
-def _run(gh: _FakeGh, *, github_output_path: str = "") -> int:
+def _run(
+    gh: _FakeGh,
+    *,
+    github_output_path: str = "",
+    deadline_seconds: int = 0,
+    poll_interval_seconds: int = 0,
+) -> int:
+    """Drive the probe's CLI.
+
+    OMN-19164 gave the probe a bounded wait, so every case in this module
+    that is INDETERMINATE on the first read -- an absent outcome, an
+    unreadable one, an outcome bound to another SHA -- would otherwise spend
+    the live 180s budget before reaching the refusal it asserts. A zero
+    deadline collapses that to the single read these tests were written
+    against WITHOUT touching any verdict: the classification of every read is
+    unchanged, and the timeout branch fails closed exactly as the absent
+    branch did. The race itself is covered in the OMN-19164 module, which
+    drives real polls with a zero interval.
+    """
     return main(
         [
             "--check-no-companion-required",
@@ -134,6 +152,10 @@ def _run(gh: _FakeGh, *, github_output_path: str = "") -> int:
             PR_NUMBER,
             "--github-output-path",
             github_output_path,
+            "--no-companion-deadline-seconds",
+            str(deadline_seconds),
+            "--no-companion-poll-interval-seconds",
+            str(poll_interval_seconds),
         ],
         gh=gh,
     )
@@ -278,12 +300,29 @@ def test_non_exempt_run_writes_no_output(tmp_path: Any) -> None:
     assert "evidence_not_required" not in out.read_text()
 
 
-def test_the_probe_does_not_poll() -> None:
-    """The Receipt Gate runs after the bounded wait has already had its
-    budget; this probe must answer in one read, never sleep."""
-    gh = _FakeGh(head_sha=HEAD_SHA, check_runs_by_sha={HEAD_SHA: []})
+def test_a_verdict_the_producer_reached_is_answered_without_polling() -> None:
+    """CORRECTED by OMN-19164. This test previously asserted the probe never
+    polls at all, on OMN-18882's premise that the Receipt Gate runs after the
+    bounded wait has already paid for the same fact. That premise was measured
+    FALSE -- the two run concurrently off one event and the gate is the faster
+    -- so the blanket no-poll claim is gone.
+
+    What survives is the half that was always right and is now load-bearing:
+    a read that DID reach a verdict is terminal on the first look. A MINTED
+    outcome, or a decline for a non-pin reason, means a companion is genuinely
+    owed, and no later poll changes that, so a PR that owes evidence learns so
+    immediately rather than after the budget. Only a not-yet-known premise
+    waits.
+    """
+    gh = _FakeGh(
+        head_sha=HEAD_SHA,
+        check_runs_by_sha={
+            HEAD_SHA: [_outcome_run(outcome="MINTED", reason=PIN_ONLY_REASON)]
+        },
+    )
     import time as _time
 
     start = _time.monotonic()
-    assert _run(gh) == EXIT_ERROR
+    # A live-sized budget: a probe that polled this verdict would sit on it.
+    assert _run(gh, deadline_seconds=600, poll_interval_seconds=30) == EXIT_ERROR
     assert _time.monotonic() - start < 5.0
