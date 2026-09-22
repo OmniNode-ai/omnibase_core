@@ -1,3 +1,18 @@
+## v0.47.22 (2026-09-21)
+
+### Release
+- Cut omnibase-core from dev at 0.47.22 by hand rather than by the scheduled train, because three consumers are blocked on a fix that no published tag carries.
+- 6 release-relevant commit(s) merged since v0.47.20.
+- The cut version is the one dev already carried; no version line moved in this pull request.
+
+### Changes
+- A FAIL supersede receipt no longer latches a receipt key forever. An attempt-scoped record whose filename suffix contains a dot is now visible to resolution instead of being silently dropped, records order totally by creation instant and then by a dotted-numeric sequence key, and a PASS supersedes a prior FAIL only when it carries a different commit sha, so the chain cannot be used as a retry-until-green channel (#1736).
+- A gate-decided exhaustion now carries a cause it can land on (#1735).
+- CI contexts are scoped by event (#1732).
+- Code ownership is repointed at teams that exist (#1734).
+- A workflow-budget waiver is renewed for seven days (#1731).
+- The core delegation source slice is delivered (#1730).
+
 ## v0.47.21
 
 ### Changes
