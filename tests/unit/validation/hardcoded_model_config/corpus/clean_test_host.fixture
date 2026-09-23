@@ -1,0 +1,2 @@
+URL = "http://model.test/v1/chat/completions"
+MODEL = "qwen3-coder"

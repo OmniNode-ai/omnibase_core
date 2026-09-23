@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.47.22"
+version = "0.47.23"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -422,6 +422,7 @@ ignore = [
 "src/omnibase_core/validation/local_paths/runtime_local_paths.py" = ["T201"]
 # OMN-13294: CLI runner for the private-IP COMPUTE validator prints findings.
 "src/omnibase_core/validation/private_ip/runtime_private_ip.py" = ["T201"]
+"src/omnibase_core/validation/hardcoded_model_config/runtime_hardcoded_model_config.py" = ["T201"]  # OMN-19252: CLI verdict to stdout
 # OMN-13497: CLI runner for the no-faked-boundary COMPUTE validator prints findings.
 "src/omnibase_core/validation/no_faked_boundary/runtime_no_faked_boundary.py" = ["T201"]
 # OMN-13480: CLI runner for the unfinished-work-marker COMPUTE validator prints findings.  # onex-allow-todo-marker OMN-13480 reason="describes the marker scanner; not agent-left unfinished work"

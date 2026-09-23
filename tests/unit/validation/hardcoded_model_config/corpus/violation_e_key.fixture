@@ -1,0 +1,2 @@
+provider:
+  base_url: "https://api.vendor.test/v1"

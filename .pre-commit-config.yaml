@@ -1319,6 +1319,26 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
+      # OMN-19252: no NEW hardcoded lab model configuration (task A1 of the
+      # knowledge-base-internal plan 2026-09-23-remove-hardcoded-model-config).
+      # Families: model ids, inference endpoints, private/lab-subnet hosts,
+      # retired lab values, loaded example files. The path classes and the
+      # vendor-default file list live in the validator's policy.yaml; there is
+      # no exclude here and no inline suppression marker (onex-allow-internal-ip
+      # is deliberately NOT honoured). Pre-existing findings are tolerated only
+      # through config/hardcoded_model_config_baseline.yaml, which may only
+      # shrink: a new finding fails, a stale entry fails, and the CI job
+      # "Hardcoded Model Config Ratchet (OMN-19252)" refuses an added entry.
+      # BLOCKING. Runs in CI through the Pre-commit Suite (OMN-18899) job.
+      - id: check-hardcoded-model-config-compute
+        name: No new hardcoded lab model configuration — baseline ratchet (OMN-19252)
+        entry: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          --baseline config/hardcoded_model_config_baseline.yaml
+        language: system
+        types: [text]
+        pass_filenames: true
+        stages: [pre-commit]
+
       # OMN-13497: ban hand-written fakes/stubs of the platform's OWN inference /
       # routing / dispatch boundary, executed as a COMPUTE node over the in-memory
       # event bus (same two-transport seam as check-private-ip-compute; Kafka in
@@ -2094,7 +2114,8 @@ repos:
             \.github/workflows/.*\.yml|
             url_authority_baseline\.json|
             canonical_inference_baseline\.json|
-            extra_forbid_baseline\.yaml
+            extra_forbid_baseline\.yaml|
+            config/hardcoded_model_config_baseline\.yaml
           )$
 
   # --------------------------------------------------------------------------
