@@ -1,0 +1,127 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+#
+# Policy for check-hardcoded-model-config-compute (OMN-19252). Task A1 of
+# knowledge-base-internal beta/plans/2026-09-23-remove-hardcoded-model-config.md,
+# as amended by that plan's "Review decisions (2026-09-23)".
+#
+# This file IS the allowlist. There is no inline suppression marker: an exception
+# is a change to this file, which every repository running the hook sees.
+# path_classes are ordered and the first match wins; the last class is SOURCE.
+# A path joins VENDOR_DEFAULT only by being named in `files`, never by a glob, so
+# a new file cannot silently join the one class that tolerates model ids.
+
+schema_version: 1
+
+path_classes:
+  - name: HISTORICAL
+    globs:
+      - "evidence/**"
+      - "drift/**"
+      - "contracts/OMN-*.yaml"
+      - "**/receipts/**"
+      - "benchmarks/**/results/**"
+      - "**/*.captured"
+    families: []
+
+  - name: GUARD
+    globs:
+      - "src/omnibase_core/validation/hardcoded_model_config/**"
+      - "tests/unit/validation/hardcoded_model_config/**"
+      # The baseline holds paths and hashes only; a path naming a model family
+      # must not make the baseline a finding of itself.
+      - "config/hardcoded_model_config_baseline.yaml"
+    families: []
+
+  - name: EXAMPLE
+    globs:
+      - "**/*.example.yaml"
+      - "**/*.example.json"
+      - "**/.env.example"
+      - "**/examples/config-overlays/**"
+    families: [R]
+
+  # Review decision 1 (2026-09-23): public, vendor-published endpoints and model
+  # ids stay in these named package default files so the local customer path
+  # works with a provider key alone. A private or lab host and a retired lab
+  # value are still refused here.
+  - name: VENDOR_DEFAULT
+    files:
+      - "src/omnimarket/configs/bifrost_delegation.yaml"
+      - "src/omnimarket/inference/openrouter_models.py"
+      - "src/omniintelligence/adapters/plan_reviewer_z_ai_client.py"
+      - "src/omniintelligence/adapters/plan_reviewer_gemini_client.py"
+    families: [E-LAN, R]
+
+  # Review decision 2 (2026-09-23): the files that start a model server name the
+  # model they serve. Only retired lab values are refused there.
+  - name: LAUNCH
+    globs:
+      - "deploy/systemd/*.service"
+      - "k8s/**"
+    families: [R]
+
+  - name: DOC
+    globs:
+      - "**/*.md"
+      - "**/*.mdx"
+      - "**/*.rst"
+      - "docs/**"
+      - "app/(marketing)/**"
+    families: [R]
+
+  - name: TEST
+    globs:
+      - "tests/**"
+      - "**/tests/**"
+      - "**/node_tests/**"
+      - "**/test_*.py"
+      - "**/*_test.py"
+      - "**/conftest.py"
+      - "**/fixtures/**"
+      - "**/*.test.ts"
+      - "**/*.test.tsx"
+      - "**/*.spec.ts"
+      - "**/*.stories.tsx"
+    families: [R, E-LAN]
+
+  - name: SOURCE
+    globs:
+      - "**"
+    families: [M, E, E-LAN, R, L]
+
+# Family M: the plan's P1 model-family regex, applied case-insensitively.
+model_id_pattern: >-
+  qwen[0-9]|qwen-|qwen2|qwen3|deepseek-(v|r|coder|chat)|glm-[0-9]|gpt-oss|gpt-4|gpt-5|gpt-3\.5|o[134]-mini|claude-(opus|sonnet|haiku|3|4|5)|gemini-[0-9]|llama-?[0-9]|llama3|mistral-|nemotron|phi-[0-9]|codestral|devstral|text-embedding-|nomic-embed|bge-|gte-qwen|kimi-k|minimax-m
+
+# Family E: a URL literal whose path ends in one of these, or a URL-valued
+# literal assigned to one of these keys, or a URL default of an environment read.
+endpoint_path_suffixes:
+  - "/v1/chat/completions"
+  - "/v1/completions"
+  - "/v1/embeddings"
+  - "/v1/models"
+endpoint_keys:
+  - endpoint_url
+  - base_url
+  - default_url
+  - api_base
+
+# Family E-LAN: an RFC 1918 host inside a URL is detected in code; this pattern
+# adds any literal on our own lab subnet, with or without a scheme or a port.
+lab_subnet_pattern: '(?<![\d.])192\.168\.86\.\d{1,3}(?![\d])'
+
+# Family R: exact retired lab strings (plan section 2.2). Matched in comments
+# too, and never admitted to a baseline. A bare ":8099" or ":8101" is NOT listed:
+# those are live projection-runner health ports (plan premise P4).
+retired_values:
+  - "192.168.86.200:8101"  # onex-allow-internal-ip (the dead endpoint this guard refuses)
+  - "127.0.0.1:8099"  # onex-allow-internal-ip (the dead endpoint this guard refuses)
+  - "local-ds-v4-flash"
+  - "deepseek-v4-flash"
+  - "deepseek-v4-pro"
+  - "Qwen3.8-27B-8bit"
+  - "ds4-flash"
+  - "qwen38-serve"
+  - "BIFROST_LOCAL_DS_V4_FLASH"

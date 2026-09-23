@@ -1128,6 +1128,10 @@ jobs:
           #   FQNs; a "module.path:ClassName" entry is key:value-shaped, so the
           #   Secret Keyword detector fires on names like model_network_restrictions
           #   — same false-positive class as the two baselines above)
+          # hardcoded_model_config_baseline.yaml (OMN-19252: generated ratchet
+          #   baseline keyed by the sha1 of each tolerated line; every key is a
+          #   40-character hex digest, so the Hex High Entropy detector fires on
+          #   all of them — same false-positive class again)
           #
           # -n/--no-verify (OMN-15063): several plugins (SlackDetector,
           # StripeDetector, ...) call the live vendor API to "verify" each
@@ -1153,7 +1157,8 @@ jobs:
             --exclude-files '\.github/workflows/.*\.yml' \
             --exclude-files 'url_authority_baseline\.json' \
             --exclude-files 'canonical_inference_baseline\.json' \
-            --exclude-files 'extra_forbid_baseline\.yaml'
+            --exclude-files 'extra_forbid_baseline\.yaml' \
+            --exclude-files 'hardcoded_model_config_baseline\.yaml'
           HOOK_EXIT=$?
           set -e
 
@@ -1820,6 +1825,93 @@ jobs:
           export SKIP
           echo "skipping: $SKIP"
           uv run pre-commit run --all-files --show-diff-on-failure
+
+  # Hardcoded model-configuration baseline ratchet (OMN-19252).
+  #
+  # The check-hardcoded-model-config-compute hook already runs over the whole
+  # tree inside the Pre-commit Suite job above: a finding the committed
+  # baseline does not cover fails, and a baseline entry that no longer matches
+  # fails. What a hook cannot see is the base branch, so this job adds the one
+  # remaining property of the ratchet: the baseline may only LOSE entries. It
+  # compares config/hardcoded_model_config_baseline.yaml with the same file at
+  # the base of the change and refuses any entry the base did not carry.
+  #
+  # Unconditional (no `if:`, no `needs:`), inside ci.yml so the required
+  # `CI Summary` context fails on it through that gate's default-deny sweep.
+  # The base is resolved per event; where an event has no base (a schedule, a
+  # manual dispatch, a push that created the branch) the job still runs the
+  # full-tree check and says why it skipped the comparison. A base that is
+  # named but cannot be fetched fails the job.
+  hardcoded-model-config-ratchet:
+    name: Hardcoded Model Config Ratchet (OMN-19252)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          save-cache: false
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Resolve the base the baseline may only shrink from
+        id: base
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request) base_sha="$PR_BASE_SHA" ;;
+            merge_group) base_sha="$MERGE_GROUP_BASE_SHA" ;;
+            push) base_sha="$PUSH_BEFORE" ;;
+            *) base_sha="" ;;
+          esac
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            echo "Event '$EVENT_NAME' carries no base commit; running the full-tree check without the shrink-only comparison."
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 "$REPO_URL" "$base_sha"
+          echo "Base for the shrink-only comparison: $base_sha"
+          echo "sha=$base_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce the hardcoded-model-config baseline (whole tree)
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          set -euo pipefail
+          args=(--all --baseline config/hardcoded_model_config_baseline.yaml)
+          if [ -n "$BASE_SHA" ]; then
+            args+=(--base "$BASE_SHA")
+          fi
+          uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config "${args[@]}"
 
   # Duplicate registry id guard (OMN-14401). Rejects config/registry YAML files
   # declaring duplicate ids over a key that is not guaranteed unique (the

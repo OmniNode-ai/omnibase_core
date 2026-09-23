@@ -75,6 +75,25 @@
   pass_filenames: true
   stages: [pre-commit]
 
+- id: check-hardcoded-model-config-compute
+  name: No new hardcoded lab model configuration (baseline ratchet)
+  description: >
+    Refuse NEW hardcoded lab model configuration (OMN-19252; task A1 of the knowledge-base-internal plan
+    2026-09-23-remove-hardcoded-model-config): model ids, inference endpoints, RFC 1918 and lab-subnet
+    hosts, retired lab values, and example overlay files loaded by code. Path classes (historical, example,
+    named vendor-default files, model-server launch files, docs, tests, source) and the families that
+    apply to each live in omnibase_core.validation.hardcoded_model_config/policy.yaml; that file is the
+    whole allowlist and no inline suppression marker is honoured. Pre-existing findings are tolerated
+    only through the repository's config/hardcoded_model_config_baseline.yaml, generated with `--all --write-baseline`.
+    It may only shrink: a finding not in it fails, an entry that no longer matches fails, `--base <ref>`
+    refuses an added entry, and retired lab values can never be baselined.
+  language: python
+  entry: python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+  args: [--baseline, config/hardcoded_model_config_baseline.yaml]
+  types: [text]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-no-faked-boundary
   name: Check for faked inference/routing/dispatch boundaries (COMPUTE node over the bus)
   description: >

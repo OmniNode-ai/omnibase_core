@@ -1,0 +1,9 @@
+"""Routing helpers.
+
+Example: a backend named "qwen3-coder" at http://192.168.86.201:8000/v1/models.
+"""
+
+
+def route() -> str:
+    # e.g. gpt-4o would be chosen here
+    return "primary"

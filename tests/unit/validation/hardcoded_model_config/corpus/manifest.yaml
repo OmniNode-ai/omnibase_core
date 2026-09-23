@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+#
+# Acceptance corpus for check-hardcoded-model-config-compute (OMN-19252).
+# Each fixture is scanned under `path` (the path decides its class); `family` is
+# the one family it must yield exactly one finding of, or null for a clean
+# fixture that must yield none.
+fixtures:
+  violation_m.fixture: {path: src/pkg/router.py, family: M}
+  violation_m_yaml.fixture: {path: src/pkg/configs/tiers.yaml, family: M}
+  violation_e.fixture: {path: src/pkg/client.py, family: E}
+  violation_e_key.fixture: {path: src/pkg/configs/provider.yaml, family: E}
+  violation_e_getenv.fixture: {path: src/pkg/settings_env.py, family: E}
+  violation_elan.fixture: {path: src/pkg/settings.py, family: E-LAN}
+  violation_elan_bare.fixture: {path: src/pkg/hosts.py, family: E-LAN}
+  violation_elan_test.fixture: {path: tests/unit/test_client.py, family: E-LAN}
+  violation_r.fixture: {path: src/pkg/notes.py, family: R}
+  violation_l.fixture: {path: src/pkg/loader.py, family: L}
+  marker_ignored.fixture: {path: src/pkg/endpoints.py, family: E-LAN}
+  vendor_default_lan.fixture: {path: src/omnimarket/configs/bifrost_delegation.yaml, family: E-LAN}
+  launch_retired.fixture: {path: deploy/systemd/vllm-gpu0.service, family: R}
+  clean_docstring.fixture: {path: src/pkg/routing.py, family: null}
+  clean_test_host.fixture: {path: tests/unit/test_routing.py, family: null}
+  clean_health_port.fixture: {path: docker/docker-compose.dev-lane.yml, family: null}
+  clean_example.fixture: {path: config/lane.example.yaml, family: null}
+  clean_evidence.fixture: {path: evidence/OMN-1/run.yaml, family: null}
+  clean_vendor_default.fixture: {path: src/omnimarket/inference/openrouter_models.py, family: null}
+  clean_public_ip.fixture: {path: src/pkg/constants.py, family: null}
+  clean_doc.fixture: {path: docs/guide.md, family: null}

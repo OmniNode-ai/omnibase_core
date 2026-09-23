@@ -94,8 +94,10 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     "no-env-fallbacks": (
         "e6ee4cb21d27caaba2d3a0514683f4df9ab448d588e7ce107f1c610f4c928cb7"  # pragma: allowlist secret
     ),
+    # OMN-19252: + --exclude-files for config/hardcoded_model_config_baseline.yaml
+    # (sha1 line keys are 40-hex digests; Hex High Entropy fires on every one).
     "detect-secrets": (
-        "4c87091b2cd5322878766b784d30158edbbd607fb304ea416df805067a0eb0c2"  # pragma: allowlist secret
+        "b4c0072775bd5064469293ac50be505514e2154bacdb840c9d41a75237bbc82b"  # pragma: allowlist secret
     ),
     "sdk-boundary-check": (
         "30800b3a56c20e4c0d8b0365b17cb847f6c8149264aa03a8fe8e254136fc6cba"  # pragma: allowlist secret

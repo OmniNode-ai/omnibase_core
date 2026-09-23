@@ -1,0 +1,3 @@
+import os
+
+URL = os.getenv("LLM_URL", "http://localhost:8001")
