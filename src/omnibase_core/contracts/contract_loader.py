@@ -96,7 +96,8 @@ DEFAULT_CACHE_TTL_SECONDS: int | None = None
 class _YamlDisposable(Protocol):
     """Typed subset of PyYAML's loader cleanup API."""
 
-    def dispose(self) -> None: ...
+    def dispose(self) -> None:
+        """Release the loader's parser and scanner state."""
 
 
 def _dispose_yaml_loader(loader: yaml.SafeLoader) -> None:

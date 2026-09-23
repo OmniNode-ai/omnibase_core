@@ -204,7 +204,6 @@ async def test_put_preserves_primary_write_error_when_close_also_fails(
         data={"x": 1},
         written_at=datetime.now(UTC),
     )
-    real_write = os.write
     real_close = os.close
 
     def fail_write(fd: int, data: bytes) -> int:
