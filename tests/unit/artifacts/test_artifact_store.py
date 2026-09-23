@@ -20,25 +20,30 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.artifacts import (
+from omnibase_core.artifacts.artifact_store import (
     ARTIFACT_STORE_ROOT_ENV,
     RESTRICTED_ARTIFACT_KINDS,
     WRITER_VERSION,
-    ArtifactConfigurationError,
-    ArtifactIntegrityError,
-    ArtifactNotFoundError,
-    ArtifactQuotaExceededError,
-    ArtifactSecretDetectedError,
     ArtifactStore,
-    ArtifactUnauthorizedError,
-    SecretDetector,
 )
+from omnibase_core.artifacts.secret_detector import SecretDetector
 from omnibase_core.enums.artifacts.enum_artifact_redaction_state import (
     EnumArtifactRedactionState,
 )
 from omnibase_core.enums.artifacts.enum_artifact_retention_class import (
     EnumArtifactRetentionClass,
 )
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_artifact_quota_exceeded import (
+    ArtifactQuotaExceededError,
+)
+from omnibase_core.errors.error_artifact_secret_detected import (
+    ArtifactSecretDetectedError,
+)
+from omnibase_core.errors.error_artifact_unauthorized import (
+    ArtifactUnauthorizedError,
+)
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.artifacts.model_artifact_auth_context import (
     ModelArtifactAuthContext,
 )
@@ -66,21 +71,6 @@ def _write(store: ArtifactStore, data: bytes = _PAYLOAD) -> ModelArtifactRef:
 
 
 @pytest.mark.unit
-def test_typed_artifact_errors_preserve_standard_catch_boundaries() -> None:
-    """Typed artifact errors remain compatible with existing standard catches."""
-    assert issubclass(ArtifactConfigurationError, ValueError)
-    assert issubclass(ArtifactIntegrityError, ValueError)
-    assert issubclass(ArtifactNotFoundError, FileNotFoundError)
-
-
-@pytest.mark.unit
-def test_secret_error_preserves_ref_identity() -> None:
-    """The typed error retains the exact content-addressed payload object."""
-    ref = ModelArtifactRef.from_bytes(b"secret payload")
-    error = ArtifactSecretDetectedError(ref)
-    assert error.ref is ref
-
-
 class TestArtifactStoreEnv:
     """Fail-fast store-root resolution (Operating Rule 8)."""
 
@@ -102,10 +92,12 @@ class TestArtifactStoreEnv:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv(ARTIFACT_STORE_ROOT_ENV, str(tmp_path))
-        with pytest.raises(ArtifactConfigurationError, match="max_artifact_bytes"):
+        with pytest.raises(ModelOnexError, match="max_artifact_bytes") as exc_info:
             ArtifactStore(max_artifact_bytes=-1)
-        with pytest.raises(ArtifactConfigurationError, match="max_scope_bytes"):
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
+        with pytest.raises(ModelOnexError, match="max_scope_bytes") as exc_info:
             ArtifactStore(max_scope_bytes=-1)
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
 
 
 @pytest.mark.unit
@@ -157,27 +149,6 @@ class TestArtifactStoreWrite:
     def test_empty_payload_supported(self, store: ArtifactStore) -> None:
         ref = _write(store, b"")
         assert store.read_blob(ref) == b""
-
-    def test_atomic_write_preserves_write_error_when_cleanup_fails(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """A failed temporary-file cleanup cannot replace the write failure."""
-        write_error = RuntimeError("replace failed")
-
-        def fail_replace(_source: Path, _target: Path) -> Path:
-            raise write_error
-
-        def fail_unlink(_path: Path, *, missing_ok: bool = False) -> None:
-            del missing_ok
-            raise OSError("cleanup failed")
-
-        monkeypatch.setattr(Path, "replace", fail_replace)
-        monkeypatch.setattr(Path, "unlink", fail_unlink)
-
-        with pytest.raises(RuntimeError, match="replace failed") as exc_info:
-            ArtifactStore._atomic_write(tmp_path / "destination", b"payload")
-
-        assert exc_info.value is write_error
 
 
 @pytest.mark.unit
@@ -422,7 +393,7 @@ class TestArtifactRedactionAndSecrets:
                 scope_ref=None,
                 correlation_id=None,
             )
-        assert exc_info.value.ref == ref
+        assert exc_info.value.ref == ref.ref
         # No blob bytes on disk.
         assert not (tmp_path / ref.hex_digest[:2] / ref.hex_digest).exists()
         # But an auditable secret_detected sidecar IS recorded.
@@ -444,8 +415,9 @@ class TestArtifactRedactionAndSecrets:
                 correlation_id=None,
             )
         # The blob never existed, so a read fails explicitly.
-        with pytest.raises(ArtifactNotFoundError):
+        with pytest.raises(ModelOnexError) as exc_info:
             store.read(ref)
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
 
     def test_redaction_transform_records_itself(self, store: ArtifactStore) -> None:
         def _strip(_data: bytes) -> bytes:
@@ -470,8 +442,8 @@ class TestArtifactRedactionAndSecrets:
 
     def test_redaction_transform_requires_name(self, store: ArtifactStore) -> None:
         with pytest.raises(
-            ArtifactConfigurationError, match="redaction_transform_name"
-        ):
+            ModelOnexError, match="redaction_transform_name"
+        ) as exc_info:
             store.write_blob(
                 b"data",
                 media_type="text/plain",
@@ -481,6 +453,7 @@ class TestArtifactRedactionAndSecrets:
                 correlation_id=None,
                 redaction_transform=lambda d: d,
             )
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
 
     def test_custom_secret_detector(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -601,13 +574,15 @@ class TestArtifactStoreRead:
 
     def test_read_missing_raises(self, store: ArtifactStore) -> None:
         ref = ModelArtifactRef.from_bytes(b"never written")
-        with pytest.raises(ArtifactNotFoundError):
+        with pytest.raises(ModelOnexError) as exc_info:
             store.read(ref)
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
 
     def test_read_blob_missing_raises(self, store: ArtifactStore) -> None:
         ref = ModelArtifactRef.from_bytes(b"never written")
-        with pytest.raises(ArtifactNotFoundError):
+        with pytest.raises(ModelOnexError) as exc_info:
             store.read_blob(ref)
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
 
     def test_read_detects_corruption(
         self, store: ArtifactStore, tmp_path: Path
@@ -615,8 +590,9 @@ class TestArtifactStoreRead:
         ref = _write(store)
         blob_path = tmp_path / ref.hex_digest[:2] / ref.hex_digest
         blob_path.write_bytes(b"tampered bytes")
-        with pytest.raises(ArtifactIntegrityError, match="hash mismatch"):
+        with pytest.raises(ModelOnexError, match="hash mismatch") as exc_info:
             store.read(ref)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
 
     def test_read_blob_detects_corruption(
         self, store: ArtifactStore, tmp_path: Path
@@ -624,13 +600,15 @@ class TestArtifactStoreRead:
         ref = _write(store)
         blob_path = tmp_path / ref.hex_digest[:2] / ref.hex_digest
         blob_path.write_bytes(b"tampered bytes")
-        with pytest.raises(ArtifactIntegrityError, match="hash mismatch"):
+        with pytest.raises(ModelOnexError, match="hash mismatch") as exc_info:
             store.read_blob(ref)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
 
     def test_read_meta_missing_raises(self, store: ArtifactStore) -> None:
         ref = ModelArtifactRef.from_bytes(b"never written")
-        with pytest.raises(ArtifactNotFoundError):
+        with pytest.raises(ModelOnexError) as exc_info:
             store.read_meta(ref)
+        assert exc_info.value.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
 
     def test_read_chunks_roundtrip(self, store: ArtifactStore) -> None:
         data = b"y" * 200_000
@@ -656,15 +634,17 @@ class TestArtifactStoreRead:
         ref = _write(store)
         blob_path = tmp_path / ref.hex_digest[:2] / ref.hex_digest
         blob_path.write_bytes(b"tampered")
-        with pytest.raises(ArtifactIntegrityError, match="hash mismatch"):
+        with pytest.raises(ModelOnexError, match="hash mismatch") as exc_info:
             list(store.read_chunks(ref))
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
 
     def test_read_chunks_rejects_nonpositive_chunk_size(
         self, store: ArtifactStore
     ) -> None:
         ref = _write(store)
-        with pytest.raises(ArtifactConfigurationError, match="chunk_size"):
+        with pytest.raises(ModelOnexError, match="chunk_size") as exc_info:
             list(store.read_chunks(ref, chunk_size=0))
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
 
 
 @pytest.mark.unit

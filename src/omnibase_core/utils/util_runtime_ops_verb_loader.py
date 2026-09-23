@@ -25,25 +25,16 @@ import importlib.resources
 from functools import cache
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, StrictStr
-
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
-    load_typed_yaml_content_document,
+from omnibase_core.models.validation.model_runtime_ops_verb_allowlist import (
+    ModelRuntimeOpsVerbAllowlist,
 )
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 _CONTRACTS_PKG = "omnibase_core.contracts"
 _ALLOWLIST_YAML = "runtime_ops_verb_allowlist.yaml"
 _ALLOWLIST_KEY = "runtime_ops_verbs"
-
-
-class _ModelRuntimeOpsVerbAllowlist(BaseModel):
-    """Strict schema for the one governed runtime-operations verb document."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    schema_version: StrictInt
-    runtime_ops_verbs: list[StrictStr] = Field(min_length=1)
 
 
 @cache
@@ -55,9 +46,9 @@ def load_runtime_ops_verb_allowlist() -> frozenset[str]:
     installed wheel. Result is cached for the process.
 
     Raises:
-        FileNotFoundError: the bundled allowlist YAML is missing (fatal config
+        ModelOnexError: the bundled allowlist YAML is missing (fatal config
             error — the class cannot be enforced without its governed data).
-        ValueError: the YAML exists but does not declare a non-empty
+        ModelOnexError: the YAML exists but does not declare a non-empty
             ``runtime_ops_verbs`` list of strings.
     """
     try:
@@ -68,34 +59,22 @@ def load_runtime_ops_verb_allowlist() -> frozenset[str]:
         if fallback.exists():
             raw = fallback.read_text(encoding="utf-8")
         else:
-            raise FileNotFoundError(  # error-ok: bundled governed YAML missing — fatal config error
-                f"Cannot locate {_ALLOWLIST_YAML}; tried importlib.resources "
-                f"and {fallback}"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
+                message=(
+                    f"Cannot locate {_ALLOWLIST_YAML}; tried importlib.resources "
+                    f"and {fallback}"
+                ),
             ) from exc
 
     try:
-        allowlist = load_typed_yaml_content_document(
-            raw,
-            _ModelRuntimeOpsVerbAllowlist,
-            source=f"package:{_CONTRACTS_PKG}/{_ALLOWLIST_YAML}",
-        )
+        allowlist = load_yaml_content_as_model(raw, ModelRuntimeOpsVerbAllowlist)
     except ModelOnexError as exc:
-        raise ValueError(  # error-ok: documented public validation boundary
-            f"{_ALLOWLIST_YAML} must declare a non-empty {_ALLOWLIST_KEY!r} list"
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            message=f"Invalid {_ALLOWLIST_YAML}: {exc}",
         ) from exc
-    if allowlist is None:
-        raise ValueError(  # error-ok: documented public validation boundary
-            f"{_ALLOWLIST_YAML} must declare a non-empty {_ALLOWLIST_KEY!r} list"
-        )
-
-    normalized: set[str] = set()
-    for verb in allowlist.runtime_ops_verbs:
-        if not verb.strip():
-            raise ValueError(  # error-ok: documented public validation boundary
-                f"{_ALLOWLIST_KEY} entries must be non-blank strings, got: {verb!r}"
-            )
-        normalized.add(verb.strip())
-    return frozenset(normalized)
+    return frozenset(allowlist.runtime_ops_verbs)
 
 
 __all__ = ["load_runtime_ops_verb_allowlist"]

@@ -1,0 +1,5 @@
+services:
+  runner:
+    environment:
+      PROJECTION_RUNNER_HEALTH_PORT: "8099"
+      OTHER_PORT: "8101"

@@ -1,0 +1,3 @@
+VERSION = "1.10.172.0"
+RESOLVER = "http://8.8.8.8/dns"
+NAME = "claude-code"

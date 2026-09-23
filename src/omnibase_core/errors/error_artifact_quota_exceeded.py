@@ -1,15 +1,17 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Typed quota error for the content-addressed artifact store."""
+"""Structured quota failure for artifact writes."""
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
 
-class ArtifactQuotaExceededError(Exception):
-    """Raised when a write would exceed a per-write or per-scope size quota.
+class ArtifactQuotaExceededError(ModelOnexError):
+    """Raised when a write exceeds per-artifact or per-scope quota."""
 
-    No bytes are persisted when this is raised — the write fails closed with no
-    silent truncation.
-    """
+    def __init__(self, message: str) -> None:
+        super().__init__(message=message, error_code=EnumCoreErrorCode.QUOTA_EXCEEDED)
 
 
 __all__ = ["ArtifactQuotaExceededError"]

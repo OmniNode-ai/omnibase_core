@@ -9,7 +9,9 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.models.routing.model_ci_override_policy import ModelCiOverridePolicy
+from omnibase_core.models.routing.model_ci_override_policy import (
+    ModelCiOverridePolicy,
+)
 
 
 class ModelRoutingPolicy(BaseModel):

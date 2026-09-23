@@ -42,9 +42,7 @@ from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_inpu
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_output import (
     ModelSourceFileGatherOutput,
 )
-from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
-    load_typed_yaml_document,
-)
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 __all__ = ["NodeSourceFileGatherEffect"]
 
@@ -181,12 +179,12 @@ class NodeSourceFileGatherEffect:
             if onexignore.exists():
                 onexignore_model: ModelOnexIgnore | None
                 try:
-                    onexignore_model = load_typed_yaml_document(
-                        onexignore, ModelOnexIgnore
+                    content = onexignore.read_text(encoding="utf-8")
+                    onexignore_model = load_yaml_content_as_model(
+                        content, ModelOnexIgnore
                     )
                 except (
                     OSError,
-                    UnicodeDecodeError,
                     ModelOnexError,
                 ):
                     onexignore_model = None  # fallback-ok: unreadable/invalid .onexignore contributes no patterns

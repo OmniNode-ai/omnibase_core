@@ -70,17 +70,15 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+import yaml
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
-    load_typed_yaml_document,
-)
-from omnibase_core.models.validation.model_transport_mock_baseline import (
-    ModelTransportMockBaseline,
+from omnibase_core.models.validation.model_transport_mock_lint_baseline import (
+    ModelTransportMockLintBaseline,
 )
 
 try:
-    import yaml
-
     _YAML_AVAILABLE = True
 except ModuleNotFoundError:
     _YAML_AVAILABLE = False
@@ -115,8 +113,7 @@ SURFACE_KEYWORDS: tuple[str, ...] = (
     "subscriber",
 )
 
-SUPPRESSION_TOKEN = "# transport-mock-ok:"  # secret-ok: detector grammar token, not a credential; env-var-ok: validator grammar token, not configuration
-
+SUPPRESSION_TOKEN = "# transport-mock-ok:"  # secret-ok: validator-owned marker, not a credential  # env-var-ok: validator marker constant
 
 _EXCLUDED_PATH_PARTS: frozenset[str] = frozenset(
     {
@@ -355,19 +352,25 @@ def _iter_python_files(root: Path) -> list[Path]:
 def _load_baseline(baseline_path: Path) -> dict[str, int]:
     """Load a YAML baseline file mapping relative path -> allowed violation count."""
     if not _YAML_AVAILABLE:
-        sys.stderr.write(
-            "transport-mock-lint: PyYAML not available; cannot load baseline. "
-            "Install pyyaml or run without --baseline.\n"
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+            message=(
+                "PyYAML not available; cannot load baseline. Install pyyaml or "
+                "run without --baseline."
+            ),
         )
-        raise SystemExit(2)  # error-ok: CLI reports an unusable baseline
+    from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+
     try:
-        baseline = load_typed_yaml_document(baseline_path, ModelTransportMockBaseline)
-    except ModelOnexError as exc:
-        sys.stderr.write(
-            f"transport-mock-lint: cannot load baseline {baseline_path}: {exc}\n"
+        baseline_model = load_yaml_content_as_model(
+            baseline_path.read_text(encoding="utf-8"), ModelTransportMockLintBaseline
         )
-        raise SystemExit(2) from exc  # error-ok: CLI reports baseline parse failure
-    return {} if baseline is None else baseline.root
+    except (OSError, ModelOnexError) as exc:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            message=f"Cannot load baseline {baseline_path}: {exc}",
+        ) from exc
+    return baseline_model.root
 
 
 def _apply_baseline(
@@ -428,8 +431,10 @@ def _git_changed_files(base: str) -> list[Path]:
         check=False,
     )
     if proc.returncode != 0:
-        sys.stderr.write(proc.stderr)
-        raise SystemExit(2)  # error-ok: CLI reports an unavailable git comparison
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message=f"Could not determine changed files from git: {proc.stderr}",
+        )
     return [Path(p) for p in proc.stdout.splitlines() if p.strip()]
 
 
@@ -472,10 +477,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    if args.base is not None:
-        paths = _git_changed_files(args.base)
-    else:
-        paths = [Path(p) for p in args.files]
+    try:
+        if args.base is not None:
+            paths = _git_changed_files(args.base)
+        else:
+            paths = [Path(p) for p in args.files]
+    except ModelOnexError as exc:
+        sys.stderr.write(f"transport-mock-lint: {exc}\n")
+        return 2
 
     if not paths:
         # No files supplied — scan nothing (pre-commit passes only staged files).
@@ -505,7 +514,11 @@ def main(argv: list[str] | None = None) -> int:
 
     baseline: dict[str, int] = {}
     if args.baseline is not None:
-        baseline = _load_baseline(Path(args.baseline))
+        try:
+            baseline = _load_baseline(Path(args.baseline))
+        except ModelOnexError as exc:
+            sys.stderr.write(f"transport-mock-lint: {exc}\n")
+            return 2
 
     active_findings = (
         _apply_baseline(all_findings, baseline) if baseline else all_findings
@@ -530,4 +543,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())  # error-ok: CLI process exit boundary
+    sys.exit(main())

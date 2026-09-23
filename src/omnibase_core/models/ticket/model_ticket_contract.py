@@ -66,9 +66,6 @@ from omnibase_core.models.ticket.model_interface_consumed import (
 from omnibase_core.models.ticket.model_interface_provided import (
     ModelInterfaceProvided,
 )
-from omnibase_core.models.ticket.model_package_only_deploy_binding import (
-    ModelPackageOnlyDeployBinding,
-)
 from omnibase_core.models.ticket.model_requirement import ModelRequirement
 from omnibase_core.models.ticket.model_verification_step import ModelVerificationStep
 from omnibase_core.utils.util_decorators import allow_dict_str_any, allow_string_id
@@ -83,6 +80,7 @@ _SEMVER_PATTERN: re.Pattern[str] = re.compile(
 # Security constraints (matching OCC values to prevent DoS)
 _MAX_STRING_LENGTH = 10000
 _MAX_LIST_ITEMS = 1000
+_MAX_DOD_EVIDENCE_ITEMS = 10000
 
 
 @allow_string_id(reason="External Linear ticket identifier (e.g., OMN-1807)")
@@ -185,7 +183,7 @@ class ModelTicketContract(BaseModel):
             "Definition of Done evidence items. Maps Linear DoD bullets "
             "to executable checks for automated verification."
         ),
-        max_length=_MAX_LIST_ITEMS,
+        max_length=_MAX_DOD_EVIDENCE_ITEMS,
     )
 
     # Contract completeness level (drives tooling decisions)
@@ -210,14 +208,6 @@ class ModelTicketContract(BaseModel):
             "Which surface proves this ticket's completion claim: "
             "code-only | receipt-bound | deployed | live-readback | "
             "replay-proven | prod-proven. None when not yet declared."
-        ),
-    )
-
-    package_only_deploy_binding: ModelPackageOnlyDeployBinding | None = Field(
-        default=None,
-        description=(
-            "Immutable deploy-gate input binding for a package-only Core change. "
-            "None when no package-only classification is declared."
         ),
     )
 

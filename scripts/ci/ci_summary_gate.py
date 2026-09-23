@@ -54,6 +54,7 @@ import argparse
 import json
 import sys
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 # The poller's own job — excluded to avoid self-deadlock.
 SELF_JOB_NAME = "CI Summary"
@@ -70,6 +71,62 @@ GATE_JOBS: tuple[str, ...] = (
     "Contract Compliance Check",  # contract-compliance job (NOT "Contract Compliance")
     "Cross-repo boundary validation",  # boundary-validation job
     "OCC Companion Merged Gate (OMN-15214)",  # occ-companion-merged — cited OCC evidence must be MERGED before product merge (OMN-15222 port)
+    # OMN-18031: the per-run runner routing decision (ci.yml `route`, a `uses:`
+    # job, so the jobs API reports it as "<caller display name> / <inner job
+    # name>"). THIS LINE IS HALF THE MECHANISM, on the identical reasoning as
+    # the companion-merged entry above: the default-deny sweep below already
+    # fails when a present job FAILS, but an unregistered job that is `skipped`
+    # or ABSENT yields SUCCESS. Without this entry, deleting `route` from
+    # ci.yml would silently retire per-run routing on a fully green run — and
+    # because routing is deliberately INERT while this repo's trusted seam
+    # reads '["ubuntu-latest"]', nothing about job PLACEMENT would change to
+    # reveal it. That is the exact silent-retirement shape this tuple exists
+    # for, and it is worse here than elsewhere: the only observable difference
+    # between "routing works and chose hosted" and "routing is gone" is a
+    # decision artifact nobody is required to read. The job is unconditional in
+    # ci.yml (no `needs:`, no `if:`), so a skip is anomalous and never a
+    # legitimate opt-out — hence the paired STRICT_SUCCESS_JOBS entry below.
+    # Renaming either half of the name string breaks this registration.
+    "Runner Route (OMN-18031) / route",
+    # OMN-18790: the skip-count baseline ratchet (epic OMN-18775, ported from
+    # omnibase_infra's OMN-18776). THIS LINE IS HALF THE MECHANISM, on the
+    # identical reasoning as the two entries above: the default-deny sweep below
+    # already fails CI Summary when a present job FAILS, but an unregistered job
+    # that is `skipped` or ABSENT yields SUCCESS. The failure mode it closes is
+    # itself silent and measured -- this repo's integration matrix skipped the
+    # same 17 tests and its unit matrix the same 60, byte-identical id sets
+    # across five consecutive runs on 2026-09-18 -- so a gate that could be
+    # silently deleted would reproduce the exact shape it exists to refuse. The
+    # job is unconditional in ci.yml (`if: always()`), so a skip is anomalous
+    # and never a legitimate opt-out -- hence the paired STRICT_SUCCESS_JOBS
+    # entry below. It is deliberately NOT a raw branch-protection context:
+    # adding one would block every in-flight PR whose run predates the job, and
+    # this registration is enforcement-equivalent. Renaming the string breaks
+    # the registration. Pinned by tests/ci/test_skip_count_ratchet_omn18790.py.
+    "Skip Count Ratchet (OMN-18776)",  # skip-count-ratchet
+    # OMN-18865: the pre-merge wheel content-parity gate (ci.yml
+    # `wheel-content-parity`). It is an ORDINARY job running a pinned
+    # composite action, NOT a `uses:` job, so the jobs API reports its own
+    # display name as a SINGLE segment -- unlike the `route` entry above,
+    # which is a reusable and therefore reads as "<caller> / <inner job>".
+    #
+    # THE STRING MUST BE THE CHECK-RUN NAME, and this repository's own suite
+    # cannot tell you when it is not. The tests here compare this tuple
+    # against ci.yml and against the committed snapshot; neither knows what
+    # GitHub will actually name the run. A stale " / wheel-content-parity"
+    # suffix survived here from an earlier reusable-workflow design of this
+    # same gate and passed all 64 tests. It was caught only by reading the
+    # live check-run name off an open pull request, which is the one thing
+    # that can catch it, and had it merged the poller would have waited for a
+    # context nothing mints and wedged `dev` at the deadline. Verify against a
+    # live run before changing this string.
+    #
+    # Registered on the identical reasoning as the `route` entry above: the
+    # default-deny sweep already fails when a present job FAILS, but an
+    # unregistered job that is `skipped` or ABSENT yields SUCCESS -- so
+    # without this entry, deleting it from ci.yml would silently retire the
+    # proof on a fully green run.
+    "Wheel Content Parity (OMN-18865)",
 )
 
 # OMN-15222 (port of the omnibase_infra OMN-15214 canary, mirroring omniclaude's
@@ -80,7 +137,27 @@ GATE_JOBS: tuple[str, ...] = (
 # un-enforcement and must fail closed, not pass.
 STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
     {
+        # OMN-18865: paired with the GATE_JOBS entry above, same reasoning --
+        # GATE_JOBS' completeness anchor accepts ``skipped`` as complete, so
+        # this is the half that makes a SKIPPED (or CANCELLED) parity job fail
+        # closed rather than pass. The job carries no `if:` and no `needs:`,
+        # so it always runs to a terminal conclusion and a `skipped` here is a
+        # failure-to-run, never a legitimate absence.
+        "Wheel Content Parity (OMN-18865)",
         "OCC Companion Merged Gate (OMN-15214)",
+        # OMN-18031: paired with the GATE_JOBS entry above. GATE_JOBS' anchor
+        # accepts ``skipped`` as complete, so this is the half that makes a
+        # SKIPPED (or CANCELLED) route job fail closed rather than pass.
+        "Runner Route (OMN-18031) / route",
+        # OMN-18790: paired with the GATE_JOBS entry above, same reasoning --
+        # GATE_JOBS' completeness anchor accepts ``skipped`` as complete, so
+        # this is the half that makes a SKIPPED (or CANCELLED) ratchet job fail
+        # closed rather than pass. The job is `if: always()` in ci.yml and
+        # decides internally whether there is a run to ratchet, so it reaches
+        # `success` even on a docs-only diff; a `skipped` conclusion means the
+        # job was removed or wedged, never that the check legitimately opted
+        # out.
+        "Skip Count Ratchet (OMN-18776)",
     }
 )
 
@@ -132,7 +209,54 @@ SOFT_ALLOWLIST: frozenset[str] = frozenset(
 EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
     "DB ownership CI twin (B1)",
     "LLM refs drift check (OMN-11932)",
+    # OMN-18796 (epic OMN-18775): the no-new-advisory-job gate, called from
+    # .github/workflows/advisory-job-gate.yml against the omniclaude reusable
+    # pinned by commit. Registered HERE rather than in live branch protection
+    # because this repository's own committed snapshot records that no agent
+    # may mutate required_status_checks
+    # (tests/unit/scripts/ci/fixtures/required_status_checks_snapshot.json,
+    # `_meta.note`); L4 is a first-class enforcement surface under the required
+    # "CI Summary" umbrella and carries the same merge-blocking force without a
+    # live branch-protection write. The caller carries no `paths:` and no
+    # `branches:` filter, so it reports on every pull-request shape and cannot
+    # be legitimately absent -- the admission condition this tuple requires.
+    "advisory-job-gate / advisory-job-gate",
 )
+
+# The L4 producers do not share an event contract. The CI Summary poller runs
+# on more event shapes than any individual producer, so treating the union as
+# required for every event turns a producer that cannot fire into a permanent
+# pending verdict. These maps state the live producer contracts explicitly.
+#
+# `merge_group` and `schedule` deliberately have no external contexts: none of
+# the three producer workflows fires on either event today. This is an explicit,
+# tested applicability decision, not an absence that is read as a pass. An
+# unknown event is rejected by `external_contexts_for_event`.
+_DB_AND_LLM_EXTERNAL_CONTEXTS: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS[:2]
+EXTERNAL_CONTEXTS_BY_EVENT: dict[str, tuple[str, ...]] = {
+    "pull_request": EXPECTED_EXTERNAL_CONTEXTS,
+    "push": _DB_AND_LLM_EXTERNAL_CONTEXTS,
+    "merge_group": (),
+    "workflow_dispatch": _DB_AND_LLM_EXTERNAL_CONTEXTS,
+    "schedule": (),
+}
+
+
+def external_contexts_for_event(event_name: str) -> tuple[str, ...]:
+    """Return the L4 contexts whose producer actually fires for ``event_name``.
+
+    The caller passes GitHub's event name explicitly. Missing or unknown events
+    fail closed rather than defaulting to an empty applicability set, which
+    would turn a poller wiring regression into a green verdict.
+    """
+
+    try:
+        return EXTERNAL_CONTEXTS_BY_EVENT[event_name]
+    except KeyError as error:
+        raise ValueError(
+            f"unsupported CI event for L4 contexts: {event_name!r}"
+        ) from error
+
 
 # Spec-required validator covering jobs (OMN-14127 load-bearing property).
 #
@@ -164,7 +288,7 @@ SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
     "Pydantic Patterns",  # pydantic-patterns
     "AI Slop Patterns",  # aislop-patterns
     "Doc-Content Scan",  # doc-content-scan
-    "No New os.environ Reads (OMN-13566)",  # no-new-os-environ
+    "Typed Bootstrap Environment Boundary (OMN-17744)",  # typed-bootstrap-environment-boundary
     "SPDX Headers",  # spdx-headers
     "Duplicate Registry Ids",  # duplicate-registry-ids (OMN-14401)
     "Hardcoded Topic Validator",  # hardcoded-topic-validator (OMN-14430)
@@ -173,6 +297,71 @@ SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
 
 # Conclusions that count as "provably passed".
 GOOD_CONCLUSIONS: frozenset[str] = frozenset({"success", "skipped"})
+
+# OMN-18355 -- how long a `cancelled` L4 external context is treated as
+# "awaiting its replacement" rather than as this head's answer.
+#
+# A cancellation is not a verdict. The producer was stopped before it could
+# decide, and in the measured shape it was stopped BY the thing that is about
+# to re-run it: a PR-body PATCH fires a second `pull_request` run of a workflow
+# whose `types:` include `edited`, GitHub cancels the in-flight first run under
+# the same concurrency group, and the replacement posts its own check-run
+# seconds later. Reading that cancellation as a failure records a terminal
+# verdict on a row that exists only because a newer run of the same producer
+# took its place.
+#
+# 10 minutes is deliberately SHORTER than the window below: a cancellation's
+# replacement is already running when the cancellation is written, whereas a
+# companion-race red waits on a separate automation cycle.
+CANCELLED_SUPERSESSION_GRACE_S: int = 600
+
+# OMN-17864 -- how long a `failure` or `skipped` L4 external context is treated
+# as "a verdict a re-run is about to replace" rather than as this head's answer.
+#
+# MECHANISM, measured on omnibase_infra#3779 and replayed in that repository's
+# tests/fixtures/omn17864/: on a ticketed PR the change-control evidence
+# companion is minted by AUTOMATION after the PR opens. Until it lands the PR
+# body carries no evidence-source stamp and the Receipt Gate (`verify / verify`)
+# is legitimately red. When the companion merges, automation PATCHes the PR
+# body; every workflow whose `types:` include `edited` re-fires; the Receipt
+# Gate re-runs and goes green ON ITS OWN. `CI Summary` polled inside that
+# window, recorded FAILURE on a row that had completed 47 seconds earlier, and
+# exited. The replacement row concluded `success` three minutes later. Only a
+# human rerun cleared it, and that rerun passed with NO CHANGE TO THE PR --
+# which is the proof that nothing was ever wrong with the head.
+#
+# THE WINDOW IS MEASURED, NOT CHOSEN. Over the 30 merged `dev` PRs sampled in
+# omnibase_infra, 16 exhibited this shape; every one recovered, the slowest in
+# 6.8 minutes, the median in 1.9. 20 minutes is ~3x the slowest observed and
+# still well under this poller's own deadline.
+#
+# THIS RELAXES NOTHING THAT WAS EVER A STABLE VERDICT: a red older than the
+# window still fails, an absent/unparseable/future `completed_at` still fails,
+# `timed_out` and `action_required` are untouched, a missing clock restores the
+# strict pre-grace reading, the poller's deadline still converts a sustained
+# PENDING into FAILURE, and NOTHING here can resolve a context green -- only a
+# real green check-run can.
+EXTERNAL_FAILURE_SUPERSESSION_GRACE_S: int = 1200
+
+#: Conclusions a re-run of the same producer can replace, and which therefore
+#: get the OMN-17864 window. `failure` is the measured companion race.
+#: `skipped` is the same race reached by a different route, measured on
+#: omnibase_infra#3793: a producer whose job `needs:` a gate that failed for the
+#: same unmerged companion is SKIPPED rather than run, so its row is a statement
+#: about its DEPENDENCY, never about this head. Its rerun concluded `success` 38
+#: seconds after `CI Summary` had already recorded FAILURE on the stale skip.
+#:
+#: THIS DOES NOT REOPEN THE SKIP-AS-PASS VECTOR (OMN-15057 / OMN-14854). That
+#: vector is `skipped` read as SUCCESS. Here it is read as NO VERDICT YET: the
+#: context is held pending, a real verdict may supersede it, and if none arrives
+#: it still FAILS at the window. The L4 bar is unchanged -- only `success` ever
+#: passes there.
+#:
+#: `cancelled` is absent deliberately: it has its own, shorter window
+#: (:data:`CANCELLED_SUPERSESSION_GRACE_S`). `timed_out` and `action_required`
+#: are absent because neither is produced by a producer that an automatic re-run
+#: replaces.
+SUPERSEDABLE_CONCLUSIONS: frozenset[str] = frozenset({"failure", "skipped"})
 
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
@@ -187,6 +376,10 @@ class JobState:
     status: str  # queued | in_progress | completed | waiting | ...
     conclusion: str | None  # success | failure | cancelled | skipped | timed_out | None
     run_attempt: int
+    # ISO-8601; the instant this row concluded. Populated for L4 check-run rows
+    # (the supersession windows are measured against it) and left ``None`` for
+    # in-run job rows, which no window applies to.
+    completed_at: str | None = None
 
 
 def _job_states(
@@ -349,39 +542,166 @@ def _external_check_states(
     """Collapse ``commits/{sha}/check-runs`` rows to one entry per check-run name.
 
     That endpoint has no ``run_attempt`` field like the Actions jobs endpoint —
-    a rerun instead POSTs a new check-run row under the same name. Rows are
-    kept by latest ``started_at`` (lexicographic ISO-8601 compare; ties keep
-    array order, last wins) so a stale failed rerun can never outrank a fresh
-    success, mirroring the run-attempt dedup used for in-run jobs above.
+    a rerun instead POSTs a new check-run row under the same name. Resolution
+    is **latest wins** by ``(started_at, id)`` — deliberately the same rule
+    GitHub itself applies when deciding a required status check from several
+    same-named check-runs on one SHA — so a stale failed rerun can never
+    outrank a fresh success, mirroring the run-attempt dedup used for in-run
+    jobs above.
+
+    OMN-16332 ADDED THE ``id`` COMPONENT. ``started_at`` alone is only
+    second-granular, and this function previously resolved a tie by keeping
+    whichever row came LAST IN THE PAYLOAD ARRAY. The check-runs endpoint makes
+    no ordering guarantee, so a tie between two same-second rows was decided by
+    a non-signal: a stale failure arriving last silently outranked the success
+    beside it. The check-run ``id`` is monotonically increasing and orders those
+    rows by actual creation, so nothing is left to array position. Rows with no
+    ``id`` sort as ``0`` and therefore lose a tie to any row that has one,
+    rather than winning it by position.
+
+    A stricter "most-blocking across all same-named runs" rule was measured in
+    omnibase_infra and REJECTED: because check-runs accumulate on a SHA forever,
+    most-blocking makes any transient red permanent and removes re-run as a
+    recovery path. Latest-wins is the measured choice, not the convenient one.
 
     Rows are read after :func:`drop_superseded_skips`, so a re-trigger skip
     cannot supersede a real conclusion already recorded for that name on this
     head (OMN-18062).
     """
 
-    best: dict[str, tuple[str, JobState]] = {}
+    best: dict[str, JobState] = {}
+    ordering: dict[str, tuple[str, int]] = {}
     for raw in drop_superseded_skips(check_runs):
         name = str(raw.get("name") or "")
         if not name:
             continue
+        try:
+            run_id = int(str(raw.get("id") or 0))
+        except (TypeError, ValueError):
+            run_id = 0
+        key = (str(raw.get("started_at") or ""), run_id)
+        if name in ordering and key <= ordering[name]:
+            continue
         conclusion = raw.get("conclusion")
-        started_at = str(raw.get("started_at") or "")
-        state = JobState(
+        completed_at = raw.get("completed_at")
+        ordering[name] = key
+        best[name] = JobState(
             name=name,
             status=str(raw.get("status") or ""),
             conclusion=None if conclusion is None else str(conclusion),
             run_attempt=1,
+            completed_at=None if completed_at is None else str(completed_at),
         )
-        prev = best.get(name)
-        if prev is None or started_at >= prev[0]:
-            best[name] = (started_at, state)
-    return {name: state for name, (_started_at, state) in best.items()}
+    return best
+
+
+def _parse_timestamp(raw: str | None) -> datetime | None:
+    """Parse a GitHub ISO-8601 ``Z`` timestamp, or ``None`` if unreadable."""
+
+    if not raw:
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+def _within(state: JobState, now: datetime | None, grace_s: int) -> bool:
+    """True when ``state`` concluded within ``grace_s`` either side of ``now``.
+
+    The symmetric bound is not sloppiness. A ``completed_at`` slightly in the
+    future is ordinary clock skew between GitHub and the runner and must stay
+    provisional; a ``completed_at`` further in the future than the window is a
+    clock so wrong the row cannot be reasoned about, and fails now rather than
+    waiting forever on it.
+    """
+
+    if now is None:
+        return False
+    completed = _parse_timestamp(state.completed_at)
+    if completed is None:
+        return False
+    return -grace_s <= (now - completed).total_seconds() <= grace_s
+
+
+def cancellation_is_provisional(state: JobState, now: datetime | None) -> bool:
+    """True while a ``cancelled`` L4 row is still awaiting its replacement.
+
+    OMN-18355. See :data:`CANCELLED_SUPERSESSION_GRACE_S` for the mechanism.
+    """
+
+    if state.conclusion != "cancelled":
+        return False
+    return _within(state, now, CANCELLED_SUPERSESSION_GRACE_S)
+
+
+def supersedable_verdict_is_provisional(state: JobState, now: datetime | None) -> bool:
+    """True while a supersedable L4 row is inside its re-run window.
+
+    OMN-17864. See :data:`SUPERSEDABLE_CONCLUSIONS` for which conclusions
+    qualify and why, and :data:`EXTERNAL_FAILURE_SUPERSESSION_GRACE_S` for the
+    measurement behind the window.
+    """
+
+    if state.conclusion not in SUPERSEDABLE_CONCLUSIONS:
+        return False
+    return _within(state, now, EXTERNAL_FAILURE_SUPERSESSION_GRACE_S)
+
+
+def verdict_is_provisional(state: JobState, now: datetime | None) -> bool:
+    """True when this row is a verdict an automatic replacement is due to replace.
+
+    The union of the two windows, and the single place the poller's "keep
+    waiting" decision is made, so the two cannot drift apart.
+
+    FAIL-CLOSED IN EVERY UNCERTAIN CASE:
+
+    * ``now is None`` (no clock supplied) -> not provisional -> fails now, so a
+      caller that forgets the time enforces the OLD, stricter behaviour.
+    * an absent or unparseable ``completed_at`` -> not provisional -> fails now.
+    * a row older than its window -> not provisional -> fails now.
+    * a ``completed_at`` further in the FUTURE than its window -> fails now.
+    * a conclusion in neither graced set -> fails now.
+
+    And the poller's own deadline still converts a sustained PENDING into
+    FAILURE, so nothing here can make a required context green or absent.
+    """
+
+    return cancellation_is_provisional(state, now) or (
+        supersedable_verdict_is_provisional(state, now)
+    )
+
+
+def provisional_external_verdicts(
+    check_runs: list[dict[str, object]],
+    *,
+    expected: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
+    now: datetime | None = None,
+) -> list[str]:
+    """The subset of ``expected`` held pending by a due automatic replacement.
+
+    Reporting only. The poller's log is the diagnostic surface for a wedged PR,
+    and "pending because a red is about to be re-run" must not read the same as
+    "pending because nothing has started".
+    """
+
+    latest = _external_check_states(check_runs)
+    return sorted(
+        name
+        for name in expected
+        if (st := latest.get(name)) is not None
+        and st.status == "completed"
+        and st.conclusion != "success"
+        and verdict_is_provisional(st, now)
+    )
 
 
 def evaluate_external(
     check_runs: list[dict[str, object]],
     *,
     expected: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
+    now: datetime | None = None,
 ) -> tuple[list[str], list[str]]:
     """Return ``(failures, missing_or_pending)`` for L4 EXPECTED_EXTERNAL_CONTEXTS.
 
@@ -390,23 +710,31 @@ def evaluate_external(
     ``conclusion == 'success'``. Absent, still-running, skipped, failed, and
     cancelled are never a silent pass — absent/still-running is
     missing-or-pending (poll again, fail-closed at the caller's deadline);
-    everything else present+completed+not-success is an immediate failure.
+    everything else present+completed+not-success is a failure.
+
+    OMN-17864 / OMN-18355: a non-success row still inside its re-run window
+    (:func:`verdict_is_provisional`) is missing-or-pending rather than a
+    failure — a replacement is demonstrably due and the poller should look
+    again. Nothing here can make such a row SUCCEED: it stays out of the
+    success path, it is re-read on the next poll, and it fails as soon as its
+    window closes. ``now`` is the observation time those windows are measured
+    against; omitting it is the strict, pre-OMN-17864 reading.
     """
 
     latest = _external_check_states(check_runs)
-    failures = sorted(
-        name
-        for name in expected
-        if (st := latest.get(name)) is not None
-        and st.status == "completed"
-        and st.conclusion != "success"
-    )
-    missing_or_pending = sorted(
-        name
-        for name in expected
-        if name not in latest or latest[name].status != "completed"
-    )
-    return failures, missing_or_pending
+    failures: list[str] = []
+    missing_or_pending: list[str] = []
+    for name in expected:
+        st = latest.get(name)
+        if st is None or st.status != "completed":
+            missing_or_pending.append(name)
+        elif st.conclusion == "success":
+            continue
+        elif verdict_is_provisional(st, now):
+            missing_or_pending.append(name)
+        else:
+            failures.append(name)
+    return sorted(failures), sorted(missing_or_pending)
 
 
 def evaluate(
@@ -419,8 +747,14 @@ def evaluate(
     required_validator_jobs: tuple[str, ...] = SPEC_REQUIRED_VALIDATOR_JOBS,
     external_check_runs: list[dict[str, object]] | None = None,
     external_contexts: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
+    now: datetime | None = None,
 ) -> tuple[int, str]:
-    """Return ``(exit_code, human_report)`` for the current job snapshot."""
+    """Return ``(exit_code, human_report)`` for the current job snapshot.
+
+    ``now`` is the observation time the OMN-17864 / OMN-18355 supersession
+    windows are measured against. Omitting it is the strict, pre-OMN-17864
+    reading: every non-success L4 row fails on the poll that observes it.
+    """
 
     latest = dedup_latest(jobs, run_attempt=run_attempt)
     observed = _job_states(jobs, run_attempt=run_attempt)
@@ -483,7 +817,10 @@ def evaluate(
     #     workflow file, resolved against commits/{sha}/check-runs rather than
     #     this run's job list. See EXPECTED_EXTERNAL_CONTEXTS docstring above.
     external_failures, external_missing_or_pending = evaluate_external(
-        external_check_runs or [], expected=external_contexts
+        external_check_runs or [], expected=external_contexts, now=now
+    )
+    external_provisional = provisional_external_verdicts(
+        external_check_runs or [], expected=external_contexts, now=now
     )
 
     args = (
@@ -497,6 +834,7 @@ def evaluate(
         external_contexts,
         external_failures,
         external_missing_or_pending,
+        external_provisional,
     )
 
     if sweep_failures or validator_not_success or external_failures:
@@ -522,9 +860,11 @@ def _report(
     external_contexts: tuple[str, ...] = (),
     external_failures: list[str] | None = None,
     external_missing_or_pending: list[str] | None = None,
+    external_provisional: list[str] | None = None,
 ) -> str:
     external_failures = external_failures or []
     external_missing_or_pending = external_missing_or_pending or []
+    external_provisional = external_provisional or []
     lines = [f"CI Summary verdict: {verdict}", f"  jobs observed: {len(latest)}"]
     lines.append("  aggregate gates:")
     for g in gate_jobs:
@@ -576,6 +916,16 @@ def _report(
         lines.append(
             "  L4 external contexts missing/pending: "
             + ", ".join(external_missing_or_pending)
+        )
+    if external_provisional:
+        # Distinct from the line above on purpose: "pending because a red is
+        # about to be replaced by an automatic re-run" and "pending because
+        # nothing has started" are different diagnoses of a wedged PR, and one
+        # line reads the same for both.
+        lines.append(
+            "  L4 external contexts awaiting an automatic replacement "
+            "(cancelled, or failed or skipped inside the re-run window): "
+            + ", ".join(external_provisional)
         )
     return "\n".join(lines)
 
@@ -644,13 +994,42 @@ def main(argv: list[str] | None = None) -> int:
         "EXPECTED_EXTERNAL_CONTEXTS (default: none supplied -> treated as "
         "all-missing, i.e. PENDING until supplied).",
     )
+    parser.add_argument(
+        "--event-name",
+        required=True,
+        help="GitHub event name selecting the L4 external-context contract.",
+    )
     args = parser.parse_args(argv)
 
     jobs = _load_jobs(args.jobs_file)
     external_check_runs = _load_check_runs(args.external_check_runs_file)
+    try:
+        external_contexts = external_contexts_for_event(args.event_name)
+    except ValueError as error:
+        parser.error(str(error))
+        return EXIT_FAILURE
     code, report = evaluate(
-        jobs, run_attempt=args.run_attempt, external_check_runs=external_check_runs
+        jobs,
+        run_attempt=args.run_attempt,
+        external_check_runs=external_check_runs,
+        external_contexts=external_contexts,
+        # The observation time the OMN-17864 / OMN-18355 windows are measured
+        # against. It is the process's own wall clock and has NO CLI surface --
+        # deliberately, because a caller-assertable time would let a long-dead
+        # red be held provisional indefinitely, which is the one way these
+        # windows could become a bypass.
+        #
+        # OMITTING IT SILENTLY DISABLES BOTH. `verdict_is_provisional` returns
+        # False on `now is None` by design -- fail-closed, so a forgetful
+        # caller enforces the old strict reading rather than waiting. That is
+        # the right default and a terrible silent outcome: the first port of
+        # this change into a sibling repository changed the gate module and not
+        # its poller, and the gate shipped completely inert with every unit
+        # test green.
+        now=datetime.now(UTC),
     )
+    selected = ", ".join(external_contexts) or "<none: no producer for this event>"
+    print(f"L4 event/context contract: {args.event_name}: {selected}")  # noqa: T201
     print(report)  # noqa: T201 — CLI verdict report to stdout for the poll loop
     if args.report_only:
         return EXIT_SUCCESS

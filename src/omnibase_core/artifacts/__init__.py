@@ -1,11 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Content-addressed artifact storage and its canonical public API."""
+"""Content-addressed artifact store (OMN-13093 slice; OMN-13152 Phase 1).
+
+Provides :class:`ArtifactStore`, the durable-capture blob store consumed by
+the skill-output suppression slice (OMN-13089) and hardened in place by the
+durable-capture plan's Phase 1 (retention, quota, redaction, restricted-tier
+read authorization).
+"""
 
 from __future__ import annotations
 
-from omnibase_core.artifacts.artifact_secret_detector import SecretDetector
 from omnibase_core.artifacts.artifact_store import (
     ARTIFACT_STORE_ROOT_ENV,
     DEFAULT_READ_CHUNK_BYTES,
@@ -13,11 +18,7 @@ from omnibase_core.artifacts.artifact_store import (
     WRITER_VERSION,
     ArtifactStore,
 )
-from omnibase_core.errors.error_artifact_configuration import (
-    ArtifactConfigurationError,
-)
-from omnibase_core.errors.error_artifact_integrity import ArtifactIntegrityError
-from omnibase_core.errors.error_artifact_not_found import ArtifactNotFoundError
+from omnibase_core.artifacts.secret_detector import SecretDetector
 from omnibase_core.errors.error_artifact_quota_exceeded import (
     ArtifactQuotaExceededError,
 )
@@ -33,9 +34,6 @@ __all__ = [
     "DEFAULT_READ_CHUNK_BYTES",
     "RESTRICTED_ARTIFACT_KINDS",
     "WRITER_VERSION",
-    "ArtifactConfigurationError",
-    "ArtifactIntegrityError",
-    "ArtifactNotFoundError",
     "ArtifactQuotaExceededError",
     "ArtifactSecretDetectedError",
     "ArtifactStore",

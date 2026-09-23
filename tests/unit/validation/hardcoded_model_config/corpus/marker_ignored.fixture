@@ -1,0 +1,1 @@
+HOST = "http://192.168.86.77:8000"  # onex-allow-internal-ip

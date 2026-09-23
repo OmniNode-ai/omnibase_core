@@ -53,25 +53,21 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_severity import EnumSeverity
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
-    load_typed_yaml_content_document,
+from omnibase_core.models.validation.model_demo_path_contract import (
+    ModelDemoPathContract,
 )
-from omnibase_core.models.validation.model_demo_yaml_document import (
-    ModelDemoYamlDocument,
+from omnibase_core.models.validation.model_demo_path_yaml_contract import (
+    ModelDemoPathYamlContract,
 )
-from omnibase_core.types.type_json import StrictJsonType
-from omnibase_core.validation.demo_path_contract import DemoPathContract
-from omnibase_core.validation.demo_path_topic_index import DemoPathTopicIndex
+from omnibase_core.validation.demo_path_topic_registry import DemoPathTopicRegistry
 
 # ---------------------------------------------------------------------------
 # Rule identifiers (exported so tests can reference them symbolically)
@@ -89,39 +85,21 @@ RULE_WIDGET_TOPIC_NO_PRODUCER: str = "demo_path_widget_topic_no_producer"
 
 _LITERAL_SUPPRESSION_MARKER: str = "onex-demo-gate-allow:"
 
-
-def _load_demo_document(
-    content: str, *, source: str = "demo path contract YAML"
-) -> dict[str, StrictJsonType] | None:
-    try:
-        document = load_typed_yaml_content_document(
-            content, ModelDemoYamlDocument, source=source
-        )
-    except ModelOnexError:
-        return None
-    return None if document is None else document.root
-
-
 # Pattern for bare onex topic string literals in Python/TypeScript source
 _ONEX_TOPIC_LITERAL: re.Pattern[str] = re.compile(
     r"""["']onex\.(cmd|evt|dlq|snapshot|intent)\.[^"'\s]+["']"""
 )
 
 # ---------------------------------------------------------------------------
-# Demo-path contract data model
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
 # Contract loader
 # ---------------------------------------------------------------------------
 
 
-def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
+def load_demo_path_contracts(repo_roots: list[Path]) -> list[ModelDemoPathContract]:
     """Scan ``repo_roots`` for contract.yaml files with ``metadata.demo_path: true``.
 
     Walks each root recursively, reads every ``contract.yaml``, and returns
-    ``DemoPathContract`` instances for those with the demo_path marker set.
+    ``ModelDemoPathContract`` instances for those with the demo_path marker set.
 
     Args:
         repo_roots: Directories to scan.  Each root is walked recursively.
@@ -129,7 +107,7 @@ def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
     Returns:
         List of parsed demo-path contracts (may be empty).
     """
-    contracts: list[DemoPathContract] = []
+    contracts: list[ModelDemoPathContract] = []
 
     for root in repo_roots:
         if not root.is_dir():
@@ -151,46 +129,26 @@ def load_demo_path_contracts(repo_roots: list[Path]) -> list[DemoPathContract]:
                 continue
 
             try:
-                raw = _load_demo_document(
-                    contract_path.read_text(encoding="utf-8"), source=str(contract_path)
+                parsed = ModelDemoPathYamlContract.from_yaml(
+                    contract_path.read_text(encoding="utf-8")
                 )
-            except (OSError, UnicodeDecodeError):
+            except (OSError, ValueError):
                 continue
 
-            if not isinstance(raw, dict):
+            if not parsed.is_demo_path:
                 continue
-
-            metadata: Any = raw.get("metadata", {})
-            if not isinstance(metadata, dict):
-                metadata = {}
-
-            if not metadata.get("demo_path", False):
-                continue
-
-            event_bus: Any = raw.get("event_bus", {})
-            if not isinstance(event_bus, dict):
-                event_bus = {}
-
-            subscribe_raw: Any = event_bus.get("subscribe_topics") or []
-            publish_raw: Any = event_bus.get("publish_topics") or []
-            widget_raw: Any = metadata.get("widget_topics") or []
 
             contracts.append(
-                DemoPathContract(
+                ModelDemoPathContract(
                     name=contract_path.parent.name,
                     contract_path=contract_path,
-                    subscribe_topics=frozenset(str(t) for t in subscribe_raw),
-                    publish_topics=frozenset(str(t) for t in publish_raw),
-                    widget_topics=frozenset(str(t) for t in widget_raw),
+                    subscribe_topics=frozenset(parsed.subscribe_topics),
+                    publish_topics=frozenset(parsed.publish_topics),
+                    widget_topics=frozenset(parsed.widget_topics),
                 )
             )
 
     return contracts
-
-
-# ---------------------------------------------------------------------------
-# Topic registry and coherence checks
-# ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +225,7 @@ class ValidatorDemoPathTopicCoherence:
         contracts = load_demo_path_contracts(self.repo_roots)
 
         if contracts:
-            registry = DemoPathTopicIndex.from_contracts(contracts)
+            registry = DemoPathTopicRegistry.from_contracts(contracts)
 
             # (b) publish/subscribe byte-match
             for desc in registry.find_publish_subscribe_mismatches():

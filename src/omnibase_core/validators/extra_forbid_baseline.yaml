@@ -312,7 +312,6 @@ violations:
   - "omnibase_core.models.contracts.subcontracts.model_workflow_instance:ModelWorkflowInstance"
   - "omnibase_core.models.contracts.subcontracts.model_workflow_node:ModelWorkflowNode"
   - "omnibase_core.models.core.model_action_base:ModelActionBase"
-  - "omnibase_core.models.core.model_action_category:ModelActionCategory"
   - "omnibase_core.models.core.model_action_config_boolean_value:ModelActionConfigBooleanValue"
   - "omnibase_core.models.core.model_action_config_numeric_value:ModelActionConfigNumericValue"
   - "omnibase_core.models.core.model_action_config_string_value:ModelActionConfigStringValue"

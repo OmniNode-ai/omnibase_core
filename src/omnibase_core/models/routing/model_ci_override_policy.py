@@ -1,13 +1,15 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CI-specific override for a contract-declared LLM routing policy."""
+"""CI-mode override policy for model routing."""
+
+from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelCiOverridePolicy(BaseModel):
-    """CI-mode override selecting a deterministic primary model key."""
+    """CI-mode override: when ONEX_CI_MODE=true, use this primary model key."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 

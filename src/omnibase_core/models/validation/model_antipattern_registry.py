@@ -9,6 +9,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_antipattern_entry import (
     ModelAntipatternEntry,
 )
@@ -19,7 +20,7 @@ class ModelAntipatternRegistry(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    version: str = Field(description="Registry schema version, e.g. '1.0.0'")
+    version: ModelSemVer = Field(description="Registry schema version")
     last_updated: datetime = Field(description="Timestamp of the last registry update")
     entries: tuple[ModelAntipatternEntry, ...] = Field(
         default=(),

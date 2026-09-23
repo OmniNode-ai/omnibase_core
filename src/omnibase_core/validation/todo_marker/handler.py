@@ -70,23 +70,82 @@ _SUPPRESSION_MARKER: Final[str] = "onex-allow-todo-marker"
 # docs) — line markers there would pollute the rendered prose.
 _FILE_SUPPRESSION_MARKER: Final[str] = "onex-allow-file-todo-marker"
 
+_YAML_PATH_SUFFIXES: Final[tuple[str, ...]] = (".yaml", ".yml")
+_YAML_SINGLE_QUOTED_MAPPING_START: Final[re.Pattern[str]] = re.compile(
+    r"^\s*[^#\n][^:\n]*:\s*'(.*)$"
+)
 
-def scan_source(content: str, path: str = "<input>") -> ModelTodoMarkerScanResult:
+
+def _single_quoted_yaml_scalar_close_index(fragment: str) -> int | None:
+    """Return the first non-escaped YAML single-quote index, if any."""
+
+    position = 0
+    while position < len(fragment):
+        if fragment[position] != "'":
+            position += 1
+            continue
+        if position + 1 < len(fragment) and fragment[position + 1] == "'":
+            position += 2
+            continue
+        return position
+    return None
+
+
+def _yaml_scalar_suppressed_lines(content: str, path: str) -> frozenset[int]:
+    """Find marked multiline YAML scalars without broadening line suppression.
+
+    yamlfmt can wrap a single-quoted scalar before its trailing comment.  The
+    comment belongs to the scalar's closing line while the literal vocabulary
+    can be on its first line.  Treat that one complete scalar as the annotation
+    scope; malformed or unclosed scalars intentionally yield no suppression.
+    """
+
+    if not path.lower().endswith(_YAML_PATH_SUFFIXES):
+        return frozenset()
+
+    suppressed: set[int] = set()
+    scalar_start: int | None = None
+    for line_number, line in enumerate(content.splitlines(), start=1):
+        if scalar_start is None:
+            match = _YAML_SINGLE_QUOTED_MAPPING_START.match(line)
+            if match is None:
+                continue
+            if _single_quoted_yaml_scalar_close_index(match.group(1)) is not None:
+                continue
+            scalar_start = line_number
+            continue
+
+        closing_index = _single_quoted_yaml_scalar_close_index(line)
+        if closing_index is None:
+            continue
+        trailing = line[closing_index + 1 :].lstrip()
+        if trailing.startswith("#") and _SUPPRESSION_MARKER in trailing:
+            suppressed.update(range(scalar_start, line_number + 1))
+        scalar_start = None
+    return frozenset(suppressed)
+
+
+def scan_source(  # stub-ok: TODO/FIXME/HACK tokens are the input vocabulary this scanner must document
+    content: str, path: str = "<input>"
+) -> ModelTodoMarkerScanResult:
     """Scan ``content`` line by line for agent-left unfinished-work markers.
 
     Pure and deterministic. A line containing the ``onex-allow-todo-marker``
     suppression marker is skipped; otherwise every whole-word TODO/FIXME/HACK
-    token on the line is flagged. Findings are emitted in a stable order (line,
-    then in-line marker order) so the verdict is order-independent regardless of
-    dispatch backend (§1A).
+    token on the line is flagged. A marked multiline single-quoted YAML scalar
+    is one logical annotation scope so yamlfmt cannot detach its closing-line
+    marker from its literal subject. Findings are emitted in a stable order
+    (line, then in-line marker order) so the verdict is order-independent
+    regardless of dispatch backend (§1A).
     """
     findings: list[ModelTodoMarkerFinding] = []
     # File-level escape hatch: a documentation-heavy source whose subject IS the
     # marker token suppresses the whole file with one marker.
     if _FILE_SUPPRESSION_MARKER in content:
         return ModelTodoMarkerScanResult(path=path, flagged=False, findings=())
+    yaml_scalar_suppressed_lines = _yaml_scalar_suppressed_lines(content, path)
     for lineno, line in enumerate(content.splitlines(), start=1):
-        if _SUPPRESSION_MARKER in line:
+        if _SUPPRESSION_MARKER in line or lineno in yaml_scalar_suppressed_lines:
             continue
         for match in _MARKER_PATTERN.finditer(line):
             findings.append(

@@ -174,10 +174,12 @@ class TestSecurityValidatorSuppressionScope:
         )
 
         assert not secret_module.BypassChecker.check_line_bypass(
-            'password = "live # secret-ok: not a comment"', "secret-ok:"
+            'password = "live # secret-ok: not a comment"',  # pragma: allowlist secret
+            "secret-ok:",
         )
         assert secret_module.BypassChecker.check_line_bypass(
-            'password = "fixture"  # secret-ok: fixture', "secret-ok:"
+            'password = "fixture"  # secret-ok: fixture',  # pragma: allowlist secret
+            "secret-ok:",
         )
         assert not env_module.BypassChecker.check_line_bypass(
             'DATABASE_URL = "postgresql://live/# env-var-ok: not a comment"',
@@ -192,7 +194,9 @@ class TestSecurityValidatorSuppressionScope:
     ) -> None:
         module = _load_security_validator("validate-secrets.py", "omn17522_secrets")
         candidate = tmp_path / "candidate.py"
-        candidate.write_text('# secret-ok: prose only\npassword = "live-secret"\n')
+        candidate.write_text(
+            '# secret-ok: prose only\npassword = "live-secret"\n'  # pragma: allowlist secret
+        )
         validator = module.SecretValidator()
         assert (
             validator.validate_python_file(

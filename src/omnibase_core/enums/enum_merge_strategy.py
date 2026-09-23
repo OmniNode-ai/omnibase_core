@@ -32,5 +32,5 @@ class EnumMergeStrategy(str, Enum):
     SQUASH_AUTO = "squash_auto"
 
 
-# TODO(OMN-18154): Remove alias once all consumers migrated to EnumMergeStrategy.  # onex-allow-todo-marker OMN-18154 reason="ticketed consumer audit"
+# TODO(OMN-7260): Remove alias once all consumers migrated to EnumMergeStrategy.  # onex-allow-todo-marker OMN-7260 reason="compatibility-removal work is tracked by this migration issue"
 MergeStrategy = EnumMergeStrategy

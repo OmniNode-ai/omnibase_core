@@ -94,6 +94,34 @@ pre-commit run --all-files              # All hooks
 `pyproject.toml` `[tool.pytest.ini_options] markers` plus `tests/conftest.py`
 (`memory_intensive`, `isolated`) — read those two sources, not a hand-copied list.
 
+### Pre-push scope (2026-09-11)
+
+Pre-push is policy, type and lint checks plus two named test exceptions —
+**nine hooks**, none of which runs the suite. The governed impacted-test
+selector was retired from this stage; hosted CI is the enforced merge gate and
+runs the identical selection. Measured in-tree on 2026-09-11, `pytest tests/
+--ignore=tests/integration` collects 45,136 tests on both sides with zero rows
+in either difference, and neither side applies a marker expression, so no test
+lost its only execution path.
+
+Two hooks still reach a test runner and are **kept deliberately**. Do not
+remove either for consistency with the retirement — each carries its measured
+cost and its retention ground in an annotation at its own definition in
+`.pre-commit-config.yaml`.
+
+| Retained exception | Cost | Why it stays |
+| --- | --- | --- |
+| `pytest-protocol-uuid-enforcement` | 4.4 s wall, unconditional | coverage — CI gates the property only when the impacted-subset selector picks the module up |
+| `verify-flip-bundle` | 0.51 s at steady state, path-filtered | cost — CI runs the identical gate on every non-docs-only pull request |
+
+`scripts/hooks/prepush_smart_tests.sh` is retained for **manual invocation
+only** and is wired to no hook. There is no environment variable that restores
+the leg; rollback is a revert of the retirement's squash commit. The end state
+is enforced by `tests/ci/test_prepush_test_leg_retired_omn18176.py`, not by
+this paragraph — that module's own docstring carries the ticket, the
+measurement and the rollback. Plan of record:
+`OmniNode-ai/knowledge-base-internal#328` phase 1.
+
 **uv, not Poetry**: `uv sync --all-extras` / `uv run <command>` / `uv lock`. All
 Python commands — including any spawned agent's — run via `uv run`, never bare
 `python`/`pip`. Shared git/hook rules (`--no-verify` / `--no-gpg-sign`

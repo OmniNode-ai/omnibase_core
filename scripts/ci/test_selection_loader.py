@@ -34,4 +34,7 @@ def load_adjacency_map(path: Path) -> ModelAdjacencyMap:
     # instead of silently keeping the last occurrence — a fail-open shape in the
     # selector's own config. The YAML filesystem read stays here at the caller
     # boundary; the parse+validate is the one canonical model method.
-    return ModelAdjacencyMap.from_yaml_text(path.read_text(encoding="utf-8"))
+    return ModelAdjacencyMap.from_yaml_text(
+        path.read_text(encoding="utf-8"),
+        source=str(path),
+    )

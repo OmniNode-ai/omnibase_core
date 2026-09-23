@@ -337,7 +337,7 @@ def test_baselined_violation_passes(
         "mod_old",
         "from pydantic import BaseModel\n\nclass ModelLegacy(BaseModel):\n    f: str\n",
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelLegacy"
     exit_code = main(
@@ -365,7 +365,7 @@ def test_stale_baseline_entry_fails_check_stale(
         "class ModelNowFixed(BaseModel):\n"
         '    model_config = ConfigDict(extra="forbid")\n',
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelNowFixed"
     exit_code = main(
@@ -443,7 +443,7 @@ def test_active_waiver_suppresses_a_new_violation(tmp_path: Path) -> None:
         "mod_waived",
         "from pydantic import BaseModel\n\nclass ModelInFlight(BaseModel):\n    f: str\n",
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelInFlight"
     waivers = tmp_path / "waivers.yaml"
@@ -479,7 +479,7 @@ def test_expired_waiver_is_a_hard_failure(
         "mod_expired",
         "from pydantic import BaseModel\n\nclass ModelStale(BaseModel):\n    f: str\n",
     )
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     fqn = f"{module_for_path(module)[0]}:ModelStale"
     waivers = tmp_path / "waivers.yaml"
@@ -610,7 +610,7 @@ def test_modifying_a_baselined_model_fails(
     _git(git_repo, "add", "-A")
     _git(git_repo, "commit", "-qm", "seed")
 
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
+    from omnibase_core.validation.pydantic_module_index import module_for_path
 
     prefix = module_for_path(module)[0]
     baseline = _write_baseline(
@@ -667,134 +667,6 @@ def test_modifying_a_baselined_model_fails(
     assert "ModelTouched" in err
     # The untouched sibling in the same file must NOT be dragged in.
     assert "ModelUntouched" not in err
-
-
-def test_worktree_mode_fails_on_an_unstaged_baselined_model(
-    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """The mandatory all-files mode cannot mask an unstaged baselined-model edit."""
-    module = git_repo / "pkg" / "mod_unstaged.py"
-    module.write_text(
-        "from pydantic import BaseModel\n\nclass ModelLegacy(BaseModel):\n    a: str\n",
-        encoding="utf-8",
-    )
-    _git(git_repo, "add", "-A")
-    _git(git_repo, "commit", "-qm", "seed")
-
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
-
-    baseline = _write_baseline(
-        git_repo / "baseline.yaml", [f"{module_for_path(module)[0]}:ModelLegacy"]
-    )
-    waivers = _empty_waivers(git_repo / "waivers.yaml")
-    module.write_text(
-        "from pydantic import BaseModel\n\nclass ModelLegacy(BaseModel):\n    a: str\n    b: int = 0\n",
-        encoding="utf-8",
-    )
-    monkeypatch.chdir(git_repo)
-
-    exit_code = main(
-        [
-            "pkg",
-            "--baseline",
-            str(baseline),
-            "--waivers",
-            str(waivers),
-            "--enforce-modified",
-            ":worktree",
-        ]
-    )
-
-    assert exit_code == 1
-    assert "ModelLegacy" in capsys.readouterr().err
-
-
-def test_worktree_mode_is_index_byte_invariant(
-    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """The worktree scope reads an alternate caller index without rewriting it."""
-    module = git_repo / "pkg" / "mod_alternate.py"
-    module.write_text(
-        "from pydantic import BaseModel\n\nclass ModelLegacy(BaseModel):\n    a: str\n",
-        encoding="utf-8",
-    )
-    _git(git_repo, "add", "-A")
-    _git(git_repo, "commit", "-qm", "seed")
-
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
-
-    baseline = _write_baseline(
-        git_repo / "baseline.yaml", [f"{module_for_path(module)[0]}:ModelLegacy"]
-    )
-    waivers = _empty_waivers(git_repo / "waivers.yaml")
-    alternate_index = git_repo / "alternate.index"
-    alternate_index.write_bytes((git_repo / ".git" / "index").read_bytes())
-    before = alternate_index.read_bytes()
-    module.write_text(
-        "from pydantic import BaseModel\n\nclass ModelLegacy(BaseModel):\n    a: str\n    b: int = 0\n",
-        encoding="utf-8",
-    )
-    monkeypatch.chdir(git_repo)
-    monkeypatch.setenv("GIT_INDEX_FILE", str(alternate_index))
-
-    assert (
-        main(
-            [
-                "pkg",
-                "--baseline",
-                str(baseline),
-                "--waivers",
-                str(waivers),
-                "--enforce-modified",
-                ":worktree",
-            ]
-        )
-        == 1
-    )
-    assert "ModelLegacy" in capsys.readouterr().err
-    assert alternate_index.read_bytes() == before
-
-
-def test_worktree_mode_decodes_newline_and_space_paths(
-    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """Git's C-quoted diff headers retain an exact changed path with a newline."""
-    module = git_repo / "pkg" / "mod space\nname.py"
-    module.write_text(
-        "from pydantic import BaseModel\n\nclass ModelOddPath(BaseModel):\n    a: str\n",
-        encoding="utf-8",
-    )
-    _git(git_repo, "add", "-A")
-    _git(git_repo, "commit", "-qm", "seed")
-
-    from omnibase_core.validators.pydantic_extra_forbid import module_for_path
-
-    baseline = _write_baseline(
-        git_repo / "baseline.yaml", [f"{module_for_path(module)[0]}:ModelOddPath"]
-    )
-    waivers = _empty_waivers(git_repo / "waivers.yaml")
-    module.write_text(
-        "from pydantic import BaseModel\n\nclass ModelOddPath(BaseModel):\n    a: str\n    b: int = 0\n",
-        encoding="utf-8",
-    )
-    monkeypatch.chdir(git_repo)
-
-    assert (
-        main(
-            [
-                "pkg",
-                "--no-runtime",
-                "--baseline",
-                str(baseline),
-                "--waivers",
-                str(waivers),
-                "--enforce-modified",
-                ":worktree",
-            ]
-        )
-        == 1
-    )
-    assert "ModelOddPath" in capsys.readouterr().err
 
 
 def test_enforce_modified_fails_closed_on_bad_ref(

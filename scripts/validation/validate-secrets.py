@@ -32,6 +32,8 @@ from io import StringIO
 from pathlib import Path
 from typing import Final, NamedTuple
 
+_PLACEHOLDER_WORK_ITEM = "TODO"  # onex-allow-todo-marker OMN-18931 reason="validator placeholder vocabulary, not unfinished work"
+
 
 class BypassChecker:
     """Parse a rule-local suppression comment without granting file-wide bypasses."""
@@ -346,8 +348,8 @@ class PythonSecretValidator(ast.NodeVisitor):
                 "",
                 "YOUR_KEY_HERE",
                 "CHANGEME",
-                "TODO",  # onex-allow-todo-marker OMN-17522 detector sentinel
-            ]:  # onex-allow-todo-marker OMN-17522 detector sentinel
+                _PLACEHOLDER_WORK_ITEM,
+            ]:
                 return False
             # Ignore very short strings (< 3 chars) - likely not real secrets
             if len(value) < 3:

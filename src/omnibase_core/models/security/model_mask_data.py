@@ -90,4 +90,4 @@ class ModelMaskData(BaseModel):
         )
 
 
-ModelMaskData.model_rebuild()
+ModelMaskData.model_rebuild(raise_errors=False)

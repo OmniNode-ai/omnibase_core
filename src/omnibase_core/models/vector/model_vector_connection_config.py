@@ -37,7 +37,7 @@ class ModelVectorConnectionConfig(BaseModel):
             from omnibase_core.models.vector import ModelVectorConnectionConfig
 
             config = ModelVectorConnectionConfig(
-                url="http://localhost:6333",  # url-authority-ok: local vector-store example # onex-allow-internal-ip OMN-17524 reason="documentation example"
+                url="https://vector.example.test:6333",
             )
 
         With authentication::

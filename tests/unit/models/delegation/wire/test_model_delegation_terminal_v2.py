@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 from omnibase_core.models.delegation.wire import (
     EnumDelegationRoutingDisposition,
+    EnumDelegationTerminalFailureCause,
     EnumDelegationTerminalOutcome,
     EnumDelegationUnroutedReason,
     EnumQualityScoreComparison,
@@ -236,6 +237,42 @@ def test_provider_failure_requires_a_closed_enum_cause() -> None:
 
 
 @pytest.mark.unit
+def test_provider_branch_refuses_a_gate_decided_cause() -> None:
+    """OMN-19004: widening the cause vocabulary must not widen the provider branch.
+
+    This union already separates the two subsystems structurally: a provider
+    fault is ``kind="provider"`` carrying a typed cause, and a gate refusal is
+    ``kind="quality_gate_rejection"`` carrying none. Adding a gate-decided
+    member to the cause enum makes a third, contradictory spelling reachable --
+    a provider-kind failure whose cause says the gate decided it. That is the
+    same defect the member was added to remove, one level down, so the branch
+    refuses it at construction rather than leaving the union to be read two
+    ways.
+    """
+    payload = _routed_failure_payload()
+    payload["routed_failure_cause"]["cause"] = "quality_gate_refused"
+
+    with pytest.raises(ValidationError, match="quality_gate_rejection"):
+        ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+
+@pytest.mark.unit
+def test_provider_branch_still_accepts_every_provider_cause() -> None:
+    """Positive control: the refusal above is scoped to the one non-provider member."""
+    for cause in (
+        EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED,
+        EnumDelegationTerminalFailureCause.AUTH_FAILED,
+        EnumDelegationTerminalFailureCause.PROVIDER_ERROR,
+    ):
+        payload = _routed_failure_payload()
+        payload["routed_failure_cause"]["cause"] = cause.value
+
+        terminal = ModelDelegationTerminalFailedRoutedV2.model_validate(payload)
+
+        assert terminal.routed_failure_cause.kind == "provider"
+        assert terminal.routed_failure_cause.cause is cause
+
+
 def test_routed_failure_rejects_an_unknown_cause_discriminator() -> None:
     payload = _routed_failure_payload()
     payload["routed_failure_cause"] = {"kind": "unknown"}

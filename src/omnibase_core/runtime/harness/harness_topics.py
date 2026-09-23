@@ -11,23 +11,15 @@ identifiers, not environment-tunable settings.
 
 from __future__ import annotations
 
-from typing import Final
-
 from omnibase_core.topics import TopicBase
 
-# env-var-ok: fixed canonical topic identifiers, not environment-tunable settings
-DELEGATION_COMMAND_TOPIC: Final[str] = TopicBase.HARNESS_DELEGATION_REQUESTED.value
-# env-var-ok: fixed canonical topic identifier
-DELEGATION_INFER_TOPIC: Final[str] = TopicBase.HARNESS_DELEGATION_INFERRED.value
-# env-var-ok: fixed canonical topic identifier
-DELEGATION_COMPLETED_TOPIC: Final[str] = TopicBase.HARNESS_DELEGATION_COMPLETED.value
+DELEGATION_COMMAND_TOPIC = TopicBase.HARNESS_DELEGATION_COMMAND
+DELEGATION_INFER_TOPIC = TopicBase.HARNESS_DELEGATION_INFER
+DELEGATION_COMPLETED_TOPIC = TopicBase.HARNESS_DELEGATION_COMPLETED
 
-# env-var-ok: fixed canonical topic identifier
-SEA_COMMAND_TOPIC: Final[str] = TopicBase.HARNESS_SEA_REQUESTED.value
-# env-var-ok: fixed canonical topic identifier
-SEA_INFER_TOPIC: Final[str] = TopicBase.HARNESS_SEA_INFERRED.value
-# env-var-ok: fixed canonical topic identifier
-SEA_COMPLETED_TOPIC: Final[str] = TopicBase.HARNESS_SEA_COMPLETED.value
+SEA_COMMAND_TOPIC = TopicBase.HARNESS_SEA_COMMAND
+SEA_INFER_TOPIC = TopicBase.HARNESS_SEA_INFER
+SEA_COMPLETED_TOPIC = TopicBase.HARNESS_SEA_COMPLETED
 
 
 def infer_topic(workflow: str) -> str:

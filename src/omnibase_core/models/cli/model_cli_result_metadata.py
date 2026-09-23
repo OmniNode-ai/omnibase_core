@@ -11,6 +11,7 @@ Follows ONEX one-model-per-file naming conventions.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -169,9 +170,11 @@ class ModelCliResultMetadata(BaseModel):
         if isinstance(v, EnumRetentionPolicy):
             return v
         if isinstance(v, str):
-            for policy in EnumRetentionPolicy:
-                if policy.value == v:
-                    return policy
+            retention_policy = EnumRetentionPolicy._value2member_map_.get(v)
+            if retention_policy is None:
+                retention_policy = EnumRetentionPolicy.__members__.get(v.upper())
+            if retention_policy is not None:
+                return cast(EnumRetentionPolicy, retention_policy)
             raise ModelOnexError(
                 message=f"Invalid retention policy: {v}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

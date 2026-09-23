@@ -5,11 +5,18 @@
 
 from __future__ import annotations
 
+from typing import Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_quality_gate_result import EnumQualityGateResult
+from omnibase_core.enums.enum_quality_rule_enforcement import (
+    EnumQualityRuleEnforcement,
+)
+from omnibase_core.models.delegation.wire.model_delegation_deliverable_evidence import (
+    ModelDelegationDeliverableEvidence,
+)
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     EnumQualityContractMode,
     validate_response_contract,
@@ -66,6 +73,14 @@ class ModelQualityGateInput(BaseModel):
         default=(),
         description="Request-level quality checks enforced by the quality gate.",
     )
+    deliverable_evidence: ModelDelegationDeliverableEvidence | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Exact declared-contract extraction evidence. It is required when a "
+            "cleaned text deliverable reaches the gate without its raw marker."
+        ),
+    )
     response_contract: dict[str, object] | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
@@ -82,6 +97,77 @@ class ModelQualityGateInput(BaseModel):
         cls, response_contract: dict[str, object] | None
     ) -> dict[str, object] | None:
         return validate_response_contract(response_contract)
+
+
+class ModelQualityRuleEvaluation(BaseModel):
+    """One declared rule's own verdict, with the threshold it was judged against.
+
+    OMN-18295. Before this, a delegation terminal carried an aggregate
+    ``quality_score``, a ``required_quality_bar``, and a free-text
+    ``failed_acceptance_criteria`` list. Those three could disagree with each
+    other and did: ``ca144d1a-ea03-475f-bc81-650ccfa0495e`` printed
+    ``actual_score=0.900 required_bar=0.800 score_vs_bar=at_or_above_bar`` and
+    terminalised ``failed``, with the deciding rule appearing only as an
+    unattributed sentence fragment. Nothing said which rule decided, what
+    threshold it applied, or whether it was even entitled to decide. The
+    250-word limit that actually rejected that response was a literal inside
+    the gate's own code: a number a customer was held to that appeared in no
+    contract and on no receipt.
+
+    Recorded for PASSING rules too. A record that exists only on failure
+    cannot distinguish "this rule passed" from "this rule never ran" — and it
+    cannot show a reader that a ``scored`` miss did NOT decide an outcome the
+    bar decided.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    rule: str = Field(
+        ...,
+        min_length=1,
+        description="The declared check name, e.g. 'concise'.",
+    )
+    enforcement: EnumQualityRuleEnforcement = Field(
+        ...,
+        description=(
+            "Whether this rule vetoes acceptance outright ('blocking') or "
+            "moves the graded score and leaves the verdict to the required "
+            "bar ('scored')."
+        ),
+    )
+    passed: bool = Field(..., description="This rule's own verdict.")
+    threshold: int | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "The numeric threshold applied, where the rule declares one. None "
+            "means the rule declares no numeric threshold — never zero."
+        ),
+    )
+    threshold_unit: str | None = Field(
+        default=None,
+        description="What the threshold counts — 'words', 'characters'.",
+    )
+    detail: str | None = Field(
+        default=None,
+        description="The failure message, when this rule failed. None on a pass.",
+    )
+
+    @field_validator("rule")
+    @classmethod
+    def _validate_rule_name(cls, rule: str) -> str:
+        if not rule.strip():
+            msg = "rule must name a declared check, not blank"
+            raise ValueError(msg)
+        return rule
+
+    @model_validator(mode="after")
+    def validate_detail_accompanies_a_failure(self) -> Self:
+        """A pass carrying a failure message reads, to a customer, as a failure."""
+        if self.passed and self.detail is not None:
+            msg = "a rule that passed cannot carry a failure detail"
+            raise ValueError(msg)
+        return self
 
 
 class ModelQualityGateResult(BaseModel):
@@ -121,6 +207,8 @@ class ModelQualityGateResult(BaseModel):
 
 __all__: list[str] = [
     "EnumQualityGateCategory",
+    "EnumQualityRuleEnforcement",
     "ModelQualityGateInput",
     "ModelQualityGateResult",
+    "ModelQualityRuleEvaluation",
 ]

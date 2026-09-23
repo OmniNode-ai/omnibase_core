@@ -55,8 +55,10 @@ Invocation surfaces:
 
     python -m omnibase_core.validation.validator_skill_backing_node [OMNICLAUDE_ROOT]
 
-  OMNICLAUDE_ROOT defaults to ``$OMNI_HOME/omniclaude`` when ``$OMNI_HOME``
-  is set, else raises ``RuntimeError``.
+  OMNICLAUDE_ROOT defaults to ``$OMNI_HOME/omniclaude`` when
+  ``$OMNI_HOME`` is set, else raises ``RuntimeError``. This is internal
+  contributor tooling (OMN-16849 boundary ruling) -- OMNI_HOME, never
+  the customer-facing OMNIBASE_PATH.
 
 Exit codes:
     0 -- all declared backing nodes are live (or omnimarket not resolvable locally)
@@ -65,12 +67,18 @@ Exit codes:
 
 from __future__ import annotations
 
-import os
 import re
 import sys
 from pathlib import Path
 
 import yaml
+
+from omnibase_core.models.bootstrap.model_environment_bootstrap import (
+    ModelEnvironmentBootstrap,
+)
+
+_OMNIMARKET_ROOT_KEY = "OMNIMARKET_ROOT"
+_OMNI_HOME_KEY = "OMNI_HOME"
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -213,7 +221,7 @@ def _resolve_omnimarket_nodes_root(omniclaude_root: Path) -> list[Path]:
 
     Resolution order (first that is_dir() wins):
     1. ``$OMNIMARKET_ROOT`` env var -- explicit override for local dev + CI.
-    2. ``$OMNI_HOME/omnimarket`` -- standard OMNI_HOME layout.
+    2. ``$OMNI_HOME/omnimarket`` -- standard registry layout.
     3. ``_omnimarket`` relative to *omniclaude_root* -- CI checkout layout.
     4. Sibling repo: ``<omniclaude_root>/../omnimarket`` -- worktree sibling.
     5. Mono-repo style: ``<omniclaude_root>/omnimarket/...`` (future).
@@ -221,11 +229,15 @@ def _resolve_omnimarket_nodes_root(omniclaude_root: Path) -> list[Path]:
     """
     bases: list[Path] = []
 
-    omnimarket_root_env = os.environ.get("OMNIMARKET_ROOT")
+    bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
+        declared_keys=(_OMNIMARKET_ROOT_KEY, _OMNI_HOME_KEY)
+    )
+
+    omnimarket_root_env = bootstrap.environment.optional(_OMNIMARKET_ROOT_KEY)
     if omnimarket_root_env:
         bases.append(Path(omnimarket_root_env) / _OMNIMARKET_NODES_REL)
 
-    omni_home = os.environ.get("OMNI_HOME")
+    omni_home = bootstrap.environment.optional(_OMNI_HOME_KEY)
     if omni_home:
         bases.append(Path(omni_home) / "omnimarket" / _OMNIMARKET_NODES_REL)
 
@@ -385,7 +397,10 @@ def _count_skills_checked(omniclaude_root: Path) -> int:
 
 def _resolve_omniclaude_root() -> Path:
     """Resolve the omniclaude repo root from env or raise RuntimeError."""
-    omni_home = os.environ.get("OMNI_HOME")
+    bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
+        declared_keys=(_OMNI_HOME_KEY,)
+    )
+    omni_home = bootstrap.environment.optional(_OMNI_HOME_KEY)
     if omni_home:
         candidate = Path(omni_home) / "omniclaude"
         if candidate.is_dir():

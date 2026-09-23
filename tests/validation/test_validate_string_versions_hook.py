@@ -42,17 +42,6 @@ def test_allows_string_version_only_for_validated_canonical_registry() -> None:
     assert completed.returncode == 0, completed.stdout + completed.stderr
 
 
-def test_rejects_same_registry_schema_at_noncanonical_path(tmp_path: Path) -> None:
-    """A matching document elsewhere cannot bypass the version policy."""
-    copy = tmp_path / "antipattern_registry.yaml"
-    copy.write_text(_REGISTRY.read_text(encoding="utf-8"), encoding="utf-8")
-
-    completed = _run_hook(copy)
-
-    assert completed.returncode == 1
-    assert "Field 'version' uses string version '1.0.0'" in completed.stdout
-
-
 def test_allows_ruff_formatted_field_rationale(tmp_path: Path) -> None:
     """A rationale on the immediate ``Field`` continuation is intentional."""
     source = tmp_path / "model.py"

@@ -82,3 +82,85 @@ topics:
       - platform
       - projection
       - health
+
+  # ---------------------------------------------------------------------------
+  # Delegation — terminal events (OMN-15622, plan Task 1.2)
+  #
+  # Scope note: this is the BACKFILL disposition for the delegation terminal
+  # family ONLY. OMN-15622's parent criterion — an explicit, machine-readable
+  # relationship between the whole TopicBase enum and this registry, checked in
+  # both directions — is NOT answered by these five rows and stays open on the
+  # parent ticket.
+  #
+  # The v2 family is three topics because it is three wire classes. Both failure
+  # classes on a single delegation-failed.v2 topic is a non-injective
+  # class -> topic map and is refused by assert_published_events_injective
+  # (runtime_fanout_resolver.py).
+  # ---------------------------------------------------------------------------
+  - topic: onex.evt.omnibase-infra.delegation-completed.v1  # onex-topic-sot
+    introduced_in: OMN-12663
+    owner: omnibase_infra
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_completed.ModelDelegationCompleted
+    description: >
+      v1 terminal event emitted by node_delegation_orchestrator when a delegation run completes successfully. 
+      Superseded for new producers by onex.evt.omnibase-infra.delegation-completed.v2; retained because
+      live v1 producers and projections still read it.
+    tags:
+      - delegation
+      - terminal
+      - v1
+
+  - topic: onex.evt.omnibase-infra.delegation-failed.v1  # onex-topic-sot
+    introduced_in: OMN-12663
+    owner: omnibase_infra
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_failed.ModelDelegationFailed
+    description: >
+      v1 terminal event emitted by node_delegation_orchestrator when a delegation run fails at any stage. 
+      One class carried both routed and unrouted failures; v2 splits them into two typed classes on two
+      topics.
+    tags:
+      - delegation
+      - terminal
+      - v1
+
+  - topic: onex.evt.omnibase-infra.delegation-completed.v2  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_infra
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_terminal_v2.ModelDelegationTerminalCompletedV2
+    description: >
+      v2 terminal event for a ROUTED delegation that completed and passed the quality bar.  Carries backend_ref,
+      pricing_manifest_version and the typed quality-bar evaluation pair; quality_passed is narrowed to
+      true on this class.
+    tags:
+      - delegation
+      - terminal
+      - v2
+
+  - topic: onex.evt.omnibase-infra.delegation-failed-routed.v2  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_infra
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_terminal_v2.ModelDelegationTerminalFailedRoutedV2
+    description: >
+      v2 terminal event for a delegation that reached a backend and then failed. Carries terminal_failure_reason
+      and exactly one arm of the closed routed-failure cause union.
+    tags:
+      - delegation
+      - terminal
+      - v2
+
+  - topic: onex.evt.omnibase-infra.delegation-failed-unrouted.v2  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_infra
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_terminal_v2.ModelDelegationTerminalFailedUnroutedV2
+    description: >
+      v2 terminal event for a delegation that never reached a backend.  Carries unrouted_reason and no
+      routed-only or quality field.
+    tags:
+      - delegation
+      - terminal
+      - v2

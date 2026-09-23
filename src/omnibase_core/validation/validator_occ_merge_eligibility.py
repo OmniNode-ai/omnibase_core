@@ -51,6 +51,8 @@ TICKET_TOKEN_PATTERN = re.compile(r"(?<![A-Z0-9])OMN-(\d+)(?![A-Z0-9])", re.IGNO
 _OCC_REPO_NAME = "onex_change_control"
 _OCC_REPO_ORG = "OmniNode-ai"
 _OCC_REPO_QUALIFIED = f"{_OCC_REPO_ORG}/{_OCC_REPO_NAME}"
+_STRUCTURAL_BINDINGS_RELATIVE_DIR = Path("drift/occ_bindings")
+_STRUCTURAL_SELF_BIND_CHECK_TYPE = "command"
 
 # OMN-16859: check types a PRODUCT-REPO CI runner executes and supersedes.
 #
@@ -97,31 +99,18 @@ def _self_bind_remediation(ticket_id: str, pr_number: int) -> str:
     path so the convention is taught at the moment of failure instead of
     costing a full CI round-trip of re-diagnosis.
     """
-    entry_id = f"occ-self-bind-pr-{pr_number}"
+    evidence_id = f"occ-self-bind-pr-{pr_number}"
     return (
         f"OCC evidence for {ticket_id} verifies (receipts PASS, hashes bound), "
-        f"but no receipt binds to this OCC PR (#{pr_number}). "
-        f"Add a self-bind entry to contracts/{ticket_id}.yaml:\n"
-        "\n"
-        f'  - id: "{entry_id}"\n'
-        "    description: >-\n"
-        f"      OCC self-binding receipt for PR #{pr_number}, the in-repo evidence PR\n"
-        f"      carrying this contract. Binds {ticket_id} to the OCC PR by pr_number\n"
-        "      so eligibility can resolve a PASS receipt for the evidence PR itself.\n"
-        '    source: "manual"\n'
-        '    status: "verified"\n'
-        "    checks:\n"
-        '      - check_type: "command"\n'
-        "        check_value: >-\n"
-        f"          gh pr view {pr_number} --repo {_OCC_REPO_QUALIFIED} "
-        "--json number,state,headRefName\n"
-        "\n"
-        "then write a PASS receipt at "
-        f"drift/dod_receipts/{ticket_id}/{entry_id}/command.yaml with "
-        f"pr_number: {pr_number}. Recompute contract_sha256 on the EXISTING "
-        f"receipts for {ticket_id} — the whole-file hash moves when the contract "
-        "gains an entry; per-entry contract_entry_sha256 values do not "
-        "(OMN-13888)."
+        f"but no structural receipt binds to this OCC PR (#{pr_number}). "
+        "Mint a PASS structural binding receipt at "
+        f"drift/occ_bindings/{ticket_id}/{evidence_id}/command.yaml with "
+        f"ticket_id: {ticket_id}, evidence_item_id: {evidence_id}, "
+        f"check_type: {_STRUCTURAL_SELF_BIND_CHECK_TYPE}, pr_number: {pr_number}, "
+        "and contract_sha256 equal to the current ticket contract hash. "
+        "Do not declare this structural receipt in dod_evidence, do not add "
+        "binds_ac, and do not mint contract_entry_sha256 for an undeclared item "
+        "(OMN-18075)."
     )
 
 
@@ -198,6 +187,7 @@ def validate_occ_merge_eligibility(
             )
 
     contract_hashes: dict[str, str] = {}
+    contract_data_by_ticket: dict[str, object] = {}
     receipt_ids: list[str] = []
     missing_contracts: list[str] = []
     missing_receipts: list[str] = []
@@ -263,6 +253,7 @@ def validate_occ_merge_eligibility(
                 detail=f"contract {contract_path} is unreadable: {exc}",
             )
         contract_hashes[ticket_id] = contract_hash
+        contract_data_by_ticket[ticket_id] = contract_data
         triples = _iter_dod_evidence(contract_data)
         if not triples:
             missing_receipts.append(f"{ticket_id}:*:*")
@@ -484,6 +475,142 @@ def validate_occ_merge_eligibility(
             ),
             detail="one or more receipts are missing or non-PASS",
         )
+
+    # OMN-18075: an OCC companion's receipt-to-current-PR binding is structural
+    # provenance, not product DoD evidence. New companions therefore keep the
+    # deterministic ``occ-self-bind-pr-<N>`` receipt but no longer declare that
+    # id in ``dod_evidence`` (where it polluted the closer's probative ratio).
+    # Resolve that one receipt directly, only for the canonical OCC repo and
+    # only when declared evidence has not already bound the ticket. The latter
+    # preserves every historical companion whose self-bind remains declared.
+    if _is_occ_repo(snapshot.repo):
+        for ticket_id in ticket_ids:
+            if ticket_id in tickets_with_pr_bound_receipt:
+                continue
+
+            evidence_item_id = f"occ-self-bind-pr-{snapshot.pr_number}"
+            receipt_key = (
+                f"{ticket_id}:{evidence_item_id}:{_STRUCTURAL_SELF_BIND_CHECK_TYPE}"
+            )
+            receipt_path = (
+                snapshot.contracts_dir.parent
+                / _STRUCTURAL_BINDINGS_RELATIVE_DIR
+                / ticket_id
+                / evidence_item_id
+                / f"{_STRUCTURAL_SELF_BIND_CHECK_TYPE}.yaml"
+            )
+            if not receipt_path.is_file():
+                continue
+
+            try:
+                receipt_raw = _load_yaml(receipt_path)
+                receipt = ModelDodReceipt.model_validate(receipt_raw)
+            except (OSError, yaml.YAMLError, ValidationError) as exc:
+                return ModelOccEligibilityResult(
+                    eligible=False,
+                    reason=EnumOccEligibilityReason.NONPASS_RECEIPT,
+                    ticket_ids=ticket_ids,
+                    occ_commit_sha=snapshot.occ_commit_sha,
+                    contract_hashes=contract_hashes,
+                    receipt_ids=tuple(sorted(receipt_ids)),
+                    missing_or_nonpass_receipts=(receipt_key,),
+                    detail=f"structural self-bind receipt {receipt_path} is invalid: {exc}",
+                )
+
+            expected_key = (
+                ticket_id,
+                evidence_item_id,
+                _STRUCTURAL_SELF_BIND_CHECK_TYPE,
+            )
+            actual_key = (
+                receipt.ticket_id,
+                receipt.evidence_item_id,
+                receipt.check_type,
+            )
+            if actual_key != expected_key:
+                return ModelOccEligibilityResult(
+                    eligible=False,
+                    reason=EnumOccEligibilityReason.PR_TICKET_MISMATCH,
+                    ticket_ids=ticket_ids,
+                    occ_commit_sha=snapshot.occ_commit_sha,
+                    contract_hashes=contract_hashes,
+                    receipt_ids=tuple(sorted(receipt_ids)),
+                    detail=(
+                        f"structural self-bind receipt {receipt_path} declares key "
+                        f"{actual_key!r}, expected {expected_key!r}"
+                    ),
+                )
+
+            is_bound = _receipt_bound_to_pr(receipt, snapshot)
+            if receipt.contract_entry_sha256 is not None:
+                return ModelOccEligibilityResult(
+                    eligible=False,
+                    reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
+                    ticket_ids=ticket_ids,
+                    occ_commit_sha=snapshot.occ_commit_sha,
+                    contract_hashes=contract_hashes,
+                    receipt_ids=tuple(sorted(receipt_ids)),
+                    stale_receipt_bindings=(receipt_key,),
+                    detail=(
+                        f"structural self-bind receipt {receipt_path} must not "
+                        "declare contract_entry_sha256 because its evidence id "
+                        "is intentionally absent from dod_evidence (OMN-18075)"
+                    ),
+                )
+            if (
+                receipt.contract_sha256 is None
+                and receipt.contract_entry_sha256 is None
+            ):
+                return ModelOccEligibilityResult(
+                    eligible=False,
+                    reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
+                    ticket_ids=ticket_ids,
+                    occ_commit_sha=snapshot.occ_commit_sha,
+                    contract_hashes=contract_hashes,
+                    receipt_ids=tuple(sorted(receipt_ids)),
+                    stale_receipt_bindings=(receipt_key,),
+                    detail=(
+                        f"structural self-bind receipt {receipt_path} is missing "
+                        "both contract_sha256 and contract_entry_sha256"
+                    ),
+                )
+            binding_error = check_receipt_contract_binding(
+                receipt=receipt,
+                contract_data=contract_data_by_ticket[ticket_id],
+                evidence_item_id=evidence_item_id,
+                whole_file_hash=contract_hashes[ticket_id],
+                is_bound_to_this_pr=is_bound,
+            )
+            if binding_error is not None:
+                return ModelOccEligibilityResult(
+                    eligible=False,
+                    reason=EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH,
+                    ticket_ids=ticket_ids,
+                    occ_commit_sha=snapshot.occ_commit_sha,
+                    contract_hashes=contract_hashes,
+                    receipt_ids=tuple(sorted(receipt_ids)),
+                    stale_receipt_bindings=(receipt_key,),
+                    detail=f"structural self-bind receipt {receipt_path}: {binding_error}",
+                )
+            if receipt.status is not EnumReceiptStatus.PASS:
+                return ModelOccEligibilityResult(
+                    eligible=False,
+                    reason=EnumOccEligibilityReason.NONPASS_RECEIPT,
+                    ticket_ids=ticket_ids,
+                    occ_commit_sha=snapshot.occ_commit_sha,
+                    contract_hashes=contract_hashes,
+                    receipt_ids=tuple(sorted(receipt_ids)),
+                    missing_or_nonpass_receipts=(receipt_key,),
+                    detail=(
+                        f"structural self-bind receipt {receipt_path} has "
+                        f"non-PASS status {receipt.status.value}"
+                    ),
+                )
+
+            receipt_ids.append(receipt_key)
+            if is_bound:
+                tickets_with_pr_bound_receipt.add(ticket_id)
+
     unbound_tickets = tuple(
         ticket_id
         for ticket_id in ticket_ids

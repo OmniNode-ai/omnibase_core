@@ -5,8 +5,6 @@
 Detection domain models for ONEX.
 """
 
-from pydantic.errors import PydanticUndefinedAnnotation
-
 from .model_detection_rule_metadata import ModelDetectionRuleMetadata
 from .model_service_detection_config import ModelServiceDetectionConfig
 
@@ -19,7 +17,7 @@ try:
         ModelHealthCheck,  # noqa: F401
     )
 
-    ModelServiceDetectionConfig.model_rebuild()
-except (ImportError, PydanticUndefinedAnnotation):
-    # init-errors-ok: may fail during circular import, safe to ignore
+    ModelServiceDetectionConfig.model_rebuild(raise_errors=False)
+except ImportError:
+    # The model is rebuilt by the importing module once the health types load.
     pass

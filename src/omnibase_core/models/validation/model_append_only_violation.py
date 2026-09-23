@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Typed violation emitted by the OCC append-only validator."""
+"""One typed target that violates an OCC append-only check."""
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -20,6 +20,3 @@ class ModelAppendOnlyViolation(BaseModel):
         ..., description="dod_evidence item id or receipt file path that violated."
     )
     detail: str = Field(default="")
-
-
-__all__ = ["ModelAppendOnlyViolation"]

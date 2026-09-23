@@ -12,6 +12,7 @@ the fix in PR #358 (OMN-1264).
 from collections.abc import Generator
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -41,6 +42,16 @@ def clean_action_category_registry() -> Generator[None, None, None]:
 @pytest.mark.unit
 class TestSelfReferentialNesting:
     """Test self-referential model nesting to prevent RecursionError regression."""
+
+    def test_action_category_rejects_unknown_fields(self) -> None:
+        """Action categories have only their three declared data fields."""
+        with pytest.raises(ValidationError):
+            ModelActionCategory(
+                name="compute",
+                display_name="Compute",
+                description="Runs a computation.",
+                unexpected="rejected",
+            )
 
     # -------------------------------------------------------------------------
     # ModelMaskData Tests

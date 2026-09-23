@@ -26,6 +26,7 @@ from scripts.ci.ci_summary_gate import (
     EXIT_PENDING,
     EXIT_SUCCESS,
     EXPECTED_EXTERNAL_CONTEXTS,
+    EXTERNAL_CONTEXTS_BY_EVENT,
     GATE_JOBS,
     SOFT_ALLOWLIST,
     SPEC_REQUIRED_VALIDATOR_JOBS,
@@ -33,6 +34,7 @@ from scripts.ci.ci_summary_gate import (
     drop_superseded_skips,
     evaluate,
     evaluate_external,
+    external_contexts_for_event,
 )
 
 pytestmark = pytest.mark.unit
@@ -41,6 +43,12 @@ REPO_ROOT = Path(__file__).resolve().parents[4]
 WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 CI_YML = WORKFLOWS_DIR / "ci.yml"
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
+
+EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS: dict[str, str] = {
+    "DB ownership CI twin (B1)": "check-db-ownership.yml",
+    "LLM refs drift check (OMN-11932)": "check-llm-refs-drift.yml",
+    "advisory-job-gate / advisory-job-gate": "advisory-job-gate.yml",
+}
 
 
 def _job(
@@ -268,6 +276,32 @@ class TestCiSummaryGate:
         assert code == EXIT_PENDING
         assert _all_good()[-1]["name"] in report
 
+    def test_runner_route_job_is_strict_and_fails_closed(self) -> None:
+        # OMN-18031: the per-run runner routing decision. Registration in BOTH
+        # tuples is half the mechanism — routing is deliberately INERT while
+        # this repo's trusted seam reads '["ubuntu-latest"]', so deleting the
+        # `route` job from ci.yml changes no job's PLACEMENT and would be
+        # invisible on a green run without this anchor. Same shape as the
+        # companion-merged pin above: FAILURE on red, FAILURE on skip, PENDING
+        # on absent — never a vacuous green.
+        gate = "Runner Route (OMN-18031) / route"
+        assert gate in GATE_JOBS
+        assert gate in STRICT_SUCCESS_JOBS
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        jobs.append(_job(gate, "failure"))
+        code, report = evaluate(jobs)
+        assert code == EXIT_FAILURE
+        assert gate in report
+        # A skip must fail closed — the job is unconditional in ci.yml.
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        jobs.append(_job(gate, "skipped"))
+        code, _ = evaluate(jobs)
+        assert code == EXIT_FAILURE
+        # Absent entirely → PENDING (completeness anchor), never a vacuous green.
+        jobs = [j for j in _all_good() if j["name"] != gate]
+        code, _ = evaluate(jobs)
+        assert code == EXIT_PENDING
+
     def test_neutral_conclusion_is_fail_closed(self) -> None:
         jobs = _all_good() + [_job("Some New Job", "neutral")]
         code, _ = evaluate(jobs)
@@ -337,6 +371,7 @@ class TestCiSummaryGateCli:
         payload: object,
         *extra: str,
         external_runs: list[dict] | None = None,
+        event_name: str = "pull_request",
     ) -> subprocess.CompletedProcess[str]:
         # Default to both L4 EXPECTED_EXTERNAL_CONTEXTS green so existing
         # jobs-only scenarios keep their original SUCCESS/FAILURE/PENDING
@@ -360,6 +395,8 @@ class TestCiSummaryGateCli:
                     "-",
                     "--external-check-runs-file",
                     str(tmp_path),
+                    "--event-name",
+                    event_name,
                     *extra,
                 ],
                 input=json.dumps(payload),
@@ -409,6 +446,26 @@ class TestCiSummaryGateCli:
         result = self._run(_all_good(), external_runs=bad)
         assert result.returncode == EXIT_FAILURE, result.stdout + result.stderr
 
+    def test_cli_push_requires_only_producers_that_fire_on_push(self) -> None:
+        push_contexts = EXTERNAL_CONTEXTS_BY_EVENT["push"]
+        result = self._run(
+            _all_good(),
+            event_name="push",
+            external_runs=[_check_run(name, "success") for name in push_contexts],
+        )
+        assert result.returncode == EXIT_SUCCESS, result.stdout + result.stderr
+        assert "L4 event/context contract: push:" in result.stdout
+
+    def test_cli_pull_request_requires_advisory_context(self) -> None:
+        result = self._run(
+            _all_good(),
+            external_runs=[
+                _check_run(name, "success")
+                for name in EXTERNAL_CONTEXTS_BY_EVENT["push"]
+            ],
+        )
+        assert result.returncode == EXIT_PENDING, result.stdout + result.stderr
+
     def test_cli_external_check_runs_empty_is_pending(self) -> None:
         result = self._run(_all_good(), external_runs=[])
         assert result.returncode == EXIT_PENDING, result.stdout + result.stderr
@@ -421,7 +478,14 @@ class TestCiSummaryGateCli:
         # SUCCESS -- this is the CLI-level guard against the wiring silently
         # regressing back to "L4 never actually enforced."
         result = subprocess.run(
-            [sys.executable, "scripts/ci/ci_summary_gate.py", "--jobs-file", "-"],
+            [
+                sys.executable,
+                "scripts/ci/ci_summary_gate.py",
+                "--jobs-file",
+                "-",
+                "--event-name",
+                "pull_request",
+            ],
             input=json.dumps(_all_good()),
             capture_output=True,
             text=True,
@@ -429,6 +493,77 @@ class TestCiSummaryGateCli:
             check=False,
         )
         assert result.returncode == EXIT_PENDING, result.stdout + result.stderr
+
+    def test_cli_event_name_is_required_and_unknown_events_fail_closed(self) -> None:
+        missing = subprocess.run(
+            [sys.executable, "scripts/ci/ci_summary_gate.py", "--jobs-file", "-"],
+            input=json.dumps(_all_good()),
+            capture_output=True,
+            text=True,
+            cwd=REPO_ROOT,
+            check=False,
+        )
+        unknown = self._run(_all_good(), event_name="repository_dispatch")
+        assert missing.returncode == 2
+        assert unknown.returncode == 2
+
+
+class TestExternalContextEventContracts:
+    """L4 contexts apply only to the CI events their producers emit."""
+
+    @pytest.mark.parametrize(
+        ("event_name", "expected"),
+        [
+            ("pull_request", EXPECTED_EXTERNAL_CONTEXTS),
+            ("push", EXPECTED_EXTERNAL_CONTEXTS[:2]),
+            ("workflow_dispatch", EXPECTED_EXTERNAL_CONTEXTS[:2]),
+            ("merge_group", ()),
+            ("schedule", ()),
+        ],
+    )
+    def test_event_contracts_are_explicit(
+        self, event_name: str, expected: tuple[str, ...]
+    ) -> None:
+        assert external_contexts_for_event(event_name) == expected
+
+    def test_unknown_event_fails_closed(self) -> None:
+        with pytest.raises(ValueError, match="unsupported CI event"):
+            external_contexts_for_event("repository_dispatch")
+
+    def test_event_map_matches_live_producer_triggers(self) -> None:
+        """An L4 entry applies exactly where its producer can emit it."""
+
+        actual: dict[str, tuple[str, ...]] = {}
+        for event_name in EXTERNAL_CONTEXTS_BY_EVENT:
+            emitted = []
+            for context, filename in EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS.items():
+                document = yaml.safe_load((WORKFLOWS_DIR / filename).read_text())
+                if event_name in _on_block(document):
+                    emitted.append(context)
+            actual[event_name] = tuple(emitted)
+        assert actual == EXTERNAL_CONTEXTS_BY_EVENT
+
+    def test_l4_producers_retrigger_when_ci_summary_retriggers_on_pr_edit(self) -> None:
+        """A body evidence update must replace a stale L4 preflight verdict."""
+
+        ci_document = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
+        ci_pull_request = _on_block(ci_document)["pull_request"]
+        assert isinstance(ci_pull_request, dict)
+        assert "edited" in ci_pull_request["types"]
+
+        expected_default_activities = {"opened", "synchronize", "reopened", "edited"}
+        for context in (
+            "DB ownership CI twin (B1)",
+            "LLM refs drift check (OMN-11932)",
+        ):
+            document = yaml.safe_load(
+                (
+                    WORKFLOWS_DIR / EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS[context]
+                ).read_text(encoding="utf-8")
+            )
+            pull_request = _on_block(document)["pull_request"]
+            assert isinstance(pull_request, dict)
+            assert expected_default_activities <= set(pull_request["types"])
 
 
 class TestExpectedExternalContexts:
@@ -447,10 +582,17 @@ class TestExpectedExternalContexts:
         assert missing == []
 
     def test_absent_context_is_missing_not_failure(self) -> None:
-        runs = [_check_run(EXPECTED_EXTERNAL_CONTEXTS[0], "success")]
+        # Every context but one reports green; the one left out must come back
+        # PENDING, never a pass. Written over the whole tuple rather than over
+        # two hardcoded indices so that registering a new L4 context does not
+        # turn this pin red for a reason that has nothing to do with it.
+        absent = EXPECTED_EXTERNAL_CONTEXTS[1]
+        runs = [
+            _check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS if n != absent
+        ]
         failures, missing = evaluate_external(runs)
         assert failures == []
-        assert missing == [EXPECTED_EXTERNAL_CONTEXTS[1]]
+        assert missing == [absent]
 
     def test_failed_context_is_a_failure(self) -> None:
         runs = [_check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS]
@@ -489,7 +631,11 @@ class TestExpectedExternalContexts:
         runs = [
             _check_run(name, "failure", started_at="2026-01-01T00:00:00Z"),
             _check_run(name, "success", started_at="2026-01-01T01:00:00Z"),
-            _check_run(EXPECTED_EXTERNAL_CONTEXTS[1], "success"),
+            *(
+                _check_run(n, "success")
+                for n in EXPECTED_EXTERNAL_CONTEXTS
+                if n != name
+            ),
         ]
         failures, missing = evaluate_external(runs)
         assert failures == []
@@ -555,25 +701,21 @@ class TestContractComplianceFailClosed:
         for event in ("pull_request", "merge_group", "push"):
             assert f"github.event_name == '{event}'" in condition, condition
 
-    def test_pr_resolution_is_delegated_to_the_fail_closed_evidence_resolver(
-        self,
-    ) -> None:
-        """The resolver owns push/merge-group PR admission after OMN-18157."""
-        workflow = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
-        steps = workflow["jobs"]["contract-compliance"]["steps"]
-        resolver = next(
-            step
-            for step in steps
-            if step.get("id") == "resolve_contract_compliance_evidence"
-        )
-        assert "resolve_contract_compliance_evidence.py" in resolver["run"]
-        assert '--event-name "${{ github.event_name }}"' in resolver["run"]
-        assert '--commit-sha "${{ github.sha }}"' in resolver["run"]
-        resolver_source = (
-            REPO_ROOT / "scripts/ci/resolve_contract_compliance_evidence.py"
-        ).read_text(encoding="utf-8")
-        assert "No PR number could be resolved" in resolver_source
-        assert "return 1" in resolver_source
+    def test_empty_pr_number_branch_fails_closed_not_open(self) -> None:
+        text = CI_YML.read_text(encoding="utf-8")
+        marker = 'if [ -z "${PR_NUMBER:-}" ]; then'
+        idx = text.index(marker)
+        # OMN-16346: bound the branch by its own terminator only. This used to
+        # slice a fixed `text[idx : idx + 400]` window first, which silently
+        # made the pin depend on how many COMMENT characters happen to sit
+        # between the `if` and the `exit 1` -- adding an explanatory comment
+        # inside the branch pushed `exit 1` past offset 400 and failed this
+        # test while the fail-closed property it guards was fully intact. The
+        # `\n          fi` split already bounds the branch exactly, so the
+        # character cap was never load-bearing, only brittle.
+        branch = text[idx:].split("\n          fi", 1)[0]
+        assert "exit 1" in branch, branch
+        assert "exit 0" not in branch, branch
 
 
 class TestContractComplianceNameDistinction:
@@ -610,7 +752,14 @@ class TestContractComplianceNameDistinction:
 _OCC_PREFLIGHT_CONTEXT = "occ-preflight / eligibility"
 
 EXTERNAL_CONTEXT_FILES: frozenset[str] = frozenset(
-    {"check-db-ownership.yml", "check-llm-refs-drift.yml"}
+    {
+        "check-db-ownership.yml",
+        "check-llm-refs-drift.yml",
+        # OMN-18796: the advisory-job gate's caller. Its job resolves to the L4
+        # context "advisory-job-gate / advisory-job-gate", so it is classified
+        # by EXPECTED_EXTERNAL_CONTEXTS and not by a direct-required row.
+        "advisory-job-gate.yml",
+    }
 )
 
 # (file, job_key) -> literal required-status-check context name(s) that job
@@ -703,6 +852,33 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "triggers only on pull_request closed -- post-merge TODO/ticket "
         "audit, structurally cannot be a merge gate (same class as "
         "auto-tag-on-merge)."
+    ),
+    ("call-occ-autobind.yml", "occ-autobind"): (
+        "thin uses: caller of omniclaude's call-occ-autobind-reusable.yml "
+        "(OMN-14160 fan-out) -- it PUBLISHES a Kafka command for the .201 "
+        "dev-lane effects runtime to consume out of band and validates no PR "
+        "content, so it cannot gate a merge and must not be treated as though "
+        "it does. Deliberately absent from .github/required-checks.yaml and "
+        "NOT added to EXPECTED_EXTERNAL_CONTEXTS: asserting it there would "
+        "make this poller treat a publisher as de facto required, and a "
+        "transient broker outage would then block every merge in the "
+        "repository. Self-declared non-required by the "
+        "pull-request-workflow-budget.yaml waiver on this same workflow file, "
+        "the same classification the kb-doc-gate.yml caller carries below. "
+        "Being non-required is also precisely why this job may carry a "
+        "job-level `if:` where the sibling occ-companion-effect caller may "
+        "not (OMN-15120/OMN-14864: a skipped `uses:` job produces no check "
+        "run at all)."
+    ),
+    ("call-occ-autobind.yml", "occ-autobind-manual-replay"): (
+        "OMN-14993 manual replay entrypoint, gated to `github.event_name == "
+        "'workflow_dispatch'` -- it is skipped on every pull_request event and "
+        "is reachable only by an operator dispatching it by hand for a named "
+        "PR. Structurally cannot gate a merge, the same class as the "
+        "closed-PR-only jobs in auto-tag-on-merge.yml and "
+        "todo-audit-on-merge.yml above. It is enumerated here rather than "
+        "omitted because this audit walks every job in a PR-triggered "
+        "workflow file, not only the ones a pull_request event can start."
     ),
     ("kb-doc-gate.yml", "kb-doc-gate"): (
         "thin uses: caller of omniclaude's kb-doc-gate-reusable.yml (OMN-16589 "

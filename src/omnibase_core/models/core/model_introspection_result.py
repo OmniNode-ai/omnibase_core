@@ -24,4 +24,4 @@ class ModelIntrospectionResult(BaseModel):
     )
 
 
-ModelIntrospectionResult.model_rebuild()
+ModelIntrospectionResult.model_rebuild(raise_errors=False)

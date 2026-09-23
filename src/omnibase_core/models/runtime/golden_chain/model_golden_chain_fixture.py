@@ -17,6 +17,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.routing.model_served_model_name import ModelServedModelName
+
 
 class ModelGoldenChainProvenance(BaseModel):
     """Full provenance bundle stamped on every recorded golden-chain fixture.
@@ -33,10 +35,8 @@ class ModelGoldenChainProvenance(BaseModel):
         min_length=1,
         description="Provider the response was recorded from (e.g. zai, gemini, openrouter).",
     )
-    # string-id-ok: concrete provider model identifier, not a UUID
-    model_id: str = Field(
+    model_id: ModelServedModelName = Field(
         ...,
-        min_length=1,
         description="CONCRETE resolved model id (never a delegation tier name).",
     )
     endpoint_ref: str = Field(
@@ -81,7 +81,6 @@ class ModelGoldenChainProvenance(BaseModel):
         min_length=1,
         description="UTC ISO-8601 timestamp the fixture was recorded.",
     )
-    # string-version-ok: serialized fixture-envelope wire field
     fixture_version: str = Field(
         ..., min_length=1, description="Schema version of the fixture envelope."
     )
@@ -97,7 +96,7 @@ class ModelGoldenChainFixture(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    fixture_version: str = Field(  # string-version-ok: serialized fixture-envelope wire field
+    fixture_version: str = Field(
         ...,
         min_length=1,
         description="Schema version of the fixture envelope (mirrors provenance.fixture_version).",

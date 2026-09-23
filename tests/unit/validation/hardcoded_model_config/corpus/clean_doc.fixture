@@ -1,0 +1,3 @@
+# Guide
+
+Point `base_url` at http://192.168.86.201:8000/v1/models and pick qwen3-coder.

@@ -37,10 +37,29 @@ jobs:
       github.event_name == 'workflow_dispatch'
       || github.event.workflow_run.event == 'pull_request'
     steps:
+      # OMN-18273: this job used to clone and push the metrics branch with the
+      # default workflow token, committing as an invented harvester identity that
+      # resolves to no GitHub account. Mint the onexbot-occ-writer installation
+      # token instead. No `|| secrets.GITHUB_TOKEN` fallback: a fallback silently
+      # restores the mis-attributed push while the job still reports success.
+      - name: Mint onexbot-occ-writer app token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          repositories: omnibase_core
+          permission-contents: write
+
       - name: Checkout product branch (for the append script)
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
+          # The metrics branch is cloned below through an explicit credentialed
+          # URL. A persisted basic-auth header here would override that URL's
+          # credential and push as the workflow token instead.
+          persist-credentials: false
 
       - name: Download shadow record(s) from the triggering run
         if: github.event_name == 'workflow_run'
@@ -54,7 +73,8 @@ jobs:
 
       - name: Append records to ci-shadow-metrics NDJSON
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
           NDJSON_PATH: shadow_metrics.ndjson
         run: |
           set -euo pipefail
@@ -70,7 +90,7 @@ jobs:
           APPEND_SCRIPT="$PWD/scripts/ci/shadow_metrics_append.py"
           RECORDS_DIR="$PWD/records"
 
-          AUTH="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          AUTH="https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           if git ls-remote --exit-code --heads "$AUTH" ci-shadow-metrics >/dev/null 2>&1; then
             git clone --branch ci-shadow-metrics --single-branch "$AUTH" _metrics
           else
@@ -88,12 +108,14 @@ jobs:
             --ndjson "$PWD/_metrics/${NDJSON_PATH}"
 
           cd _metrics
-          git config user.name "onex-shadow-harvester[bot]"
-          git config user.email "shadow-harvester@omninode.ai"
+          git config user.name "onexbot-occ-writer[bot]"
+          git config user.email "307849072+onexbot-occ-writer[bot]@users.noreply.github.com"
           git add "${NDJSON_PATH}" README.md
           if git diff --cached --quiet; then
             echo "No new records to commit."
             exit 0
           fi
-          git commit -m "chore(OMN-14342): harvest shadow test-selection record(s)"
+          git commit -m "chore(OMN-14342): harvest shadow test-selection record(s)" \
+            --trailer "Onex-Workflow: ${GITHUB_WORKFLOW}" \
+            --trailer "Onex-Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           git push "$AUTH" ci-shadow-metrics

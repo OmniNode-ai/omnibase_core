@@ -18,6 +18,9 @@ Coverage:
 
 from __future__ import annotations
 
+import ast
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -359,6 +362,121 @@ def another_bad_version():
 class TestPythonASTValidator:
     """Test suite for PythonASTValidator AST parsing logic."""
 
+    def test_allows_only_named_semantic_string_references(self) -> None:
+        """Semantic domain references remain scalar without broad ID exemptions."""
+
+        valid = PythonASTValidator(
+            "src/omnibase_core/models/dashboard/model_renderer_theme_contract.py"
+        )
+        valid.visit(
+            ast.parse(
+                """
+class ModelRendererThemeContract:
+    theme_id: str
+"""
+            )
+        )
+        assert valid.violations == []
+
+        invalid = PythonASTValidator("src/other/model_renderer_theme_contract.py")
+        invalid.visit(
+            ast.parse(
+                """
+class ModelUnrelated:
+    theme_id: str
+"""
+            )
+        )
+        assert len(invalid.violations) == 1
+        assert invalid.violations[0].field_name == "theme_id"
+
+        pricing_snapshot = PythonASTValidator(
+            "src/omnibase_core/models/validation/model_llm_reference_codegen_inputs.py"
+        )
+        pricing_snapshot.visit(
+            ast.parse(
+                """
+class ModelLlmReferenceCodegenInputs:
+    pricing_manifest_version: str
+"""
+            )
+        )
+        assert pricing_snapshot.violations == []
+
+        same_named_model_elsewhere = PythonASTValidator(
+            "src/other/model_llm_reference_codegen_inputs.py"
+        )
+        same_named_model_elsewhere.visit(
+            ast.parse(
+                """
+class ModelLlmReferenceCodegenInputs:
+    pricing_manifest_version: str
+"""
+            )
+        )
+        assert len(same_named_model_elsewhere.violations) == 1
+        assert same_named_model_elsewhere.violations[0].field_name == (
+            "pricing_manifest_version"
+        )
+
+        uuid_entity = PythonASTValidator("/fake/path.py")
+        uuid_entity.visit(
+            ast.parse(
+                """
+class ModelUnrelatedEntity:
+    record_id: str
+"""
+            )
+        )
+        assert len(uuid_entity.violations) == 1
+        assert uuid_entity.violations[0].field_name == "record_id"
+
+    def test_cli_validator_binds_semantic_reference_to_its_source_path(
+        self, tmp_path: Path
+    ) -> None:
+        """The checked-in CLI rejects a same-named model outside its canonical path."""
+        script = (
+            Path(__file__).parents[3]
+            / "scripts"
+            / "validation"
+            / "validate-string-versions.py"
+        )
+        source = """
+class ModelRendererThemeContract:
+    theme_id: str
+"""
+        allowed = (
+            tmp_path
+            / "src"
+            / "omnibase_core"
+            / "models"
+            / "dashboard"
+            / "model_renderer_theme_contract.py"
+        )
+        allowed.parent.mkdir(parents=True)
+        allowed.write_text(source)
+        assert (
+            subprocess.run(
+                [sys.executable, str(script), str(allowed)],
+                check=False,
+                capture_output=True,
+                text=True,
+            ).returncode
+            == 0
+        )
+
+        rejected = tmp_path / "src" / "other" / "model_renderer_theme_contract.py"
+        rejected.parent.mkdir(parents=True)
+        rejected.write_text(source)
+        result = subprocess.run(
+            [sys.executable, str(script), str(rejected)],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 1
+        assert "theme_id" in result.stdout
+
     def test_semantic_version_detection_logic(self) -> None:
         """
         Test the semantic version string detection helper.
@@ -390,7 +508,6 @@ class TestPythonASTValidator:
         The validator needs to identify method calls like ModelSemVer.parse()
         to detect violations.
         """
-        import ast
 
         validator = PythonASTValidator("/fake/path.py")
 

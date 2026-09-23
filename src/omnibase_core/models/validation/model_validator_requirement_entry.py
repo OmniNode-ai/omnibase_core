@@ -83,11 +83,13 @@ class ModelValidatorRequirementEntry(BaseModel):
             "evidence that this validator runs in CI."
         ),
     )
-    excludes: ModelValidatorRequirementExcludes = Field(
+    excludes: ModelValidatorRequirementExcludes | None = Field(
+        default=None,
         description=(
             "Allow/forbid path-regex buckets constraining where the "
-            "validator is permitted to skip."
-        )
+            "validator is permitted to skip. Omit this field when no path "
+            "exclusion is allowed."
+        ),
     )
     applies_to_repos: list[str] | str = Field(
         description=(

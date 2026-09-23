@@ -1,0 +1,269 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# call-occ-autobind.yml
+#
+# Per-repo OCC-autobind trigger for omnibase_core (OMN-14160, the fan-out
+# destination this ticket names FIRST and never reached). Thin caller — all
+# publish logic lives in the omniclaude reusable, which in turn runs
+# omnimarket's canonical publisher; this file only wires the trigger and picks
+# the lane. Ported from the omnibase_infra shape (OMN-14811 canary, OMN-14993
+# manual replay), NOT the omninode_infra shape, which carries no manual-replay
+# entrypoint (OMN-18495).
+#
+# WHY THIS ARRIVES FOURTEEN MONTHS LATE, AND WHY THE EARLIER "NO" NO LONGER
+# HOLDS. omnibase_core's `call-occ-companion-effect.yml` header carried, from
+# 2026-07-23, a paragraph stating that this repo "gets only the current
+# canonical born path, not the path being retired" — citing OMN-14941's line
+# that the companion-effect path "supersedes resurrecting the legacy
+# occ-autobind path for infra/core". So the exclusion WAS deliberate, and that
+# is the answer OMN-14160 asks to be recorded either way.
+#
+# Its premise lapsed the following day and nobody revisited it. On 2026-07-24
+# the OMN-14160 fan-out wired this exact caller into FIVE repositories that
+# already carried the companion-effect caller — omniclaude, omnimemory,
+# omninode_infra, omnibase_spi, omnidash — and omnibase_spi's was added under
+# OMN-15012 explicitly as "OCC autobind + companion-effect callers", both, on
+# purpose. A path fanned out to five more repositories the day after it was
+# called retired is not being retired. omnibase_core became the sole holdout
+# by omission, not by a second decision.
+#
+# THE TWO PATHS ARE NOT SUBSTITUTES, which is what made the holdout cost real.
+# The companion-effect path mints an OCC companion; the autobind path is what
+# binds the evidence-source trailer onto the product PR body. Over the last
+# 200 change-control PRs the two flavours resolve to different repo sets, and
+# omnibase_core's counts are the discriminator: 5 companion-effect mints (so
+# the minter can see this repo, and reaches it) against 0 autobind mints (so
+# the zero is this missing caller, not an unreachable minter). That pairing is
+# the positive control the zero needed — see OMN-14160.
+#
+# ADDITIVE / REJECTS NOTHING: this workflow is NOT a required status check and
+# is deliberately absent from `.github/required-checks.yaml`. It publishes a
+# command; it never fails a PR's merge. A fail-loud exit 1 on the trusted
+# runner (missing/mismatched dev broker) is a non-blocking red signal, not a
+# merge gate. Contrast the sibling companion-effect caller, whose composed
+# context IS required here — that is why the sibling carries no job-level `if:`
+# (a skipped `uses:` job produces zero check runs, OMN-15120/OMN-14864) while
+# this one safely can.
+#
+# TRIGGER COVERAGE (OMN-14987), applied here from the start rather than patched
+# in after observing the gap the way omnibase_infra had to: opened/synchronize
+# alone miss two born-path holes. (1) draft->ready_for_review WITHOUT an
+# intervening push never re-fires either event — GitHub emits a distinct
+# ready_for_review event that an opened/synchronize-only trigger does not listen
+# for, so a PR opened as draft and later marked ready is permanently stranded
+# unbound (live case: omnibase_infra#2407). (2) closed-then-reopened has the
+# same hole via the reopened event. Both are listed below. The F-17
+# draft-suppression guard is NOT a trigger-level gate — it lives downstream in
+# node_occ_companion_compute (handler_occ_companion_compute.py), which checks
+# live pr_is_draft state at compute time, so listening for ready_for_review here
+# cannot cause a mint while the PR is still a draft; it only unblocks the mint
+# for the transition OUT of draft.
+#
+# BRANCH FILTER (OMN-14987, the #2377 stacked-PR vector): NO trigger-level
+# branch filter, deliberately. A `branches: [main, dev, "hotfix/**"]` filter
+# means a PR whose BASE is a feature branch never instantiates this workflow at
+# all — the born path silently never runs, and if the base later retargets dev
+# the opened/synchronize events have already passed. This matches
+# call-occ-companion-effect.yml's already-deliberate no-filter design in this
+# repo. Every pull_request fires here; the reusable's own bot/OMN-ticket gate
+# (plus this caller's copy of it) filters what should not publish. Any future
+# base-branch filtering must be IN-JOB with a logged skip, never at the trigger.
+#
+# LANE / SECRETS (OMN-14801 / OMN-14800; corrected by OMN-14813 + OMN-18012):
+# lane=dev is resolved against omnimarket's config/ci_bus_lanes.yaml overlay at
+# the ref the reusable sources (contract-owned, authoritative).
+#   * The broker is NOT `from-secret`. Since OMN-14813 the dev lane declares a
+#     CONCRETE broker in the committed overlay and the publisher uses it
+#     directly, so this repo needs no `KAFKA_BOOTSTRAP_SERVERS` secret — and
+#     has none. An opaque broker value is the OMN-14800 silent-repoint surface
+#     and must never become a secret.
+#   * The lane is authenticated, not plaintext. OMN-18012 Phase B enabled
+#     SASL/SCRAM-SHA-256 on the dev-lane listener at ~16:40Z on 2026-09-07; the
+#     overlay declares `security_protocol: SASL_PLAINTEXT` /
+#     `sasl_mechanism: SCRAM-SHA-256` and the publisher reads the protocol from
+#     there rather than inferring TLS from credential presence. What this caller
+#     must supply is `secrets: inherit` (present below) so KAFKA_SASL_USERNAME /
+#     KAFKA_SASL_PASSWORD reach the publish step. Both are organisation secrets,
+#     verified present 2026-09-19 by name (never by value).
+# See the reusable header for the full broker decision.
+#
+# MANUAL REPLAY ENTRYPOINT (OMN-14993): `workflow_dispatch` lets an operator
+# manually re-request a mint for a PR whose original `pull_request` event was
+# swallowed (e.g. the pre-fix 422 bug, OMN-14981/OMN-14939). This ONLY works for
+# a PR that is currently OPEN and non-draft — the downstream F-17 guard in
+# omnimarket's handler_occ_companion_compute.py deliberately refuses to author a
+# companion for a closed/merged/draft PR (added after incident occ#4333), so
+# `scripts/ci/occ_manual_replay_precheck.py` refuses BEFORE publish for those
+# states rather than let the request silently vanish downstream. Merged/closed-PR
+# replay is explicitly OUT OF SCOPE — see OMN-14993 and OMN-14991
+# Recommendation 4 for why building that is a separate, deliberate design
+# decision, not a trigger-wiring change. The `occ-autobind-manual-replay` job
+# below deliberately duplicates the reusable's checkout/pip/run GHA glue (not the
+# publish LOGIC itself, which stays sourced from omnimarket) rather than
+# threading override inputs through the shared cross-repo reusable used by every
+# born-path caller.
+#
+# THE PRECHECK SCRIPT SHIPS WITH THE JOB, and the variant matters. Three
+# repositories shipped this manual-replay job while the script it runs was absent
+# from their tree, and the entrypoint died with `Errno 2` before reaching the
+# publisher (OMN-15231 omnimemory, OMN-15333 onex_change_control, OMN-15393
+# omniclaude). `scripts/ci/occ_manual_replay_precheck.py` is added in the same
+# change as this file, and `tests/ci/test_occ_manual_replay_entrypoint.py`
+# asserts structurally that the trigger and the precheck cannot drift apart
+# again. The copy taken is the OMN-16697 STRICT variant carried by omniclaude,
+# omnibase_spi and omnidash — not the older omnibase_infra copy, which coerces a
+# missing `state` to OPEN and a missing `isDraft` to False and so fails OPEN on a
+# malformed payload. The strict variant raises a typed input error and exits 2,
+# "cannot decide", which is the correct verdict for an unusable payload.
+#
+# Ticket: OMN-14160 (OMN-14811 / OMN-14987 / OMN-14993 / OMN-15012 lineage)
+
+name: OCC Autobind Publisher
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: >
+          PR number to manually re-request an occ-autobind mint for
+          (OMN-14993). Only works for a PR that is currently OPEN and
+          non-draft -- a closed/merged/draft PR is refused before publish
+          (see scripts/ci/occ_manual_replay_precheck.py); it is not silently
+          accepted and dropped downstream.
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || inputs.pr_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  occ-autobind:
+    # Byte-consistent with every sibling caller on the fleet: dependency bots
+    # never carry an OMN ticket and must not publish a mint request, and a PR
+    # with no ticket token in either its title or its head ref has nothing for
+    # the companion to cite. The reusable carries its own copy of this gate;
+    # this caller-level copy is the cheap one, and it is safe here precisely
+    # because this context is not required (see the ADDITIVE note above).
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'renovate[bot]' &&
+      (contains(github.event.pull_request.title, 'OMN-') ||
+       contains(github.event.pull_request.head.ref, 'OMN-'))
+    # PIN CHOICE (OMN-14941 F1 / the E1 failure class): `@dev` is the ref every
+    # sibling caller on the fleet pins, and the ref this repo's own
+    # call-occ-companion-effect.yml pins. `@main` was a live 404 when the
+    # original omnibase_infra caller shipped, and every invocation failed at
+    # workflow parse time ("workflow was not found") with the publisher never
+    # running. As of 2026-09-19 the reusable DOES also resolve on omniclaude
+    # main, so the OMN-14812 re-pin is now unblocked — but that is a fleet-wide
+    # pin-policy change affecting seven callers and is deliberately NOT made
+    # inside a fan-out PR. Re-pin all of them together under OMN-14812.
+    # tests/ci/test_workflow_uses_refs_resolve.py pins this expectation, and its
+    # live sibling in tests/integration/ci/ fails closed on any cross-repo
+    # `uses:` ref that stops resolving.
+    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-autobind-reusable.yml@dev
+    # pragma: allowlist secret -- `secrets: inherit` is a GHA syntax keyword,
+    # not a literal secret; the repo secret scanner's Secret Keyword heuristic
+    # false-positives on the word "secrets:" here.
+    secrets: inherit  # pragma: allowlist secret
+    with:
+      lane: dev
+
+  occ-autobind-manual-replay:
+    # OMN-14993: manual re-publish entrypoint, gated to the workflow_dispatch
+    # trigger only. See the header comment above -- open/non-draft PRs only.
+    if: github.event_name == 'workflow_dispatch'
+    # RUNNER CARVE-OUT (OMN-16691, OMN-16682 constraint 8) -- this replay job
+    # publishes to the same TAILNET-ONLY dev-lane broker as the reusable it
+    # mirrors, so it is pinned to the fleet via the DEDICATED
+    # `OMNI_OCC_AUTOBIND_RUNS_ON_JSON` knob, not the shared
+    # `OMNI_TRUSTED_CI_RUNS_ON_JSON` seam. It hardcodes RUNNER_IS_TRUSTED=true
+    # below, so on a hosted runner it would fail loud on an unreachable broker --
+    # i.e. the recovery path for an autobind outage would itself be dead exactly
+    # when it is needed. The knob is left UNSET org-wide and in every repo
+    # (verified 2026-09-19); the literal below is the operating value, and that
+    # unset state is the intended one, not drift.
+    runs-on: ${{ fromJSON(vars.OMNI_OCC_AUTOBIND_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]') }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      PR_NUMBER: ${{ inputs.pr_number }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch live PR state
+        id: pr
+        run: |
+          gh pr view "${PR_NUMBER}" --repo "${{ github.repository }}" \
+            --json number,state,isDraft,headRefOid,headRefName,title \
+            > pr_state.json
+          cat pr_state.json
+
+      - name: Precheck -- refuse closed/merged/draft (F-17 boundary, OMN-14993)
+        run: python3 scripts/ci/occ_manual_replay_precheck.py pr_state.json
+
+      - name: Ticket gate (mirrors the reusable's defensive gate, OMN-13990 H4)
+        run: |
+          title="$(jq -r .title pr_state.json)"
+          head_ref="$(jq -r .headRefName pr_state.json)"
+          if [[ "${title}" != *"OMN-"* && "${head_ref}" != *"OMN-"* ]]; then
+            echo "REFUSED: PR #${PR_NUMBER} title/branch carries no OMN- ticket token; the reusable's defensive gate would also skip this PR." >&2
+            exit 1
+          fi
+
+      - name: Fetch canonical OCC-autobind publisher (omnimarket)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OmniNode-ai/omnimarket
+          ref: dev
+          path: .occ-autobind-src
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/publish_occ_autobind_command.py
+            config/ci_bus_lanes.yaml
+            src/omnimarket/events/topics.py
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        # The publisher's imports, read at omnimarket origin/dev on 2026-09-19:
+        # click, yaml, and confluent-kafka at publish time. The data-modeling
+        # package the omnibase_infra copy of this line installs is imported
+        # nowhere in that script -- a dead dependency carried by copy, dropped
+        # here rather than propagated. Widening this line means naming the
+        # import that needs it.
+        run: pip install --quiet confluent-kafka click pyyaml
+
+      - name: Publish onex.cmd.omnimarket.occ-autobind.v1 (manual replay)
+        env:
+          KAFKA_BOOTSTRAP_SERVERS: ${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          KAFKA_SASL_USERNAME: ${{ secrets.KAFKA_SASL_USERNAME }}
+          KAFKA_SASL_PASSWORD: ${{ secrets.KAFKA_SASL_PASSWORD }}
+          RUNNER_IS_TRUSTED: "true"
+          PR_REPO: ${{ github.repository }}
+          PR_TICKET: ""
+          LANE: dev
+        working-directory: .occ-autobind-src
+        run: |
+          PR_HEAD_SHA="$(jq -r .headRefOid ../pr_state.json)"
+          PR_TITLE="$(jq -r .title ../pr_state.json)"
+          export PR_HEAD_SHA PR_TITLE
+          python scripts/publish_occ_autobind_command.py --lane "${LANE}"

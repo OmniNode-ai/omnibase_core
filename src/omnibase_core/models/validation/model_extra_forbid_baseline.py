@@ -1,17 +1,17 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Typed frozen baseline for the Pydantic extra-forbid ratchet."""
+"""Frozen FQN set used by the extra-forbid ratchet."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictStr
 
 
 class ModelExtraForbidBaseline(BaseModel):
-    """Fail-closed schema for extra-forbid violation fingerprints."""
+    """Baseline document containing the exact historical model FQNs."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    violations: list[str] = Field(default_factory=list)
+    violations: tuple[StrictStr, ...] = Field(default_factory=tuple)
 
 
 __all__ = ["ModelExtraForbidBaseline"]

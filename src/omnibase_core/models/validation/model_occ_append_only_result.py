@@ -42,4 +42,6 @@ class ModelOccAppendOnlyResult(BaseModel):
         return json.dumps(self.as_dict(), sort_keys=True, separators=(",", ":"))
 
 
-__all__ = ["ModelOccAppendOnlyResult"]
+__all__ = [
+    "ModelOccAppendOnlyResult",
+]

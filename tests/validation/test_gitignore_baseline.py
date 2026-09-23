@@ -70,9 +70,11 @@ _PYTHON_LINES = [
     "__pycache__/",
     "*.py[cod]",
     "*$py.class",
-    ".venv/",
-    "venv/",
-    "env/",
+    # Root-anchored (OMN-14636): a bare `env/` matches a directory at any depth
+    # and drops a real src/<pkg>/env/ package from a git-stripped wheel build.
+    "/.venv/",
+    "/venv/",
+    "/env/",
     ".pytest_cache/",
     ".mypy_cache/",
     ".ruff_cache/",
@@ -97,7 +99,10 @@ _PUBLIC_REPO_HYGIENE_LINES = [
     ".repowise-workspace.yaml",
     ".evidence/",
     "docs/evidence/",
-    "merge-sweep/",
+    # Root-anchored (OMN-18364): a bare `merge-sweep/` matches a directory at
+    # any depth and dropped omnimarket's tracked, packaged
+    # src/omnimarket/adapters/codex/skills/merge-sweep/ out of its wheel.
+    "/merge-sweep/",
     "# === end onex-managed: public_repo_hygiene ===",
 ]
 _HYGIENE_BLOCK = "\n".join(_PUBLIC_REPO_HYGIENE_LINES)

@@ -136,6 +136,9 @@ from omnibase_core.models.dispatch.model_lifecycle_chain import (
     HEARTBEAT_REQUIRED_ENV_VAR,
     ModelLifecycleChain,
 )
+from omnibase_core.models.dispatch.model_message_delivery_context import (
+    ModelMessageDeliveryContext,
+)
 from omnibase_core.models.dispatch.model_model_call_record import ModelCallRecord
 from omnibase_core.models.dispatch.model_skill_result import (
     SKILL_RESULT_SCHEMA_VERSION,
@@ -203,6 +206,7 @@ __all__ = [
     "ModelHandlerOutput",
     "ModelHandlerRef",
     "ModelHandlerRegistration",
+    "ModelMessageDeliveryContext",
     "ModelParsedTopic",
     "ModelSkillResult",
     "ModelTopicParser",

@@ -51,12 +51,14 @@ from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
-from omnibase_core.runtime.dispatch_entry import DispatchEntry
-from omnibase_core.runtime.dispatch_match import DispatchMatch
-from omnibase_core.runtime.dispatch_state import DispatchState
-from omnibase_core.types.type_node_dispatch import (
-    DispatcherCallable,
+from omnibase_core.runtime.dispatch_entry import (
+    _DispatcherCallable,
+    _NodeDispatchEntry,
+)
+from omnibase_core.runtime.dispatch_match import _NodeDispatchMatch
+from omnibase_core.runtime.dispatch_state import (
     DlqTopicDeriver,
+    _NodeDispatchState,
 )
 
 if TYPE_CHECKING:
@@ -78,24 +80,24 @@ class MixinNodeDispatch:
 
     # Class-level annotation only (no assignment) so mypy sees the attribute while
     # the value is materialized lazily via ``_state``. Mirrors MixinHandlerRouting.
-    _node_dispatch_state: DispatchState
+    _node_dispatch_state: _NodeDispatchState
 
     def __init__(self, **kwargs: object) -> None:
         """Cooperative MRO init. State is created here for standalone use and is
         also (re)materialized lazily so node subclasses that skip kwargs are safe."""
         super().__init__(**kwargs)
-        self._node_dispatch_state = DispatchState()
+        self._node_dispatch_state = _NodeDispatchState()
 
     # -- internal state access ------------------------------------------------
 
-    def _state(self) -> DispatchState:
+    def _state(self) -> _NodeDispatchState:
         """Return the selection table, materializing it on first use.
 
         Lazy creation keeps the mixin inert when a node never registers routes and
         tolerates instantiation paths that bypass ``__init__`` (defensive)."""
         state = getattr(self, "_node_dispatch_state", None)
         if state is None:
-            state = DispatchState()
+            state = _NodeDispatchState()
             self._node_dispatch_state = state
         return state
 
@@ -139,7 +141,7 @@ class MixinNodeDispatch:
     def register_dispatcher(
         self,
         dispatcher_id: str,
-        dispatcher: DispatcherCallable,
+        dispatcher: _DispatcherCallable,
         category: EnumMessageCategory,
         message_types: set[str] | None = None,
         node_kind: EnumNodeKind | None = None,
@@ -177,7 +179,7 @@ class MixinNodeDispatch:
                 message=f"Dispatcher with ID '{dispatcher_id}' is already registered.",
                 error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
             )
-        entry = DispatchEntry(
+        entry = _NodeDispatchEntry(
             dispatcher_id=dispatcher_id,
             dispatcher=dispatcher,
             category=category,
@@ -214,7 +216,7 @@ class MixinNodeDispatch:
 
     @staticmethod
     def _validate_route_dispatcher_category(
-        route: ModelDispatchRoute, entry: DispatchEntry
+        route: ModelDispatchRoute, entry: _NodeDispatchEntry
     ) -> None:
         """Reject routes whose declared category disagrees with their dispatcher."""
         if route.message_category == entry.category:
@@ -235,7 +237,7 @@ class MixinNodeDispatch:
         category: EnumMessageCategory,
         message_type: str,
         payload: object | None,
-    ) -> list[DispatchMatch]:
+    ) -> list[_NodeDispatchMatch]:
         """Port of the engine's ``_find_matching_dispatchers`` (selection only).
 
         Iterates routes in registration (insertion) order — the fan-out order the
@@ -244,7 +246,7 @@ class MixinNodeDispatch:
         the dispatcher's own message-type filter admits ``message_type``, and, for
         type-scoped dispatchers, the payload matches the declared event_model.
         """
-        matching: list[DispatchMatch] = []
+        matching: list[_NodeDispatchMatch] = []
         seen: set[str] = set()
         state = self._state()
         for route in state.routes.values():
@@ -284,24 +286,24 @@ class MixinNodeDispatch:
                 and not self._payload_matches(entry, payload)
             ):
                 continue
-            matching.append(DispatchMatch(route.route_id, entry))
+            matching.append(_NodeDispatchMatch(route.route_id, entry))
             seen.add(dispatcher_id)
         return matching
 
     @staticmethod
-    def _payload_matches(entry: DispatchEntry, payload: object | None) -> bool:
+    def _payload_matches(entry: _NodeDispatchEntry, payload: object | None) -> bool:
         """True when ``payload`` matches a type-scoped dispatcher's event_model.
 
-        A raising matcher means "not my type" (never selected), mirroring the
-        engine — a malformed/wrong-type payload never selects a type-scoped
-        dispatcher. Callers only invoke this when a matcher is present.
+        A type validation error means "not my type" (never selected), mirroring
+        the engine. Unexpected matcher failures propagate to preserve the
+        dispatch registration fault rather than silently selecting no route.
         """
         matcher = entry.payload_type_matcher
         if matcher is None:
             return True
         try:
             return bool(matcher(payload))
-        except Exception:  # noqa: BLE001  # fallback-ok: a raising matcher means "not my type"
+        except (TypeError, ValueError):
             return False
 
     async def dispatch(
@@ -428,8 +430,12 @@ class MixinNodeDispatch:
             return None
         try:
             return deriver(event_type, topic)
-        except Exception:  # noqa: BLE001  # fallback-ok: optional DLQ derivation must not crash selection
-            return None
+        except Exception as error:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+                message="Injected DLQ topic deriver failed",
+                context={"event_type": event_type, "topic": topic},
+            ) from error
 
     @staticmethod
     def _extract_routing_inputs(envelope: object) -> tuple[object | None, object]:

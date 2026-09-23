@@ -48,10 +48,10 @@ from pathlib import Path
 from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
-from omnibase_core.models.utils.model_util_typed_yaml_document_loader import (
-    load_typed_yaml_document,
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.validation.diff_consistency_violation import (
+    DiffConsistencyViolation,
 )
-from omnibase_core.validation.diff_consistency_violation import DiffConsistencyViolation
 from omnibase_core.validation.receipt_diff_finding import ReceiptDiffFinding
 
 _RECEIPT_PREFIX = "drift/dod_receipts/"
@@ -248,8 +248,10 @@ def _load_receipt(receipt_path: Path) -> ModelDodReceipt | None:
     failures; this gate only speaks to attestation honesty.
     """
     try:
-        return load_typed_yaml_document(receipt_path, ModelDodReceipt)
-    except ModelOnexError:
+        return load_yaml_content_as_model(
+            receipt_path.read_text(encoding="utf-8"), ModelDodReceipt
+        )
+    except (ModelOnexError, OSError):
         return None
 
 
@@ -301,7 +303,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         git diff --name-status "origin/dev"...HEAD > /tmp/diff_name_status.txt
         python -m omnibase_core.validation.validator_receipt_diff_consistency \\
             --diff-file /tmp/diff_name_status.txt \\
-            drift/dod_receipts/OMN-12345/item/command.yaml ...
+        drift/dod_receipts/OMN-1234/item/command.yaml ...
 
     Exit codes:
         0 — no contradicted attestations

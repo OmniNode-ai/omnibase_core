@@ -1,0 +1,2 @@
+FREE_MODELS = ["deepseek-chat-v3", "llama-3.3-70b"]
+BASE_URL = "https://router.vendor.test/api/v1"

@@ -238,9 +238,11 @@ def convert_dict_to_typed_payload(
             context={"event_type": event_type},
         )
 
+    # Prepare the data for conversion
+    converted_data = _prepare_dict_for_conversion(data.copy(), payload_class)
+
+    # Attempt the conversion
     try:
-        # Prepare the data and attempt conversion under one validation boundary.
-        converted_data = _prepare_dict_for_conversion(data.copy(), payload_class)
         return payload_class.model_validate(converted_data)
     except PYDANTIC_MODEL_ERRORS as e:
         # Catch Pydantic validation errors, dict access errors, or type conversion issues
@@ -283,7 +285,11 @@ def _prepare_dict_for_conversion(
     for field in uuid_fields:
         field_value = data.get(field)
         if isinstance(field_value, str):
-            data[field] = UUID(field_value)
+            try:
+                data[field] = UUID(field_value)
+            except ValueError:
+                # Leave as-is; Pydantic will handle the validation error
+                pass
 
     # Convert string node_type to EnumNodeKind for ModelNodeRegisteredEvent
     # NOTE: Dict field access is intentional - this is a migration utility, not YAML parsing
@@ -294,8 +300,11 @@ def _prepare_dict_for_conversion(
         and isinstance(data.get(node_type_key), str)
     ):
         node_type_value = data.get(node_type_key)
-        assert isinstance(node_type_value, str)
-        data[node_type_key] = EnumNodeKind(node_type_value.lower())
+        node_kind = EnumNodeKind._value2member_map_.get(node_type_value)
+        if node_kind is None:
+            node_kind = EnumNodeKind.__members__.get(str(node_type_value).upper())
+        if node_kind is not None:
+            data[node_type_key] = node_kind
 
     return data
 

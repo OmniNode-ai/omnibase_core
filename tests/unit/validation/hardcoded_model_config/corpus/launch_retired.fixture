@@ -1,0 +1,2 @@
+[Service]
+ExecStart=/usr/bin/vllm serve /models/q --served-model-name qwen38-serve

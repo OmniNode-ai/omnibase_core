@@ -11,7 +11,7 @@ This validator looks for patterns that indicate incomplete implementations:
 - NotImplementedError being raised
 - Pass statements followed by return (common stub pattern)
 - Always-success returns without meaningful logic
-- unfinished-work marker comments in production code
+- TODO/FIXME comments in production code  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
 - Methods that only contain docstrings
 
 Excludes:
@@ -23,6 +23,13 @@ Excludes:
 import ast
 import sys
 from pathlib import Path
+
+_WORK_ITEM_MARKERS = (
+    "TODO",  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
+    "FIXME",  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
+    "XXX",
+    "HACK",  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
+)
 
 
 class StubbedFunctionalityChecker(ast.NodeVisitor):
@@ -150,18 +157,10 @@ class StubbedFunctionalityChecker(ast.NodeVisitor):
                     )
 
     def visit_Expr(self, node: ast.Expr) -> None:
-        """Check for unfinished-work markers in string literals."""
+        """Check for TODO/FIXME comments in string literals."""  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
         if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
             comment_text = node.value.value.upper()
-            if any(
-                marker in comment_text
-                for marker in [
-                    "TODO",  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
-                    "FIXME",  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
-                    "XXX",
-                    "HACK",  # onex-allow-todo-marker OMN-18142 reason="detector grammar"
-                ]
-            ):
+            if any(marker in comment_text for marker in _WORK_ITEM_MARKERS):
                 self.issues.append(
                     (
                         node.lineno,
@@ -282,9 +281,7 @@ class ONEXStubbedFunctionalityValidator:
             print("   Guidelines:")
             print("   • Replace NotImplementedError with actual implementation")
             print("   • Remove pass statements and add meaningful logic")
-            print(
-                "   • Replace TODO/FIXME comments with completed functionality"  # onex-allow-todo-marker OMN-18142 reason="CLI guidance"
-            )
+            print("   • Replace unfinished-work comments with completed functionality")
             print("   • Ensure functions perform their documented behavior")
         else:
             print(

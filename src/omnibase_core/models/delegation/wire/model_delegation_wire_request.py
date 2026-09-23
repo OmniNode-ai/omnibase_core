@@ -14,6 +14,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.delegation.wire.model_budget import ModelBudgetLimits
+from omnibase_core.models.delegation.wire.model_delegation_provenance import (
+    ModelDelegationProvenance,
+)
 
 EnumQualityContractMode = Literal["extend_task_class", "replace_task_class"]
 
@@ -159,6 +162,14 @@ class ModelDelegationRequest(BaseModel):
         default=None,
         description="File context for the delegation, if any.",
     )
+    provenance: ModelDelegationProvenance | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed ingress provenance carried unchanged into durable workflow state "
+            "and terminal evidence. None is explicit legacy/unclassified provenance."
+        ),
+    )
     context_pack: str = Field(
         default="",
         description=(
@@ -231,12 +242,30 @@ class ModelDelegationRequest(BaseModel):
             ),
         )
     )
+    no_escalation: bool = Field(
+        default=False,
+        exclude_if=lambda value: not value,
+        description=(
+            "Dogfood fault-route policy marker. Trusted consumer-side route "
+            "validation accepts true only for a declared pinned dogfood route; "
+            "ordinary requests remain false."
+        ),
+    )
     response_contract: dict[str, object] | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
         description=(
             "Optional caller-declared JSON Schema used by the quality gate. "
             "It is never sent to the inference provider."
+        ),
+    )
+    requested_timeout_seconds: int | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        ge=1,
+        description=(
+            "Requested handler execution timeout. The task-class ceiling decides "
+            "whether dispatch may proceed."
         ),
     )
     system_prompt: str | None = Field(

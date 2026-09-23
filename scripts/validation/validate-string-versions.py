@@ -31,7 +31,6 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 import yaml
-from pydantic import ValidationError
 
 
 class ValidationViolation(NamedTuple):
@@ -123,16 +122,7 @@ def should_exclude_file(file_path: Path, verbose: bool = False) -> bool:
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-# The canonical registry schema is independently available even when the
-# optional generic-YAML adapter is not installed in this checkout.
-try:
-    from omnibase_core.models.validation.model_antipattern_registry import (
-        ModelAntipatternRegistry,
-    )
-except ImportError:
-    ModelAntipatternRegistry = None
-
-# Try to import the optional generic-YAML adapter if available.
+# Try to import Pydantic models if available (may not exist in empty package structure)
 try:
     from omnibase_core.core.model_generic_yaml import ModelGenericYaml
 
@@ -149,6 +139,56 @@ except ImportError:
 class PythonASTValidator(ast.NodeVisitor):
     """AST visitor to validate ID and version field types in Python files."""
 
+    _SEMANTIC_STRING_FIELDS: frozenset[tuple[str, str, str]] = frozenset(
+        {
+            (
+                "src/omnibase_core/models/context/model_adr_summary.py",
+                "ModelADRSummary",
+                "adr_id",
+            ),
+            (
+                "src/omnibase_core/models/artifacts/model_artifact_metadata.py",
+                "ModelArtifactMetadata",
+                "writer_version",
+            ),
+            (
+                "src/omnibase_core/models/context/model_context_provenance.py",
+                "ModelContextProvenance",
+                "source_id",
+            ),
+            (
+                "src/omnibase_core/models/dispatch/model_dispatch_result.py",
+                "ModelDispatchResult",
+                "dispatcher_id",
+            ),
+            (
+                "src/omnibase_core/models/runtime/golden_chain/model_golden_chain_fixture.py",
+                "ModelGoldenChainFixture",
+                "fixture_version",
+            ),
+            (
+                "src/omnibase_core/models/runtime/golden_chain/model_golden_chain_fixture.py",
+                "ModelGoldenChainProvenance",
+                "fixture_version",
+            ),
+            (
+                "src/omnibase_core/models/validation/model_llm_reference_codegen_inputs.py",
+                "ModelLlmReferenceCodegenInputs",
+                "pricing_manifest_version",
+            ),
+            (
+                "src/omnibase_core/models/context/model_learning_match.py",
+                "ModelLearningMatch",
+                "learning_id",
+            ),
+            (
+                "src/omnibase_core/models/dashboard/model_renderer_theme_contract.py",
+                "ModelRendererThemeContract",
+                "theme_id",
+            ),
+        }
+    )
+
     def __init__(self, file_path: str, source_lines: list[str] | None = None):
         self.file_path = file_path
         self.violations: list[ValidationViolation] = []
@@ -156,6 +196,7 @@ class PythonASTValidator(ast.NodeVisitor):
         self.current_call_func = None  # Track current function being called
         # Store source lines for inline comment checking
         self.source_lines = source_lines or []
+        self.class_names: list[str] = []
 
         # Bypass comment patterns for inline exemptions
         self.id_bypass_patterns = [
@@ -321,6 +362,24 @@ class PythonASTValidator(ast.NodeVisitor):
             #      src/omnibase_core/models/runtime/model_liveness_receipt.py
             "surface_id",  # Stable liveness surface slug, e.g. "omnimarket.node_x" (not UUID)
         }
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        """Track the owning model for exact semantic-field classification."""
+        self.class_names.append(node.name)
+        self.generic_visit(node)
+        self.class_names.pop()
+
+    def _is_semantic_string_field(self, field_name: str) -> bool:
+        """Return whether this exact source model field is a scalar domain reference."""
+        if not self.class_names:
+            return False
+        source_path = self.file_path.replace("\\", "/")
+        return any(
+            source_path.endswith(path)
+            and self.class_names[-1] == class_name
+            and field_name == allowed_field
+            for path, class_name, allowed_field in self._SEMANTIC_STRING_FIELDS
+        )
 
     def visit_Import(self, node: ast.Import):
         """Track imports to understand what types are available."""
@@ -494,6 +553,8 @@ class PythonASTValidator(ast.NodeVisitor):
         # Skip exceptions
         if field_name in self.exceptions:
             return
+        if self._is_semantic_string_field(field_name):
+            return
 
         annotation_str = self._get_annotation_string(annotation)
 
@@ -628,27 +689,6 @@ class StringVersionValidator:
         self.errors: list[str] = []
         self.ast_violations: list[ValidationViolation] = []
         self.checked_files = 0
-
-    @staticmethod
-    def _is_canonical_antipattern_registry(yaml_path: Path, data: object) -> bool:
-        """Return whether the canonical registry owns its string schema version."""
-        repository_root = Path(__file__).resolve().parent.parent.parent
-        canonical_path = (
-            repository_root
-            / "src"
-            / "omnibase_core"
-            / "contracts"
-            / "antipattern_registry.yaml"
-        )
-        if yaml_path.resolve() != canonical_path.resolve():
-            return False
-        if not isinstance(data, dict) or ModelAntipatternRegistry is None:
-            return False
-        try:
-            ModelAntipatternRegistry.model_validate(data)
-        except ValidationError:
-            return False
-        return isinstance(data.get("version"), str)
 
     def validate_python_file(self, python_path: Path) -> bool:
         """Validate a Python file for hardcoded __version__ strings."""
@@ -901,7 +941,7 @@ class StringVersionValidator:
 
         # Basic YAML syntax validation
         try:
-            parsed_yaml = yaml.safe_load(content)
+            yaml.safe_load(content)
         except yaml.YAMLError as e:
             self.errors.append(f"{yaml_path}: Invalid YAML syntax - {e}")
             return False
@@ -923,16 +963,7 @@ class StringVersionValidator:
 
         # Use AST-based validation on the raw content (always runs)
         try:
-            registry_string_version = self._is_canonical_antipattern_registry(
-                yaml_path,
-                parsed_yaml,
-            )
-            self._validate_yaml_content_ast(
-                content,
-                yaml_path,
-                file_errors,
-                registry_string_version=registry_string_version,
-            )
+            self._validate_yaml_content_ast(content, yaml_path, file_errors)
         except Exception as e:
             self.errors.append(f"{yaml_path}: Error during AST validation - {e}")
             return False
@@ -940,11 +971,7 @@ class StringVersionValidator:
         # Also validate the parsed structure if we have it
         if yaml_data:
             try:
-                self._validate_parsed_yaml(
-                    yaml_data,
-                    file_errors,
-                    registry_string_version=registry_string_version,
-                )
+                self._validate_parsed_yaml(yaml_data, file_errors)
             except Exception as e:
                 self.errors.append(
                     f"{yaml_path}: Error during parsed YAML validation - {e}"
@@ -962,8 +989,6 @@ class StringVersionValidator:
         content: str,
         yaml_path: Path,
         errors: list[str],
-        *,
-        registry_string_version: bool,
     ) -> None:
         """Use AST-like parsing to detect string versions in YAML content."""
         lines = content.splitlines()
@@ -994,12 +1019,6 @@ class StringVersionValidator:
                         # Remove quotes and check if it's a version string
                         clean_value = value_part.strip().strip("\"'")
 
-                        if (
-                            registry_string_version
-                            and field_name == "version"
-                            and line == line.lstrip()
-                        ):
-                            continue
                         if self._is_semantic_version_ast(clean_value):
                             errors.append(
                                 f"Line {line_num}: Field '{field_name}' uses string version '{clean_value}' - "
@@ -1010,8 +1029,6 @@ class StringVersionValidator:
         self,
         yaml_data: dict[str, Any],
         errors: list[str],
-        *,
-        registry_string_version: bool,
     ) -> None:
         """Validate the parsed YAML structure for string versions."""
         version_fields = [
@@ -1026,31 +1043,20 @@ class StringVersionValidator:
         for field in version_fields:
             if field in yaml_data:
                 value = yaml_data[field]
-                if (
-                    isinstance(value, str)
-                    and self._is_semantic_version_ast(value)
-                    and not (registry_string_version and field == "version")
-                ):
+                if isinstance(value, str) and self._is_semantic_version_ast(value):
                     errors.append(
                         f"Field '{field}' uses string version '{value}' - "
                         f"should use ModelSemVer format {{major: X, minor: Y, patch: Z}}",
                     )
 
         # Check nested version fields
-        self._check_nested_versions(
-            yaml_data,
-            errors,
-            [],
-            registry_string_version=registry_string_version,
-        )
+        self._check_nested_versions(yaml_data, errors, [])
 
     def _check_nested_versions(
         self,
         data: Any,
         errors: list[str],
         path: list[str],
-        *,
-        registry_string_version: bool,
     ) -> None:
         """Recursively check for version strings in nested structures."""
         if isinstance(data, dict):
@@ -1059,13 +1065,7 @@ class StringVersionValidator:
 
                 # If the key suggests it's a version field
                 if any(version_word in key.lower() for version_word in ["version"]):
-                    if (
-                        isinstance(value, str)
-                        and self._is_semantic_version_ast(value)
-                        and not (
-                            registry_string_version and not path and key == "version"
-                        )
-                    ):
+                    if isinstance(value, str) and self._is_semantic_version_ast(value):
                         path_str = ".".join(current_path)
                         errors.append(
                             f"Field '{path_str}' uses string version '{value}' - "
@@ -1073,22 +1073,12 @@ class StringVersionValidator:
                         )
 
                 # Recurse into nested structures
-                self._check_nested_versions(
-                    value,
-                    errors,
-                    current_path,
-                    registry_string_version=registry_string_version,
-                )
+                self._check_nested_versions(value, errors, current_path)
 
         elif isinstance(data, list):
             for i, item in enumerate(data):
                 current_path = path + [f"[{i}]"]
-                self._check_nested_versions(
-                    item,
-                    errors,
-                    current_path,
-                    registry_string_version=registry_string_version,
-                )
+                self._check_nested_versions(item, errors, current_path)
 
     def _is_semantic_version_ast(self, value: str) -> bool:
         """

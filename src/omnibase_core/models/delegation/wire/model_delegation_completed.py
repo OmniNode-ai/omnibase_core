@@ -9,6 +9,9 @@ from typing import Self
 
 from pydantic import model_validator
 
+from omnibase_core.enums.enum_delegation_operational_outcome import (
+    EnumDelegationOperationalOutcome,
+)
 from omnibase_core.models.delegation.wire.model_delegation_result import (
     ModelDelegationResult,
 )
@@ -25,6 +28,12 @@ class ModelDelegationCompleted(ModelDelegationResult):
     @model_validator(mode="after")
     def validate_completed_terminal_truth(self) -> Self:
         """Keep the completed topic identity consistent with its payload."""
+        if (
+            self.operational_outcome
+            is EnumDelegationOperationalOutcome.TERMINAL_CONSTRUCTION_FAILED
+        ):
+            msg = "construction failure must use failed terminal class"
+            raise ValueError(msg)
         if self.terminal_failure_cause is not None:
             msg = "completed delegation cannot carry terminal_failure_cause"
             raise ValueError(msg)

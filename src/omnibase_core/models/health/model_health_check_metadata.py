@@ -10,7 +10,6 @@ Type-safe health check metadata that replaces Dict[str, Any] usage.
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
-from pydantic.errors import PydanticUndefinedAnnotation
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -119,16 +118,12 @@ def _resolve_forward_references() -> None:
         # Explicitly rebuild with the imported type in the namespace
         # This ensures the forward reference 'ModelCustomFields' is resolved
         ModelHealthCheckMetadata.model_rebuild(
-            _types_namespace={"ModelCustomFields": ModelCustomFields}
+            _types_namespace={"ModelCustomFields": ModelCustomFields},
+            raise_errors=False,
         )
     except ImportError:
         # init-errors-ok: Import may fail during early module loading
         # The forward reference will be resolved when health/__init__.py completes
-        pass
-    except PydanticUndefinedAnnotation:
-        # init-errors-ok: model_rebuild may fail during circular import resolution
-        # This is safe to ignore as the forward reference will be resolved
-        # when the full module graph is loaded
         pass
 
 

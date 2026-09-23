@@ -7,12 +7,11 @@ on:
   push:
     branches: [main, dev, "hotfix/**"]
   pull_request:
-    branches: [main, dev]
     # OMN-16215: default types (opened/synchronize/reopened) don't retrigger
     # on a draft->ready flip. `ready_for_review` ensures undrafting a dev PR
     # fires a full CI evaluation against the current head without requiring a
     # new push -- see test-parallel's/tests-integration's `if:` below.
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   merge_group:
     branches: [main, dev]
   workflow_dispatch:
@@ -87,6 +86,135 @@ jobs:
   #   4. Branch protection uses stable gate names (Quality Gate, Tests Gate)
   # =============================================================================
 
+  # ===========================================================================
+  # Per-run runner routing (OMN-18031)
+  # ===========================================================================
+  # Decides ONCE PER RUN which runs-on label set the consuming job below should
+  # use, from live org-runner capacity and the most recent lab load record. The
+  # decision itself is an ONEX COMPUTE node (`node_ci_runner_route_compute` in
+  # omnibase_infra); this repo vendors NO routing module and NO policy file, and
+  # the cross-repo reusable it calls is pinned to an immutable commit sha.
+  #
+  # THE SEAM IS READ AS A CEILING AND NEVER WRITTEN. Routing can only ever
+  # DOWNGRADE from what `OMNI_TRUSTED_CI_RUNS_ON_JSON` already allows, never
+  # widen past it, and nothing in this job or the workflow it calls writes any
+  # Actions variable at any scope (CLAUDE.md rule 14, single-owner).
+  #
+  # IT IS INERT ON ARRIVAL AND THAT IS THE HEADLINE. Read live on 2026-09-18,
+  # omnibase_core's own repo-scoped `OMNI_TRUSTED_CI_RUNS_ON_JSON` is
+  # '["ubuntu-latest"]' and `OMNI_PUBLIC_PR_RUNS_ON_JSON` is the same, so the
+  # decision is `seam_ceiling_hosted` on every event and the consumer below
+  # lands byte-identically to where it lands today. NOTHING MOVES ONTO THE LAB
+  # AS A RESULT OF THIS JOB. Changing placement means changing the seam, which
+  # is a separate single-owner claim (OMN-16682) and is not this change.
+  #
+  # ONE CONSUMER IS WIRED: `lint`. It runs on EVERY event (no `if:`, no
+  # zone-filter dependency), so the consumer is exercised on every single run,
+  # which is what turns "the wiring resolves" from an assumption into a
+  # per-run observation; it is not container-backed and needs no lab/tailnet
+  # reachability, so its placement is genuinely free to move when the seam one
+  # day allows it; and it is deliberately NOT one of the digest-frozen
+  # AUDITED_GUARD_JOB_EXECUTION_CONTRACTS jobs, so wiring it does not require
+  # re-baselining an audited execution-contract digest in the same change.
+  # EVERY OTHER JOB IN THIS FILE KEEPS ITS OMNI_RUNNER_SELECTOR_V1 EXPRESSION
+  # UNTOUCHED and moves only on separate evidence.
+  #
+  # FAIL-CLOSED ON ANY PROBE ERROR. The reusable's decide step carries a floor
+  # that emits hosted labels when the decision cannot be computed at all, so a
+  # probe fault degrades to today's placement rather than to an empty `runs-on`
+  # (which would make the consumer fail to SCHEDULE — a failure with no log to
+  # read). If the route job itself goes red, `lint` is skipped, and because
+  # "Code Quality" is a SPEC_REQUIRED_VALIDATOR_JOBS member in
+  # scripts/ci/ci_summary_gate.py a skipped `lint` fails the required
+  # `CI Summary` context. Both directions end closed; neither ends silent.
+  #
+  # Registered in scripts/ci/ci_summary_gate.py as
+  # "Runner Route (OMN-18031) / route", in BOTH `GATE_JOBS` (so an ABSENT job
+  # is PENDING → fail-closed at the poller's deadline) and
+  # `STRICT_SUCCESS_JOBS` (so a SKIPPED job is FAILURE, not a pass). THAT
+  # REGISTRATION IS HALF THE MECHANISM: this job is unconditional, and without
+  # both entries deleting it from this file would silently retire per-run
+  # routing on a fully green run — and because routing is deliberately inert at
+  # the current seam value, no job's PLACEMENT would change to reveal it. The
+  # name is the "<caller display name> / <inner job name>" shape the jobs API
+  # reports for a `uses:` job; renaming either half breaks the registration.
+  route:
+    name: Runner Route (OMN-18031)
+    uses: OmniNode-ai/omniclaude/.github/workflows/route-runner-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
+    with:
+      workflow_path: .github/workflows/ci.yml
+    secrets:
+      RUNNER_FLEET_STATUS_TOKEN: ${{ secrets.RUNNER_FLEET_STATUS_TOKEN }}
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
+
+  # OMN-16359: migrated from call-occ-companion-effect.yml. This remains a
+  # required composed context, so it MUST NOT gain a job-level `if:`: even a
+  # dependency-bot/ticketless skip must be produced by the invoked reusable.
+  # The job-level concurrency is the retired caller's literal group; CI's
+  # workflow-level group differs and must not silently change cancellation.
+  occ-companion-effect:
+    concurrency:
+      group: OCC Companion Effect Publisher-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev
+    # pragma: allowlist secret -- `secrets: inherit` is GHA syntax, not a secret.
+    secrets: inherit
+    with:
+      lane: dev
+
+  # OMN-18865: the pre-merge twin of the OMN-14631 workspace content-parity
+  # gate. It proves this repository's built wheel carries byte-for-byte the
+  # tracked source tree under src/omnibase_core, plus whatever this repo
+  # declares force-included into that package from outside src/.
+  #
+  # WHY IT IS HERE RATHER THAN ONLY ON THE LAB. #1710 added a hatch
+  # force-include on 2026-09-19. It was GREEN here, and from 15:37Z it failed
+  # every BUILD_SOURCE=workspace runtime image build with
+  # `differing files (1 total): ['data/gitignore-baseline.yaml']`, leaving the
+  # .201 dev lane unable to rebuild at all until omnibase_infra#3846 taught
+  # the gate to resolve the mapping. Nothing in this repository looked at what
+  # its own wheel contained, so a packaging change could not be judged where
+  # it was written.
+  #
+  # IT IS A JOB IN THIS FILE, not a workflow of its own, deliberately: the
+  # OMN-14907 net-negative-surface ratchet locks the count of
+  # pull_request-triggered workflow files, and its own header says a gate
+  # belongs inside ci.yml rather than taking a slot. That is also why it is
+  # registered in GATE_JOBS + STRICT_SUCCESS_JOBS rather than in
+  # EXPECTED_EXTERNAL_CONTEXTS -- the in-run poller can see it here.
+  #
+  # The comparison is NOT copied into this repository: it lives once, in the
+  # omnibase_infra image gate, and the ACTION carries it. An action's
+  # repository is checked out at the ref pinned below, so one pin fixes the
+  # action and the comparison together, never a branch.
+  #
+  # A CI-TIME ACTION IS NOT A RUNTIME DEPENDENCY, so rule 7's layering is
+  # untouched: nothing is added to this project's metadata, lock file or
+  # import graph, and the fetched files die with the runner. This repository
+  # already calls omniclaude actions and reusables the same way, `route`
+  # above included.
+  wheel-content-parity:
+    # `needs: route` is load-bearing exactly as it is on `lint` below: without
+    # the edge the `runs-on` expression resolves to nothing and this job fails
+    # to SCHEDULE rather than to FAIL, which does not surface as a red check.
+    # The route job is fail-closed and yields hosted labels on a probe fault
+    # rather than redding this gate. No `zone-filter` and no `if:` -- this job
+    # is asserted in GATE_JOBS and STRICT_SUCCESS_JOBS, so a skip is a
+    # failure-to-run, and a packaging change can arrive on any diff shape.
+    needs: [route]
+    name: Wheel Content Parity (OMN-18865)
+    # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
+    runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Judge wheel content parity
+        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@df6ffe0261e554c4442fbee7c34713993ac50c9d
+        with:
+          package: omnibase_core
+
   # ---------------------------------------------------------------------------
   # Phase 1 - Quick Validation Jobs (all run in parallel)
   # ---------------------------------------------------------------------------
@@ -94,14 +222,17 @@ jobs:
   # Phase 1 validation job - runs in parallel with pyright, exports-validation
   # Must complete before test-parallel starts (fail-fast optimization)
   lint:
+    # `needs: route` is load-bearing twice (OMN-18031): without the edge the
+    # `runs-on` expression below resolves to nothing and this job fails to
+    # SCHEDULE rather than to FAIL, which does not surface as a red check; and
+    # the route job is fail-closed, so a probe fault yields hosted labels here
+    # rather than a red gate. `zone-filter` is deliberately NOT added — this is
+    # a spec-required validator and must stay ungated on docs-only diffs.
+    needs: [route]
     name: Code Quality
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    if: always()
+    # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
+    runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
     timeout-minutes: 10
 
     steps:
@@ -997,6 +1128,10 @@ jobs:
           #   FQNs; a "module.path:ClassName" entry is key:value-shaped, so the
           #   Secret Keyword detector fires on names like model_network_restrictions
           #   — same false-positive class as the two baselines above)
+          # hardcoded_model_config_baseline.yaml (OMN-19252: generated ratchet
+          #   baseline keyed by the sha1 of each tolerated line; every key is a
+          #   40-character hex digest, so the Hex High Entropy detector fires on
+          #   all of them — same false-positive class again)
           #
           # -n/--no-verify (OMN-15063): several plugins (SlackDetector,
           # StripeDetector, ...) call the live vendor API to "verify" each
@@ -1022,7 +1157,8 @@ jobs:
             --exclude-files '\.github/workflows/.*\.yml' \
             --exclude-files 'url_authority_baseline\.json' \
             --exclude-files 'canonical_inference_baseline\.json' \
-            --exclude-files 'extra_forbid_baseline\.yaml'
+            --exclude-files 'extra_forbid_baseline\.yaml' \
+            --exclude-files 'hardcoded_model_config_baseline\.yaml'
           HOOK_EXIT=$?
           set -e
 
@@ -1559,13 +1695,12 @@ jobs:
           # shellcheck disable=SC2086
           .venv/bin/python scripts/validation/validate_spdx_headers.py $files
 
-  # No-new-os-environ gate (OMN-13566) — canonical AST-based env-read enforcement.
-  # Blocks ALL os.environ/os.getenv reads outside KEEP_ALLOWLIST. Feeds quality-gate
-  # so a violation turns the single required CI Summary rollup red. The deliberate
-  # red-test corpus (test_deliberate_violation_corpus) is the DoD proof that CI
-  # would catch a real violation.
-  no-new-os-environ:
-    name: No New os.environ Reads (OMN-13566)
+  # Typed-bootstrap env gate (OMN-17744) — canonical AST-based inventory audit.
+  # The four-root adversarial corpus remains in scope. Existing readers are
+  # tracked with an owner/disposition; new or stale inventory entries fail
+  # closed, while the default validator mode remains strict for raw access.
+  typed-bootstrap-environment-boundary:
+    name: Typed Bootstrap Environment Boundary (OMN-17744)
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -1598,9 +1733,185 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --no-dev
 
-      - name: Scan src/ for os.environ/os.getenv reads outside KEEP_ALLOWLIST (OMN-13566)
+      - name: Audit source, tests, examples, and scripts environment-reader inventory
         run: |
-          .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all --src src/
+          .venv/bin/python -m omnibase_core.validators.no_new_os_environ --all --inventory
+
+  # The pre-commit suite, re-asserted remotely (OMN-18899).
+  #
+  # No workflow in this repository ran `pre-commit run --all-files`, and that
+  # absence is the whole drift mechanism. Measured over the whole tree on
+  # 2026-09-20: 119 hooks reported and 19 failed, of which 14 had no CI mirror
+  # of any kind. A check-only hook that nothing re-asserts on a pull request is
+  # advisory in practice, and one already red on files a lane did not touch
+  # teaches that lane to read past it. Two of those 19 were red for seven
+  # months and nine months respectively, and both were found by reading the
+  # hooks rather than by any gate firing.
+  #
+  # This job does NOT replace the ~50 single-shard leaf jobs under
+  # `quality-gate`, which stay as they are. Those cover the hooks that have a
+  # mirror; this covers the ones that do not, in one job rather than fourteen.
+  # Measured hook time for the whole suite on the census tree: 369 seconds.
+  #
+  # Enforcement: this job is inside ci.yml, so the required `CI Summary`
+  # context fails on it through that gate's default-deny sweep over every
+  # present-and-completed job in its own run
+  # (scripts/ci/ci_summary_gate.py, `sweep_failures`). It needs no entry in
+  # GATE_JOBS, no `needs:` edge and no allowlist change; a `SOFT_ALLOWLIST`
+  # entry is what would make it advisory, and it has none.
+  #
+  # Unconditional: no `if:`, no `needs:`, no `paths:` filter. A gate that can
+  # be legitimately absent on some pull-request shape does not fail that
+  # shape.
+  #
+  # The excluded hook ids, and the reason for each, are in
+  # .github/precommit-suite-skip.yaml. Everything not named there runs, so a
+  # newly added hook is enforced without anyone remembering to widen a list.
+  # Removing a line from that file is how this job widens, and OMN-18899 is the
+  # ticket that does it.
+  #
+  # That file is deliberately NOT under .github/workflows/. The
+  # validator-requirements consumer resolves CI coverage by substring-matching
+  # validator keywords against the concatenated text of every workflow file, so
+  # a list of hook ids living in one reads as those validators HAVING CI
+  # coverage — the opposite of what the list means. Its own header carries the
+  # measurement.
+  precommit-suite:
+    name: Pre-commit Suite (OMN-18899)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          save-cache: false
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Cache pre-commit hook environments
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: precommit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run the pre-commit suite
+        run: |
+          set -euo pipefail
+          skip_file=.github/precommit-suite-skip.yaml
+          SKIP="$(uv run python -c "import sys, yaml; print(','.join(yaml.safe_load(open(sys.argv[1]))))" "$skip_file")"
+          if [ -z "$SKIP" ]; then
+            echo "::error::$skip_file resolved to no hook ids; refusing to guess a scope"
+            exit 1
+          fi
+          export SKIP
+          echo "skipping: $SKIP"
+          uv run pre-commit run --all-files --show-diff-on-failure
+
+  # Hardcoded model-configuration baseline ratchet (OMN-19252).
+  #
+  # The check-hardcoded-model-config-compute hook already runs over the whole
+  # tree inside the Pre-commit Suite job above: a finding the committed
+  # baseline does not cover fails, and a baseline entry that no longer matches
+  # fails. What a hook cannot see is the base branch, so this job adds the one
+  # remaining property of the ratchet: the baseline may only LOSE entries. It
+  # compares config/hardcoded_model_config_baseline.yaml with the same file at
+  # the base of the change and refuses any entry the base did not carry.
+  #
+  # Unconditional (no `if:`, no `needs:`), inside ci.yml so the required
+  # `CI Summary` context fails on it through that gate's default-deny sweep.
+  # The base is resolved per event; where an event has no base (a schedule, a
+  # manual dispatch, a push that created the branch) the job still runs the
+  # full-tree check and says why it skipped the comparison. A base that is
+  # named but cannot be fetched fails the job.
+  hardcoded-model-config-ratchet:
+    name: Hardcoded Model Config Ratchet (OMN-19252)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          save-cache: false
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Resolve the base the baseline may only shrink from
+        id: base
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request) base_sha="$PR_BASE_SHA" ;;
+            merge_group) base_sha="$MERGE_GROUP_BASE_SHA" ;;
+            push) base_sha="$PUSH_BEFORE" ;;
+            *) base_sha="" ;;
+          esac
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            echo "Event '$EVENT_NAME' carries no base commit; running the full-tree check without the shrink-only comparison."
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 "$REPO_URL" "$base_sha"
+          echo "Base for the shrink-only comparison: $base_sha"
+          echo "sha=$base_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce the hardcoded-model-config baseline (whole tree)
+        env:
+          BASE_SHA: ${{ steps.base.outputs.sha }}
+        run: |
+          set -euo pipefail
+          args=(--all --baseline config/hardcoded_model_config_baseline.yaml)
+          if [ -n "$BASE_SHA" ]; then
+            args+=(--base "$BASE_SHA")
+          fi
+          uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config "${args[@]}"
 
   # Duplicate registry id guard (OMN-14401). Rejects config/registry YAML files
   # declaring duplicate ids over a key that is not guaranteed unique (the
@@ -2921,6 +3232,27 @@ jobs:
   # API-STABLE check_name: "Quality Gate"
   # This is the single required check for branch protection (replaces 6+ individual checks).
   # Individual Phase 1 job names can change without updating branch protection rules.
+  # Secrets-baseline wiring gate (OMN-18669).
+  #
+  # A repository carrying `.secrets.baseline` must also carry a pre-commit hook
+  # AND a CI workflow that read it. The file on its own blocks nothing, proves
+  # nothing, and looks exactly like a repository that is protected; measured
+  # 2026-09-18, one registry repo was in that state with 47 unapproved findings.
+  #
+  # Called as a JOB HERE rather than as its own workflow file, deliberately: the
+  # pull-request-workflow-ratchet (C7 / OMN-14907) count-locks PR-triggered
+  # workflow FILES, and a new gate that costs a net-new file would have to retire
+  # another gate to pay for itself. A job inside the existing consolidated
+  # workflow costs no file and still fails the merge through quality-gate below.
+  #
+  # Pinned to the same omniclaude SHA as the `secrets-baseline-wired` hook in
+  # .pre-commit-config.yaml. The reusable checks its validator out at
+  # github.job_workflow_sha -- i.e. this very SHA -- so local and CI cannot
+  # diverge, and advancing the gate is those two lines changed together.
+  secrets-baseline-wiring:
+    name: secrets-baseline-wiring
+    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
+
   quality-gate:
     name: Quality Gate
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
@@ -2953,7 +3285,7 @@ jobs:
     # job itself stays `if: always()` so it is never a skip-vector; the step
     # below re-derives docs_only itself before ever admitting a `skipped` leaf
     # as passing, mirroring tests-gate's per-upstream skip policy (OMN-15315).
-    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, no-new-os-environ, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers, zone-filter]
+    needs: [lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, lint-imports, check-deterministic-skills, docs-validation, node-purity-check, enum-governance, detect-secrets, secrets-baseline-wiring, sdk-boundary-check, contract-config-compliance, breaking-schema-change, no-env-fallbacks, demo-path-topic-coherence, dispatch-surface-test-required, naming-conventions, pydantic-patterns, aislop-patterns, doc-content-scan, typed-bootstrap-environment-boundary, no-noncanonical-lifecycle-classes, pydantic-extra-forbid, pull-request-workflow-ratchet, spdx-headers, zone-filter]
     if: always()
 
     steps:
@@ -2985,7 +3317,7 @@ jobs:
           pydantic="${{ needs.pydantic-patterns.result }}"
           aislop="${{ needs.aislop-patterns.result }}"
           doc_content="${{ needs.doc-content-scan.result }}"
-          no_new_os_environ="${{ needs.no-new-os-environ.result }}"
+          typed_bootstrap_environment_boundary="${{ needs.typed-bootstrap-environment-boundary.result }}"
           noncanonical_classes="${{ needs.no-noncanonical-lifecycle-classes.result }}"
           extra_forbid="${{ needs.pydantic-extra-forbid.result }}"
           pr_workflow_ratchet="${{ needs.pull-request-workflow-ratchet.result }}"
@@ -3007,6 +3339,7 @@ jobs:
           echo "| Node Purity Check | $purity |" >> $GITHUB_STEP_SUMMARY
           echo "| Enum Governance | $enum_gov |" >> $GITHUB_STEP_SUMMARY
           echo "| Detect Secrets | $secrets |" >> $GITHUB_STEP_SUMMARY
+          echo "| Secrets Baseline Wiring | ${{ needs.secrets-baseline-wiring.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| SDK Boundary Guard | $sdk_boundary |" >> $GITHUB_STEP_SUMMARY
           echo "| Contract-Config Compliance | $contract_config |" >> $GITHUB_STEP_SUMMARY
           echo "| Breaking-Schema-Change (OMN-12621) | $breaking_schema |" >> $GITHUB_STEP_SUMMARY
@@ -3017,7 +3350,7 @@ jobs:
           echo "| Pydantic Patterns (OMN-13574) | $pydantic |" >> $GITHUB_STEP_SUMMARY
           echo "| AI Slop Patterns (OMN-13574) | $aislop |" >> $GITHUB_STEP_SUMMARY
           echo "| Doc-Content Scan (OMN-13572) | $doc_content |" >> $GITHUB_STEP_SUMMARY
-          echo "| No New os.environ Reads (OMN-13566) | $no_new_os_environ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Typed Bootstrap Environment Boundary (OMN-17744) | $typed_bootstrap_environment_boundary |" >> $GITHUB_STEP_SUMMARY
           echo "| Non-Canonical Lifecycle-Class Ratchet (OMN-14350) | $noncanonical_classes |" >> $GITHUB_STEP_SUMMARY
           echo "| Pydantic extra=\"forbid\" Ratchet (OMN-14515) | $extra_forbid |" >> $GITHUB_STEP_SUMMARY
           echo "| Pull-Request Workflow Ratchet (OMN-14907) | $pr_workflow_ratchet |" >> $GITHUB_STEP_SUMMARY
@@ -3051,8 +3384,9 @@ jobs:
             "pydantic=${{ needs.pydantic-patterns.result }}" \
             "aislop=${{ needs.aislop-patterns.result }}" \
             "doc_content=${{ needs.doc-content-scan.result }}" \
-            "no_new_os_environ=${{ needs.no-new-os-environ.result }}" \
-            "spdx_headers=${{ needs.spdx-headers.result }}"; do
+            "typed_bootstrap_environment_boundary=${{ needs.typed-bootstrap-environment-boundary.result }}" \
+            "spdx_headers=${{ needs.spdx-headers.result }}" \
+            "secrets_wiring=${{ needs.secrets-baseline-wiring.result }}"; do
             NAME="${check%%=*}"
             RESULT="${check#*=}"
             case "$RESULT" in
@@ -3840,6 +4174,175 @@ jobs:
           echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> "$GITHUB_STEP_SUMMARY"
           echo "Test matrix result: unit=$parallel integration=$integration"
 
+  # ============================================================================
+  # OMN-18790 — skip-count baseline ratchet (epic OMN-18775, ported from the
+  # omnibase_infra OMN-18776 landing, squash 77ea8d01)
+  #
+  # A skipped test reports nothing, and a SET of tests that skips on every run
+  # reports nothing repeatedly while looking identical to a green suite.
+  # Measured 2026-09-18 on this repo: `Integration Tests (Split n/4)` skipped 17
+  # and `Tests (Split n/m)` skipped 60, and both id SETS were byte-identical
+  # across five consecutive runs. Perfect stability is the diagnostic — it is a
+  # fixed set of tests that never runs, and nothing notices when it grows.
+  #
+  # This job refuses the GROWTH of those sets against
+  # config/skip_count_baseline.yaml. The integration suite is compared by COUNT
+  # (its command is a fixed `pytest tests/integration/ --splits 4`, so the
+  # collected set does not vary); the unit suite is compared by NODE IDS,
+  # because it sits behind scripts/ci/detect_test_paths.py with
+  # ENABLE_SMART_TESTS live and a narrowed selection would otherwise produce a
+  # misleading ratchet-candidate verdict. Both premises are recorded with their
+  # provenance in the baseline file.
+  #
+  # Registered in GATE_JOBS *and* STRICT_SUCCESS_JOBS (scripts/ci/ci_summary_gate.py).
+  # THOSE LINES ARE HALF THE MECHANISM: `CI Summary` is this repo's required
+  # context, and its default-deny sweep already fails when a present job FAILS —
+  # but an unregistered job that is `skipped` or ABSENT yields SUCCESS, which is
+  # the silent-retirement shape this gate exists to close. The job is
+  # unconditional (`if: always()`), so a skip is anomalous and never a
+  # legitimate opt-out. Deliberately NOT added to branch protection as a raw
+  # required context: that would block every in-flight PR whose run predates the
+  # job, and the umbrella registration is enforcement-equivalent.
+  # ============================================================================
+  skip-count-ratchet:
+    name: "Skip Count Ratchet (OMN-18776)"
+    needs: [test-parallel, tests-integration, tests-gate]
+    if: always()
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    steps:
+      # Both matrices legitimately do not run on a docs-only diff or a draft PR,
+      # and `Tests Gate` (registered, strict) already owns the verdict on every
+      # ILLEGITIMATE skip of them — it re-evaluates the docs-only precondition
+      # itself and fails closed when it does not hold. Re-deriving that
+      # judgement here would fork it. This job therefore states the reason and
+      # stops, rather than inventing a second opinion or failing a docs-only PR
+      # on artifacts that were never meant to exist.
+      - name: Decide whether there is a run to ratchet
+        id: decide
+        env:
+          UNIT_RESULT: ${{ needs.test-parallel.result }}
+          INT_RESULT: ${{ needs.tests-integration.result }}
+        run: |
+          ran() { [ "$1" = "success" ] || [ "$1" = "failure" ]; }
+          if ran "$UNIT_RESULT" || ran "$INT_RESULT"; then
+            echo "ratchet=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ratchet=false" >> "$GITHUB_OUTPUT"
+            echo "Neither test matrix produced JUnit reports (unit=$UNIT_RESULT"
+            echo "integration=$INT_RESULT). The verdict on whether that skip was"
+            echo "legitimate belongs to Tests Gate, which is registered and"
+            echo "strict. This job does not fork it."
+          fi
+          echo "unit=$UNIT_RESULT" >> "$GITHUB_OUTPUT"
+          echo "integration=$INT_RESULT" >> "$GITHUB_OUTPUT"
+          echo "Unit matrix: $UNIT_RESULT / integration matrix: $INT_RESULT"
+
+      - name: Checkout code
+        if: steps.decide.outputs.ratchet == 'true'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        if: steps.decide.outputs.ratchet == 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      # Retried inside the step rather than by letting a download step fail
+      # softly and trying again. The artifact service flakes, but a gate whose
+      # input fetch is allowed to fail softly is a gate that passes when it
+      # could not read anything — the whole failure class this job refuses.
+      # Three attempts, then red. This job carries no advisory setting at job
+      # or step level, deliberately and by test.
+      - name: Download this run's JUnit reports
+        if: steps.decide.outputs.ratchet == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in 1 2 3; do
+            if gh run download "${{ github.run_id }}" \
+                 --repo "${{ github.repository }}" \
+                 --pattern 'test-results-*' \
+                 --pattern 'junit-int-*' \
+                 --dir junit-reports; then
+              echo "JUnit reports downloaded on attempt ${attempt}."
+              exit 0
+            fi
+            echo "Artifact download attempt ${attempt} failed."
+            rm -rf junit-reports
+            sleep $((attempt * 10))
+          done
+          echo "::error::could not download this run's JUnit reports after 3 attempts."
+          echo "Failing closed: a gate that cannot read its input has not passed."
+          exit 1
+
+      # Fail-closed: a matrix that ran and produced no parsable report is an
+      # uploader defect (the OMN-18542 shape: an upload pattern silently
+      # matching nothing), and a gate that treated it as "nothing to check"
+      # would be the very false-green this closes. Every step here is blocking,
+      # by construction and by test.
+      - name: Enforce the skip-count baseline (OMN-18790)
+        if: steps.decide.outputs.ratchet == 'true'
+        env:
+          UNIT_RESULT: ${{ steps.decide.outputs.unit }}
+          INT_RESULT: ${{ steps.decide.outputs.integration }}
+        run: |
+          echo "================================================================"
+          echo "Skip Count Ratchet (OMN-18776)"
+          echo "A test that is collected and never executed proves nothing. This"
+          echo "gate refuses the growth of that set against a recorded baseline."
+          echo "Lowering the bar is an edit to config/skip_count_baseline.yaml."
+          echo "================================================================"
+          ran() { [ "$1" = "success" ] || [ "$1" = "failure" ]; }
+          status=0
+
+          if ran "$INT_RESULT"; then
+            mapfile -t int_reports < <(find junit-reports -name 'junit-int-*.xml' -type f | sort)
+            if [ "${#int_reports[@]}" -eq 0 ]; then
+              echo "::error::the integration matrix ran but produced no JUnit report to read."
+              echo "That is an uploader defect, not an empty result -- failing closed."
+              status=1
+            else
+              echo "Reading ${#int_reports[@]} integration JUnit report(s)."
+              uv run --no-project --with 'pyyaml>=6.0.2,<7.0.0' \
+                python scripts/ci/skip_count_ratchet.py \
+                --suite omnibase_core/tests-integration \
+                --junit "${int_reports[@]}" || status=1
+            fi
+          else
+            echo "Integration matrix result: $INT_RESULT -- no reports expected."
+          fi
+
+          if ran "$UNIT_RESULT"; then
+            mapfile -t unit_reports < <(find junit-reports -name 'junit-*.xml' -type f -not -name 'junit-int-*.xml' | sort)
+            if [ "${#unit_reports[@]}" -eq 0 ]; then
+              echo "::error::the unit matrix ran but produced no JUnit report to read."
+              echo "That is an uploader defect, not an empty result -- failing closed."
+              status=1
+            else
+              echo "Reading ${#unit_reports[@]} unit JUnit report(s)."
+              uv run --no-project --with 'pyyaml>=6.0.2,<7.0.0' \
+                python scripts/ci/skip_count_ratchet.py \
+                --suite omnibase_core/test-parallel \
+                --junit "${unit_reports[@]}" || status=1
+            fi
+          else
+            echo "Unit matrix result: $UNIT_RESULT -- no reports expected."
+          fi
+
+          exit "$status"
+
   # CI Summary - final aggregator for all gates (OMN-2226)
   # Cross-repo boundary validation (OMN-6576, OMN-10978)
   # Blocking mode: boundary parity is an architectural CI gate.
@@ -3977,7 +4480,7 @@ jobs:
           # scripts/ci/run_contract_compliance_check.py in working order.
           # Re-pinned to OCC dev HEAD at the time of this change.
           ref: 91f5b69104366c2d86e4bb21de67c3c497702111
-          path: onex_change_control_checker
+          path: onex_change_control
           token: ${{ steps.app-token.outputs.token || github.token }}
 
       - uses: astral-sh/setup-uv@v7
@@ -3987,7 +4490,7 @@ jobs:
 
       - name: Install onex_change_control
         if: steps.dep-scope.outputs.exempt != 'true'
-        working-directory: onex_change_control_checker
+        working-directory: onex_change_control
         run: |
           set -euo pipefail
           export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
@@ -4005,51 +4508,82 @@ jobs:
             attempt=$((attempt + 1))
           done
 
-      # OMN-18157: the checker code stays at its audited immutable pin while
-      # contracts are checked out at the exact Evidence-Source SHA from this PR.
-      # A missing or malformed source is a hard failure; it never falls back to
-      # the checker pin or OCC default branch.
-      - name: Resolve contract-compliance evidence data (OMN-18157)
-        id: resolve_contract_compliance_evidence
+      # OMN-14887: EXECUTE the DoD check_values against the PRODUCT tree.
+      #
+      # What was here before -- `uv run validate-yaml $CONTRACTS` -- never ran a
+      # single check_value. It only parsed OCC's YAML, so a green
+      # "Contract Compliance Check" meant exactly "OCC's contract files are
+      # valid YAML" and nothing about this PR. The DoD gate has been dead here
+      # since the OMN-14436 fix (core#1435) documented that lie without
+      # replacing the executor -- fan-out was deliberately deferred until
+      # omnibase_infra (OMN-14454) burned in the pattern first.
+      #
+      # --workspace is the load-bearing argument. It must be the PRODUCT
+      # checkout ($GITHUB_WORKSPACE), not the OCC clone -- pointing it at OCC
+      # is the original OMN-14436 defect.
+      #
+      # Landmine specific to this repo (see quality-gate job above): this job
+      # used to be a `needs:` predecessor of quality-gate, whose downstream
+      # (detect-changes, test-parallel) skip when quality-gate != success, and
+      # tests-gate treats a skipped test-parallel as PASSED. Turning on a real
+      # executor here without first decoupling would have let a single BLOCK
+      # cascade to "tests-gate: PASSED" on zero tests run -- strictly worse than
+      # infra's failure mode. contract-compliance is no longer in quality-gate's
+      # needs; ci-summary's independent GATE_JOBS entry keeps this required and
+      # merge-blocking without the cascade.
+      - name: Run DoD contract compliance against the product tree (OMN-14887)
         if: steps.dep-scope.outputs.exempt != 'true'
+        working-directory: onex_change_control
+        run: |
+          set -euo pipefail
+          # OMN-16346: the job-level `if:` above deliberately admits
+          # pull_request, merge_group, AND push (it cannot be narrowed to
+          # pull_request -- see that comment), so this branch is NOT an
+          # invariant-broke escape hatch, it is the normal path on every dev
+          # push. Prior text here claimed the job "now only runs on
+          # pull_request" and unconditionally exited 1; that made
+          # push-event runs (i.e. every post-merge dev commit) fail closed
+          # by construction, permanently reddening dev's post-merge signal
+          # (OMN-16013 / OMN-16055 / OMN-16346).
+          #
+          # Push-path fix: resolve the PR that produced this push's commit
+          # and validate against IT, instead of failing blind. GitHub
+          # associates a squash-merge commit with its originating PR (the
+          # documented "List pull requests associated with a commit" API),
+          # so for the ordinary squash-merge-to-dev case this evaluates the
+          # exact same check_values the PR's own pull_request run already
+          # evaluated -- not a vacuous pass, not a skip, and not a second
+          # independent judgment that could disagree with the PR verdict.
+          if [ -z "${PR_NUMBER:-}" ] && [ "${{ github.event_name }}" = "push" ]; then
+            RESOLVED_PR="$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+              --jq '[.[] | select(.merged_at != null)] | sort_by(.merged_at) | last | .number // empty' \
+              2>/dev/null || true)"
+            if [ -n "$RESOLVED_PR" ]; then
+              echo "::notice::event=push, no PR in event payload -- resolved merged PR #${RESOLVED_PR} from commit ${{ github.sha }} via the associated-PR API"
+              PR_NUMBER="$RESOLVED_PR"
+            fi
+          fi
+          if [ -z "${PR_NUMBER:-}" ]; then
+            # Still unresolved: a pull_request run missing PR_NUMBER (the
+            # invariant above broke some other way), a merge_group run (no
+            # live dev merge queue today; this repo has no merge_group
+            # associated-PR resolution yet -- see OMN-16346 follow-up if one
+            # is ever enabled), or a push whose commit genuinely has no
+            # associated PR (direct push, rebase merge, force push). Fail
+            # closed (exit 1), never vacuously pass a DoD check that did not
+            # actually run a single check_value.
+            echo "::error::No PR number (event=${{ github.event_name }}); DoD check_values are PR-scoped and could not be resolved for this event. Failing closed."
+            exit 1
+          fi
+          uv run python scripts/ci/run_contract_compliance_check.py \
+            --pr "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --contracts-dir "$GITHUB_WORKSPACE/onex_change_control/contracts" \
+            --workspace "$GITHUB_WORKSPACE" \
+            --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control/scripts/ci/dod_runner_legacy_allowlist.txt"
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
-        run: |
-          set -euo pipefail
-          uv run python scripts/ci/resolve_contract_compliance_evidence.py \
-            --repo "${{ github.repository }}" \
-            --event-name "${{ github.event_name }}" \
-            --commit-sha "${{ github.sha }}" \
-            --pr-number "${PR_NUMBER:-}" \
-            --merge-group-head-ref "${MERGE_GROUP_HEAD_REF:-}"
-
-      - name: Checkout contract-compliance evidence data (OMN-18157)
-        if: steps.dep-scope.outputs.exempt != 'true'
-        uses: actions/checkout@v7
-        with:
-          repository: OmniNode-ai/onex_change_control
-          ref: ${{ steps.resolve_contract_compliance_evidence.outputs.occ_sha }}
-          path: onex_change_control_evidence
-          token: ${{ steps.app-token.outputs.token || github.token }}
-
-      # The preflight calls the same pinned runner resolver used by the runner
-      # itself, then requires that exact ticket's data contract before ``uv``
-      # can execute any check_value against the product workspace.
-      - name: Run DoD contract compliance against the product tree (OMN-14887)
-        if: steps.dep-scope.outputs.exempt != 'true'
-        run: |
-          set -euo pipefail
-          uv run python scripts/ci/run_contract_compliance_with_evidence.py \
-            --pr "${{ steps.resolve_contract_compliance_evidence.outputs.pr_number }}" \
-            --repo "${{ github.repository }}" \
-            --checker-dir "$GITHUB_WORKSPACE/onex_change_control_checker" \
-            --evidence-contracts-dir "$GITHUB_WORKSPACE/onex_change_control_evidence/contracts" \
-            --workspace "$GITHUB_WORKSPACE" \
-            --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control_checker/scripts/ci/dod_runner_legacy_allowlist.txt"
-        env:
-          GH_TOKEN: ${{ github.token }}
       - name: Record dependency-bot workflow-only contract compliance decision
         if: steps.dep-scope.outputs.exempt == 'true'
         run: |
@@ -4184,6 +4718,11 @@ jobs:
           GH_REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
+          # L4 producers have different trigger contracts. Pass the event
+          # explicitly so ci_summary_gate selects only producers that could
+          # have emitted a check-run for this CI event; omitted/unknown events
+          # fail closed in the gate rather than silently selecting no contexts.
+          EVENT_NAME: ${{ github.event_name }}
           # L4 EXPECTED_EXTERNAL_CONTEXTS (scripts/ci/ci_summary_gate.py) live in
           # OTHER workflow files, so they are resolved against
           # commits/{sha}/check-runs rather than this run's own job list.
@@ -4230,7 +4769,7 @@ jobs:
               sleep "${POLL_INTERVAL_SECONDS}"
               continue
             fi
-            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json
+            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --event-name "${EVENT_NAME}"
             rc=$?
             case "${rc}" in
               0) echo "::notice::CI Summary = SUCCESS (all gating jobs provably passed)"; exit 0 ;;
@@ -4240,7 +4779,7 @@ jobs:
             esac
             if [ "$(date +%s)" -ge "${deadline}" ]; then
               echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached with gating jobs still pending — failing closed"
-              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --report-only || true
+              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --event-name "${EVENT_NAME}" --report-only || true
               exit 1
             fi
             sleep "${POLL_INTERVAL_SECONDS}"

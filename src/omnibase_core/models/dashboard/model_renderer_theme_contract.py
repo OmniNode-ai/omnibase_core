@@ -72,11 +72,11 @@ class ModelRendererThemeContract(BaseModel):
     # Identity / versioning
     # ------------------------------------------------------------------
 
-    theme_id: str = Field(  # string-id-ok: namespaced theme key, not a UUID
+    theme_id: str = Field(
         ...,
         description=(
             "Stable, namespaced theme identifier "
-            "(e.g. 'onex.theme.dark.v1', 'onex.theme.light.v1')"  # onex-allow-topic-literal OMN-17524 documentation identifier
+            "(e.g. 'onex.theme.dark.v1', 'onex.theme.light.v1')"  # onex-allow-topic-literal OMN-18931 reason="field documentation examples, not runtime topics"
         ),
         min_length=1,
     )

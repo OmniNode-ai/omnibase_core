@@ -1,0 +1,407 @@
+---
+# Baseline for check-hardcoded-model-config-compute (OMN-19252).
+# Plan: knowledge-base-internal beta/plans/2026-09-23-remove-hardcoded-model-config.md
+# (task A1 and the per-repository ratchet of tasks A3.x).
+#
+# RULE: entries only leave. A finding not listed here fails. An entry that no
+# longer matches its file fails until it is removed. CI refuses a pull request
+# whose copy of this file carries an entry its base branch did not. Retired lab
+# values (family R) are never admitted. Entries are keyed by line content
+# (sha1 of the stripped line), not by line number.
+#
+# Regenerate only to SHRINK it:
+#   python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config \
+#     --all --baseline <this file> --write-baseline
+
+schema_version: 1
+entries:
+  - path: examples/demo/handlers/support_assistant/handler_anthropic.py
+    family: M
+    content_sha1: 83ef4f65080568b7365bb97b8a2a22c9fa929e0a
+  - path: examples/demo/handlers/support_assistant/handler_local.py
+    family: M
+    content_sha1: 44ce1b7141ebd5b9276e3d9425c0e3cd872eb0d6
+  - path: examples/demo/handlers/support_assistant/handler_openai.py
+    family: E
+    content_sha1: 13dd5cf3fafd73618f9a07d1b964b6280fcb8db6
+  - path: examples/demo/handlers/support_assistant/handler_openai.py
+    family: E
+    content_sha1: ff267d7202dbdab0ed2f7bb25d730f1112e9752b
+  - path: examples/demo/handlers/support_assistant/handler_openai.py
+    family: M
+    content_sha1: 64ad1ed5f66ade1deff70c258c394ce74d22ec69
+  - path: examples/demo/handlers/support_assistant/model_config.py
+    family: M
+    content_sha1: 555ec6e775bf53fd82bbf799e76fdd2c0d02c9b4
+  - path: examples/demo/handlers/support_assistant/model_config.py
+    family: M
+    content_sha1: e6b0d4ce32cef5e917d0fea3a2d3dd74c46e3f53
+  - path: examples/demo/handlers/support_assistant/support_assistant.yaml
+    family: M
+    content_sha1: 07ada33fa94497124c63cc1b33807e874942a591
+  - path: examples/demo/handlers/support_assistant/support_assistant.yaml
+    family: M
+    content_sha1: ca54cc26553f4b36019b9301a605714a473b4be3
+  - path: examples/demo/handlers/support_assistant/support_assistant.yaml
+    family: M
+    content_sha1: d23925019065835d77200564ac30beccf4e9c8df
+  - path: examples/demo/model-validate/mock-responses/baseline/response_001_billing_refund.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_002_billing_payment.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_003_account_access.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_004_account_profile.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_005_technical_bug.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_006_technical_howto.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_007_billing_refund_enterprise.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_008_account_access_chat.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_009_technical_bug_detailed.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_010_billing_payment_pro.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_011_malformed_date.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_012_missing_fields.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_013_unicode_body.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_014_borderline_content.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/baseline/response_015_negative_sentiment.json
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: examples/demo/model-validate/mock-responses/candidate/response_001_billing_refund.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_002_billing_payment.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_003_account_access.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_004_account_profile.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_005_technical_bug.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_006_technical_howto.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_007_billing_refund_enterprise.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_008_account_access_chat.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_009_technical_bug_detailed.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_010_billing_payment_pro.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_011_malformed_date.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_012_missing_fields.json
+    family: M
+    content_sha1: 04b65fdca4dc9f3a84a3de0c62d9e5b2075be814
+  - path: examples/demo/model-validate/mock-responses/candidate/response_013_unicode_body.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_014_borderline_content.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: examples/demo/model-validate/mock-responses/candidate/response_015_negative_sentiment.json
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: scripts/hooks/prepush_hosts.tsv
+    family: E-LAN
+    content_sha1: 044a792f127e77a9696fc8ba74eb5508b2cd544d
+  - path: scripts/hooks/prepush_hosts.tsv
+    family: E-LAN
+    content_sha1: 57ae2180d30166c3ef6b478df204439c650dbf57
+  - path: scripts/hooks/prepush_hosts.tsv
+    family: E-LAN
+    content_sha1: ecd71df31e0ba2246516df3e201bb13138c0a71d
+  - path: scripts/hooks/prepush_smart_tests.sh
+    family: E-LAN
+    content_sha1: 2f38b8e0f437ec067a60d17fb90ed09eef25bec6
+  - path: scripts/validation/decommissioned_patterns.conf
+    family: E-LAN
+    content_sha1: 0fe76943a15b6660e9faa8b971554cc01812f635
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: 0c7ef5a561a586f6766ca593e901413cc100972f
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: 262c10aa0cd6936a3e977f8175444b5b8cbc192c
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: 45aa29a9997a27eb692db4e056c24ab29bfac2f6
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: 6116d2d11eeb5c1f06b0ab7b60953e0d72895437
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: 6eae6a955ca85f512a222bbad96bb97292ac6d2c
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: 78faff929e0a454736e405efad6bb3063412ea0a
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: 9a17807ee5572676a9df741e3036b719a0f30742
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: b0e33c5f49b8153d3a84238c8b17fdc409d2d3ee
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: daafb567ccbafc9e9282b1a77f2cae6957b0d984
+  - path: src/omnibase_core/constants/constants_llm_refs.py
+    family: M
+    content_sha1: f99af5b402b142695ee7e48385a3e4ee8a3d690b
+  - path: src/omnibase_core/contracts/integrations/catalog.yaml
+    family: E
+    content_sha1: 2931f82937808122aab89d6a24d4024320d21416
+  - path: src/omnibase_core/contracts/integrations/catalog.yaml
+    family: E
+    content_sha1: b3ef873ec1f813dcbec0b013e4494fa771ce3e6d
+  - path: src/omnibase_core/contracts/integrations/catalog.yaml
+    family: E
+    content_sha1: d809cee8b7f6cdd0846a02a390fce8ad1d6bdfcc
+  - path: src/omnibase_core/models/configuration/model_agent_config.py
+    family: M
+    content_sha1: 364496e83e78f38428a13b9fe48df33649a95242
+  - path: src/omnibase_core/models/configuration/model_tier_config.py
+    family: M
+    content_sha1: 1b0223c9ad41402ac7fc35591af17decd3bfc5a7
+  - path: src/omnibase_core/models/configuration/model_tier_config.py
+    family: M
+    content_sha1: 2062d6112581c67bdc70e275c5721f49f42c490b
+  - path: src/omnibase_core/models/configuration/model_tier_config.py
+    family: M
+    content_sha1: 7c51b2ab20e8337e3a075bf9f31e9e170791d214
+  - path: src/omnibase_core/models/configuration/model_tier_config.py
+    family: M
+    content_sha1: a946c5048c6e82c006bbbd7ae2758f73c904d8c8
+  - path: src/omnibase_core/models/configuration/model_tier_config.py
+    family: M
+    content_sha1: ce32914fa00a2e906a3ee281c38beae531b355d1
+  - path: src/omnibase_core/models/configuration/model_tier_config.py
+    family: M
+    content_sha1: f378718bd546b34f87ebc6f432690404d486d761
+  - path: src/omnibase_core/models/delegation/wire/model_premium_counterfactual.py
+    family: M
+    content_sha1: a66a55e2b455192bad9033f5da9efe78ddc1aaa8
+  - path: src/omnibase_core/models/delegation/wire/model_task_delegated_event.py
+    family: M
+    content_sha1: e12325c9450f0c250ad017653a5a323354b123d9
+  - path: src/omnibase_core/models/routing/model_routing_decision.py
+    family: M
+    content_sha1: 55e2e27515a7cfd56dd6cab3fffa29d7689ce8e3
+  - path: tests/unit/backends/cache/test_sanitize_redis_url.py
+    family: E-LAN
+    content_sha1: de4dd7ceab9b30e8b0754aadd5e461f687a25e90
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: E-LAN
+    content_sha1: 291ce7051af36d32751214e7244af5985c8f545f
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: E-LAN
+    content_sha1: 6e3ea5d7cf400c322cf332c57e87cc48d07de1f1
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: E-LAN
+    content_sha1: b1ab7bb8c3643bd9a23085509259134528a7ce35
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: E-LAN
+    content_sha1: c98799a801300960d1138c2a862fb8cdc7727565
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: E-LAN
+    content_sha1: f92b23e05e491c388472b56d9f3f1e3f44439a9e
+  - path: tests/unit/models/contracts/test_model_behavior_proven_receipt.py
+    family: E-LAN
+    content_sha1: ad7f4f82cb35f37e9232abde3c23731e53bf2106
+  - path: tests/unit/models/contracts/test_model_delegation_runtime_profile.py
+    family: E-LAN
+    content_sha1: 178463ab9123b3a402af2104d5f498a4e2f7b6e5
+  - path: tests/unit/models/contracts/test_model_delegation_runtime_profile.py
+    family: E-LAN
+    content_sha1: 8be1781ed1400c97ae3ae87a8a59de57a82f9d5e
+  - path: tests/unit/models/contracts/test_runtime_sha_match.py
+    family: E-LAN
+    content_sha1: 7b1813f83f0a35e14940b36c5d073647ec26b430
+  - path: tests/unit/models/contracts/test_runtime_sha_match.py
+    family: E-LAN
+    content_sha1: f51bff31a6356bcd3dff724f8a5d3dec0fe1f958
+  - path: tests/unit/models/contracts/test_runtime_sha_match_dod_gate.py
+    family: E-LAN
+    content_sha1: 8c8c2735eb0cc728004ada45c7b9c3b1d89e056b
+  - path: tests/unit/models/contracts/test_runtime_sha_match_dod_gate.py
+    family: E-LAN
+    content_sha1: 8c8c2735eb0cc728004ada45c7b9c3b1d89e056b
+  - path: tests/unit/models/contracts/test_runtime_sha_match_dod_gate.py
+    family: E-LAN
+    content_sha1: 8c8c2735eb0cc728004ada45c7b9c3b1d89e056b
+  - path: tests/unit/models/contracts/test_runtime_sha_match_dod_gate.py
+    family: E-LAN
+    content_sha1: 8c8c2735eb0cc728004ada45c7b9c3b1d89e056b
+  - path: tests/unit/models/contracts/test_runtime_sha_match_dod_gate.py
+    family: E-LAN
+    content_sha1: 9204991f770a2b5ae94760ebc2fc5acb92234dce
+  - path: tests/unit/models/contracts/test_runtime_sha_match_dod_gate.py
+    family: E-LAN
+    content_sha1: a46e911ee8bcc47288dac579a9eabfa6a6688e84
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: E-LAN
+    content_sha1: 8bff1b0b47ff1210e63a054aaf17b133420cc362
+  - path: tests/unit/models/dispatch/test_model_dispatch_claim.py
+    family: E-LAN
+    content_sha1: 4c137bd5ca5c3a16c73b2033f38a31c791aa0d65
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: E-LAN
+    content_sha1: 2293d92c52ecf6acc87749b6a4100b9e409ebc7f
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: E-LAN
+    content_sha1: 7296c81c3e1660dbae64d4fa1b9c025d55f0653b
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: E-LAN
+    content_sha1: a0073dd61bd0efca60c081666b2123c8890eeb5c
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: E-LAN
+    content_sha1: f15582fca71e13c8fe986782a7544c008ea98edb
+  - path: tests/unit/models/overlay/test_model_overlay_file.py
+    family: E-LAN
+    content_sha1: ddeb7a5e0678cdb71eebde412cd604e1ff76eafe
+  - path: tests/unit/models/services/test_model_service_health.py
+    family: E-LAN
+    content_sha1: 5418b272dade4b2d9a9b4f02f2cd793c71a5d6b6
+  - path: tests/unit/models/validation/test_model_event_destination.py
+    family: E-LAN
+    content_sha1: 89ed4fb71b14b45ed018155e4412f4d540ccf99d
+  - path: tests/unit/models/validation/test_model_event_destination.py
+    family: E-LAN
+    content_sha1: 89ed4fb71b14b45ed018155e4412f4d540ccf99d
+  - path: tests/unit/models/validation/test_model_event_destination.py
+    family: E-LAN
+    content_sha1: 89ed4fb71b14b45ed018155e4412f4d540ccf99d
+  - path: tests/unit/nodes/node_no_env_fallbacks_check_compute/test_node_no_env_fallbacks_check_compute.py
+    family: E-LAN
+    content_sha1: 5c2d9cbda87bd7e1553a187b897a3da2b5079adc
+  - path: tests/unit/nodes/node_no_env_fallbacks_check_compute/test_node_no_env_fallbacks_check_compute.py
+    family: E-LAN
+    content_sha1: afa33d6b8bda9baa8ee1f423ff6e0b38ab25ae18
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 0327df25b510aca69a8499c4a9c376586ee31c10
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 14fb7778f405e89d714bba5cb487380acc8c1231
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 269f15a9a3ee7209b5e7827e0580d672d5d9e0d3
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 886a45cc756dc8af12d7976f44b4435341fe19fe
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: cf12324724d70faa46bff29e1c782ec9f5dbb281
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: d246d63801df0df0ee457b99086d463b61cf38ea
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: d2912e598bf635f348c4dfdb0cace050d83f8a53
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: e2a65f0cbccd2d0fcf4623eed9e696eaf5033c20
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
+    family: E-LAN
+    content_sha1: 777b42b3c1d1cf160e2440284a94a30517e6397a
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
+    family: E-LAN
+    content_sha1: 777b42b3c1d1cf160e2440284a94a30517e6397a
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
+    family: E-LAN
+    content_sha1: a77ed50e63260c9a5708b5339796e201f573f33e
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
+    family: E-LAN
+    content_sha1: e6d8e74c14774a95845ecffa60dea48ebda134dd
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
+    family: E-LAN
+    content_sha1: f6dfd928d719a425a88309fda5775b298f3ea2c1
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
+    family: E-LAN
+    content_sha1: fab8638345b1032f9aad2d5a618d980d5427d9c3
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 2c6f76790b93826be0e68f50ec7b5257cd12ecd1
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 4672390a70832343a87da85297c36ed62c6e2cc2
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: d618388138c707ee1c0e287ae4bb6e554c700eea
+  - path: tests/unit/validation/api_key_ref_discipline/test_handler_api_key_ref_discipline.py
+    family: E-LAN
+    content_sha1: 58335d941f96f6a31e6423cdc38cddfe5858717d
+  - path: tests/unit/validation/delegation/test_validator_delegation_profile.py
+    family: E-LAN
+    content_sha1: 1a5bd7beb904fcf75373549e71b682e1ebe1fc6d
+  - path: tests/unit/validation/delegation/test_validator_delegation_profile.py
+    family: E-LAN
+    content_sha1: 245d842867adb98af7df0ce5af55d9c7110a0ae9
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 10811c14d5202c53a72e2ccfb7ff8c5dae5f6c3a
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 8975afe41d3d8c7d1b232267742d0e912765d529
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: a87f350422197237aa968e7d884ea80d5b840f11
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: b1e1fbdd584cdfecdd35d727ff816d57385de7cb
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: ea803a56b35536e586e4c507f890c9c7a19d2f27
+  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
+    family: E-LAN
+    content_sha1: 1bc727cba8bf706230d789bdf1ad887d2cab53f8
+  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
+    family: E-LAN
+    content_sha1: 7a5dd747c19371c22c25c34dc8a2dc9158fdcc51
+  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
+    family: E-LAN
+    content_sha1: a1a01e0241c9c59681620ae24991c971e95100c0
+  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
+    family: E-LAN
+    content_sha1: a2f5c82e0c875530c1e045a39c2044899e2a9607
+  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
+    family: E-LAN
+    content_sha1: c311f018523864a5939442740a5d1228ab7e0bd7
+  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
+    family: E-LAN
+    content_sha1: ddaf4d5018d8694c83a6d3bc07265806da299488
+  - path: tests/unit/validation/test_receipt_honesty_validator.py
+    family: E-LAN
+    content_sha1: eebbb28fe53a69c9543ad9da2005cf25f72d077b

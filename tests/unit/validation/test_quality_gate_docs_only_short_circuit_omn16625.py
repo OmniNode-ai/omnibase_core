@@ -95,7 +95,7 @@ _STRICT_SPEC_REQUIRED_LEAVES = (
     "pydantic-patterns",
     "aislop-patterns",
     "doc-content-scan",
-    "no-new-os-environ",
+    "typed-bootstrap-environment-boundary",
     "spdx-headers",
 )
 
@@ -298,7 +298,7 @@ _STRICT_VAR_ALIASES = {
     "pydantic-patterns": "pydantic",
     "aislop-patterns": "aislop",
     "doc-content-scan": "doc_content",
-    "no-new-os-environ": "no_new_os_environ",
+    "typed-bootstrap-environment-boundary": "typed_bootstrap_environment_boundary",
 }
 
 

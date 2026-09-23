@@ -1,26 +1,23 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Typed secret-detection error for the content-addressed artifact store."""
+"""Structured refusal when an artifact payload contains a detected secret."""
 
-from __future__ import annotations
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 
-from omnibase_core.types.type_artifact_ref import ArtifactRefProtocol
 
+class ArtifactSecretDetectedError(ModelOnexError):
+    """Raised after refusing raw bytes that match a secret pattern."""
 
-class ArtifactSecretDetectedError(Exception):
-    """Raised when raw artifact bytes contain a detected secret.
-
-    ``ref`` remains the full content-addressed payload so callers keep the
-    existing typed identity rather than a flattened string. The structural
-    protocol keeps this foundation-layer error independent of ``models``.
-    """
-
-    def __init__(self, ref: ArtifactRefProtocol) -> None:
+    def __init__(self, ref: str) -> None:
         self.ref = ref
         super().__init__(
-            f"secret detected in artifact {ref.ref}; raw write refused "
-            "(secret_detected sidecar recorded)"
+            message=(
+                f"secret detected in artifact {ref}; raw write refused "
+                "(secret_detected sidecar recorded)"
+            ),
+            error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
         )
 
 

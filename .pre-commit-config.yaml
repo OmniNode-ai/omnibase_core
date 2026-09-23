@@ -29,6 +29,17 @@
 #   pre-commit install --hook-type pre-push  # Install pre-push hooks
 #   pre-commit run --all-files            # Run all pre-commit hooks
 #   pre-commit run --all-files --hook-stage pre-push  # Run pre-push hooks
+#
+# PRE-PUSH SCOPE, as of 2026-09-11 (OMN-18176): pre-push is policy, type and
+# lint checks plus two named test exceptions. Nine hooks. The governed
+# impacted-test selector was retired from this stage -- hosted CI is the
+# enforced merge gate and runs the identical selection. The two hooks that
+# still reach a test runner, `pytest-protocol-uuid-enforcement` and
+# `verify-flip-bundle`, are deliberate exceptions and each carries an
+# annotation at its own definition giving its measured cost and the reason it
+# is kept. Do not remove either for consistency with the retirement. See the
+# retirement block at the foot of this file; plan of record
+# OmniNode-ai/knowledge-base-internal#328 phase 1.
 
 repos:
   # YAML formatting (standard across ecosystem)
@@ -47,9 +58,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: trailing-whitespace
-        args: [--markdown-linebreak-ext=md]
-        exclude: ^\.github/workflows/
       - id: end-of-file-fixer
         exclude: ^(\.github/workflows/|\.mcp\.json$)
       - id: check-merge-conflict
@@ -163,6 +171,21 @@ repos:
         files: ^(src/omnibase_core/.*\.py|scripts/ci/check_import_ratchet\.py|scripts/ci/import_ratchet_baseline\.py|\.importlinter|pyproject\.toml)$
         stages: [pre-commit]
 
+      # OMN-18790: the skip-count ratchet's own logic, driven over synthetic
+      # reports locally. The case that matters is the RED one: a reintroduced
+      # environmentally-skipped test must turn the gate red. The shipped
+      # baseline's provenance is validated in the same pass, because a baseline
+      # number with no recorded measurement is a claim, not a measurement.
+      # SYNC with ci.yml job 'skip-count-ratchet' (Operating Rule #5).
+      - id: skip-count-ratchet
+        name: Skip-count baseline ratchet selftest (OMN-18790)
+        entry: uv run python scripts/ci/skip_count_ratchet.py --selftest
+        language: system
+        pass_filenames: false
+        files: >-
+          ^(scripts/ci/skip_count_ratchet\.py|config/skip_count_baseline\.yaml|tests/ci/test_skip_count_ratchet_omn18790\.py|\.github/workflows/ci\.yml)$
+        stages: [pre-commit]
+
       # Async-fixture decorator gate (OMN-17319) -- fail-closed, whole-tree, sub-second.
       # An `async def` fixture with a bare `@pytest.fixture` is NOT executed under
       # pytest-asyncio STRICT mode (which tests/pytest.ini leaves in force): pytest hands
@@ -231,6 +254,36 @@ repos:
       # Runs at PRE-PUSH (flip-discovery diffs the whole branch vs origin/dev, which is
       # present locally) — it does its OWN git discovery, so pass_filenames is false.
       # No committed flip in the diff -> exit 0.
+      #
+      # RETAINED TEST EXCEPTION #2 (OMN-18176, kb-internal#328 section 2.8).
+      # This gate reaches the test runner -- indirectly, through the
+      # parity_replay module the entry script imports -- and is DELIBERATELY
+      # KEPT at pre-push even though OMN-18176 retired the governed
+      # impacted-test selector from this stage. Do not remove it as an
+      # oversight or for consistency.
+      #
+      #   Measured cost 2026-09-09: 0.51 s at steady state, exit 0, reporting
+      #                             no canonical-shape flips to prove. The
+      #                             files: filter above means an unrelated
+      #                             push never starts it at all. It runs tests
+      #                             only when the push carries a newly
+      #                             canonicalised node, or burns an entry out
+      #                             of the parity-debt baseline. When it does
+      #                             fire the module records a 2026-07-28
+      #                             census of ~24 min for 22 proofs, ~65 s
+      #                             each.
+      #   Kept ON COST, NOT ON COVERAGE -- and the difference from exception
+      #                             #1 matters. CI runs this IDENTICAL gate in
+      #                             the import-layering job on every pull
+      #                             request except a docs-only diff, and a
+      #                             docs-only diff cannot contain a node flip.
+      #                             Retiring it would lose no property. It
+      #                             stays because it costs half a second at
+      #                             steady state and because phase 1's rule is
+      #                             to change nothing but the smart-tests hook.
+      #                             A later reader who wants exactly one rule
+      #                             can drop it at no loss of coverage; that is
+      #                             a decision, not a cleanup.
       - id: verify-flip-bundle
         name: canonical-shape flip-bundle seam gate (fail-closed, OMN-14809)
         entry: uv run python scripts/ci/verify_flip_bundle.py
@@ -338,6 +391,12 @@ repos:
         name: Reject skip-gate bypass tokens in commit messages (OMN-10414)
         entry: .pre-commit-hooks/reject-deploy-gate-skip-token.sh
         language: script
+        pass_filenames: true
+        stages: [commit-msg]
+      - id: strip-ai-coauthor-trailer
+        name: Strip AI-generated Co-Authored-By trailers from commit messages
+        entry: perl -i -ne 'print unless /^co-authored-by:.*claude.*noreply\@anthropic\.com/i'
+        language: system
         pass_filenames: true
         stages: [commit-msg]
 
@@ -499,20 +558,43 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      # OMN-18235: the dependency-cascade generator may not silently stop
+      # emitting its machine-readable provenance block. Clause 1 of the
+      # OMN-18233 verified-supersession predicate resolves against that block,
+      # so a generator that drops it makes the predicate unresolvable and puts
+      # every release-cascading ticket back behind a pull request that can
+      # never merge. The same assertions run in CI as part of the test suite;
+      # this hook is the local half, scoped to the one file that can break it
+      # so unrelated commits do not pay for it.
+      - id: cascade-provenance-block
+        name: Cascade bumps carry machine-readable provenance (OMN-18235)
+        entry: uv run --frozen pytest
+        language: system
+        files: ^\.github/workflows/dependency-cascade\.yml$
+        pass_filenames: false
+        args:
+          - tests/scripts/test_omn_18235_cascade_provenance_block.py
+          - -q
+          - --no-header
+          - --timeout=60
+          - -p
+          - no:rerunfailures
+          - -p
+          - no:testmon
+        stages: [pre-commit]
+
       # OMN-14515: every Pydantic model must resolve to an explicit extra="forbid".
       # ABSENCE IS A VIOLATION — Pydantic's default is extra="ignore", which SILENTLY
       # DROPS unknown fields (four live data-loss bugs: OMN-14490/14506/14513/14514).
-      # New models block outright. The full-root ratchet remains; :worktree attributes
-      # modified baselined models from staged bytes in a normal hook run and from actual
-      # worktree bytes during the mandated --all-files maintenance check, without
-      # staging or changing the caller's staged content or index entries.
+      # New models block outright; --enforce-modified :staged also blocks a BASELINED
+      # model whose body you just edited — touching it is your chance to fix it.
       # language: system so the validator runs in the repo venv and can introspect the
       # real cls.model_config (which Pydantic has already merged down the MRO) instead
       # of approximating inheritance statically.
       - id: pydantic-extra-forbid
         name: Pydantic extra="forbid" ratchet (OMN-14515)
         entry: uv run --frozen python -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified
-          :worktree src/omnibase_core
+          :staged src/omnibase_core
         language: system
         types: [python]
         files: ^src/omnibase_core/.*\.py$
@@ -705,9 +787,14 @@ repos:
         language: system
         pass_filenames: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/skip_count_ratchet\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
         stages: [pre-commit]
         # validate_string_versions.py: validation script that must load YAML to validate it (OMN-4402)
+        # scripts/ci/skip_count_ratchet.py (OMN-18790): vendored from omnibase_infra
+        # (canonical source, OMN-18776) unmodified — it parses config/skip_count_baseline.yaml,
+        # a CI baseline file, not an ONEX contract, so Pydantic contract-model
+        # validation does not apply. A local model here would fork the upstream
+        # file and break re-copy, which is the whole vendoring convention.
         # required-check-skip-guard/*.py (OMN-14863): vendored from omniclaude
         # (canonical source) unmodified — these parse GitHub Actions workflow
         # YAML into an internal job/if-expression model, not ONEX contract
@@ -1116,7 +1203,7 @@ repos:
       # Suppress legitimate lines with: # local-path-ok
       - id: check-local-paths
         name: No hardcoded local/machine-specific paths (OMN-9043)
-        entry: uv run check-local-paths
+        entry: uv run python -m omnibase_core.validation.validator_local_paths
         language: system
         types: [text]
         # OMN-17159: scripts/hooks/prepush_dispatch.sh is a VENDORED, byte-identical
@@ -1229,6 +1316,26 @@ repos:
             tests/|
             docs/
           )
+        pass_filenames: true
+        stages: [pre-commit]
+
+      # OMN-19252: no NEW hardcoded lab model configuration (task A1 of the
+      # knowledge-base-internal plan 2026-09-23-remove-hardcoded-model-config).
+      # Families: model ids, inference endpoints, private/lab-subnet hosts,
+      # retired lab values, loaded example files. The path classes and the
+      # vendor-default file list live in the validator's policy.yaml; there is
+      # no exclude here and no inline suppression marker (onex-allow-internal-ip
+      # is deliberately NOT honoured). Pre-existing findings are tolerated only
+      # through config/hardcoded_model_config_baseline.yaml, which may only
+      # shrink: a new finding fails, a stale entry fails, and the CI job
+      # "Hardcoded Model Config Ratchet (OMN-19252)" refuses an added entry.
+      # BLOCKING. Runs in CI through the Pre-commit Suite (OMN-18899) job.
+      - id: check-hardcoded-model-config-compute
+        name: No new hardcoded lab model configuration — baseline ratchet (OMN-19252)
+        entry: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          --baseline config/hardcoded_model_config_baseline.yaml
+        language: system
+        types: [text]
         pass_filenames: true
         stages: [pre-commit]
 
@@ -1695,6 +1802,33 @@ repos:
       # Verifies protocol type annotations use UUID instead of str
       # Catches issues like / before CI
       # ~6s runtime - acceptable for pre-push but too slow for every commit
+      #
+      # RETAINED TEST EXCEPTION #1 (OMN-18176, kb-internal#328 section 2.8).
+      # This hook invokes the test runner and is DELIBERATELY KEPT at pre-push
+      # even though OMN-18176 retired the governed impacted-test selector from
+      # this stage. Do not remove it as an oversight or for consistency.
+      #
+      #   Measured cost 2026-09-09: 2.02 s of test-runner time, 4.4 s wall
+      #                             including environment resolution. One
+      #                             module, 45 tests. Unconditional -- it takes
+      #                             no file arguments and always runs.
+      #   Kept ON COVERAGE:         CI gates the same property only when the
+      #                             impacted-subset selector happens to pick
+      #                             this module up. ENABLE_SMART_TESTS is true
+      #                             for this repository, so an ordinary pull
+      #                             request runs the selector's output, not the
+      #                             full suite, and no workflow names this
+      #                             module or a marker unique to it. CI's
+      #                             coverage is therefore conditional on the
+      #                             diff; this hook's is unconditional on every
+      #                             push. Retiring it would trade a guaranteed
+      #                             check for a conditional one.
+      #   What it guards:           that identifier fields on the container and
+      #                             type protocols are typed as UUID rather
+      #                             than str, and that the models built on them
+      #                             validate, reject and serialise accordingly.
+      #                             It is the regression fence around the
+      #                             string-to-identifier migration.
       - id: pytest-protocol-uuid-enforcement
         name: Protocol UUID Enforcement Check
         entry: uv run pytest
@@ -1825,23 +1959,25 @@ repos:
           session files. See OMN-4569."
         stages: [pre-commit]
 
-      # OMN-11186: Block new os.environ / os.getenv additions outside allowlist
-      - id: no-new-env-vars
-        name: No New os.environ/os.getenv Additions (OMN-11186)
-        language: python
-        entry: python scripts/validation/validate_no_new_env_vars.py
-        types: [python]
-        pass_filenames: true
-        stages: [pre-commit]
-
-      # OMN-13566: Canonical AST env-read gate replacing the regex ratchet.
-      - id: no-new-os-environ
-        name: No New os.environ/os.getenv Reads (OMN-13566)
-        entry: uv run python -m omnibase_core.validators.no_new_os_environ
+      # OMN-18899: the argv below is byte-identical to the one the
+      # `typed-bootstrap-environment-boundary` job in ci.yml runs, and
+      # tests/ci/test_typed_bootstrap_hook_ci_parity_omn18899.py reads both out
+      # of their own files and fails if they ever diverge. The hook previously
+      # ran the validator in strict mode over the staged files while CI ran it
+      # in inventory mode over all four roots, so the two verdicts disagreed by
+      # construction: CI was green against the OMN-17744 debt register while a
+      # whole-tree local run was red on all 321 registered findings.
+      #
+      # `--inventory` needs the whole corpus, not a file subset. It fails closed
+      # on an inventory entry no scan reached, so handing it staged filenames
+      # would report every unstaged entry as stale and refuse every commit.
+      # Hence `pass_filenames: false` — the roots come from the validator.
+      - id: typed-bootstrap-environment-boundary
+        name: Typed bootstrap is the only raw process-environment boundary (OMN-17744)
+        entry: uv run python -m omnibase_core.validators.no_new_os_environ --all --inventory
         language: system
         types: [python]
-        exclude: ^(tests/|scripts/|examples/)
-        pass_filenames: true
+        pass_filenames: false
         stages: [pre-commit]
 
       # OMN-5063: Block untyped metadata dict fields
@@ -1923,7 +2059,7 @@ repos:
     hooks:
       - id: precommit-fail-loud-meta-gate
         name: Pre-commit fail-loud meta-gate (exit-0-on-missing / stages coverage)
-        entry: uv run --no-project --with pyyaml python3 scripts/validation/validate_precommit_fail_loud.py
+        entry: uv run --no-project --with pyyaml --with pydantic python3 scripts/validation/validate_precommit_fail_loud.py
         language: system
         pass_filenames: false
         always_run: true
@@ -1931,34 +2067,111 @@ repos:
 
       - id: precommit-pin-parity
         name: Pre-commit pin-parity (pre-commit rev vs CI-pinned SHA)
-        entry: uv run --no-project --with pyyaml python3 scripts/validation/validate_precommit_pin_parity.py
+        entry: uv run --no-project --with pyyaml --with pydantic python3 scripts/validation/validate_precommit_pin_parity.py
         language: system
         pass_filenames: false
         always_run: true
         stages: [pre-commit]
 
-  # Governed impacted-test selector at PRE-PUSH (OMN-13973 / WS7 OMN-14655, D6a).
-  # Runs the fast local IMPACTED SUBSET of the unit suite once per `git push`,
-  # via the SAME selector CI uses (scripts/ci/detect_test_paths.py +
-  # test_selection_adjacency.yaml, ENABLE_SMART_TESTS) -- never a hand-typed -k.
-  # Fail-closed: escalates to the full unit suite when it cannot prove narrowing
-  # is safe (shared module / pyproject deps / scripts/ci/ / >=8 modules / main).
-  # NET-NEGATIVE-SURFACE: retires the "run the whole suite by hand before every
-  # push" default (root CLAUDE.md Rule #4). This is a fast local mirror ADVISORY
-  # of the full CI suite -- NOT byte-parity with an enforced CI context (on CI
-  # the selector is behind ENABLE_SMART_TESTS off-by-default; the enforced gate
-  # is the full suite). FAIL-LOUD: hard-errors if base/selector/adjacency cannot
-  # resolve (plan section 3d.4); never a green skip.
-  - repo: local
+  # --------------------------------------------------------------------------
+  # detect-secrets -- the LOCAL half of the .secrets.baseline gate (OMN-18669)
+  #
+  # This repository has carried `.secrets.baseline` and judged it in CI only.
+  # A CI-only secrets gate finds the credential AFTER it has been pushed to a
+  # remote, which is real exposure under CLAUDE.md rule 22 and the expensive
+  # kind -- the remedy is a rotation and a consumer sweep, not an amend. The
+  # local half refuses the commit before the value ever leaves the machine.
+  #
+  # Same tool, same pin, same baseline and the SAME exclusions as the
+  # `detect-secrets` job in CI, deliberately: if the two selections differ, a
+  # commit passes locally and the required check fails, or worse, the reverse.
+  # Change them together or not at all.
+  #
+  # `--no-verify` is not optional (OMN-15063): without it several plugins call
+  # the live vendor API to "verify" each match and silently drop anything that
+  # comes back VERIFIED_FALSE, so a negative or uncertain network answer
+  # removes a finding. Never remove this flag without re-proving the miss is
+  # fixed another way.
+  #
+  # This hook does NOT rewrite the baseline: measured 2026-09-18, a line shift
+  # above a tracked finding left the committed file byte-identical, so it
+  # reintroduces none of the per-PR churn OMN-18521 removed. A genuinely new
+  # finding blocks, and is approved by auditing it into the baseline on
+  # purpose -- never by loosening this hook.
+  # --------------------------------------------------------------------------
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
     hooks:
-      - id: prepush-smart-tests
-        name: Governed impacted-test selector (pre-push, OMN-13973)
-        entry: bash scripts/hooks/prepush_smart_tests.sh
-        language: system
-        pass_filenames: false
-        always_run: true
-        verbose: true
-        stages: [pre-push]
+      - id: detect-secrets
+        name: detect-secrets (judged against .secrets.baseline, OMN-18669)
+        args: ['--baseline', '.secrets.baseline', '--no-verify']
+        exclude: |
+          (?x)^(
+            uv\.lock|
+            \.venv/.*|
+            tests/fixtures/.*|
+            \.secrets\.baseline|
+            \.github/workflows/.*\.yml|
+            url_authority_baseline\.json|
+            canonical_inference_baseline\.json|
+            extra_forbid_baseline\.yaml|
+            config/hardcoded_model_config_baseline\.yaml
+          )$
+
+  # --------------------------------------------------------------------------
+  # secrets-baseline wiring gate (OMN-18669)
+  #
+  # The detect-secrets hook above is worth exactly as much as the wiring around
+  # it. A repository can carry .secrets.baseline and read it from nowhere: the
+  # file is present, the repo looks protected, and nothing is checking. This
+  # refuses that state — the baseline owes a pre-commit reader AND a CI reader,
+  # and it is the local half of the same gate .github/workflows/
+  # secrets-baseline-wiring.yml runs in CI, pinned to the same omniclaude SHA so
+  # the two verdicts cannot diverge. Advancing it is those two lines, together.
+  # --------------------------------------------------------------------------
+  - repo: https://github.com/OmniNode-ai/omniclaude
+    rev: 42b994826519e8d6bc21d0ca915803084c7c3955  # pragma: allowlist secret
+    hooks:
+      - id: secrets-baseline-wired
+
+# ---------------------------------------------------------------------------
+# RETIRED 2026-09-11 (OMN-18176): the governed impacted-test selector
+# `prepush-smart-tests` (OMN-13973 / WS7 OMN-14655) no longer runs at
+# pre-push. It ran `bash scripts/hooks/prepush_smart_tests.sh`, which
+# dispatched either the impacted subset or, fail-closed, the whole
+# `tests/` tree -- 45,136 collectable tests -- onto a lab host at five
+# budgeted cores, 1h13m to 2h13m per escalation.
+#
+# Why it went: hosted CI is the ENFORCED merge gate and runs the identical
+# selection. Measured in this worktree on 2026-09-11, two independent
+# collections diffed both directions:
+#
+#     pre-push maximal  `pytest tests/ --ignore=tests/integration`  45,136
+#     CI full suite     `pytest tests/ --ignore=tests/integration`  45,136
+#     in pre-push, not in CI ......................................       0
+#     in CI, not in pre-push ......................................       0
+#
+# Neither side applies a marker expression, so no test lost its only
+# execution path and there is nothing to re-home. The narrow path used the
+# same module CI's smart selection uses (scripts/ci/detect_test_paths.py),
+# so the local leg was a duplicate of CI's own selection, not a second
+# opinion. Honest limit: feedback moves later, not away.
+#
+# `scripts/hooks/prepush_smart_tests.sh` is RETAINED, not deleted -- the
+# remote dispatcher and seven modules under tests/scripts/ pin it. Its
+# header now states it is manual-invocation only. The CI-side selector is
+# byte-unchanged.
+#
+# Rollback is `git revert` of this change's squash commit. There is no
+# environment variable that turns the leg back on, deliberately: no
+# PREPUSH_* knob and no ENABLE_SMART_TESTS override restores it, and no
+# dual path exists. Plan of record: OmniNode-ai/knowledge-base-internal#328
+# phase 1. Precedents: OmniNode-ai/omnibase_infra#3415 and
+# OmniNode-ai/omnimarket#2463.
+#
+# The end state is asserted mechanically by
+# tests/ci/test_prepush_test_leg_retired_omn18176.py, not by this comment.
+# ---------------------------------------------------------------------------
 
 # Configuration
 default_install_hook_types: [pre-commit, pre-push, commit-msg]

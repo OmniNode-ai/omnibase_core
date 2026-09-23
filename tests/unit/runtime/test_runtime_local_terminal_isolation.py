@@ -44,7 +44,11 @@ import pytest
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_terminal_outcome import EnumTerminalOutcome
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
+from omnibase_core.models.runtime.model_contract_terminal_topic import (
+    ModelContractTerminalTopic,
+)
 from omnibase_core.protocols.runtime.protocol_local_runtime_message import (
     ProtocolLocalRuntimeMessage,
 )
@@ -54,6 +58,13 @@ _MODULE = "tests.unit.runtime.test_runtime_local_terminal_isolation"
 
 _COMMAND_TOPIC = "onex.cmd.omn15660.terminal-isolation.v1"
 _TERMINAL_TOPIC = "onex.evt.omn15660.terminal-isolation-completed.v1"
+
+# OMN-18445: ``_on_terminal_event`` now receives the contract's declaration for
+# the topic that delivered the record. These tests exercise the SUCCESS
+# terminal, whose classification is still the payload's to decide.
+_DECLARED_SUCCESS_TERMINAL = ModelContractTerminalTopic(
+    topic=_TERMINAL_TOPIC, outcome=EnumTerminalOutcome.SUCCESS
+)
 
 
 class ModelIsolationCommand(BaseModel):
@@ -519,7 +530,8 @@ def test_envelope_shaped_failed_terminal_is_classified_failed(tmp_path: Path) ->
         _envelope(
             correlation_id,
             {"status": "failed", "correlation_id": str(correlation_id)},
-        )
+        ),
+        _DECLARED_SUCCESS_TERMINAL,
     )
 
     assert runtime._result is EnumWorkflowResult.FAILED
@@ -541,7 +553,8 @@ def test_envelope_shaped_failure_statuses_all_classify_failed(
         _envelope(
             correlation_id,
             {"status": status, "correlation_id": str(correlation_id)},
-        )
+        ),
+        _DECLARED_SUCCESS_TERMINAL,
     )
 
     assert runtime._result is EnumWorkflowResult.FAILED
@@ -565,7 +578,8 @@ def test_envelope_shaped_terminal_with_no_status_anywhere_is_refused(
     )
 
     runtime._on_terminal_event(
-        _envelope(correlation_id, {"correlation_id": str(correlation_id)})
+        _envelope(correlation_id, {"correlation_id": str(correlation_id)}),
+        _DECLARED_SUCCESS_TERMINAL,
     )
 
     assert runtime._result is not EnumWorkflowResult.COMPLETED
@@ -588,7 +602,8 @@ def test_envelope_shaped_success_terminal_is_completed(tmp_path: Path) -> None:
         _envelope(
             correlation_id,
             {"status": "success", "correlation_id": str(correlation_id)},
-        )
+        ),
+        _DECLARED_SUCCESS_TERMINAL,
     )
 
     assert runtime._result is EnumWorkflowResult.COMPLETED
@@ -611,7 +626,7 @@ def test_bare_domain_terminal_without_status_keeps_the_offline_classification(
         state_root=tmp_path / "state",
     )
 
-    runtime._on_terminal_event({"kind": "completed"})
+    runtime._on_terminal_event({"kind": "completed"}, _DECLARED_SUCCESS_TERMINAL)
 
     assert runtime._result is EnumWorkflowResult.COMPLETED
 
@@ -633,7 +648,7 @@ def test_envelope_payload_failure_beats_an_envelope_level_success(
     )
     payload["status"] = "success"
 
-    runtime._on_terminal_event(payload)
+    runtime._on_terminal_event(payload, _DECLARED_SUCCESS_TERMINAL)
 
     assert runtime._result is EnumWorkflowResult.FAILED
 

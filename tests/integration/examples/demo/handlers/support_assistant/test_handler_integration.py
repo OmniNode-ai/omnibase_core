@@ -277,14 +277,19 @@ class TestProviderClientCreation:
     """Tests for creating provider clients from config."""
 
     def test_local_client_from_config(self) -> None:
-        """LocalLLMClient can be created from ModelConfig."""
-        from examples.demo.handlers.support_assistant.model_config import LOCAL_CONFIG
+        """LocalLLMClient accepts an explicitly configured local endpoint."""
+        from examples.demo.handlers.support_assistant.model_config import ModelConfig
 
-        client = LocalLLMClient.from_config(LOCAL_CONFIG)
+        config = ModelConfig(
+            provider="local",
+            model_name="qwen2.5-coder-14b",
+            endpoint_url="https://llm.example.test:8200",
+        )
+        client = LocalLLMClient.from_config(config)
 
         assert client is not None
-        assert client.endpoint_url == LOCAL_CONFIG.endpoint_url
-        assert client.model_name == LOCAL_CONFIG.model_name
+        assert client.endpoint_url == config.endpoint_url
+        assert client.model_name == config.model_name
 
     def test_local_client_invalid_provider_raises(self) -> None:
         """Creating LocalLLMClient with wrong provider raises ModelOnexError."""

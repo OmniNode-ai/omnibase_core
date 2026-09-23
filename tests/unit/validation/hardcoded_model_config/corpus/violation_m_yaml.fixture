@@ -1,0 +1,3 @@
+tiers:
+  cheap:
+    default_model: glm-4.5-air

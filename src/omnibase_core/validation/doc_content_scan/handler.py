@@ -92,8 +92,8 @@ _HOST_SHORTHAND: Final[re.Pattern[str]] = re.compile(
 )
 
 # A personal absolute home path: /Users/<name>/ or /home/<name>/ — the portable
-# $OMNI_HOME / ${ONEX_HOST} / Path.home() forms carry no leading /Users|/home root
-# and so never match.
+# $OMNIBASE_PATH / $OMNI_HOME / ${ONEX_HOST} / Path.home() forms carry no leading
+# /Users|/home root and so never match.
 _PERSONAL_PATH: Final[re.Pattern[str]] = re.compile(r"/(?:Users|home)/[A-Za-z0-9._-]+")
 
 # An ssh invocation of the shape ``ssh <user>@<host>``.
@@ -108,8 +108,8 @@ _PERSONAL_EMAIL: Final[re.Pattern[str]] = re.compile(
     r"\.[A-Za-z]{2,}\b"
 )
 
-# A Linear ticket reference: OMN-<digits> as a standalone token (so OMNI_HOME /
-# OMNINODE are not matched). Matches anywhere on the line — prose, parenthetical,
+# A Linear ticket reference: OMN-<digits> as a standalone token (so OMNIBASE_PATH /
+# OMNI_HOME / OMNINODE are not matched). Matches anywhere on the line — prose, parenthetical,
 # heading, list item, link target, or embedded filename.
 _TICKET_REFERENCE: Final[re.Pattern[str]] = re.compile(r"(?<![A-Za-z0-9_])OMN-\d+\b")
 

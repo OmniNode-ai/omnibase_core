@@ -1,3 +1,74 @@
+## v0.47.22 (2026-09-21)
+
+### Release
+- Cut omnibase-core from dev at 0.47.22 by hand rather than by the scheduled train, because three consumers are blocked on a fix that no published tag carries.
+- 6 release-relevant commit(s) merged since v0.47.20.
+- The cut version is the one dev already carried; no version line moved in this pull request.
+
+### Changes
+- A FAIL supersede receipt no longer latches a receipt key forever. An attempt-scoped record whose filename suffix contains a dot is now visible to resolution instead of being silently dropped, records order totally by creation instant and then by a dotted-numeric sequence key, and a PASS supersedes a prior FAIL only when it carries a different commit sha, so the chain cannot be used as a retry-until-green channel (#1736).
+- A gate-decided exhaustion now carries a cause it can land on (#1735).
+- CI contexts are scoped by event (#1732).
+- Code ownership is repointed at teams that exist (#1734).
+- A workflow-budget waiver is renewed for seven days (#1731).
+- The core delegation source slice is delivered (#1730).
+
+## v0.47.21
+
+### Changes
+- Added typed delegation terminal outcome and content verdict fields for K1.
+
+## v0.47.20 (2026-09-20)
+
+### Release
+- Cut omnibase-core from dev at 0.47.20 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.19.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Changes
+- Added a frozen delivery-context model carrying topic, partition, offset and an optional broker timestamp, for the dispatch protocol to reference. It is deliberately inert: nothing imports it and a test asserts that by walking the tree (#1728).
+
+## v0.47.19 (2026-09-20)
+
+### Release
+- Cut omnibase-core from dev at 0.47.19 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.18.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Changes
+- Stamped the delegate-skill command with its true publish instant, so a consumer reads when the command was actually published rather than when it was constructed (#1720).
+
+## v0.47.18 (2026-09-19)
+
+### Release
+- Cut omnibase-core from dev at 0.47.18 by the scheduled release train.
+- 5 release-relevant commit(s) merged since v0.47.17.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Features
+- Declared the delegation output contracts, together with contract, budget and deliverable-span evidence and typed refusal models (#1715).
+
+### Changes
+- Added the change-control evidence-source autobind caller to this repository (#1713).
+- Made the gitignore-baseline hook propagable to its targets (#1710).
+- Reconciled the product-facing path retirement against the 2026-08-28 boundary ruling (#1714).
+- Retired an internal-only workspace environment variable from this repository's product-facing paths (#1712).
+
+## v0.47.17 (2026-09-18)
+
+### Release
+- Cut omnibase_core from dev at 0.47.17 under the release-trains roll-out. dev was ALREADY at 0.47.17 against a published v0.47.16, so this release edits no version and no dependency pin; it is this changelog entry plus the tag.
+- 2 release-relevant commits since v0.47.16, both already merged to dev under their own required contexts. Nothing speculative is included.
+
+### Release-train premise, stated rather than implied
+- **Green CI on the candidate's gating commit.** Every required context on `omnibase_core@dev` reported success for the gating commit of `4bbfd5319d57` — resolved from the merged pull request's head, because required contexts are PR-time gates that never report on a squash-merge commit.
+- **Ancestry.** `main` is an ancestor of `dev` (main-only 0, dev-only 4), so the release fast-forward can succeed.
+- **No lab premise, and why that is honest.** This repo has no lab lane of its own and reaches the lab only vendored into an omnibase_infra candidate, so no receipt is keyed by one of its shas. A cut here is a PyPI publish plus a `main` fast-forward, never a deploy, and the repos that DO reach a runtime pick this release up through governed pin bumps that carry their own lab receipt.
+- **Premise verified locally rather than by the release train.** The train cannot currently read branch protection: its App installation lacks the `administration` permission, so its own premise refuses every repo. That grant is an org-level decision and is tracked as a pending decision in the work ledger. The premise above was resolved with the same code path against the live repositories rather than skipped.
+
+### Staging only, verified from parsed YAML
+- The production deploy workflow declares `workflow_dispatch` and no push trigger, so a `main` fast-forward cannot reach it, and no omnibase_core workflow references it. Of this repo's main/release/tag-triggered workflows, none carries a production signature.
+
 <!-- onex-allow-file-todo-marker reason="historical changelog entries include literal TODO marker tokens" -->
 
 ## v0.47.7 (2026-09-09)

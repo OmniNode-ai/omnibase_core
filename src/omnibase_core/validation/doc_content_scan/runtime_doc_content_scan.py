@@ -209,7 +209,7 @@ async def _run(paths: list[Path], *, quiet: bool) -> int:
         if total_findings:
             print(
                 f"\n{total_findings} doc-content violation(s). Replace the local "
-                f"trace with a portable form ($OMNI_HOME, ${{ONEX_HOST}}, "
+                f"trace with a portable form ($OMNIBASE_PATH, $OMNI_HOME, ${{ONEX_HOST}}, "
                 f"localhost, an RFC5737 doc IP) or drop the OMN-<digits> ticket "
                 f"reference, or add `doc-content-ok` to suppress an approved line "
                 f"(or `doc-content-file-ok` for a whole file)."

@@ -1,0 +1,170 @@
+---
+# OMN-18790 — per-suite skip-count baseline for omnibase_core (epic OMN-18775).
+#
+# Ported from omnibase_infra's OMN-18776 landing (squash 77ea8d01). The gate
+# that reads this file is scripts/ci/skip_count_ratchet.py, a hand-vendored
+# copy of that repo's script; there is no automated vendoring path in this
+# estate, so the SYNC header on that file is the convention.
+#
+# Each entry records what a suite is ALLOWED to leave unexecuted, and how that
+# number was measured. An entry with no provenance is refused by the gate: a
+# baseline with no recorded measurement is a claim, not a measurement.
+#
+# Lowering a number here is the ONLY way to lower the bar. There is no flag and
+# no environment variable on scripts/ci/skip_count_ratchet.py that does it, and
+# tests/ci/test_skip_count_ratchet_omn18790.py reads the parser's own option
+# strings to keep it that way.
+#
+# mode: count    — the collected set is identical every run; compare the number.
+# mode: nodeids  — an impacted-test selector varies the collected set, so compare
+#                  identities instead. A selector only ever narrows, so a narrowed
+#                  run's skip set is a subset of a full-width baseline.
+#
+# Honest limit: this counts skips, it does not judge them. A structurally sound
+# skip and one caused by an env var CI never sets look identical here. What the
+# ratchet removes is the SILENT GROWTH of the set, not the set.
+version: 1
+suites:
+  omnibase_core/tests-integration:
+    repo: omnibase_core
+    job: Integration Tests (Split n/4)
+    mode: count
+    max_skips: 17
+    baseline_collected: 608
+    provenance:
+      measured_at: '2026-09-18'
+      measured_by: OMN-18790
+      measurement_command: gh run download 35351419513 --repo OmniNode-ai/omnibase_core --pattern 'junit-int-*'
+        --dir <dir> && uv run python scripts/ci/skip_count_ratchet.py --print-observed --suite omnibase_core/tests-integration
+        --junit <dir>/*/junit-int-*.xml
+      source_runs:
+        - '35351419513'
+      corroborating_runs:
+        - '35339212128'
+        - '35331654634'
+        - '35346004317'
+        - '35336363535'
+      notes: 'The frozen-17 surface epic OMN-18775 named. Measured on five consecutive runs (three push-to-dev:
+        35351419513, 35339212128, 35331654634; two pull_request: 35346004317, 35336363535). All five observed
+        17 unique skipped ids out of 608 collected, and the id SETS were byte-identical: 0 ids outside
+        this baseline and 0 ids missing from it, on every one. Mode is count because this job is NOT behind
+        the impacted-test selector — its command is a fixed `pytest tests/integration/ --splits 4 --group
+        N`, so the collected set does not vary and a count comparison cannot false-fail on narrowing.
+        node_ids are recorded anyway so a breach names the offending test rather than only a number. What
+        the 17 are: 11 support-assistant handler cases that need a local LLM endpoint CI does not provide,
+        and 6 agent-YAML cases that need an omniclaude sibling checkout CI does not have. This entry does
+        not judge either group; it refuses their silent growth. Positive control for the five zeros above,
+        run end-to-end over 35351419513''s own JUnit bytes with one synthetic skipped id injected into
+        split 1: the gate reports 18 against a baseline of 17, names the injected id, and exits 1.'
+    node_ids:
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestErrorRecovery::test_timeout_raises_model_onex_error
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestHandlerWithLocalModel::test_handler_processes_billing_request
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestHandlerWithLocalModel::test_handler_processes_technical_request
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestHandlerWithLocalModel::test_response_has_meaningful_content
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestHandlerWithLocalModel::test_response_matches_schema
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestJSONResponseQuality::test_response_is_valid_json
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestLocalModelIntegration::test_local_llm_client_protocol_compliant
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestLocalModelIntegration::test_local_model_health_check
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestLocalModelIntegration::test_local_model_responds
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestProviderClientCreation::test_local_client_from_config
+      - integration.examples.demo.handlers.support_assistant.test_handler_integration.TestProviderClientCreation::test_local_client_invalid_provider_raises
+      - integration.models.agents.test_agent_yaml_validation.TestAgentYAMLValidation::test_agent_yaml_files_found
+      - integration.models.agents.test_agent_yaml_validation.TestAgentYAMLValidation::test_all_agents_summary
+      - integration.models.agents.test_agent_yaml_validation.TestAgentYAMLValidation::test_omniclaude_agents_path_exists
+      - integration.models.agents.test_agent_yaml_validation.TestAgentYAMLValidation::test_pr_review_agent_has_expected_structure
+      - integration.models.agents.test_agent_yaml_validation.TestAgentYAMLValidation::test_validate_agent_yaml[NOTSET]
+      - integration.models.agents.test_agent_yaml_validation.TestAgentYAMLValidation::test_validate_compliant_agents
+  omnibase_core/test-parallel:
+    repo: omnibase_core
+    job: Tests (Split n/m)
+    mode: nodeids
+    max_skips: 60
+    baseline_collected: 45557
+    provenance:
+      measured_at: '2026-09-19'
+      measured_by: OMN-16851
+      measurement_command: gh run download 35445052084 --repo OmniNode-ai/omnibase_core --pattern 'test-results-*'
+        --dir <dir> && uv run python scripts/ci/skip_count_ratchet.py --print-observed --suite omnibase_core/test-parallel
+        --junit <dir>/*/junit-*.xml
+      source_runs:
+        - '35445052084'
+      corroborating_runs:
+        - '35443411014'
+      notes: 'Re-measured because the 2026-09-18 (OMN-18790) baseline recorded node_ids WITHOUT a leading
+        "tests." package segment (e.g. unit.enums.test_compat_enum_parity_omn12189), while every run on
+        2026-09-19 -- both this branch (OMN-16851, jonah/omn-16849-c17-parameter-retirement, runs 35442641430,
+        35443411014, 35445052084, all three) and an UNRELATED open PR (#1710, lakshman/omn-18033-propagate-additional-deps,
+        same-day failure, zero files in common with this change) -- observed the identical 60 ids WITH
+        the "tests." prefix (e.g. tests.unit.enums.test_compat_enum_parity_omn12189). The #1710 cross-check
+        is the positive control: two unrelated branches on the same day producing the same "new" prefix
+        proves a classname-emission change upstream of this baseline, not drift caused by either PR''s
+        content. dev itself was already red on this exact gate at 6ce05387 (this branch''s own merge-base,
+        two separate CI runs, both failure) before either PR existed. This entry updates the recorded
+        format to match current reality; it does not relax the check -- the skip COUNT is unchanged at
+        60, and the SET of underlying skip causes (OMN-1126 circular-import module skip, sibling-clone-dependent
+        cases, etc.) is unchanged, confirmed by diffing the old and new node_ids with the "tests." prefix
+        stripped: the sets are identical. baseline_collected moved 45480 -> 45557 because this measurement
+        run''s dev merge-base is one commit later (OMN-18807, +77 collected from its own new test file)
+        than the 2026-09-18 measurement''s base.'
+    node_ids:
+      - tests.scripts.test_prepush_host_table::test_the_slot_probe_counts_held_locks_under_real_zsh
+      - tests.unit.enums.test_compat_enum_parity_omn12189
+      - tests.unit.models.cli.test_model_cli_result.TestModelCliResultDataManagement::test_get_typed_metadata
+      - tests.unit.models.contracts.test_model_delegation_runtime_profile
+      - tests.unit.models.discovery.test_unified_discovery_system
+      - tests.unit.models.nodes.node_services.test_model_service_compute_invocation.TestModelServiceComputeBasicInvocation::test_target_node_validation_by_service_name
+      - tests.unit.normalization.test_e2e_contract_validation.TestRealCorpusFilesDoNotThrow::test_migration_audit_mode_does_not_raise[NOTSET]
+      - tests.unit.normalization.test_e2e_contract_validation.TestRealCorpusFilesDoNotThrow::test_strict_mode_does_not_raise[NOTSET]
+      - tests.unit.scripts.ci.test_verify_flip_bundle::test_passes_on_committed_infra_flips[omnibase_infra.nodes.node_coding_agent_invoke_effect]
+      - tests.unit.scripts.ci.test_verify_flip_bundle::test_passes_on_committed_infra_flips[omnibase_infra.nodes.node_coding_agent_workspace_compute]
+      - tests.unit.scripts.ci.test_verify_flip_bundle::test_resolved_infra_root_is_always_git_readable
+      - tests.unit.scripts.test_gen_hook_bits_precommit::test_hook_bits_drift_registered_in_omniclaude
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderClear::test_clear_empty_registry
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderClear::test_clear_removes_all_providers
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDunderMethods::test_contains_not_registered
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDunderMethods::test_contains_registered
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDunderMethods::test_len_empty
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDunderMethods::test_len_with_providers
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDunderMethods::test_repr
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDunderMethods::test_repr_with_providers
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDuplicateHandling::test_duplicate_with_replace_true_succeeds
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDuplicateHandling::test_duplicate_without_replace_raises_error
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderDuplicateHandling::test_replace_false_is_default
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByCapability::test_find_by_capability_empty_registry
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByCapability::test_find_by_capability_exact_match_required
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByCapability::test_find_by_capability_multiple_matches
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByCapability::test_find_by_capability_no_match
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByCapability::test_find_by_capability_single_match
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByTags::test_find_by_tags_any_match_default
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByTags::test_find_by_tags_any_match_multiple_tags
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByTags::test_find_by_tags_empty_tags_list
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByTags::test_find_by_tags_empty_tags_match_all
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByTags::test_find_by_tags_match_all_no_matches
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByTags::test_find_by_tags_match_all_true
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderFindByTags::test_find_by_tags_no_matches
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderGet::test_get_after_unregister_returns_none
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderGet::test_get_existing_provider
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderGet::test_get_nonexistent_provider_returns_none
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderLifecycle::test_register_multiple_providers
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderLifecycle::test_register_single_provider
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderLifecycle::test_unregister_existing_provider
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderLifecycle::test_unregister_nonexistent_provider
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderLifecycle::test_unregister_twice_returns_false_second_time
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListAll::test_list_all_after_unregister
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListAll::test_list_all_empty_registry
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListAll::test_list_all_preserves_insertion_order
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListAll::test_list_all_returns_all_providers
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListCapabilities::test_list_capabilities_empty_registry
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListCapabilities::test_list_capabilities_multiple_providers
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListCapabilities::test_list_capabilities_returns_set_of_all_capabilities
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderListCapabilities::test_list_capabilities_single_provider
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderThreadSafety::test_concurrent_read_operations
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderThreadSafety::test_concurrent_register_and_read
+      - tests.unit.services.registry.test_registry_provider.TestServiceRegistryProviderThreadSafety::test_concurrent_register_unregister
+      - tests.unit.test_thread_safety.TestCacheRaceConditions::test_cache_lru_eviction_race
+      - tests.unit.validation.cross_repo.test_baseline_enforcement.TestEngineBaselineSuppression::test_partial_baseline_some_pass_some_fail
+      - tests.unit.validation.test_validation_performance
+      - tests.unit.validation.test_validation_utils_edge_cases.TestExtractProtocolSignatureEdgeCases::test_extract_protocol_generic_exception
+      - tests.unit.validation.test_validation_utils_edge_cases.TestExtractProtocolSignatureEdgeCases::test_extract_protocol_with_parsing_exception
+      - tests.unit.validation.test_validator_receipt_reprobe::test_non_allowlisted_probe_is_rejected[
+        curl https://example.com]

@@ -22,6 +22,7 @@ from omnibase_core.enums.enum_reserved_group_prefix import EnumReservedGroupPref
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.util_consumer_group import (
     DEFAULT_ENVIRONMENT,
+    ENVIRONMENT_ENV_VAR,
     KAFKA_CONSUMER_GROUP_MAX_LENGTH,
     apply_instance_discriminator,
     apply_topic_discriminator,
@@ -250,13 +251,13 @@ def test_environment_defaults_to_local_when_unset_or_blank(
     """An unset ENVIRONMENT must not masquerade as a managed environment."""
     monkeypatch.delenv("ENVIRONMENT", raising=False)
     assert resolve_environment_token() == DEFAULT_ENVIRONMENT
-    monkeypatch.setenv("ENVIRONMENT", "   ")
+    monkeypatch.setenv(ENVIRONMENT_ENV_VAR, "   ")
     assert resolve_environment_token() == DEFAULT_ENVIRONMENT
 
 
 @pytest.mark.unit
 def test_environment_is_read_and_normalized(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ENVIRONMENT", "ONEX-Dev")
+    monkeypatch.setenv(ENVIRONMENT_ENV_VAR, "ONEX-Dev")
     assert resolve_environment_token() == "onex-dev"
     assert derive_service_group_id("node", service="svc").startswith("onex-dev.")
 

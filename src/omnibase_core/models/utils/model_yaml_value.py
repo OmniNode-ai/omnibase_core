@@ -124,8 +124,8 @@ class ModelYamlValue(BaseModel):
             ) from e
 
 
-# Rebuild model to resolve forward references for self-referential fields.
-ModelYamlValue.model_rebuild()
+# Rebuild model to resolve forward references for self-referential fields
+ModelYamlValue.model_rebuild(raise_errors=False)
 
 
 __all__ = ["ModelYamlValue"]

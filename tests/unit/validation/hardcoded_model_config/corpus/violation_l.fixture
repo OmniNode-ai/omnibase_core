@@ -1,0 +1,3 @@
+import yaml
+
+DATA = yaml.safe_load(open("config/lane.example.yaml"))

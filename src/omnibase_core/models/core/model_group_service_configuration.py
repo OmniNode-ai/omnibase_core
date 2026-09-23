@@ -33,4 +33,4 @@ class ModelGroupServiceConfiguration(BaseModel):
     metrics_path: str = Field(default="/metrics", description="Metrics endpoint path")
 
 
-ModelGroupServiceConfiguration.model_rebuild()
+ModelGroupServiceConfiguration.model_rebuild(raise_errors=False)

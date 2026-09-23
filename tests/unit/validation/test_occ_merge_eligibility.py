@@ -64,6 +64,8 @@ def _write_receipt(
     pr_number: int | None = 123,
     commit_sha: str = PR_SHA,
     contract_sha256: str | None,
+    contract_entry_sha256: str | None = None,
+    receipts_dir: Path | None = None,
 ) -> None:
     receipt = {
         "schema_version": "1.0.0",
@@ -83,7 +85,10 @@ def _write_receipt(
     }
     if contract_sha256 is not None:
         receipt["contract_sha256"] = contract_sha256
-    path = root / "receipts" / ticket_id / evidence_item_id / "command.yaml"
+    if contract_entry_sha256 is not None:
+        receipt["contract_entry_sha256"] = contract_entry_sha256
+    receipt_root = receipts_dir if receipts_dir is not None else root / "receipts"
+    path = receipt_root / ticket_id / evidence_item_id / "command.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         yaml.safe_dump(receipt, sort_keys=True),
@@ -811,18 +816,134 @@ def test_missing_self_bind_only_emits_actionable_reason_on_occ_repo(
     assert result.receipt_ids == (f"{TICKET}:dod-001:command",)
     assert result.missing_or_nonpass_receipts == ()
     assert result.stale_receipt_bindings == ()
-    # remediation payload: exact entry id, contract file, receipt path,
-    # pr_number, and the OMN-13888 hash-recompute reminder
+    # Remediation names the deterministic structural path and explicitly keeps
+    # it outside DoD/AC coverage.
     assert "occ-self-bind-pr-123" in result.detail
-    assert f"contracts/{TICKET}.yaml" in result.detail
     assert (
-        f"drift/dod_receipts/{TICKET}/occ-self-bind-pr-123/command.yaml"
+        f"drift/occ_bindings/{TICKET}/occ-self-bind-pr-123/command.yaml"
         in result.detail
     )
     assert "pr_number: 123" in result.detail
     assert "contract_sha256" in result.detail
     assert "contract_entry_sha256" in result.detail
-    assert "OMN-13888" in result.detail
+    assert "Do not declare" in result.detail
+    assert "binds_ac" in result.detail
+    assert "OMN-18075" in result.detail
+
+
+@pytest.mark.unit
+def test_undeclared_structural_self_bind_receipt_is_eligible(
+    tmp_path: Path,
+) -> None:
+    """OMN-18075: structural binding is resolved outside ``dod_evidence``."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+    structural_id = "occ-self-bind-pr-123"
+    _write_receipt(
+        tmp_path,
+        evidence_item_id=structural_id,
+        pr_number=123,
+        contract_sha256=contract_hash,
+        receipts_dir=tmp_path / "drift" / "occ_bindings",
+    )
+
+    contract_data = yaml.safe_load(
+        (tmp_path / "contracts" / f"{TICKET}.yaml").read_text(encoding="utf-8")
+    )
+    assert structural_id not in {item["id"] for item in contract_data["dod_evidence"]}
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is True, result.detail
+    assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+    assert f"{TICKET}:{structural_id}:command" in result.receipt_ids
+
+
+@pytest.mark.unit
+def test_undeclared_structural_self_bind_rejects_stale_contract_hash(
+    tmp_path: Path,
+) -> None:
+    """An undeclared binding stays structural, but never escapes integrity."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="occ-self-bind-pr-123",
+        pr_number=123,
+        contract_sha256=STALE_HASH,
+        receipts_dir=tmp_path / "drift" / "occ_bindings",
+    )
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+    assert "occ-self-bind-pr-123" in result.detail
+
+
+@pytest.mark.unit
+def test_undeclared_structural_self_bind_rejects_per_entry_hash(
+    tmp_path: Path,
+) -> None:
+    """Structural provenance cannot claim a hash for a nonexistent DoD row."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="occ-self-bind-pr-123",
+        pr_number=123,
+        contract_sha256=contract_hash,
+        contract_entry_sha256=f"sha256:{'a' * 64}",
+        receipts_dir=tmp_path / "drift" / "occ_bindings",
+    )
+
+    result = validate_occ_merge_eligibility(_occ_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.CONTRACT_HASH_MISMATCH
+    assert "must not declare contract_entry_sha256" in result.detail
+    assert "OMN-18075" in result.detail
+
+
+@pytest.mark.unit
+def test_product_repo_does_not_consume_structural_self_bind_receipt(
+    tmp_path: Path,
+) -> None:
+    """The new structural lookup is confined to the canonical OCC repo."""
+    contract_hash = _write_contract(tmp_path)
+    _write_receipt(
+        tmp_path,
+        pr_number=999,
+        commit_sha="c" * 40,
+        contract_sha256=contract_hash,
+    )
+    _write_receipt(
+        tmp_path,
+        evidence_item_id="occ-self-bind-pr-123",
+        pr_number=123,
+        contract_sha256=contract_hash,
+        receipts_dir=tmp_path / "drift" / "occ_bindings",
+    )
+
+    result = validate_occ_merge_eligibility(_snapshot(tmp_path))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.PR_TICKET_MISMATCH
 
 
 @pytest.mark.unit
@@ -1010,9 +1131,8 @@ def test_missing_self_bind_names_every_unbound_ticket(tmp_path: Path) -> None:
 
     assert result.eligible is False
     assert result.reason is EnumOccEligibilityReason.MISSING_OCC_SELF_BIND
-    assert f"contracts/{TICKET}.yaml" in result.detail
-    assert f"contracts/{second_ticket}.yaml" in result.detail
-    assert f"drift/dod_receipts/{second_ticket}/occ-self-bind-pr-123" in result.detail
+    assert f"drift/occ_bindings/{TICKET}/occ-self-bind-pr-123" in result.detail
+    assert f"drift/occ_bindings/{second_ticket}/occ-self-bind-pr-123" in result.detail
 
 
 @pytest.mark.unit
@@ -1050,8 +1170,8 @@ def test_missing_self_bind_only_names_the_unbound_ticket(tmp_path: Path) -> None
 
     assert result.eligible is False
     assert result.reason is EnumOccEligibilityReason.MISSING_OCC_SELF_BIND
-    assert f"drift/dod_receipts/{second_ticket}/occ-self-bind-pr-123" in result.detail
-    assert f"drift/dod_receipts/{TICKET}/" not in result.detail
+    assert f"drift/occ_bindings/{second_ticket}/occ-self-bind-pr-123" in result.detail
+    assert f"drift/occ_bindings/{TICKET}/" not in result.detail
 
 
 @pytest.mark.unit

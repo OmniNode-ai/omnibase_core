@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Per-receipt aggregate emitted by the diff-consistency scanner."""
+"""Per-receipt aggregation of diff-consistency violations."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,10 +13,7 @@ from omnibase_core.validation.diff_consistency_violation import (
 
 @dataclass(frozen=True)
 class ReceiptDiffFinding:
-    """All diff-consistency violations found for one receipt file."""
+    """All diff-consistency violations found for one receipt file on disk."""
 
     receipt_path: Path
     violations: list[DiffConsistencyViolation]
-
-
-__all__ = ["ReceiptDiffFinding"]

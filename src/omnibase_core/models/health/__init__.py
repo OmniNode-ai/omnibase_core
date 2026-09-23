@@ -5,8 +5,6 @@
 Health domain models for ONEX.
 """
 
-from pydantic.errors import PydanticUndefinedAnnotation
-
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 
 from .model_baseline_health_report import ModelBaselineHealthReport
@@ -42,12 +40,8 @@ __all__: list[str] = [
 
 # Fix forward references for Pydantic models.
 # These rebuilds are needed to resolve self-referential type annotations.
-try:
-    ModelHealthStatus.model_rebuild()
-    ModelToolHealth.model_rebuild()
-except (ImportError, PydanticUndefinedAnnotation):
-    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
-    pass
+ModelHealthStatus.model_rebuild(raise_errors=False)
+ModelToolHealth.model_rebuild(raise_errors=False)
 
 # Resolve forward reference for ModelHealthCheckMetadata.custom_fields
 # This is needed because ModelCustomFields is imported with TYPE_CHECKING guard
@@ -62,9 +56,10 @@ try:
     # then ModelHealthCheckConfig (contains ModelHealthCheckMetadata)
     # Use explicit namespace to ensure the forward reference is resolved
     ModelHealthCheckMetadata.model_rebuild(
-        _types_namespace={"ModelCustomFields": _ModelCustomFields}
+        _types_namespace={"ModelCustomFields": _ModelCustomFields},
+        raise_errors=False,
     )
-    ModelHealthCheckConfig.model_rebuild()
-except (ImportError, PydanticUndefinedAnnotation):
-    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
+    ModelHealthCheckConfig.model_rebuild(raise_errors=False)
+except ImportError:
+    # The services package retries these models after its forward types load.
     pass

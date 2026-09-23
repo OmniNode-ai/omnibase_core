@@ -55,6 +55,7 @@ from omnibase_core.models.validation.model_contract_config_compliance_finding im
 INFRA_ALLOWLIST: frozenset[str] = frozenset(
     {
         "KAFKA_BOOTSTRAP_SERVERS",
+        "OMNIBASE_PATH",
         "OMNI_HOME",
         "ONEX_STATE_DIR",
         "ONEX_STATE_ROOT",
