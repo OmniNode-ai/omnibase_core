@@ -615,10 +615,15 @@ class ModelToolHealth(BaseModel):
         )
 
 
-# Fix forward references for Pydantic models
-try:
-    ModelToolHealth.model_rebuild()
-except (
-    Exception  # noqa: BLE001
-):  # error-ok: model_rebuild may fail during circular import resolution, safe to ignore
-    pass
+# Resolve the TYPE_CHECKING-only forward references before exposing the model.
+# These core models do not import the health package, so direct runtime imports
+# avoid leaving ModelToolHealth incomplete while preserving the health import order.
+from omnibase_core.models.core.model_generic_properties import ModelGenericProperties
+from omnibase_core.models.core.model_monitoring_metrics import ModelMonitoringMetrics
+
+ModelToolHealth.model_rebuild(
+    _types_namespace={
+        "ModelGenericProperties": ModelGenericProperties,
+        "ModelMonitoringMetrics": ModelMonitoringMetrics,
+    }
+)

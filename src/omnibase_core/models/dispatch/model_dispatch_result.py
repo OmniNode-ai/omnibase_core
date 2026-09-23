@@ -146,6 +146,7 @@ class ModelDispatchResult(BaseModel):
         default=None,
         description="Identifier of the route that was matched (if any).",
     )
+    # string-id-ok: human-readable dispatch registry key, not a UUID
     dispatcher_id: str | None = Field(
         default=None,
         description="Identifier of the dispatcher that was invoked (if any).",

@@ -68,7 +68,7 @@ required_validators:
 
   hardcoded-local-paths:
     description: |
-      Blocks /Users/, /Volumes/, /home/, C:\Users\ absolute paths in source.  # local-path-ok OMN-13294 doc text naming the patterns this gate blocks
+      Blocks machine-specific macOS user-home and volume paths, Linux home paths, and Windows user-directory absolute paths in source.
       Violations escape this on any repo without the hook wired.
     central_source: "omnibase_core.validation.validator_local_paths"
     pre_commit: required

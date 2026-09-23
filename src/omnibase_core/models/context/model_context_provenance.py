@@ -20,10 +20,8 @@ class ModelContextProvenance(BaseModel):
     source: str = Field(
         description="Backend that produced this item (e.g. repowise, linear)"
     )
-    source_id: str = (
-        Field(  # string-id-ok: external system identifier, not an internal UUID
-            description="Stable identifier within the source system"
-        )
+    source_id: str = (  # string-id-ok: external system identifier, not an internal UUID
+        Field(description="Stable identifier within the source system")
     )
     source_hash: str = Field(description="Content hash for cache invalidation")
     retrieved_at: datetime = Field(

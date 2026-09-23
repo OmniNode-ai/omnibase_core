@@ -150,7 +150,7 @@ _NO_SECRET_BACKEND_IDS: frozenset[str] = frozenset(
 )
 
 _CONFIG_SUFFIXES: frozenset[str] = frozenset({".yaml", ".yml", ".json"})
-_SUPPRESSION_TOKEN = "# backend-secret-ok:"
+_SUPPRESSION_TOKEN = "# backend-secret-ok:"  # secret-ok: detector grammar
 
 # ---------------------------------------------------------------------------
 # Pure scanning functions — identical logic to ported script

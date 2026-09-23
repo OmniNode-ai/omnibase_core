@@ -17,10 +17,10 @@ class ModelDockerComposeConfig:
 
     # Infrastructure service images
     ZOOKEEPER_IMAGE = "confluentinc/cp-zookeeper:7.4.0"
-    KAFKA_IMAGE = "confluentinc/cp-kafka:7.4.0"
+    KAFKA_IMAGE = "confluentinc/cp-kafka:7.4.0"  # env-var-ok: compose default
     PROMETHEUS_IMAGE = "prom/prometheus:v2.45.0"
     GRAFANA_IMAGE = "grafana/grafana:10.0.0"
-    REDIS_IMAGE = "redis:7.2-alpine"
+    REDIS_IMAGE = "redis:7.2-alpine"  # env-var-ok: compose default
 
     # Health check defaults
     DEFAULT_HEALTH_CHECK_INTERVAL = "10s"
@@ -37,8 +37,8 @@ class ModelDockerComposeConfig:
     DEFAULT_BRIDGE_NAME = "onex-bridge"
 
     # Port assignments
-    ZOOKEEPER_PORT = 2181
-    KAFKA_PORT = 9092
-    PROMETHEUS_PORT = 9090
-    GRAFANA_PORT = 3000
-    REDIS_PORT = 6379
+    ZOOKEEPER_PORT = 2181  # env-var-ok: compose default
+    KAFKA_PORT = 9092  # env-var-ok: compose default
+    PROMETHEUS_PORT = 9090  # env-var-ok: compose default
+    GRAFANA_PORT = 3000  # env-var-ok: compose default
+    REDIS_PORT = 6379  # env-var-ok: compose default

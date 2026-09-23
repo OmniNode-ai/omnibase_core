@@ -394,6 +394,16 @@ def test_discover_no_contracts(tmp_path: Path) -> None:
     assert contracts == []
 
 
+@pytest.mark.parametrize("content", ["null\n", "{}\n"])
+def test_discover_skips_absent_or_non_binding_document(
+    tmp_path: Path, content: str
+) -> None:
+    """Null is absent; an empty mapping is present but lacks a binding declaration."""
+    _make_node(tmp_path, node="node_empty", contract_yaml=content)
+
+    assert discover_fsm_binding_contracts(tmp_path) == []
+
+
 def test_contract_schema_error_missing_state_filter(tmp_path: Path) -> None:
     """fsm_handler_binding missing state_filter produces CONTRACT_SCHEMA_ERROR."""
     contract_yaml = """\

@@ -26,6 +26,7 @@ from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_IMPLICIT_DEFAULT,
 )
 from omnibase_core.validators.pydantic_extra_forbid import (
+    load_baseline,
     load_waivers,
     main,
     render_baseline,
@@ -523,6 +524,20 @@ def test_malformed_waiver_is_an_error(
     active, errors = load_waivers(waivers, today_utc())
     assert active == set()
     assert any(expected_error in error for error in errors)
+
+
+@pytest.mark.parametrize("content", ["null\n", "{}\n"])
+def test_absent_or_empty_mapping_baseline_and_waivers_are_explicit_empty_documents(
+    tmp_path: Path, content: str
+) -> None:
+    """Null and empty mappings retain the deliberate empty-document policy."""
+    baseline = tmp_path / "baseline.yaml"
+    waivers = tmp_path / "waivers.yaml"
+    baseline.write_text(content, encoding="utf-8")
+    waivers.write_text(content, encoding="utf-8")
+
+    assert load_baseline(baseline) == set()
+    assert load_waivers(waivers, today_utc()) == (set(), [])
 
 
 # ===========================================================================

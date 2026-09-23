@@ -85,6 +85,11 @@ class TestModelCliResultMetadata:
         assert metadata.tags == ["test", "unit"]
         assert metadata.processing_time_ms == 125.5
 
+    def test_rejects_unknown_field(self):
+        """Unknown metadata keys fail instead of being silently discarded."""
+        with pytest.raises(ValidationError, match="unexpected_field"):
+            ModelCliResultMetadata(unexpected_field="rejected")
+
     def test_processed_at_default_utc(self):
         """Test that default processed_at timestamp is in UTC."""
         metadata = ModelCliResultMetadata()

@@ -3,6 +3,7 @@
 
 """Unit tests for aislop_rule_loader (OMN-11132)."""
 
+import re
 import textwrap
 from pathlib import Path
 
@@ -54,6 +55,22 @@ def test_load_default_rules_parses_without_error() -> None:
         assert rule.name
         assert rule.pattern
         assert rule.severity in ("ERROR", "WARNING", "INFO")
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("rule_name", "source"),
+    [
+        ("obvious_comment", "# TODO: "),
+        ("todo_fixme", "# FIXME: resolve this"),
+    ],
+)
+def test_unfinished_work_rule_patterns_remain_effective(
+    rule_name: str, source: str
+) -> None:
+    ruleset = load_default_rules()
+    rule = next(item for item in ruleset.rules if item.name == rule_name)
+    assert re.search(rule.pattern, source) is not None
 
 
 @pytest.mark.unit

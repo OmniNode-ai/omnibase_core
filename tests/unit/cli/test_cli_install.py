@@ -16,6 +16,7 @@ import yaml
 
 from omnibase_core.cli.cli_install import (
     _install_oncp,
+    _load_registry,
     _resolve_entry_point_contract_path,
 )
 
@@ -52,6 +53,34 @@ def _make_oncp(
             _add(name, data)
 
     return archive
+
+
+@pytest.mark.unit
+def test_load_registry_accepts_existing_string_metadata(
+    tmp_path: Path,
+) -> None:
+    registry_path = tmp_path / "installed_nodes.json"
+    registry_path.write_text(
+        '{"node": {"package": "node", "version": "1.0.0"}}',
+        encoding="utf-8",
+    )
+    with patch(
+        "omnibase_core.cli.cli_install._get_registry_path",
+        return_value=registry_path,
+    ):
+        assert _load_registry() == {"node": {"package": "node", "version": "1.0.0"}}
+
+
+@pytest.mark.unit
+def test_load_registry_rejects_untyped_entry(tmp_path: Path) -> None:
+    registry_path = tmp_path / "installed_nodes.json"
+    registry_path.write_text('{"node": {"version": 1}}', encoding="utf-8")
+    with patch(
+        "omnibase_core.cli.cli_install._get_registry_path",
+        return_value=registry_path,
+    ):
+        with pytest.raises(ValueError, match="only string values"):
+            _load_registry()
 
 
 @pytest.mark.unit

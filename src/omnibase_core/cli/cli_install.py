@@ -42,7 +42,27 @@ def _load_registry() -> dict[str, dict[str, str]]:
     """Load the installed nodes registry from disk."""
     path = _get_registry_path()
     if path.exists():
-        return json.loads(path.read_text())
+        raw: object = json.loads(path.read_text())
+        if not isinstance(raw, dict):
+            raise ValueError(  # error-ok: installed-node registry shape validation at load boundary
+                "installed nodes registry must be a JSON object"
+            )
+
+        registry: dict[str, dict[str, str]] = {}
+        for package_name, metadata in raw.items():
+            if not isinstance(package_name, str) or not isinstance(metadata, dict):
+                raise ValueError(  # error-ok: installed-node registry shape validation at load boundary
+                    "installed nodes registry entries must map package names to objects"
+                )
+            typed_metadata: dict[str, str] = {}
+            for key, value in metadata.items():
+                if not isinstance(key, str) or not isinstance(value, str):
+                    raise ValueError(  # error-ok: installed-node registry shape validation at load boundary
+                        "installed nodes registry metadata must contain only string values"
+                    )
+                typed_metadata[key] = value
+            registry[package_name] = typed_metadata
+        return registry
     return {}
 
 

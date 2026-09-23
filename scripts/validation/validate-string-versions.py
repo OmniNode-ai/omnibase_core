@@ -22,9 +22,11 @@ from __future__ import annotations
 
 import argparse
 import ast
+import io
 import os
 import re
 import sys
+import tokenize
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -502,22 +504,45 @@ class PythonASTValidator(ast.NodeVisitor):
         if line_idx < 0 or line_idx >= len(self.source_lines):
             return False
 
-        line = self.source_lines[line_idx]
+        def has_bypass_token(source_line: str) -> bool:
+            """Return whether a physical line has an exact bypass comment token.
 
-        # Check for inline comment with bypass pattern on the current line
-        if "#" in line:
-            comment_part = line.split("#", 1)[1]
-            for pattern in bypass_patterns:
-                if pattern in comment_part:
-                    return True
+            A marker embedded in a string literal is data, not a policy waiver.
+            ``tokenize`` also keeps this check tied to Python's comment grammar
+            instead of treating every ``#`` as a comment delimiter.
+            """
+            comments: list[str] = []
+            try:
+                tokens = tokenize.generate_tokens(io.StringIO(source_line).readline)
+                for token in tokens:
+                    if token.type == tokenize.COMMENT:
+                        comments.append(token.string[1:].lstrip())
+            except tokenize.TokenError:
+                # A single physical line can be an incomplete parenthesized
+                # expression. Any comment token already emitted is still valid.
+                pass
+            return any(
+                comment.startswith(pattern)
+                for comment in comments
+                for pattern in bypass_patterns
+            )
+
+        # Check an inline bypass marker only when it is a real comment token.
+        if has_bypass_token(self.source_lines[line_idx]):
+            return True
 
         # Check for bypass comment on the previous line (consistent with YAML validation)
         if line_idx > 0:
-            prev_line = self.source_lines[line_idx - 1].strip()
-            if prev_line.startswith("#"):
-                for pattern in bypass_patterns:
-                    if pattern in prev_line:
-                        return True
+            if has_bypass_token(self.source_lines[line_idx - 1]):
+                return True
+
+        # Ruff formats an annotated Pydantic field as ``field: str = (`` then
+        # ``Field(  # string-id-ok: reason``. Accept only that immediate Field
+        # continuation, not an arbitrary later comment.
+        if line_idx + 1 < len(self.source_lines):
+            next_line = self.source_lines[line_idx + 1].lstrip()
+            if next_line.startswith("Field(") and has_bypass_token(next_line):
+                return True
 
         return False
 
