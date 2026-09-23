@@ -47,7 +47,7 @@ _VIOLATION_LINES: tuple[str, ...] = (
 _CLEAN_LINES: tuple[str, ...] = (
     'CONFIG = Path(__file__).parent / "c.yaml"',
     'ROOT = Path(os.environ["OMNI_HOME"])',
-    'D = "/Users/jonah/Code/omni_home"  # local-path-ok',  # test-literal-ok: suppressed
+    'D = "/Users/jonah/Code/omni_home"  # local-path-ok',  # test-literal-ok: suppressed  # local-path-ok
     '"/node_modules/some/pkg/index.js"',
     'BREW = "/usr/local/bin/python3.13"',  # test-literal-ok: near-miss, must stay clean
     'HOST = "/homelab/data/cache"',  # test-literal-ok: near-miss, must stay clean
@@ -115,9 +115,7 @@ def test_findings_are_stably_ordered() -> None:
 
 @pytest.mark.unit
 def test_suppression_marker_suppresses_line() -> None:
-    src = (
-        'X = "/Users/jonah/x/"  # local-path-ok'  # test-literal-ok: suppression fixture
-    )
+    src = 'X = "/Users/jonah/x/"  # local-path-ok'  # test-literal-ok: suppression fixture  # local-path-ok
     assert scan_source(src).flagged is False
 
 

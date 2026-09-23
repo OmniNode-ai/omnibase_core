@@ -621,8 +621,7 @@ api_key = "sk-1234567890abcdef"
         """Test that bypass comment allows hardcoded secrets."""
         test_file = tmp_path / "test_bypass.py"
         test_file.write_text(
-            """# secret-ok: test fixture
-api_key = "sk-1234567890abcdef"
+            """api_key = "sk-1234567890abcdef"  # secret-ok: test fixture
 """,
             encoding="utf-8",
         )

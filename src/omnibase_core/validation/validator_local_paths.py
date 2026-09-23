@@ -40,6 +40,8 @@ from __future__ import annotations
 
 import re
 import sys
+import tokenize
+from io import StringIO
 from pathlib import Path
 from typing import Final
 
@@ -57,6 +59,18 @@ _LOCAL_PATH_PATTERNS: Final[list[tuple[str, re.Pattern[str]]]] = [
 ]
 
 _SUPPRESSION_MARKER: Final[str] = "local-path-ok"
+
+
+def _comment_carries_suppression_marker(line: str) -> bool:
+    """Return whether the rule-local marker occurs in a source comment."""
+    try:
+        return any(
+            token.type == tokenize.COMMENT and _SUPPRESSION_MARKER in token.string
+            for token in tokenize.generate_tokens(StringIO(line).readline)
+        )
+    except tokenize.TokenError:
+        return False
+
 
 # Text-based file extensions to scan
 _TEXT_EXTENSIONS: Final[frozenset[str]] = frozenset(
@@ -156,7 +170,7 @@ class ValidatorLocalPaths(BaseModel):
             return []
 
         for lineno, line in enumerate(lines, start=1):
-            if _SUPPRESSION_MARKER in line:
+            if _comment_carries_suppression_marker(line):
                 continue
             for pattern_name, pattern in _LOCAL_PATH_PATTERNS:
                 for match in pattern.finditer(line):

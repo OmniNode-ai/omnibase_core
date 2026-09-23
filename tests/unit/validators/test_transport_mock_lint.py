@@ -22,6 +22,7 @@ import pytest
 from omnibase_core.validators.transport_mock_lint import (
     SUPPRESSION_TOKEN,
     Finding,
+    _load_baseline,
     validate_file,
     validate_paths,
 )
@@ -45,6 +46,17 @@ def _non_test_file(tmp_path: Path, name: str, content: str) -> Path:
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8")
     return p
+
+
+@pytest.mark.parametrize("content", ["null\n", "{}\n"])
+def test_absent_or_empty_mapping_baseline_retains_empty_mapping_policy(
+    tmp_path: Path, content: str
+) -> None:
+    """Null and empty mappings retain the explicit empty allowance policy."""
+    baseline_path = tmp_path / "baseline.yaml"
+    baseline_path.write_text(content, encoding="utf-8")
+
+    assert _load_baseline(baseline_path) == {}
 
 
 # ---------------------------------------------------------------------------

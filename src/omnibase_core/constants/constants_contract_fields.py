@@ -69,8 +69,8 @@ RUNTIME_LANGUAGE_HINT = "runtime_language_hint"
 META_TYPE = "meta_type"
 
 # Output field processing keys
-BACKEND_KEY = "backend"
-CUSTOM_KEY = "custom"
+BACKEND_KEY = "backend"  # env-var-ok: contract field
+CUSTOM_KEY = "custom"  # env-var-ok: contract field
 DEFAULT_PROCESSED_VALUE = "default_processed"
-INTEGRATION_KEY = "integration"
-PROCESSED_KEY = "processed"
+INTEGRATION_KEY = "integration"  # env-var-ok: contract field
+PROCESSED_KEY = "processed"  # env-var-ok: contract field

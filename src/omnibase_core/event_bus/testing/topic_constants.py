@@ -17,23 +17,23 @@ from __future__ import annotations
 
 from typing import Final
 
-SEAM_TEST_TOPIC: Final[str] = (
-    "onex.evt.omnibase-infra.event-bus-substrate-seam-test.v1"  # env-var-ok: topic name constant, not configuration
+SEAM_TEST_TOPIC: Final[str] = (  # env-var-ok: test topic
+    "onex.evt.omnibase-infra.event-bus-substrate-seam-test.v1"
 )
-FIDELITY_JOIN_LEAVE_TOPIC: Final[str] = (
-    "onex.evt.omnibase-infra.fidelity-join-leave.v1"  # env-var-ok: topic name constant, not configuration
+FIDELITY_JOIN_LEAVE_TOPIC: Final[str] = (  # env-var-ok: test topic
+    "onex.evt.omnibase-infra.fidelity-join-leave.v1"
 )
-FIDELITY_EARLIEST_TOPIC: Final[str] = (
-    "onex.evt.omnibase-infra.fidelity-earliest.v1"  # env-var-ok: topic name constant, not configuration
+FIDELITY_EARLIEST_TOPIC: Final[str] = (  # env-var-ok: test topic
+    "onex.evt.omnibase-infra.fidelity-earliest.v1"
 )
-FIDELITY_LATEST_TOPIC: Final[str] = (
-    "onex.evt.omnibase-infra.fidelity-latest.v1"  # env-var-ok: topic name constant, not configuration
+FIDELITY_LATEST_TOPIC: Final[str] = (  # env-var-ok: test topic
+    "onex.evt.omnibase-infra.fidelity-latest.v1"
 )
-FIDELITY_REJOIN_TOPIC: Final[str] = (
-    "onex.evt.omnibase-infra.fidelity-rejoin.v1"  # env-var-ok: topic name constant, not configuration
+FIDELITY_REJOIN_TOPIC: Final[str] = (  # env-var-ok: test topic
+    "onex.evt.omnibase-infra.fidelity-rejoin.v1"
 )
-FIDELITY_REBALANCE_TOPIC: Final[str] = (
-    "onex.evt.omnibase-infra.fidelity-rebalance.v1"  # env-var-ok: topic name constant, not configuration
+FIDELITY_REBALANCE_TOPIC: Final[str] = (  # env-var-ok: test topic
+    "onex.evt.omnibase-infra.fidelity-rebalance.v1"
 )
 
 __all__: list[str] = [

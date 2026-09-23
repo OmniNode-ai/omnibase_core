@@ -31,6 +31,14 @@ _DELEGATION_TERMINAL_V2_PATH = (
     / "model_delegation_terminal_v2.py"
 )
 
+_PYDANTIC_EXTRA_FORBID_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "src"
+    / "omnibase_core"
+    / "validators"
+    / "pydantic_extra_forbid.py"
+)
+
 
 class ClassDefinitionDetector(ast.NodeVisitor):
     """AST visitor to detect module-level class definitions in Python code.
@@ -194,6 +202,12 @@ def should_exclude_file(filepath: Path) -> bool:
     # exemption tied to that module: an identically named file elsewhere must
     # remain subject to this validator.
     if filepath.resolve() == _DELEGATION_TERMINAL_V2_PATH:
+        return True
+
+    # The extra-forbid ratchet's static and runtime resolvers share one scan engine.
+    # Keep this exemption tied to its canonical module: a same-named file elsewhere
+    # must remain subject to the single-class rule.
+    if filepath.resolve() == _PYDANTIC_EXTRA_FORBID_PATH:
         return True
 
     # Exclude the COMPUTE-validator scan I/O trios (OMN-13294 / OMN-13497).

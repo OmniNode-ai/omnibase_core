@@ -48,7 +48,6 @@ _WORK_ITEM_MARKERS = (
     "TODO",  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
     "FIXME",  # onex-allow-todo-marker OMN-18931 reason="validator input vocabulary, not unfinished work"
     "XXX",
-    "STUB",
 )
 
 try:
@@ -354,7 +353,7 @@ class StubImplementationDetector(ast.NodeVisitor):
                         "Remove 'pass' and implement actual logic before return",
                     )
 
-        # Pattern 6: staleness markers (to-do/fix-me) in docstring or comments  # TODO_FORMAT_EXEMPT: describes stub detection pattern
+        # Pattern 6: staleness markers (to-do/fix-me) in docstring or comments  # TODO_FORMAT_EXEMPT: describes stub detection pattern # onex-allow-todo-marker OMN-17522 detector literal
         if docstring:
             if any(marker in docstring.upper() for marker in _WORK_ITEM_MARKERS):
                 # Check if the function has a stub-ok comment

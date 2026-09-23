@@ -13,8 +13,7 @@ Pass cases:
     - Placeholder strings (YOUR_KEY_HERE, CHANGEME, TODO)
     - Variable name in the exception list (e.g. password_hash)
     - Enum class member with secret-like name
-    - File-level bypass comment in header (# secret-ok: ...)
-    - Inline bypass comment on line (# noqa: secrets)
+    - Same-line bypass comment (# secret-ok: ...)
     - File with only non-secret variable names
 
 Fail cases:
@@ -139,17 +138,17 @@ def test_enum_class_members_not_flagged(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-def test_file_level_bypass_comment_skips_file(tmp_path: Path) -> None:
-    """A # secret-ok: comment in the file header causes the whole file to be skipped."""
+def test_header_marker_does_not_skip_file(tmp_path: Path) -> None:
+    """A header marker cannot suppress a later hardcoded secret."""
     content = "# secret-ok: test fixture file\npassword = 'supersecret'\n"  # pragma: allowlist secret
     sv = _run(tmp_path, "bypass_file.py", content)
-    assert sv.violations == []
+    assert len(sv.violations) == 1
 
 
 @pytest.mark.unit
-def test_inline_bypass_nosec_skips_line(tmp_path: Path) -> None:
-    """An inline # nosec bypass on the same line suppresses the violation."""
-    content = "password = 'mysecretvalue'  # nosec\n"  # pragma: allowlist secret
+def test_inline_bypass_secret_ok_skips_line(tmp_path: Path) -> None:
+    """An inline # secret-ok marker suppresses only its own finding."""
+    content = "password = 'mysecretvalue'  # secret-ok: test fixture\n"  # pragma: allowlist secret
     sv = _run(tmp_path, "bypass_inline.py", content)
     assert sv.violations == []
 

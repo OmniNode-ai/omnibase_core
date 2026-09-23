@@ -33,6 +33,8 @@ Reference:
 
 import ast
 import sys
+import tokenize
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
@@ -56,8 +58,8 @@ class PrintStatementDetector(ast.NodeVisitor):
                 else ""
             )
 
-            # Check for print-ok comment anywhere on the call's source span
-            if self._has_print_ok_comment(line_num, node.end_lineno):
+            # Check for print-ok comment
+            if self._has_print_ok_comment(node):
                 self.generic_visit(node)
                 return
 
@@ -76,36 +78,26 @@ class PrintStatementDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _has_print_ok_comment(
-        self, line_num: int, end_line_num: int | None = None
-    ) -> bool:
-        """Check whether a ``# print-ok:`` comment allows the print at ``line_num``.
-
-        A call is attributed to its opening ``print(`` line, but a formatter
-        wraps a long call across several lines and puts the trailing comment on
-        the CLOSING-paren line. Reading only the opening line and the line above
-        made that annotation invisible, so a correctly annotated multi-line call
-        was reported as a blocking error (OMN-18899).
-
-        The whole source span of the call is read instead: ``line_num`` through
-        ``end_line_num`` (the AST node's ``end_lineno``), plus the line above the
-        call for the comment-on-preceding-line form. A single-line call has
-        ``end_line_num == line_num``, so its behavior is unchanged.
-        """
-        last_line = max(line_num, end_line_num or line_num)
-
-        # Check the line above the call
-        if line_num > 1 and "# print-ok:" in self.source_lines[line_num - 2].strip():
-            return True
-
-        # Check every line of the call, opening through closing paren
-        for candidate in range(line_num, last_line + 1):
-            if (
-                candidate <= len(self.source_lines)
-                and "# print-ok:" in self.source_lines[candidate - 1]
-            ):
+    def _has_print_ok_comment(self, node: ast.Call) -> bool:
+        """Check the exact AST call span and its preceding line for a CLI marker."""
+        start = node.lineno
+        end = node.end_lineno or start
+        for line_num in range(start, end + 1):
+            if _line_has_print_ok_comment(self.source_lines[line_num - 1]):
                 return True
+        if start > 1:
+            return _line_has_print_ok_comment(self.source_lines[start - 2])
+        return False
 
+
+def _line_has_print_ok_comment(line: str) -> bool:
+    """Return whether the print marker occurs in a Python comment token."""
+    try:
+        return any(
+            token.type == tokenize.COMMENT and "# print-ok:" in token.string
+            for token in tokenize.generate_tokens(StringIO(line).readline)
+        )
+    except tokenize.TokenError:
         return False
 
 
