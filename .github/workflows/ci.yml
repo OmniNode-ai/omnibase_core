@@ -4551,7 +4551,8 @@ jobs:
             --checker-dir "$GITHUB_WORKSPACE/onex_change_control_checker" \
             --evidence-contracts-dir "$GITHUB_WORKSPACE/onex_change_control_evidence/contracts" \
             --workspace "$GITHUB_WORKSPACE" \
-            --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control_checker/scripts/ci/dod_runner_legacy_allowlist.txt"
+            --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control_checker/scripts/ci/dod_runner_legacy_allowlist.txt" \
+            --deferred-record "$RUNNER_TEMP/contract-compliance-deferred/record.json"
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Record dependency-bot workflow-only contract compliance decision
@@ -4559,6 +4560,23 @@ jobs:
         run: |
           set -euo pipefail
           echo "Dependency-bot PR changes only workflow files; no product contract DoD check_values apply." >> "$GITHUB_STEP_SUMMARY"
+          mkdir -p "$RUNNER_TEMP/contract-compliance-deferred"
+          printf '%s\n' '{"schema": 1, "deferred": []}' > "$RUNNER_TEMP/contract-compliance-deferred/record.json"
+      # OMN-18157: the pinned runner judges a `test_passes` item with
+      # `gh pr checks`, and in this job that set always holds this job's own
+      # running check, so the item can never pass here. The driver records
+      # each such item instead; CI Summary downloads this record and judges the
+      # items once every other check has a verdict
+      # (scripts/ci/deferred_test_passes_gate.py). Both paths above write a
+      # record, so a success of this job with no artifact fails CI Summary.
+      - name: Upload deferred test_passes record (OMN-18157)
+        uses: actions/upload-artifact@v7
+        with:
+          name: contract-compliance-deferred
+          path: ${{ runner.temp }}/contract-compliance-deferred/record.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
 
   occ-companion-merged:
     name: OCC Companion Merged Gate (OMN-15214)
@@ -4668,6 +4686,10 @@ jobs:
       actions: read
       checks: read
       contents: read
+      # OMN-18157: the deferred test_passes evaluation reads the recorded PR's
+      # head (push runs) and the head's commit statuses.
+      pull-requests: read
+      statuses: read
     # Deadline (below) is comfortably under any run-cancellation window so the
     # required context ALWAYS posts a terminal state first. On pull_request the
     # concurrency group does NOT cancel-in-progress (only merge_group does), so
@@ -4677,7 +4699,9 @@ jobs:
     # 90m deadline was too tight once test-parallel's own budget grew 35->70
     # (self-hosted omnibase-ci fleet latency root-caused in OMN-15980; see that
     # job's timeout-minutes comment and scripts/ci/detect_test_paths.py history).
-    timeout-minutes: 140
+    # OMN-18157: 140 -> 185 for the deferred test_passes step below (up to
+    # its own 40m deadline after the 130m poll deadline).
+    timeout-minutes: 185
     steps:
       - name: Checkout (gate script)
         uses: actions/checkout@v7
@@ -4754,3 +4778,34 @@ jobs:
             fi
             sleep "${POLL_INTERVAL_SECONDS}"
           done
+      # OMN-18157: judge the `test_passes` DoD items Contract Compliance Check
+      # deferred (it cannot judge them in-job: its own check is still running).
+      # Runs only after the verdict above is SUCCESS, so every gate job,
+      # including Contract Compliance Check, has already finished. Same pass
+      # set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL over every check on
+      # the head), read at the exact head this run gates, latest-wins per check
+      # name, every CI Summary row excluded, pending checks polled to a 40m
+      # deadline and then failed. On push the recorded PR's head is judged.
+      - name: Evaluate deferred test_passes DoD items (OMN-18157)
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          rm -rf deferred-record
+          # A missing artifact is not an error here: the gate decides from the
+          # Contract Compliance Check conclusion whether a record is required.
+          if ! gh run download "${RUN_ID}" --repo "${GH_REPO}" --name contract-compliance-deferred --dir deferred-record; then
+            echo "::notice::no contract-compliance-deferred artifact in run ${RUN_ID}"
+          fi
+          python3 -m scripts.ci.deferred_test_passes_gate \
+            --jobs-file jobs.json \
+            --run-attempt "${RUN_ATTEMPT}" \
+            --record deferred-record/record.json \
+            --head-sha "${HEAD_SHA}" \
+            --deadline-seconds 2400 \
+            --poll-interval-seconds 60

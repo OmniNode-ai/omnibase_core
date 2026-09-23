@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Fail closed before invoking the pinned OCC contract-compliance runner."""
+"""Fail closed before invoking the pinned OCC contract-compliance runner.
+
+The runner executes through ``defer_test_passes_driver.py`` so its
+``test_passes`` items are recorded for CI Summary instead of judged in-job
+(OMN-18157).
+"""
 
 from __future__ import annotations
 
@@ -38,6 +43,7 @@ def main() -> int:
     parser.add_argument("--evidence-contracts-dir", required=True, type=Path)
     parser.add_argument("--workspace", required=True, type=Path)
     parser.add_argument("--legacy-allowlist", required=True, type=Path)
+    parser.add_argument("--deferred-record", required=True, type=Path)
     args = parser.parse_args()
 
     try:
@@ -64,18 +70,16 @@ def main() -> int:
         )
         return 1
 
-    runner = args.checker_dir / "scripts" / "ci" / "run_contract_compliance_check.py"
-    if not runner.is_file():
-        sys.stderr.write(
-            f"::error::Pinned contract-compliance runner is unavailable: {runner}\n"
-        )
-        return 1
+    driver = Path(__file__).resolve().parent / "defer_test_passes_driver.py"
     result = subprocess.run(
         [
             "uv",
             "run",
             "python",
-            str(runner),
+            str(driver),
+            "--deferred-record",
+            str(args.deferred_record.resolve()),
+            "--",
             "--pr",
             str(args.pr),
             "--repo",

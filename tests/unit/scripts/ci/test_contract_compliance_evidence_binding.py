@@ -179,6 +179,8 @@ def _runner_command(checker: Path, evidence: Path, workspace: Path) -> list[str]
         str(workspace),
         "--legacy-allowlist",
         str(checker / "scripts/ci/dod_runner_legacy_allowlist.txt"),
+        "--deferred-record",
+        str(checker.parent / "deferred/record.json"),
     ]
 
 
@@ -232,6 +234,11 @@ def test_valid_evidence_invokes_pinned_runner_with_data_and_workspace(
     assert str(checker) in invocation
     assert f"--contracts-dir {evidence}" in invocation
     assert f"--workspace {workspace}" in invocation
+    # OMN-18157: the pinned runner runs through the test_passes deferral driver.
+    assert "scripts/ci/defer_test_passes_driver.py" in invocation
+    assert (
+        f"--deferred-record {tmp_path / 'deferred/record.json'} -- --pr 7" in invocation
+    )
 
 
 def test_workflow_keeps_checker_pin_and_uses_separate_evidence_checkout() -> None:
