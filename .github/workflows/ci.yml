@@ -140,7 +140,7 @@ jobs:
   # reports for a `uses:` job; renaming either half breaks the registration.
   route:
     name: Runner Route (OMN-18031)
-    uses: OmniNode-ai/omniclaude/.github/workflows/route-runner-reusable.yml@b6ba84ef6c9ba3f220204c3d672de1da5131132c
+    uses: OmniNode-ai/omniclaude/.github/workflows/route-runner-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
     with:
       workflow_path: .github/workflows/ci.yml
     secrets:
@@ -211,7 +211,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Judge wheel content parity
-        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@5b0898a938202e499e8b2ce491f9fab65adeeb44
+        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@df6ffe0261e554c4442fbee7c34713993ac50c9d
         with:
           package: omnibase_core
 
@@ -1803,7 +1803,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Cache pre-commit hook environments
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
           key: precommit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -3159,7 +3159,7 @@ jobs:
   # diverge, and advancing the gate is those two lines changed together.
   secrets-baseline-wiring:
     name: secrets-baseline-wiring
-    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@42b994826519e8d6bc21d0ca915803084c7c3955
+    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
 
   quality-gate:
     name: Quality Gate
