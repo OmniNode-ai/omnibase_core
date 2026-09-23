@@ -52,5 +52,5 @@ permissions:
 
 jobs:
   advisory-job-gate:
-    uses: OmniNode-ai/omniclaude/.github/workflows/advisory-job-gate-reusable.yml@d062b74b1e60a3c86ec355d8736fa5d76c903c24
+    uses: OmniNode-ai/omniclaude/.github/workflows/advisory-job-gate-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
     secrets: inherit
