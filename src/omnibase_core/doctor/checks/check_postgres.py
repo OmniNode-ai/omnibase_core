@@ -7,6 +7,7 @@ import time
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 from omnibase_core.models.doctor.model_postgres_probe_config import (
     ModelPostgresProbeConfig,
@@ -22,8 +23,20 @@ class CheckPostgres(DoctorCheckBase):
         start = time.monotonic()
         # Endpoint resolves via the sanctioned overlay boundary
         # (${env.POSTGRES_HOST} / ${env.POSTGRES_PORT}), fail-closed — never a
-        # direct os.environ read or localhost default (OMN-13559).
-        probe = ModelPostgresProbeConfig.from_overlay()
+        # direct os.environ read or localhost default (OMN-13559). The overlay
+        # itself still raises when unbound (that contract is unchanged); this
+        # check turns an unconfigured overlay into a typed "skipped" result
+        # instead of letting the doctor crash on a clean install (OMN-19443).
+        try:
+            probe = ModelPostgresProbeConfig.from_overlay()
+        except ModelOnexError:
+            return ModelDoctorCheckResult(
+                name=self.check_name,
+                category=self.category,
+                status=EnumHealthStatusValue.UNKNOWN,
+                message="Skipped: POSTGRES_HOST/POSTGRES_PORT not configured",
+                duration_ms=int((time.monotonic() - start) * 1000),
+            )
         host = probe.host
         port = probe.port
         try:
