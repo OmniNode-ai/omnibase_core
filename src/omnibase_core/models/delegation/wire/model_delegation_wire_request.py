@@ -230,6 +230,27 @@ class ModelDelegationRequest(BaseModel):
             "The durable per-tenant identity design is OMN-14107."
         ),
     )
+    trace_id: UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Distributed trace identifier for this delegation. OMN-19437: "
+            "463 deployed-lane terminals in 7 days carried null trace and "
+            "span ids because nothing set them. None is explicit "
+            "legacy/unset; the CLI and RuntimeLocal set it at publish "
+            "(OMN-19437 AC2, gated on OMN-19407)."
+        ),
+    )
+    span_id: UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Trace span identifier for this delegation's own operation "
+            "within trace_id. None is explicit legacy/unset; the terminal "
+            "copies both ids from this command verbatim once the publish "
+            "path sets them (OMN-19437 AC2, gated on OMN-19407)."
+        ),
+    )
     # string-id-ok: backend references are named contract slugs, not UUIDs
     backend_id: str | None = (
         Field(  # string-id-ok: backend references are named contract slugs, not UUIDs
