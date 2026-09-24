@@ -68,6 +68,7 @@ def _ruling(**overrides: object) -> ModelWorkRulingRecorded:
         "actor": _session_actor(),
         "ticket_id": "OMN-16177",
         "summary": "operator ruling recorded",
+        "operator_words": "record it",
     }
     kwargs.update(overrides)
     return ModelWorkRulingRecorded(**kwargs)  # type: ignore[arg-type]
@@ -175,6 +176,7 @@ def test_emitted_at_has_no_default() -> None:
             actor=_session_actor(),
             ticket_id="OMN-16177",
             summary="no timestamp supplied",
+            operator_words="record it",
         )
     assert "emitted_at" in str(excinfo.value)
 
@@ -344,14 +346,16 @@ def test_claim_requested_requires_a_ticket_id() -> None:
 
 
 def test_claim_released_requires_a_ticket_id() -> None:
-    with pytest.raises(ValidationError):
-        ModelWorkClaimReleased(  # type: ignore[call-arg]
+    with pytest.raises(ValidationError) as excinfo:
+        ModelWorkClaimReleased(
             event_id=uuid.uuid4(),
             emitted_at=_EMITTED_AT,
             actor=_node_actor(),
-            ticket_id=None,
+            ticket_id=None,  # type: ignore[arg-type]
             summary="releasing nothing in particular",
+            claim_event_id=uuid.uuid4(),
         )
+    assert "ticket_id" in str(excinfo.value)
 
 
 def test_narrative_kinds_allow_an_absent_ticket_id() -> None:
@@ -390,6 +394,7 @@ def test_result_recorded_carries_structured_citations() -> None:
         summary="schema increment landed",
         proof_class=EnumProofClass.CODE_ONLY,
         outcome=EnumWorkOutcome.LANDED,
+        friction_none=True,
         pr_refs=[
             ModelPrRef(
                 repo="omnibase_core",
@@ -421,6 +426,7 @@ def test_result_recorded_defaults_to_no_citations_not_none() -> None:
         ticket_id="OMN-16177",
         summary="blocked on a circular gate",
         outcome=EnumWorkOutcome.BLOCKED,
+        friction_none=True,
     )
     assert event.pr_refs == ()
     assert event.occ_refs == ()
@@ -495,6 +501,13 @@ def test_event_kind_values_are_the_registry_event_types() -> None:
         # with the rest of the registry half of this ticket, not here.
         "work.hold.placed",
         "work.hold.released",
+        # Typed work ledger task T2.
+        "work.message.sent",
+        "work.message.acked",
+        "work.status.recorded",
+        "work.friction.recorded",
+        "work.consent.recorded",
+        "work.ledger.epoch.opened",
     }
 
 

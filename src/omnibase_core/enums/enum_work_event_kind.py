@@ -47,5 +47,23 @@ class EnumWorkEventKind(StrEnum):
     HOLD_RELEASED = "work.hold.released"
     """Releases one hold, wholly or in part, naming it by its event_id."""
 
+    MESSAGE_SENT = "work.message.sent"
+    """A message to named lanes, every lane or the operator. Never consent."""
+
+    MESSAGE_ACKED = "work.message.acked"
+    """Acknowledges one message, hold or ruling, naming it by its event_id."""
+
+    STATUS_RECORDED = "work.status.recorded"
+    """A progress or verification note, with structured PR citations."""
+
+    FRICTION_RECORDED = "work.friction.recorded"
+    """Process friction, with its ticket and a measured or estimated cost."""
+
+    CONSENT_RECORDED = "work.consent.recorded"
+    """Operator consent: the verbatim words, the approved scope and what is out of it."""
+
+    LEDGER_EPOCH_OPENED = "work.ledger.epoch.opened"
+    """Tool-written: a cutover or a roll opened a new ledger epoch."""
+
 
 __all__: list[str] = ["EnumWorkEventKind"]
