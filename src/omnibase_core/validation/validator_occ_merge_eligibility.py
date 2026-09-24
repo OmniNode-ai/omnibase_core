@@ -192,6 +192,10 @@ def validate_occ_merge_eligibility(
     missing_contracts: list[str] = []
     missing_receipts: list[str] = []
     nonpass_receipts: list[str] = []
+    # OMN-19050: why the supersession guard refused a PASS or accepted one at
+    # the same code. Carried into the verdict's detail so the reason a key
+    # resolved as it did is in the log line, not only in the resolver.
+    guard_notes: list[str] = []
     # OMN-16859: PENDING receipts on runner-covered check types, kept in their
     # own bucket so they can be reported distinctly ONLY when nothing harder is
     # outstanding. Deliberately a third list rather than a flag on
@@ -311,6 +315,8 @@ def validate_occ_merge_eligibility(
                         missing_or_nonpass_receipts=tuple(sorted(nonpass_receipts)),
                         detail=supersession.error,
                     )
+                if supersession.guard_note is not None:
+                    guard_notes.append(f"{receipt_key}: {supersession.guard_note}")
                 if supersession.tombstoned or supersession.receipt is None:
                     missing_receipts.append(receipt_key)
                     continue
@@ -473,7 +479,9 @@ def validate_occ_merge_eligibility(
                     ]
                 )
             ),
-            detail="one or more receipts are missing or non-PASS",
+            detail=_with_guard_notes(
+                "one or more receipts are missing or non-PASS", guard_notes
+            ),
         )
 
     # OMN-18075: an OCC companion's receipt-to-current-PR binding is structural
@@ -697,8 +705,16 @@ def validate_occ_merge_eligibility(
         occ_commit_sha=snapshot.occ_commit_sha,
         contract_hashes=contract_hashes,
         receipt_ids=tuple(sorted(receipt_ids)),
-        detail="OCC evidence is present, PASS, hash-bound, and PR-bound",
+        detail=_with_guard_notes(
+            "OCC evidence is present, PASS, hash-bound, and PR-bound", guard_notes
+        ),
     )
+
+
+def _with_guard_notes(detail: str, guard_notes: list[str]) -> str:
+    if not guard_notes:
+        return detail
+    return f"{detail}; supersession guard: " + "; ".join(guard_notes)
 
 
 def _read_file(path: str | None) -> str:

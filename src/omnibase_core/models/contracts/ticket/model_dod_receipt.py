@@ -62,6 +62,8 @@ from omnibase_core.models.contracts.ticket.model_proof_packet import ModelProofP
 _TICKET_ID_RE = re.compile(r"^OMN-\d+$")
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 _SHA256_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
+# A full git object id: 40 hex for a SHA-1 repository, 64 for SHA-256.
+_TREE_SHA_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 # SemVer 2.0.0 — official regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 # Rejects leading zeros in numeric core (e.g. "01.0.0"), allows pre-release
 # identifiers with dot-separated alphanumerics and hyphens (e.g. "1.0.0-rc.1"),
@@ -154,6 +156,17 @@ class ModelDodReceipt(BaseModel):
         description=(
             "Git commit SHA the check was executed against. Used by the "
             "receipt-gate to reject stale receipts that predate the PR head."
+        ),
+    )
+    tree_sha: str | None = Field(
+        default=None,
+        description=(
+            "Git tree object id of ``commit_sha`` (``git rev-parse "
+            "<commit>^{tree}``), full length, OMN-19050. Two commits with the "
+            "same tree ran the same code, so the supersession guard compares "
+            "trees when both records carry one and refuses a PASS that restates "
+            "a FAIL over the same tree. None on receipts written before the "
+            "field existed, and the guard then falls back to ``commit_sha``."
         ),
     )
     runner: str = Field(
@@ -408,6 +421,20 @@ class ModelDodReceipt(BaseModel):
             raise ValueError(f"commit_sha must be 7-40 hex chars (git SHA), got: {v!r}")
         if not _SHA_RE.match(v):
             raise ValueError(f"commit_sha must be 7-40 hex chars (git SHA), got: {v!r}")
+        return v
+
+    @field_validator("tree_sha")
+    @classmethod
+    def _validate_tree_sha(cls, v: str | None) -> str | None:
+        # Full length only. An abbreviated id can name two different trees,
+        # and the guard would then treat two different codebases as one.
+        if v is None:
+            return None
+        if not _TREE_SHA_RE.match(v):
+            raise ValueError(
+                "tree_sha must be a full lowercase git object id "
+                f"(40 or 64 hex chars), got: {v!r}"
+            )
         return v
 
     @field_validator("contract_sha256", "contract_entry_sha256")

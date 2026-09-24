@@ -49,12 +49,35 @@ and two rules make that safe rather than merely possible:
   by a dotted-numeric sequence key second (``_sequence_key``), so two records
   for one key resolve identically in any filesystem order, and a same-second
   pair still has exactly one winner.
-* **A PASS supersedes a FAIL only as an independent observation.** Its
-  replacement must carry a different ``commit_sha`` (``_guarded_winner``).
-  Re-filing a PASS at the FAIL's own head changes nothing and clears nothing,
-  so the chain cannot be used as a retry-until-green channel. Self-attestation
-  is refused upstream and unchanged: ``ModelDodReceipt`` downgrades a PASS
-  whose ``verifier`` equals its ``runner`` to ADVISORY.
+* **A PASS supersedes a FAIL only as an independent observation**
+  (``_guarded_winner``). Re-filing a PASS over the FAIL's own code changes
+  nothing and clears nothing, so the chain cannot be used as a
+  retry-until-green channel. Self-attestation is refused upstream and
+  unchanged: ``ModelDodReceipt`` downgrades a PASS whose ``verifier`` equals
+  its ``runner`` to ADVISORY.
+
+What counts as the same observation (OMN-19050, second pass):
+
+The guard first compared ``commit_sha`` alone, and omnimarket#2839 showed that
+was wrong both ways. An empty commit (``9c09739``, the same tree as
+``f490fba``) got a new commit id with no code change and cleared a FAIL. That
+works for any FAIL, a flaky one included. And a real correction of the
+declared check, re-executed at the SAME head, was refused because the commit
+id matched. Two receipts now describe the same observation only when both of
+these hold:
+
+* **Same code.** Both ``tree_sha`` values match when both records carry one.
+  Otherwise ``commit_sha`` is compared, which is exactly the prior rule, so a
+  record written before ``tree_sha`` existed resolves as it always did.
+* **Same check.** A definition change needs BOTH a different
+  ``contract_entry_sha256`` AND a different declared command. The entry hash
+  also covers the item's description, so a prose edit alone must not count.
+  The runner's per-commit ``repos/<owner>/<repo>/commits/<sha>`` line is not
+  part of the command.
+
+A PASS is refused against ANY earlier FAIL that is the same observation, not
+only the latest one. When a PASS is accepted over a FAIL at the same code
+because the check changed, the resolution records why in ``guard_note``.
 
 This module keeps the path-local O(1) glob the receipt tree was built for; it
 does not scan a global supersessions directory, and chain length for a single
@@ -90,6 +113,13 @@ from omnibase_core.models.contracts.ticket.model_receipt_supersession import (
 # widening was written to fix.
 _SUPERSEDE_SUFFIX_RE = re.compile(r"\.supersede\.([^/]+)\.yaml$")
 
+# The product-repo receipt runner prefixes every executed command with the
+# reference for its own commit (OMN-17794). That line differs on every commit,
+# so it identifies where the check ran, not what the check was.
+_COMMIT_REFERENCE_LINE_RE = re.compile(
+    r"^repos/[^/\s]+/[^/\s]+/commits/[0-9a-f]{7,40}$"
+)
+
 
 @dataclass(frozen=True)
 class SupersessionResolution:
@@ -104,12 +134,17 @@ class SupersessionResolution:
       unreadable/invalid; the caller must fail closed.
 
     ``source_path`` names the record used, for operator-facing messages.
+
+    ``guard_note`` is set when the anti-retry guard shaped the outcome: it
+    refused a PASS that restated a FAIL, or it accepted a PASS over a FAIL at
+    the same code because the check definition changed. None otherwise.
     """
 
     receipt: ModelDodReceipt | None
     tombstoned: bool
     error: str | None
     source_path: Path
+    guard_note: str | None = None
 
 
 def _load_supersede_record(
@@ -185,18 +220,78 @@ def _order_key(
     return created_at, (1, sequence)
 
 
+def _declared_command(receipt: ModelDodReceipt) -> str:
+    """The command a receipt executed, without the runner's commit reference.
+
+    Whitespace is collapsed, so re-wrapping a long command is not a change.
+    """
+    lines = [
+        line
+        for line in receipt.check_value.splitlines()
+        if not _COMMIT_REFERENCE_LINE_RE.match(line.strip())
+    ]
+    return " ".join(" ".join(lines).split())
+
+
+def _code_identity(
+    fail: ModelDodReceipt, candidate: ModelDodReceipt
+) -> tuple[bool, str]:
+    """Whether two receipts observed the same code, and the identity compared.
+
+    The tree is the code. Two commits with one tree differ only in metadata,
+    so a new commit id over an unchanged tree is not a new observation. The
+    tree is compared only when BOTH receipts carry one. Otherwise the commit
+    id is compared, which is the rule every earlier record was resolved under.
+
+    A tree may only ever ADD sameness. One commit has one tree, and
+    ``tree_sha`` is written by the record's author with nothing binding it to
+    ``commit_sha``, so the same commit id is the same code whatever trees the
+    two records claim. Letting a claimed tree split one commit into two
+    observations would be weaker than the commit-only rule this replaces.
+    """
+    if fail.commit_sha == candidate.commit_sha:
+        return True, f"commit {fail.commit_sha}"
+    if fail.tree_sha is not None and candidate.tree_sha is not None:
+        return fail.tree_sha == candidate.tree_sha, f"tree {fail.tree_sha}"
+    return False, f"commit {fail.commit_sha}"
+
+
+def _check_definition_changed(
+    fail: ModelDodReceipt, candidate: ModelDodReceipt
+) -> bool:
+    """Whether a different check ran, not just a differently described one.
+
+    Both signals must move. The entry hash alone also changes when only the
+    item's description is edited, and the command text alone is what OCC
+    commit 66946494a5 left inconsistent with a hand-edited entry hash. A
+    missing hash on either side is not evidence of a change.
+    """
+    if fail.contract_entry_sha256 is None or candidate.contract_entry_sha256 is None:
+        return False
+    return (
+        fail.contract_entry_sha256 != candidate.contract_entry_sha256
+        and _declared_command(fail) != _declared_command(candidate)
+    )
+
+
 def _guarded_winner(
     ordered: list[tuple[Path, ModelReceiptSupersession]],
-) -> tuple[Path, ModelReceiptSupersession]:
+) -> tuple[Path, ModelReceiptSupersession, str | None]:
     """The last record in chain order, unless it launders a prior FAIL.
 
     OMN-19050. Ordering alone would let any later PASS erase any earlier
     FAIL, which turns an append-only chain into a retry-until-green channel:
     re-file the same observation often enough and the gate stops biting. So a
-    PASS supersedes the latest prior FAIL only as an INDEPENDENT OBSERVATION,
-    meaning its replacement carries a different ``commit_sha`` — something
-    actually changed between the two runs. A PASS at the FAIL's own head is
-    the same observation restated, and the FAIL stands.
+    PASS supersedes a prior FAIL only as an INDEPENDENT OBSERVATION: different
+    code (``_code_identity``) or a different check
+    (``_check_definition_changed``). The same check over the same code is the
+    same observation restated, and the FAIL stands.
+
+    Every earlier FAIL is checked, not only the latest. With only the latest,
+    FAIL at T1, then FAIL at T2, then PASS at T1 again would clear T1.
+
+    Returns the winning record and a note when the guard shaped the outcome
+    (see ``SupersessionResolution.guard_note``).
 
     This is deliberately the ONLY distinctness test applied here. The other
     half of the two-actor rule is enforced upstream and unchanged: a
@@ -212,29 +307,55 @@ def _guarded_winner(
     winner_path, winner = ordered[-1]
     replacement = winner.replacement
     if replacement is None or replacement.status is not EnumReceiptStatus.PASS:
-        return winner_path, winner
+        return winner_path, winner, None
 
+    accepted_note: str | None = None
     for path, record in reversed(ordered[:-1]):
         prior = record.replacement
-        if prior is None:
+        if prior is None or prior.status is not EnumReceiptStatus.FAIL:
             continue
-        if prior.status is not EnumReceiptStatus.FAIL:
+        same_code, identity = _code_identity(prior, replacement)
+        if not same_code:
             continue
-        if prior.commit_sha == replacement.commit_sha:
-            return path, record
-        break
-    return winner_path, winner
+        if _check_definition_changed(prior, replacement):
+            if accepted_note is None:
+                accepted_note = (
+                    f"PASS {winner_path.name} supersedes FAIL {path.name} at the "
+                    f"same {identity} because the check definition changed: "
+                    f"contract_entry_sha256 {prior.contract_entry_sha256} -> "
+                    f"{replacement.contract_entry_sha256}"
+                )
+            continue
+        return (
+            path,
+            record,
+            (
+                f"PASS {winner_path.name} refused: it restates FAIL {path.name} "
+                f"at the same {identity} under the same check definition "
+                f"(contract_entry_sha256 {prior.contract_entry_sha256}); an "
+                "independent observation needs different code or a changed check"
+            ),
+        )
+    return winner_path, winner, accepted_note
 
 
 def _resolution_from_record(
-    record: ModelReceiptSupersession, path: Path
+    record: ModelReceiptSupersession, path: Path, guard_note: str | None = None
 ) -> SupersessionResolution:
     if record.tombstone:
         return SupersessionResolution(
-            receipt=None, tombstoned=True, error=None, source_path=path
+            receipt=None,
+            tombstoned=True,
+            error=None,
+            source_path=path,
+            guard_note=guard_note,
         )
     return SupersessionResolution(
-        receipt=record.replacement, tombstoned=False, error=None, source_path=path
+        receipt=record.replacement,
+        tombstoned=False,
+        error=None,
+        source_path=path,
+        guard_note=guard_note,
     )
 
 
@@ -298,8 +419,8 @@ def resolve_supersession(
         ordered = [
             (path, record) for _s, path, record, _e in sequenced if record is not None
         ]
-        path, record = _guarded_winner(ordered)
-        return _resolution_from_record(record, path)
+        path, record, note = _guarded_winner(ordered)
+        return _resolution_from_record(record, path, note)
 
     if current_pr_number is None:
         return _legacy_winner()
@@ -329,10 +450,10 @@ def resolve_supersession(
 
     if applicable:
         applicable.sort(key=lambda item: item[0])
-        winner_path, winner_record = _guarded_winner(
+        winner_path, winner_record, note = _guarded_winner(
             [(path, record) for _key, path, record in applicable]
         )
-        return _resolution_from_record(winner_record, winner_path)
+        return _resolution_from_record(winner_record, winner_path, note)
 
     # No record targets this consumer specifically — behave exactly as a
     # caller with no PR context would (legacy / untargeted chain).
