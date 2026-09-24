@@ -217,7 +217,7 @@ repos:
         entry: uv run python scripts/ci/canonical_handler_shape.py
         language: system
         pass_filenames: true
-        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|src/omnibase_core/runtime/runtime_local(_adapter)?\.py|src/omnibase_core/mixins/mixin_envelope_extraction\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/test_selection_adjacency\.yaml|scripts/ci/adequacy_receipts/.*)$
+        files: ^(src/omnibase_core/(.*/)?nodes/.*/contract\.yaml|src/omnibase_core/(.*/)?nodes/.*\.py|src/omnibase_core/runtime/runtime_local(_adapter)?\.py|src/omnibase_core/mixins/mixin_envelope_extraction\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/test_selection_adjacency\.yaml|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-commit]
 
       # RSD provenance-stamp fail-closed GATE (OMN-15011). The OMN-14355 ratchet
@@ -235,7 +235,7 @@ repos:
         entry: uv run python scripts/ci/rsd_provenance_stamp.py
         language: system
         pass_filenames: false
-        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*/\.rsd_provenance\.json|scripts/ci/rsd_provenance_stamp\.py|scripts/ci/rsd_provenance_stamp_baseline\.py)$
+        files: ^(src/omnibase_core/(.*/)?nodes/.*/contract\.yaml|src/omnibase_core/(.*/)?nodes/.*/\.rsd_provenance\.json|scripts/ci/rsd_provenance_stamp\.py|scripts/ci/rsd_provenance_stamp_baseline\.py)$
         stages: [pre-commit]
 
       # Fail-closed pre-PR SEAM gate for canonical-shape flips (OMN-14809). The
@@ -289,7 +289,7 @@ repos:
         entry: uv run python scripts/ci/verify_flip_bundle.py
         language: system
         pass_filenames: false
-        files: ^(src/omnibase_core/.*/nodes/.*/contract\.yaml|src/omnibase_core/.*/nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/parity_replay\.py|scripts/ci/parity_red_on_base_baseline\.py|scripts/ci/adequacy_receipts/.*)$
+        files: ^(src/omnibase_core/(.*/)?nodes/.*/contract\.yaml|src/omnibase_core/(.*/)?nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/parity_replay\.py|scripts/ci/parity_red_on_base_baseline\.py|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-push]
 
       # Cleanup: Clear tmp/ directory before commits
