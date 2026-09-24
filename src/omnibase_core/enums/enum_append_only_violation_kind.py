@@ -14,6 +14,7 @@ class EnumAppendOnlyViolationKind(StrEnum):
     ENTRY_EDITED = "entry_edited"
     ENTRY_REMOVED = "entry_removed"
     RECEIPT_FILE_MUTATED = "receipt_file_mutated"
+    BRANCH_RECORD_MUTATED = "branch_record_mutated"
 
 
 __all__ = ["EnumAppendOnlyViolationKind"]
