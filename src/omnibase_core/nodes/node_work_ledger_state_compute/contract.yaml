@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the work_ledger_state COMPUTE node.
+# Folds the lines of the JSON-lines work ledger into the typed ledger state:
+# holds in force, refused releases, open claims, messages and acks.
+#
+# See: OMN-19405 (typed work ledger plan T4, epic OMN-16176)
+
+name: node_work_ledger_state_compute
+node_id: node_work_ledger_state_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Pure, order-independent fold of typed work-ledger lines into a ModelWorkLedgerState. Reads typed fields
+  only, never free text. An unparseable line, an unknown schema or kind, a conflicting duplicate event_id,
+  or a ledger with no epoch event makes the state undecidable, so every query answers UNDECIDED. No filesystem
+  access, no clock, no global state.
+input_model: omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input.ModelWorkLedgerFoldInput
+output_model: omnibase_core.models.nodes.work_ledger_state.model_work_ledger_state.ModelWorkLedgerState
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeWorkLedgerStateCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
