@@ -36,6 +36,7 @@ from omnibase_core.models.events.work.model_work_event_base import (
     WORK_EVENT_PARTITION_KEY_FIELDS,
     ModelWorkEventBase,
 )
+from omnibase_core.models.events.work.model_work_event_union import ModelWorkEvent
 from omnibase_core.models.events.work.model_work_friction_recorded import (
     ModelWorkFrictionRecorded,
 )
@@ -47,6 +48,16 @@ from omnibase_core.models.events.work.model_work_hold_released import (
 )
 from omnibase_core.models.events.work.model_work_ledger_epoch_opened import (
     ModelWorkLedgerEpochOpened,
+)
+from omnibase_core.models.events.work.model_work_ledger_line import (
+    WORK_LEDGER_EVENTS_PATH_ENV,
+    dump_work_ledger_line,
+    events_path_from_env,
+    parse_work_ledger_line,
+)
+from omnibase_core.models.events.work.model_work_ledger_record import (
+    WORK_LEDGER_SCHEMA,
+    ModelWorkLedgerRecord,
 )
 from omnibase_core.models.events.work.model_work_message_acked import (
     ModelWorkMessageAcked,
@@ -70,6 +81,8 @@ from omnibase_core.models.events.work.model_work_status_recorded import (
 __all__ = [
     "SUMMARY_MAX_LENGTH",
     "WORK_EVENT_PARTITION_KEY_FIELDS",
+    "WORK_LEDGER_EVENTS_PATH_ENV",
+    "WORK_LEDGER_SCHEMA",
     "ModelActor",
     "ModelHoldScope",
     "ModelNodeActor",
@@ -81,15 +94,20 @@ __all__ = [
     "ModelWorkClaimReleased",
     "ModelWorkClaimRequested",
     "ModelWorkCorrectionRecorded",
+    "ModelWorkEvent",
     "ModelWorkEventBase",
     "ModelWorkFrictionRecorded",
     "ModelWorkHoldPlaced",
     "ModelWorkHoldReleased",
     "ModelWorkLedgerEpochOpened",
+    "ModelWorkLedgerRecord",
     "ModelWorkMessageAcked",
     "ModelWorkMessageSent",
     "ModelWorkOperatorConsentRecorded",
     "ModelWorkResultRecorded",
     "ModelWorkRulingRecorded",
     "ModelWorkStatusRecorded",
+    "dump_work_ledger_line",
+    "events_path_from_env",
+    "parse_work_ledger_line",
 ]
