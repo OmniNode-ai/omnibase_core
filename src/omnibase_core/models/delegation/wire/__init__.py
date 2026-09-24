@@ -54,6 +54,10 @@ from omnibase_core.models.delegation.wire.model_delegation_provenance import (
     EnumDelegationTrafficClass,
     ModelDelegationProvenance,
 )
+from omnibase_core.models.delegation.wire.model_delegation_raw_response import (
+    MAX_RAW_RESPONSE_UTF8_BYTES,
+    ModelDelegationRawResponse,
+)
 from omnibase_core.models.delegation.wire.model_delegation_result import (
     EnumCredentialSource,
     EnumDelegationTerminalFailureCause,
@@ -113,6 +117,7 @@ from omnibase_core.models.delegation.wire.model_task_delegated_event import (
 )
 
 __all__: list[str] = [
+    "MAX_RAW_RESPONSE_UTF8_BYTES",
     "MAX_WORDS_PER_SENTENCE_RE",
     "SUPPORTED_ACCEPTANCE_CRITERIA",
     "TASK_DELEGATED_TOPIC_V1",
@@ -149,6 +154,7 @@ __all__: list[str] = [
     "ModelDelegationBudgetRefusal",
     "ModelDelegationContractEvidence",
     "ModelDelegationDeliverableEvidence",
+    "ModelDelegationRawResponse",
     "ModelDelegationOutputRefusal",
     "ModelDelegationRequest",
     "ModelDelegationResult",
