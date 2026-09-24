@@ -2,12 +2,19 @@
 
 ### Release
 - Cut omnibase-core from dev at 0.47.23 by the scheduled release train.
-- 2 release-relevant commit(s) merged since v0.47.22.
+- 5 release-relevant commit(s) merged since v0.47.22.
 - Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
 
 ### Included Since v0.47.22
 - fix(validation): restore fail-closed Core validator enforcement (OMN-16992) (#1674) <!-- doc-content-ok -->
 - feat(OMN-19252): block new hardcoded lab model configuration with a shrink-only baseline (#1743) <!-- doc-content-ok -->
+- feat(OMN-16177): hold kinds and their value types for the typed work ledger (#1747) <!-- doc-content-ok -->
+- feat(OMN-19385): the provider-boundary evidence can carry the raw provider response (#1749) <!-- doc-content-ok -->
+- feat(OMN-19391): delete generated model constants and tier defaults, add typed config overlay documents (#1750) <!-- doc-content-ok -->
+
+### Breaking
+- Removed public API with no shim or alias (#1750): the module `omnibase_core.constants.constants_llm_refs`, its re-exports `omnibase_core.constants.EndpointRef` and `omnibase_core.constants.LogicalModelKey`, the generator `scripts/generate_llm_refs.py`, `omnibase_core.models.configuration.ModelTierConfig`, and the `ModelCLIConfig.tiers` field. A config file that still carries a `tiers:` key is now refused (`extra="forbid"`). Model identities, endpoints, tiers and prices now come from configuration overlays; the typed overlay documents are in `omnibase_core.models.config_overlay`, with JSON Schema exports under `omnibase_core/schemas/config_overlay/`.
+- This stays a patch release on purpose: no repository outside core imports any removed name (re-checked by grep across the downstream repositories before the cut), and a minor bump would fall outside the downstream below-0.48.0 dependency ranges.
 
 ## v0.47.22 (2026-09-21)
 
