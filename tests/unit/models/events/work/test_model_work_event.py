@@ -491,6 +491,10 @@ def test_event_kind_values_are_the_registry_event_types() -> None:
         "work.result.recorded",
         "work.ruling.recorded",
         "work.correction.recorded",
+        # Typed work ledger task T1: the hold kinds. Registered in topics.yaml
+        # with the rest of the registry half of this ticket, not here.
+        "work.hold.placed",
+        "work.hold.released",
     }
 
 
