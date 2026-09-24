@@ -71,6 +71,9 @@ omni-agent = "omnibase_core.cli.cli_commands:cli"
 # Dev/test runtime host CLI (Phase 1 MVP - LocalHandler only)
 # WARNING: For development and testing ONLY, not for production use
 omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
+# OMN-19405 (typed work ledger T5): the read CLI; folds the JSON-lines ledger at
+# ONEX_WORK_LEDGER_PATH and answers one query. Exit 0 CLEAR, 3 HELD/FOUND, 2 UNDECIDED.
+onex-work-ledger = "omnibase_core.nodes.node_work_ledger_state_compute.runtime_work_ledger:main"
 check-local-paths = "omnibase_core.validation.validator_local_paths:main"
 check-github-token-env-reads = "omnibase_core.validation.validator_github_token_env_reads:main"
 # OMN-14401: reject config/registry YAML files declaring duplicate ids over a

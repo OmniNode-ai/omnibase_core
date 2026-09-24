@@ -803,6 +803,44 @@ class TestModelDelegationResult:
         assert dumped["terminal_failure_cause"] == "provider_quota_exhausted"
         assert ModelDelegationFailed.model_validate(dumped) == r
 
+    @pytest.mark.parametrize(
+        ("cause", "wire_value"),
+        [
+            (EnumDelegationTerminalFailureCause.TIMEOUT, "timeout"),
+            (EnumDelegationTerminalFailureCause.NO_TERMINAL, "no_terminal"),
+        ],
+    )
+    def test_failed_terminal_round_trips_omn19435_causes(
+        self,
+        cause: EnumDelegationTerminalFailureCause,
+        wire_value: str,
+    ) -> None:
+        """OMN-19435: the budget-exhausted and no-terminal members round trip.
+
+        Same shape as the provider-quota round trip above: the wire terminal
+        model must accept and losslessly serialise/deserialise each new
+        member, released before any emitter (the handler cancel path, the
+        planned reaper) ever produces one on the wire.
+        """
+        r = ModelDelegationFailed(
+            correlation_id=uuid.uuid4(),
+            task_type="refactor",
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+            failure_reason="handler cancelled the run",
+            terminal_failure_reason="execution_budget_exceeded",
+            terminal_failure_cause=cause,
+        )
+
+        dumped = r.model_dump(mode="json")
+        assert dumped["terminal_failure_cause"] == wire_value
+        assert ModelDelegationFailed.model_validate(dumped) == r
+
     def test_completed_terminal_rejects_terminal_failure_cause(self) -> None:
         with pytest.raises(
             ValidationError,

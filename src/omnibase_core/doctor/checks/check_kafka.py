@@ -11,8 +11,10 @@ from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
 
-def _parse_kafka_bootstrap() -> tuple[str, int]:
-    raw = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
+def _parse_kafka_bootstrap() -> tuple[str, int] | None:
+    raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
+    if not raw:
+        return None
     first = raw.split(",")[0].strip()
     host, sep, port_str = first.rpartition(":")
     if not sep:
@@ -37,7 +39,7 @@ class CheckKafka(DoctorCheckBase):
     def run(self) -> ModelDoctorCheckResult:
         start = time.monotonic()
         try:
-            host, port = _parse_kafka_bootstrap()
+            parsed = _parse_kafka_bootstrap()
         except ValueError as exc:
             return ModelDoctorCheckResult(
                 name=self.check_name,
@@ -46,6 +48,15 @@ class CheckKafka(DoctorCheckBase):
                 message=str(exc),
                 duration_ms=int((time.monotonic() - start) * 1000),
             )
+        if parsed is None:
+            return ModelDoctorCheckResult(
+                name=self.check_name,
+                category=self.category,
+                status=EnumHealthStatusValue.UNKNOWN,
+                message="Skipped: KAFKA_BOOTSTRAP_SERVERS not set",
+                duration_ms=int((time.monotonic() - start) * 1000),
+            )
+        host, port = parsed
         try:
             conn = socket.create_connection((host, port), timeout=3)
             conn.close()
