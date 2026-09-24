@@ -8,6 +8,9 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_delegation_output_shape import EnumDelegationOutputShape
+from omnibase_core.models.delegation.wire.model_delegation_raw_response import (
+    ModelDelegationRawResponse,
+)
 
 
 class ModelDelegationContractEvidence(BaseModel):
@@ -26,6 +29,16 @@ class ModelDelegationContractEvidence(BaseModel):
     )
     contract_sha256: str = Field(min_length=64, max_length=64)
     channel: str = Field(min_length=1)
+    raw_response: ModelDelegationRawResponse | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "The provider's response content exactly as returned, before any "
+            "extraction (OMN-19385). The output-only release bar judges the "
+            "caller's bytes against it. Absent when the producer predates the "
+            "carrier or the attempt produced no response."
+        ),
+    )
 
     @field_validator("contract_sha256")
     @classmethod
