@@ -66,5 +66,28 @@ class EnumDelegationTerminalFailureCause(str, Enum):
     been decided by three gate refusals.
     """
 
+    TIMEOUT = "timeout"
+    """The run was cancelled for exceeding its execution budget.
+
+    Emitted by the handler cancellation path (the 240-second handler cancel),
+    never by a provider or the quality gate (OMN-19435). Before this member
+    existed, that cancel recorded ``status=timeout`` with a null cause --
+    measured at 10 such runs in 7 days of local receipts -- because no member
+    named the run's own clock running out. Distinct from ``PROVIDER_ERROR``:
+    the provider may never have responded at all, so there is nothing
+    provider-side to report.
+    """
+
+    NO_TERMINAL = "no_terminal"
+    """No component ever published a terminal event for this run.
+
+    Reserved for the planned reaper (OMN-19435): a run that neither a
+    provider, the quality gate nor the handler cancellation path ever
+    terminated, discovered by reconciliation against a missing record rather
+    than reported by the run itself. Distinct from ``None``, which means no
+    classification was attempted on a terminal that exists; this member means
+    the terminal itself never arrived.
+    """
+
 
 __all__: list[str] = ["EnumDelegationTerminalFailureCause"]
