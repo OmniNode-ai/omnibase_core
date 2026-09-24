@@ -16,6 +16,7 @@ import json
 from pathlib import Path
 from uuid import UUID, uuid4
 
+import click
 import pytest
 from click.testing import CliRunner, Result
 
@@ -331,10 +332,19 @@ def test_onex_run_rejects_an_unknown_workflow() -> None:
 
 
 def test_onex_run_is_registered_alongside_run_node() -> None:
-    """``run`` is a distinct command from the pre-existing ``run-node``."""
-    assert "run" in cli.commands
-    assert "run-node" in cli.commands
-    assert cli.commands["run"] is not cli.commands["run-node"]
+    """``run`` is a distinct command from the pre-existing ``run-node``.
+
+    Resolved via ``get_command`` rather than raw ``cli.commands`` membership:
+    built-in commands load lazily on first resolution (OMN-19444), so a name
+    can be a valid, registered command without yet appearing in the eager
+    ``commands`` dict.
+    """
+    ctx = click.Context(cli)
+    run_command = cli.get_command(ctx, "run")
+    run_node_command = cli.get_command(ctx, "run-node")
+    assert run_command is not None
+    assert run_node_command is not None
+    assert run_command is not run_node_command
 
 
 def test_run_and_run_node_help_distinguish_local_from_remote() -> None:
