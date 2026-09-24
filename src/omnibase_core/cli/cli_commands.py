@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json as _json
 import os
 import socket
@@ -16,10 +17,10 @@ from typing import TYPE_CHECKING
 import click
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.errors.exception_groups import PYDANTIC_MODEL_ERRORS
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.logging.logging_structured import emit_log_event_sync
 
 if TYPE_CHECKING:
     from omnibase_core.validation.validator_utils import ModelValidationResult
@@ -75,7 +76,111 @@ def print_version(
     ctx.exit(0)
 
 
-@click.group(invoke_without_command=True)
+# --------------------------------------------------------------------------
+# Lazy built-in command loading (OMN-19444)
+# --------------------------------------------------------------------------
+#
+# Every built-in core command used to be imported at module level: ``from
+# omnibase_core.cli.cli_doctor import doctor`` followed immediately by
+# ``cli.add_command(doctor)``, repeated ~20 times. That meant importing this
+# module at all -- for ANY onex invocation, from ``onex doctor --help`` to a
+# bare ``onex --help`` -- paid for every command's own transitive import
+# tree whether or not that command was ever invoked (measured: 5.1-6.1s on a
+# clean install, most of it commands nobody asked for). ``_LazyCoreCommandGroup``
+# defers each built-in's import to the first time click actually resolves that
+# command by name, so ``onex <cmd> ...`` only pays for ``<cmd>``'s own
+# dependency tree.
+#
+# This is deliberately scoped to CORE'S OWN commands only. The onex.cli
+# EXTENSION group (kafka, delegate, market, cloud, ... contributed by other
+# distributions via ``load_cli_extensions`` below) keeps its existing eager,
+# fail-loud-at-import-time contract untouched: that is a dated, ticketed
+# operator ruling (OMN-16967, 2026-08-29), pinned by
+# ``tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py``, and
+# reversing it is a separate architectural decision this ticket does not make.
+_LAZY_BUILTIN_COMMANDS: dict[str, tuple[str, str]] = {
+    "compliance": ("omnibase_core.cli.cli_compliance", "compliance_group"),
+    "composition-report": (
+        "omnibase_core.cli.cli_composition_report",
+        "composition_report",
+    ),
+    "contract": ("omnibase_core.cli.cli_contract", "contract"),
+    "demo": ("omnibase_core.cli.cli_demo", "demo"),
+    "db": ("omnibase_core.cli.cli_db_migration", "db"),
+    "spdx": ("omnibase_core.cli.cli_spdx", "spdx"),
+    "validate-shape": ("omnibase_core.cli.cli_validate_shape", "validate_shape"),
+    "new": ("omnibase_core.cli.cli_new", "new_group"),
+    "init": ("omnibase_core.cli.cli_init", "init_command"),
+    "registry": ("omnibase_core.cli.cli_registry", "registry"),
+    "doctor": ("omnibase_core.cli.cli_doctor", "doctor"),
+    "install": ("omnibase_core.cli.cli_install", "cli_install"),
+    "uninstall": ("omnibase_core.cli.cli_install", "cli_uninstall"),
+    "scaffold-channel-adapter": (
+        "omnibase_core.cli.cli_scaffold_channel",
+        "cli_scaffold_channel_adapter",
+    ),
+    "port-openclaw": ("omnibase_core.cli.cli_port_openclaw", "cli_port_openclaw"),
+    "run": ("omnibase_core.cli.cli_run", "run"),
+    "run-node": ("omnibase_core.cli.cli_run_node", "run_node"),
+    "pack": ("omnibase_core.cli.cli_pack", "cli_pack"),
+    "bootstrap": ("omnibase_core.cli.cli_bootstrap", "bootstrap"),
+    "config": ("omnibase_core.cli.cli_config", "config_group"),
+    "refresh-credentials": (
+        "omnibase_core.cli.cli_refresh_credentials",
+        "refresh_credentials",
+    ),
+    "hooks": ("omnibase_core.cli.cli_hooks", "hooks_group"),
+}
+
+
+class _LazyCoreCommandGroup(click.Group):
+    """A :class:`click.Group` whose built-in core subcommands import lazily.
+
+    ``list_commands`` answers from names alone (no import). ``get_command``
+    imports the target module on first resolution of that specific name,
+    validates the resolved attribute is a real click command, caches it on
+    ``self.commands`` (so a second lookup is free, matching click's own
+    behaviour for eagerly-registered commands), and returns it.
+    """
+
+    def __init__(
+        self,
+        *args: object,
+        lazy_commands: dict[str, tuple[str, str]] | None = None,
+        **kwargs: object,
+    ) -> None:
+        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        self._lazy_commands: dict[str, tuple[str, str]] = dict(lazy_commands or {})
+
+    def list_commands(self, ctx: click.Context) -> list[str]:
+        names = set(super().list_commands(ctx))
+        names.update(self._lazy_commands)
+        return sorted(names)
+
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+        command = super().get_command(ctx, cmd_name)
+        if command is not None:
+            return command
+        target = self._lazy_commands.get(cmd_name)
+        if target is None:
+            return None
+        module_path, attr_name = target
+        module = importlib.import_module(module_path)
+        resolved = getattr(module, attr_name)
+        if not isinstance(resolved, (click.Command, click.Group)):
+            raise ModelOnexError(
+                f"the built-in command {cmd_name!r} resolved to "
+                f"{type(resolved).__name__} from "
+                f"'{module_path}.{attr_name}', not a click.Command or "
+                "click.Group. This is a packaging defect in omnibase_core "
+                "itself, not a plugin.",
+                error_code=EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED,
+            )
+        self.add_command(resolved, cmd_name)
+        return resolved
+
+
+@click.group(cls=_LazyCoreCommandGroup, invoke_without_command=True)
 @click.option(
     "--version",
     is_flag=True,
@@ -121,6 +226,13 @@ def cli(ctx: click.Context, verbose: bool) -> None:
         click.echo(ctx.get_help())
 
 
+# Populated post-construction (rather than via a decorator kwarg) so the
+# forwarding contract of click's own ``**attrs`` plumbing through
+# ``click.group()`` -> ``click.command()`` -> ``Command.__init__`` is never a
+# question: this is a plain attribute assignment on the already-built group.
+cli._lazy_commands = _LAZY_BUILTIN_COMMANDS
+
+
 @cli.command()
 @click.argument(
     "directories",
@@ -159,6 +271,14 @@ def validate(
         onex validate src/ tests/
         onex validate --strict src/
     """
+    # Function-local (OMN-19444): emit_log_event_sync is used only inside this
+    # command. At module level it pulled in omnibase_core.logging.logging_emit
+    # -> omnibase_core.models.core (and the whole contract/orchestrator/event
+    # model tree beneath it) on EVERY onex invocation, whether or not
+    # ``validate`` was the command being run (measured ~1.9-4.5s, depending on
+    # what else the interpreter had already imported).
+    from omnibase_core.logging.logging_structured import emit_log_event_sync
+
     verbose = ctx.obj.get("verbose", False)
 
     # Default to ONEX_SRC_DIR or src/ if no directories specified
@@ -620,116 +740,12 @@ def _check_kafka_reachable() -> tuple[bool, str]:
         return False, f"Kafka not reachable at {host}:{port}"
 
 
-# Register compliance command group from separate module
-from omnibase_core.cli.cli_compliance import compliance_group
-
-cli.add_command(compliance_group, "compliance")
-
-# Register composition-report command from separate module
-from omnibase_core.cli.cli_composition_report import composition_report
-
-cli.add_command(composition_report)
-
-# Register contract command group from separate module
-from omnibase_core.cli.cli_contract import contract
-
-cli.add_command(contract)
-
-# Register demo command group from separate module
-from omnibase_core.cli.cli_demo import demo
-
-cli.add_command(demo)
-
-# Register db command group from separate module
-from omnibase_core.cli.cli_db_migration import db
-
-cli.add_command(db)
-
-# Register spdx command group from separate module
-from omnibase_core.cli.cli_spdx import spdx
-
-cli.add_command(spdx)
-
-# Register validate-shape command group from separate module
-from omnibase_core.cli.cli_validate_shape import validate_shape
-
-cli.add_command(validate_shape)
-
-# Register new (scaffolding) command group from separate module
-from omnibase_core.cli.cli_new import new_group
-
-cli.add_command(new_group, "new")
-
-# Register init command from separate module
-from omnibase_core.cli.cli_init import init_command
-
-cli.add_command(init_command, "init")
-
-# Register registry command group from separate module
-from omnibase_core.cli.cli_registry import registry
-
-cli.add_command(registry)
-
-# Local runtime commands (`onex node` and `onex run`) are contributed by
-# omnibase_infra through the onex.cli entry-point group. Core owns only the
-# extension loading surface to avoid depending on concrete runtime code.
-
-# Register doctor command from separate module
-from omnibase_core.cli.cli_doctor import doctor
-
-cli.add_command(doctor)
-
-
-# Register install/uninstall commands from separate module
-from omnibase_core.cli.cli_install import cli_install, cli_uninstall
-
-cli.add_command(cli_install)
-cli.add_command(cli_uninstall)
-
-# Register scaffold-channel-adapter command from separate module
-from omnibase_core.cli.cli_scaffold_channel import cli_scaffold_channel_adapter
-
-cli.add_command(cli_scaffold_channel_adapter)
-
-# Register port-openclaw command from separate module
-from omnibase_core.cli.cli_port_openclaw import cli_port_openclaw
-
-cli.add_command(cli_port_openclaw)
-
-# Register run command (local in-process runtime harness, no infrastructure)
-from omnibase_core.cli.cli_run import run
-
-cli.add_command(run)
-
-# Register run-node command (Kafka-based remote node execution)
-from omnibase_core.cli.cli_run_node import run_node
-
-cli.add_command(run_node)
-
-# Register pack command
-from omnibase_core.cli.cli_pack import cli_pack
-
-cli.add_command(cli_pack)
-
-# Register bootstrap command group
-from omnibase_core.cli.cli_bootstrap import bootstrap
-
-cli.add_command(bootstrap)
-
-# Register config command group (init + get)
-from omnibase_core.cli.cli_config import config_group
-
-cli.add_command(config_group)
-
-# Register refresh-credentials command
-from omnibase_core.cli.cli_refresh_credentials import refresh_credentials
-
-cli.add_command(refresh_credentials)
-
-# Register hooks command group (list, mask, enable, disable) [OMN-9614]
-from omnibase_core.cli.cli_hooks import hooks_group
-
-cli.add_command(hooks_group)
+# Every built-in core command above (compliance, composition-report,
+# contract, demo, db, spdx, validate-shape, new, init, registry, doctor,
+# install, uninstall, scaffold-channel-adapter, port-openclaw, run,
+# run-node, pack, bootstrap, config, refresh-credentials, hooks) is
+# registered lazily via _LAZY_BUILTIN_COMMANDS above (OMN-19444), not
+# imported and attached here.
 
 # --------------------------------------------------------------------------
 # onex.cli extension discovery (OMN-16967)
@@ -767,8 +783,6 @@ cli.add_command(hooks_group)
 # installed package set — no arbitrary code is executed from untrusted sources.
 from importlib.metadata import EntryPoint
 from importlib.metadata import entry_points as _entry_points
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 _CLI_EXTENSION_GROUP = "onex.cli"
 
