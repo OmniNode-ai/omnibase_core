@@ -22,6 +22,7 @@ Usage::
     onex-work-ledger inbox --lane <lane>
     onex-work-ledger surface --surface <surface>
     onex-work-ledger health
+    onex-work-ledger render --check|--repair [--md <md ledger>]
 
 Every output starts with one header line, so each call is a durable readback::
 
@@ -47,11 +48,16 @@ from typing import Final
 
 from pydantic import ValidationError
 
+from omnibase_core.cli.cli_work_ledger_render import (
+    MD_LEDGER_PATH_ENV,
+    run_render,
+)
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
 from omnibase_core.models.events.work.model_hold_scope import ModelHoldScope
 from omnibase_core.models.events.work.model_pr_key import ModelPrKey
 from omnibase_core.models.events.work.model_work_ledger_line import (
     WORK_LEDGER_EVENTS_PATH_ENV,
+    complete_ledger_lines,
     events_path_from_env,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
@@ -68,7 +74,6 @@ from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_verdict impo
 )
 from omnibase_core.nodes.node_work_ledger_state_compute.handler import (
     NodeWorkLedgerStateCompute,
-    complete_ledger_lines,
 )
 from omnibase_core.nodes.node_work_ledger_state_compute.queries import (
     actor_lane,
@@ -312,6 +317,24 @@ def _build_parser() -> argparse.ArgumentParser:
     surface.add_argument("--surface", required=True)
 
     sub.add_parser("health", help="Counts, last event, epoch and reasons for doubt.")
+
+    render = sub.add_parser(
+        "render",
+        help=(
+            "Compare the md ledger with the JSON-lines ledger by event id "
+            "(--check), or append the md rows it is missing (--repair)."
+        ),
+    )
+    mode = render.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--check", action="store_true", help="Compare; write nothing.")
+    mode.add_argument(
+        "--repair", action="store_true", help="Append every missing md row, once."
+    )
+    render.add_argument(
+        "--md",
+        default=None,
+        help=f"The md ledger. Defaults to {MD_LEDGER_PATH_ENV}; there is no other default.",
+    )
     return parser
 
 
@@ -326,6 +349,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Run one query and print its verdict. Returns the exit code."""
     parser = _build_parser()
     args = parser.parse_args(argv)
+    if args.command == "render":
+        code, out = run_render("repair" if args.repair else "check", args.md)
+        sys.stdout.write("\n".join(out) + "\n")
+        return code
     if args.command == "claims" and (args.repo is None) != (args.pr is None):
         parser.error("claims: --repo and --pr are given together")
     path, sha256, ledger_lines, doubt = _read_ledger()

@@ -30,6 +30,9 @@ from omnibase_core.models.events.work import (
     ModelRecipients,
     ModelWorkEvent,
 )
+from omnibase_core.models.events.work.model_work_ledger_line import (
+    complete_ledger_lines,
+)
 from omnibase_core.models.nodes.work_ledger_state import (
     ModelWorkLedgerFoldInput,
     ModelWorkLedgerState,
@@ -40,7 +43,6 @@ from omnibase_core.nodes.node_work_ledger_state_compute import (
 )
 from omnibase_core.nodes.node_work_ledger_state_compute.handler import (
     NO_EPOCH_REASON,
-    complete_ledger_lines,
     fold_work_events,
 )
 from omnibase_core.nodes.node_work_ledger_state_compute.queries import (

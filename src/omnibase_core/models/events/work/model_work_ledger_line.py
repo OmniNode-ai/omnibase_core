@@ -35,6 +35,7 @@ from omnibase_core.models.events.work.model_work_ledger_record import (
 
 __all__ = [
     "WORK_LEDGER_EVENTS_PATH_ENV",
+    "complete_ledger_lines",
     "dump_work_ledger_line",
     "events_path_from_env",
     "parse_work_ledger_line",
@@ -62,6 +63,22 @@ def events_path_from_env() -> Path:
         # error-ok: a blank value is the same failure as an unset one, and callers catch KeyError for both
         raise KeyError(f"{WORK_LEDGER_EVENTS_PATH_ENV} is set but blank")
     return Path(raw)
+
+
+def complete_ledger_lines(text: str) -> tuple[str, ...]:
+    """Split ledger text into complete lines, leaving out an unterminated tail.
+
+    A final line with no newline is an append whose writer has not finished.
+    Leaving it out is the same as reading the file a moment earlier; treating
+    it as a parse failure would make every in-progress append read UNDECIDED.
+    A blank line in the middle is kept, and fails to parse.
+    """
+    if not text:
+        return ()
+    parts = text.split("\n")
+    # The element after the last newline is "" when the text ends with a
+    # newline, and an unterminated fragment otherwise: either way it is dropped.
+    return tuple(parts[:-1])
 
 
 def _in_utc[T](value: T) -> tuple[T, bool]:
