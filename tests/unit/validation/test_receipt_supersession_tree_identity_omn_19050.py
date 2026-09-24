@@ -22,7 +22,9 @@ The repaired rule, which these tests pin:
 
 * Code identity is the ``tree_sha`` when both records carry one. Otherwise
   it falls back to ``commit_sha``, so records written before ``tree_sha``
-  existed resolve exactly as they did.
+  existed resolve exactly as they did. The same ``commit_sha`` is always the
+  same code: a claimed tree can make two commits the same, never one commit
+  two.
 * The check definition has changed only when BOTH the ``contract_entry_sha256``
   and the declared command differ. The runner prefixes each command with a
   per-commit ``repos/<owner>/<repo>/commits/<sha>`` line, and that line is
@@ -309,6 +311,33 @@ def test_legacy_same_commit_same_definition_is_still_refused(tmp_path: Path) -> 
 
     assert resolution.receipt is not None
     assert resolution.receipt.status is EnumReceiptStatus.FAIL
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "pass_tree", [FIXED_TREE, None], ids=["claims-another-tree", "omits-tree"]
+)
+def test_the_same_commit_is_the_same_code_whatever_tree_is_claimed(
+    tmp_path: Path, pass_tree: str | None
+) -> None:
+    """One commit has one tree. A record claiming otherwise does not get a new observation.
+
+    tree_sha is written by the record's author and nothing checks it against
+    commit_sha, so a tree may only ever ADD sameness. Before this, a PASS at
+    the FAIL's own commit that claimed a different tree cleared the FAIL.
+    """
+    receipts = _chain(
+        tmp_path,
+        _fail(),
+        _pass(head=FAIL_HEAD, tree=pass_tree),
+    )
+
+    resolution = _resolve(receipts)
+
+    assert resolution.receipt is not None
+    assert resolution.receipt.status is EnumReceiptStatus.FAIL
+    assert resolution.guard_note is not None
+    assert "refused" in resolution.guard_note
 
 
 # --------------------------------------------------------------------------- #

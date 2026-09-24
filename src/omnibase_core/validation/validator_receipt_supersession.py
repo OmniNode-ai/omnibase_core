@@ -242,10 +242,18 @@ def _code_identity(
     so a new commit id over an unchanged tree is not a new observation. The
     tree is compared only when BOTH receipts carry one. Otherwise the commit
     id is compared, which is the rule every earlier record was resolved under.
+
+    A tree may only ever ADD sameness. One commit has one tree, and
+    ``tree_sha`` is written by the record's author with nothing binding it to
+    ``commit_sha``, so the same commit id is the same code whatever trees the
+    two records claim. Letting a claimed tree split one commit into two
+    observations would be weaker than the commit-only rule this replaces.
     """
+    if fail.commit_sha == candidate.commit_sha:
+        return True, f"commit {fail.commit_sha}"
     if fail.tree_sha is not None and candidate.tree_sha is not None:
         return fail.tree_sha == candidate.tree_sha, f"tree {fail.tree_sha}"
-    return fail.commit_sha == candidate.commit_sha, f"commit {fail.commit_sha}"
+    return False, f"commit {fail.commit_sha}"
 
 
 def _check_definition_changed(
