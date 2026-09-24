@@ -61,8 +61,8 @@ pytestmark = pytest.mark.unit
 _EMITTED_AT = datetime(2026, 9, 24, 12, 0, tzinfo=UTC)
 _CONTROLLER = uuid.UUID("e2583369-b006-4c23-9a79-b13061f0ea09")
 
-# The ledger grammar's placeholder set (docs/workflows/_shared/ledger_grammar.py
-# PLACEHOLDER_VALUES in omni_home), copied here as data. Plan task T10 adds the
+# The rolling ledger row grammar's placeholder set (ledger_grammar.py
+# PLACEHOLDER_VALUES in the workspace registry), copied here as data. Plan task T10 adds the
 # cross-repo equality test; this one pins the core copy so a silent edit fails.
 _GRAMMAR_PLACEHOLDERS = frozenset(
     {"", "-", "--", ".", "none", "n/a", "na", "nil", "tbd", "nothing", "?"}
