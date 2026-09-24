@@ -10,7 +10,6 @@ from omnibase_core.constants import (
     constants_error,
     constants_field_limits,
     constants_handler_capabilities,
-    constants_llm_refs,
     constants_omnimemory,
     constants_topic_taxonomy,
 )
@@ -101,7 +100,6 @@ from omnibase_core.constants.constants_handler_capabilities import (
     get_capabilities_by_node_kind,
     validate_capabilities,
 )
-from omnibase_core.constants.constants_llm_refs import EndpointRef, LogicalModelKey
 from omnibase_core.constants.constants_omnimemory import (
     FLOAT_COMPARISON_EPSILON,
 )
@@ -167,13 +165,9 @@ __all__ = [
     "constants_effect",
     "constants_error",
     "constants_field_limits",
-    "constants_llm_refs",
     "constants_omnimemory",
     "constants_topic_taxonomy",
     "constants_handler_capabilities",
-    # LLM reference enums (OMN-11932)
-    "EndpointRef",
-    "LogicalModelKey",
     "normalize_legacy_event_type",
     # Contract filename constant (OMN-1533)
     "CONTRACT_FILENAME",

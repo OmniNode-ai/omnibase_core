@@ -46,7 +46,6 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "scripts/ci/rsd_provenance_stamp.py",
         "scripts/ci/test_selection_shadow.py",
         "scripts/ci/verify_flip_bundle.py",
-        "scripts/generate_llm_refs.py",
         "scripts/hooks/prepush_override_grant.py",
         "scripts/hooks/pytest_full_suite_host_guard.py",
         "scripts/run_cross_repo_validation.py",

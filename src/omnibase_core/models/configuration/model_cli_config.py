@@ -15,7 +15,6 @@ from .model_api_config import ModelAPIConfig
 from .model_database_config import ModelDatabaseConfig
 from .model_monitoring_config import ModelMonitoringConfig
 from .model_output_config import ModelOutputConfig
-from .model_tier_config import ModelTierConfig
 
 __all__ = [
     "ModelAPIConfig",
@@ -23,7 +22,6 @@ __all__ = [
     "ModelDatabaseConfig",
     "ModelMonitoringConfig",
     "ModelOutputConfig",
-    "ModelTierConfig",
 ]
 
 
@@ -38,7 +36,6 @@ class ModelCLIConfig(BaseModel):
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Core configuration sections
-    tiers: ModelTierConfig = Field(default_factory=ModelTierConfig)
     output: ModelOutputConfig = Field(default_factory=ModelOutputConfig)
     api: ModelAPIConfig | None = Field(default=None)
     database: ModelDatabaseConfig | None = Field(default=None)
