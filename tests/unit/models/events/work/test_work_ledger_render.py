@@ -889,6 +889,17 @@ def test_repair_takes_the_md_lock_file_beside_the_ledger(tmp_path: Path) -> None
     assert (locks / ".gitignore").read_text(encoding="utf-8").endswith("*\n")
 
 
+def test_repair_md_lock_file_is_owner_only(tmp_path: Path) -> None:
+    # CodeQL py/overly-permissive-file: the lock file is created without group
+    # or world permission bits, whatever the caller's umask.
+    events = _all_events()
+    jsonl, md = _write_pair(tmp_path, events, events[:1])
+    assert _run(jsonl, md, "--repair").returncode == 0
+    digest = hashlib.sha256(str(md.resolve()).encode("utf-8")).hexdigest()[:24]
+    lock = tmp_path / ".ledger_locks" / f"ROLLING_WORK_LEDGER.md.{digest}.flock"
+    assert lock.stat().st_mode & 0o077 == 0
+
+
 def test_render_in_process_matches_the_script(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

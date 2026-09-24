@@ -313,7 +313,7 @@ def _md_lock(md: Path) -> Iterator[None]:
     ignore = lock_file.parent / ".gitignore"
     if not ignore.exists():
         ignore.write_text(_LOCK_DIR_GITIGNORE, encoding="utf-8")
-    fd = os.open(lock_file, os.O_RDWR | os.O_CREAT, 0o644)
+    fd = os.open(lock_file, os.O_RDWR | os.O_CREAT, 0o600)
     try:
         deadline = time.monotonic() + _LOCK_TIMEOUT_SECONDS
         while True:
