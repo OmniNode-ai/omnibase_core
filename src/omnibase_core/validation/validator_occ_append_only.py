@@ -25,7 +25,14 @@ a PROTECTED record is a violation. A record is protected when it is a
 supersession record, which is the correction primitive itself, or when its
 prior content names the product-repo receipt runner. The autobind emitter's
 base mints are deliberately not protected, because re-minting them at a new
-head is the normal flow.
+head is the normal flow. One modification of a protected record is allowed: a
+re-stamp of the legacy whole-file ``contract_sha256`` beside an unchanged
+``contract_entry_sha256``, which is what the companion effect's self-bind pass
+does after it appends to the contract (OCC#11077, 232d124e5a).
+
+Limit: the history read is the history that survives on the branch. A
+force-push that replaces the branch removes the rewritten commits from
+``base..HEAD``, and the companion emitter regenerates its branches that way.
 
 The pure core (:func:`evaluate_append_only`) takes the two parsed contracts and
 a list of ``(git_status, path)`` diff tuples, so it is fully unit-testable. The
@@ -40,13 +47,10 @@ import sys
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
+import yaml
+
 from omnibase_core.enums.enum_append_only_violation_kind import (
     EnumAppendOnlyViolationKind,
-)
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
-from omnibase_core.models.contracts.ticket.model_receipt_supersession import (
-    ModelReceiptSupersession,
 )
 from omnibase_core.models.validation.model_append_only_violation import (
     ModelAppendOnlyViolation,
@@ -57,7 +61,7 @@ from omnibase_core.models.validation.model_occ_append_only_contract import (
 from omnibase_core.models.validation.model_occ_append_only_result import (
     ModelOccAppendOnlyResult,
 )
-from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_duplicates
 from omnibase_core.validation.validator_receipt_gate import (
     ContractEntryNotFoundError,
     compute_contract_entry_sha256,
@@ -75,9 +79,17 @@ RECEIPT_RUNNER_IDENTITIES: frozenset[str] = frozenset(
 )
 
 # One change a branch commit made to a receipt path: the commit, the git
-# status letter(s), the path before the change, and the content that path held
-# before the change (None when the change is an addition).
-BranchHistoryChange = tuple[str, str, str, str | None]
+# status letter(s), the path before the change, the content that path held
+# before the change (None when the change is an addition), and the content the
+# commit left at that path (None unless the change is a modification).
+BranchHistoryChange = tuple[str, str, str, str | None, str | None]
+
+# The legacy WHOLE-FILE contract hash. It goes stale on every append to the
+# contract (validator_receipt_gate), so a producer that appends to the
+# contract after writing a record re-stamps it. The per-entry hash beside it
+# is the authoritative binding.
+_WHOLE_FILE_HASH = "contract_sha256"
+_ENTRY_HASH = "contract_entry_sha256"
 
 
 def _entry_ids(contract: object) -> list[str]:
@@ -93,29 +105,76 @@ def _entry_ids(contract: object) -> list[str]:
     return ids
 
 
+def _record_mapping(text: str | None) -> dict[object, object] | None:
+    """A record's YAML mapping, or None when there is no text or it is not one."""
+    if not text:
+        return None
+    try:
+        return load_yaml_mapping_no_duplicates(text, source="receipt record")
+    except (ValueError, yaml.YAMLError):
+        return None
+
+
 def _names_the_runner(prior_text: str | None) -> bool:
     """Whether a record's prior content says the receipt runner produced it.
 
-    The content is read through the two record models. A record the runner
-    wrote always validates, and one that does not validate was not the
-    runner's, so it is judged on its path alone.
+    The identity fields are read from the raw mapping, not through the record
+    models, so a runner record that this core's models would reject (one
+    carrying a field this core does not declare, for instance) keeps its
+    protection. Content that is not a mapping is judged on its path alone.
     """
-    if not prior_text:
+    record = _record_mapping(prior_text)
+    if record is None:
         return False
-    try:
-        record = load_yaml_content_as_model(prior_text, ModelReceiptSupersession)
-    except ModelOnexError:
-        pass
-    else:
-        identities = [record.superseder]
-        if record.replacement is not None:
-            identities.append(record.replacement.runner)
-        return any(identity in RECEIPT_RUNNER_IDENTITIES for identity in identities)
-    try:
-        receipt = load_yaml_content_as_model(prior_text, ModelDodReceipt)
-    except ModelOnexError:
+    identities = [record.get("superseder"), record.get("runner")]
+    replacement = record.get("replacement")
+    if isinstance(replacement, dict):
+        identities.append(replacement.get("runner"))
+    return any(identity in RECEIPT_RUNNER_IDENTITIES for identity in identities)
+
+
+def _level_without_whole_file_hash(
+    level: dict[object, object],
+) -> dict[object, object]:
+    return {
+        key: value
+        for key, value in level.items()
+        if key not in (_WHOLE_FILE_HASH, "replacement")
+    }
+
+
+def _only_whole_file_hash_restamped(
+    prior_text: str | None, new_text: str | None
+) -> bool:
+    """Whether a modification changed nothing but the legacy whole-file hash.
+
+    Checked at the record's top level and inside ``replacement``. At every
+    level where ``contract_sha256`` moved, an unchanged ``contract_entry_sha256``
+    must still bind it. On a level with no entry hash the whole-file hash IS
+    the binding, and re-stamping it is the 66946494a5 rewrite in its legacy
+    form, so it stays refused.
+    """
+    prior = _record_mapping(prior_text)
+    new = _record_mapping(new_text)
+    if prior is None or new is None or prior == new:
         return False
-    return receipt.runner in RECEIPT_RUNNER_IDENTITIES
+    prior_replacement = prior.get("replacement")
+    new_replacement = new.get("replacement")
+    levels: list[tuple[dict[object, object], dict[object, object]]] = [(prior, new)]
+    if isinstance(prior_replacement, dict) and isinstance(new_replacement, dict):
+        levels.append((prior_replacement, new_replacement))
+    elif prior_replacement != new_replacement:
+        return False
+    for prior_level, new_level in levels:
+        if _level_without_whole_file_hash(
+            prior_level
+        ) != _level_without_whole_file_hash(new_level):
+            return False
+        if prior_level.get(_WHOLE_FILE_HASH) != new_level.get(_WHOLE_FILE_HASH) and (
+            prior_level.get(_ENTRY_HASH) is None
+        ):
+            return False
+    return True
 
 
 def _is_protected_record(path: str, prior_text: str | None) -> bool:
@@ -128,12 +187,14 @@ def _branch_history_violations(
     branch_history: Iterable[BranchHistoryChange],
 ) -> list[ModelAppendOnlyViolation]:
     violations: list[ModelAppendOnlyViolation] = []
-    for commit, status, path, prior_text in branch_history:
+    for commit, status, path, prior_text, new_text in branch_history:
         code = status.strip().upper()[:1] if status.strip() else ""
         # A copy leaves its source in place, so it is an addition.
         if code not in ("M", "D", "R"):
             continue
         if not _is_protected_record(path, prior_text):
+            continue
+        if code == "M" and _only_whole_file_hash_restamped(prior_text, new_text):
             continue
         verb = {"M": "modified", "D": "deleted", "R": "renamed"}[code]
         violations.append(
@@ -337,7 +398,10 @@ def _branch_history_from_git(
             prior = None
             if status[:1] in ("M", "D", "R"):
                 prior = _git_text(repo, "show", f"{parent}:{path}")
-            changes.append((commit, status, path, prior))
+            new = None
+            if status[:1] == "M":
+                new = _git_text(repo, "show", f"{commit}:{path}")
+            changes.append((commit, status, path, prior, new))
     return changes, None
 
 

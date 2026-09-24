@@ -39,6 +39,7 @@ from omnibase_core.enums.enum_append_only_violation_kind import (
     EnumAppendOnlyViolationKind,
 )
 from omnibase_core.validation.validator_occ_append_only import (
+    BranchHistoryChange,
     evaluate_append_only,
     main,
 )
@@ -118,7 +119,7 @@ def _runner_base(entry: str) -> str:
 
 
 def _history_kinds(
-    changes: list[tuple[str, str, str, str | None]],
+    changes: list[BranchHistoryChange],
 ) -> list[EnumAppendOnlyViolationKind]:
     result = evaluate_append_only(None, None, branch_history=changes)
     return [violation.kind for violation in result.violations]
@@ -128,7 +129,15 @@ def _history_kinds(
 @pytest.mark.parametrize("status", ["M", "D", "R100"])
 def test_a_supersession_record_cannot_be_rewritten_on_the_branch(status: str) -> None:
     kinds = _history_kinds(
-        [("66946494a5", status, FAIL_RECORD, _runner_record("FAIL", "sha256:old"))]
+        [
+            (
+                "66946494a5",
+                status,
+                FAIL_RECORD,
+                _runner_record("FAIL", "sha256:old"),
+                None,
+            )
+        ]
     )
 
     assert kinds == [EnumAppendOnlyViolationKind.BRANCH_RECORD_MUTATED]
@@ -137,14 +146,18 @@ def test_a_supersession_record_cannot_be_rewritten_on_the_branch(status: str) ->
 @pytest.mark.unit
 def test_a_supersession_record_is_protected_whoever_wrote_it() -> None:
     """A hand-authored correction record is a correction all the same."""
-    kinds = _history_kinds([("b02418cc4a", "M", FAIL_RECORD, "reason: hand-run\n")])
+    kinds = _history_kinds(
+        [("b02418cc4a", "M", FAIL_RECORD, "reason: hand-run\n", None)]
+    )
 
     assert kinds == [EnumAppendOnlyViolationKind.BRANCH_RECORD_MUTATED]
 
 
 @pytest.mark.unit
 def test_a_base_receipt_the_runner_wrote_cannot_be_rewritten() -> None:
-    kinds = _history_kinds([("c0ffee", "M", BASE_MINT, _runner_base("sha256:old"))])
+    kinds = _history_kinds(
+        [("c0ffee", "M", BASE_MINT, _runner_base("sha256:old"), None)]
+    )
 
     assert kinds == [EnumAppendOnlyViolationKind.BRANCH_RECORD_MUTATED]
 
@@ -152,7 +165,9 @@ def test_a_base_receipt_the_runner_wrote_cannot_be_rewritten() -> None:
 @pytest.mark.unit
 def test_the_emitter_may_still_re_mint_its_own_base_receipt() -> None:
     """Positive control: autobind re-mints its PENDING base at each new head."""
-    kinds = _history_kinds([("7f45d34541", "M", BASE_MINT, _emitter_mint("sha256:a"))])
+    kinds = _history_kinds(
+        [("7f45d34541", "M", BASE_MINT, _emitter_mint("sha256:a"), None)]
+    )
 
     assert kinds == []
 
@@ -161,7 +176,7 @@ def test_the_emitter_may_still_re_mint_its_own_base_receipt() -> None:
 @pytest.mark.parametrize("status", ["A", "C100"])
 def test_adding_a_record_is_allowed(status: str) -> None:
     """Positive control: additions, tombstones included, are how corrections land."""
-    kinds = _history_kinds([("3f26e3b466", status, PASS_RECORD, None)])
+    kinds = _history_kinds([("3f26e3b466", status, PASS_RECORD, None, None)])
 
     assert kinds == []
 
@@ -171,7 +186,9 @@ def test_a_violation_names_the_commit_and_the_record() -> None:
     result = evaluate_append_only(
         None,
         None,
-        branch_history=[("22261d23a8", "D", PASS_RECORD, _runner_record("PASS", "x"))],
+        branch_history=[
+            ("22261d23a8", "D", PASS_RECORD, _runner_record("PASS", "x"), None)
+        ],
     )
 
     assert result.ok is False
@@ -294,3 +311,128 @@ def test_cli_reads_the_branch_through_a_merge_from_dev(
     merge_base = _git(repo, "merge-base", "dev", "HEAD")
 
     assert _gate(repo, merge_base) == 1
+
+
+# --------------------------------------------------------------------------- #
+# The companion effect's self-bind re-stamp of the whole-file hash
+# --------------------------------------------------------------------------- #
+#
+# The effect's self-bind pass appends an item to the contract after the first
+# pass has written the records, so the legacy whole-file ``contract_sha256`` in
+# those records goes stale and the pass re-stamps it. Measured on OCC#11077:
+# commit 232d124e5a changed exactly that one line in four supersede records it
+# had written in 956023a1a. The per-entry hash beside it is untouched.
+
+
+def _stamped(status: str, *, contract: str, entry: str | None = "sha256:e") -> str:
+    record = yaml.safe_load(_runner_record(status, "sha256:unused"))
+    replacement = record["replacement"]
+    replacement["contract_sha256"] = contract
+    if entry is None:
+        del replacement["contract_entry_sha256"]
+    else:
+        replacement["contract_entry_sha256"] = entry
+    return yaml.safe_dump(record, sort_keys=True)
+
+
+@pytest.mark.unit
+def test_the_self_bind_whole_file_hash_restamp_is_allowed() -> None:
+    kinds = _history_kinds(
+        [
+            (
+                "232d124e5a",
+                "M",
+                FAIL_RECORD,
+                _stamped("FAIL", contract="sha256:before-self-bind"),
+                _stamped("FAIL", contract="sha256:after-self-bind"),
+            )
+        ]
+    )
+
+    assert kinds == []
+
+
+@pytest.mark.unit
+def test_a_restamp_that_also_moves_the_entry_hash_is_refused() -> None:
+    """The 66946494a5 rewrite does not become legal by riding on a re-stamp."""
+    kinds = _history_kinds(
+        [
+            (
+                "66946494a5",
+                "M",
+                FAIL_RECORD,
+                _stamped("FAIL", contract="sha256:a", entry="sha256:as-generated"),
+                _stamped("FAIL", contract="sha256:b", entry="sha256:corrected"),
+            )
+        ]
+    )
+
+    assert kinds == [EnumAppendOnlyViolationKind.BRANCH_RECORD_MUTATED]
+
+
+@pytest.mark.unit
+def test_a_restamp_where_the_whole_file_hash_is_the_only_binding_is_refused() -> None:
+    kinds = _history_kinds(
+        [
+            (
+                "c0ffee",
+                "M",
+                FAIL_RECORD,
+                _stamped("FAIL", contract="sha256:a", entry=None),
+                _stamped("FAIL", contract="sha256:b", entry=None),
+            )
+        ]
+    )
+
+    assert kinds == [EnumAppendOnlyViolationKind.BRANCH_RECORD_MUTATED]
+
+
+@pytest.mark.unit
+def test_a_restamp_that_also_flips_the_status_is_refused() -> None:
+    kinds = _history_kinds(
+        [
+            (
+                "c0ffee",
+                "M",
+                FAIL_RECORD,
+                _stamped("FAIL", contract="sha256:a"),
+                _stamped("PASS", contract="sha256:b"),
+            )
+        ]
+    )
+
+    assert kinds == [EnumAppendOnlyViolationKind.BRANCH_RECORD_MUTATED]
+
+
+@pytest.mark.unit
+def test_a_runner_record_this_core_cannot_model_is_still_protected() -> None:
+    """Identity is read from the raw record, not through a model that may reject it.
+
+    A runner receipt carrying a field this core does not declare (tree_sha, on
+    a core without it) failed model validation and so lost its protection.
+    """
+    record = yaml.safe_load(_runner_base("sha256:old"))
+    record["tree_sha"] = "7dceb0ed" + "0" * 32
+    record["a_field_no_core_declares"] = True
+    kinds = _history_kinds(
+        [("c0ffee", "M", BASE_MINT, yaml.safe_dump(record, sort_keys=True), None)]
+    )
+
+    assert kinds == [EnumAppendOnlyViolationKind.BRANCH_RECORD_MUTATED]
+
+
+@pytest.mark.unit
+def test_cli_passes_the_self_bind_restamp(companion: tuple[Path, str]) -> None:
+    repo, base = companion
+    _commit(
+        repo,
+        "effect pass 1",
+        {PASS_RECORD: _stamped("PASS", contract="sha256:before-self-bind")},
+    )
+    _commit(
+        repo,
+        "effect self-bind",
+        {PASS_RECORD: _stamped("PASS", contract="sha256:after-self-bind")},
+    )
+
+    assert _gate(repo, base) == 0
