@@ -15,10 +15,13 @@ could not work or because ``gh pr checks`` is not how GitHub reads a head:
 
 * It reads the exact head this run gates (``commits/{sha}/check-runs`` and the
   combined commit status), so a later push cannot change what it judges.
-* Same-named check-runs resolve latest-wins, the rule GitHub applies to a
-  required context and ``ci_summary_gate`` applies to its external contexts.
-  ``gh pr checks`` keys by workflow as well, which keeps a superseded red from
-  one caller of a reusable workflow alive beside the green that replaced it.
+* Same-named check-runs resolve latest-wins by ``(started_at, id)``, the rule
+  GitHub applies to a required context. ``gh pr checks`` keys by workflow as
+  well, which keeps a superseded red from one caller of a reusable workflow
+  alive beside the green that replaced it. Unlike ``ci_summary_gate``'s L4
+  reading, a newer ``skipped`` row is NOT dropped in favour of an older
+  non-skipped one: skipped is a pass here, so a rerun that skips a job replaces
+  the cancelled row an earlier run left (measured on omnibase_core#1745).
 * Every ``CI Summary`` row is excluded: CI Summary is the judge, and two runs
   on one head must not wait on each other.
 * A still-running check is PENDING, polled until the deadline and then a
@@ -42,7 +45,7 @@ from scripts.ci.ci_summary_gate import (
     EXIT_PENDING,
     EXIT_SUCCESS,
     SELF_JOB_NAME,
-    _external_check_states,
+    JobState,
     dedup_latest,
     verdict_is_provisional,
 )
@@ -115,6 +118,36 @@ def _status_rows(statuses: list[dict[str, object]]) -> list[dict[str, object]]:
     return rows
 
 
+def _latest_by_name(rows: list[dict[str, object]]) -> dict[str, JobState]:
+    """One row per name, latest ``(started_at, id)`` wins; skipped rows compete."""
+
+    best: dict[str, tuple[tuple[str, int], JobState]] = {}
+    for raw in rows:
+        name = str(raw.get("name") or "")
+        if not name:
+            continue
+        try:
+            row_id = int(str(raw.get("id") or 0))
+        except ValueError:
+            row_id = 0
+        key = (str(raw.get("started_at") or ""), row_id)
+        if name in best and key <= best[name][0]:
+            continue
+        conclusion = raw.get("conclusion")
+        completed_at = raw.get("completed_at")
+        best[name] = (
+            key,
+            JobState(
+                name=name,
+                status=str(raw.get("status") or ""),
+                conclusion=None if conclusion is None else str(conclusion),
+                run_attempt=1,
+                completed_at=None if completed_at is None else str(completed_at),
+            ),
+        )
+    return {name: state for name, (_, state) in best.items()}
+
+
 def evaluate_checks(
     check_runs: list[dict[str, object]],
     statuses: list[dict[str, object]],
@@ -123,7 +156,7 @@ def evaluate_checks(
 ) -> tuple[int, str]:
     """Judge one head's check-runs and commit statuses (REST shapes)."""
 
-    latest = _external_check_states([*check_runs, *_status_rows(statuses)])
+    latest = _latest_by_name([*check_runs, *_status_rows(statuses)])
     others = {name: st for name, st in latest.items() if name != SELF_JOB_NAME}
     if not others:
         return EXIT_FAILURE, "  no checks observed besides CI Summary"

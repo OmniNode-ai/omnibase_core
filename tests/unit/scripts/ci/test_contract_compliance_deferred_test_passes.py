@@ -324,6 +324,28 @@ def test_same_named_rows_resolve_latest_wins() -> None:
     assert evaluate_checks(green_then_red, [], now=NOW)[0] == EXIT_FAILURE
 
 
+def test_a_newer_skipped_row_replaces_an_older_cancelled_one() -> None:
+    """Live on omnibase_core#1745 (CI run 35932440937): a cancelled run left
+    ``Shadow Selection Compare`` cancelled; the rerun on the same head skipped it.
+    Skipped is a pass here, so the newer skip is the verdict. (``ci_summary_gate``
+    drops such a skip for its L4 contexts, where skipped is not a pass.)"""
+    checks = [
+        _row(
+            "Shadow Selection Compare",
+            "cancelled",
+            started="2026-09-23T23:34:00Z",
+            row_id=1,
+        ),
+        _row(
+            "Shadow Selection Compare",
+            "skipped",
+            started="2026-09-24T00:05:00Z",
+            row_id=2,
+        ),
+    ]
+    assert evaluate_checks(checks, [], now=NOW)[0] == EXIT_SUCCESS
+
+
 def test_a_fresh_cancellation_is_held_for_its_replacement() -> None:
     fresh = [_row("Enable Auto-Merge", "cancelled", completed=JUST_NOW)]
     assert evaluate_checks(fresh, [], now=NOW)[0] == EXIT_PENDING
