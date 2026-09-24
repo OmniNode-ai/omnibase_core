@@ -1,0 +1,219 @@
+{
+  "$defs": {
+    "EnumLlmPricingSource": {
+      "description": "Where a per-token price came from.",
+      "enum": [
+        "measured",
+        "vendor_list"
+      ],
+      "title": "EnumLlmPricingSource",
+      "type": "string"
+    },
+    "ModelLlmComputeCostEntry": {
+      "additionalProperties": false,
+      "description": "Electricity and amortization cost per accelerator hour.",
+      "properties": {
+        "amortization_per_hour": {
+          "description": "Hardware amortization per accelerator hour.",
+          "minimum": 0.0,
+          "title": "Amortization Per Hour",
+          "type": "number"
+        },
+        "electricity_per_hour": {
+          "description": "Electricity cost per accelerator hour.",
+          "minimum": 0.0,
+          "title": "Electricity Per Hour",
+          "type": "number"
+        },
+        "note": {
+          "default": "",
+          "description": "Free-form note.",
+          "maxLength": 512,
+          "title": "Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "electricity_per_hour",
+        "amortization_per_hour"
+      ],
+      "title": "ModelLlmComputeCostEntry",
+      "type": "object"
+    },
+    "ModelLlmPricingEntry": {
+      "additionalProperties": false,
+      "description": "Input and output price per one million tokens, with provenance.",
+      "properties": {
+        "currency": {
+          "description": "ISO 4217 currency code.",
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "effective_date": {
+          "description": "Date from which this price applies.",
+          "format": "date",
+          "title": "Effective Date",
+          "type": "string"
+        },
+        "evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelLlmPricingEvidence"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The usage sample behind a measured price. Required when measured."
+        },
+        "input_price_per_1m": {
+          "description": "Price per one million input tokens.",
+          "minimum": 0.0,
+          "title": "Input Price Per 1M",
+          "type": "number"
+        },
+        "note": {
+          "default": "",
+          "description": "Free-form note.",
+          "maxLength": 512,
+          "title": "Note",
+          "type": "string"
+        },
+        "output_price_per_1m": {
+          "description": "Price per one million output tokens.",
+          "minimum": 0.0,
+          "title": "Output Price Per 1M",
+          "type": "number"
+        },
+        "source": {
+          "$ref": "#/$defs/EnumLlmPricingSource",
+          "description": "Whether the price was measured or copied from a list."
+        }
+      },
+      "required": [
+        "input_price_per_1m",
+        "output_price_per_1m",
+        "currency",
+        "effective_date",
+        "source"
+      ],
+      "title": "ModelLlmPricingEntry",
+      "type": "object"
+    },
+    "ModelLlmPricingEvidence": {
+      "additionalProperties": false,
+      "description": "The usage sample a measured price was computed from.",
+      "properties": {
+        "authoritative": {
+          "description": "True when the sample met min_samples.",
+          "title": "Authoritative",
+          "type": "boolean"
+        },
+        "generated_at": {
+          "description": "When the price was computed (timezone-aware).",
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "min_samples": {
+          "description": "Rows required before the price is authoritative.",
+          "minimum": 0,
+          "title": "Min Samples",
+          "type": "integer"
+        },
+        "query": {
+          "description": "How the rows were selected.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        },
+        "sample_count": {
+          "description": "Usage rows in the sample.",
+          "minimum": 0,
+          "title": "Sample Count",
+          "type": "integer"
+        },
+        "sample_window_days": {
+          "description": "Days of usage rows the sample covers.",
+          "minimum": 1,
+          "title": "Sample Window Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "generated_at",
+        "sample_window_days",
+        "sample_count",
+        "min_samples",
+        "query",
+        "authoritative"
+      ],
+      "title": "ModelLlmPricingEvidence",
+      "type": "object"
+    },
+    "ModelLlmRunnerCostPolicy": {
+      "additionalProperties": false,
+      "description": "The hosted-runner baseline price per runner minute.",
+      "properties": {
+        "github_hosted_per_minute_usd": {
+          "description": "Hosted runner cost per runner minute in USD.",
+          "minimum": 0.0,
+          "title": "Github Hosted Per Minute Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "github_hosted_per_minute_usd"
+      ],
+      "title": "ModelLlmRunnerCostPolicy",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Model key to price, plus accelerator and runner cost policies.",
+  "properties": {
+    "compute_cost": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ModelLlmComputeCostEntry"
+      },
+      "description": "Accelerator type to its hourly cost policy.",
+      "title": "Compute Cost",
+      "type": "object"
+    },
+    "models": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ModelLlmPricingEntry"
+      },
+      "description": "Logical model key to its price.",
+      "title": "Models",
+      "type": "object"
+    },
+    "runner_cost": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelLlmRunnerCostPolicy"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "CI runner cost policy, when priced."
+    },
+    "schema_version": {
+      "const": "llm_pricing.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "models"
+  ],
+  "title": "ModelLlmPricingOverlay",
+  "type": "object"
+}

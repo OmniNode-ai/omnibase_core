@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "An ``(environment, lane)`` pair naming where overlay documents live.",
+  "properties": {
+    "environment": {
+      "description": "Deployment environment the documents belong to.",
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "title": "Environment",
+      "type": "string"
+    },
+    "lane": {
+      "description": "Runtime lane within the environment.",
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "title": "Lane",
+      "type": "string"
+    }
+  },
+  "required": [
+    "environment",
+    "lane"
+  ],
+  "title": "ModelConfigOverlayScope",
+  "type": "object"
+}

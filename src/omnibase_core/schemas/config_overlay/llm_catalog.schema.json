@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "EnumLlmTierClass": {
+      "description": "Tier class of a model in the ``llm.catalog`` overlay.",
+      "enum": [
+        "local",
+        "cheap_cloud",
+        "frontier"
+      ],
+      "title": "EnumLlmTierClass",
+      "type": "string"
+    },
+    "ModelLlmCatalogEntry": {
+      "additionalProperties": false,
+      "description": "Served names, provider, window, capabilities and tier class of one model.\n\n``tier_class`` and ``free`` are both required: a model's class and whether\nit costs anything are stated by the catalog, never inferred from its name.",
+      "properties": {
+        "capability_tags": {
+          "default": [],
+          "description": "Capabilities the model is catalogued for.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Capability Tags",
+          "type": "array"
+        },
+        "context_window_tokens": {
+          "description": "Maximum context length in tokens.",
+          "exclusiveMinimum": 0,
+          "title": "Context Window Tokens",
+          "type": "integer"
+        },
+        "free": {
+          "description": "True when a call costs nothing per token.",
+          "title": "Free",
+          "type": "boolean"
+        },
+        "provider": {
+          "description": "Wire protocol family of the serving backends.",
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Provider",
+          "type": "string"
+        },
+        "served_model_names": {
+          "description": "Names the serving backends accept for this model.",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Served Model Names",
+          "type": "array"
+        },
+        "tier_class": {
+          "$ref": "#/$defs/EnumLlmTierClass",
+          "description": "Cost-and-locality class of the model."
+        }
+      },
+      "required": [
+        "served_model_names",
+        "provider",
+        "context_window_tokens",
+        "tier_class",
+        "free"
+      ],
+      "title": "ModelLlmCatalogEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Logical model key to catalog entry. Holds no default model.",
+  "properties": {
+    "models": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ModelLlmCatalogEntry"
+      },
+      "description": "Logical model key to its catalog entry.",
+      "minProperties": 1,
+      "title": "Models",
+      "type": "object"
+    },
+    "schema_version": {
+      "const": "llm_catalog.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "models"
+  ],
+  "title": "ModelLlmCatalogOverlay",
+  "type": "object"
+}
