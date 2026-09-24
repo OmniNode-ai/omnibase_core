@@ -46,7 +46,6 @@ FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 
 EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS: dict[str, str] = {
     "DB ownership CI twin (B1)": "check-db-ownership.yml",
-    "LLM refs drift check (OMN-11932)": "check-llm-refs-drift.yml",
     "advisory-job-gate / advisory-job-gate": "advisory-job-gate.yml",
 }
 
@@ -515,8 +514,8 @@ class TestExternalContextEventContracts:
         ("event_name", "expected"),
         [
             ("pull_request", EXPECTED_EXTERNAL_CONTEXTS),
-            ("push", EXPECTED_EXTERNAL_CONTEXTS[:2]),
-            ("workflow_dispatch", EXPECTED_EXTERNAL_CONTEXTS[:2]),
+            ("push", EXPECTED_EXTERNAL_CONTEXTS[:1]),
+            ("workflow_dispatch", EXPECTED_EXTERNAL_CONTEXTS[:1]),
             ("merge_group", ()),
             ("schedule", ()),
         ],
@@ -552,10 +551,7 @@ class TestExternalContextEventContracts:
         assert "edited" in ci_pull_request["types"]
 
         expected_default_activities = {"opened", "synchronize", "reopened", "edited"}
-        for context in (
-            "DB ownership CI twin (B1)",
-            "LLM refs drift check (OMN-11932)",
-        ):
+        for context in ("DB ownership CI twin (B1)",):
             document = yaml.safe_load(
                 (
                     WORKFLOWS_DIR / EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS[context]
@@ -569,9 +565,9 @@ class TestExternalContextEventContracts:
 class TestExpectedExternalContexts:
     """L4 EXPECTED_EXTERNAL_CONTEXTS (enforce-everything gate audit).
 
-    "DB ownership CI twin (B1)" and "LLM refs drift check (OMN-11932)" live in
-    separate workflow files (check-db-ownership.yml / check-llm-refs-drift.yml)
-    and are therefore invisible to the in-run jobs sweep above; these tests pin
+    "DB ownership CI twin (B1)" and the advisory-job gate live in separate
+    workflow files (check-db-ownership.yml / advisory-job-gate.yml) and are
+    therefore invisible to the in-run jobs sweep above; these tests pin
     the resolution against ``commits/{sha}/check-runs`` fixtures directly.
     """
 
@@ -758,7 +754,6 @@ _OCC_PREFLIGHT_CONTEXT = "occ-preflight / eligibility"
 EXTERNAL_CONTEXT_FILES: frozenset[str] = frozenset(
     {
         "check-db-ownership.yml",
-        "check-llm-refs-drift.yml",
         # OMN-18796: the advisory-job gate's caller. Its job resolves to the L4
         # context "advisory-job-gate / advisory-job-gate", so it is classified
         # by EXPECTED_EXTERNAL_CONTEXTS and not by a direct-required row.

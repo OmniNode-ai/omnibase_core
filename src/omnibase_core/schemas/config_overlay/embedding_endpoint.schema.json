@@ -1,0 +1,55 @@
+{
+  "additionalProperties": false,
+  "description": "Where embeddings are computed, by which model, at which dimension.\n\nCarries a reference to the API key, never the key itself.",
+  "properties": {
+    "api_key_ref": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Reference to the API key in the secret store, when one is needed.",
+      "title": "Api Key Ref"
+    },
+    "dimension": {
+      "description": "Embedding vector dimension.",
+      "exclusiveMinimum": 0,
+      "title": "Dimension",
+      "type": "integer"
+    },
+    "endpoint_url": {
+      "description": "Base URL of the embedding server.",
+      "maxLength": 2048,
+      "minLength": 1,
+      "title": "Endpoint Url",
+      "type": "string"
+    },
+    "model_name": {
+      "description": "Model the server embeds with.",
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Model Name",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "embedding_endpoint.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "endpoint_url",
+    "model_name",
+    "dimension"
+  ],
+  "title": "ModelEmbeddingEndpointOverlay",
+  "type": "object"
+}

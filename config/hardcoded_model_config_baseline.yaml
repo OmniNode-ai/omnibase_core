@@ -150,36 +150,6 @@ entries:
   - path: scripts/validation/decommissioned_patterns.conf
     family: E-LAN
     content_sha1: 0fe76943a15b6660e9faa8b971554cc01812f635
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: 0c7ef5a561a586f6766ca593e901413cc100972f
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: 262c10aa0cd6936a3e977f8175444b5b8cbc192c
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: 45aa29a9997a27eb692db4e056c24ab29bfac2f6
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: 6116d2d11eeb5c1f06b0ab7b60953e0d72895437
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: 6eae6a955ca85f512a222bbad96bb97292ac6d2c
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: 78faff929e0a454736e405efad6bb3063412ea0a
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: 9a17807ee5572676a9df741e3036b719a0f30742
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: b0e33c5f49b8153d3a84238c8b17fdc409d2d3ee
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: daafb567ccbafc9e9282b1a77f2cae6957b0d984
-  - path: src/omnibase_core/constants/constants_llm_refs.py
-    family: M
-    content_sha1: f99af5b402b142695ee7e48385a3e4ee8a3d690b
   - path: src/omnibase_core/contracts/integrations/catalog.yaml
     family: E
     content_sha1: 2931f82937808122aab89d6a24d4024320d21416
@@ -192,24 +162,6 @@ entries:
   - path: src/omnibase_core/models/configuration/model_agent_config.py
     family: M
     content_sha1: 364496e83e78f38428a13b9fe48df33649a95242
-  - path: src/omnibase_core/models/configuration/model_tier_config.py
-    family: M
-    content_sha1: 1b0223c9ad41402ac7fc35591af17decd3bfc5a7
-  - path: src/omnibase_core/models/configuration/model_tier_config.py
-    family: M
-    content_sha1: 2062d6112581c67bdc70e275c5721f49f42c490b
-  - path: src/omnibase_core/models/configuration/model_tier_config.py
-    family: M
-    content_sha1: 7c51b2ab20e8337e3a075bf9f31e9e170791d214
-  - path: src/omnibase_core/models/configuration/model_tier_config.py
-    family: M
-    content_sha1: a946c5048c6e82c006bbbd7ae2758f73c904d8c8
-  - path: src/omnibase_core/models/configuration/model_tier_config.py
-    family: M
-    content_sha1: ce32914fa00a2e906a3ee281c38beae531b355d1
-  - path: src/omnibase_core/models/configuration/model_tier_config.py
-    family: M
-    content_sha1: f378718bd546b34f87ebc6f432690404d486d761
   - path: src/omnibase_core/models/delegation/wire/model_premium_counterfactual.py
     family: M
     content_sha1: a66a55e2b455192bad9033f5da9efe78ddc1aaa8

@@ -9,7 +9,6 @@ from .model_cli_config import (
     ModelDatabaseConfig,
     ModelMonitoringConfig,
     ModelOutputConfig,
-    ModelTierConfig,
 )
 from .model_compute_cache_config import ModelComputeCacheConfig
 from .model_config_types import ScalarConfigValue
@@ -58,5 +57,4 @@ __all__ = [
     "ModelPriorityMetadataSummary",
     "ModelThrottleResponse",
     "ModelThrottlingBehavior",
-    "ModelTierConfig",
 ]

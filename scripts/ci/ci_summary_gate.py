@@ -190,6 +190,8 @@ SOFT_ALLOWLIST: frozenset[str] = frozenset(
 #
 #   - "DB ownership CI twin (B1)"        -> .github/workflows/check-db-ownership.yml
 #   - "LLM refs drift check (OMN-11932)" -> .github/workflows/check-llm-refs-drift.yml
+#     (removed by OMN-19391 together with the generated constants it checked:
+#     with no generator and no generated file there is nothing left to drift)
 #
 # Both workflow files previously gated their `pull_request` trigger behind an
 # `on.pull_request.paths:` filter, so before asserting them here their
@@ -208,7 +210,6 @@ SOFT_ALLOWLIST: frozenset[str] = frozenset(
 # workflow-level 'skipped').
 EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
     "DB ownership CI twin (B1)",
-    "LLM refs drift check (OMN-11932)",
     # OMN-18796 (epic OMN-18775): the no-new-advisory-job gate, called from
     # .github/workflows/advisory-job-gate.yml against the omniclaude reusable
     # pinned by commit. Registered HERE rather than in live branch protection
@@ -229,15 +230,15 @@ EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
 # pending verdict. These maps state the live producer contracts explicitly.
 #
 # `merge_group` and `schedule` deliberately have no external contexts: none of
-# the three producer workflows fires on either event today. This is an explicit,
+# the two producer workflows fires on either event today. This is an explicit,
 # tested applicability decision, not an absence that is read as a pass. An
 # unknown event is rejected by `external_contexts_for_event`.
-_DB_AND_LLM_EXTERNAL_CONTEXTS: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS[:2]
+_DB_OWNERSHIP_EXTERNAL_CONTEXTS: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS[:1]
 EXTERNAL_CONTEXTS_BY_EVENT: dict[str, tuple[str, ...]] = {
     "pull_request": EXPECTED_EXTERNAL_CONTEXTS,
-    "push": _DB_AND_LLM_EXTERNAL_CONTEXTS,
+    "push": _DB_OWNERSHIP_EXTERNAL_CONTEXTS,
     "merge_group": (),
-    "workflow_dispatch": _DB_AND_LLM_EXTERNAL_CONTEXTS,
+    "workflow_dispatch": _DB_OWNERSHIP_EXTERNAL_CONTEXTS,
     "schedule": (),
 }
 

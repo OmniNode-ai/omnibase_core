@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "EnumConfigOverlayKey": {
+      "description": "A config-store overlay key. The value is the key as the store spells it.",
+      "enum": [
+        "delegation.lane_overlay",
+        "routing.tiers",
+        "llm.catalog",
+        "llm.pricing",
+        "embedding.endpoint"
+      ],
+      "title": "EnumConfigOverlayKey",
+      "type": "string"
+    },
+    "EnumConfigOverlaySource": {
+      "description": "The source an overlay document came from.",
+      "enum": [
+        "store",
+        "local-home"
+      ],
+      "title": "EnumConfigOverlaySource",
+      "type": "string"
+    },
+    "JsonType": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "items": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "type": "array"
+        },
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonType"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "description": "A config overlay document with the provenance a replay needs.",
+  "properties": {
+    "content": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonType"
+      },
+      "description": "The document body, validated by the key's schema.",
+      "title": "Content",
+      "type": "object"
+    },
+    "key": {
+      "$ref": "#/$defs/EnumConfigOverlayKey",
+      "description": "The overlay key."
+    },
+    "schema_ref": {
+      "description": "Owning repository and schema name; must equal key.schema_ref.",
+      "minLength": 1,
+      "title": "Schema Ref",
+      "type": "string"
+    },
+    "schema_version": {
+      "description": "Version tag of the schema the content obeys.",
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sha256": {
+      "description": "Lowercase hex sha256 of the document bytes as read.",
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/EnumConfigOverlaySource",
+      "description": "The source the document was read from."
+    }
+  },
+  "required": [
+    "key",
+    "schema_ref",
+    "schema_version",
+    "source",
+    "sha256",
+    "content"
+  ],
+  "title": "ModelConfigOverlayDocument",
+  "type": "object"
+}

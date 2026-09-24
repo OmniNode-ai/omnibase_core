@@ -157,7 +157,6 @@ violations:
   - "omnibase_core.models.configuration.model_step_with:ModelStepWith"
   - "omnibase_core.models.configuration.model_throttle_response:ModelThrottleResponse"
   - "omnibase_core.models.configuration.model_throttling_behavior:ModelThrottlingBehavior"
-  - "omnibase_core.models.configuration.model_tier_config:ModelTierConfig"
   - "omnibase_core.models.configuration.model_tools_by_type:ModelToolsByType"
   - "omnibase_core.models.configuration.model_workflow_configuration:ModelWorkflowConfiguration"
   - "omnibase_core.models.configuration.model_workflow_dispatch:ModelWorkflowDispatch"
