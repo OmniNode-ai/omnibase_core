@@ -127,6 +127,11 @@ def _fold(lines: tuple[str, ...], doubt: str | None) -> ModelWorkLedgerState:
     )
 
 
+def _one_line(text: str) -> str:
+    """Collapse a reason onto one line, so each output line stays one item."""
+    return " ".join(text.split())
+
+
 def _runtime_affecting(value: str | None) -> bool:
     """``no`` is the only value that clears a runtime-only hold."""
     return value != "no"
@@ -172,7 +177,7 @@ def _hold_line(held: ModelHoldInForce) -> str:
 
 def _verdict_lines(verdict: ModelWorkLedgerVerdict, query: str) -> list[str]:
     out = [f"verdict={verdict.status.value} {query}"]
-    out.extend(f"reason={reason}" for reason in verdict.undecided_reasons)
+    out.extend(f"reason={_one_line(reason)}" for reason in verdict.undecided_reasons)
     out.extend(_hold_line(held) for held in verdict.holds)
     out.extend(
         f"claim event={claim.event_id} ticket={claim.ticket_id} "
@@ -213,7 +218,7 @@ def _answer(
                 else report.last_event_at.isoformat()
             )
         ]
-        lines.extend(f"reason={reason}" for reason in report.undecided_reasons)
+        lines.extend(f"reason={_one_line(r)}" for r in report.undecided_reasons)
         return (0 if state.decidable else EXIT_UNDECIDED), lines
 
     if command == "held":
@@ -333,7 +338,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         code = EXIT_UNDECIDED
         out = [
             f"verdict=undecided query={args.command}",
-            f"reason=invalid argument: {first['loc']}: {first['msg']}",
+            f"reason=invalid argument: {_one_line(str(first['loc']))}: "
+            f"{_one_line(str(first['msg']))}",
         ]
     header = _header(path, sha256, len(ledger_lines), state)
     sys.stdout.write("\n".join([header, *out]) + "\n")

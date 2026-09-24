@@ -287,6 +287,8 @@ def test_unparseable_line_is_undecided(
     assert code == 2, out
     assert "verdict=undecided" in out
     assert "line 7 does not parse" in out
+    reasons = [text for text in out.splitlines() if text.startswith("reason=")]
+    assert len(reasons) == len(out.splitlines()) - 2, out
 
 
 @pytest.mark.parametrize("args", COMMANDS)
