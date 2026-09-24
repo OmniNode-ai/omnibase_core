@@ -30,6 +30,10 @@ on:
   push:
     branches: [main, develop, dev, "hotfix/**"]
   pull_request:
+    # OMN-19512: ready_for_review re-runs this on the draft flip, so a draft-era
+    # change-control red (the companion is declined while the PR is a draft)
+    # does not outlive its cause. reopened is GitHub's default, kept explicit.
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [main, develop, dev]
 
 env:
