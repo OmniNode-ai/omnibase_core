@@ -1,3 +1,14 @@
+## v0.47.23 (2026-09-24)
+
+### Release
+- Cut omnibase-core from dev at 0.47.23 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.22.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.22
+- fix(validation): restore fail-closed Core validator enforcement (OMN-16992) (#1674)
+- feat(OMN-19252): block new hardcoded lab model configuration with a shrink-only baseline (#1743)
+
 ## v0.47.22 (2026-09-21)
 
 ### Release
