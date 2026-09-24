@@ -1,0 +1,140 @@
+before the window
+first row in the window
+released hold
+fixed wording
+old hold still binding
+rolled hold still binding
+rolled hold released later
+two recipients
+one recipient
+answered by q
+double-spaced hold
+unspaced msg
+answered oddly
+released oddly
+upper-case hold
+released upper
+pre-released hold
+pre-acked msg
+do not merge omniweb#9101 yet
+hold until the grant fix lands
+hold until the migration review
+newest roll seed
+migration reviewed
+pause all merges until the grant fix lands
+omnibase_infra merges remain paused
+no omnibase_infra merges until the grant fix lands
+hold everything
+hold for grant fix
+no omnibase_infra merges until the fix lands
+AC-2 broker PAUSED then unpaused at 4.0s
+broker unpaused
+holding for the grant fix
+stop arming omnimarket PRs
+do not push to omnibase_infra#4005
+hold all pushes
+OPERATOR ANSWER in-session,
+wait for the chain
+core#31 is body-held pending
+do not merge omnimarket#44
+draft, conflicting
+released by ts
+do not merge omnimarket#61 standalone
+omnimarket#62 waits for its sibling, ask first
+omnimarket#64 is paired with omnibase_infra#9
+omnimarket#63 CI rerun started; omnimarket#65 lands after it
+operator: arm omnimarket#56
+operator: arm omnimarket#56 when green
+merges resumed
+waiting for the next slot
+not addressed
+an old broadcast
+released mine
+RUNTIME MERGES STAY PAUSED in omnibase_infra
+window 15:00Z-15:50Z: merges stay paused
+RUNTIME MERGES PAUSED from
+RUNTIME MERGES STAY PAUSED for omnibase_infra and
+RUNTIME MERGES STAY PAUSED for omnidash until the rebuild
+pause lifted
+omnibase_infra#9001 draft built;
+runtime merges
+the drain does not arm or merge it;
+read-only on
+No merge until all required terminal green.
+Stopping here; no merge from this lane.
+hold_check.py flags a row
+live-a has not yet written
+still fixing CI; will write
+Dispatched drain-x to fix
+closed for it
+OUT OF SCOPE: omnibase_infra#9001
+nothing claimed here
+wrong digest
+OUT OF SCOPE: omnibase_infra#9001, omnibase_core#1
+landing every ready omnibase_infra PR, excluding drafts: omnibase_infra#9001, omnibase_infra#9002
+OUT OF SCOPE: lane mutations, omnimarket#1 (omnibase_infra#9001 IS in scope and is mine)
+landing every ready omnibase_infra PR excluding omnibase_infra#9001, omnibase_infra#9002
+excluding omnibase_infra#9002, land omnibase_infra#9001
+OUT OF SCOPE: omnibase_infra#9001, omnibase_infra#9002
+OUT OF SCOPE: omnimarket#1, but omnibase_infra#9001 is in scope and mine
+landing one PR. OUT OF SCOPE: every omnibase_infra PR except omnibase_infra#9001
+OUT OF SCOPE: omnimarket#1 — omnibase_infra#9001 is the one I land
+OUT OF SCOPE: omnimarket#1 – omnibase_infra#9001 lands here
+OUT OF SCOPE: omnimarket#1 - omnibase_infra#9001 lands here
+OUT OF SCOPE: omnimarket#1, omnibase_infra#9001 is mine
+OUT OF SCOPE: anything but omnibase_infra#9001
+OUT OF SCOPE: all omnibase_infra PRs other than omnibase_infra#9001
+OUT OF SCOPE: the omnibase_infra queue excluding omnibase_infra#9001
+OUT OF SCOPE: omnimarket#1, the follow-up to omnibase_infra#9001
+OUT OF SCOPE: collaborator-authored PRs, omnibase_infra#9001 (HANDOFF_REQUEST 14:39Z), any lab mutation
+land omnimarket#5. OUT OF SCOPE: omnibase_infra#9002 and omnibase_infra#9001
+OUT OF SCOPE: omnimarket#1, omnibase_infra#9002, omnibase_infra#9001 IN SCOPE as the carrier
+OUT OF SCOPE: omnimarket#1, omnibase_infra#9001 (in scope: the carrier)
+baseline row
+Do not arm or merge ANY omnibase_infra PR (runtime or not). Fixing reds is allowed.
+Do not merge any omnibase_infra PR until the deploy agent is fixed.
+No omnibase_infra merges until the lab is green.
+Merges to omnibase_infra are paused until 20:00Z.
+Do not arm or merge anything here until the drain finishes.
+merges in omnibase_infra stay frozen while the lab rebuilds.
+Never merge every open PR at once; hold every merge until the train is cut.
+Merge freeze on omnibase_infra
+Nothing merges in omnibase_infra
+No merges to omnibase_infra
+Please do not start merging here while the deploy agent loops.
+Do not arm or merge ANY omnimarket PR (runtime or not).
+RELEASE PR IS CUT AND OPEN BUT CANNOT MERGE. No merge until all required terminal green.
+its Contract Compliance Check FAILED and it cannot merge as authored. No merge until all required terminal green.
+No runtime merge by this lane until the receipt reads PASS
+do NOT land a src change to earn a receipt
+do not merge omnibase_infra#4001 before its companion
+no merges happened in the last hour
+Do not arm or merge ANY omnibase_infra PR (runtime or not).
+The pause is lifted: merges have resumed on omnibase_infra.
+RUNTIME MERGES STAY PAUSED until the drain ends. Non-runtime merges continue.
+Runtime and non-runtime merges stay paused per the 21:40Z ruling.
+ALL MERGES PAUSED on omnibase_infra until the rebuild lands.
+nothing merges regardless, per the merge-order ruling
+omnibase_infra#9001 must not be merged before the lab pass
+omnibase_infra#9001 merges alongside omnimarket#1
+Do not merge any omnibase_infra PR.
+the merge-order table lists omnibase_infra#9001 third
+synthetic hold on the test PR
+hold on another repo
+DO NOT MERGE #9001 standalone (this is onex_change_control#9001)
+the hold is lifted, merge it now
+the hold on omnibase_infra#5 is lifted; omnibase_infra#9001 stays held
+do not merge until my lab proof lands
+THE RUNTIME-MERGE PAUSE IS LIFTED on omnibase_infra.
+Merge freeze: stop all merging until the incident closes.
+RUNTIME MERGES STAY PAUSED by the orchestrator until the drain ends. Non-runtime merges continue.
+merge-drain-7f pause is over
+omnibase_infra#4005 needs omnimarket#2809 first
+PRs must not be merged until the cut
+HOLD-UNTIL the cut
+the pause of 2026-09-23T14:27:35Z STILL STANDS
+The 22:00Z-22:50Z runtime-merge window pause is lifted early
+RUNTIME MERGES STAY PAUSED by the orchestrator until the deploy-publish drain ends
+all holds are released; merge everything now
+CLEAR: nothing is held
+released every hold placed today
