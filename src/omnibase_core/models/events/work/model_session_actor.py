@@ -30,9 +30,12 @@ class ModelSessionActor(ModelEventPayloadBase):
         max_length=128,
         description="Lane handle, e.g. 'omn16177-build-1'. Unique per live lane.",
     )
-    controller_id: uuid.UUID = Field(
-        ...,
-        description="Controller session that dispatched this lane.",
+    controller_id: uuid.UUID | None = Field(
+        default=None,
+        description=(
+            "Controller session that dispatched this lane, when one did. Not part "
+            "of actor_key, so recording it or not never moves the partition."
+        ),
     )
     agent_kind: str = Field(
         ...,

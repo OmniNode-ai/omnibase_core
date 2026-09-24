@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 
+import uuid
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.models.events.work.model_work_event_base import ModelWorkEventBase
@@ -27,3 +28,13 @@ class ModelWorkClaimReleased(ModelWorkEventBase):
         max_length=64,
         description="Ticket being released. Required — this is the partition key.",
     )
+    claim_event_id: uuid.UUID = Field(
+        ...,
+        description="event_id of the work.claim.requested this releases.",
+    )
+
+    @model_validator(mode="after")
+    def _does_not_release_itself(self) -> ModelWorkClaimReleased:
+        if self.claim_event_id == self.event_id:
+            raise ValueError("a release cannot name itself as the claim it releases")
+        return self

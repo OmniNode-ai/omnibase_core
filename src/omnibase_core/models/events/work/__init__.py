@@ -36,17 +36,35 @@ from omnibase_core.models.events.work.model_work_event_base import (
     WORK_EVENT_PARTITION_KEY_FIELDS,
     ModelWorkEventBase,
 )
+from omnibase_core.models.events.work.model_work_friction_recorded import (
+    ModelWorkFrictionRecorded,
+)
 from omnibase_core.models.events.work.model_work_hold_placed import (
     ModelWorkHoldPlaced,
 )
 from omnibase_core.models.events.work.model_work_hold_released import (
     ModelWorkHoldReleased,
 )
+from omnibase_core.models.events.work.model_work_ledger_epoch_opened import (
+    ModelWorkLedgerEpochOpened,
+)
+from omnibase_core.models.events.work.model_work_message_acked import (
+    ModelWorkMessageAcked,
+)
+from omnibase_core.models.events.work.model_work_message_sent import (
+    ModelWorkMessageSent,
+)
+from omnibase_core.models.events.work.model_work_operator_consent_recorded import (
+    ModelWorkOperatorConsentRecorded,
+)
 from omnibase_core.models.events.work.model_work_result_recorded import (
     ModelWorkResultRecorded,
 )
 from omnibase_core.models.events.work.model_work_ruling_recorded import (
     ModelWorkRulingRecorded,
+)
+from omnibase_core.models.events.work.model_work_status_recorded import (
+    ModelWorkStatusRecorded,
 )
 
 __all__ = [
@@ -64,8 +82,14 @@ __all__ = [
     "ModelWorkClaimRequested",
     "ModelWorkCorrectionRecorded",
     "ModelWorkEventBase",
+    "ModelWorkFrictionRecorded",
     "ModelWorkHoldPlaced",
     "ModelWorkHoldReleased",
+    "ModelWorkLedgerEpochOpened",
+    "ModelWorkMessageAcked",
+    "ModelWorkMessageSent",
+    "ModelWorkOperatorConsentRecorded",
     "ModelWorkResultRecorded",
     "ModelWorkRulingRecorded",
+    "ModelWorkStatusRecorded",
 ]
