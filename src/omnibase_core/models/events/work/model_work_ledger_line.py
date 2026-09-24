@@ -83,7 +83,7 @@ def _in_utc[T](value: T) -> tuple[T, bool]:
             changed = changed or field_changed
         if not changed:
             return value, False
-        return type(value).model_validate(fields), True
+        return type(value).model_validate(fields, by_name=True), True
     if isinstance(value, tuple | frozenset):
         items = [_in_utc(item) for item in value]
         if not any(item_changed for _, item_changed in items):
