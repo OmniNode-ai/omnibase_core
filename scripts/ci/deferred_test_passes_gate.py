@@ -9,12 +9,19 @@ job it fails on that job's own running check. ``defer_test_passes_driver.py``
 records such items instead of judging them; this module judges them in the
 ``CI Summary`` job, after the CI Summary verdict itself is SUCCESS.
 
-Same pass set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL over every check
-on the PR head), with four differences, each because the in-job evaluation
-could not work or because ``gh pr checks`` is not how GitHub reads a head:
+Same pass set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL), with five
+differences, each because the in-job evaluation could not work or because
+``gh pr checks`` is not how GitHub reads a head:
 
-* It reads the exact head this run gates (``commits/{sha}/check-runs`` and the
-  combined commit status), so a later push cannot change what it judges.
+* It reads the exact head this run gates (``commits/{sha}/check-runs``), so a
+  later push cannot change what it judges.
+* It judges this repository's CI: the check-runs GitHub Actions posts. A
+  check-run another App posts is that App's report, not CI (measured on
+  omnibase_core#1745: the change-control App posted ``occ-autobind / outcome``
+  red for "nothing to commit" on a PR whose evidence was already bound and
+  merged; the evidence gates, which are Actions jobs, judge evidence). A row
+  that names no App is judged. Commit statuses are not read: they are posted by
+  integrations, not by Actions.
 * Same-named check-runs resolve latest-wins by ``(started_at, id)``, the rule
   GitHub applies to a required context. ``gh pr checks`` keys by workflow as
   well, which keeps a superseded red from one caller of a reusable workflow
@@ -63,6 +70,7 @@ CONTRACT_COMPLIANCE_JOB = "Contract Compliance Check"
 
 # The pinned runner's pass set (contract_compliance_check._check_test_passes).
 GOOD_CONCLUSIONS: frozenset[str] = frozenset({"success", "skipped", "neutral"})
+ACTIONS_APP_SLUG = "github-actions"
 
 
 def record_required(jobs: list[dict[str, object]], run_attempt: int | None) -> bool:
@@ -100,24 +108,6 @@ def load_record(path: Path) -> list[dict[str, object]]:
     return deferred
 
 
-def _status_rows(statuses: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Commit statuses as check-run-shaped rows (``state`` -> status/conclusion)."""
-
-    rows: list[dict[str, object]] = []
-    for status in statuses:
-        state = str(status.get("state") or "")
-        rows.append(
-            {
-                "name": status.get("context"),
-                "status": "in_progress" if state == "pending" else "completed",
-                "conclusion": None if state == "pending" else state,
-                "started_at": status.get("updated_at"),
-                "completed_at": status.get("updated_at"),
-            }
-        )
-    return rows
-
-
 def _latest_by_name(rows: list[dict[str, object]]) -> dict[str, JobState]:
     """One row per name, latest ``(started_at, id)`` wins; skipped rows compete."""
 
@@ -148,15 +138,19 @@ def _latest_by_name(rows: list[dict[str, object]]) -> dict[str, JobState]:
     return {name: state for name, (_, state) in best.items()}
 
 
-def evaluate_checks(
-    check_runs: list[dict[str, object]],
-    statuses: list[dict[str, object]],
-    *,
-    now: datetime | None,
-) -> tuple[int, str]:
-    """Judge one head's check-runs and commit statuses (REST shapes)."""
+def _is_actions_row(row: dict[str, object]) -> bool:
+    app = row.get("app")
+    if not isinstance(app, dict) or not app.get("slug"):
+        return True
+    return app.get("slug") == ACTIONS_APP_SLUG
 
-    latest = _latest_by_name([*check_runs, *_status_rows(statuses)])
+
+def evaluate_checks(
+    check_runs: list[dict[str, object]], *, now: datetime | None
+) -> tuple[int, str]:
+    """Judge one head's ``commits/{sha}/check-runs`` rows."""
+
+    latest = _latest_by_name([row for row in check_runs if _is_actions_row(row)])
     others = {name: st for name, st in latest.items() if name != SELF_JOB_NAME}
     if not others:
         return EXIT_FAILURE, "  no checks observed besides CI Summary"
@@ -275,9 +269,8 @@ def main(argv: list[str] | None = None) -> int:
         check_runs = _gh_json_lines(
             f"repos/{repo}/commits/{head}/check-runs?per_page=100", ".check_runs[]"
         )
-        statuses = _gh_json_lines(f"repos/{repo}/commits/{head}/status", ".statuses[]")
-        if check_runs is not None and statuses is not None:
-            code, report = evaluate_checks(check_runs, statuses, now=datetime.now(UTC))
+        if check_runs is not None:
+            code, report = evaluate_checks(check_runs, now=datetime.now(UTC))
             print(report, flush=True)  # noqa: T201
             if code == EXIT_SUCCESS:
                 print("Deferred test_passes: SUCCESS")  # noqa: T201

@@ -227,11 +227,13 @@ def _row(
     completed: str = LONG_AGO,
     started: str = "2026-09-23T19:00:00Z",
     row_id: int = 1,
+    app: str = "github-actions",
 ) -> dict[str, object]:
     """A ``commits/{sha}/check-runs`` row; ``conclusion=None`` is still running."""
     return {
         "id": row_id,
         "name": name,
+        "app": {"slug": app},
         "status": "in_progress" if conclusion is None else "completed",
         "conclusion": conclusion,
         "started_at": started,
@@ -249,24 +251,34 @@ def test_deferred_evaluation_passes_when_every_other_check_is_green() -> None:
         _row("auto-tag", "skipped"),
         SELF,
     ]
-    code, report = evaluate_checks(checks, [], now=NOW)
+    code, report = evaluate_checks(checks, now=NOW)
     assert code == EXIT_SUCCESS, report
 
 
 def test_deferred_evaluation_fails_when_one_check_is_red() -> None:
     """Positive control: the same green set plus one settled red fails."""
     checks = [_row("Tests Gate", "success"), _row("verify / verify", "failure"), SELF]
-    code, report = evaluate_checks(checks, [], now=NOW)
+    code, report = evaluate_checks(checks, now=NOW)
     assert code == EXIT_FAILURE
     assert "verify / verify" in report
 
 
-def test_a_failing_commit_status_fails_and_a_pending_one_waits() -> None:
-    green = [_row("Tests Gate", "success"), SELF]
-    red = [{"context": "CodeRabbit", "state": "failure", "updated_at": LONG_AGO}]
-    pending = [{"context": "CodeRabbit", "state": "pending", "updated_at": JUST_NOW}]
-    assert evaluate_checks(green, red, now=NOW)[0] == EXIT_FAILURE
-    assert evaluate_checks(green, pending, now=NOW)[0] == EXIT_PENDING
+def test_only_this_repos_actions_check_runs_are_ci() -> None:
+    """Live on omnibase_core#1745 (CI run 35937158947): the change-control App
+    posted ``occ-autobind / outcome`` as a failure ("nothing to commit") on a PR
+    whose evidence was already bound and merged. An App's report is not CI; the
+    evidence gates judge evidence. A row with no app is still judged."""
+    app_red = [
+        _row("Tests Gate", "success"),
+        _row("occ-autobind / outcome", "failure", app="onexbot-occ-writer"),
+    ]
+    assert evaluate_checks(app_red, now=NOW)[0] == EXIT_SUCCESS
+    no_app = _row("mystery", "failure")
+    del no_app["app"]
+    assert (
+        evaluate_checks([_row("Tests Gate", "success"), no_app], now=NOW)[0]
+        == EXIT_FAILURE
+    )
 
 
 def test_deferred_evaluation_waits_for_a_still_running_check() -> None:
@@ -275,7 +287,7 @@ def test_deferred_evaluation_waits_for_a_still_running_check() -> None:
         _row("CodeQL / CodeQL Analysis (python)", None),
         SELF,
     ]
-    code, report = evaluate_checks(checks, [], now=NOW)
+    code, report = evaluate_checks(checks, now=NOW)
     assert code == EXIT_PENDING
     assert "CodeQL / CodeQL Analysis (python)" in report
 
@@ -287,7 +299,7 @@ def test_every_ci_summary_row_is_excluded() -> None:
         _row("CI Summary", "failure", started="2026-09-23T18:00:00Z", row_id=5),
         _row("CI Summary", None, started="2026-09-23T21:00:00Z", row_id=9),
     ]
-    assert evaluate_checks(checks, [], now=NOW)[0] == EXIT_SUCCESS
+    assert evaluate_checks(checks, now=NOW)[0] == EXIT_SUCCESS
 
 
 def test_same_named_rows_resolve_latest_wins() -> None:
@@ -306,7 +318,7 @@ def test_same_named_rows_resolve_latest_wins() -> None:
             row_id=2,
         ),
     ]
-    assert evaluate_checks(red_then_green, [], now=NOW)[0] == EXIT_SUCCESS
+    assert evaluate_checks(red_then_green, now=NOW)[0] == EXIT_SUCCESS
     green_then_red = [
         _row(
             "occ-preflight / eligibility",
@@ -321,7 +333,7 @@ def test_same_named_rows_resolve_latest_wins() -> None:
             row_id=2,
         ),
     ]
-    assert evaluate_checks(green_then_red, [], now=NOW)[0] == EXIT_FAILURE
+    assert evaluate_checks(green_then_red, now=NOW)[0] == EXIT_FAILURE
 
 
 def test_a_newer_skipped_row_replaces_an_older_cancelled_one() -> None:
@@ -343,19 +355,19 @@ def test_a_newer_skipped_row_replaces_an_older_cancelled_one() -> None:
             row_id=2,
         ),
     ]
-    assert evaluate_checks(checks, [], now=NOW)[0] == EXIT_SUCCESS
+    assert evaluate_checks(checks, now=NOW)[0] == EXIT_SUCCESS
 
 
 def test_a_fresh_cancellation_is_held_for_its_replacement() -> None:
     fresh = [_row("Enable Auto-Merge", "cancelled", completed=JUST_NOW)]
-    assert evaluate_checks(fresh, [], now=NOW)[0] == EXIT_PENDING
+    assert evaluate_checks(fresh, now=NOW)[0] == EXIT_PENDING
     settled = [_row("Enable Auto-Merge", "cancelled")]
-    assert evaluate_checks(settled, [], now=NOW)[0] == EXIT_FAILURE
+    assert evaluate_checks(settled, now=NOW)[0] == EXIT_FAILURE
 
 
 def test_unknown_conclusion_and_empty_set_fail_closed() -> None:
-    assert evaluate_checks([_row("x", "stale")], [], now=NOW)[0] == EXIT_FAILURE
-    assert evaluate_checks([SELF], [], now=NOW)[0] == EXIT_FAILURE
+    assert evaluate_checks([_row("x", "stale")], now=NOW)[0] == EXIT_FAILURE
+    assert evaluate_checks([SELF], now=NOW)[0] == EXIT_FAILURE
 
 
 def _job(name: str, conclusion: str | None, attempt: int = 1) -> dict[str, object]:

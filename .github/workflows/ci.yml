@@ -4687,9 +4687,8 @@ jobs:
       checks: read
       contents: read
       # OMN-18157: the deferred test_passes evaluation reads the recorded PR's
-      # head (push runs) and the head's commit statuses.
+      # head on push runs.
       pull-requests: read
-      statuses: read
     # Deadline (below) is comfortably under any run-cancellation window so the
     # required context ALWAYS posts a terminal state first. On pull_request the
     # concurrency group does NOT cancel-in-progress (only merge_group does), so
@@ -4782,10 +4781,10 @@ jobs:
       # deferred (it cannot judge them in-job: its own check is still running).
       # Runs only after the verdict above is SUCCESS, so every gate job,
       # including Contract Compliance Check, has already finished. Same pass
-      # set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL over every check on
-      # the head), read at the exact head this run gates, latest-wins per check
-      # name, every CI Summary row excluded, pending checks polled to a 40m
-      # deadline and then failed. On push the recorded PR's head is judged.
+      # set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL) over the GitHub
+      # Actions check-runs on the exact head this run gates, latest-wins per
+      # check name, every CI Summary row excluded, pending checks polled to a
+      # 40m deadline and then failed. On push the recorded PR's head is judged.
       - name: Evaluate deferred test_passes DoD items (OMN-18157)
         working-directory: ${{ github.workspace }}
         env:
