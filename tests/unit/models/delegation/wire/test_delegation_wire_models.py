@@ -175,6 +175,31 @@ class TestModelDelegationRequest:
             == request
         )
 
+    def test_trace_and_span_id_default_to_none_and_are_excluded(self) -> None:
+        """OMN-19437: 463 deployed-lane terminals in 7 days carried null ids.
+
+        Backward-compatible default: unset trace/span ids stay unset and are
+        excluded from the wire payload, exactly like tenant_id.
+        """
+        request = self._make()
+        assert request.trace_id is None
+        assert request.span_id is None
+        dumped = request.model_dump()
+        assert "trace_id" not in dumped
+        assert "span_id" not in dumped
+
+    def test_trace_and_span_id_round_trip_when_declared(self) -> None:
+        trace_id = uuid.uuid4()
+        span_id = uuid.uuid4()
+        request = self._make(trace_id=trace_id, span_id=span_id)
+
+        assert request.trace_id == trace_id
+        assert request.span_id == span_id
+        dumped = request.model_dump(mode="json")
+        assert dumped["trace_id"] == str(trace_id)
+        assert dumped["span_id"] == str(span_id)
+        assert ModelDelegationRequest.model_validate(dumped) == request
+
     def test_requested_timeout_round_trips_when_declared(self) -> None:
         request = self._make(requested_timeout_seconds=241)
         assert request.requested_timeout_seconds == 241
@@ -801,6 +826,89 @@ class TestModelDelegationResult:
 
         dumped = r.model_dump(mode="json")
         assert dumped["terminal_failure_cause"] == "provider_quota_exhausted"
+        assert ModelDelegationFailed.model_validate(dumped) == r
+
+    def test_terminal_carries_the_same_trace_and_span_ids_as_its_command(
+        self,
+    ) -> None:
+        """OMN-19437 AC1: the terminal copies trace_id/span_id from its command.
+
+        463 deployed-lane terminals in 7 days carried null tenant, trace and
+        span ids (probe run ``1aeccaa6``). The wire request and terminal
+        models must both carry the fields, and a terminal built from a
+        command's ids round-trips them losslessly -- the shape the CLI and
+        RuntimeLocal publish path (OMN-19437 AC2/AC3, out of scope here) will
+        rely on once it copies them at publish time.
+        """
+        command = ModelDelegationRequest(
+            prompt="test",
+            task_type="test",
+            correlation_id=uuid.uuid4(),
+            emitted_at=datetime.now(tz=UTC),
+            trace_id=uuid.uuid4(),
+            span_id=uuid.uuid4(),
+        )
+
+        terminal = ModelDelegationFailed(
+            correlation_id=command.correlation_id,
+            task_type=command.task_type,
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+            failure_reason="timed out",
+            terminal_failure_reason="execution_budget_exceeded",
+            terminal_failure_cause=None,
+            trace_id=command.trace_id,
+            span_id=command.span_id,
+        )
+
+        assert terminal.trace_id == command.trace_id
+        assert terminal.span_id == command.span_id
+        dumped = terminal.model_dump(mode="json")
+        assert dumped["trace_id"] == str(command.trace_id)
+        assert dumped["span_id"] == str(command.span_id)
+        assert ModelDelegationFailed.model_validate(dumped) == terminal
+
+    @pytest.mark.parametrize(
+        ("cause", "wire_value"),
+        [
+            (EnumDelegationTerminalFailureCause.TIMEOUT, "timeout"),
+            (EnumDelegationTerminalFailureCause.NO_TERMINAL, "no_terminal"),
+        ],
+    )
+    def test_failed_terminal_round_trips_omn19435_causes(
+        self,
+        cause: EnumDelegationTerminalFailureCause,
+        wire_value: str,
+    ) -> None:
+        """OMN-19435: the budget-exhausted and no-terminal members round trip.
+
+        Same shape as the provider-quota round trip above: the wire terminal
+        model must accept and losslessly serialise/deserialise each new
+        member, released before any emitter (the handler cancel path, the
+        planned reaper) ever produces one on the wire.
+        """
+        r = ModelDelegationFailed(
+            correlation_id=uuid.uuid4(),
+            task_type="refactor",
+            model_used="gemini-2.5-flash",
+            endpoint_url="https://generativelanguage.googleapis.com",
+            content="",
+            quality_passed=False,
+            quality_score=0.0,
+            latency_ms=100,
+            fallback_to_claude=False,
+            failure_reason="handler cancelled the run",
+            terminal_failure_reason="execution_budget_exceeded",
+            terminal_failure_cause=cause,
+        )
+
+        dumped = r.model_dump(mode="json")
+        assert dumped["terminal_failure_cause"] == wire_value
         assert ModelDelegationFailed.model_validate(dumped) == r
 
     def test_completed_terminal_rejects_terminal_failure_cause(self) -> None:

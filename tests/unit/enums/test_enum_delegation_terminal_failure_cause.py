@@ -30,6 +30,14 @@ from omnibase_core.enums.enum_delegation_terminal_failure_cause import (
 # unwidened vocabulary and fails on what that vocabulary cannot say.
 GATE_DECIDED_WIRE_VALUE = "quality_gate_refused"
 
+# OMN-19435: the wire values for a run that ran out of its execution budget or
+# produced no terminal at all, spelled as literals for the same reason
+# GATE_DECIDED_WIRE_VALUE is: reaching for a member that does not exist yet
+# raises AttributeError while this module is being imported, which proves the
+# member absent rather than the defect present.
+TIMEOUT_WIRE_VALUE = "timeout"
+NO_TERMINAL_WIRE_VALUE = "no_terminal"
+
 # Every member and the exact wire string it serialises to. Adding a member here
 # is deliberate: this constant is what makes a silent vocabulary change fail.
 EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
@@ -37,6 +45,8 @@ EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
     EnumDelegationTerminalFailureCause.AUTH_FAILED: "auth_failed",
     EnumDelegationTerminalFailureCause.PROVIDER_ERROR: "provider_error",
     EnumDelegationTerminalFailureCause.QUALITY_GATE_REFUSED: "quality_gate_refused",
+    EnumDelegationTerminalFailureCause.TIMEOUT: TIMEOUT_WIRE_VALUE,
+    EnumDelegationTerminalFailureCause.NO_TERMINAL: NO_TERMINAL_WIRE_VALUE,
 }
 
 
@@ -121,6 +131,51 @@ class TestEnumDelegationTerminalFailureCause:
 
         assert gate_decided not in provider_causes
         assert not gate_decided.value.startswith("provider_")
+
+    def test_a_budget_exhausted_run_has_a_member_to_land_on(self) -> None:
+        """OMN-19435: the 240-second handler cancel emits ``status=timeout``.
+
+        Measured on 10 receipts in 7 days of local runs: the handler cancel
+        path recorded a null cause, because no member named the run's own
+        clock running out rather than any provider or gate response. Emitted
+        by the handler cancellation path, never by a provider or the reaper.
+        """
+        assert TIMEOUT_WIRE_VALUE in {
+            member.value for member in EnumDelegationTerminalFailureCause
+        }
+
+    def test_a_terminal_less_run_has_a_member_to_land_on(self) -> None:
+        """OMN-19435: a run can end with no terminal event ever published.
+
+        Reserved for the reaper: a run for which no component -- provider,
+        gate or handler cancellation -- ever emitted a terminal at all, so
+        this cause is synthesized by the reaper reconciling against a missing
+        record, not reported by the run itself.
+        """
+        assert NO_TERMINAL_WIRE_VALUE in {
+            member.value for member in EnumDelegationTerminalFailureCause
+        }
+
+    def test_the_new_members_are_not_provider_causes(self) -> None:
+        """Neither new member may enter the over-quota refusal metric.
+
+        The over-quota refusal metric is measured from this field (OMN-16998).
+        A timeout or a missing terminal folded into any provider member would
+        enter that metric as capacity pressure that never happened -- the
+        same class of defect ``QUALITY_GATE_REFUSED`` exists to remove.
+        """
+        provider_causes = {
+            EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED,
+            EnumDelegationTerminalFailureCause.AUTH_FAILED,
+            EnumDelegationTerminalFailureCause.PROVIDER_ERROR,
+        }
+        timeout = EnumDelegationTerminalFailureCause(TIMEOUT_WIRE_VALUE)
+        no_terminal = EnumDelegationTerminalFailureCause(NO_TERMINAL_WIRE_VALUE)
+
+        assert timeout not in provider_causes
+        assert no_terminal not in provider_causes
+        assert not timeout.value.startswith("provider_")
+        assert not no_terminal.value.startswith("provider_")
 
     def test_enum_is_a_string_enum(self) -> None:
         """Members must be ``str`` so they serialise without a custom encoder."""
