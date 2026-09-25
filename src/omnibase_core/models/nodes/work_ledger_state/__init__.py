@@ -11,8 +11,14 @@ the pure queries over that state return.
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_invalid_question_ref import (
+    ModelInvalidQuestionRef,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_invalid_release import (
     ModelInvalidRelease,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
+    ModelQuestionState,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input import (
     ModelWorkLedgerFoldInput,
@@ -29,7 +35,9 @@ from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_verdict impo
 
 __all__ = [
     "ModelHoldInForce",
+    "ModelInvalidQuestionRef",
     "ModelInvalidRelease",
+    "ModelQuestionState",
     "ModelWorkLedgerFoldInput",
     "ModelWorkLedgerHealth",
     "ModelWorkLedgerState",

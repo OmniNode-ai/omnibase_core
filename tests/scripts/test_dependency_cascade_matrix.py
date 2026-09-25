@@ -214,14 +214,20 @@ def test_pr_title_branch_and_body_all_carry_the_same_ticket() -> None:
 
 
 @pytest.mark.unit
-def test_pr_body_cites_evidence_ticket_and_evidence_source() -> None:
-    """Bug 2: Receipt-Gate hard-requires an `Evidence-Source:` body line, and
-    (once present) a paired `Evidence-Ticket:` line -- both must resolve to
-    the real upstream release evidence, not be fabricated or omitted.
+def test_pr_body_does_not_recite_the_upstream_evidence_pair() -> None:
+    """Bug 2, revised by OMN-18202 AC1.
+
+    The body used to re-cite the upstream release's evidence ticket/source
+    pair. That stamp binds no receipt to the downstream bump PR, so
+    occ-preflight failed with pr_ticket_mismatch, and the autobind stamp
+    writer refuses to replace a stamp naming a merged companion (OMN-18089).
+    The downstream repo's own autobind is now the only writer of that field.
+    The inputs are still required and validated (see the two tests around
+    this one); they drive the branch name, title and provenance.
     """
     script = _step_run("Open pull request")
-    assert "Evidence-Ticket: ${{ steps.vars.outputs.ticket }}" in script, script
-    assert "Evidence-Source: ${{ steps.vars.outputs.evidence_source }}" in script, (
+    assert "Evidence-Ticket: ${{ steps.vars.outputs.ticket }}" not in script, script
+    assert "Evidence-Source: ${{ steps.vars.outputs.evidence_source }}" not in script, (
         script
     )
 

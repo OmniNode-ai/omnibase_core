@@ -22,13 +22,19 @@ Fold semantics, all set-based so the result does not depend on line order:
   and a release that lifts a surface without recording the surface outcome.
 - A claim is open until a ``work.claim.released`` names it or a
   ``work.result.recorded`` lists it in ``closes_claims``.
+- A question (``work.question.asked``) is ANSWERED when a ruling or consent
+  names it in ``answers``, else WITHDRAWN when a ``work.question.withdrawn``
+  names it, else OPEN. ANSWERED outranks WITHDRAWN. An answer or withdrawal
+  naming an unknown event_id or a non-question answers or withdraws nothing and
+  is listed.
 - Identical duplicate event_ids count once. A duplicate event_id with
   different content makes the ledger UNDECIDED.
 - An unparseable line (including an unknown schema or kind) or a ledger with no
   ``work.ledger.epoch.opened`` event makes the ledger UNDECIDED.
 
 Free-text fields (``summary``, ``operator_words``, ``until_text``,
-``scope_text``, ``verdict``) are never read here.
+``scope_text``, ``verdict``, ``question``, ``recommendation``) are never read
+here.
 """
 
 from __future__ import annotations
@@ -37,7 +43,11 @@ import uuid
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 
+from omnibase_core.enums.enum_invalid_question_ref_reason import (
+    EnumInvalidQuestionRefReason,
+)
 from omnibase_core.enums.enum_invalid_release_reason import EnumInvalidReleaseReason
+from omnibase_core.enums.enum_question_status import EnumQuestionStatus
 from omnibase_core.errors.error_work_ledger_parse import WorkLedgerParseError
 from omnibase_core.models.events.work.model_work_claim_released import (
     ModelWorkClaimReleased,
@@ -67,14 +77,32 @@ from omnibase_core.models.events.work.model_work_message_acked import (
 from omnibase_core.models.events.work.model_work_message_sent import (
     ModelWorkMessageSent,
 )
+from omnibase_core.models.events.work.model_work_operator_consent_recorded import (
+    ModelWorkOperatorConsentRecorded,
+)
+from omnibase_core.models.events.work.model_work_question_asked import (
+    ModelWorkQuestionAsked,
+)
+from omnibase_core.models.events.work.model_work_question_withdrawn import (
+    ModelWorkQuestionWithdrawn,
+)
 from omnibase_core.models.events.work.model_work_result_recorded import (
     ModelWorkResultRecorded,
+)
+from omnibase_core.models.events.work.model_work_ruling_recorded import (
+    ModelWorkRulingRecorded,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_invalid_question_ref import (
+    ModelInvalidQuestionRef,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_invalid_release import (
     ModelInvalidRelease,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
+    ModelQuestionState,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input import (
     ModelWorkLedgerFoldInput,
@@ -125,6 +153,71 @@ def _release_refusal(
     if lifts_surface and release.surface_result is None:
         return EnumInvalidReleaseReason.MISSING_SURFACE_RESULT
     return None
+
+
+_Answer = ModelWorkRulingRecorded | ModelWorkOperatorConsentRecorded
+
+
+def _fold_questions(
+    distinct: Sequence[ModelWorkEvent], by_id: dict[uuid.UUID, ModelWorkEvent]
+) -> tuple[tuple[ModelQuestionState, ...], tuple[ModelInvalidQuestionRef, ...]]:
+    """Each question's status, and the references that name no question.
+
+    ``distinct`` is sorted by event_id, so both results are in canonical order.
+    """
+    answers: dict[uuid.UUID, list[_Answer]] = {}
+    withdrawals: dict[uuid.UUID, list[ModelWorkQuestionWithdrawn]] = {}
+    invalid: list[ModelInvalidQuestionRef] = []
+
+    def _check(
+        referrer: _Answer | ModelWorkQuestionWithdrawn, target_id: uuid.UUID
+    ) -> bool:
+        target = by_id.get(target_id)
+        if isinstance(target, ModelWorkQuestionAsked):
+            return True
+        invalid.append(
+            ModelInvalidQuestionRef(
+                referrer=referrer,
+                target=target_id,
+                reason=(
+                    EnumInvalidQuestionRefReason.UNKNOWN_QUESTION
+                    if target is None
+                    else EnumInvalidQuestionRefReason.NOT_A_QUESTION
+                ),
+            )
+        )
+        return False
+
+    for event in distinct:
+        if isinstance(event, _Answer):
+            for target_id in sorted(event.answers, key=str):
+                if _check(event, target_id):
+                    answers.setdefault(target_id, []).append(event)
+        elif isinstance(event, ModelWorkQuestionWithdrawn):
+            if _check(event, event.withdraws):
+                withdrawals.setdefault(event.withdraws, []).append(event)
+
+    states: list[ModelQuestionState] = []
+    for event in distinct:
+        if not isinstance(event, ModelWorkQuestionAsked):
+            continue
+        answered_by = tuple(answers.get(event.event_id, ()))
+        withdrawn_by = tuple(withdrawals.get(event.event_id, ()))
+        if answered_by:
+            status = EnumQuestionStatus.ANSWERED
+        elif withdrawn_by:
+            status = EnumQuestionStatus.WITHDRAWN
+        else:
+            status = EnumQuestionStatus.OPEN
+        states.append(
+            ModelQuestionState(
+                question=event,
+                status=status,
+                answered_by=answered_by,
+                withdrawn_by=withdrawn_by,
+            )
+        )
+    return tuple(states), tuple(invalid)
 
 
 def fold_work_events(
@@ -208,6 +301,8 @@ def fold_work_events(
         elif isinstance(event, ModelWorkResultRecorded):
             closed_claims.update(event.closes_claims)
 
+    questions, invalid_question_refs = _fold_questions(distinct, by_id)
+
     if not epochs:
         reasons.add(NO_EPOCH_REASON)
 
@@ -231,6 +326,8 @@ def fold_work_events(
         ),
         messages=tuple(e for e in distinct if isinstance(e, ModelWorkMessageSent)),
         acks=tuple(e for e in distinct if isinstance(e, ModelWorkMessageAcked)),
+        questions=questions,
+        invalid_question_refs=invalid_question_refs,
     )
 
 
