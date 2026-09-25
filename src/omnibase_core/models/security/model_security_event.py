@@ -11,7 +11,7 @@ for comprehensive audit trails and compliance tracking.
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
@@ -19,6 +19,8 @@ from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 
 class ModelSecurityEvent(BaseModel):
     """Security event for audit trail."""
+
+    model_config = ConfigDict(extra="forbid")
 
     event_id: UUID = Field(default=..., description="Unique event identifier")
     event_type: EnumSecurityEventType = Field(

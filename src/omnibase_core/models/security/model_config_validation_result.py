@@ -7,11 +7,13 @@ ModelConfigValidationResult: Configuration validation result model.
 This model represents the result of configuration validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelConfigValidationResult(BaseModel):
     """Result of configuration validation."""
+
+    model_config = ConfigDict(extra="forbid")
 
     is_valid: bool = Field(
         default=True, description="Whether the configuration is valid"
