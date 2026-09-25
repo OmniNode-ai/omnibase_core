@@ -93,6 +93,10 @@ def _iter_generated_node_contracts(paths: Sequence[Path]) -> Iterator[Path]:
     for path in scan_paths:
         if path.is_file() and path.name == CONTRACT_FILENAME:
             yield path
+        elif path.is_file() and path.name == HANDLER_FILENAME:
+            contract_path = path.parent / CONTRACT_FILENAME
+            if contract_path.is_file():
+                yield contract_path
         elif path.is_dir():
             yield from sorted(
                 candidate
@@ -115,7 +119,7 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
         nargs="*",
         type=Path,
         default=[DEFAULT_SCAN_ROOT],
-        help="contract.yaml file or directory paths to scan.",
+        help="contract.yaml, sibling handler.py, or directory paths to scan.",
     )
     return parser.parse_args(argv)
 

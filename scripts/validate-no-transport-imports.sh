@@ -146,7 +146,7 @@ while IFS= read -r line; do
     fi
 
     REAL_VIOLATIONS="$REAL_VIOLATIONS$line"$'\n'
-done <<< "$VIOLATIONS"
+done < <(printf '%s\n' "$VIOLATIONS")
 
 # Trim trailing newline
 REAL_VIOLATIONS="${REAL_VIOLATIONS%$'\n'}"
