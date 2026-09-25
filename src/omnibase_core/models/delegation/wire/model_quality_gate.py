@@ -90,6 +90,16 @@ class ModelQualityGateInput(BaseModel):
             "task-class default contract."
         ),
     )
+    grounding_source: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "The text the response was derived from: the delegated prompt. "
+            "The gate grounds the response's identifiers, numbers and code "
+            "names against it. None records those checks as skipped, never "
+            "as passed."
+        ),
+    )
 
     @field_validator("response_contract")
     @classmethod
