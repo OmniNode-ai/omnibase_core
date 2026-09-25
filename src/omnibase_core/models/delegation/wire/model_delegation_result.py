@@ -99,6 +99,24 @@ class ModelDelegationResult(BaseModel):
             "None is explicit legacy/unclassified provenance."
         ),
     )
+    trace_id: UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Distributed trace identifier, copied unchanged from the command "
+            "that produced this terminal (OMN-19437). None is explicit "
+            "legacy/unset provenance, not an unset-on-purpose marker."
+        ),
+    )
+    span_id: UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Trace span identifier, copied unchanged from the command that "
+            "produced this terminal (OMN-19437). None is explicit "
+            "legacy/unset provenance."
+        ),
+    )
     content: str = Field(..., description="The LLM-generated response content.")
     operational_outcome: EnumDelegationOperationalOutcome | None = Field(
         default=None,
