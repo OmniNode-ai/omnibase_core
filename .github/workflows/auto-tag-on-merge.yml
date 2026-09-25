@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [closed]
 
+# OMN-19639: cancel only superseded pull request runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
 # OMN-18658: this job used to delegate to the shared
 # `auto-tag-reusable.yml@main`, which pushed the release tag with the job's
 # default workflow GITHUB_TOKEN. A GITHUB_TOKEN push delivers no push event, so
