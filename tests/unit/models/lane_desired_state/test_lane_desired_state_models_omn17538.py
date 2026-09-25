@@ -9,6 +9,8 @@ Authored before the models, RED on origin/dev: every import below fails there.
 from __future__ import annotations
 
 import pytest
+from pydantic import ValidationError
+
 from omnibase_core.models.lane_desired_state import (
     ModelImperativeOverride,
     ModelLaneDesiredStateIdentity,
@@ -17,7 +19,7 @@ from omnibase_core.models.lane_desired_state import (
     ModelSecretsSyncIdentity,
     ModelUnresolvedField,
 )
-from pydantic import ValidationError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 pytestmark = pytest.mark.unit
 
@@ -77,8 +79,8 @@ def _identity(
             "rendered_manifest_hash": DIGEST_B,
             "resolved_images": resolved,
             "migration_bundle_ids": [_bundle()],
-            "overlay_schema_version": "1.0.0",
-            "config_schema_version": "1.0.0",
+            "overlay_schema_version": ModelSemVer(major=1, minor=0, patch=0),
+            "config_schema_version": ModelSemVer(major=1, minor=2, patch=0),
             "secrets_sync_identity": _secrets(),
             "imperative_overrides": [_override()],
         }
