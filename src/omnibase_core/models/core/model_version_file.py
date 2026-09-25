@@ -7,11 +7,13 @@ Version File Model - Tier 3 Metadata.
 Pydantic model for file references within a version implementation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelVersionFile(BaseModel):
     """File reference within a version implementation."""
+
+    model_config = ConfigDict(extra="forbid")
 
     file_path: str = Field(description="Relative path to file within version directory")
     file_type: str = Field(

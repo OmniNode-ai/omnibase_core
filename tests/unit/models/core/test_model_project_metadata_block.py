@@ -39,7 +39,6 @@ class TestModelProjectMetadataBlock:
     def test_minimal_instantiation(self):
         """Test instantiation with minimal required fields."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -61,10 +60,21 @@ class TestModelProjectMetadataBlock:
         assert metadata.lifecycle == EnumLifecycle.ACTIVE
         assert metadata.meta_type == EnumMetaType.PROJECT
 
+    def test_versions_rejects_phantom_record_version(self):
+        """The three-axis aggregate must not silently accept project record version."""
+        with pytest.raises(ValidationError, match="version"):
+            ModelOnexVersionInfo.model_validate(
+                {
+                    "version": {"major": 1, "minor": 0, "patch": 0},
+                    "metadata_version": {"major": 1, "minor": 0, "patch": 0},
+                    "protocol_version": {"major": 1, "minor": 0, "patch": 0},
+                    "schema_version": {"major": 1, "minor": 0, "patch": 0},
+                }
+            )
+
     def test_instantiation_with_all_fields(self):
         """Test instantiation with all fields populated."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=2, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=5, patch=0),
             schema_version=ModelSemVer(major=1, minor=2, patch=0),
@@ -108,7 +118,6 @@ class TestModelProjectMetadataBlock:
     def test_parse_entrypoint_with_uri_string(self):
         """Test _parse_entrypoint with valid URI string."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -133,7 +142,6 @@ class TestModelProjectMetadataBlock:
     def test_parse_entrypoint_with_entrypoint_block(self):
         """Test _parse_entrypoint with EntrypointBlock object."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -155,7 +163,6 @@ class TestModelProjectMetadataBlock:
     def test_parse_entrypoint_invalid_value(self):
         """Test _parse_entrypoint raises error for invalid value."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -300,7 +307,6 @@ class TestModelProjectMetadataBlock:
     def test_to_serializable_dict_basic(self):
         """Test to_serializable_dict converts entrypoint to URI string."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -327,7 +333,6 @@ class TestModelProjectMetadataBlock:
     def test_to_serializable_dict_excludes_none_values(self):
         """Test to_serializable_dict excludes None and empty values."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -353,7 +358,6 @@ class TestModelProjectMetadataBlock:
     def test_to_serializable_dict_preserves_tools(self):
         """Test to_serializable_dict preserves tools even if empty."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -389,7 +393,6 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_empty_namespace(self):
         """Test with empty namespace."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -409,7 +412,6 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_unicode_in_fields(self):
         """Test unicode characters in string fields."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -432,7 +434,6 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_very_long_strings(self):
         """Test with very long string values."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -455,7 +456,6 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_lifecycle_enum_values(self):
         """Test all lifecycle enum values."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),
@@ -480,7 +480,6 @@ class TestModelProjectMetadataBlockEdgeCases:
     def test_extra_fields_allowed(self):
         """Test that extra fields are allowed via model_config."""
         versions = ModelOnexVersionInfo(
-            version=DEFAULT_VERSION,
             metadata_version=ModelSemVer(major=1, minor=0, patch=0),
             protocol_version=ModelSemVer(major=1, minor=0, patch=0),
             schema_version=ModelSemVer(major=1, minor=0, patch=0),

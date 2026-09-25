@@ -8,7 +8,7 @@ Provides typed models for common YAML configuration sections,
 replacing dict[str, Any] patterns in YAML configuration models.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelYamlSection(BaseModel):
@@ -18,6 +18,8 @@ class ModelYamlSection(BaseModel):
     Replaces dict[str, Any] config/settings/options/parameters fields
     with strongly-typed string key-value pairs.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # Typed string properties
     string_values: dict[str, str] = Field(
