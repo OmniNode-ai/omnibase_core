@@ -6,7 +6,7 @@
 
 Covers the three acceptance criteria of task T3:
 
-- AC1: for each of the 13 kinds, ``parse(dump(x)) == x`` and
+- AC1: for each of the 15 kinds (13 from T1-T2, two question kinds from T17, OMN-19620), ``parse(dump(x)) == x`` and
   ``dump(parse(dump(x))) == dump(x)`` byte for byte, by one fixture per kind
   and by a Hypothesis round trip.
 - AC2: an unknown ``schema``, an unknown ``kind``, an extra field, a naive
@@ -33,6 +33,9 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_cost_basis import EnumCostBasis
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
+from omnibase_core.enums.enum_question_withdrawal_reason import (
+    EnumQuestionWithdrawalReason,
+)
 from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
 from omnibase_core.enums.enum_surface_result import EnumSurfaceResult
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
@@ -42,7 +45,9 @@ from omnibase_core.errors.error_work_ledger_parse import WorkLedgerParseError
 from omnibase_core.models.events.work import (
     WORK_LEDGER_EVENTS_PATH_ENV,
     WORK_LEDGER_SCHEMA,
+    ModelEvidenceRefs,
     ModelHoldScope,
+    ModelLedgerRowRef,
     ModelNodeActor,
     ModelPrKey,
     ModelPrRef,
@@ -62,6 +67,8 @@ from omnibase_core.models.events.work import (
     ModelWorkMessageAcked,
     ModelWorkMessageSent,
     ModelWorkOperatorConsentRecorded,
+    ModelWorkQuestionAsked,
+    ModelWorkQuestionWithdrawn,
     ModelWorkResultRecorded,
     ModelWorkRulingRecorded,
     ModelWorkStatusRecorded,
@@ -158,6 +165,7 @@ def _ruling() -> ModelWorkEventBase:
         **_base(  # type: ignore[arg-type]  # NOTE(OMN-16177): kwargs dict built by _base
             operator_words="stick with your recommendations",
             amends=_REF_A,
+            answers=frozenset({_REF_B, _REF_A}),
         )
     )
 
@@ -255,6 +263,42 @@ def _epoch() -> ModelWorkEventBase:
     )
 
 
+def _question_asked() -> ModelWorkEventBase:
+    return ModelWorkQuestionAsked(
+        **_base(  # type: ignore[arg-type]  # NOTE(OMN-19620): kwargs dict built by _base
+            question="Re-scope AC2, or hold the ticket?",
+            recommendation="re-scope",
+            legacy_row=ModelLedgerRowRef(
+                path="docs/tracking/archive/ROLLING_WORK_LEDGER_2026-09-20-split.md",
+                line=716,
+                stamp=datetime(
+                    2026, 9, 17, 18, 24, 55, tzinfo=timezone(timedelta(hours=2))
+                ),
+                lane="m4-stalled-carriers-triage-1552",
+            ),
+        )
+    )
+
+
+def _question_withdrawn() -> ModelWorkEventBase:
+    return ModelWorkQuestionWithdrawn(
+        **_base(  # type: ignore[arg-type]  # NOTE(OMN-19620): kwargs dict built by _base
+            withdraws=_REF_A,
+            reason=EnumQuestionWithdrawalReason.DUPLICATE,
+            evidence=ModelEvidenceRefs(
+                prs=frozenset(
+                    {
+                        ModelPrKey(repo="omnibase_infra", number=4058),
+                        ModelPrKey(repo="omnibase_core", number=1761),
+                    }
+                ),
+                tickets=frozenset({"OMN-19620", "OMN-17389"}),
+                events=frozenset({_REF_B}),
+            ),
+        )
+    )
+
+
 _FIXTURES: dict[EnumWorkEventKind, Callable[[], ModelWorkEventBase]] = {
     EnumWorkEventKind.CLAIM_REQUESTED: _claim_requested,
     EnumWorkEventKind.CLAIM_RELEASED: _claim_released,
@@ -269,6 +313,8 @@ _FIXTURES: dict[EnumWorkEventKind, Callable[[], ModelWorkEventBase]] = {
     EnumWorkEventKind.FRICTION_RECORDED: _friction,
     EnumWorkEventKind.CONSENT_RECORDED: _consent,
     EnumWorkEventKind.LEDGER_EPOCH_OPENED: _epoch,
+    EnumWorkEventKind.QUESTION_ASKED: _question_asked,
+    EnumWorkEventKind.QUESTION_WITHDRAWN: _question_withdrawn,
 }
 
 
@@ -277,22 +323,22 @@ def _record(event: ModelWorkEventBase) -> ModelWorkLedgerRecord:
 
 
 # ---------------------------------------------------------------------------
-# The union covers exactly the 13 kinds
+# The union covers exactly the 15 kinds
 # ---------------------------------------------------------------------------
 
 
 def test_fixture_per_kind_covers_every_kind() -> None:
     assert set(_FIXTURES) == set(EnumWorkEventKind)
-    assert len(_FIXTURES) == 13
+    assert len(_FIXTURES) == 15
     for kind, build in _FIXTURES.items():
         assert build().kind == kind
 
 
-def test_union_members_are_the_thirteen_kind_models() -> None:
+def test_union_members_are_the_fifteen_kind_models() -> None:
     union_args = get_args(get_args(ModelWorkEvent)[0])
     members = {model.model_fields["kind"].default for model in union_args}
     assert members == set(EnumWorkEventKind)
-    assert len(union_args) == 13
+    assert len(union_args) == 15
 
 
 def test_record_discriminates_to_the_concrete_kind() -> None:
@@ -348,6 +394,27 @@ def test_set_valued_fields_are_written_sorted() -> None:
     assert obj["event"]["scope"]["lanes"] == ["merge-drain-7f", "runtime-train"]
     assert obj["event"]["blocks"] == ["arm", "merge"]
     assert obj["event"]["addressed_to"]["lanes"] == ["a-lane", "b-lane"]
+
+
+def test_question_fields_are_written_sorted_and_in_utc() -> None:
+    withdrawn = json.loads(
+        dump_work_ledger_line(
+            _record(_FIXTURES[EnumWorkEventKind.QUESTION_WITHDRAWN]())
+        )
+    )["event"]
+    assert withdrawn["evidence"]["tickets"] == ["OMN-17389", "OMN-19620"]
+    assert [pr["repo"] for pr in withdrawn["evidence"]["prs"]] == [
+        "omnibase_core",
+        "omnibase_infra",
+    ]
+    ruling = json.loads(
+        dump_work_ledger_line(_record(_FIXTURES[EnumWorkEventKind.RULING_RECORDED]()))
+    )["event"]
+    assert ruling["answers"] == sorted([str(_REF_A), str(_REF_B)])
+    asked = json.loads(
+        dump_work_ledger_line(_record(_FIXTURES[EnumWorkEventKind.QUESTION_ASKED]()))
+    )["event"]
+    assert asked["legacy_row"]["stamp"] == "2026-09-17T16:24:55Z"
 
 
 def test_non_utc_offset_dumps_identically_to_its_utc_instant() -> None:

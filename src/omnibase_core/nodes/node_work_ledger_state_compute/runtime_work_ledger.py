@@ -21,6 +21,7 @@ Usage::
     onex-work-ledger claims [--ticket OMN-1] [--repo R --pr N] [--lane L]
     onex-work-ledger inbox --lane <lane>
     onex-work-ledger surface --surface <surface>
+    onex-work-ledger questions [--status open|answered|withdrawn|any] [--ticket OMN-1]
     onex-work-ledger health
     onex-work-ledger render --check|--repair [--md <md ledger>]
 
@@ -53,6 +54,7 @@ from omnibase_core.cli.cli_work_ledger_render import (
     run_render,
 )
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
+from omnibase_core.enums.enum_question_status import EnumQuestionStatus
 from omnibase_core.models.events.work.model_hold_scope import ModelHoldScope
 from omnibase_core.models.events.work.model_pr_key import ModelPrKey
 from omnibase_core.models.events.work.model_work_ledger_line import (
@@ -62,6 +64,9 @@ from omnibase_core.models.events.work.model_work_ledger_line import (
 )
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
+    ModelQuestionState,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input import (
     ModelWorkLedgerFoldInput,
@@ -82,6 +87,7 @@ from omnibase_core.nodes.node_work_ledger_state_compute.queries import (
     is_held,
     open_claims,
     pauses_in_force,
+    questions,
     surface_lease,
 )
 
@@ -91,6 +97,10 @@ EXIT_UNDECIDED: Final = 2
 """Exit code of every answer that is not certain. Never 0."""
 
 _RUNTIME_CHOICES: Final = ("yes", "no", "unknown")
+_QUESTION_STATUS_CHOICES: Final = (
+    *(status.value for status in EnumQuestionStatus),
+    "any",
+)
 
 
 _Read = tuple[str, str | None, tuple[str, ...], str | None]
@@ -180,6 +190,32 @@ def _hold_line(held: ModelHoldInForce) -> str:
     return " ".join(fields)
 
 
+def _question_line(entry: ModelQuestionState) -> str:
+    asked = entry.question
+    fields = [
+        f"question event={asked.event_id}",
+        f"status={entry.status.value}",
+        f"lane={actor_lane(asked.actor)}",
+        f"emitted_at={asked.emitted_at.isoformat()}",
+    ]
+    if asked.ticket_id is not None:
+        fields.append(f"ticket={asked.ticket_id}")
+    if entry.answered_by:
+        fields.append(
+            "answered_by=" + ",".join(str(a.event_id) for a in entry.answered_by)
+        )
+    if entry.withdrawn_by:
+        fields.append(
+            "withdrawn_by=" + ",".join(str(w.event_id) for w in entry.withdrawn_by)
+        )
+        fields.append(
+            "reasons=" + ",".join(sorted({w.reason.value for w in entry.withdrawn_by}))
+        )
+    if asked.legacy_row is not None:
+        fields.append(f"legacy={asked.legacy_row.path}:{asked.legacy_row.line}")
+    return " ".join(fields)
+
+
 def _verdict_lines(verdict: ModelWorkLedgerVerdict, query: str) -> list[str]:
     out = [f"verdict={verdict.status.value} {query}"]
     out.extend(f"reason={_one_line(reason)}" for reason in verdict.undecided_reasons)
@@ -194,6 +230,7 @@ def _verdict_lines(verdict: ModelWorkLedgerVerdict, query: str) -> list[str]:
         f"emitted_at={message.emitted_at.isoformat()}"
         for message in verdict.messages
     )
+    out.extend(_question_line(entry) for entry in verdict.questions)
     return out
 
 
@@ -215,6 +252,8 @@ def _answer(
             f"verdict={status} query=health events={report.event_count} "
             f"holds_in_force={report.holds_in_force_count} "
             f"invalid_releases={report.invalid_release_count} "
+            f"open_questions={report.open_question_count} "
+            f"invalid_question_refs={report.invalid_question_ref_count} "
             f"epoch_seq={'none' if report.epoch_seq is None else report.epoch_seq} "
             "last_event_at="
             + (
@@ -257,6 +296,12 @@ def _answer(
                 ("lane", args.lane),
             )
             if value is not None
+        )
+    elif command == "questions":
+        wanted = None if args.status == "any" else EnumQuestionStatus(args.status)
+        verdict = questions(state, status=wanted, ticket_id=args.ticket)
+        query = f"query=questions status={args.status}" + (
+            f" ticket={args.ticket}" if args.ticket is not None else ""
         )
     elif command == "inbox":
         verdict = inbox(state, args.lane)
@@ -316,6 +361,17 @@ def _build_parser() -> argparse.ArgumentParser:
     surface = sub.add_parser("surface", help="The lease in force on a surface.")
     surface.add_argument("--surface", required=True)
 
+    questions_parser = sub.add_parser(
+        "questions",
+        help=(
+            "Questions put to the operator, by status: open (the default), "
+            "answered, withdrawn or any."
+        ),
+    )
+    questions_parser.add_argument(
+        "--status", default="open", choices=_QUESTION_STATUS_CHOICES
+    )
+    questions_parser.add_argument("--ticket")
     sub.add_parser("health", help="Counts, last event, epoch and reasons for doubt.")
 
     render = sub.add_parser(

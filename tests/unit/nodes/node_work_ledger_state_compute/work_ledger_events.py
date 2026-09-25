@@ -14,11 +14,16 @@ import uuid
 from datetime import UTC, datetime
 
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
+from omnibase_core.enums.enum_question_withdrawal_reason import (
+    EnumQuestionWithdrawalReason,
+)
 from omnibase_core.enums.enum_surface_result import EnumSurfaceResult
 from omnibase_core.enums.enum_work_outcome import EnumWorkOutcome
 from omnibase_core.models.events.work import (
     WORK_LEDGER_SCHEMA,
+    ModelEvidenceRefs,
     ModelHoldScope,
+    ModelLedgerRowRef,
     ModelPrKey,
     ModelRecipients,
     ModelSessionActor,
@@ -31,7 +36,11 @@ from omnibase_core.models.events.work import (
     ModelWorkLedgerRecord,
     ModelWorkMessageAcked,
     ModelWorkMessageSent,
+    ModelWorkOperatorConsentRecorded,
+    ModelWorkQuestionAsked,
+    ModelWorkQuestionWithdrawn,
     ModelWorkResultRecorded,
+    ModelWorkRulingRecorded,
     dump_work_ledger_line,
 )
 
@@ -180,6 +189,86 @@ def message(
 def ack(event_id: uuid.UUID, re: uuid.UUID, *, lane: str) -> ModelWorkMessageAcked:
     return ModelWorkMessageAcked(
         event_id=event_id, emitted_at=T0, actor=actor(lane), summary="ack", re=re
+    )
+
+
+def question(
+    event_id: uuid.UUID,
+    *,
+    lane: str = "lane-a",
+    summary: str = "question",
+    text: str = "Re-scope AC2, or hold the ticket?",
+    recommendation: str | None = None,
+    legacy_row: ModelLedgerRowRef | None = None,
+    ticket_id: str | None = None,
+) -> ModelWorkQuestionAsked:
+    return ModelWorkQuestionAsked(
+        event_id=event_id,
+        emitted_at=T0,
+        actor=actor(lane),
+        summary=summary,
+        ticket_id=ticket_id,
+        question=text,
+        recommendation=recommendation,
+        legacy_row=legacy_row,
+    )
+
+
+def withdrawal(
+    event_id: uuid.UUID,
+    withdraws: uuid.UUID,
+    *,
+    reason: EnumQuestionWithdrawalReason = EnumQuestionWithdrawalReason.OVERTAKEN,
+    lane: str = "lane-b",
+    summary: str = "withdrawn",
+    evidence: ModelEvidenceRefs | None = None,
+) -> ModelWorkQuestionWithdrawn:
+    return ModelWorkQuestionWithdrawn(
+        event_id=event_id,
+        emitted_at=T0,
+        actor=actor(lane),
+        summary=summary,
+        withdraws=withdraws,
+        reason=reason,
+        evidence=evidence
+        if evidence is not None
+        else ModelEvidenceRefs(tickets=frozenset({"OMN-19620"})),
+    )
+
+
+def ruling(
+    event_id: uuid.UUID,
+    *,
+    answers: frozenset[uuid.UUID] = frozenset(),
+    words: str = "re-scope it",
+    summary: str = "ruling",
+) -> ModelWorkRulingRecorded:
+    return ModelWorkRulingRecorded(
+        event_id=event_id,
+        emitted_at=T0,
+        actor=actor("orchestrator"),
+        summary=summary,
+        operator_words=words,
+        answers=answers,
+    )
+
+
+def consent(
+    event_id: uuid.UUID,
+    *,
+    answers: frozenset[uuid.UUID] = frozenset(),
+    words: str = "yes",
+    summary: str = "consent",
+) -> ModelWorkOperatorConsentRecorded:
+    return ModelWorkOperatorConsentRecorded(
+        event_id=event_id,
+        emitted_at=T0,
+        actor=actor("orchestrator"),
+        summary=summary,
+        operator_words=words,
+        approved_scope=("the named action",),
+        out_of_scope=("prod",),
+        answers=answers,
     )
 
 

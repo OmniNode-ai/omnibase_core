@@ -12,6 +12,7 @@ UNDECIDED to every query, never CLEAR. Exit codes: 0 CLEAR, 3 HELD or FOUND,
 from __future__ import annotations
 
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
+from omnibase_core.enums.enum_question_status import EnumQuestionStatus
 from omnibase_core.enums.enum_work_ledger_verdict_status import (
     EnumWorkLedgerVerdictStatus,
 )
@@ -42,6 +43,7 @@ __all__ = [
     "is_held",
     "open_claims",
     "pauses_in_force",
+    "questions",
     "surface_lease",
 ]
 
@@ -202,6 +204,39 @@ def surface_lease(state: ModelWorkLedgerState, surface: str) -> ModelWorkLedgerV
     return ModelWorkLedgerVerdict(status=_HELD if matching else _CLEAR, holds=matching)
 
 
+def questions(
+    state: ModelWorkLedgerState,
+    *,
+    status: EnumQuestionStatus | None = EnumQuestionStatus.OPEN,
+    ticket_id: str | None = None,
+) -> ModelWorkLedgerVerdict:
+    """Questions put to the operator, with the given status (None: any status).
+
+    FOUND cites every matching question with its answers and withdrawals. Ticket
+    ids compare case-insensitively. A question is ANSWERED only by a ruling or
+    consent naming it, and WITHDRAWN only by a typed withdrawal naming it; the
+    question's text and every summary are never read.
+    """
+    if not state.decidable:
+        return _undecided(state)
+    wanted_ticket = None if ticket_id is None else ticket_id.upper()
+    matching = tuple(
+        entry
+        for entry in state.questions
+        if (status is None or entry.status is status)
+        and (
+            wanted_ticket is None
+            or (
+                entry.question.ticket_id is not None
+                and entry.question.ticket_id.upper() == wanted_ticket
+            )
+        )
+    )
+    return ModelWorkLedgerVerdict(
+        status=_FOUND if matching else _CLEAR, questions=matching
+    )
+
+
 def health(state: ModelWorkLedgerState) -> ModelWorkLedgerHealth:
     """Counts, the last event time, the epoch and the reasons for doubt."""
     return ModelWorkLedgerHealth(
@@ -212,5 +247,9 @@ def health(state: ModelWorkLedgerState) -> ModelWorkLedgerHealth:
         epoch_seq=None if state.epoch is None else state.epoch.epoch_seq,
         holds_in_force_count=len(state.holds_in_force),
         invalid_release_count=len(state.invalid_releases),
+        open_question_count=sum(
+            1 for entry in state.questions if entry.status is EnumQuestionStatus.OPEN
+        ),
+        invalid_question_ref_count=len(state.invalid_question_refs),
         undecided_reasons=state.undecided_reasons,
     )

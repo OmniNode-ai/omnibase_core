@@ -15,7 +15,9 @@ import them.
 """
 
 from omnibase_core.models.events.work.model_actor import ModelActor
+from omnibase_core.models.events.work.model_evidence_refs import ModelEvidenceRefs
 from omnibase_core.models.events.work.model_hold_scope import ModelHoldScope
+from omnibase_core.models.events.work.model_ledger_row_ref import ModelLedgerRowRef
 from omnibase_core.models.events.work.model_node_actor import ModelNodeActor
 from omnibase_core.models.events.work.model_pr_key import ModelPrKey
 from omnibase_core.models.events.work.model_pr_ref import ModelPrRef
@@ -68,6 +70,12 @@ from omnibase_core.models.events.work.model_work_message_sent import (
 from omnibase_core.models.events.work.model_work_operator_consent_recorded import (
     ModelWorkOperatorConsentRecorded,
 )
+from omnibase_core.models.events.work.model_work_question_asked import (
+    ModelWorkQuestionAsked,
+)
+from omnibase_core.models.events.work.model_work_question_withdrawn import (
+    ModelWorkQuestionWithdrawn,
+)
 from omnibase_core.models.events.work.model_work_result_recorded import (
     ModelWorkResultRecorded,
 )
@@ -84,7 +92,9 @@ __all__ = [
     "WORK_LEDGER_EVENTS_PATH_ENV",
     "WORK_LEDGER_SCHEMA",
     "ModelActor",
+    "ModelEvidenceRefs",
     "ModelHoldScope",
+    "ModelLedgerRowRef",
     "ModelNodeActor",
     "ModelPrKey",
     "ModelPrRef",
@@ -104,6 +114,8 @@ __all__ = [
     "ModelWorkMessageAcked",
     "ModelWorkMessageSent",
     "ModelWorkOperatorConsentRecorded",
+    "ModelWorkQuestionAsked",
+    "ModelWorkQuestionWithdrawn",
     "ModelWorkResultRecorded",
     "ModelWorkRulingRecorded",
     "ModelWorkStatusRecorded",

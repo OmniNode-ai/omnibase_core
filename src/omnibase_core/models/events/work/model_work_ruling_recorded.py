@@ -8,7 +8,7 @@ from __future__ import annotations
 import uuid
 from typing import Literal
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, field_serializer, field_validator, model_validator
 
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.models.events.work.model_work_event_base import (
@@ -40,6 +40,15 @@ class ModelWorkRulingRecorded(ModelWorkEventBase):
         description="event_id of the ruling this one supersedes, when it supersedes one.",
     )
 
+    answers: frozenset[uuid.UUID] = Field(
+        default_factory=frozenset,
+        description=(
+            "event_ids of the work.question.asked events this ruling answers. The "
+            "operator's typed answer: a question is answered only by a ruling or a "
+            "consent that names it here."
+        ),
+    )
+
     @field_validator("operator_words")
     @classmethod
     def _reject_blank_words(cls, raw: str) -> str:
@@ -51,4 +60,10 @@ class ModelWorkRulingRecorded(ModelWorkEventBase):
     def _does_not_name_itself(self) -> ModelWorkRulingRecorded:
         if self.event_id in (self.amends, self.supersedes):
             raise ValueError("a ruling cannot amend or supersede itself")
+        if self.event_id in self.answers:
+            raise ValueError("a ruling cannot answer itself")
         return self
+
+    @field_serializer("answers")
+    def _serialize_answers_sorted(self, value: frozenset[uuid.UUID]) -> list[str]:
+        return sorted(str(event_id) for event_id in value)
