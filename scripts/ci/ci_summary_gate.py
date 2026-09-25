@@ -104,6 +104,7 @@ GATE_JOBS: tuple[str, ...] = (
     # this registration is enforcement-equivalent. Renaming the string breaks
     # the registration. Pinned by tests/ci/test_skip_count_ratchet_omn18790.py.
     "Skip Count Ratchet (OMN-18776)",  # skip-count-ratchet
+    'Pydantic extra="forbid" Baseline One-way (OMN-19677) / anti-growth-baseline',
     # OMN-18865: the pre-merge wheel content-parity gate (ci.yml
     # `wheel-content-parity`). It is an ORDINARY job running a pinned
     # composite action, NOT a `uses:` job, so the jobs API reports its own
@@ -158,6 +159,7 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
         # job was removed or wedged, never that the check legitimately opted
         # out.
         "Skip Count Ratchet (OMN-18776)",
+        'Pydantic extra="forbid" Baseline One-way (OMN-19677) / anti-growth-baseline',
     }
 )
 
