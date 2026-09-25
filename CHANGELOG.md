@@ -23,6 +23,10 @@
 - fix(validation): restore fail-closed Core validator enforcement (#1674)
 - feat: block new hardcoded lab model configuration with a shrink-only baseline (#1743)
 
+### Breaking
+- Removed public API with no shim or alias (#1750): the module `omnibase_core.constants.constants_llm_refs`, its re-exports `omnibase_core.constants.EndpointRef` and `omnibase_core.constants.LogicalModelKey`, the generator `scripts/generate_llm_refs.py`, `omnibase_core.models.configuration.ModelTierConfig`, and the `ModelCLIConfig.tiers` field. A config file that still carries a `tiers:` key is now refused (`extra="forbid"`). Model identities, endpoints, tiers and prices now come from configuration overlays; the typed overlay documents are in `omnibase_core.models.config_overlay`, with JSON Schema exports under `omnibase_core/schemas/config_overlay/`.
+- This stays a patch release on purpose: no repository outside core imports any removed name (re-checked by grep across the downstream repositories before the cut), and a minor bump would fall outside the downstream below-0.48.0 dependency ranges.
+
 ## v0.47.22 (2026-09-21)
 
 ### Release
