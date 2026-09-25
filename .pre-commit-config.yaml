@@ -825,17 +825,22 @@ repos:
         pass_filenames: true
         stages: [pre-commit]
 
-      # UNION VALIDATION THRESHOLD:
-      # Tech debt: Union type threshold reduced from 256 to 160 (OMN-676).
-      # Target: Reduce to 0 incrementally. Tracking: OMN-468, OMN-676
-      # Improvements: Created json_types.py with centralized aliases (JsonValue,
-      # PrimitiveValue, ToolParameterValue), fixed any_contaminated and overly_broad patterns.
+      # UNION VALIDATION THRESHOLD (whole-tree ratchet, OMN-19515):
+      # The script scans all of src/ in ONE invocation (pass_filenames: false)
+      # and the ceiling is the measured whole-tree invalid-union total. The old
+      # per-file-list cap (160) was applied to each pre-commit xargs batch, and
+      # pre-commit reshuffles every batch whenever any file is added, so an
+      # unrelated PR could trip it (omnibase_core#1761). protocols/ is excluded
+      # by the script's --exclude-regex; `files:`/`exclude:` below only decide
+      # when the hook triggers. Lower the ceiling when you remove an invalid
+      # union: tests/unit/validation/test_validate_union_usage_whole_tree.py
+      # pins it to the measured total. Never raise it. Tracking: OMN-468, OMN-676
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: uv run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '160']
+        args: ['--allow-invalid', '430', '--exclude-regex', '^src/omnibase_core/protocols/']
         language: system
-        pass_filenames: true
+        pass_filenames: false
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/protocols/).*\.py$
         stages: [pre-commit]

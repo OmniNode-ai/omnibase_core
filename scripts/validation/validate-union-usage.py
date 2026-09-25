@@ -807,6 +807,9 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.invalid_patterns: list[UnionPattern] = []
         self.validation_results: dict[str, Any] = {}
 
+        # BitOr nodes that are isinstance/issubclass classinfo, not type unions
+        self._classinfo_nodes: set[int] = set()
+
         # Statistics
         self.pattern_statistics = {
             "optional": 0,
@@ -1001,9 +1004,36 @@ class UnionUsageChecker(ast.NodeVisitor):
             self._process_union_types(node, node.slice, node.lineno)
         self.generic_visit(node)
 
+    def visit_Call(self, node: ast.Call) -> None:
+        """Mark the classinfo argument of isinstance/issubclass (OMN-19515).
+
+        ``isinstance(x, A | B)`` is a runtime class check, equivalent to
+        ``isinstance(x, (A, B))``, which this validator never counted. It is
+        not a type annotation, so neither spelling is a union to validate.
+        """
+        if (
+            isinstance(node.func, ast.Name)
+            and node.func.id in {"isinstance", "issubclass"}
+            and len(node.args) == 2
+        ):
+            classinfo = node.args[1]
+            elements = (
+                classinfo.elts if isinstance(classinfo, ast.Tuple) else [classinfo]
+            )
+            for element in elements:
+                self._mark_classinfo_chain(element)
+        self.generic_visit(node)
+
+    def _mark_classinfo_chain(self, node: ast.AST) -> None:
+        """Record every BitOr node of a classinfo ``A | B | C`` chain."""
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr):
+            self._classinfo_nodes.add(id(node))
+            self._mark_classinfo_chain(node.left)
+            self._mark_classinfo_chain(node.right)
+
     def visit_BinOp(self, node: ast.BinOp) -> None:
         """Visit binary operation nodes (e.g., str | int | float)."""
-        if isinstance(node.op, ast.BitOr):
+        if isinstance(node.op, ast.BitOr) and id(node) not in self._classinfo_nodes:
             # Skip bitwise operations and set operations - only process type unions
             if self._is_likely_type_union(node):
                 # Modern union syntax: str | int | float
@@ -1407,7 +1437,19 @@ Examples:
         default=0,
         help="Maximum allowed invalid union patterns (default: 0)",
     )
+    parser.add_argument(
+        "--exclude-regex",
+        action="append",
+        default=[],
+        metavar="PATTERN",
+        help=(
+            "Skip files whose POSIX path matches PATTERN (re.search). Repeatable. "
+            "Lets the pre-commit hook scan the whole tree in one invocation "
+            "(pass_filenames: false) against one ceiling (OMN-19515)."
+        ),
+    )
     args = parser.parse_args()
+    exclude_patterns = [re.compile(p) for p in args.exclude_regex]
 
     # Determine files to validate
     if args.files:
@@ -1434,8 +1476,8 @@ Examples:
 
     # Filter out archived files, examples, and __pycache__
     #
-    # NOTE: The protocols/ directory is excluded via .pre-commit-config.yaml,
-    # not in this script. This is intentional - see the module docstring for
+    # NOTE: The protocols/ directory is excluded by the --exclude-regex that
+    # .pre-commit-config.yaml passes, not hardcoded here. See the module docstring for
     # the "Protocol Type Exclusion Rationale" explaining why Protocol definitions
     # are exempt from union validation (structural typing, interface flexibility,
     # and inability to use Protocol types as union discriminators).
@@ -1449,6 +1491,7 @@ Examples:
         and "/examples/" not in str(f)
         and "examples" not in f.parts
         and "__pycache__" not in str(f)
+        and not any(p.search(f.as_posix()) for p in exclude_patterns)
     ]
 
     if not python_files:
