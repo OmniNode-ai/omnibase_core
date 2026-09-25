@@ -136,6 +136,7 @@ from .model_return_schema import ModelReturnSchema
 from .model_route_definition import ModelRouteDefinition
 from .model_routing_metrics import ModelRoutingMetrics
 from .model_routing_subcontract import ModelRoutingSubcontract
+from .model_runtime_lane_scope import ModelRuntimeLaneScope
 from .model_security_subcontract import ModelSecuritySubcontract
 from .model_serialization_subcontract import ModelSerializationSubcontract
 from .model_state_management_subcontract import ModelStateManagementSubcontract
@@ -223,6 +224,8 @@ __all__ = [
     # DB ownership subcontracts (OMN-7916)
     "ModelDbTableDeclaration",
     "ModelDbOwnershipSubcontract",
+    # Runtime lane scope (OMN-19408)
+    "ModelRuntimeLaneScope",
     # Discovery subcontracts
     "ModelDiscoverySubcontract",
     # Event type subcontracts and components
