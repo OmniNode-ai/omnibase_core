@@ -1,3 +1,28 @@
+## v0.47.23 (2026-09-25)
+
+### Release
+- Cut omnibase-core from dev at 0.47.23 by the scheduled release train.
+- 16 release-relevant commit(s) merged since v0.47.22.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.22
+- feat: core half -- trace and span ids on the delegation command and terminal (#1760)
+- feat: runtime lane names and the runtime_lanes contract scope model (#1756)
+- feat: timeout and no-terminal terminal failure cause members (#1759)
+- perf: lazy-load onex CLI built-in commands and cli package attrs (#1758)
+- feat: onex-work-ledger read CLI over the work-ledger fold (#1755)
+- fix: onex doctor survives a clean install instead of crashing (#1757)
+- fix: the append-only gate reads a companion branch commit by commit (#1751)
+- feat: work-ledger fold COMPUTE node and pure queries (#1754)
+- fix: the supersession guard compares tree and check, not commit id (#1748)
+- feat: work-event union, ledger record and canonical JSON line (#1753)
+- feat: message, ack, status, friction, consent and epoch work kinds (#1752)
+- feat: delete generated model constants and tier defaults, add typed config overlay documents (plan B1, B2) (#1750)
+- feat: the provider-boundary evidence can carry the raw provider response (#1749)
+- feat: hold kinds and their value types for the typed work ledger (#1747)
+- fix(validation): restore fail-closed Core validator enforcement (#1674)
+- feat: block new hardcoded lab model configuration with a shrink-only baseline (#1743)
+
 ## v0.47.22 (2026-09-21)
 
 ### Release
