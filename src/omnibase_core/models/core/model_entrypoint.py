@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelEntrypointBlock(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     type: str
     target: str  # Always the filename stem (no extension)
     # No URI string logic, only type/target

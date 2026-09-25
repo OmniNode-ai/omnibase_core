@@ -5,7 +5,7 @@
 
 from collections.abc import Iterator
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelStringList(BaseModel):
@@ -15,6 +15,8 @@ class ModelStringList(BaseModel):
     Replaces List[str] to comply with ONEX
     standards requiring specific typed models.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     items: list[str] = Field(default_factory=list, description="List of string items")
 

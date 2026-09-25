@@ -3,8 +3,10 @@
 
 """Centralized ModelProcessingConfig implementation."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelProcessingConfig(BaseModel):
     """Generic processingconfig model for common use."""
+
+    model_config = ConfigDict(extra="forbid")

@@ -62,6 +62,16 @@ class TestModelOptionalStringBoolConversion:
         opt = ModelOptionalString(value=None)
         assert bool(opt) is False
 
+    def test_bool_conversion_has_no_output(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test custom truthiness remains a pure value operation."""
+        assert bool(ModelOptionalString(value="hello")) is True
+        assert bool(ModelOptionalString(value=None)) is False
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert captured.err == ""
+
     def test_bool_conversion_with_empty_string(self) -> None:
         """Test __bool__ returns True for empty string (has value, even if empty).
 
@@ -257,6 +267,7 @@ class TestModelOptionalStringEdgeCases:
         opt = ModelOptionalString(value="hello\nworld\n")
         assert bool(opt) is True
         assert opt.has_value() is True
+        assert opt.value is not None
         assert "\n" in opt.value  # Verify actual newline character present
 
     def test_unicode_string(self) -> None:
@@ -267,6 +278,7 @@ class TestModelOptionalStringEdgeCases:
         assert bool(opt) is True
         assert opt.value == unicode_value
         assert opt.has_value() is True
+        assert opt.value is not None
         # Verify specific unicode characters are present
         assert "こんにちは" in opt.value
         assert "🎉" in opt.value

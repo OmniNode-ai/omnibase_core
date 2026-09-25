@@ -11,7 +11,6 @@ This file maintains compatibility by re-exporting all models.
 # Import all models from their individual files
 from .model_complex_filter import ModelComplexFilter
 from .model_custom_filter_base import ModelCustomFilterBase
-from .model_custom_filters import ModelCustomFilters
 from .model_datetime_filter import ModelDateTimeFilter
 from .model_list_filter import ModelListFilter
 from .model_metadata_filter import ModelMetadataFilter
@@ -23,7 +22,6 @@ from .model_string_filter import ModelStringFilter
 __all__ = [
     "ModelComplexFilter",
     "ModelCustomFilterBase",
-    "ModelCustomFilters",
     "ModelDateTimeFilter",
     "ModelListFilter",
     "ModelMetadataFilter",

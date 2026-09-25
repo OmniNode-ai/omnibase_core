@@ -7,7 +7,7 @@ The ModelMixinPerformance class for defining
 performance characteristics and recommendations for mixins.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_mixin_performance_use_case import (
     ModelMixinPerformanceUseCase,
@@ -23,6 +23,8 @@ class ModelMixinPerformance(BaseModel):
         recommended_max_retries: Recommended maximum retries (if applicable)
         typical_use_cases: Performance data per use case
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     overhead_per_call: str | None = Field(None, description="Overhead per call")
     memory_per_instance: str | None = Field(None, description="Memory per instance")

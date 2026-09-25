@@ -5,11 +5,13 @@
 PerformanceProfileInfo model for node introspection.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelPerformanceProfileInfo(BaseModel):
     """Model for performance profile information."""
+
+    model_config = ConfigDict(extra="forbid")
 
     cpu: float | None = None
     memory: float | None = None

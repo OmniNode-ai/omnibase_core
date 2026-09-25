@@ -5,7 +5,7 @@
 MaskedConnectionProperties model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMaskedConnectionProperties(BaseModel):
@@ -13,6 +13,8 @@ class ModelMaskedConnectionProperties(BaseModel):
     Masked connection properties with typed fields.
     Replaces Dict[str, Any] for get_masked_connection_properties() returns.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     connection_string: str | None = Field(
         default=None,

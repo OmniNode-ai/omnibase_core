@@ -11,7 +11,7 @@ with flexible, extensible tagging system.
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelTag(BaseModel):
@@ -21,6 +21,8 @@ class ModelTag(BaseModel):
     This model allows users and third-party nodes to define custom tags
     beyond hardcoded enums, enabling flexible categorization.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     tag_id: UUID = Field(default_factory=uuid4, description="Unique tag identifier")
 

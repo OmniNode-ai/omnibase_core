@@ -35,7 +35,7 @@ Model for .tree and filesystem sync validation results.
 
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.results.model_onex_message import ModelOnexMessage
 
@@ -44,6 +44,8 @@ class ModelTreeSyncResult(BaseModel):
     """
     Result model for validating .tree and filesystem sync.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     extra_files_on_disk: set[Path] = Field(
         default_factory=set,

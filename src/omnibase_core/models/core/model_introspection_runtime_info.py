@@ -5,11 +5,13 @@
 Model for runtime information in introspection metadata.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelIntrospectionRuntimeInfo(BaseModel):
     """Runtime information for introspection metadata."""
+
+    model_config = ConfigDict(extra="forbid")
 
     python_path: str = Field(description="Python path of the module")
     module_path: str = Field(description="Module import path")

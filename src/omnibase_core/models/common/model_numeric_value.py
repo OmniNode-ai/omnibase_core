@@ -14,10 +14,34 @@ To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
 and runtime imports in validators that need to raise errors.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from collections.abc import Mapping
+from math import isfinite
+from typing import NoReturn
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
+
+
+def _raise_numeric_validation_error(
+    message: str,
+    *,
+    raw_value: object,
+    raw_value_type: object,
+    assignment_field: str | None,
+) -> NoReturn:
+    """Raise the canonical validation error without widening the import graph."""
+    from omnibase_core.errors.model_onex_error import ModelOnexError
+
+    raise ModelOnexError(
+        message=message,
+        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        raw_value=repr(raw_value),
+        raw_value_python_type=type(raw_value).__name__,
+        raw_value_type=repr(raw_value_type),
+        assignment_field=assignment_field,
+    )
 
 
 class ModelNumericValue(BaseModel):
@@ -51,26 +75,104 @@ class ModelNumericValue(BaseModel):
         description="Source of the numeric value",
     )
 
-    @field_validator("value")
+    @model_validator(mode="before")
     @classmethod
-    def validate_value_type(cls, v: object, info: ValidationInfo) -> float:
+    def validate_numeric_contract(cls, data: object, info: ValidationInfo) -> object:
         """
-        Validate that value is numeric.
+        Validate raw numeric value and discriminator before Pydantic coercion.
 
-        Raises ModelOnexError with VALIDATION_ERROR code for non-numeric values.
+        The complete candidate mapping is also supplied during assignment validation,
+        so invalid value changes and discriminator retags fail before object mutation.
         """
-        if not isinstance(v, (int, float)):
-            from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        if not isinstance(data, Mapping):
+            return data
+        if "value" not in data or "value_type" not in data:
+            return data
 
-            msg = f"Value must be numeric (int or float), got {type(v).__name__}"
-            raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
-        return float(v)
+        raw_value = data["value"]
+        raw_value_type = data["value_type"]
+        assignment_field = info.field_name
+
+        if isinstance(raw_value_type, EnumNumericType):
+            numeric_type = raw_value_type
+        elif isinstance(raw_value_type, str):
+            if raw_value_type == EnumNumericType.INTEGER.value:
+                numeric_type = EnumNumericType.INTEGER
+            elif raw_value_type == EnumNumericType.FLOAT.value:
+                numeric_type = EnumNumericType.FLOAT
+            elif raw_value_type == EnumNumericType.NUMERIC.value:
+                numeric_type = EnumNumericType.NUMERIC
+            else:
+                _raise_numeric_validation_error(
+                    "Unsupported numeric value discriminator",
+                    raw_value=raw_value,
+                    raw_value_type=raw_value_type,
+                    assignment_field=assignment_field,
+                )
+        else:
+            _raise_numeric_validation_error(
+                "Numeric value discriminator must be an EnumNumericType or canonical string",
+                raw_value=raw_value,
+                raw_value_type=raw_value_type,
+                assignment_field=assignment_field,
+            )
+
+        if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
+            _raise_numeric_validation_error(
+                "Numeric value must be an int or float; coercion is not permitted",
+                raw_value=raw_value,
+                raw_value_type=raw_value_type,
+                assignment_field=assignment_field,
+            )
+
+        if isinstance(raw_value, int):
+            try:
+                canonical_value = float(raw_value)
+            except OverflowError:
+                _raise_numeric_validation_error(
+                    "Integer value cannot be represented by canonical float storage",
+                    raw_value=raw_value,
+                    raw_value_type=raw_value_type,
+                    assignment_field=assignment_field,
+                )
+            if not isfinite(canonical_value) or int(canonical_value) != raw_value:
+                _raise_numeric_validation_error(
+                    "Integer value cannot be represented exactly by canonical float storage",
+                    raw_value=raw_value,
+                    raw_value_type=raw_value_type,
+                    assignment_field=assignment_field,
+                )
+        elif not isfinite(raw_value):
+            _raise_numeric_validation_error(
+                "Numeric value must be finite",
+                raw_value=raw_value,
+                raw_value_type=raw_value_type,
+                assignment_field=assignment_field,
+            )
+
+        if numeric_type is EnumNumericType.INTEGER:
+            if isinstance(raw_value, float) and not raw_value.is_integer():
+                _raise_numeric_validation_error(
+                    "INTEGER values must be integral and cannot be truncated",
+                    raw_value=raw_value,
+                    raw_value_type=raw_value_type,
+                    assignment_field=assignment_field,
+                )
+        elif numeric_type is EnumNumericType.FLOAT and not isinstance(raw_value, float):
+            _raise_numeric_validation_error(
+                "FLOAT values require an explicit float and cannot coerce integers",
+                raw_value=raw_value,
+                raw_value_type=raw_value_type,
+                assignment_field=assignment_field,
+            )
+
+        return data
 
     @classmethod
     def from_int(cls, value: int, source: str | None = None) -> "ModelNumericValue":
         """Create numeric value from integer."""
         return cls(
-            value=float(value),
+            value=value,
             value_type=EnumNumericType.INTEGER,
             source=source,
             is_validated=True,
@@ -163,7 +265,7 @@ class ModelNumericValue(BaseModel):
         return self.value >= other.value
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )
@@ -176,7 +278,7 @@ class ModelNumericValue(BaseModel):
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return self.model_dump(mode="json", exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
         """

@@ -3,8 +3,10 @@
 
 """Centralized ModelNodeStatus implementation."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelNodeStatus(BaseModel):
     """Generic nodestatus model for common use."""
+
+    model_config = ConfigDict(extra="forbid")

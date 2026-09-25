@@ -5,13 +5,15 @@
 FilterCondition model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .model_filter_operator import ModelFilterOperator
 
 
 class ModelFilterCondition(BaseModel):
     """Individual filter condition."""
+
+    model_config = ConfigDict(extra="forbid")
 
     field: str = Field(default=..., description="Field to filter on")
     operator: ModelFilterOperator = Field(default=..., description="Filter operator")
