@@ -7,8 +7,8 @@ import pytest
 
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.enums.enum_nondeterminism_class import EnumNondeterminismClass
-from omnibase_core.models.core.model_mixin_mapping import (
-    ModelMixinMapping,
+from omnibase_core.models.core.model_mixin_mapping import ModelMixinMapping
+from omnibase_core.models.core.model_mixin_mapping_collection import (
     ModelMixinMappingCollection,
 )
 
