@@ -175,10 +175,16 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
 #     check is "Contract Compliance Check" (in GATE_JOBS above); the two names
 #     are distinct and matched exactly, so allowlisting the orphan does not
 #     weaken the gate.
+#   - "Shadow Selection Compare" (shadow-compare): deliberately report-only.
+#     It compares a counterfactual test selection with the authoritative full
+#     suite and uploads the record; it defines no pass/fail policy and carries
+#     ``continue-on-error: true``. Treating it as required through the default-
+#     deny sweep would manufacture a gate from a telemetry-only surface.
 SOFT_ALLOWLIST: frozenset[str] = frozenset(
     {
         "Version Pin Compliance",  # version-pin-check: continue-on-error advisory
         "Contract Compliance",  # compliance: orphan job, not gated, not required
+        "Shadow Selection Compare",  # shadow-compare: report-only telemetry
     }
 )
 
