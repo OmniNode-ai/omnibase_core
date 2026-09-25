@@ -549,16 +549,27 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
                 },
             )
 
-        # Add to signature chain
-        self.signature_chain.add_signature(signature)
-
-        # Log security event
-        self.log_security_event(
+        # Construct the closed audit contract before changing the signature chain.
+        # This keeps the signature and its audit event atomic if contract validation
+        # rejects a future caller-supplied event value.
+        event = self._build_security_event(
             EnumSecurityEventType.TOOL_ACCESS,
-            signature_key_id=signature.key_id,
+            key_id=signature.key_id,
             node_id=signature.node_id,
             algorithm=signature.signature_algorithm.value,
         )
+
+        # Validate the complete chain transition on an isolated typed copy. This
+        # keeps a failing chain operation from leaving a signature without its
+        # corresponding audit event.
+        candidate_chain = self.signature_chain.model_copy(deep=True)
+        candidate_chain.content_hash = self.content_hash
+        candidate_signature = signature.model_copy(deep=True)
+        if not candidate_chain.add_signature(candidate_signature):
+            return
+
+        self.signature_chain = candidate_chain
+        self.security_events.append(event)
 
     def verify_signatures(
         self,
@@ -1148,7 +1159,13 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         self, event_type: EnumSecurityEventType, **kwargs: Any
     ) -> None:
         """Log a security event for audit trail."""
-        event = ModelSecurityEvent(
+        self.security_events.append(self._build_security_event(event_type, **kwargs))
+
+    def _build_security_event(
+        self, event_type: EnumSecurityEventType, **kwargs: Any
+    ) -> ModelSecurityEvent:
+        """Build a closed audit event before any caller-visible state mutation."""
+        return ModelSecurityEvent(
             event_id=uuid4(),
             event_type=event_type,
             timestamp=datetime.now(UTC),
@@ -1156,7 +1173,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             status=EnumSecurityEventStatus.SUCCESS,  # Required field
             **kwargs,
         )
-        self.security_events.append(event)
 
     def get_security_summary(self) -> ModelSecuritySummary:
         """Get comprehensive security summary for reporting."""

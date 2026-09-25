@@ -41,7 +41,7 @@ class ModelSignatureChain(BaseModel):
         execution where class identity may differ between workers.
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     chain_id: UUID = Field(
         default=...,
@@ -182,12 +182,12 @@ class ModelSignatureChain(BaseModel):
             self.chain_hash = ""
             return
         chain_data = {
-            "chain_id": self.chain_id,
-            "envelope_id": self.envelope_id,
+            "chain_id": str(self.chain_id),
+            "envelope_id": str(self.envelope_id),
             "content_hash": self.content_hash,
             "signatures": [
                 {
-                    "node_id": sig.node_id,
+                    "node_id": str(sig.node_id),
                     "signature": sig.signature,
                     "timestamp": sig.timestamp.isoformat(),
                     "hop_index": sig.hop_index,
