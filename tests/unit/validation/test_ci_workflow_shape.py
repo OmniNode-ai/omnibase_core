@@ -96,8 +96,10 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     ),
     # OMN-19252: + --exclude-files for config/hardcoded_model_config_baseline.yaml
     # (sha1 line keys are 40-hex digests; Hex High Entropy fires on every one).
+    # OMN-19614: pull_request scans only the PR diff via ci_scan_scope.py
+    # (checkout fetch-depth 2, a scope step, xargs reads the scoped list).
     "detect-secrets": (
-        "b4c0072775bd5064469293ac50be505514e2154bacdb840c9d41a75237bbc82b"  # pragma: allowlist secret
+        "a3ad1bf255aa8ceab051193d9d46972b12a97fe50fe5b24e3fe59927e8365883"  # pragma: allowlist secret
     ),
     "sdk-boundary-check": (
         "30800b3a56c20e4c0d8b0365b17cb847f6c8149264aa03a8fe8e254136fc6cba"  # pragma: allowlist secret
@@ -114,8 +116,9 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     "pydantic-patterns": (
         "0c69ccc1414177fc6b8ce43a34990d8fbd3c63de3ad58a0dc0eb735cf95d8f1b"  # pragma: allowlist secret
     ),
+    # OMN-19614: pull_request scans only the PR diff via ci_scan_scope.py.
     "aislop-patterns": (
-        "ccd7eef29e492fdd919b57e24dbecd266764613d65a6dd666f1625b3d209afa7"  # pragma: allowlist secret
+        "d5d212ec7b90428a0bd3d89f16a624054d29f32b15cf6e263cf684bf39398726"  # pragma: allowlist secret
     ),
     "doc-content-scan": (
         "1e8c24ae8e37648af73bfabb75575112632b8cd4ac169045d4ac8b5b9664e7cc"  # pragma: allowlist secret
@@ -828,3 +831,132 @@ def test_no_workflow_pytest_invocation_uses_thread_timeout_method() -> None:
         "the explicit CLI flag overrides the addopts signal default): "
         f"{violations}"
     )
+
+
+# OMN-19614: concurrency cancels superseded pull_request runs; merge_group keeps
+# its per-batch-commit group; push, schedule and dispatch never cancel.
+def _render_concurrency_expression(expression: str, context: dict[str, str]) -> str:
+    """Evaluate the two concurrency expressions for one event, by substitution.
+
+    The expressions are small and fixed; this resolves them for the event
+    shapes GitHub delivers so the test pins behaviour, not spelling.
+    """
+    event = context["github.event_name"]
+    if "format('pr-{0}', github.event.pull_request.number)" in expression:
+        key = (
+            f"pr-{context['github.event.pull_request.number']}"
+            if event == "pull_request"
+            else context["github.ref"]
+        )
+        return f"{context['github.workflow']}-{key}"
+    raise AssertionError(f"unrecognised concurrency group expression: {expression}")
+
+
+def test_concurrency_group_is_keyed_on_pr_number_for_pull_requests() -> None:
+    concurrency = _ci_workflow()["concurrency"]
+    assert isinstance(concurrency, dict)
+    group = str(concurrency["group"])
+    base = {"github.workflow": "CI", "github.event.pull_request.number": ""}
+
+    pr_a = _render_concurrency_expression(
+        group,
+        {
+            **base,
+            "github.event_name": "pull_request",
+            "github.ref": "refs/pull/17/merge",
+            "github.event.pull_request.number": "17",
+        },
+    )
+    queue = _render_concurrency_expression(
+        group,
+        {
+            **base,
+            "github.event_name": "merge_group",
+            "github.ref": "refs/heads/gh-readonly-queue/dev/pr-17-abc",
+        },
+    )
+    push = _render_concurrency_expression(
+        group,
+        {**base, "github.event_name": "push", "github.ref": "refs/heads/dev"},
+    )
+
+    assert pr_a == "CI-pr-17"
+    # merge_group stays per batch commit (OMN-12445): never shares a PR group.
+    assert queue == "CI-refs/heads/gh-readonly-queue/dev/pr-17-abc"
+    assert push == "CI-refs/heads/dev"
+
+
+def test_concurrency_cancels_only_pull_request_and_merge_group_runs() -> None:
+    concurrency = _ci_workflow()["concurrency"]
+    assert isinstance(concurrency, dict)
+    cancel = str(concurrency["cancel-in-progress"])
+
+    assert "github.event_name == 'pull_request'" in cancel
+    assert "github.event_name == 'merge_group'" in cancel
+    for event in ("push", "schedule", "workflow_dispatch"):
+        assert event not in cancel, f"{event} runs must never be cancelled"
+
+
+def test_edited_still_triggers_ci_for_ci_summary_re_evaluation() -> None:
+    pr_trigger = _ci_workflow()[True]["pull_request"]
+    assert isinstance(pr_trigger, dict)
+    assert "edited" in pr_trigger["types"]
+
+
+@pytest.mark.parametrize(
+    ("job_name", "required_force_full"),
+    [
+        (
+            "detect-secrets",
+            {
+                ".secrets.baseline",
+                ".github/workflows/ci.yml",
+                "scripts/ci/ci_scan_scope.py",
+            },
+        ),
+        (
+            "aislop-patterns",
+            {
+                "scripts/validation/check_ai_slop.py",
+                ".onex/aislop-rules.yaml",
+                "src/omnibase_core/contracts/aislop_default_rules.yaml",
+                "src/omnibase_core/validation/aislop_rule_loader.py",
+                "src/omnibase_core/models/validation/model_aislop_*.py",
+                "uv.lock",
+                ".github/workflows/ci.yml",
+                "scripts/ci/ci_scan_scope.py",
+            },
+        ),
+    ],
+)
+def test_diff_scoped_validators_keep_their_full_tree_fallbacks(
+    job_name: str, required_force_full: set[str]
+) -> None:
+    steps = _job_steps(job_name)
+    checkout = next(
+        step
+        for step in steps
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    # Depth 2 is what lets the helper see the merge commit's two parents.
+    assert checkout["with"]["fetch-depth"] == 2
+
+    scope_step = next(step for step in steps if step.get("name") == "Decide scan scope")
+    run = str(scope_step["run"])
+    assert "python3 scripts/ci/ci_scan_scope.py" in run
+    assert '--event "$EVENT_NAME"' in run
+    assert '--pr-head-sha "$PR_HEAD_SHA"' in run
+    env = scope_step["env"]
+    assert env["EVENT_NAME"] == "${{ github.event_name }}"
+    assert env["PR_HEAD_SHA"] == "${{ github.event.pull_request.head.sha }}"
+    declared = set(re.findall(r"--force-full '([^']+)'", run))
+    assert required_force_full <= declared
+
+    # The scan reads the scoped list, never an unscoped git ls-files.
+    scan_runs = [
+        str(step["run"]) for step in steps if "run" in step and step is not scope_step
+    ]
+    assert not any("git ls-files" in scan for scan in scan_runs)
+    out_file = re.search(r'--out "(\$RUNNER_TEMP/[\w-]+)"', run)
+    assert out_file is not None
+    assert any(out_file.group(1) in scan for scan in scan_runs)
