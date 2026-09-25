@@ -7,11 +7,13 @@ ModelBackendConfigValidation: Configuration validation for secret backends.
 This model represents configuration requirements and validation for backends.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelBackendConfigValidation(BaseModel):
     """Configuration validation result for a backend."""
+
+    model_config = ConfigDict(extra="forbid")
 
     is_valid: bool = Field(
         default=True, description="Whether the configuration is valid"
