@@ -368,12 +368,9 @@ class TopicBase(StrEnum):
 
     # ==========================================================================
     # DoD (Definition of Done) telemetry topics (OMN-5197)
-    # Consumed by omnidash /dod dashboard via dod_verify_runs and
-    # dod_guard_events tables.
+    # The verification-completed event is omnimarket node_dod_verify's
+    # terminal; the omniclaude-namespace spelling was retired by OMN-19153.
     # ==========================================================================
-    DOD_VERIFY_COMPLETED = "onex.evt.omniclaude.dod-verify-completed.v1"
-    """Emitted after every DoD evidence verification run."""
-
     DOD_GUARD_FIRED = "onex.evt.omniclaude.dod-guard-fired.v1"
     """Emitted on every DoD guard interception (pre-tool-use hook)."""
 
