@@ -90,27 +90,10 @@ from omnibase_core.nodes.node_work_ledger_state_compute.scope_math import (
 __all__ = [
     "NO_EPOCH_REASON",
     "NodeWorkLedgerStateCompute",
-    "complete_ledger_lines",
     "fold_work_events",
 ]
 
 NO_EPOCH_REASON = "no work.ledger.epoch.opened event: the typed cutover is not done"
-
-
-def complete_ledger_lines(text: str) -> tuple[str, ...]:
-    """Split ledger text into complete lines, leaving out an unterminated tail.
-
-    A final line with no newline is an append whose writer has not finished.
-    Leaving it out is the same as reading the file a moment earlier; treating
-    it as a parse failure would make every in-progress append read UNDECIDED.
-    A blank line in the middle is kept, and fails to parse.
-    """
-    if not text:
-        return ()
-    parts = text.split("\n")
-    # The element after the last newline is "" when the text ends with a
-    # newline, and an unterminated fragment otherwise: either way it is dropped.
-    return tuple(parts[:-1])
 
 
 def _canonical(event: ModelWorkEvent) -> str:
