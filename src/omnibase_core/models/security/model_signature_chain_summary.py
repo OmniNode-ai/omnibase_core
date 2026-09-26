@@ -9,13 +9,15 @@ Signature chain summary with validation status and trust level information.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.security.model_security_summaries import ModelChainInfoSummary
 
 
 class ModelSignatureChainSummary(BaseModel):
     """Signature chain summary."""
+
+    model_config = ConfigDict(extra="forbid")
 
     chain_id: UUID = Field(default=..., description="Chain identifier")
     envelope_id: UUID = Field(default=..., description="Envelope identifier")

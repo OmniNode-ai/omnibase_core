@@ -870,8 +870,7 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "make this poller treat a publisher as de facto required, and a "
         "transient broker outage would then block every merge in the "
         "repository. Self-declared non-required by the "
-        "pull-request-workflow-budget.yaml waiver on this same workflow file, "
-        "the same classification the kb-doc-gate.yml caller carries below. "
+        "pull-request-workflow-budget.yaml waiver on this same workflow file. "
         "Being non-required is also precisely why this job may carry a "
         "job-level `if:` where the sibling occ-companion-effect caller may "
         "not (OMN-15120/OMN-14864: a skipped `uses:` job produces no check "
@@ -886,15 +885,6 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "todo-audit-on-merge.yml above. It is enumerated here rather than "
         "omitted because this audit walks every job in a PR-triggered "
         "workflow file, not only the ones a pull_request event can start."
-    ),
-    ("kb-doc-gate.yml", "kb-doc-gate"): (
-        "thin uses: caller of omniclaude's kb-doc-gate-reusable.yml (OMN-16589 "
-        "pilot, transition mode) -- self-declared non-required per the "
-        "pull-request-workflow-budget.yaml waiver on this same workflow file; "
-        "NOT added to EXPECTED_EXTERNAL_CONTEXTS, since that would make this "
-        "poller treat it as de facto required, contradicting the pilot's "
-        "explicit not-required-yet scope. The fleet-wide required-check flip "
-        "is tracked separately once the pilot proves green."
     ),
 }
 

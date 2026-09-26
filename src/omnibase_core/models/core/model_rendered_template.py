@@ -5,12 +5,14 @@
 Canonical model for rendered template output.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelRenderedTemplate(BaseModel):
     """
     Canonical model for rendered template output.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     content: str

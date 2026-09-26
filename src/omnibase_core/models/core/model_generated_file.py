@@ -10,11 +10,13 @@ multi-document model generator.
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelGeneratedFile(BaseModel):
     """Represents a generated file."""
+
+    model_config = ConfigDict(extra="forbid")
 
     path: Path = Field(default=..., description="Path where the file will be written")
     content: str = Field(default=..., description="Content of the file")

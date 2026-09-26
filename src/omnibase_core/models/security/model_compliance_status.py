@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelComplianceStatus(BaseModel):
     """Compliance status model."""
+
+    model_config = ConfigDict(extra="forbid")
 
     frameworks: list[str] = Field(
         default_factory=list,

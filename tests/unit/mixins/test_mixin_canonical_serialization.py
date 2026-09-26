@@ -150,14 +150,15 @@ class TestMixinCanonicalYAMLSerializer:
         serializer = MixinCanonicalYAMLSerializer()
 
         metadata = {
-            "zebra": "last",
-            "alpha": "first",
-            "beta": "second",
+            "name": "test_node",
+            "description": "last alphabetically",
+            "author": "first alphabetically",
         }
 
         result = serializer.canonicalize_metadata_block(metadata, sort_keys=True)
 
-        assert isinstance(result, str)
+        assert result.index("author:") < result.index("description:")
+        assert result.index("description:") < result.index("name:")
 
     def test_canonicalize_metadata_block_with_node_metadata_block(self):
         """Test canonicalize_metadata_block with NodeMetadataBlock-like dict."""
@@ -482,13 +483,12 @@ class TestCanonicalSerializationEdgeCases:
 
         metadata = {
             "name": "test_node",
-            "active": True,
-            "deprecated": False,
+            "deprecated": True,
         }
 
         result = serializer.canonicalize_metadata_block(metadata)
 
-        assert isinstance(result, str)
+        assert "deprecated: 'true'" in result
 
     def test_canonicalize_with_numeric_values(self):
         """Test canonicalization with numeric values."""
@@ -496,13 +496,14 @@ class TestCanonicalSerializationEdgeCases:
 
         metadata = {
             "name": "test_node",
-            "priority": 10,
-            "timeout": 3.14,
+            "trust_score": 3.14,
+            "test_coverage": 10.0,
         }
 
         result = serializer.canonicalize_metadata_block(metadata)
 
-        assert isinstance(result, str)
+        assert "trust_score: '3.14'" in result
+        assert "test_coverage: '10'" in result
 
     def test_canonicalize_with_nested_structures(self):
         """Test canonicalization with nested dict structures."""
@@ -510,15 +511,20 @@ class TestCanonicalSerializationEdgeCases:
 
         metadata = {
             "name": "test_node",
-            "config": {
-                "setting1": "value1",
-                "setting2": "value2",
+            "x_extensions": {
+                "config": {
+                    "value": {
+                        "setting1": "value1",
+                        "setting2": "value2",
+                    }
+                },
             },
         }
 
         result = serializer.canonicalize_metadata_block(metadata)
 
-        assert isinstance(result, str)
+        assert "setting1" in result
+        assert "setting2" in result
 
     def test_extract_with_malformed_content(self):
         """Test extraction with malformed content."""
