@@ -139,5 +139,15 @@ class TestSkipListIsHonest:
         Twenty-one entries. The list is expected to shrink; growing it means a
         hook stopped being enforced, which is a decision, not a cleanup.
         Lowering this number when entries are removed is the ratchet working.
+
+        Grown to 22 on 2026-09-25 (OMN-19677): `anti-growth-baseline` needs a
+        `--base-ref origin/dev` merge-base and this job's checkout is a
+        default single-ref, no-fetch clone, so `origin/dev` is not a valid
+        object here (measured: `git merge-base HEAD origin/dev failed (128)`,
+        exit 2, after its own positive control passed). Not debt: the
+        dedicated `pydantic-extra-forbid-baseline-oneway` CI job already gates
+        this exact script with its own base-ref-fetching checkout, so this is
+        the same already-mirrored shape as `validate-deterministic-skill-routing`
+        above, not a hook that stopped being enforced.
         """
-        assert len(_skipped_ids()) <= 21
+        assert len(_skipped_ids()) <= 22

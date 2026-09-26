@@ -3035,7 +3035,7 @@ jobs:
   # frozen baseline count down (it may never grow).
   pydantic-extra-forbid-baseline-oneway:
     name: Pydantic extra="forbid" Baseline One-way (OMN-19677)
-    uses: OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@dad0ef50cd4b0479ab091e32b006408441602634
+    uses: OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@5e219caa4f121382a275ad7b42dae40279142fc7
     with:
       baseline-path: src/omnibase_core/validators/extra_forbid_baseline.yaml
       parser: yaml-list:violations

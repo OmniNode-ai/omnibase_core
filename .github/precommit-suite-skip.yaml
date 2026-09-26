@@ -79,3 +79,18 @@
 # that checkout here would buy no coverage. This exclusion is the one entry that
 # does NOT represent a gap.
 - validate-deterministic-skill-routing
+
+# (5) Green locally, cannot run here, and ALREADY MIRRORED so nothing is lost
+# (same shape as (4)). anti-growth-baseline's own one-way property needs a
+# `--base-ref origin/dev` merge-base, and this job's `actions/checkout@v7`
+# step takes the default single-ref, no-fetch checkout: `origin/dev` is not a
+# valid object here. Measured 2026-09-25 on this pull request's own head:
+# `ANTI-GROWTH BASELINE ERROR: git merge-base HEAD origin/dev failed (128):
+# fatal: Not a valid object name origin/dev` (exit 2), immediately after its
+# own positive control passed (it does reject synthetic growth once it can
+# see history). It is excluded rather than wired for the same reason (4)
+# gives, not because the property is unproven: the dedicated
+# `pydantic-extra-forbid-baseline-oneway` CI job (ci.yml) already gates this
+# exact hook's own script with its own `fetch-depth: 0` checkout of the base
+# ref. Duplicating that checkout here would buy no coverage.
+- anti-growth-baseline
