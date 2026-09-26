@@ -45,8 +45,6 @@ def source_ref(offset: int = 20) -> ModelExecutionGraphSourceRef:
         topic="onex.evt.omnimarket.delegation-request.v1",
         partition=0,
         kafka_offset=offset,
-        ingest_epoch=1,
-        ingest_seq=offset + 1,
     )
 
 
@@ -69,51 +67,45 @@ def node(
     )
 
 
-def test_source_cursor_is_partition_scoped_and_rejects_negative_positions() -> None:
+def test_source_cursor_is_partition_scoped_offset_bound_and_rejects_negative_positions() -> (
+    None
+):
     cursor = ModelExecutionGraphSourceCursor(
         topic="onex.evt.omnimarket.delegation-request.v1",
         partition=1,
-        ingest_epoch=1,
-        max_ingest_seq=42,
+        max_kafka_offset=42,
     )
     assert (
         cursor.topic,
         cursor.partition,
-        cursor.ingest_epoch,
-        cursor.max_ingest_seq,
+        cursor.max_kafka_offset,
     ) == (
         "onex.evt.omnimarket.delegation-request.v1",
-        1,
         1,
         42,
     )
     with pytest.raises(ValidationError):
         ModelExecutionGraphSourceCursor(
-            topic=cursor.topic, partition=-1, ingest_epoch=1, max_ingest_seq=0
+            topic=cursor.topic, partition=-1, max_kafka_offset=0
         )
     with pytest.raises(ValidationError):
         ModelExecutionGraphSourceCursor(
-            topic=cursor.topic, partition=0, ingest_epoch=2, max_ingest_seq=5
+            topic=cursor.topic, partition=0, max_kafka_offset=-1
         )
 
 
-def test_source_ref_represents_legacy_rows_without_inventing_watermarks() -> None:
-    legacy = ModelExecutionGraphSourceRef(
+def test_source_ref_is_the_recorded_kafka_position_without_a_watermark_claim() -> None:
+    source = ModelExecutionGraphSourceRef(
         topic="onex.evt.omnimarket.delegation-request.v1",
         partition=0,
         kafka_offset=8,
-        ingest_epoch=None,
-        ingest_seq=None,
     )
-    assert legacy.ingest_epoch is None
-    assert legacy.ingest_seq is None
-    with pytest.raises(ValidationError, match="both be set or both null"):
+    assert source.kafka_offset == 8
+    with pytest.raises(ValidationError):
         ModelExecutionGraphSourceRef(
-            topic=legacy.topic,
-            partition=legacy.partition,
-            kafka_offset=legacy.kafka_offset,
-            ingest_epoch=1,
-            ingest_seq=None,
+            topic=source.topic,
+            partition=source.partition,
+            kafka_offset=-1,
         )
 
 
@@ -125,8 +117,7 @@ def test_request_has_no_tenant_override_and_rejects_duplicate_cursor_keys() -> N
             ModelExecutionGraphSourceCursor(
                 topic=source_ref().topic,
                 partition=0,
-                ingest_epoch=1,
-                max_ingest_seq=30,
+                max_kafka_offset=30,
             )
         ],
     )
@@ -195,8 +186,7 @@ def test_read_model_splits_deterministic_replay_from_labels_and_current_annotati
                 ModelExecutionGraphSourceCursor(
                     topic=ref.topic,
                     partition=ref.partition,
-                    ingest_epoch=1,
-                    max_ingest_seq=100,
+                    max_kafka_offset=100,
                 )
             ],
             correlation_id=CORRELATION_ID,
