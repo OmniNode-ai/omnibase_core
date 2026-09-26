@@ -43,6 +43,23 @@ def test_stability_test_is_a_lane_a_runtime_can_declare_but_not_a_lab_lane() -> 
     assert "stability-test" not in LAB_RUNTIME_LANES
 
 
+@pytest.mark.parametrize(
+    "lane", ["compose-dev-105", "compose-dev-200", "compose-dev-202"]
+)
+def test_the_per_host_dev_lanes_are_registered_but_not_lab_lanes(lane: str) -> None:
+    # omnibase_infra docker-compose.dev-105/200/202.yml declare these values in
+    # ONEX_RUNTIME_LANE. Unregistered, each runtime "cannot name its lane", the
+    # lab lane-health projection records a fail-closed discovery error, and the
+    # runtime reads DEGRADED forever (dev-202 read 2026-09-25T14:52Z). Naming
+    # them must not widen the lab lane-health scope (OMN-18769 AC6).
+    assert lane in REGISTERED_RUNTIME_LANES
+    assert lane not in LAB_RUNTIME_LANES
+    assert (
+        ModelRuntimeLaneScope(lanes=tuple(sorted(LAB_RUNTIME_LANES))).admits(lane)
+        is False
+    )
+
+
 def test_scope_admits_a_lane_inside_it_and_refuses_one_outside_it() -> None:
     scope = ModelRuntimeLaneScope(lanes=("compose-dev", "onex-lab", "onex-lab-k3s"))
     assert scope.admits("compose-dev") is True
