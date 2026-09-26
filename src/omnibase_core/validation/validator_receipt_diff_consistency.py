@@ -328,7 +328,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         git diff --name-status "origin/dev"...HEAD > /tmp/diff_name_status.txt
         python -m omnibase_core.validation.validator_receipt_diff_consistency \\
             --diff-file /tmp/diff_name_status.txt \\
-            drift/dod_receipts/OMN-XXXX/item/command.yaml ...
+            drift/dod_receipts/OMN-1234/item/command.yaml ...
 
     Exit codes:
         0 — no contradicted attestations

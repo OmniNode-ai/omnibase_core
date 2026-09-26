@@ -107,7 +107,7 @@ SURFACE_KEYWORDS: tuple[str, ...] = (
     "subscriber",
 )
 
-SUPPRESSION_TOKEN = "# transport-mock-ok:"
+SUPPRESSION_TOKEN = "# transport-mock-ok:"  # secret-ok: annotation marker, not a credential  # env-var-ok: constant definition
 
 _EXCLUDED_PATH_PARTS: frozenset[str] = frozenset(
     {

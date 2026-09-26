@@ -92,7 +92,7 @@ REAL_DISPATCH_TEST_MARKERS: tuple[str, ...] = (
     "_materialize_envelope_with_bindings",
 )
 
-SUPPRESSION_TOKEN = "# dispatch-surface-test-ok:"
+SUPPRESSION_TOKEN = "# dispatch-surface-test-ok:"  # secret-ok: annotation marker, not a credential  # env-var-ok: constant definition
 
 
 def _is_source(path: str) -> bool:
