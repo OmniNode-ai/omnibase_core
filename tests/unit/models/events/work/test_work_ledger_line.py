@@ -36,7 +36,6 @@ from omnibase_core.enums.enum_hold_block import EnumHoldBlock
 from omnibase_core.enums.enum_question_withdrawal_reason import (
     EnumQuestionWithdrawalReason,
 )
-from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
 from omnibase_core.enums.enum_surface_result import EnumSurfaceResult
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.enums.enum_work_outcome import EnumWorkOutcome
@@ -92,7 +91,7 @@ def _session() -> ModelSessionActor:
 def _node() -> ModelNodeActor:
     return ModelNodeActor(
         node_id="node_pr_lifecycle_orchestrator",
-        runtime_lane=EnumRuntimeLane.DEV,
+        runtime_lane="dev",
         contract_version=ModelSemVer(major=1, minor=2, patch=3),
         run_id=uuid.UUID("33333333-3333-4333-8333-333333333333"),
     )

@@ -561,7 +561,7 @@ def _lane(actor: ModelActor) -> str:
     if isinstance(actor, ModelSessionActor):
         return _one_token(actor.session_handle)
     return _one_token(
-        f"{EnumActorKind.NODE.value}:{actor.node_id}.{actor.runtime_lane.value}"
+        f"{EnumActorKind.NODE.value}:{actor.node_id}.{actor.runtime_lane}"
     )
 
 

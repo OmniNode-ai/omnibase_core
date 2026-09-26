@@ -88,3 +88,18 @@ jobs:
 
       - name: Self-scan omnibase_core contract.yaml files
         run: uv run python -m omnibase_core.validation.validator_runtime_profiles src/
+
+      # OMN-19746: runtime_lane_roles names roles, never a lane, and core code
+      # names no runtime lane or lab host. Lanes and their roles come from the
+      # deployment's runtime.lane overlay document. Rides this job rather than
+      # a new PR-triggered workflow (OMN-14907 workflow ratchet).
+      - name: Run the runtime lane declaration and ValidatorRuntimeLaneRoles unit tests
+        run: |
+          uv run pytest \
+            tests/unit/validation/test_validator_runtime_lane_roles.py \
+            tests/unit/models/config_overlay/test_runtime_lane_declaration.py \
+            tests/unit/models/config_overlay/test_core_names_no_runtime_lane.py \
+            -v
+
+      - name: Self-scan omnibase_core contract.yaml files for runtime_lane_roles
+        run: uv run python -m omnibase_core.validation.validator_runtime_lane_roles src/

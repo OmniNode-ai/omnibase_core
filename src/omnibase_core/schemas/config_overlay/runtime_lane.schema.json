@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "EnumRuntimeLaneRole": {
+      "description": "A role a deployment's overlay may grant its runtime lane.",
+      "enum": [
+        "lab",
+        "dev",
+        "proof",
+        "read_only",
+        "collaborator",
+        "ephemeral",
+        "fault_injection",
+        "staging",
+        "production",
+        "local"
+      ],
+      "title": "EnumRuntimeLaneRole",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The body of a ``runtime.lane`` overlay document.",
+  "properties": {
+    "description": {
+      "description": "What this deployment is, for a reader.",
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "lane_id": {
+      "description": "The lane's id: the value its runtime declares in ONEX_RUNTIME_LANE and the scope segment the document is stored under.",
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "title": "Lane Id",
+      "type": "string"
+    },
+    "roles": {
+      "description": "What the lane is for. De-duplicated in declaration order.",
+      "items": {
+        "$ref": "#/$defs/EnumRuntimeLaneRole"
+      },
+      "minItems": 1,
+      "title": "Roles",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "runtime_lane.v1",
+      "description": "Version tag of this document's schema.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "lane_id",
+    "roles",
+    "description"
+  ],
+  "title": "ModelRuntimeLaneDeclaration",
+  "type": "object"
+}
