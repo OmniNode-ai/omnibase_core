@@ -7,11 +7,13 @@ Test matrix entry model.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelTestMatrixEntry(BaseModel):
     """Test matrix entry for comprehensive testing."""
+
+    model_config = ConfigDict(extra="forbid")
 
     id: UUID
     description: str

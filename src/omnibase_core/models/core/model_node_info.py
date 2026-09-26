@@ -7,13 +7,15 @@ Pydantic model for node information.
 Information about a discovered ONEX node, used in node discovery results.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeInfo(BaseModel):
     """Information about a discovered ONEX node."""
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(default=..., description="Node name")
     version: ModelSemVer = Field(

@@ -9,11 +9,13 @@ Detailed node information data structure.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelNodeData(BaseModel):
     """Detailed node information data."""
+
+    model_config = ConfigDict(extra="forbid")
 
     # Basic info
     node_id: UUID | None = Field(default=None, description="Node identifier")

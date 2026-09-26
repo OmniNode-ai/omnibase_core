@@ -225,7 +225,6 @@ class TestQualifiedName:
     def test_get_qualified_name_with_namespace(self):
         """Test qualified name includes namespace."""
         node_ref = ModelNodeReference(
-            version=DEFAULT_VERSION,
             node_name="validator_node",
             namespace="third_party",
             node_type="plugin",
@@ -251,7 +250,6 @@ class TestQualifiedName:
     def test_get_qualified_name_empty_namespace(self):
         """Test qualified name when namespace is empty string."""
         node_ref = ModelNodeReference(
-            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="",
             node_type="local",
@@ -518,7 +516,6 @@ class TestCommandMatching:
     def test_matches_command_qualified_name(self):
         """Test matching by qualified name."""
         node_ref = ModelNodeReference(
-            version=DEFAULT_VERSION,
             node_name="validator",
             namespace="plugin",
             node_type="plugin",

@@ -5,11 +5,13 @@
 Testing block model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelTestingBlock(BaseModel):
     """Testing configuration and requirements."""
+
+    model_config = ConfigDict(extra="forbid")
 
     canonical_test_case_ids: list[str] = Field(default_factory=list)
     required_ci_tiers: list[str] = Field(default_factory=list)

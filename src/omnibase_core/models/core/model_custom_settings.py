@@ -9,9 +9,12 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 from omnibase_core.types.type_serializable_value import (
     SerializableValue,
     SerializedDict,
@@ -23,6 +26,8 @@ class ModelCustomSettings(BaseModel):
     Custom settings with typed fields and validation.
     Replaces Dict[str, Any] for custom_settings fields.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # Settings categories
     general_settings: SerializedDict = Field(
@@ -47,11 +52,7 @@ class ModelCustomSettings(BaseModel):
     @classmethod
     def parse_version(cls, v: object) -> object:
         """Convert string versions to ModelSemVer."""
-        if v is None:
-            return ModelSemVer(major=1, minor=0, patch=0)
         if isinstance(v, str):
-            from omnibase_core.utils.util_semver_parser import parse_semver_from_string
-
             return parse_semver_from_string(v)
         return v
 

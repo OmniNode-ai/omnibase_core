@@ -15,6 +15,7 @@ of validator behaviors.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_list_filter import ModelListFilter
@@ -338,6 +339,52 @@ class TestModelListFilterSerialization:
         assert restored.match_all is True
         assert restored.exclude is True
         assert restored.priority == 5
+
+    def test_json_roundtrip_preserves_value_types_and_values(self):
+        """Canonical JSON round-trip preserves typed and raw input semantics."""
+        original = ModelListFilter.model_validate(
+            {
+                "values": ["ready", 2, {"team": "core"}],
+                "match_all": True,
+            }
+        )
+
+        restored = ModelListFilter.model_validate_json(original.model_dump_json())
+
+        assert restored == original
+        assert [value.to_value() for value in restored.values] == [
+            "ready",
+            2,
+            {"team": "core"},
+        ]
+
+    def test_canonical_wire_and_raw_object_remain_distinct(self):
+        """The required discriminator identifies typed wire, not raw objects."""
+        canonical_wire = ModelSchemaValue.create_string("typed").model_dump()
+
+        filter_model = ModelListFilter.model_validate(
+            {"values": [canonical_wire, {"plain": "object"}]}
+        )
+
+        assert filter_model.values[0].to_value() == "typed"
+        assert filter_model.values[1].to_value() == {"plain": "object"}
+
+    @pytest.mark.parametrize(
+        "malformed_wire",
+        [
+            {"value_type": "string"},
+            {"value_type": "unknown", "string_value": "value"},
+            {
+                "value_type": "string",
+                "string_value": "value",
+                "unknown": True,
+            },
+        ],
+    )
+    def test_malformed_canonical_wire_fails_closed(self, malformed_wire):
+        """Malformed discriminator-bearing input is never treated as a raw object."""
+        with pytest.raises(ValidationError):
+            ModelListFilter(values=[malformed_wire])
 
 
 @pytest.mark.unit

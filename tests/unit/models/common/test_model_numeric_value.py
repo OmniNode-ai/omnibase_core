@@ -53,25 +53,25 @@ class TestModelNumericValueValidation:
 
     def test_invalid_value_type_string(self):
         """Test that string value raises error."""
-        # Pydantic raises ValidationError before our field_validator runs
+        # The before-model validator rejects this before float coercion.
         with pytest.raises((OnexError, ValidationError)):
             ModelNumericValue(value="not a number", value_type=EnumNumericType.INTEGER)
 
     def test_invalid_value_type_list(self):
         """Test that list value raises error."""
-        # Pydantic raises ValidationError before our field_validator runs
+        # The before-model validator rejects this before float coercion.
         with pytest.raises((OnexError, ValidationError)):
             ModelNumericValue(value=[1, 2, 3], value_type=EnumNumericType.INTEGER)
 
     def test_invalid_value_type_dict(self):
         """Test that dict value raises error."""
-        # Pydantic raises ValidationError before our field_validator runs
+        # The before-model validator rejects this before float coercion.
         with pytest.raises((OnexError, ValidationError)):
             ModelNumericValue(value={"num": 42}, value_type=EnumNumericType.INTEGER)
 
     def test_invalid_value_type_none(self):
         """Test that None value raises error."""
-        # Pydantic raises ValidationError before our field_validator runs
+        # The before-model validator rejects this before float coercion.
         with pytest.raises((OnexError, ValidationError)):
             ModelNumericValue(value=None, value_type=EnumNumericType.INTEGER)
 

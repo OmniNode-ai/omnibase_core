@@ -5,7 +5,7 @@
 
 from collections.abc import Callable
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelOptionalString(BaseModel):
@@ -15,6 +15,8 @@ class ModelOptionalString(BaseModel):
     Replaces str | None to comply with ONEX standards
     requiring specific typed models instead of generic types.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     value: str | None = Field(default=None, description="Optional string value")
 
@@ -53,13 +55,11 @@ class ModelOptionalString(BaseModel):
 
         Example:
             >>> value = ModelOptionalString(value="hello")
-            >>> if value:
-            ...     print(f"Got: {value.value}")
-            Got: hello
+            >>> bool(value)
+            True
 
             >>> empty = ModelOptionalString(value=None)
-            >>> if not empty:
-            ...     print("No value")
-            No value
+            >>> bool(empty)
+            False
         """
         return self.has_value()

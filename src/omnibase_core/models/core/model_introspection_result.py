@@ -5,7 +5,7 @@
 Model for introspection command results.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_introspection_metadata import (
     ModelIntrospectionMetadata,
@@ -17,6 +17,8 @@ from omnibase_core.models.core.model_usage_example import ModelUsageExample
 class ModelIntrospectionResult(BaseModel):
     """Complete introspection result containing all introspection data."""
 
+    model_config = ConfigDict(extra="forbid")
+
     metadata: ModelIntrospectionMetadata = Field(description="Tool metadata")
     health: ModelToolHealthStatus = Field(description="Tool health status")
     examples: list["ModelUsageExample[object, object]"] = Field(
@@ -24,4 +26,4 @@ class ModelIntrospectionResult(BaseModel):
     )
 
 
-ModelIntrospectionResult.model_rebuild(raise_errors=False)
+ModelIntrospectionResult.model_rebuild()

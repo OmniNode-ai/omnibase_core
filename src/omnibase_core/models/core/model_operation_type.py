@@ -8,7 +8,7 @@ Extensible operation type model that replaces string literals with
 rich metadata for operation tracking and categorization.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelOperationType(BaseModel):
@@ -18,6 +18,8 @@ class ModelOperationType(BaseModel):
     Replaces string literals with rich operation metadata that can be
     extended by plugins and third-party systems.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     operation_name: str = Field(
         default=...,

@@ -7,11 +7,13 @@ Trend data point model for time series data.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class ModelTrendPoint(BaseModel):
     """Individual trend data point."""
+
+    model_config = ConfigDict(extra="forbid")
 
     timestamp: datetime = Field(default=..., description="Data point timestamp")
     value: float | int = Field(default=..., description="Data point value")
