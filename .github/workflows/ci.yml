@@ -178,6 +178,25 @@ jobs:
     with:
       lane: dev
 
+  # OMN-16589: migrated from kb-doc-gate.yml to permanently close its expired
+  # pull-request-workflow-budget waiver. The caller job id deliberately remains
+  # `kb-doc-gate` and the reusable's job name remains `kb-doc-gate`, preserving
+  # the live required dev context byte-for-byte as `kb-doc-gate / kb-doc-gate`.
+  # The `if:` exactly preserves the retired workflow's trigger surface: it is
+  # always true for pull requests targeting dev, where the context is required,
+  # and false for every other ci.yml event (including PRs targeting main, where
+  # no required context is expected). No `needs:` means an unrelated failure
+  # cannot prevent the required check from being created. The immutable caller
+  # pin remains the reusable validator's single source of truth because the
+  # reusable checks its validator out at `github.job_workflow_sha`.
+  kb-doc-gate:
+    if: github.event_name == 'pull_request' && github.base_ref == 'dev'
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
+    with:
+      mode: diff
+    permissions:
+      contents: read
+
   # OMN-18865: the pre-merge twin of the OMN-14631 workspace content-parity
   # gate. It proves this repository's built wheel carries byte-for-byte the
   # tracked source tree under src/omnibase_core, plus whatever this repo
