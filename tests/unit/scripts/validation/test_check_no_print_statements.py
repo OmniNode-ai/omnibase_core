@@ -832,3 +832,72 @@ def foo():
         violations = check_file(test_file)
         # "print-okay:" is not "print-ok:", so should be flagged
         assert len(violations) == 1
+
+
+@pytest.mark.unit
+class TestMultiLinePrintOkRange:
+    """OMN-16992: the annotation may sit anywhere in the call's own source range.
+
+    A formatter moves the trailing comment of a wrapped ``print(...)`` onto the
+    closing-paren line. The detector reports the call at its ``lineno``, so a
+    same-line-only lookup never saw the annotation and the hook failed on four
+    compute runtimes that were correctly annotated.
+    """
+
+    def test_annotation_on_closing_paren_is_honored(self, tmp_path: Path) -> None:
+        """A wrapped print annotated on its closing paren is not a violation."""
+        test_file = tmp_path / "wrapped_ok.py"
+        test_file.write_text(
+            """
+def foo(errors):
+    print(
+        f"ERROR: failed to read {len(errors)} file(s):"
+    )  # print-ok: CLI output
+"""
+        )
+        assert check_file(test_file) == []
+
+    def test_annotation_inside_multiline_call_is_honored(self, tmp_path: Path) -> None:
+        """The annotation counts on any interior line of the call."""
+        test_file = tmp_path / "interior_ok.py"
+        test_file.write_text(
+            """
+def foo(a, b):
+    print(
+        a,  # print-ok: CLI output
+        b,
+    )
+"""
+        )
+        assert check_file(test_file) == []
+
+    def test_unannotated_multiline_print_is_still_a_violation(
+        self, tmp_path: Path
+    ) -> None:
+        """Widening where the annotation may sit must not stop requiring one."""
+        test_file = tmp_path / "wrapped_bad.py"
+        test_file.write_text(
+            """
+def foo(errors):
+    print(
+        f"ERROR: failed to read {len(errors)} file(s):"
+    )
+"""
+        )
+        violations = check_file(test_file)
+        assert len(violations) == 1
+        assert violations[0]["severity"] == "error"
+
+    def test_annotation_after_the_call_does_not_count(self, tmp_path: Path) -> None:
+        """The range is bounded by end_lineno; a later line does not suppress."""
+        test_file = tmp_path / "after_bad.py"
+        test_file.write_text(
+            """
+def foo(a):
+    print(
+        a
+    )
+    x = 1  # print-ok: belongs to a different statement
+"""
+        )
+        assert len(check_file(test_file)) == 1

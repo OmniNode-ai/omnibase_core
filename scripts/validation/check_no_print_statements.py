@@ -56,8 +56,10 @@ class PrintStatementDetector(ast.NodeVisitor):
                 else ""
             )
 
-            # Check for print-ok comment
-            if self._has_print_ok_comment(line_num):
+            # Check for print-ok comment anywhere in the call's own source range.
+            # A formatter may place the annotation on the closing paren of a
+            # multi-line print(...), which is still the statement's own line.
+            if self._has_print_ok_comment(line_num, node.end_lineno or line_num):
                 self.generic_visit(node)
                 return
 
@@ -76,13 +78,23 @@ class PrintStatementDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def _has_print_ok_comment(self, line_num: int) -> bool:
-        """Check if line has a # print-ok: comment allowing the print."""
-        # Check same line
-        if line_num <= len(self.source_lines):
-            line = self.source_lines[line_num - 1]
-            if "# print-ok:" in line:
-                return True
+    def _has_print_ok_comment(
+        self, line_num: int, end_line_num: int | None = None
+    ) -> bool:
+        """Check for a # print-ok: comment on the print call or the line above.
+
+        ``end_line_num`` is the AST ``end_lineno`` of the call. The annotation
+        counts anywhere inside ``[line_num, end_line_num]`` because a multi-line
+        ``print(...)`` carries it on the closing-paren line after formatting.
+        The annotation is still required; only where it may sit is widened.
+        """
+        last_line = end_line_num if end_line_num is not None else line_num
+
+        # Check the call's own source range (start line through closing paren)
+        for candidate in range(line_num, last_line + 1):
+            if 1 <= candidate <= len(self.source_lines):
+                if "# print-ok:" in self.source_lines[candidate - 1]:
+                    return True
 
         # Check line above
         if line_num > 1:
