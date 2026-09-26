@@ -69,22 +69,20 @@ repos:
   # Note: ruff replaces both black and isort (10-100x faster)
   - repo: local
     hooks:
-      # FULL CODEBASE FORMATTING: These hooks run on src/ and tests/ (not just staged files)
-      # to match CI behavior and prevent "works locally, fails in CI" issues.
       - id: ruff-format
-        name: ruff format (auto-format entire codebase)
-        entry: uv run ruff format src/ tests/
+        name: ruff format (staged Python files)
+        entry: uv run ruff format --force-exclude
         language: system
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
+        files: ^(src|tests)/.*\.py$
         stages: [pre-commit]
 
       - id: ruff-fix
-        name: ruff check (auto-fix entire codebase)
-        entry: uv run ruff check --fix --exit-non-zero-on-fix src/ tests/
+        name: ruff check (auto-fix staged Python files)
+        entry: uv run ruff check --force-exclude --fix --exit-non-zero-on-fix
         language: system
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
+        files: ^(src|tests)/.*\.py$
         stages: [pre-commit]
         # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
         # forcing you to re-stage the changes. This keeps pre-commit and CI in sync.
@@ -197,7 +195,7 @@ repos:
         name: no bare @pytest.fixture on an async def (OMN-17319)
         entry: uv run python scripts/ci/check_async_fixture_decorators.py
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^((src|tests)/.*\.py|scripts/ci/check_async_fixture_decorators\.py)$
         stages: [pre-commit]
 
@@ -504,11 +502,11 @@ repos:
       # lifecycles belong behind ONEX nodes/handlers. Core dogfoods its own export.
       - id: no-plugin-daemon-classes
         name: Block Plugin* daemon/service/worker classes (OMN-13284)
-        entry: uv run python -m omnibase_core.validators.no_plugin_daemon_classes src/omnibase_core
+        entry: uv run python -m omnibase_core.validators.no_plugin_daemon_classes
         language: system
         types: [python]
         files: ^src/omnibase_core/.*\.py$
-        pass_filenames: false
+        pass_filenames: true
         stages: [pre-commit]
 
       # OMN-14891: no test may shell out to git while able to inherit GIT_DIR /
@@ -517,15 +515,15 @@ repos:
       # the pre-push hook mutates the REAL invoking worktree — twice observed
       # (core.bare=true + a bogus [user] block + 6707 phantom staged deletions on
       # the shared canonical clone). The session scrub in tests/conftest.py is the
-      # remedy; this blocks reintroduction. Whole-tree arg so a partially-staged
-      # commit cannot hide a violation elsewhere.
+      # remedy; this blocks reintroduction. Commit-time scope is the staged tests;
+      # CI re-asserts the whole tests/ tree.
       - id: no-unguarded-git-subprocess
         name: Block unguarded git subprocess calls in tests (OMN-14891)
-        entry: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess tests
+        entry: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess
         language: system
         types: [python]
         files: ^tests/.*\.py$
-        pass_filenames: false
+        pass_filenames: true
         stages: [pre-commit]
 
       # OMN-14350: non-canonical lifecycle-word class ratchet (omnibase_core canary).
@@ -621,10 +619,10 @@ repos:
       # the headless automation fleet. Core dogfoods its own export.
       - id: operation-match-requires-operation
         name: operation_match handler 'operation' field guard (OMN-13530)
-        entry: uv run python -m omnibase_core.validators.operation_match_requires_operation src/omnibase_core
+        entry: uv run python -m omnibase_core.validators.operation_match_requires_operation
         language: system
         files: (^|/)contract\.yaml$
-        pass_filenames: false
+        pass_filenames: true
         stages: [pre-commit]
 
       # OMN-13324: require handlers[0].operation on every dispatched node contract.
@@ -635,10 +633,10 @@ repos:
       # exempts. Core dogfoods its own export.
       - id: dispatched-contract-operation
         name: dispatched contract handlers[0].operation guard (OMN-13324)
-        entry: uv run python -m omnibase_core.validators.dispatched_contract_operation src/omnibase_core
+        entry: uv run python -m omnibase_core.validators.dispatched_contract_operation
         language: system
         files: (^|/)contract\.yaml$
-        pass_filenames: false
+        pass_filenames: true
         stages: [pre-commit]
 
       # OMN-13028: require an 'event_model' on command-category handler entries.
@@ -649,10 +647,10 @@ repos:
       # OMN-13003/13005 top-10 failure. Core dogfoods its own export.
       - id: command-category-requires-event-model
         name: command-category handler 'event_model' guard (OMN-13028)
-        entry: uv run python -m omnibase_core.validators.command_category_requires_event_model src/omnibase_core
+        entry: uv run python -m omnibase_core.validators.command_category_requires_event_model
         language: system
         files: (^|/)contract\.yaml$
-        pass_filenames: false
+        pass_filenames: true
         stages: [pre-commit]
 
       # OMN-13609 (WS-C Phase 1.1): a generated node's contract-declared inline
@@ -664,10 +662,10 @@ repos:
       # hand-authored nodes that declare a dotted importable model path are skipped.
       - id: generated-node-model-class-exists
         name: generated-node model-class-existence guard (OMN-13609)
-        entry: uv run python -m omnibase_core.validators.generated_node_model_class_exists src/omnibase_core
+        entry: uv run python -m omnibase_core.validators.generated_node_model_class_exists
         language: system
-        files: (^|/)contract\.yaml$
-        pass_filenames: false
+        files: (^|/)(contract\.yaml|handler\.py)$
+        pass_filenames: true
         stages: [pre-commit]
 
       # CLASS vs FILE Naming Conventions:
@@ -706,7 +704,7 @@ repos:
         name: ONEX File Location Enforcement
         entry: uv run python scripts/validation/validate-file-locations.py
         language: system
-        pass_filenames: false
+        pass_filenames: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/).*\.py$
         stages: [pre-commit]
@@ -762,20 +760,18 @@ repos:
       - id: validate-archived-imports
         name: ONEX Archived Path Import Prevention
         entry: uv run python scripts/validation/validate-archived-imports.py
-        args: ['src/']
         language: system
-        pass_filenames: false
-        files: ^.*\.py$
+        pass_filenames: true
+        files: ^src/.*\.py$
         exclude: ^(archived/|archive/|tests/fixtures/validation/).*$
         stages: [pre-commit]
 
       - id: validate-no-backward-compatibility
         name: ONEX Backward Compatibility Anti-Pattern Detection
         entry: uv run python scripts/validation/validate-no-backward-compatibility.py
-        args: ['-d', 'src/']
         language: system
-        pass_filenames: false
-        files: ^.*\.py$
+        pass_filenames: true
+        files: ^src/.*\.py$
         exclude: ^(scripts/validation/validate-no-backward-compatibility\.py|archived/.*)$
         stages: [pre-commit]
 
@@ -850,8 +846,8 @@ repos:
         name: ONEX Contract Validation
         entry: uv run python scripts/validation/validate-contracts.py
         language: system
-        pass_filenames: false
-        files: ^src/omnibase_core/(nodes|protocol|core).*\.py$
+        pass_filenames: true
+        files: (^|/)contract\.ya?ml$
         stages: [pre-commit]
 
       - id: audit-optional-usage

@@ -13,6 +13,7 @@ shape of the ``cleanup_async_tasks`` fixture this ticket removed);
 from __future__ import annotations
 
 import ast
+from pathlib import Path
 
 import pytest
 
@@ -78,3 +79,18 @@ def test_repo_is_clean() -> None:
         "pytest-asyncio STRICT mode and error on pytest >= 9.1: "
         + ", ".join(f"{p}:{ln} ({name})" for p, ln, name in violations)
     )
+
+
+@pytest.mark.unit
+def test_find_violations_scans_only_explicit_files(tmp_path: Path) -> None:
+    """Commit-time mode must not inspect an unrelated unstaged Python file."""
+    staged = tmp_path / "staged.py"
+    staged.write_text("def clean() -> None:\n    pass\n", encoding="utf-8")
+    unstaged = tmp_path / "unstaged.py"
+    unstaged.write_text(
+        "@pytest.fixture\nasync def broken():\n    yield\n",
+        encoding="utf-8",
+    )
+
+    assert find_violations([staged]) == []
+    assert find_violations([unstaged]) == [(unstaged, 2, "broken")]
