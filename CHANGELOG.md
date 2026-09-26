@@ -1,3 +1,27 @@
+## v0.47.24 (2026-09-26)
+
+### Release
+- Cut omnibase-core from dev at 0.47.24 by the scheduled release train.
+- 15 release-relevant commit(s) merged since v0.47.23.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.23
+- feat: a structural guard refuses branching on a runtime lane name (#1787)
+- feat: typed runtime lane declaration, lane roles and the runtime.lane overlay key; core names no lane (#1786)
+- fix: register the per-host dev lanes compose-dev-105, -200 and -202 (#1771)
+- fix: revive the sealed bundle, node core metadata resolves ModelSemVer at runtime (#1777)
+- fix: revive the sealed /17712/17715/17719/17720 bundle, complete custom filters and strict filter and numeric wire (#1776)
+- fix: scope core hooks to staged files (#1779)
+- fix: revive sealed / bundle — strict wire configs for version and generation models (#1773)
+- fix: revive the sealed bundle, strict backend and permission security leaf configs (#1778)
+- fix: revive the sealed / bundle, strict security leaf configs and signature audit key_id (#1775)
+- feat: typed questions, the operator answer link and typed withdrawal in the work ledger (#1774)
+- feat: report-only contract walker composes orchestrator and reducer machines and reports paths, error edges, illegal pairs and defects (#1770)
+- chore: drop TopicBase's unreferenced member for omniclaude's retired DoD-verify-completed spelling (#1766)
+- feat: the quality gate input can carry the text a response was derived from (#1767)
+- feat: work-ledger md renderer and onex-work-ledger render --check/--repair (#1761)
+- feat: lane desired-state identity models (core half) (#1765)
+
 ## v0.47.23 (2026-09-25)
 
 ### Release
