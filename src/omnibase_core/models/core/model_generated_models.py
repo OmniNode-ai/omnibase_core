@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_core_metadata import ModelMetadata
 
@@ -12,6 +12,8 @@ class ModelGeneratedModels(BaseModel):
     Maps model names to generated code strings.
     Optionally includes canonical metadata.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     models: dict[str, str] = Field(
         default_factory=dict,

@@ -102,9 +102,8 @@ TestMatrixEntry = ModelTestMatrixEntry
 NodeMetadataBlock = ModelNodeMetadataBlock
 
 
-# --- Pydantic forward reference for ModelExtractedBlock ---
-# Removed runtime import to break circular dependency.
-# ModelExtractedBlock properly uses TYPE_CHECKING for forward references.
+# ModelExtractedBlock imports ModelNodeMetadataBlock from its leaf module directly.
+# Keep this compatibility aggregation module out of that dependency path.
 
 # Import the core ModelNodeMetadata that other systems expect
 from .model_node_metadata_core import ModelNodeMetadata

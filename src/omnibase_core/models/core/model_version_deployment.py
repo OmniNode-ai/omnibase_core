@@ -7,11 +7,13 @@ Version Deployment Model - Tier 3 Metadata.
 Pydantic model for deployment-specific configuration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelVersionDeployment(BaseModel):
     """Deployment-specific configuration."""
+
+    model_config = ConfigDict(extra="forbid")
 
     docker_image: str | None = Field(
         default=None,

@@ -7,13 +7,15 @@ Version Implementation Model - Tier 3 Metadata.
 Pydantic model for implementation file information.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_version_file import ModelVersionFile
 
 
 class ModelVersionImplementation(BaseModel):
     """Implementation file information."""
+
+    model_config = ConfigDict(extra="forbid")
 
     implementation_file: str = Field(
         default="node.py",

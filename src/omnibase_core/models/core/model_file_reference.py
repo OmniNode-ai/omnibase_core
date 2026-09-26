@@ -25,9 +25,11 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelFileReference(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     path: str  # Use str for now; can be changed to Path if needed
     description: str | None = None

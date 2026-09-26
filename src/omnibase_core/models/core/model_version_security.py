@@ -7,11 +7,13 @@ Version Security Model - Tier 3 Metadata.
 Pydantic model for version-specific security configuration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelVersionSecurity(BaseModel):
     """Version-specific security configuration."""
+
+    model_config = ConfigDict(extra="forbid")
 
     security_context: dict[str, str] = Field(
         default_factory=dict,

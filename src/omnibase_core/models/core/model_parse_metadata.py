@@ -11,7 +11,7 @@ metrics, source information, and parsing context.
 from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import (
@@ -27,6 +27,8 @@ class ModelParseMetadata(BaseModel):
     This model tracks parsing performance, source information,
     and context for debugging and optimization purposes.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     parse_start_time: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
