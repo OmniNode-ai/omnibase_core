@@ -145,6 +145,15 @@ class TestAssertPublishedEventsInjective:
         with pytest.raises(ModelOnexError, match="injective"):
             assert_published_events_injective(published, context="test")
 
+    def test_collapsed_delegation_v2_terminal_map_fails(self) -> None:
+        published = {
+            "DelegationTerminalCompletedV2": "onex.evt.omnibase-infra.delegation-completed.v2",
+            "DelegationTerminalFailedRoutedV2": "onex.evt.omnibase-infra.delegation-failed-routed.v2",
+            "DelegationTerminalFailedUnroutedV2": "onex.evt.omnibase-infra.delegation-failed-routed.v2",
+        }
+        with pytest.raises(ModelOnexError, match="injective"):
+            assert_published_events_injective(published, context="delegation v2")
+
 
 # Canonical 5-segment ONEX topics so an event_type is derivable (OMN-14743).
 _PUBLISHED_CANONICAL = {

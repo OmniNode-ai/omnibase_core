@@ -33,6 +33,69 @@ schema_version:
 
 topics:
   # ---------------------------------------------------------------------------
+  # Delegation terminal wire topics
+  # ---------------------------------------------------------------------------
+  - topic: onex.evt.omnibase-infra.delegation-completed.v1  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_completed.ModelDelegationCompleted
+    description: >
+      V1 completed delegation terminal retained during the delegation V2 dual-publish window.
+    tags:
+      - delegation
+      - terminal
+      - v1
+
+  - topic: onex.evt.omnibase-infra.delegation-completed.v2  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_terminal_v2.ModelDelegationTerminalCompletedV2
+    description: >
+      V2 completed delegation terminal with a concrete routed-success wire shape.
+    tags:
+      - delegation
+      - terminal
+      - v2
+
+  - topic: onex.evt.omnibase-infra.delegation-failed-routed.v2  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_terminal_v2.ModelDelegationTerminalFailedRoutedV2
+    description: >
+      V2 routed delegation failure terminal with a closed failure-cause union.
+    tags:
+      - delegation
+      - terminal
+      - v2
+
+  - topic: onex.evt.omnibase-infra.delegation-failed-unrouted.v2  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_terminal_v2.ModelDelegationTerminalFailedUnroutedV2
+    description: >
+      V2 delegation failure terminal for a run where routing selected no backend.
+    tags:
+      - delegation
+      - terminal
+      - v2
+
+  - topic: onex.evt.omnibase-infra.delegation-failed.v1  # onex-topic-sot
+    introduced_in: OMN-15622
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: omnibase_core.models.delegation.wire.model_delegation_failed.ModelDelegationFailed
+    description: >
+      V1 failed delegation terminal retained during the delegation V2 dual-publish window.
+    tags:
+      - delegation
+      - terminal
+      - v1
+
+  # ---------------------------------------------------------------------------
   # Platform — runtime health
   # ---------------------------------------------------------------------------
   - topic: onex.evt.platform.log-entry.v1  # onex-topic-sot

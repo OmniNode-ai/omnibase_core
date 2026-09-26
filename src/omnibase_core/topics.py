@@ -492,19 +492,38 @@ class TopicBase(StrEnum):
     # namespace is the authoritative runtime namespace for the inference
     # request/response and delegation completion/failure events.
     # ==========================================================================
-    DELEGATION_COMPLETED_INFRA = "onex.evt.omnibase-infra.delegation-completed.v1"
+    DELEGATION_COMPLETED_INFRA = (
+        "onex.evt.omnibase-infra.delegation-completed.v1"  # onex-topic-sot
+    )
     """Emitted by node_delegation_orchestrator when a delegation run completes successfully.
 
     Producer: node_delegation_orchestrator (omnibase_infra runtime).
     Confirmed in live D3 trace (OMN-12642, stability-test lane).
     """
 
-    DELEGATION_FAILED_INFRA = "onex.evt.omnibase-infra.delegation-failed.v1"
+    DELEGATION_FAILED_INFRA = (
+        "onex.evt.omnibase-infra.delegation-failed.v1"  # onex-topic-sot
+    )
     """Emitted by node_delegation_orchestrator when a delegation run fails at any stage.
 
     Producer: node_delegation_orchestrator (omnibase_infra runtime).
     Confirmed in live D3 trace (OMN-12642, stability-test lane).
     """
+
+    DELEGATION_COMPLETED_INFRA_V2 = (
+        "onex.evt.omnibase-infra.delegation-completed.v2"  # onex-topic-sot
+    )
+    """V2 completed delegation terminal emitted by the delegation orchestrator."""
+
+    DELEGATION_FAILED_ROUTED_INFRA_V2 = (
+        "onex.evt.omnibase-infra.delegation-failed-routed.v2"  # onex-topic-sot
+    )
+    """V2 routed delegation failure terminal emitted by the delegation orchestrator."""
+
+    DELEGATION_FAILED_UNROUTED_INFRA_V2 = (
+        "onex.evt.omnibase-infra.delegation-failed-unrouted.v2"  # onex-topic-sot
+    )
+    """V2 unrouted delegation failure terminal emitted by the delegation orchestrator."""
 
     DELEGATION_INFERENCE_REQUEST = (
         "onex.cmd.omnibase-infra.delegation-inference-request.v1"
