@@ -135,6 +135,37 @@ def load_yaml_mapping_no_duplicates(
     return loaded
 
 
+def parse_yaml_into_model[T: BaseModel](content: str, model_cls: type[T]) -> T:
+    """Parse YAML ``content`` and validate it into ``model_cls``.
+
+    This is the sanctioned raw-parse seam for callers that already own their own
+    exception contract. Unlike :func:`load_yaml_content_as_model`, which wraps
+    every failure in :class:`ModelOnexError`, this helper lets PyYAML's
+    ``yaml.YAMLError`` and Pydantic's ``ValidationError`` propagate **unwrapped**,
+    so an existing caller can be moved off a direct ``yaml.safe_load`` call
+    without changing which exception type its callers and tests observe.
+
+    An empty document (``None``) is normalised to ``{}`` so that an empty file
+    means "an empty document of this type" rather than a parse failure — the
+    same normalisation both wrapping loaders already perform.
+
+    Args:
+        content: YAML document text.
+        model_cls: Pydantic model class describing the document.
+
+    Returns:
+        The validated model instance.
+
+    Raises:
+        yaml.YAMLError: The text is not well-formed YAML.
+        ValidationError: The parsed document does not match ``model_cls``.
+    """
+    data = yaml.safe_load(content)
+    if data is None:
+        data = {}
+    return model_cls.model_validate(data)
+
+
 def validate_file_exists(path: Path | str) -> None:
     """
     Pre-flight check that a file path exists and is a readable file.
