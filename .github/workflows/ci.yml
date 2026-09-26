@@ -168,6 +168,9 @@ jobs:
   # dependency-bot/ticketless skip must be produced by the invoked reusable.
   # The job-level concurrency is the retired caller's literal group; CI's
   # workflow-level group differs and must not silently change cancellation.
+  # This job is the ONLY producer of the required context. OMN-16359 deleted
+  # call-occ-companion-effect.yml after it was restored as a duplicate producer
+  # sharing this concurrency group. Do NOT re-add the standalone workflow.
   occ-companion-effect:
     concurrency:
       group: OCC Companion Effect Publisher-${{ github.event.pull_request.number || github.ref }}
