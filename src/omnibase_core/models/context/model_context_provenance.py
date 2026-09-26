@@ -9,21 +9,35 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_knowledge_provider_kind import EnumKnowledgeProviderKind
+
 __all__ = ["ModelContextProvenance"]
 
 
 class ModelContextProvenance(BaseModel):
-    """Source provenance for a single context section."""
+    """Source provenance for a single context section.
+
+    The backend that produced an item is recorded in two parts (OMN-18372).
+    ``provider_kind`` is the closed, vendor-neutral class of backend and is the
+    only half a consumer may branch on. ``provider_name`` is the adapter's own
+    identifier for the concrete instance it called, carried as data — it is the
+    only field in this model where a product name may appear.
+    """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    source: str = Field(
-        description="Backend that produced this item (e.g. repowise, linear)"
+    provider_kind: EnumKnowledgeProviderKind = Field(
+        description="Generic class of backend that produced this item"
     )
-    source_id: str = (
-        Field(  # string-id-ok: external system identifier, not an internal UUID
-            description="Stable identifier within the source system"
+    provider_name: str = Field(
+        description=(
+            "Adapter-supplied name of the concrete backend instance; the only "
+            "field carrying a vendor identity, and it is data, not type"
         )
+    )
+    # string-id-ok: external system identifier, not an internal UUID
+    source_id: str = Field(
+        description="Stable identifier of this item within the provider"
     )
     source_hash: str = Field(description="Content hash for cache invalidation")
     retrieved_at: datetime = Field(

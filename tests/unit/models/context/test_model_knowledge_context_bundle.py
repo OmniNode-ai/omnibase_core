@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 
 import pytest
 
+from omnibase_core.enums.enum_knowledge_provider_kind import EnumKnowledgeProviderKind
+
 
 @pytest.fixture
 def now() -> datetime:
@@ -22,7 +24,8 @@ def provenance(now: datetime):
     )
 
     return ModelContextProvenance(
-        source="repowise",
+        provider_kind=EnumKnowledgeProviderKind.DOCUMENT_STORE,
+        provider_name="omnimemory",
         source_id="doc-abc123",
         source_hash="sha256:abc",
         retrieved_at=now,
@@ -85,7 +88,7 @@ def graph_snapshot(provenance):
 class TestModelContextProvenance:
     def test_frozen(self, provenance) -> None:
         with pytest.raises(Exception):
-            provenance.source = "changed"  # type: ignore[misc]
+            provenance.provider_name = "changed"  # type: ignore[misc]
 
     def test_extra_forbid(self, now: datetime) -> None:
         from pydantic import ValidationError
@@ -96,7 +99,8 @@ class TestModelContextProvenance:
 
         with pytest.raises(ValidationError):
             ModelContextProvenance(
-                source="x",
+                provider_kind=EnumKnowledgeProviderKind.CODE_INDEX,
+                provider_name="x",
                 source_id="y",
                 source_hash="z",
                 retrieved_at=now,
@@ -113,12 +117,57 @@ class TestModelContextProvenance:
 
         with pytest.raises(ValidationError):
             ModelContextProvenance(
-                source="x",
+                provider_kind=EnumKnowledgeProviderKind.CODE_INDEX,
+                provider_name="x",
                 source_id="y",
                 source_hash="z",
                 retrieved_at=now,
                 confidence=1.5,
             )
+
+    def test_provider_kind_rejects_free_text(self, now: datetime) -> None:
+        """The provider CLASS is a closed set; a vendor string is not a kind."""
+        from pydantic import ValidationError
+
+        from omnibase_core.models.context.model_context_provenance import (
+            ModelContextProvenance,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelContextProvenance(
+                provider_kind="some_vendor_product",  # type: ignore[arg-type]
+                provider_name="some_vendor_product",
+                source_id="y",
+                source_hash="z",
+                retrieved_at=now,
+                confidence=0.5,
+            )
+
+    @pytest.mark.parametrize("kind", list(EnumKnowledgeProviderKind))
+    def test_round_trips_for_every_provider_kind(
+        self, kind: EnumKnowledgeProviderKind, now: datetime
+    ) -> None:
+        """OMN-18372 AC2 — every kind is generic and survives a dump/validate.
+
+        The vendor identity rides in provider_name as data, so a provenance
+        record naming a backend this repo has never heard of is still valid.
+        """
+        from omnibase_core.models.context.model_context_provenance import (
+            ModelContextProvenance,
+        )
+
+        original = ModelContextProvenance(
+            provider_kind=kind,
+            provider_name="an-unaffiliated-backend",
+            source_id="doc-1",
+            source_hash="sha256:abc",
+            retrieved_at=now,
+            confidence=0.75,
+        )
+        restored = ModelContextProvenance.model_validate(original.model_dump())
+        assert restored == original
+        assert restored.provider_kind is kind
+        assert restored.provider_name == "an-unaffiliated-backend"
 
 
 class TestModelADRSummary:
@@ -176,7 +225,7 @@ class TestModelKnowledgeContextBundle:
             dependency_graph=None,
             bundle_level="L0",
             degraded=False,
-            degraded_backends=(),
+            degraded_providers=(),
             missing_sections=(),
             bundle_hash="abc123",
             generated_at=now,
@@ -197,7 +246,7 @@ class TestModelKnowledgeContextBundle:
             dependency_graph=None,
             bundle_level="L1",
             degraded=False,
-            degraded_backends=(),
+            degraded_providers=(),
             missing_sections=(),
             bundle_hash="def456",
             generated_at=now,
@@ -218,7 +267,7 @@ class TestModelKnowledgeContextBundle:
             dependency_graph=None,
             bundle_level="L2",
             degraded=False,
-            degraded_backends=(),
+            degraded_providers=(),
             missing_sections=(),
             bundle_hash="ghi789",
             generated_at=now,
@@ -246,7 +295,7 @@ class TestModelKnowledgeContextBundle:
             dependency_graph=graph_snapshot,
             bundle_level="L3",
             degraded=False,
-            degraded_backends=(),
+            degraded_providers=(),
             missing_sections=(),
             bundle_hash="jkl012",
             generated_at=now,
@@ -275,7 +324,7 @@ class TestModelKnowledgeContextBundle:
                 dependency_graph=None,
                 bundle_level="L0",
                 degraded=False,
-                degraded_backends=(),
+                degraded_providers=(),
                 missing_sections=(),
                 bundle_hash="abc",
                 generated_at=now,
@@ -287,7 +336,7 @@ class TestModelKnowledgeContextBundle:
         assert isinstance(bundle.applicable_antipatterns, tuple)
         assert isinstance(bundle.relevant_adrs, tuple)
         assert isinstance(bundle.prior_learnings, tuple)
-        assert isinstance(bundle.degraded_backends, tuple)
+        assert isinstance(bundle.degraded_providers, tuple)
         assert isinstance(bundle.missing_sections, tuple)
 
     def test_to_markdown_l0_contains_antipatterns(
@@ -362,7 +411,7 @@ class TestModelKnowledgeContextBundle:
             dependency_graph=None,
             bundle_level="L0",
             degraded=True,
-            degraded_backends=("repowise",),
+            degraded_providers=(EnumKnowledgeProviderKind.CODE_INDEX,),
             missing_sections=("architecture_context",),
             bundle_hash="abc",
             generated_at=now,
@@ -388,8 +437,105 @@ class TestModelKnowledgeContextBundle:
                 dependency_graph=None,
                 bundle_level="L9",  # type: ignore[arg-type]
                 degraded=False,
-                degraded_backends=(),
+                degraded_providers=(),
                 missing_sections=(),
                 bundle_hash="abc",
                 generated_at=now,
             )
+
+
+class TestGenericProviderDiscriminator:
+    """OMN-18372 — the provider surface carries no vendor in its type."""
+
+    def test_enum_values_name_no_vendor(self) -> None:
+        """Every member names a CLASS of backend, not a product."""
+        for kind in EnumKnowledgeProviderKind:
+            assert kind.value.islower()
+            assert kind.value.replace("_", "").isalpha()
+
+    def test_bundle_round_trips_with_degraded_providers(
+        self, antipattern_summary, now: datetime
+    ) -> None:
+        """AC2 — a degraded bundle round-trips through model_validate/model_dump."""
+        from omnibase_core.models.context.model_knowledge_context_bundle import (
+            ModelKnowledgeContextBundle,
+        )
+
+        original = ModelKnowledgeContextBundle(
+            repo="omnibase_core",
+            ticket_id="OMN-18372",
+            architecture_context="",
+            relevant_adrs=(),
+            applicable_antipatterns=(antipattern_summary,),
+            prior_learnings=(),
+            dependency_graph=None,
+            bundle_level="L0",
+            degraded=True,
+            degraded_providers=(
+                EnumKnowledgeProviderKind.CODE_INDEX,
+                EnumKnowledgeProviderKind.DEPENDENCY_GRAPH,
+            ),
+            missing_sections=("architecture_context",),
+            bundle_hash="abc",
+            generated_at=now,
+        )
+        restored = ModelKnowledgeContextBundle.model_validate(original.model_dump())
+        assert restored == original
+        assert restored.degraded_providers == (
+            EnumKnowledgeProviderKind.CODE_INDEX,
+            EnumKnowledgeProviderKind.DEPENDENCY_GRAPH,
+        )
+
+    def test_degraded_providers_rejects_free_text(
+        self, antipattern_summary, now: datetime
+    ) -> None:
+        """A failed backend is recorded by kind, never by a vendor string."""
+        from pydantic import ValidationError
+
+        from omnibase_core.models.context.model_knowledge_context_bundle import (
+            ModelKnowledgeContextBundle,
+        )
+
+        with pytest.raises(ValidationError):
+            ModelKnowledgeContextBundle(
+                repo="omnibase_core",
+                ticket_id=None,
+                architecture_context="",
+                relevant_adrs=(),
+                applicable_antipatterns=(antipattern_summary,),
+                prior_learnings=(),
+                dependency_graph=None,
+                bundle_level="L0",
+                degraded=True,
+                degraded_providers=("some_vendor_product",),  # type: ignore[arg-type]
+                missing_sections=(),
+                bundle_hash="abc",
+                generated_at=now,
+            )
+
+    def test_degraded_markdown_names_the_provider_kinds(
+        self, antipattern_summary, now: datetime
+    ) -> None:
+        """to_markdown renders the generic kind values, not enum reprs."""
+        from omnibase_core.models.context.model_knowledge_context_bundle import (
+            ModelKnowledgeContextBundle,
+        )
+
+        bundle = ModelKnowledgeContextBundle(
+            repo="omnibase_core",
+            ticket_id=None,
+            architecture_context="",
+            relevant_adrs=(),
+            applicable_antipatterns=(antipattern_summary,),
+            prior_learnings=(),
+            dependency_graph=None,
+            bundle_level="L0",
+            degraded=True,
+            degraded_providers=(EnumKnowledgeProviderKind.CODE_INDEX,),
+            missing_sections=("architecture_context",),
+            bundle_hash="abc",
+            generated_at=now,
+        )
+        md = bundle.to_markdown()
+        assert "code_index" in md
+        assert "EnumKnowledgeProviderKind" not in md

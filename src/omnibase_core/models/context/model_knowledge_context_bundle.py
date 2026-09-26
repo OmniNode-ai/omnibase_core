@@ -10,6 +10,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_knowledge_provider_kind import EnumKnowledgeProviderKind
 from omnibase_core.models.context.model_adr_summary import ModelADRSummary
 from omnibase_core.models.context.model_antipattern_summary import (
     ModelAntipatternSummary,
@@ -32,6 +33,9 @@ class ModelKnowledgeContextBundle(BaseModel):
         L1 — + ADRs
         L2 — + architecture context (markdown output capped at 4000 chars)
         L3 — + dependency graph + prior learnings
+
+    Backend failures are recorded by generic provider KIND, never by a vendor
+    name (OMN-18372); see :class:`EnumKnowledgeProviderKind`.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -41,7 +45,7 @@ class ModelKnowledgeContextBundle(BaseModel):
         default=None, description="Optional Linear ticket that scoped this bundle"
     )
     architecture_context: str = Field(
-        description="Free-text architecture summary from Repowise get_answer"
+        description="Free-text architecture summary supplied by a code-index provider"
     )
     relevant_adrs: tuple[ModelADRSummary, ...] = Field(
         default=(), description="ADRs applicable to this repo/ticket"
@@ -59,8 +63,9 @@ class ModelKnowledgeContextBundle(BaseModel):
     degraded: bool = Field(
         default=False, description="True when one or more backends failed"
     )
-    degraded_backends: tuple[str, ...] = Field(
-        default=(), description="Names of backends that failed during assembly"
+    degraded_providers: tuple[EnumKnowledgeProviderKind, ...] = Field(
+        default=(),
+        description="Kinds of provider that failed during assembly (OMN-18372)",
     )
     missing_sections: tuple[str, ...] = Field(
         default=(), description="Section names omitted due to backend failure"
@@ -91,12 +96,12 @@ class ModelKnowledgeContextBundle(BaseModel):
             parts.append(f"**Ticket:** {self.ticket_id}")
         parts.append(f"**Bundle level:** {self.bundle_level}")
         if self.degraded:
-            backends = (
-                ", ".join(self.degraded_backends)
-                if self.degraded_backends
+            providers = (
+                ", ".join(p.value for p in self.degraded_providers)
+                if self.degraded_providers
                 else "unknown"
             )
-            parts.append(f"> **DEGRADED** — backends unavailable: {backends}")
+            parts.append(f"> **DEGRADED** — providers unavailable: {providers}")
             if self.missing_sections:
                 parts.append(f"> Missing sections: {', '.join(self.missing_sections)}")
 
