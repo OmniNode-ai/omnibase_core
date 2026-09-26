@@ -367,6 +367,8 @@ class TestModelDelegationResult:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="result",
             quality_passed=True,
             quality_score=0.9,
@@ -383,8 +385,8 @@ class TestModelDelegationResult:
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
             content="result",
-            quality_passed=True,
-            quality_score=0.9,
+            quality_passed=False,
+            quality_score=0.0,
             latency_ms=100,
             fallback_to_claude=False,
         )
@@ -393,6 +395,9 @@ class TestModelDelegationResult:
         assert r.attempts_count == 1
         assert r.delegated_to is None
         assert r.pricing_manifest_version is None
+        dumped = r.model_dump()
+        assert "delegated_to" not in dumped
+        assert "pricing_manifest_version" not in dumped
 
     def test_terminal_identity_and_pricing_manifest_round_trip(self) -> None:
         r = ModelDelegationResult(
@@ -414,6 +419,55 @@ class TestModelDelegationResult:
         assert dumped["pricing_manifest_version"] == 7
         assert ModelDelegationResult.model_validate(dumped) == r
 
+    @pytest.mark.parametrize(
+        "delegated_to", ["", "   ", "http://provider", "https://provider"]
+    )
+    def test_rejects_noncanonical_delegated_to(self, delegated_to: str) -> None:
+        with pytest.raises(ValidationError, match="delegated_to"):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                delegated_to=delegated_to,
+                pricing_manifest_version=1,
+                content="result",
+                quality_passed=True,
+                quality_score=0.9,
+                latency_ms=100,
+                fallback_to_claude=False,
+            )
+
+    @pytest.mark.parametrize(
+        ("quality_passed", "delegated_to", "pricing_manifest_version", "message"),
+        [
+            (True, None, None, "accepted delegation requires"),
+            (False, "local-qwen3", None, "must be provided together"),
+            (False, None, 1, "must be provided together"),
+        ],
+    )
+    def test_rejects_incomplete_terminal_identity(
+        self,
+        quality_passed: bool,
+        delegated_to: str | None,
+        pricing_manifest_version: int | None,
+        message: str,
+    ) -> None:
+        with pytest.raises(ValidationError, match=message):
+            ModelDelegationResult(
+                correlation_id=uuid.uuid4(),
+                task_type="test",
+                model_used="qwen3",
+                endpoint_url="http://localhost:8000",
+                delegated_to=delegated_to,
+                pricing_manifest_version=pricing_manifest_version,
+                content="result",
+                quality_passed=quality_passed,
+                quality_score=0.9 if quality_passed else 0.0,
+                latency_ms=100,
+                fallback_to_claude=False,
+            )
+
     def test_structured_quality_evidence_defaults_for_release_compatibility(
         self,
     ) -> None:
@@ -423,6 +477,8 @@ class TestModelDelegationResult:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="result",
             quality_passed=True,
             quality_score=0.9,
@@ -479,6 +535,8 @@ class TestModelDelegationResult:
                 task_type="reasoning",
                 model_used="qwen3",
                 endpoint_url="http://localhost:8000",
+                delegated_to="local-qwen3",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=False,
                 quality_score=0.5,
@@ -500,6 +558,8 @@ class TestModelDelegationResult:
                 task_type="reasoning",
                 model_used="qwen3",
                 endpoint_url="http://localhost:8000",
+                delegated_to="local-qwen3",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=False,
                 quality_score=0.5,
@@ -518,6 +578,8 @@ class TestModelDelegationResult:
                 task_type="reasoning",
                 model_used="qwen3",
                 endpoint_url="http://localhost:8000",
+                delegated_to="local-qwen3",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=True,
                 quality_score=0.9,
@@ -536,6 +598,8 @@ class TestModelDelegationResult:
                 task_type="reasoning",
                 model_used="qwen3",
                 endpoint_url="http://localhost:8000",
+                delegated_to="local-qwen3",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=True,
                 quality_score=0.5,
@@ -626,6 +690,8 @@ class TestModelDelegationResult:
             task_type="reasoning",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="result",
             quality_passed=True,
             quality_score=0.8,
@@ -742,6 +808,8 @@ class TestModelDelegationResult:
             "task_type": "reasoning",
             "model_used": "qwen3",
             "endpoint_url": "http://localhost:8000",
+            "delegated_to": "local-qwen3",
+            "pricing_manifest_version": 1,
             "content": "result",
             "quality_passed": True,
             "quality_score": 0.9,
@@ -762,6 +830,8 @@ class TestModelDelegationResult:
                 task_type="reasoning",
                 model_used="qwen3",
                 endpoint_url="http://localhost:8000",
+                delegated_to="local-qwen3",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=True,
                 quality_score=0.9,
@@ -780,6 +850,8 @@ class TestModelDelegationResult:
                 task_type="refactor",
                 model_used="gemini-2.5-flash",
                 endpoint_url="https://generativelanguage.googleapis.com",
+                delegated_to="cheap-cloud-gemini",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=True,
                 quality_score=0.9,
@@ -796,6 +868,8 @@ class TestModelDelegationResult:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="result",
             quality_passed=True,
             quality_score=0.9,
@@ -810,6 +884,8 @@ class TestModelDelegationResult:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="result",
             quality_passed=True,
             quality_score=0.9,
@@ -829,6 +905,8 @@ class TestModelDelegationResult:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="result",
             quality_passed=True,
             quality_score=0.9,
@@ -843,6 +921,8 @@ class TestModelDelegationResult:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="result",
             quality_passed=True,
             quality_score=0.9,
@@ -863,6 +943,8 @@ class TestModelDelegationResult:
                 task_type="test",
                 model_used="qwen3",
                 endpoint_url="http://localhost:8000",
+                delegated_to="local-qwen3",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=True,
                 quality_score=1.1,
@@ -877,6 +959,8 @@ class TestModelDelegationResult:
                 task_type="test",
                 model_used="qwen3",
                 endpoint_url="http://localhost:8000",
+                delegated_to="local-qwen3",
+                pricing_manifest_version=1,
                 content="result",
                 quality_passed=True,
                 quality_score=0.9,
@@ -1529,6 +1613,8 @@ class TestModelDelegationEventEnvelope:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="ok",
             quality_passed=True,
             quality_score=0.9,
@@ -1547,6 +1633,8 @@ class TestModelDelegationEventEnvelope:
             task_type="test",
             model_used="qwen3",
             endpoint_url="http://localhost:8000",
+            delegated_to="local-qwen3",
+            pricing_manifest_version=1,
             content="ok",
             quality_passed=True,
             quality_score=0.9,

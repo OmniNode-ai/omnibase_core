@@ -37,6 +37,7 @@ class ModelDelegationResult(BaseModel):
     endpoint_url: str = Field(..., description="URL of the LLM endpoint used.")
     delegated_to: str | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         description=(
             "Stable backend or agent reference selected for this delegation. "
             "None when the terminal producer did not resolve one; this field "
@@ -45,6 +46,7 @@ class ModelDelegationResult(BaseModel):
     )
     pricing_manifest_version: int | None = Field(
         default=None,
+        exclude_if=lambda value: value is None,
         gt=0,
         description=(
             "Version of the pricing manifest applied at the terminal effect "
@@ -217,6 +219,27 @@ class ModelDelegationResult(BaseModel):
     @model_validator(mode="after")
     def validate_structured_terminal_evidence(self) -> Self:
         """Reject incomplete or contradictory structured terminal evidence."""
+        delegated_to = self.delegated_to
+        if delegated_to is not None:
+            normalized_ref = delegated_to.strip()
+            if not normalized_ref:
+                msg = "delegated_to must not be blank"
+                raise ValueError(msg)
+            if normalized_ref.lower().startswith(("http://", "https://")):
+                msg = "delegated_to must be a stable reference, not an endpoint URL"
+                raise ValueError(msg)
+
+        has_delegated_to = delegated_to is not None
+        has_pricing_manifest = self.pricing_manifest_version is not None
+        if has_delegated_to != has_pricing_manifest:
+            msg = "delegated_to and pricing_manifest_version must be provided together"
+            raise ValueError(msg)
+        if self.quality_passed and not has_delegated_to:
+            msg = (
+                "accepted delegation requires delegated_to and pricing_manifest_version"
+            )
+            raise ValueError(msg)
+
         if any(not item.strip() for item in self.failed_acceptance_criteria):
             msg = "failed_acceptance_criteria entries must not be blank"
             raise ValueError(msg)
