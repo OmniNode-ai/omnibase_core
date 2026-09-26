@@ -7,7 +7,7 @@ The ModelMixinVersion class for validating and working
 with semantic version numbers in mixin metadata.
 """
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -21,6 +21,8 @@ class ModelMixinVersion(BaseModel):
         minor: Minor version number (new features)
         patch: Patch version number (bug fixes)
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     major: int = Field(..., ge=0, description="Major version number")
     minor: int = Field(..., ge=0, description="Minor version number")

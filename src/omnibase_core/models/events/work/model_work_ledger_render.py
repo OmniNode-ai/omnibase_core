@@ -48,6 +48,7 @@ from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.enums.governance.enum_pr_state import EnumPRState
 from omnibase_core.errors.error_work_ledger_render import WorkLedgerRenderError
 from omnibase_core.models.events.work.model_actor import ModelActor
+from omnibase_core.models.events.work.model_evidence_refs import ModelEvidenceRefs
 from omnibase_core.models.events.work.model_hold_scope import ModelHoldScope
 from omnibase_core.models.events.work.model_pr_key import ModelPrKey
 from omnibase_core.models.events.work.model_pr_ref import ModelPrRef
@@ -90,6 +91,12 @@ from omnibase_core.models.events.work.model_work_message_sent import (
 from omnibase_core.models.events.work.model_work_operator_consent_recorded import (
     ModelWorkOperatorConsentRecorded,
 )
+from omnibase_core.models.events.work.model_work_question_asked import (
+    ModelWorkQuestionAsked,
+)
+from omnibase_core.models.events.work.model_work_question_withdrawn import (
+    ModelWorkQuestionWithdrawn,
+)
 from omnibase_core.models.events.work.model_work_result_recorded import (
     ModelWorkResultRecorded,
 )
@@ -129,9 +136,15 @@ ROW_TYPE_BY_KIND: Final[Mapping[EnumWorkEventKind, str]] = MappingProxyType(
         EnumWorkEventKind.HOLD_RELEASED: "RELEASE",
         EnumWorkEventKind.CLAIM_RELEASED: "RELEASE",
         EnumWorkEventKind.LEDGER_EPOCH_OPENED: EPOCH_BANNER_ROW_TYPE,
+        EnumWorkEventKind.QUESTION_ASKED: "MSG",
+        EnumWorkEventKind.QUESTION_WITHDRAWN: "STATUS",
     }
 )
-"""The md row type of every kind: plan section 5.1, one-to-one with OMN-19256."""
+"""The md row type of every kind: plan sections 5.1 and 5.6, inside OMN-19256.
+
+A question renders as the MSG to the operator carrying ``question=`` that the
+grammar and the decisions register already read as a question put to the
+operator; a withdrawal renders as a STATUS row. No new row type is needed."""
 
 _ID_BEARING_TYPES: Final = frozenset({"HOLD", "MSG", "ACK"})
 _STAMP_FORMAT: Final = "%Y-%m-%dT%H:%M:%SZ"
@@ -203,9 +216,13 @@ def render_ledger_row(
     elif isinstance(event, ModelWorkCorrectionRecorded):
         body = _correction_cells(event)
     elif isinstance(event, ModelWorkRulingRecorded):
-        body = _ruling_cells(event)
+        body = _ruling_cells(event, index)
     elif isinstance(event, ModelWorkOperatorConsentRecorded):
-        body = _consent_cells(event)
+        body = _consent_cells(event, index)
+    elif isinstance(event, ModelWorkQuestionAsked):
+        body = _question_cells(event, stamp, lane)
+    elif isinstance(event, ModelWorkQuestionWithdrawn):
+        body = _withdrawal_cells(event, index)
     else:
         body = _epoch_cells(event)
 
@@ -412,24 +429,98 @@ def _correction_cells(event: ModelWorkCorrectionRecorded) -> list[str]:
     return cells
 
 
-def _ruling_cells(event: ModelWorkRulingRecorded) -> list[str]:
+def _ruling_cells(
+    event: ModelWorkRulingRecorded, index: Mapping[uuid.UUID, ModelWorkEvent]
+) -> list[str]:
     cells = _ticket(event.ticket_id)
     if event.amends is not None:
         cells.append(f"amends={event.amends}")
     if event.supersedes is not None:
         cells.append(f"supersedes={event.supersedes}")
+    cells.extend(_answers_cells(event.answers, index))
     cells.append(_quoted(event.operator_words))
     return cells
 
 
-def _consent_cells(event: ModelWorkOperatorConsentRecorded) -> list[str]:
+def _consent_cells(
+    event: ModelWorkOperatorConsentRecorded, index: Mapping[uuid.UUID, ModelWorkEvent]
+) -> list[str]:
     cells = _ticket(event.ticket_id)
     if event.approved_by is not None:
         cells.append(f"approved_by={event.approved_by}")
+    cells.extend(_answers_cells(event.answers, index))
     cells.append(_quoted(event.operator_words))
     cells.append(f"APPROVED SCOPE: {'; '.join(_text(s) for s in event.approved_scope)}")
     cells.append(f"OUT OF SCOPE: {'; '.join(_text(s) for s in event.out_of_scope)}")
     return cells
+
+
+def _answers_cells(
+    answers: frozenset[uuid.UUID], index: Mapping[uuid.UUID, ModelWorkEvent]
+) -> list[str]:
+    """``answers=<question row ids>`` and ``answers-events=<uuids>``, or nothing."""
+    if not answers:
+        return []
+    row_ids = [
+        _row_id(_question(index, qid, "answers")) for qid in sorted(answers, key=str)
+    ]
+    return [f"answers={','.join(row_ids)}", f"answers-events={_ids(answers)}"]
+
+
+def _question_cells(event: ModelWorkQuestionAsked, stamp: str, lane: str) -> list[str]:
+    cells = ["to=operator", f"id={stamp}-{lane}"]
+    cells.extend(_ticket(event.ticket_id))
+    cells.append(f"question={_quoted(event.question)}")
+    if event.recommendation is not None:
+        cells.append(f"recommendation={_quoted(event.recommendation)}")
+    row = event.legacy_row
+    if row is not None:
+        cells.append(f"legacy={_text(row.path)}:{row.line}")
+        cells.append(f"legacy-row={_stamp(row.stamp)}-{_one_token(row.lane)}")
+    return cells
+
+
+def _withdrawal_cells(
+    event: ModelWorkQuestionWithdrawn, index: Mapping[uuid.UUID, ModelWorkEvent]
+) -> list[str]:
+    question = _question(index, event.withdraws, "withdraws")
+    cells = _ticket(event.ticket_id)
+    cells.append(f"withdraws={_row_id(question)}")
+    cells.append(f"withdrawal={event.reason.value}")
+    cells.append(f"evidence={_evidence_text(event.evidence)}")
+    cells.append(f"withdraws-event={event.withdraws}")
+    return cells
+
+
+def _question(
+    index: Mapping[uuid.UUID, ModelWorkEvent], event_id: uuid.UUID, field: str
+) -> ModelWorkQuestionAsked:
+    target = _resolve(index, event_id, field)
+    if not isinstance(target, ModelWorkQuestionAsked):
+        raise WorkLedgerRenderError(
+            f"{field} names {event_id}, a {target.kind.value}, not a "
+            "work.question.asked"
+        )
+    return target
+
+
+def _evidence_text(evidence: ModelEvidenceRefs) -> str:
+    parts = [
+        f"pr:{key.repo}#{key.number}"
+        for key in sorted(evidence.prs, key=lambda k: (k.repo, k.number))
+    ]
+    parts.extend(
+        f"ticket:{ticket}"
+        for ticket in sorted(
+            evidence.tickets, key=lambda t: int(t.removeprefix("OMN-"))
+        )
+    )
+    parts.extend(f"event:{event_id}" for event_id in sorted(map(str, evidence.events)))
+    parts.extend(
+        f"row:{_text(row.path)}:{row.line}"
+        for row in sorted(evidence.ledger_rows, key=lambda r: (r.path, r.line))
+    )
+    return ",".join(parts)
 
 
 def _epoch_cells(event: ModelWorkLedgerEpochOpened) -> list[str]:

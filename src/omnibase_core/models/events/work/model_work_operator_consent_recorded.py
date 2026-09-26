@@ -17,9 +17,10 @@ adds the cross-repo equality test.
 
 from __future__ import annotations
 
+import uuid
 from typing import Final, Literal, get_args
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_serializer, field_validator, model_validator
 
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.models.events.work.model_work_event_base import (
@@ -79,6 +80,15 @@ class ModelWorkOperatorConsentRecorded(ModelWorkEventBase):
         description="What the consent does not approve. At least one entry; no placeholder.",
     )
 
+    answers: frozenset[uuid.UUID] = Field(
+        default_factory=frozenset,
+        description=(
+            "event_ids of the work.question.asked events this consent answers. The "
+            "operator's typed answer: a question is answered only by a ruling or a "
+            "consent that names it here."
+        ),
+    )
+
     @field_validator("operator_words")
     @classmethod
     def _reject_blank_words(cls, raw: str) -> str:
@@ -100,3 +110,13 @@ class ModelWorkOperatorConsentRecorded(ModelWorkEventBase):
                     f"scope entry is longer than {_SCOPE_ENTRY_MAX_LENGTH} characters"
                 )
         return raw
+
+    @model_validator(mode="after")
+    def _does_not_answer_itself(self) -> ModelWorkOperatorConsentRecorded:
+        if self.event_id in self.answers:
+            raise ValueError("a consent cannot answer itself")
+        return self
+
+    @field_serializer("answers")
+    def _serialize_answers_sorted(self, value: frozenset[uuid.UUID]) -> list[str]:
+        return sorted(str(event_id) for event_id in value)

@@ -44,6 +44,12 @@ from omnibase_core.models.events.work.model_work_message_sent import (
 from omnibase_core.models.events.work.model_work_operator_consent_recorded import (
     ModelWorkOperatorConsentRecorded,
 )
+from omnibase_core.models.events.work.model_work_question_asked import (
+    ModelWorkQuestionAsked,
+)
+from omnibase_core.models.events.work.model_work_question_withdrawn import (
+    ModelWorkQuestionWithdrawn,
+)
 from omnibase_core.models.events.work.model_work_result_recorded import (
     ModelWorkResultRecorded,
 )
@@ -57,6 +63,7 @@ from omnibase_core.models.events.work.model_work_status_recorded import (
 __all__ = ["ModelWorkEvent"]
 
 ModelWorkEvent = Annotated[
+    # union-ok: discriminated_union - each member pins a Literal kind; Field(discriminator="kind") below
     ModelWorkClaimRequested
     | ModelWorkClaimReleased
     | ModelWorkResultRecorded
@@ -69,7 +76,9 @@ ModelWorkEvent = Annotated[
     | ModelWorkStatusRecorded
     | ModelWorkFrictionRecorded
     | ModelWorkOperatorConsentRecorded
-    | ModelWorkLedgerEpochOpened,
+    | ModelWorkLedgerEpochOpened
+    | ModelWorkQuestionAsked
+    | ModelWorkQuestionWithdrawn,
     Field(discriminator="kind"),
 ]
 """One work event of any kind, discriminated on ``kind``.

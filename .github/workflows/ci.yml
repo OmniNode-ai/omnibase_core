@@ -18,19 +18,35 @@ on:
   schedule:
     - cron: "13 7 * * *"   # 07:13 UTC nightly
 
-# Prevent auto-cancellation for normal PR/push workflows. For merge_group runs the
-# concurrency group MUST be unique per queued batch commit: GitHub forms one
-# merge_group commit per queue position, and keying the group on base_ref (shared
-# by every dev-targeted merge_group run) made each newly-formed batch commit cancel
-# the CI of the entries ahead of it, leaving the queue front permanently in
-# AWAITING_CHECKS (CI Summary never reported). Keying on github.ref — the
-# gh-readonly-queue/<base>/pr-<n>-<sha> ref, which is unique per batch commit —
-# gives every queued position its own CI run while still cancelling a superseded
-# re-attempt of the same batch commit. Mirrors the OMN-6488 test.yml fix already
-# applied in omnibase_infra. (OMN-12445)
+# pull_request (OMN-19614): one group per PR number, and a newer run cancels the
+# one in flight. Before this, only merge_group cancelled, so a second run of the
+# same PR queued behind the first and then ran in full anyway: on head f1fbad47
+# the second run waited 29 minutes before a 34.5 minute run, and 9 of 19 head
+# SHAs sampled had two or more run ids (ci-validator-scope audit, 2026-09-25).
+# The `edited` trigger type stays: a PR body PATCH (the change-control autobind
+# stamp) must still re-run CI Summary so it re-reads the Receipt Gate it polls.
+# Cancelling can only finish sooner: the queued run would have run in full.
+#
+# merge_group is unchanged. Its group MUST be unique per queued batch commit:
+# GitHub forms one merge_group commit per queue position, and keying the group on
+# base_ref (shared by every dev-targeted merge_group run) made each newly-formed
+# batch commit cancel the CI of the entries ahead of it, leaving the queue front
+# permanently in AWAITING_CHECKS (CI Summary never reported). Keying on
+# github.ref — the gh-readonly-queue/<base>/pr-<n>-<sha> ref, which is unique
+# per batch commit — gives every queued position its own CI run while still
+# cancelling a superseded re-attempt of the same batch commit. Mirrors the
+# OMN-6488 test.yml fix already applied in omnibase_infra. (OMN-12445)
+#
+# push, schedule and workflow_dispatch keep a per-ref group that never cancels,
+# so every push to dev still gets its own full-tree run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'merge_group' }}
+  group: >-
+    ${{ github.workflow }}-${{
+      github.event_name == 'pull_request'
+      && format('pr-{0}', github.event.pull_request.number)
+      || github.ref
+    }}
+  cancel-in-progress: ${{ github.event_name == 'merge_group' || github.event_name == 'pull_request' }}
 
 env:
   UV_VERSION: "0.8.3"
@@ -161,6 +177,25 @@ jobs:
     secrets: inherit
     with:
       lane: dev
+
+  # OMN-16589: migrated from kb-doc-gate.yml to permanently close its expired
+  # pull-request-workflow-budget waiver. The caller job id deliberately remains
+  # `kb-doc-gate` and the reusable's job name remains `kb-doc-gate`, preserving
+  # the live required dev context byte-for-byte as `kb-doc-gate / kb-doc-gate`.
+  # The `if:` exactly preserves the retired workflow's trigger surface: it is
+  # always true for pull requests targeting dev, where the context is required,
+  # and false for every other ci.yml event (including PRs targeting main, where
+  # no required context is expected). No `needs:` means an unrelated failure
+  # cannot prevent the required check from being created. The immutable caller
+  # pin remains the reusable validator's single source of truth because the
+  # reusable checks its validator out at `github.job_workflow_sha`.
+  kb-doc-gate:
+    if: github.event_name == 'pull_request' && github.base_ref == 'dev'
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
+    with:
+      mode: diff
+    permissions:
+      contents: read
 
   # OMN-18865: the pre-merge twin of the OMN-14631 workspace content-parity
   # gate. It proves this repository's built wheel carries byte-for-byte the
@@ -1102,6 +1137,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          # Depth 2 carries the pull_request merge commit's two parents, which
+          # ci_scan_scope.py needs to read the PR diff. Shallower, it finds no
+          # parents and falls back to the full tree.
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -1110,6 +1150,26 @@ jobs:
 
       - name: Install detect-secrets
         run: pip install detect-secrets==1.5.0
+
+      # OMN-19614: detect-secrets-hook checks each file on its own against the
+      # baseline, so a pull request only needs its changed files scanned (the
+      # full tree took 218 s and was the last quality-gate need to finish).
+      # Full tree on push, merge_group, schedule and dispatch, on an
+      # unresolvable base, and when the baseline, this workflow (which pins the
+      # detect-secrets version and the exclude set) or the scope helper changes.
+      - name: Decide scan scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 scripts/ci/ci_scan_scope.py \
+            --event "$EVENT_NAME" \
+            --pr-head-sha "$PR_HEAD_SHA" \
+            --force-full '.secrets.baseline' \
+            --force-full '.github/workflows/ci.yml' \
+            --force-full 'scripts/ci/ci_scan_scope.py' \
+            --nul \
+            --out "$RUNNER_TEMP/detect-secrets-files"
 
       - name: Run detect-secrets-hook
         run: |
@@ -1146,7 +1206,7 @@ jobs:
           # (fail-closed). Never remove this flag without re-proving the
           # miss is fixed another way.
           set +e
-          git ls-files -z | xargs -0 detect-secrets-hook \
+          xargs -0 -r detect-secrets-hook \
             --no-verify \
             --baseline .secrets.baseline \
             --exclude-files 'uv\.lock' \
@@ -1158,7 +1218,8 @@ jobs:
             --exclude-files 'url_authority_baseline\.json' \
             --exclude-files 'canonical_inference_baseline\.json' \
             --exclude-files 'extra_forbid_baseline\.yaml' \
-            --exclude-files 'hardcoded_model_config_baseline\.yaml'
+            --exclude-files 'hardcoded_model_config_baseline\.yaml' \
+            < "$RUNNER_TEMP/detect-secrets-files"
           HOOK_EXIT=$?
           set -e
 
@@ -1522,10 +1583,14 @@ jobs:
   # AI-Slop Patterns (OMN-13574: Model B failing-rollup enforcement)
   # validator-requirements.yaml requires `aislop-patterns`. Previously this only
   # ran in omni-standards-compliance.yml (`ai-slop-check`), which is NOT in
-  # branch protection. This copy runs the same strict scan over the full tracked
-  # tree and feeds quality-gate so a real AI-slop violation turns the required
-  # rollup red. Full-tree scan (not changed-files) avoids the merge_group /
-  # no-diff exit-0 hole on the required path.
+  # branch protection. This copy runs the same strict scan and feeds
+  # quality-gate so a real AI-slop violation turns the required rollup red.
+  # OMN-19614: on pull_request it scans only the PR's changed files (the full
+  # tree took 130 s on the quality-gate critical path); check_ai_slop.py judges
+  # each file on its own. The merge_group / no-diff exit-0 hole stays closed:
+  # every non-pull_request event, an unresolvable base, and a change to the
+  # checker, its rules, the rule loader or models, the lockfile, pyproject or
+  # this workflow all scan the full tracked tree.
   aislop-patterns:
     name: AI Slop Patterns
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
@@ -1543,6 +1608,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          # Depth 2 carries the pull_request merge commit's two parents, which
+          # ci_scan_scope.py needs to read the PR diff. Shallower, it finds no
+          # parents and falls back to the full tree.
+          fetch-depth: 2
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -1560,11 +1630,30 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --no-dev
 
+      - name: Decide scan scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 scripts/ci/ci_scan_scope.py \
+            --event "$EVENT_NAME" \
+            --pr-head-sha "$PR_HEAD_SHA" \
+            --force-full 'scripts/validation/check_ai_slop.py' \
+            --force-full '.onex/aislop-rules.yaml' \
+            --force-full 'src/omnibase_core/contracts/aislop_default_rules.yaml' \
+            --force-full 'src/omnibase_core/validation/aislop_rule_loader.py' \
+            --force-full 'src/omnibase_core/models/validation/model_aislop_*.py' \
+            --force-full 'uv.lock' \
+            --force-full 'pyproject.toml' \
+            --force-full '.github/workflows/ci.yml' \
+            --force-full 'scripts/ci/ci_scan_scope.py' \
+            --out "$RUNNER_TEMP/aislop-files"
+
       - name: Check tracked tree for AI-slop patterns (strict)
         run: |
           # Mirror the pre-commit / omni-standards exclude set: CHANGELOG.md,
           # docs/, and intentional syntax-error fixtures.
-          files=$(git ls-files '*.py' '*.md' \
+          files=$(grep -E '\.(py|md)$' "$RUNNER_TEMP/aislop-files" \
             | grep -vE '^(CHANGELOG\.md|docs/|tests/fixtures/validation/)' || true)
           if [ -z "$files" ]; then
             echo "No Python/Markdown files to scan."
@@ -4690,9 +4779,10 @@ jobs:
       # head on push runs.
       pull-requests: read
     # Deadline (below) is comfortably under any run-cancellation window so the
-    # required context ALWAYS posts a terminal state first. On pull_request the
-    # concurrency group does NOT cancel-in-progress (only merge_group does), so
-    # there is effectively no shorter PR cancel window than GitHub's job default.
+    # required context ALWAYS posts a terminal state first. On pull_request a
+    # newer run of the same PR cancels this one (OMN-19614), and that newer
+    # run's CI Summary is the context that answers for the PR; otherwise there
+    # is no shorter cancel window than GitHub's job default.
     # This job timeout is only a hard backstop above the internal poll deadline.
     # OMN-15980: raised 100->140 alongside DEADLINE_MINUTES 90->130 below — the
     # 90m deadline was too tight once test-parallel's own budget grew 35->70

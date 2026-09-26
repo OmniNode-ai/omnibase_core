@@ -7,11 +7,13 @@ ModelBackendCapabilities: Secret backend capability configuration.
 This model represents the capabilities supported by different secret backends.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelBackendCapabilities(BaseModel):
     """Capabilities supported by a secret backend."""
+
+    model_config = ConfigDict(extra="forbid")
 
     supports_secrets: bool = Field(
         default=True,

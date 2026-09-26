@@ -160,27 +160,6 @@ def session_cleanup() -> Generator[None, None, None]:
 
 
 @pytest.fixture(autouse=True)
-def aggressive_gc_cleanup() -> Generator[None, None, None]:
-    """
-    Aggressive garbage collection after each test.
-
-    This fixture runs after every test to immediately free memory,
-    preventing accumulation across thousands of tests.
-
-    Note: Exception handling includes FileNotFoundError to handle race conditions
-    during parallel test execution where cleanup may access already-deleted files.
-    """
-    yield  # Let test run
-
-    # Collect garbage after each test to prevent memory accumulation
-    try:
-        gc.collect()
-    except (FileNotFoundError, OSError):
-        # GC cleanup may fail if files are already removed by parallel workers
-        pass
-
-
-@pytest.fixture(autouse=True)
 def event_loop_cleanup() -> Generator[None, None, None]:
     """
     Clean up event loops and async tasks after each test.

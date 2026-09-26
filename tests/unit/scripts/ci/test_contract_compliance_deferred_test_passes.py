@@ -365,6 +365,71 @@ def test_a_fresh_cancellation_is_held_for_its_replacement() -> None:
     assert evaluate_checks(settled, now=NOW)[0] == EXIT_FAILURE
 
 
+TESTS_PLACEHOLDER = (
+    "Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})"
+)
+INTEGRATION_PLACEHOLDER = "Integration Tests (Split ${{ matrix.split }}/4)"
+
+
+def test_a_cancelled_matrix_placeholder_is_superseded_by_its_expanded_copies() -> None:
+    """Live on omnibase_core#1772 head d14bca07fa: the pull_request CI run
+    36155199260 was cancelled by its concurrency group before its matrices were
+    evaluated, so GitHub left two rows whose names still carry the unexpanded
+    matrix expressions. Run 36155334716 expanded and passed the same matrices,
+    but no later row can ever carry the placeholder name, so latest-wins kept
+    the cancelled placeholder and CI Summary's deferred step failed. A
+    cancelled placeholder is superseded by any row its name pattern matches;
+    the expanded copies are judged under their own names."""
+    checks = [
+        _row(TESTS_PLACEHOLDER, "cancelled", row_id=1),
+        _row("Tests (Split 1/40)", "success", row_id=2),
+        _row("Tests (Split 40/40)", "success", row_id=3),
+        _row(INTEGRATION_PLACEHOLDER, "cancelled", row_id=4),
+        _row("Integration Tests (Split 1/4)", "success", row_id=5),
+        SELF,
+    ]
+    code, report = evaluate_checks(checks, now=NOW)
+    assert code == EXIT_SUCCESS, report
+    assert TESTS_PLACEHOLDER in report
+    assert INTEGRATION_PLACEHOLDER in report
+
+
+def test_a_cancelled_placeholder_with_no_expanded_copy_still_fails() -> None:
+    """Positive control: with no expanded copy, the matrix never ran on this
+    head, so the placeholder is the verdict. A prefix of another job's name is
+    not an expansion: ``Integration Tests (Split 1/4)`` does not expand the
+    ``Tests`` placeholder."""
+    alone = [_row(TESTS_PLACEHOLDER, "cancelled"), _row("Tests Gate", "success")]
+    code, report = evaluate_checks(alone, now=NOW)
+    assert code == EXIT_FAILURE
+    assert TESTS_PLACEHOLDER in report
+    other_job = [
+        _row(TESTS_PLACEHOLDER, "cancelled"),
+        _row("Integration Tests (Split 1/4)", "success"),
+    ]
+    assert evaluate_checks(other_job, now=NOW)[0] == EXIT_FAILURE
+
+
+def test_an_expanded_red_copy_still_fails_and_only_cancellations_are_superseded() -> (
+    None
+):
+    """Dropping the placeholder never hides the matrix's own verdict, and a
+    placeholder that FAILED (a matrix that could not be evaluated) stays judged."""
+    red_copy = [
+        _row(TESTS_PLACEHOLDER, "cancelled", row_id=1),
+        _row("Tests (Split 1/40)", "success", row_id=2),
+        _row("Tests (Split 2/40)", "failure", row_id=3),
+    ]
+    code, report = evaluate_checks(red_copy, now=NOW)
+    assert code == EXIT_FAILURE
+    assert "Tests (Split 2/40)" in report
+    failed_placeholder = [
+        _row(TESTS_PLACEHOLDER, "failure", row_id=1),
+        _row("Tests (Split 1/40)", "success", row_id=2),
+    ]
+    assert evaluate_checks(failed_placeholder, now=NOW)[0] == EXIT_FAILURE
+
+
 def test_unknown_conclusion_and_empty_set_fail_closed() -> None:
     assert evaluate_checks([_row("x", "stale")], now=NOW)[0] == EXIT_FAILURE
     assert evaluate_checks([SELF], now=NOW)[0] == EXIT_FAILURE

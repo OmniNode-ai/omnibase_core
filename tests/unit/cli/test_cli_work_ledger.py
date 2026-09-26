@@ -15,6 +15,8 @@ a skill runs it, against a fixture JSON-lines ledger named by
   ``ledger=<path> sha256=<hex> lines=<n> epoch=<uuid|none>``.
 - AC3: ``--runtime-affecting`` with no value, or with ``unknown``, behaves as
   ``yes``.
+- OMN-19620 AC5 (plan T17): ``questions`` exits 3 with one line per matching
+  question, 0 when none match, and 2 on a ledger with no epoch.
 """
 
 from __future__ import annotations
@@ -31,9 +33,14 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
+from omnibase_core.enums.enum_question_withdrawal_reason import (
+    EnumQuestionWithdrawalReason,
+)
 from omnibase_core.models.events.work import (
     WORK_LEDGER_SCHEMA,
+    ModelEvidenceRefs,
     ModelHoldScope,
+    ModelLedgerRowRef,
     ModelPrKey,
     ModelRecipients,
     ModelSessionActor,
@@ -43,6 +50,9 @@ from omnibase_core.models.events.work import (
     ModelWorkLedgerEpochOpened,
     ModelWorkLedgerRecord,
     ModelWorkMessageSent,
+    ModelWorkQuestionAsked,
+    ModelWorkQuestionWithdrawn,
+    ModelWorkRulingRecorded,
     dump_work_ledger_line,
 )
 from omnibase_core.nodes.node_work_ledger_state_compute.runtime_work_ledger import (
@@ -226,6 +236,7 @@ DECIDED_CASES: list[tuple[list[str], int]] = [
 ]
 
 COMMANDS: list[list[str]] = [
+    ["questions"],
     ["held", "--repo", "omnibase_infra", "--pr", "1", "--action", "merge"],
     ["pauses", "--repo", "omnibase_spi"],
     ["claims", "--ticket", "OMN-2"],
@@ -398,3 +409,157 @@ def test_header_or_runtime_applies_to_pauses(
 ) -> None:
     proc = run(["pauses", "--repo", "omnimarket", *runtime_args], ledger)
     assert proc.returncode == expected, proc.stdout + proc.stderr
+
+
+# --------------------------------------------------------------------------
+# questions (OMN-19620, plan T17)
+# --------------------------------------------------------------------------
+
+OPEN_Q = uuid.UUID("00000000-0000-4000-8000-000000000011")
+WITHDRAWN_Q = uuid.UUID("00000000-0000-4000-8000-000000000012")
+ANSWERED_Q = uuid.UUID("00000000-0000-4000-8000-000000000013")
+WITHDRAWAL_ID = uuid.UUID("00000000-0000-4000-8000-000000000014")
+ANSWER_ID = uuid.UUID("00000000-0000-4000-8000-000000000015")
+LEGACY = ModelLedgerRowRef(
+    path="docs/tracking/archive/ROLLING_WORK_LEDGER_2026-09-20-split.md",
+    line=863,
+    stamp=datetime(2026, 9, 17, 18, 48, 12, tzinfo=UTC),
+    lane="hook-cloud-relay-chain-build-1552",
+)
+
+
+def _q(
+    event_id: uuid.UUID, ticket: str, legacy: ModelLedgerRowRef | None = None
+) -> ModelWorkQuestionAsked:
+    return ModelWorkQuestionAsked(
+        event_id=event_id,
+        emitted_at=T0,
+        actor=_actor("asker"),
+        summary="question",
+        ticket_id=ticket,
+        question="Which way?",
+        legacy_row=legacy,
+    )
+
+
+def _question_events() -> list[ModelWorkEvent]:
+    return [
+        _epoch(),
+        _q(OPEN_Q, "OMN-10"),
+        _q(WITHDRAWN_Q, "OMN-11", LEGACY),
+        _q(ANSWERED_Q, "OMN-12"),
+        ModelWorkQuestionWithdrawn(
+            event_id=WITHDRAWAL_ID,
+            emitted_at=T0,
+            actor=_actor("typed-withdrawal"),
+            summary="overtaken",
+            withdraws=WITHDRAWN_Q,
+            reason=EnumQuestionWithdrawalReason.OVERTAKEN,
+            evidence=ModelEvidenceRefs(
+                prs=frozenset({ModelPrKey(repo="omninode_infra", number=1537)})
+            ),
+        ),
+        ModelWorkRulingRecorded(
+            event_id=ANSWER_ID,
+            emitted_at=T0,
+            actor=_actor("orchestrator"),
+            summary="answered",
+            operator_words="do it",
+            answers=frozenset({ANSWERED_Q}),
+        ),
+    ]
+
+
+@pytest.fixture
+def question_ledger(tmp_path: Path) -> Path:
+    return _write(tmp_path / "questions.jsonl", [_line(e) for e in _question_events()])
+
+
+@pytest.mark.parametrize(
+    ("args", "expected", "ids"),
+    [
+        (["questions"], 3, [OPEN_Q]),
+        (["questions", "--status", "open"], 3, [OPEN_Q]),
+        (["questions", "--status", "withdrawn"], 3, [WITHDRAWN_Q]),
+        (["questions", "--status", "answered"], 3, [ANSWERED_Q]),
+        (["questions", "--status", "any"], 3, [OPEN_Q, WITHDRAWN_Q, ANSWERED_Q]),
+        (["questions", "--status", "any", "--ticket", "omn-11"], 3, [WITHDRAWN_Q]),
+        (["questions", "--status", "any", "--ticket", "OMN-99"], 0, []),
+    ],
+)
+def test_questions_exit_code_and_one_line_per_question(
+    run: _Runner,
+    question_ledger: Path,
+    args: list[str],
+    expected: int,
+    ids: list[uuid.UUID],
+) -> None:
+    proc = run(args, question_ledger)
+    assert proc.returncode == expected, proc.stdout + proc.stderr
+    lines = proc.stdout.splitlines()
+    assert HEADER.match(lines[0])
+    assert lines[1].startswith(
+        f"verdict={'found' if expected else 'clear'} query=questions"
+    )
+    question_lines = [text for text in lines if text.startswith("question ")]
+    assert [text.split()[1] for text in question_lines] == [f"event={i}" for i in ids]
+
+
+def test_questions_line_names_the_withdrawal_and_legacy_row(
+    question_ledger: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    code, out = _call(
+        ["questions", "--status", "withdrawn"], question_ledger, monkeypatch, capsys
+    )
+    assert code == 3, out
+    (entry,) = [text for text in out.splitlines() if text.startswith("question ")]
+    assert "status=withdrawn" in entry
+    assert "lane=asker" in entry
+    assert f"withdrawn_by={WITHDRAWAL_ID}" in entry
+    assert "reasons=overtaken" in entry
+    assert f"legacy={LEGACY.path}:863" in entry
+
+
+def test_questions_line_names_the_answer(
+    question_ledger: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    code, out = _call(
+        ["questions", "--status", "answered"], question_ledger, monkeypatch, capsys
+    )
+    assert code == 3, out
+    (entry,) = [text for text in out.splitlines() if text.startswith("question ")]
+    assert f"answered_by={ANSWER_ID}" in entry
+
+
+def test_questions_without_an_epoch_is_undecided(tmp_path: Path, run: _Runner) -> None:
+    path = _write(
+        tmp_path / "q-no-epoch.jsonl", [_line(e) for e in _question_events()[1:]]
+    )
+    proc = run(["questions", "--status", "any"], path)
+    assert proc.returncode == 2, proc.stdout
+    assert "verdict=undecided" in proc.stdout
+
+
+def test_health_counts_open_questions_and_invalid_refs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    stray = ModelWorkQuestionWithdrawn(
+        event_id=uuid.UUID("00000000-0000-4000-8000-000000000016"),
+        emitted_at=T0,
+        actor=_actor("typed-withdrawal"),
+        summary="names nothing",
+        withdraws=uuid.UUID("00000000-0000-4000-8000-000000000099"),
+        reason=EnumQuestionWithdrawalReason.PREMISE_FALSE,
+        evidence=ModelEvidenceRefs(tickets=frozenset({"OMN-19620"})),
+    )
+    path = _write(
+        tmp_path / "h.jsonl", [_line(e) for e in [*_question_events(), stray]]
+    )
+    code, out = _call(["health"], path, monkeypatch, capsys)
+    assert code == 0, out
+    assert "open_questions=1" in out
+    assert "invalid_question_refs=1" in out

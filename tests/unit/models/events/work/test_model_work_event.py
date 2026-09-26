@@ -508,6 +508,9 @@ def test_event_kind_values_are_the_registry_event_types() -> None:
         "work.friction.recorded",
         "work.consent.recorded",
         "work.ledger.epoch.opened",
+        # Typed work ledger task T17 (OMN-19620): questions put to the operator.
+        "work.question.asked",
+        "work.question.withdrawn",
     }
 
 

@@ -724,6 +724,22 @@
   pass_filenames: false
   stages: [pre-commit]
 
+- id: report-contract-walk
+  name: Contract walker, report-only (OMN-19553)
+  description: >
+    Golden-chain validation layer plan r4 Phase 3. Walks every contract.yaml that declares a typed state_machine,
+    composes each orchestrator with the reducers its contract links to (a shared event_bus topic or a
+    named reducer module), and prints golden paths, error edges, illegal (state, trigger) pairs, unreachable
+    and dead states and uncovered transitions. REPORT-ONLY: it exits 0 whatever it finds, so it never
+    blocks a commit; the failing gate on typed machines is analyze_fsm in the consumer's own test. Contracts
+    it cannot load strictly are listed NOT_ARMED. Consumers pass the roots to scan via args (default src).
+  language: python
+  entry: python -m omnibase_core.validation.validator_contract_walker
+  files: (^|/)contract\.yaml$
+  pass_filenames: false
+  verbose: true
+  stages: [pre-commit]
+
 - id: check-projection-exposure-drift
   name: Projection exposure-column drift (OMN-13663)
   description: >
