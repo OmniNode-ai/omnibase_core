@@ -99,7 +99,17 @@ jobs:
             tests/unit/validation/test_validator_runtime_lane_roles.py \
             tests/unit/models/config_overlay/test_runtime_lane_declaration.py \
             tests/unit/models/config_overlay/test_core_names_no_runtime_lane.py \
+            tests/unit/validation/test_validator_no_lane_literal_branching.py \
             -v
 
       - name: Self-scan omnibase_core contract.yaml files for runtime_lane_roles
         run: uv run python -m omnibase_core.validation.validator_runtime_lane_roles src/
+
+      # OMN-19760: no branching on a runtime lane name in core src, against the
+      # burn-down baseline. The same hook runs in the Pre-commit Suite job.
+      - name: Self-scan omnibase_core src for lane-literal branching
+        run: |
+          uv run python -m omnibase_core.validation.validator_no_lane_literal_branching \
+            --repo-root . \
+            --baseline src/omnibase_core/validation/baselines/no_lane_literal_branching_baseline.json \
+            src/
