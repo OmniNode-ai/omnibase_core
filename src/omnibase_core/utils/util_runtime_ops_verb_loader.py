@@ -27,6 +27,9 @@ from pathlib import Path
 
 import yaml
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
+
 _CONTRACTS_PKG = "omnibase_core.contracts"
 _ALLOWLIST_YAML = "runtime_ops_verb_allowlist.yaml"
 _ALLOWLIST_KEY = "runtime_ops_verbs"
@@ -43,8 +46,9 @@ def load_runtime_ops_verb_allowlist() -> frozenset[str]:
     Raises:
         FileNotFoundError: the bundled allowlist YAML is missing (fatal config
             error — the class cannot be enforced without its governed data).
-        ValueError: the YAML exists but does not declare a non-empty
-            ``runtime_ops_verbs`` list of strings.
+        ModelOnexError: the YAML exists but does not declare a non-empty
+            ``runtime_ops_verbs`` list of strings
+            (``EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR``).
     """
     try:
         ref = importlib.resources.files(_CONTRACTS_PKG) / _ALLOWLIST_YAML
@@ -61,19 +65,28 @@ def load_runtime_ops_verb_allowlist() -> frozenset[str]:
 
     data = yaml.safe_load(raw)
     if not isinstance(data, dict):
-        raise ValueError(
-            f"{_ALLOWLIST_YAML} must be a mapping with a {_ALLOWLIST_KEY!r} key"
+        raise ModelOnexError(
+            message=f"{_ALLOWLIST_YAML} must be a mapping with a {_ALLOWLIST_KEY!r} key",
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            context={"allowlist_yaml": _ALLOWLIST_YAML, "key": _ALLOWLIST_KEY},
         )
     verbs = data.get(_ALLOWLIST_KEY)
     if not isinstance(verbs, list) or not verbs:
-        raise ValueError(
-            f"{_ALLOWLIST_YAML} must declare a non-empty {_ALLOWLIST_KEY!r} list"
+        raise ModelOnexError(
+            message=f"{_ALLOWLIST_YAML} must declare a non-empty {_ALLOWLIST_KEY!r} list",
+            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+            context={"allowlist_yaml": _ALLOWLIST_YAML, "key": _ALLOWLIST_KEY},
         )
     normalized: set[str] = set()
     for verb in verbs:
         if not isinstance(verb, str) or not verb.strip():
-            raise ValueError(
-                f"{_ALLOWLIST_KEY} entries must be non-blank strings, got: {verb!r}"
+            raise ModelOnexError(
+                message=(
+                    f"{_ALLOWLIST_KEY} entries must be non-blank strings, "
+                    f"got: {verb!r}"
+                ),
+                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
+                context={"allowlist_yaml": _ALLOWLIST_YAML, "entry": repr(verb)},
             )
         normalized.add(verb.strip())
     return frozenset(normalized)

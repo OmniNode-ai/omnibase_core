@@ -19,6 +19,8 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_override_config import (
     ModelAntipatternOverrideConfig,
 )
@@ -172,15 +174,16 @@ class TestMergeAntipatterns:
         assert "custom_test_rule" in names
         assert len(result.entries) == len(defaults.entries) + 1
 
-    def test_unknown_override_name_raises_value_error(self) -> None:
+    def test_unknown_override_name_raises_onex_error(self) -> None:
         defaults = load_default_antipatterns()
         config = ModelAntipatternOverrideConfig.model_validate(
             {
                 "overrides": [{"name": "nonexistent_rule_xyz", "severity": "ERROR"}],
             }
         )
-        with pytest.raises(ValueError, match="nonexistent_rule_xyz"):
+        with pytest.raises(ModelOnexError, match="nonexistent_rule_xyz") as exc:
             merge_antipatterns(defaults, config)
+        assert exc.value.error_code is EnumCoreErrorCode.INVALID_CONFIGURATION
 
 
 @pytest.mark.unit

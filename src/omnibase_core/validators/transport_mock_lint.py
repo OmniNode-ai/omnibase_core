@@ -350,19 +350,19 @@ def _load_baseline(baseline_path: Path) -> dict[str, int]:
             "transport-mock-lint: PyYAML not available; cannot load baseline. "
             "Install pyyaml or run without --baseline.\n"
         )
-        raise SystemExit(2)
+        raise SystemExit(2)  # error-ok: validator CLI process exit
     try:
         raw = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:
         sys.stderr.write(
             f"transport-mock-lint: cannot load baseline {baseline_path}: {exc}\n"
         )
-        raise SystemExit(2) from exc
+        raise SystemExit(2) from exc  # error-ok: validator CLI process exit
     if not isinstance(raw, dict):
         sys.stderr.write(
             f"transport-mock-lint: baseline {baseline_path} must be a YAML mapping.\n"
         )
-        raise SystemExit(2)
+        raise SystemExit(2)  # error-ok: validator CLI process exit
     return {str(k): int(v) for k, v in raw.items()}
 
 
@@ -425,7 +425,7 @@ def _git_changed_files(base: str) -> list[Path]:
     )
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr)
-        raise SystemExit(2)
+        raise SystemExit(2)  # error-ok: validator CLI process exit
     return [Path(p) for p in proc.stdout.splitlines() if p.strip()]
 
 
@@ -526,4 +526,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())  # error-ok: validator CLI process exit

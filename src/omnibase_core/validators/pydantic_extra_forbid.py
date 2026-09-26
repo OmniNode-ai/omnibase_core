@@ -91,6 +91,8 @@ from types import ModuleType
 
 import yaml
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.validation.model_extra_forbid_finding import (
     ENGINE_RUNTIME,
     ENGINE_STATIC,
@@ -717,8 +719,8 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
     """Map absolute file path -> changed line ranges for *ref*.
 
     ``ref`` is either ``":staged"`` (pre-commit) or a git ref such as ``origin/dev``
-    (CI, diffed as ``<ref>...HEAD``). Raises ``RuntimeError`` on git failure — the
-    caller fails closed rather than silently skipping the check.
+    (CI, diffed as ``<ref>...HEAD``). Raises ``ModelOnexError`` on git failure —
+    the caller fails closed rather than silently skipping the check.
     """
     if ref == STAGED_REF:
         args = ["git", "diff", "--cached", "--unified=0", "--no-color"]
@@ -730,11 +732,19 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             args, cwd=cwd, capture_output=True, text=True, check=False
         )
     except OSError as exc:
-        raise RuntimeError(f"could not run git: {exc}") from exc
+        raise ModelOnexError(
+            message=f"could not run git: {exc}",
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            context={"git_args": " ".join(args)},
+        ) from exc
     if proc.returncode != 0:
-        raise RuntimeError(
-            f"`{' '.join(args)}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip() or 'no stderr'}"
+        raise ModelOnexError(
+            message=(
+                f"`{' '.join(args)}` failed (exit {proc.returncode}): "
+                f"{proc.stderr.strip() or 'no stderr'}"
+            ),
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            context={"git_args": " ".join(args), "returncode": proc.returncode},
         )
 
     try:
@@ -746,7 +756,11 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             check=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError(f"could not resolve the git worktree root: {exc}") from exc
+        raise ModelOnexError(
+            message=f"could not resolve the git worktree root: {exc}",
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            context={"cwd": str(cwd)},
+        ) from exc
 
     root = Path(top)
     ranges: dict[Path, list[tuple[int, int]]] = {}
@@ -924,7 +938,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.enforce_modified:
         try:
             ranges = changed_line_ranges(args.enforce_modified, Path.cwd())
-        except RuntimeError as exc:
+        except ModelOnexError as exc:
             sys.stderr.write(
                 f"pydantic-extra-forbid: --enforce-modified could not read the diff, "
                 f"failing closed: {exc}\n"

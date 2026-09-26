@@ -72,6 +72,7 @@ _MAX_RECURSION_DEPTH = 100
 if TYPE_CHECKING:
     from pydantic import BaseModel
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_contract_diff_change_type import (
     EnumContractDiffChangeType,
 )
@@ -885,14 +886,18 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
             non_reversible.append(f"{fd.field_path} ({fd.change_type.value})")
 
     if non_reversible:
-        raise ValueError(
-            "Cannot generate reverse patch: diff contains scalar field changes "
-            "at paths that are not expressible as ModelContractPatch operations. "
-            "Non-reversible paths: "
-            + ", ".join(non_reversible)
-            + ". Only list-operation fields (handlers, dependencies, "
-            "consumed_events, capability_inputs, capability_outputs) and "
-            "'description' can be reversed via a patch."
+        raise ModelOnexError(
+            message=(
+                "Cannot generate reverse patch: diff contains scalar field "
+                "changes at paths that are not expressible as "
+                "ModelContractPatch operations. Non-reversible paths: "
+                + ", ".join(non_reversible)
+                + ". Only list-operation fields (handlers, dependencies, "
+                "consumed_events, capability_inputs, capability_outputs) and "
+                "'description' can be reversed via a patch."
+            ),
+            error_code=EnumCoreErrorCode.INVALID_OPERATION,
+            context={"non_reversible_paths": ", ".join(non_reversible)},
         )
 
     def _extract_identity(field_path: str) -> str:

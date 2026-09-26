@@ -148,7 +148,7 @@ def _git_changed_files(base: str) -> list[str]:
     )
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr)
-        raise SystemExit(2)
+        raise SystemExit(2)  # error-ok: validator CLI process exit
     return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
@@ -220,4 +220,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main())  # error-ok: validator CLI process exit
