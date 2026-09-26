@@ -561,6 +561,22 @@
   pass_filenames: false
   stages: [pre-commit]
 
+- id: check-no-lane-literal-branching
+  name: No branching on a runtime lane name (OMN-19760)
+  description: >
+    Structural AST guard for the runtime lane overlay model: shipped code branches on a lane's ROLE (EnumRuntimeLaneRole,
+    from the deployment's runtime.lane overlay document), never on a lane's name. Refuses ==/!=/in/match
+    of a lane-valued expression (a lane, lane_id, lane_name or *_lane name or attribute, or a read of
+    ONEX_RUNTIME_LANE) against a string literal, and a module- or class-level collection of lane-like
+    string literals bound to a *LANE* name. Carries no list of lane names. Ratchet: pass --baseline <file>
+    to grandfather today's findings by fingerprint; only new ones fail and --update-baseline refuses growth.
+    No inline suppression. Pass --repo-root so finding paths are repo-relative.
+  language: python
+  entry: python -m omnibase_core.validation.validator_no_lane_literal_branching
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
 - id: check-canonical-inference
   name: Canonical Inference Gate (OMN-13219)
   description: >
