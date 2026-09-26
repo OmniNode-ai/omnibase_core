@@ -19,7 +19,9 @@ name: Receipt Gate
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    # OMN-19512: ready_for_review re-runs the gate on the draft flip, so a
+    # draft-era red (companion declined while the PR is a draft) is refreshed.
+    types: [opened, synchronize, reopened, edited, ready_for_review]
     branches: [main, dev]
   merge_group:
     branches: [main, dev]

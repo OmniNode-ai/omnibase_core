@@ -3,13 +3,15 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 
 
 class ModelGenerationResult(BaseModel):
     """Result of code generation operations"""
+
+    model_config = ConfigDict(extra="forbid")
 
     success: bool
     files_generated: list[str]

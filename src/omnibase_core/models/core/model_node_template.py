@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -45,6 +45,8 @@ class ModelNodeTemplateConfig(BaseModel):
     This model defines the structure and options for generating new nodes
     from templates, including metadata, file mappings, and customization options.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     template_version: ModelSemVer = Field(
         ...,  # REQUIRED - specify in contract

@@ -1,16 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""
-Strongly typed models for extracted metadata blocks, decoupled from model_node_metadata.py to avoid circular imports.
-"""
+"""Strongly typed result for an extracted node metadata block."""
 
-from typing import TYPE_CHECKING
+from pydantic import BaseModel, ConfigDict, Field
 
-from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
+from omnibase_core.models.core.model_node_metadata_block import ModelNodeMetadataBlock
 
 
 class ModelExtractedBlock(BaseModel):
@@ -18,9 +13,11 @@ class ModelExtractedBlock(BaseModel):
     Result model for extract_block protocol method.
     """
 
-    metadata: "NodeMetadataBlock | None" = Field(
+    model_config = ConfigDict(extra="forbid")
+
+    metadata: ModelNodeMetadataBlock | None = Field(
         default=None,
-        description="Extracted metadata block (NodeMetadataBlock or None)",
+        description="Extracted canonical node metadata block, when present",
     )
     body: str | None = Field(
         default=None,
@@ -30,6 +27,3 @@ class ModelExtractedBlock(BaseModel):
 
 # Compatibility alias
 ExtractedBlockModel = ModelExtractedBlock
-
-# NOTE: model_rebuild() is not called here to avoid circular import issues.
-# If runtime forward reference resolution is needed, call ModelExtractedBlock.model_rebuild() after all models are loaded (e.g., in CLI entrypoint or test setup).

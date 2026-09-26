@@ -9,13 +9,15 @@ Pydantic model for version-specific testing information.
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_version_file import ModelVersionFile
 
 
 class ModelVersionTesting(BaseModel):
     """Version-specific testing information."""
+
+    model_config = ConfigDict(extra="forbid")
 
     test_files: list[ModelVersionFile] = Field(
         default_factory=list,

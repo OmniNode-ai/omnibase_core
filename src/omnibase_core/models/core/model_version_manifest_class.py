@@ -10,7 +10,7 @@ Represents specific version implementations with contract compliance and validat
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_contract_compliance import EnumContractCompliance
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -37,6 +37,8 @@ class ModelVersionManifest(BaseModel):
     Defines version-specific implementation details, contract compliance,
     testing status, and deployment configuration.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # === VERSION IDENTITY ===
     version: SemVerField = Field(description="Semantic version identifier")
