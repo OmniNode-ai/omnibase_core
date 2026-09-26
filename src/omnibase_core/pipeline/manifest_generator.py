@@ -707,11 +707,21 @@ class ManifestGenerator:
 
         # Invoke on_manifest_built callbacks (OMN-1203: corpus capture hook)
         # Snapshot the list to prevent modification during iteration
+        # fallback-ok: this is observer notification, not the manifest build. The
+        # manifest is already fully constructed above; ``on_manifest_built`` is an
+        # out-of-band capture hook (OMN-1203) that observers register on a
+        # generator they do not own. Re-raising would let one observer's defect
+        # deny a correctly built manifest to its caller and to every later
+        # observer -- an unrelated third party deciding the build failed. The
+        # failure is not swallowed: it is surfaced to the caller's warning filters
+        # via warnings.warn with the callback's repr, and the loop continues so the
+        # remaining observers still run. Pinned by
+        # tests/unit/pipeline/test_manifest_generator.py::
+        # test_callback_exception_logged_not_raised.
         for callback in list(self._on_manifest_built):
             try:
                 callback(manifest)
-            except Exception as e:  # noqa: BLE001  # callback-resilience-ok: callbacks must not crash manifest build
-                # callback-resilience-ok: callbacks must not crash manifest build
+            except Exception as e:  # noqa: BLE001 — observer failure must not deny the built manifest
                 warnings.warn(
                     f"on_manifest_built callback failed: {e!r}. "
                     "Manifest was built successfully but callback raised an exception.",

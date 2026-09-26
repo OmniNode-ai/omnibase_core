@@ -8,6 +8,7 @@ This model provides strongly typed data masking without using Any types.
 """
 
 from pydantic import BaseModel, Field
+from pydantic.errors import PydanticUndefinedAnnotation
 
 from omnibase_core.types.type_serializable_value import (
     SerializableValue,
@@ -92,5 +93,5 @@ class ModelMaskData(BaseModel):
 
 try:
     ModelMaskData.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
+except PydanticUndefinedAnnotation:
     pass

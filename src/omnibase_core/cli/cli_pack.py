@@ -55,6 +55,9 @@ def _validate_metadata(metadata_path: Path) -> dict[str, object]:
     return metadata
 
 
+_VERSION_KEYS: tuple[str, ...] = ("contract_version", "node_version", "version")
+
+
 def _validate_contract(contract_path: Path) -> dict[str, object]:
     """Validate contract.yaml and return parsed contents."""
     import yaml
@@ -72,17 +75,32 @@ def _validate_contract(contract_path: Path) -> dict[str, object]:
     if "name" not in contract:
         raise click.ClickException("contract.yaml missing required field: name")
 
-    has_version = (
-        "contract_version" in contract
-        or "node_version" in contract
-        or "version" in contract
-    )
-    if not has_version:
+    if not any(key in contract for key in _VERSION_KEYS):
         raise click.ClickException(
             "contract.yaml missing version field (contract_version, node_version, or version)"
         )
 
     return contract
+
+
+def _resolve_contract_version(contract: dict[str, object]) -> object:
+    """Return the version a contract declares, under the first key that carries one.
+
+    Precedence is ``contract_version`` > ``node_version`` > ``version``, the same
+    order :func:`_validate_contract` checks for presence. Raises rather than
+    degrading to a ``"?"`` placeholder: ``_validate_contract`` has already refused
+    a contract declaring none of the three keys, so reaching the end of this loop
+    means a key is present but empty -- a malformed contract, which the packer
+    must report rather than render as a question mark.
+    """
+    for key in _VERSION_KEYS:
+        value = contract.get(key)
+        if value:
+            return value
+    raise click.ClickException(
+        "contract.yaml declares a version field with no value "
+        f"(one of {', '.join(_VERSION_KEYS)})"
+    )
 
 
 def _check_handlers(node_dir: Path, contract: dict[str, object]) -> list[str]:
@@ -186,11 +204,7 @@ def cli_pack(
     # Step 2: Validate contract.yaml
     contract_path = node_dir / "contract.yaml"
     contract = _validate_contract(contract_path)
-    contract_version = (
-        contract.get("contract_version")
-        or contract.get("node_version")
-        or contract.get("version", "?")
-    )
+    contract_version = _resolve_contract_version(contract)
     if isinstance(contract_version, dict):
         contract_version = f"{contract_version.get('major', '?')}.{contract_version.get('minor', '?')}.{contract_version.get('patch', '?')}"
     if verbose:

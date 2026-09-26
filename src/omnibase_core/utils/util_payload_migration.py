@@ -262,6 +262,24 @@ def convert_dict_to_typed_payload(
         ) from e
 
 
+def _coerce_node_kind(value: str) -> EnumNodeKind | None:
+    """Coerce a wire string to :class:`EnumNodeKind` by value, then by NAME.
+
+    Returns ``None`` when the string is neither, so the caller can leave the raw
+    value in place for Pydantic to reject with a typed validation error. The two
+    lookups are sequential rather than nested so that neither failure hides the
+    other.
+    """
+    try:
+        return EnumNodeKind(value)
+    except ValueError:
+        pass
+    try:
+        return EnumNodeKind[value.upper()]
+    except KeyError:
+        return None
+
+
 def _prepare_dict_for_conversion(
     data: LegacyDictPayload,
     payload_class: type[ModelEventPayloadUnion],
@@ -300,15 +318,12 @@ def _prepare_dict_for_conversion(
         and isinstance(data.get(node_type_key), str)
     ):
         node_type_value = data.get(node_type_key)
-        try:
-            data[node_type_key] = EnumNodeKind(node_type_value)
-        except ValueError:
-            # Try uppercase conversion
-            try:
-                data[node_type_key] = EnumNodeKind[str(node_type_value).upper()]
-            except KeyError:
-                # Leave as-is; Pydantic will handle the validation error
-                pass
+        coerced = _coerce_node_kind(str(node_type_value))
+        if coerced is not None:
+            data[node_type_key] = coerced
+        # Otherwise leave the raw string in place: Pydantic raises the typed
+        # validation error for it, which is a better diagnostic than anything this
+        # migration shim could synthesise.
 
     return data
 

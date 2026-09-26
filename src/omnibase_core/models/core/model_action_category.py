@@ -10,6 +10,7 @@ Defines the categories of node actions as a proper Pydantic model.
 from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator
+from pydantic.errors import PydanticUndefinedAnnotation
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -95,5 +96,5 @@ class ModelActionCategory(BaseModel):
 
 try:
     ModelActionCategory.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
+except PydanticUndefinedAnnotation:
     pass

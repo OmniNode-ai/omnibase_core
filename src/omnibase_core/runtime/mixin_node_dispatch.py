@@ -353,6 +353,14 @@ class MixinNodeDispatch:
         matcher = entry.payload_type_matcher
         if matcher is None:
             return True
+        # fallback-ok: this is not error suppression, it is the matcher protocol.
+        # ``payload_type_matcher`` is a caller-supplied predicate asked "is this
+        # payload yours?"; the live engine treats a raising matcher as a negative
+        # answer, and this mixin exists to reproduce the engine's selection tuple
+        # byte-for-byte. Propagating instead would let one mis-typed payload fail
+        # selection for every dispatcher on the topic, and would diverge from the
+        # engine. Pinned by tests/unit/runtime/test_mixin_node_dispatch.py::
+        # test_raising_matcher_is_treated_as_non_match.
         try:
             return bool(matcher(payload))
         except Exception:  # noqa: BLE001 — a raising matcher means "not my type"
@@ -480,6 +488,15 @@ class MixinNodeDispatch:
         deriver = self._state().dlq_topic_deriver
         if deriver is None:
             return None
+        # fallback-ok: the DLQ topic is a field of the NO_DISPATCHER result, not a
+        # precondition of selection. ``dlq_topic_deriver`` is caller-supplied, and
+        # the live engine this mixin mirrors does not fail selection when it
+        # raises; a message that already has no dispatcher would instead be turned
+        # into a hard selection error. The degraded outcome is not silent -- it is
+        # visible in the returned ModelDispatchResult as ``dlq_topic=None``, which
+        # callers already handle for the no-deriver-configured case. Pinned by
+        # tests/unit/runtime/test_mixin_node_dispatch.py::
+        # test_deriver_raise_is_swallowed_to_none.
         try:
             return deriver(event_type, topic)
         except Exception:  # noqa: BLE001 — DLQ derivation must never crash selection

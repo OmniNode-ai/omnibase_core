@@ -193,11 +193,13 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     complete_metadata["version"] = version_value
                 # Ensure hash is valid (replace invalid with placeholder)
                 complete_metadata["hash"] = hash_value
-                try:
-                    metadata_block = NodeMetadataBlock(**complete_metadata)
-                except (pydantic.ValidationError, TypeError):
-                    # If still failing, use model_validate as last resort
-                    metadata_block = NodeMetadataBlock.model_validate(complete_metadata)
+                # model_validate is the strict superset of ``NodeMetadataBlock(**d)``
+                # (it accepts the same mapping and additionally tolerates keys that
+                # are not valid identifiers), so the former nested "last resort"
+                # fallback could only ever re-raise the same pydantic.ValidationError
+                # one frame deeper. Call the superset once and let a genuinely
+                # unconstructable block propagate.
+                metadata_block = NodeMetadataBlock.model_validate(complete_metadata)
 
         # At this point metadata_block is always NodeMetadataBlock
         # (either passed directly or converted from dict above)

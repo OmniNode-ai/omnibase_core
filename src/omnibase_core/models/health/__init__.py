@@ -5,6 +5,8 @@
 Health domain models for ONEX.
 """
 
+from pydantic.errors import PydanticUndefinedAnnotation
+
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 
 from .model_baseline_health_report import ModelBaselineHealthReport
@@ -43,8 +45,9 @@ __all__: list[str] = [
 try:
     ModelHealthStatus.model_rebuild()
     ModelToolHealth.model_rebuild()
-except Exception:  # noqa: BLE001  # init-errors-ok: model_rebuild may fail during circular import resolution
-    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
+except (ImportError, PydanticUndefinedAnnotation):
+    # Forward reference not resolvable at this import point (cycle not yet closed);
+    # the importer that closes the cycle rebuilds it. Every other error propagates.
     pass
 
 # Resolve forward reference for ModelHealthCheckMetadata.custom_fields
@@ -63,6 +66,7 @@ try:
         _types_namespace={"ModelCustomFields": _ModelCustomFields}
     )
     ModelHealthCheckConfig.model_rebuild()
-except Exception:  # noqa: BLE001  # init-errors-ok: model_rebuild may fail during circular import resolution
-    # init-errors-ok: model_rebuild may fail during circular import resolution, safe to ignore
+except (ImportError, PydanticUndefinedAnnotation):
+    # Forward reference not resolvable at this import point (cycle not yet closed);
+    # the importer that closes the cycle rebuilds it. Every other error propagates.
     pass

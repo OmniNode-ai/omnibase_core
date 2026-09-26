@@ -66,6 +66,11 @@ class ServiceStateDisk:
             os.close(fd)
             closed = True
             Path(tmp_path).rename(path)
+        # fallback-ok: BaseException (not Exception) is required here because the raw
+        # file descriptor must also be closed when the write is interrupted by
+        # KeyboardInterrupt or SystemExit, which are not Exception subclasses;
+        # narrowing would leak an fd for the process lifetime on Ctrl-C. Nothing is
+        # swallowed: the handler only closes the fd and then re-raises unconditionally.
         except BaseException:
             if not closed:
                 os.close(fd)

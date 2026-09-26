@@ -5,6 +5,8 @@
 Detection domain models for ONEX.
 """
 
+from pydantic.errors import PydanticUndefinedAnnotation
+
 from .model_detection_rule_metadata import ModelDetectionRuleMetadata
 from .model_service_detection_config import ModelServiceDetectionConfig
 
@@ -18,6 +20,7 @@ try:
     )
 
     ModelServiceDetectionConfig.model_rebuild()
-except Exception:  # noqa: BLE001  # init-errors-ok: model_rebuild may fail during circular import resolution
-    # init-errors-ok: may fail during circular import, safe to ignore
+except (ImportError, PydanticUndefinedAnnotation):
+    # Forward reference not resolvable at this import point (cycle not yet closed);
+    # the importer that closes the cycle rebuilds it. Every other error propagates.
     pass

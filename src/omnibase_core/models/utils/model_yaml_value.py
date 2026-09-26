@@ -6,6 +6,7 @@ YAML-serializable data structures model with discriminated union.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.errors import PydanticUndefinedAnnotation
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
@@ -127,7 +128,7 @@ class ModelYamlValue(BaseModel):
 # Rebuild model to resolve forward references for self-referential fields
 try:
     ModelYamlValue.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
+except PydanticUndefinedAnnotation:
     pass
 
 

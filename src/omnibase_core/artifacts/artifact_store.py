@@ -573,6 +573,11 @@ class ArtifactStore:
             with os.fdopen(fd, "wb") as handle:
                 handle.write(data)
             tmp_path.replace(dest)
+        # fallback-ok: BaseException (not Exception) is required here because the temp
+        # file must also be removed when the write is interrupted by KeyboardInterrupt
+        # or SystemExit, which are not Exception subclasses; narrowing would leave an
+        # orphan .<name>.tmp* blob in the artifact store on Ctrl-C. Nothing is
+        # swallowed: the handler only unlinks and then re-raises unconditionally.
         except BaseException:
-            tmp_path.unlink(missing_ok=True)  # cleanup-resilience-ok: remove temp file
+            tmp_path.unlink(missing_ok=True)
             raise

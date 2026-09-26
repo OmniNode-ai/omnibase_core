@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import difflib
 import os
 import tempfile
@@ -63,12 +64,16 @@ def _write_mask(path: Path, mask: int) -> None:
         with os.fdopen(fd, "w") as f:
             f.write("\n".join(lines) + "\n")
         Path(tmp).replace(path)
+    # fallback-ok: BaseException (not Exception) is required here because the temp
+    # file must also be removed when the write is interrupted by KeyboardInterrupt or
+    # SystemExit, which are not Exception subclasses; narrowing would leak a
+    # .env_tmp_* file into the user's config directory on Ctrl-C. Nothing is
+    # swallowed: the handler only unlinks and then re-raises unconditionally.
+    # suppress(OSError) covers cleanup failure alone, preserving the original
+    # write/replace exception as the one that propagates.
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):
             Path(tmp).unlink()
-        except OSError:
-            # Preserve the original write/replace exception if temp cleanup fails.
-            pass
         raise
 
 

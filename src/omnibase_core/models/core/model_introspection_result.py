@@ -6,6 +6,7 @@ Model for introspection command results.
 """
 
 from pydantic import BaseModel, Field
+from pydantic.errors import PydanticUndefinedAnnotation
 
 from omnibase_core.models.core.model_introspection_metadata import (
     ModelIntrospectionMetadata,
@@ -26,5 +27,5 @@ class ModelIntrospectionResult(BaseModel):
 
 try:
     ModelIntrospectionResult.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
+except PydanticUndefinedAnnotation:
     pass

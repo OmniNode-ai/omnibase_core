@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from pydantic import BaseModel, Field
+from pydantic.errors import PydanticUndefinedAnnotation
 
 from omnibase_core.models.core.model_group_service_endpoint import (
     ModelGroupServiceEndpoint,
@@ -35,5 +36,5 @@ class ModelGroupServiceConfiguration(BaseModel):
 
 try:
     ModelGroupServiceConfiguration.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
+except PydanticUndefinedAnnotation:
     pass

@@ -169,17 +169,19 @@ class ModelCliResultMetadata(BaseModel):
         if isinstance(v, EnumRetentionPolicy):
             return v
         if isinstance(v, str):
-            try:
-                return EnumRetentionPolicy(v)
-            except ValueError:
-                # Try uppercase
+            # Flat candidate loop rather than a nested try/except chain: exact match
+            # then uppercase, and exhaustion raises one typed error carrying the last
+            # ValueError as its cause.
+            last_error: ValueError | None = None
+            for candidate in (v, v.upper()):
                 try:
-                    return EnumRetentionPolicy(v.upper())
-                except ValueError:
-                    raise ModelOnexError(
-                        message=f"Invalid retention policy: {v}",
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    )
+                    return EnumRetentionPolicy(candidate)
+                except ValueError as exc:
+                    last_error = exc
+            raise ModelOnexError(
+                message=f"Invalid retention policy: {v}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            ) from last_error
         raise ModelOnexError(
             message=f"Invalid retention policy type: {type(v)}",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

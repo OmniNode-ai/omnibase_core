@@ -10,6 +10,7 @@ Tier 2: Tool-level metadata model with comprehensive tool definition.
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
+from pydantic.errors import PydanticUndefinedAnnotation
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -339,5 +340,5 @@ try:
     from omnibase_core.models.core.model_tool_version import ModelToolVersion
 
     ModelToolManifest.model_rebuild()
-except Exception:  # noqa: BLE001  # catch-all-ok: circular import protection during model rebuild
+except (ImportError, PydanticUndefinedAnnotation):
     pass
