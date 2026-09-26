@@ -43,7 +43,6 @@ import argparse
 import re
 import sys
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
@@ -51,6 +50,10 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
+from omnibase_core.validation.diff_consistency_violation import (
+    DiffConsistencyViolation,
+)
+from omnibase_core.validation.receipt_diff_finding import ReceiptDiffFinding
 
 _RECEIPT_PREFIX = "drift/dod_receipts/"
 _CONTRACT_PREFIX = "contracts/"
@@ -67,21 +70,6 @@ _NET_NEW_CLAIM_RES: tuple[re.Pattern[str], ...] = (
     ),
     re.compile(r"net[- ]new[- ]only", re.IGNORECASE),
 )
-
-
-@dataclass(frozen=True)
-class DiffConsistencyViolation:
-    """One attestation contradicted by the PR diff.
-
-    Attributes:
-        attestation: The diff-falsifiable claim that was contradicted.
-        detail: Human-readable explanation naming the offending diff entries.
-        receipt_path: Path to the receipt on disk (empty when checked in-memory).
-    """
-
-    attestation: EnumDiffAttestation
-    detail: str
-    receipt_path: Path = field(default_factory=Path)
 
 
 def _normalize_name_status(
@@ -237,14 +225,6 @@ def check_diff_consistency(
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class ReceiptDiffFinding:
-    """All diff-consistency violations found for one receipt file on disk."""
-
-    receipt_path: Path
-    violations: list[DiffConsistencyViolation]
-
-
 def parse_name_status(text: str) -> list[tuple[str, str]]:
     """Parse ``git diff --name-status`` output into ``(status, path)`` pairs.
 
@@ -328,7 +308,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         git diff --name-status "origin/dev"...HEAD > /tmp/diff_name_status.txt
         python -m omnibase_core.validation.validator_receipt_diff_consistency \\
             --diff-file /tmp/diff_name_status.txt \\
-            drift/dod_receipts/OMN-XXXX/item/command.yaml ...
+            drift/dod_receipts/OMN-13927/item/command.yaml ...
 
     Exit codes:
         0 — no contradicted attestations
@@ -393,9 +373,7 @@ if __name__ == "__main__":
 
 
 __all__ = [
-    "DiffConsistencyViolation",
     "EnumDiffAttestation",
-    "ReceiptDiffFinding",
     "check_diff_consistency",
     "main",
     "parse_name_status",

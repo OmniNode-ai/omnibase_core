@@ -20,6 +20,7 @@ from omnibase_core.enums.artifacts.enum_artifact_redaction_state import (
 from omnibase_core.enums.artifacts.enum_artifact_retention_class import (
     EnumArtifactRetentionClass,
 )
+from omnibase_core.types.type_semantic_id import ArtifactWriterVersion
 
 __all__ = ["ModelArtifactMetadata"]
 
@@ -108,7 +109,7 @@ class ModelArtifactMetadata(BaseModel):
         ...,
         description="ISO-8601 UTC timestamp of creation.",
     )
-    writer_version: str = Field(
+    writer_version: ArtifactWriterVersion = Field(
         ...,
         min_length=1,
         description="Sidecar generation marker of the writer that produced it.",

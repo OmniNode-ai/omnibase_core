@@ -11,6 +11,7 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_routing_error_class import RoutingErrorClass
+from omnibase_core.types.type_semantic_id import LlmModelId, RoutingDecisionId
 
 
 class ModelLlmRouteRejectedEvent(BaseModel):
@@ -18,15 +19,15 @@ class ModelLlmRouteRejectedEvent(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    routing_decision_id: str = Field(
+    routing_decision_id: RoutingDecisionId = Field(
         ..., description="Stable identifier for this routing decision."
     )
     correlation_id: str = Field(..., description="Originating correlation id.")
     logical_model_key: str = Field(
         ..., description="Logical model key requested by policy."
     )
-    served_model_id: str = Field(
-        default="",
+    served_model_id: LlmModelId = Field(
+        default=LlmModelId(""),
         description="Concrete model id if any model was attempted.",
     )
     endpoint_ref: str = Field(

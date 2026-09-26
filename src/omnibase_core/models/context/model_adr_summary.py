@@ -10,6 +10,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.context.model_context_provenance import ModelContextProvenance
+from omnibase_core.types.type_semantic_id import AdrId
 
 __all__ = ["ModelADRSummary"]
 
@@ -19,11 +20,7 @@ class ModelADRSummary(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    adr_id: str = (
-        Field(  # string-id-ok: ADR identifiers are human-readable slugs, not UUIDs
-            description="Stable ADR identifier (e.g. ADR-001)"
-        )
-    )
+    adr_id: AdrId = Field(description="Stable human-readable ADR identifier")
     title: str = Field(description="ADR title")
     decision: str = Field(description="One-sentence decision summary")
     status: Literal["accepted", "deprecated", "superseded", "proposed"] = Field(

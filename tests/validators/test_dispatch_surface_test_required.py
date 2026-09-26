@@ -6,9 +6,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+import omnibase_core.validators.dispatch_surface_test_required as dispatch_gate
 from omnibase_core.validators.dispatch_surface_test_required import (
     is_dispatch_surface,
     is_real_dispatch_test,
@@ -84,3 +86,18 @@ def test_main_respects_suppression_token(tmp_path: Path) -> None:
     surface.parent.mkdir(parents=True)
     surface.write_text("x = 1  # dispatch-surface-test-ok: comment-only edit\n")
     assert main([str(surface)]) == 0
+
+
+def test_main_maps_typed_git_failure_to_internal_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(
+        dispatch_gate.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=1, stdout="", stderr="fatal: bad base"
+        ),
+    )
+
+    assert main(["--base", "missing-ref"]) == 2
+    assert "fatal: bad base" in capsys.readouterr().err

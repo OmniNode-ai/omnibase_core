@@ -19,6 +19,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_override_config import (
     ModelAntipatternOverrideConfig,
 )
@@ -45,7 +46,7 @@ class TestLoadDefaultAntipatterns:
 
     def test_version_present(self) -> None:
         result = load_default_antipatterns()
-        assert result.version != ""
+        assert str(result.version) == "1.0.0"
 
 
 @pytest.mark.unit
@@ -179,7 +180,7 @@ class TestMergeAntipatterns:
                 "overrides": [{"name": "nonexistent_rule_xyz", "severity": "ERROR"}],
             }
         )
-        with pytest.raises(ValueError, match="nonexistent_rule_xyz"):
+        with pytest.raises(ModelOnexError, match="nonexistent_rule_xyz"):
             merge_antipatterns(defaults, config)
 
 

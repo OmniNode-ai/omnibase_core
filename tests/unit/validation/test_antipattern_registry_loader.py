@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_registry import (
     ModelAntipatternRegistry,
 )
@@ -54,7 +55,7 @@ class TestLoadDefaultRegistry:
 
     def test_version_present(self) -> None:
         registry = load_default_registry()
-        assert registry.version != ""
+        assert str(registry.version) == "1.0.0"
 
     def test_all_aislop_rules_present(self) -> None:
         registry = load_default_registry()
@@ -153,7 +154,7 @@ class TestResolveAntipatterns:
                 }
             )
         )
-        with pytest.raises(ValueError, match="nonexistent_rule"):
+        with pytest.raises(ModelOnexError, match="nonexistent_rule"):
             resolve_antipatterns(tmp_path)
 
     def test_custom_entries_appended(self, tmp_path: Path) -> None:

@@ -9,6 +9,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.types.type_semantic_id import ExternalSourceId
+
 __all__ = ["ModelContextProvenance"]
 
 
@@ -20,10 +22,8 @@ class ModelContextProvenance(BaseModel):
     source: str = Field(
         description="Backend that produced this item (e.g. repowise, linear)"
     )
-    source_id: str = (
-        Field(  # string-id-ok: external system identifier, not an internal UUID
-            description="Stable identifier within the source system"
-        )
+    source_id: ExternalSourceId = Field(
+        description="Stable identifier within the external source system"
     )
     source_hash: str = Field(description="Content hash for cache invalidation")
     retrieved_at: datetime = Field(

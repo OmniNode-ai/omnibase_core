@@ -27,9 +27,13 @@ from pathlib import Path
 
 import yaml
 
-from omnibase_core.models.validation.model_occ_append_only_result import (
+from omnibase_core.enums.enum_append_only_violation_kind import (
     EnumAppendOnlyViolationKind,
+)
+from omnibase_core.models.validation.model_append_only_violation import (
     ModelAppendOnlyViolation,
+)
+from omnibase_core.models.validation.model_occ_append_only_result import (
     ModelOccAppendOnlyResult,
 )
 from omnibase_core.validation.validator_receipt_gate import (

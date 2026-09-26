@@ -38,7 +38,9 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_topic_schema_delta import EnumTopicSchemaDelta
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.model_canonical_topic import ModelCanonicalTopic
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -56,14 +58,17 @@ def parse_canonical_topic(topic: str) -> ModelCanonicalTopic:
     """Parse a canonical ONEX topic into its structured parts.
 
     Raises:
-        ValueError: if ``topic`` does not match the canonical format
+        ModelOnexError: if ``topic`` does not match the canonical format
             ``onex.<kind>.<service>.<event>[.<event>...].v<N>``.
     """
     match = _CANONICAL_TOPIC_RE.match(topic)
     if match is None:
-        raise ValueError(
-            f"Topic {topic!r} does not match canonical ONEX format "
-            "onex.<kind>.<service>.<event>[.<event>...].v<N>"
+        raise ModelOnexError(
+            message=(
+                f"Topic {topic!r} does not match canonical ONEX format "
+                "onex.<kind>.<service>.<event>[.<event>...].v<N>"
+            ),
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
     return ModelCanonicalTopic(
         namespace=match.group("namespace"),
@@ -86,14 +91,20 @@ def build_versioned_topic(
     General builder addressing the gap that only ``build_dlq_topic`` existed.
 
     Raises:
-        ValueError: on invalid kind, version, or segment characters.
+        ModelOnexError: on invalid kind, version, or segment characters.
     """
     if kind not in ("cmd", "evt", "dlq", "snapshot", "intent"):
-        raise ValueError(
-            f"Invalid topic kind {kind!r}; expected cmd|evt|dlq|snapshot|intent"
+        raise ModelOnexError(
+            message=(
+                f"Invalid topic kind {kind!r}; expected cmd|evt|dlq|snapshot|intent"
+            ),
+            error_code=EnumCoreErrorCode.INVALID_PARAMETER,
         )
     if version < 1:
-        raise ValueError(f"Topic version must be >= 1, got {version}")
+        raise ModelOnexError(
+            message=f"Topic version must be >= 1, got {version}",
+            error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
+        )
     topic = f"onex.{kind}.{service}.{event}.v{version}"
     # Validate by round-tripping through the canonical parser.
     parse_canonical_topic(topic)

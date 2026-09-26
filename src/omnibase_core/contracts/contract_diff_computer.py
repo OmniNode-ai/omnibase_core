@@ -75,6 +75,7 @@ if TYPE_CHECKING:
 from omnibase_core.enums.enum_contract_diff_change_type import (
     EnumContractDiffChangeType,
 )
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.diff.model_contract_diff import ModelContractDiff
@@ -863,7 +864,7 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
         ``ModelContractPatch`` encoding the list-operation inverses.
 
     Raises:
-        ValueError: If the diff contains scalar field changes at paths that
+        ModelOnexError: If the diff contains scalar field changes at paths that
             cannot be expressed as patch operations (i.e. anything other than
             ``description``), or if removed object-typed list items would need
             full model reconstruction that is not possible from the diff alone.
@@ -885,14 +886,17 @@ def generate_reverse_patch(diff: ModelContractDiff) -> ModelContractPatch:
             non_reversible.append(f"{fd.field_path} ({fd.change_type.value})")
 
     if non_reversible:
-        raise ValueError(
-            "Cannot generate reverse patch: diff contains scalar field changes "
-            "at paths that are not expressible as ModelContractPatch operations. "
-            "Non-reversible paths: "
-            + ", ".join(non_reversible)
-            + ". Only list-operation fields (handlers, dependencies, "
-            "consumed_events, capability_inputs, capability_outputs) and "
-            "'description' can be reversed via a patch."
+        raise ModelOnexError(
+            message=(
+                "Cannot generate reverse patch: diff contains scalar field changes "
+                "at paths that are not expressible as ModelContractPatch operations. "
+                "Non-reversible paths: "
+                + ", ".join(non_reversible)
+                + ". Only list-operation fields (handlers, dependencies, "
+                "consumed_events, capability_inputs, capability_outputs) and "
+                "'description' can be reversed via a patch."
+            ),
+            error_code=EnumCoreErrorCode.INVALID_OPERATION,
         )
 
     def _extract_identity(field_path: str) -> str:

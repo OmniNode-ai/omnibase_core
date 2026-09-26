@@ -69,6 +69,7 @@ from omnibase_core.models.projectors.model_projection_intent import (
     ModelProjectionIntent,
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.types.type_semantic_id import DispatcherId
 
 
 class ModelDispatchResult(BaseModel):
@@ -146,7 +147,7 @@ class ModelDispatchResult(BaseModel):
         default=None,
         description="Identifier of the route that was matched (if any).",
     )
-    dispatcher_id: str | None = Field(
+    dispatcher_id: DispatcherId | None = Field(
         default=None,
         description="Identifier of the dispatcher that was invoked (if any).",
     )

@@ -19,9 +19,11 @@ from pathlib import Path
 
 import pytest
 
+import omnibase_core.validators.transport_mock_lint as transport_mock_lint
 from omnibase_core.validators.transport_mock_lint import (
     SUPPRESSION_TOKEN,
     Finding,
+    main,
     validate_file,
     validate_paths,
 )
@@ -384,3 +386,14 @@ class TestAttributeStyleImport:
         )
         findings = validate_file(p)
         assert findings == []
+
+
+@pytest.mark.unit
+def test_main_maps_typed_baseline_failure_to_internal_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = _test_file(tmp_path, "test_clean.py", "event_bus = object()\n")
+    monkeypatch.setattr(transport_mock_lint, "_YAML_AVAILABLE", False)
+
+    assert main(["--baseline", str(tmp_path / "baseline.yaml"), str(path)]) == 2
+    assert "PyYAML not available" in capsys.readouterr().err

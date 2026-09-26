@@ -61,6 +61,9 @@ import sys
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 __all__ = [
     "DISPATCH_SURFACE_PATTERNS",
     "REAL_DISPATCH_TEST_MARKERS",
@@ -147,8 +150,10 @@ def _git_changed_files(base: str) -> list[str]:
         check=False,
     )
     if proc.returncode != 0:
-        sys.stderr.write(proc.stderr)
-        raise SystemExit(2)
+        raise ModelOnexError(
+            message=f"git diff failed: {proc.stderr.strip() or 'no stderr'}",
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+        )
     return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
@@ -212,7 +217,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.base is not None:
-        paths = _git_changed_files(args.base)
+        try:
+            paths = _git_changed_files(args.base)
+        except ModelOnexError as exc:
+            sys.stderr.write(f"dispatch-surface-test-required: {exc}\n")
+            return 2
     else:
         paths = list(args.files)
 
@@ -220,4 +229,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # error-ok: CLI process boundary maps result to exit status
     raise SystemExit(main())

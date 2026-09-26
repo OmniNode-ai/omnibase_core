@@ -72,4 +72,3 @@ allowlist:
   - "omnibase_core.validation.pin_hygiene.runtime_pin_hygiene:PinHygieneBusRunner"
   - "omnibase_core.validation.private_ip.runtime_private_ip:PrivateIpBusRunner"
   - "omnibase_core.validation.todo_marker.runtime_todo_marker:TodoMarkerBusRunner"
-  - "omnibase_core.validation.validator_demo_path_topic_coherence:DemoPathTopicRegistry"

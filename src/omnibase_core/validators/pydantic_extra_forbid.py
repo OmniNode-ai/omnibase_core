@@ -79,18 +79,17 @@ from __future__ import annotations
 
 import argparse
 import ast
-import importlib
-import importlib.util
 import json
 import subprocess
 import sys
 from collections.abc import Iterator, Sequence
 from datetime import UTC, date, datetime
 from pathlib import Path
-from types import ModuleType
 
 import yaml
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_extra_forbid_finding import (
     ENGINE_RUNTIME,
     ENGINE_STATIC,
@@ -100,6 +99,11 @@ from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_IMPLICIT_DEFAULT,
     STATUS_UNRESOLVED,
     ModelExtraForbidFinding,
+)
+from omnibase_core.validators.pydantic_extra_forbid_module_index import ModuleIndex
+from omnibase_core.validators.pydantic_extra_forbid_path import module_for_path
+from omnibase_core.validators.pydantic_extra_forbid_runtime_resolver import (
+    RuntimeResolver,
 )
 
 DEFAULT_SCAN_ROOT = Path("src/omnibase_core")
@@ -127,94 +131,13 @@ _STATUS_BY_EXTRA: dict[str, str] = {
 
 
 # ---------------------------------------------------------------------------
-# Module <-> path resolution (extractor bug #4: path-format mismatch)
-# ---------------------------------------------------------------------------
-def module_for_path(path: Path) -> tuple[str, Path]:
-    """Return the dotted module name for *path* and the sys.path root it hangs off.
-
-    Anchors on the ``src/`` root when there is one, and only otherwise falls back to
-    walking up while ``__init__.py`` exists. The ``src/`` anchor is required because
-    the ``__init__.py`` walk is WRONG for an implicit namespace package — e.g.
-    ``src/omnibase_core/models/registry/`` has no ``__init__.py``, and the walk would
-    resolve its modules to bare top-level names, breaking both the import and the FQN.
-
-    Always operates on resolved absolute paths — the relative/absolute mismatch is one
-    of the four known extractor bugs.
-    """
-    resolved = path.resolve()
-    parts_list = resolved.parts
-    src_indices = [i for i, part in enumerate(parts_list) if part == "src"]
-
-    if src_indices:
-        root = Path(*parts_list[: src_indices[-1] + 1])
-        parts = list(parts_list[src_indices[-1] + 1 : -1])
-    else:
-        parts = []
-        directory = resolved.parent
-        while (directory / "__init__.py").exists():
-            parts.insert(0, directory.name)
-            directory = directory.parent
-        root = directory
-
-    stem = resolved.stem
-    if stem != "__init__":
-        parts.append(stem)
-    return ".".join(parts), root
-
-
-# ---------------------------------------------------------------------------
 # Static AST engine
 # ---------------------------------------------------------------------------
-class _ModuleIndex:
-    """Parsed view of one module: its classes and its import bindings."""
-
-    __slots__ = ("classes", "imports", "module", "path")
-
-    def __init__(self, path: Path, module: str, tree: ast.Module) -> None:
-        self.path = path
-        self.module = module
-        self.classes: dict[str, ast.ClassDef] = {}
-        # local binding name -> (defining module, original class name)
-        self.imports: dict[str, tuple[str, str]] = {}
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
-                self.classes.setdefault(node.name, node)
-
-        package = module.rsplit(".", 1)[0] if "." in module else ""
-        for node in tree.body:
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    self.imports[alias.asname or alias.name.split(".")[0]] = (
-                        alias.name,
-                        "",
-                    )
-            elif isinstance(node, ast.ImportFrom):
-                source = _absolute_import_module(node, package)
-                if source is None:
-                    continue
-                for alias in node.names:
-                    self.imports[alias.asname or alias.name] = (source, alias.name)
-
-
-def _absolute_import_module(node: ast.ImportFrom, package: str) -> str | None:
-    """Resolve a possibly-relative ``from ... import`` to an absolute dotted module."""
-    if not node.level:
-        return node.module
-    parts = package.split(".") if package else []
-    if node.level - 1 > len(parts):
-        return None
-    base = parts[: len(parts) - (node.level - 1)]
-    if node.module:
-        base = base + node.module.split(".")
-    return ".".join(base) if base else None
-
-
 class _StaticResolver:
     """Resolves a class's effective ``extra`` by walking bases through the import graph."""
 
     def __init__(self, roots: Sequence[Path]) -> None:
-        self._by_module: dict[str, _ModuleIndex | None] = {}
+        self._by_module: dict[str, ModuleIndex | None] = {}
         self._sys_roots: list[Path] = []
         for root in roots:
             resolved = root.resolve()
@@ -224,7 +147,7 @@ class _StaticResolver:
                 self._sys_roots.append(sys_root)
 
     # -- module loading -----------------------------------------------------
-    def index_for_path(self, path: Path) -> _ModuleIndex | None:
+    def index_for_path(self, path: Path) -> ModuleIndex | None:
         module, sys_root = module_for_path(path)
         if sys_root not in self._sys_roots:
             self._sys_roots.append(sys_root)
@@ -235,7 +158,7 @@ class _StaticResolver:
         self._by_module[module] = index
         return index
 
-    def _index_for_module(self, module: str) -> _ModuleIndex | None:
+    def _index_for_module(self, module: str) -> ModuleIndex | None:
         if module in self._by_module:
             return self._by_module[module]
         self._by_module[module] = None  # cycle guard / negative cache
@@ -360,13 +283,13 @@ class _StaticResolver:
         return out
 
 
-def _parse_module(path: Path, module: str) -> _ModuleIndex | None:
+def _parse_module(path: Path, module: str) -> ModuleIndex | None:
     try:
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
     except (OSError, UnicodeDecodeError, SyntaxError, ValueError):
         return None
-    return _ModuleIndex(path, module, tree)
+    return ModuleIndex(path, module, tree)
 
 
 def _base_name(node: ast.expr) -> str | None:
@@ -447,70 +370,6 @@ def _literal_str(node: ast.expr) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Runtime engine (authoritative): read the real, MRO-merged cls.model_config
-# ---------------------------------------------------------------------------
-class _RuntimeResolver:
-    """Imports modules and reads Pydantic's own merged ``model_config``."""
-
-    def __init__(self) -> None:
-        self._modules: dict[str, ModuleType] = {}
-        self._failed: set[str] = set()
-        self.import_failures: dict[str, str] = {}
-
-    def load(self, path: Path) -> ModuleType | None:
-        module_name, sys_root = module_for_path(path)
-        if not module_name or module_name in self._failed:
-            return None
-        if module_name in self._modules:
-            return self._modules[module_name]
-
-        root = str(sys_root)
-        if root not in sys.path:
-            sys.path.insert(0, root)
-        try:
-            module = importlib.import_module(module_name)
-        except (KeyboardInterrupt, SystemExit):
-            # Cancellation signals must always propagate (repo decorator contract);
-            # never swallow them into the static-fallback path.
-            raise
-        except Exception as exc:  # noqa: BLE001  # fallback-ok: import failure -> static-engine fallback
-            # Intentional swallow: an unimportable module falls back to the static AST
-            # engine (recorded in import_failures), it does not fail the whole scan.
-            self._failed.add(module_name)
-            self.import_failures[module_name] = f"{type(exc).__name__}: {exc}"
-            return None
-        self._modules[module_name] = module
-        return module
-
-    def verdict(
-        self, module: ModuleType, class_name: str
-    ) -> tuple[str, str | None, bool] | None:
-        """Return ``(status, effective_extra, exempt)``, or None if this is not a model.
-
-        ``cls.model_config`` is Pydantic's own config, already merged down the MRO — so
-        a model inheriting ``extra="forbid"`` from a compliant base reads back as
-        ``forbid`` here, with no hand-rolled MRO walk to get wrong.
-        """
-        from pydantic import BaseModel, RootModel
-
-        obj = getattr(module, class_name, None)
-        if not isinstance(obj, type) or not issubclass(obj, BaseModel):
-            return None
-        # The class may be a re-export from another module; only judge it where it lives.
-        if getattr(obj, "__module__", None) != getattr(module, "__name__", None):
-            return None
-        if obj is BaseModel or issubclass(obj, RootModel):
-            # Exempt: RootModel cannot carry `extra` at all. The status is unused —
-            # the caller skips on the exempt flag.
-            return STATUS_EXPLICIT_FORBID, None, True
-
-        extra = obj.model_config.get("extra")
-        if extra is None:
-            return STATUS_IMPLICIT_DEFAULT, None, False
-        return _STATUS_BY_EXTRA.get(str(extra), STATUS_UNRESOLVED), str(extra), False
-
-
-# ---------------------------------------------------------------------------
 # Scan
 # ---------------------------------------------------------------------------
 def scan_paths(
@@ -519,7 +378,7 @@ def scan_paths(
     """Return one finding per Pydantic model found under *paths* (compliant included)."""
     files = list(_iter_python_files(paths))
     static = _StaticResolver(paths)
-    runtime = _RuntimeResolver() if use_runtime else None
+    runtime = RuntimeResolver() if use_runtime else None
 
     results: list[ModelExtraForbidFinding] = []
     for path in files:
@@ -717,7 +576,7 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
     """Map absolute file path -> changed line ranges for *ref*.
 
     ``ref`` is either ``":staged"`` (pre-commit) or a git ref such as ``origin/dev``
-    (CI, diffed as ``<ref>...HEAD``). Raises ``RuntimeError`` on git failure — the
+    (CI, diffed as ``<ref>...HEAD``). Raises ``ModelOnexError`` on git failure — the
     caller fails closed rather than silently skipping the check.
     """
     if ref == STAGED_REF:
@@ -730,11 +589,17 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             args, cwd=cwd, capture_output=True, text=True, check=False
         )
     except OSError as exc:
-        raise RuntimeError(f"could not run git: {exc}") from exc
+        raise ModelOnexError(
+            message=f"could not run git: {exc}",
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+        ) from exc
     if proc.returncode != 0:
-        raise RuntimeError(
-            f"`{' '.join(args)}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip() or 'no stderr'}"
+        raise ModelOnexError(
+            message=(
+                f"`{' '.join(args)}` failed (exit {proc.returncode}): "
+                f"{proc.stderr.strip() or 'no stderr'}"
+            ),
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
         )
 
     try:
@@ -746,7 +611,10 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             check=True,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as exc:
-        raise RuntimeError(f"could not resolve the git worktree root: {exc}") from exc
+        raise ModelOnexError(
+            message=f"could not resolve the git worktree root: {exc}",
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+        ) from exc
 
     root = Path(top)
     ranges: dict[Path, list[tuple[int, int]]] = {}
@@ -924,7 +792,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.enforce_modified:
         try:
             ranges = changed_line_ranges(args.enforce_modified, Path.cwd())
-        except RuntimeError as exc:
+        except ModelOnexError as exc:
             sys.stderr.write(
                 f"pydantic-extra-forbid: --enforce-modified could not read the diff, "
                 f"failing closed: {exc}\n"

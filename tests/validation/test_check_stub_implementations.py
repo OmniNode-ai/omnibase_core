@@ -9,12 +9,30 @@ Tests various stub patterns and exclusion scenarios to ensure
 accurate detection and proper handling of legitimate cases.
 """
 
+import ast
 from pathlib import Path
 
 import pytest
 
-# Import would be: from scripts.validation.check_stub_implementations import ...
-# For testing purposes, we'll test the script execution
+from scripts.validation.check_stub_implementations import StubImplementationDetector
+
+
+def test_receipt_diff_validator_has_no_stub_findings() -> None:
+    """The split validator remains clean under the production stub detector."""
+    repo_root = Path(__file__).resolve().parents[2]
+    source_path = (
+        repo_root
+        / "src"
+        / "omnibase_core"
+        / "validation"
+        / "validator_receipt_diff_consistency.py"
+    )
+    source = source_path.read_text(encoding="utf-8")
+    detector = StubImplementationDetector(str(source_path), source.splitlines())
+
+    detector.visit(ast.parse(source, filename=str(source_path)))
+
+    assert detector.issues == []
 
 
 class TestStubDetectionPatterns:

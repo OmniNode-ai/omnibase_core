@@ -17,7 +17,10 @@
 #   ast_check            — named AST visitor check identifier
 #   semantic             — description used for vector-similarity search (vector_enabled required)
 
-version: "1.0.0"
+version:
+  major: 1
+  minor: 0
+  patch: 0
 last_updated: "2026-05-24T00:00:00+00:00"
 
 entries:

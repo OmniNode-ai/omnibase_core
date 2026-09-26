@@ -895,7 +895,7 @@ class ValidatorBase(ABC):
             str, object
         ] = {}  # ONEX_EXCLUDE: dict_str_any - KB registry metadata passed as **kwargs to ModelValidationMetadata extra fields
         if self._antipattern_registry is not None:
-            extra_metadata["antipattern_registry_version"] = (
+            extra_metadata["antipattern_registry_version"] = str(
                 self._antipattern_registry.version
             )
             extra_metadata["antipattern_registry_hash"] = self._compute_registry_hash(

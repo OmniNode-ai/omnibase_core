@@ -26,6 +26,7 @@ from omnibase_core.contracts.contract_diff_computer import (
 from omnibase_core.enums.enum_contract_diff_change_type import (
     EnumContractDiffChangeType,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.diff.model_contract_diff import ModelContractDiff
 from omnibase_core.models.contracts.diff.model_diff_configuration import (
     ModelDiffConfiguration,
@@ -1291,7 +1292,7 @@ class TestGenerateReversePatch:
         after = SampleContract(name="test", version=2)
         diff = compute_contract_diff(before, after)
 
-        with pytest.raises(ValueError, match="Non-reversible paths"):
+        with pytest.raises(ModelOnexError, match="Non-reversible paths"):
             generate_reverse_patch(diff)
 
     def test_extends_uses_before_contract_name(self) -> None:

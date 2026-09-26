@@ -50,6 +50,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.type_semantic_id import ThemeId
 
 __all__ = ["ModelRendererThemeContract"]
 
@@ -72,7 +73,7 @@ class ModelRendererThemeContract(BaseModel):
     # Identity / versioning
     # ------------------------------------------------------------------
 
-    theme_id: str = Field(
+    theme_id: ThemeId = Field(
         ...,
         description=(
             "Stable, namespaced theme identifier "

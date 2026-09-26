@@ -8,6 +8,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.context.model_context_provenance import ModelContextProvenance
+from omnibase_core.types.type_semantic_id import ExternalLearningId
 
 __all__ = ["ModelLearningMatch"]
 
@@ -17,10 +18,8 @@ class ModelLearningMatch(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    learning_id: str = (
-        Field(  # string-id-ok: external memory-system identifier, not an internal UUID
-            description="Stable identifier for this learning"
-        )
+    learning_id: ExternalLearningId = Field(
+        description="Stable identifier in the external learning system"
     )
     summary: str = Field(description="One-to-two sentence learning summary")
     relevance_score: float = Field(

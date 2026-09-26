@@ -157,7 +157,7 @@ class TestModelAntipatternEntry:
 class TestModelAntipatternRegistry:
     def _make_registry(self, **overrides: object) -> ModelAntipatternRegistry:
         defaults: dict[str, object] = {
-            "version": "1.0.0",
+            "version": {"major": 1, "minor": 0, "patch": 0},
             "last_updated": datetime(2025, 1, 15, 12, 0, 0, tzinfo=UTC),
             "entries": (_make_entry(),),
         }
@@ -166,7 +166,7 @@ class TestModelAntipatternRegistry:
 
     def test_basic_registry(self) -> None:
         reg = self._make_registry()
-        assert reg.version == "1.0.0"
+        assert str(reg.version) == "1.0.0"
         assert len(reg.entries) == 1
         assert isinstance(reg.entries, tuple)
 

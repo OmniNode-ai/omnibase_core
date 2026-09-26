@@ -16,6 +16,8 @@ from pathlib import Path
 
 import yaml
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_antipattern_entry import (
     ModelAntipatternEntry,
 )
@@ -79,7 +81,7 @@ def merge_antipatterns(
     Override semantics (mirrors aislop_rule_loader.merge_rules):
     - Override fields that are None → keep the default value.
     - enabled=False → entry is excluded from the merged registry.
-    - Unknown name → ValueError (prevents silent typos).
+    - Unknown name → ModelOnexError (prevents silent typos).
     - custom_entries are appended after merging overrides.
     """
     if overrides is None:
@@ -95,8 +97,11 @@ def merge_antipatterns(
     for name in override_by_name:
         if name not in default_by_name:
             known = sorted(default_by_name)
-            raise ValueError(
-                f"Unknown antipattern name '{name}' in overrides. Known: {known}"
+            raise ModelOnexError(
+                message=(
+                    f"Unknown antipattern name '{name}' in overrides. Known: {known}"
+                ),
+                error_code=EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED,
             )
 
     # Apply field overrides; entries with enabled=False are dropped

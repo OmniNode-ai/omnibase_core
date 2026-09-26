@@ -9,21 +9,9 @@ import json
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.enums.enum_append_only_violation_kind import (
-    EnumAppendOnlyViolationKind,
+from omnibase_core.models.validation.model_append_only_violation import (
+    ModelAppendOnlyViolation,
 )
-
-
-class ModelAppendOnlyViolation(BaseModel):
-    """A single append-only violation with a human-readable detail."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid")
-
-    kind: EnumAppendOnlyViolationKind
-    target: str = Field(
-        ..., description="dod_evidence item id or receipt file path that violated."
-    )
-    detail: str = Field(default="")
 
 
 class ModelOccAppendOnlyResult(BaseModel):
@@ -54,8 +42,4 @@ class ModelOccAppendOnlyResult(BaseModel):
         return json.dumps(self.as_dict(), sort_keys=True, separators=(",", ":"))
 
 
-__all__ = [
-    "EnumAppendOnlyViolationKind",
-    "ModelAppendOnlyViolation",
-    "ModelOccAppendOnlyResult",
-]
+__all__ = ["ModelOccAppendOnlyResult"]

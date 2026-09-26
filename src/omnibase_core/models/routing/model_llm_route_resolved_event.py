@@ -10,20 +10,22 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.types.type_semantic_id import LlmModelId, RoutingDecisionId
+
 
 class ModelLlmRouteResolvedEvent(BaseModel):
     """Event emitted when model routing resolves to a concrete endpoint."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    routing_decision_id: str = Field(
+    routing_decision_id: RoutingDecisionId = Field(
         ..., description="Stable identifier for this routing decision."
     )
     correlation_id: str = Field(..., description="Originating correlation id.")
     logical_model_key: str = Field(
         ..., description="Logical model key requested by policy."
     )
-    served_model_id: str = Field(
+    served_model_id: LlmModelId = Field(
         ..., description="Concrete served model id selected from the registry."
     )
     endpoint_ref: str = Field(

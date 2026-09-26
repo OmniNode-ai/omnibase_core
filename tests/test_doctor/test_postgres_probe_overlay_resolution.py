@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import pytest
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.doctor.model_postgres_probe_config import (
     ModelPostgresProbeConfig,
 )
@@ -67,7 +68,7 @@ class TestPostgresProbeOverlayResolution:
         """Unset host binding fails closed instead of defaulting to localhost."""
         monkeypatch.delenv("POSTGRES_HOST", raising=False)
         monkeypatch.setenv("POSTGRES_PORT", "5432")
-        with pytest.raises(ValueError, match="POSTGRES_HOST is not bound"):
+        with pytest.raises(ModelOnexError, match="POSTGRES_HOST is not bound"):
             ModelPostgresProbeConfig.from_overlay()
 
     def test_port_fails_closed_when_overlay_unbound(
@@ -76,7 +77,7 @@ class TestPostgresProbeOverlayResolution:
         """Unset port binding fails closed instead of defaulting."""
         monkeypatch.setenv("POSTGRES_HOST", "somehost")
         monkeypatch.delenv("POSTGRES_PORT", raising=False)
-        with pytest.raises(ValueError, match="POSTGRES_PORT is not bound"):
+        with pytest.raises(ModelOnexError, match="POSTGRES_PORT is not bound"):
             ModelPostgresProbeConfig.from_overlay()
 
     def test_port_fails_closed_on_non_integer_overlay_value(
@@ -85,5 +86,5 @@ class TestPostgresProbeOverlayResolution:
         """A non-integer overlay-bound port fails closed with a clear error."""
         monkeypatch.setenv("POSTGRES_HOST", "somehost")
         monkeypatch.setenv("POSTGRES_PORT", "not-a-port")
-        with pytest.raises(ValueError, match="not a valid port integer"):
+        with pytest.raises(ModelOnexError, match="not a valid port integer"):
             ModelPostgresProbeConfig.from_overlay()

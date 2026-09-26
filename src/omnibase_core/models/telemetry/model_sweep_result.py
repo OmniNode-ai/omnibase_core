@@ -10,6 +10,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.types.type_semantic_id import SweepSessionId
+
 
 class ModelSweepResult(BaseModel):
     """Structured result from a sweep skill run.
@@ -31,7 +33,7 @@ class ModelSweepResult(BaseModel):
         "runtime",
         "data_flow",
     ]
-    session_id: str
+    session_id: SweepSessionId
     correlation_id: str
     ran_at: datetime
     duration_seconds: float

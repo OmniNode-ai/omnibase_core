@@ -221,4 +221,5 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # error-ok: CLI process boundary maps result to exit status
     raise SystemExit(main())

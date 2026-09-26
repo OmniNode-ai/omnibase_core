@@ -70,6 +70,9 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 try:
     import yaml
 
@@ -346,23 +349,25 @@ def _iter_python_files(root: Path) -> list[Path]:
 def _load_baseline(baseline_path: Path) -> dict[str, int]:
     """Load a YAML baseline file mapping relative path -> allowed violation count."""
     if not _YAML_AVAILABLE:
-        sys.stderr.write(
-            "transport-mock-lint: PyYAML not available; cannot load baseline. "
-            "Install pyyaml or run without --baseline.\n"
+        raise ModelOnexError(
+            message=(
+                "PyYAML not available; cannot load baseline. "
+                "Install pyyaml or run without --baseline."
+            ),
+            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
         )
-        raise SystemExit(2)
     try:
         raw = yaml.safe_load(baseline_path.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:
-        sys.stderr.write(
-            f"transport-mock-lint: cannot load baseline {baseline_path}: {exc}\n"
-        )
-        raise SystemExit(2) from exc
+        raise ModelOnexError(
+            message=f"cannot load baseline {baseline_path}: {exc}",
+            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+        ) from exc
     if not isinstance(raw, dict):
-        sys.stderr.write(
-            f"transport-mock-lint: baseline {baseline_path} must be a YAML mapping.\n"
+        raise ModelOnexError(
+            message=f"baseline {baseline_path} must be a YAML mapping",
+            error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
         )
-        raise SystemExit(2)
     return {str(k): int(v) for k, v in raw.items()}
 
 
@@ -424,8 +429,10 @@ def _git_changed_files(base: str) -> list[Path]:
         check=False,
     )
     if proc.returncode != 0:
-        sys.stderr.write(proc.stderr)
-        raise SystemExit(2)
+        raise ModelOnexError(
+            message=f"git diff failed: {proc.stderr.strip() or 'no stderr'}",
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+        )
     return [Path(p) for p in proc.stdout.splitlines() if p.strip()]
 
 
@@ -469,7 +476,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.base is not None:
-        paths = _git_changed_files(args.base)
+        try:
+            paths = _git_changed_files(args.base)
+        except ModelOnexError as exc:
+            sys.stderr.write(f"transport-mock-lint: {exc}\n")
+            return 2
     else:
         paths = [Path(p) for p in args.files]
 
@@ -501,7 +512,11 @@ def main(argv: list[str] | None = None) -> int:
 
     baseline: dict[str, int] = {}
     if args.baseline is not None:
-        baseline = _load_baseline(Path(args.baseline))
+        try:
+            baseline = _load_baseline(Path(args.baseline))
+        except ModelOnexError as exc:
+            sys.stderr.write(f"transport-mock-lint: {exc}\n")
+            return 2
 
     active_findings = (
         _apply_baseline(all_findings, baseline) if baseline else all_findings
@@ -526,4 +541,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # error-ok: CLI process boundary maps result to exit status
     raise SystemExit(main())

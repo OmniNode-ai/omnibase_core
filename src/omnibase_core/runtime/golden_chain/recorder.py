@@ -39,8 +39,12 @@ from omnibase_core.runtime.golden_chain.recorded_replay_transport import (
     canonical_prompt_hash,
     canonical_request_hash,
 )
+from omnibase_core.types.type_semantic_id import (
+    GoldenChainFixtureVersion,
+    LlmModelId,
+)
 
-FIXTURE_VERSION = "golden_chain_fixture.v1"
+FIXTURE_VERSION = GoldenChainFixtureVersion("golden_chain_fixture.v1")
 _OVERLAY_SENTINEL_NONE = "none"
 
 
@@ -104,7 +108,7 @@ def build_provenance(
     )
     return ModelGoldenChainProvenance(
         provider=provider,
-        model_id=model_id,
+        model_id=LlmModelId(model_id),
         endpoint_ref=endpoint_ref,
         endpoint=endpoint,
         request_hash=canonical_request_hash(request_payload),
