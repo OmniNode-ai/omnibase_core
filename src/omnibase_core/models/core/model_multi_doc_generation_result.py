@@ -10,15 +10,17 @@ and its associated documents.
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.errors.model_onex_error_data import _ModelOnexErrorData
 from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
 from omnibase_core.models.core.model_generated_file import ModelGeneratedFile
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelMultiDocGenerationResult(BaseModel):
     """Result of multi-document model generation."""
+
+    model_config = ConfigDict(extra="forbid")
 
     contract_path: Path = Field(
         default=...,
@@ -35,9 +37,9 @@ class ModelMultiDocGenerationResult(BaseModel):
         default="",
         description="SHA256 hash of the contract content",
     )
-    errors: list[ModelOnexError] = Field(
+    errors: list[_ModelOnexErrorData] = Field(
         default_factory=list,
-        description="List of structured error messages encountered",
+        description="List of canonical serialized error records encountered",
     )
     warnings: list[ModelOnexWarning] = Field(
         default_factory=list,

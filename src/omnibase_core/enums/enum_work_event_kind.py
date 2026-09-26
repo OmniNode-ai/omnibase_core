@@ -65,5 +65,11 @@ class EnumWorkEventKind(StrEnum):
     LEDGER_EPOCH_OPENED = "work.ledger.epoch.opened"
     """Tool-written: a cutover or a roll opened a new ledger epoch."""
 
+    QUESTION_ASKED = "work.question.asked"
+    """A question put to the operator. Answered only by a ruling or consent naming it."""
+
+    QUESTION_WITHDRAWN = "work.question.withdrawn"
+    """A lane withdraws a question it holds, with a reason and evidence. Never an answer."""
+
 
 __all__: list[str] = ["EnumWorkEventKind"]

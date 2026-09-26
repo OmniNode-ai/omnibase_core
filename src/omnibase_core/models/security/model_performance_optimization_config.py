@@ -7,11 +7,13 @@ ModelPerformanceOptimizationConfig: Performance optimization configuration.
 This model represents performance optimization settings for secret backends.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelPerformanceOptimizationConfig(BaseModel):
     """Performance optimization configuration for secret backends."""
+
+    model_config = ConfigDict(extra="forbid")
 
     cache_enabled: bool = Field(default=True, description="Whether caching is enabled")
 

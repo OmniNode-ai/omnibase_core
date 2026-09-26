@@ -30,6 +30,12 @@ class ModelWorkLedgerHealth(BaseModel):
     )
     holds_in_force_count: int = Field(..., ge=0, description="Holds in force.")
     invalid_release_count: int = Field(..., ge=0, description="Refused releases.")
+    open_question_count: int = Field(
+        ..., ge=0, description="Questions neither answered nor withdrawn."
+    )
+    invalid_question_ref_count: int = Field(
+        ..., ge=0, description="Answer and withdrawal references naming no question."
+    )
     undecided_reasons: tuple[str, ...] = Field(
         default=(), description="Every reason the ledger cannot be decided from."
     )

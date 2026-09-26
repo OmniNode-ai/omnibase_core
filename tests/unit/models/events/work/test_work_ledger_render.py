@@ -11,6 +11,9 @@
   is absent from the JSONL, and 0 on a consistent pair.
 - AC3: ``render --repair`` appends exactly the missing rendered rows, and a
   second run changes nothing (sha256 compared before and after).
+- OMN-19620 AC6 (plan T17): a question renders as a MSG to the operator with a
+  ``question=`` cell, a withdrawal as a STATUS with ``withdraws=`` and
+  ``withdrawal=`` cells, and a ruling with ``answers`` adds an ``answers=`` cell.
 
 The subprocess tests run the installed console script the way a skill runs it.
 """
@@ -29,6 +32,9 @@ import pytest
 
 from omnibase_core.enums.enum_cost_basis import EnumCostBasis
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
+from omnibase_core.enums.enum_question_withdrawal_reason import (
+    EnumQuestionWithdrawalReason,
+)
 from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
 from omnibase_core.enums.enum_surface_result import EnumSurfaceResult
 from omnibase_core.enums.enum_work_outcome import EnumWorkOutcome
@@ -36,7 +42,9 @@ from omnibase_core.enums.governance.enum_pr_state import EnumPRState
 from omnibase_core.errors.error_work_ledger_render import WorkLedgerRenderError
 from omnibase_core.models.events.work import (
     WORK_LEDGER_SCHEMA,
+    ModelEvidenceRefs,
     ModelHoldScope,
+    ModelLedgerRowRef,
     ModelNodeActor,
     ModelPrKey,
     ModelPrRef,
@@ -54,6 +62,8 @@ from omnibase_core.models.events.work import (
     ModelWorkMessageAcked,
     ModelWorkMessageSent,
     ModelWorkOperatorConsentRecorded,
+    ModelWorkQuestionAsked,
+    ModelWorkQuestionWithdrawn,
     ModelWorkResultRecorded,
     ModelWorkRulingRecorded,
     ModelWorkStatusRecorded,
@@ -99,6 +109,9 @@ RULING_ID = _id(13)
 CORRECTION_ID = _id(14)
 CONSENT_ID = _id(15)
 RULING_ACK_ID = _id(16)
+QUESTION_ID = _id(17)
+WITHDRAWAL_ID = _id(18)
+ANSWER_ID = _id(19)
 
 MERGE_SHA = (
     "7e" * 20
@@ -335,6 +348,51 @@ def _ruling_ack() -> ModelWorkMessageAcked:
     )
 
 
+def _question() -> ModelWorkQuestionAsked:
+    return ModelWorkQuestionAsked(
+        event_id=QUESTION_ID,
+        emitted_at=_at(16),
+        actor=_actor("m4-triage"),
+        summary="re-issued legacy question",
+        ticket_id="OMN-17389",
+        question="Re-scope AC2 | or hold the ticket?",
+        recommendation="re-scope",
+        legacy_row=ModelLedgerRowRef(
+            path="docs/tracking/archive/ROLLING_WORK_LEDGER_2026-09-20-split.md",
+            line=716,
+            stamp=datetime(2026, 9, 17, 16, 24, 55, tzinfo=UTC),
+            lane="m4-stalled-carriers-triage-1552",
+        ),
+    )
+
+
+def _withdrawal() -> ModelWorkQuestionWithdrawn:
+    return ModelWorkQuestionWithdrawn(
+        event_id=WITHDRAWAL_ID,
+        emitted_at=_at(17),
+        actor=_actor("typed-withdrawal"),
+        summary="the AC was re-scoped under a later ticket",
+        ticket_id="OMN-19620",
+        withdraws=QUESTION_ID,
+        reason=EnumQuestionWithdrawalReason.OVERTAKEN,
+        evidence=ModelEvidenceRefs(
+            prs=frozenset({ModelPrKey(repo="omnibase_infra", number=4058)}),
+            tickets=frozenset({"OMN-17497", "OMN-17389"}),
+        ),
+    )
+
+
+def _answer() -> ModelWorkRulingRecorded:
+    return ModelWorkRulingRecorded(
+        event_id=ANSWER_ID,
+        emitted_at=_at(18),
+        actor=_actor("merge-drain-83"),
+        summary="the operator answered",
+        operator_words="re-scope it",
+        answers=frozenset({QUESTION_ID}),
+    )
+
+
 def _all_events() -> list[ModelWorkEvent]:
     return [
         _epoch(),
@@ -353,6 +411,9 @@ def _all_events() -> list[ModelWorkEvent]:
         _ruling(),
         _correction(),
         _ruling_ack(),
+        _question(),
+        _withdrawal(),
+        _answer(),
     ]
 
 
@@ -470,6 +531,30 @@ GOLDEN: dict[str, str] = {
         " | re-event=00000000-0000-4000-8000-000000000013"
         f" | {EV}000000000016 | src=typed | read the ruling"
     ),
+    "question": (
+        "2026-09-24T12:16:00Z | MSG | lane=m4-triage | from=m4-triage"
+        " | to=operator | id=2026-09-24T12:16:00Z-m4-triage | ticket=OMN-17389"
+        ' | question="Re-scope AC2 ¦ or hold the ticket?"'
+        ' | recommendation="re-scope"'
+        " | legacy=docs/tracking/archive/ROLLING_WORK_LEDGER_2026-09-20-split.md:716"
+        " | legacy-row=2026-09-17T16:24:55Z-m4-stalled-carriers-triage-1552"
+        f" | {EV}000000000017 | src=typed | re-issued legacy question"
+    ),
+    "withdrawal": (
+        "2026-09-24T12:17:00Z | STATUS | lane=typed-withdrawal | ticket=OMN-19620"
+        " | withdraws=2026-09-24T12:16:00Z-m4-triage | withdrawal=overtaken"
+        " | evidence=pr:omnibase_infra#4058,ticket:OMN-17389,ticket:OMN-17497"
+        " | withdraws-event=00000000-0000-4000-8000-000000000017"
+        f" | {EV}000000000018 | src=typed"
+        " | the AC was re-scoped under a later ticket"
+    ),
+    "answer": (
+        "2026-09-24T12:18:00Z | RULING | lane=merge-drain-83"
+        " | answers=2026-09-24T12:16:00Z-m4-triage"
+        " | answers-events=00000000-0000-4000-8000-000000000017"
+        ' | "re-scope it"'
+        f" | {EV}000000000019 | src=typed | the operator answered"
+    ),
 }
 
 FIXTURES = {
@@ -489,6 +574,9 @@ FIXTURES = {
     "correction": _correction,
     "consent": _consent,
     "ruling_ack": _ruling_ack,
+    "question": _question,
+    "withdrawal": _withdrawal,
+    "answer": _answer,
 }
 
 
@@ -504,7 +592,7 @@ def test_golden_row_per_kind(name: str) -> None:
 def test_every_kind_has_a_golden_row() -> None:
     kinds = {FIXTURES[name]().kind for name in FIXTURES}
     assert kinds == set(ROW_TYPE_BY_KIND)
-    assert len(ROW_TYPE_BY_KIND) == 13
+    assert len(ROW_TYPE_BY_KIND) == 15
 
 
 def test_row_type_mapping_is_the_plan_table() -> None:
@@ -523,6 +611,8 @@ def test_row_type_mapping_is_the_plan_table() -> None:
         "work.hold.released": "RELEASE",
         "work.claim.released": "RELEASE",
         "work.ledger.epoch.opened": EPOCH_BANNER_ROW_TYPE,
+        "work.question.asked": "MSG",
+        "work.question.withdrawn": "STATUS",
     }
 
 
@@ -628,6 +718,24 @@ def test_surface_hold_without_expiry_is_refused() -> None:
     lease = _lease().model_copy(update={"expires_at": None})
     with pytest.raises(WorkLedgerRenderError, match="until="):
         render_ledger_row(lease, {})
+
+
+def test_question_withdrawal_naming_a_non_question_is_refused() -> None:
+    bad = _withdrawal().model_copy(update={"withdraws": RULING_ID})
+    with pytest.raises(WorkLedgerRenderError, match=r"not a work\.question\.asked"):
+        render_ledger_row(bad, index_events(_all_events()))
+
+
+def test_answer_naming_a_non_question_is_refused() -> None:
+    bad = _answer().model_copy(update={"answers": frozenset({HOLD_ID})})
+    with pytest.raises(WorkLedgerRenderError, match=r"not a work\.question\.asked"):
+        render_ledger_row(bad, index_events(_all_events()))
+
+
+def test_answer_naming_an_unread_question_is_refused() -> None:
+    bad = _answer().model_copy(update={"answers": frozenset({_id(77)})})
+    with pytest.raises(WorkLedgerRenderError, match="not among the events read"):
+        render_ledger_row(bad, index_events(_all_events()))
 
 
 def test_correction_naming_nothing_is_refused() -> None:

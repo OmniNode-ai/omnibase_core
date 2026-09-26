@@ -5,11 +5,13 @@
 VersionStatus model for node introspection.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelVersionStatus(BaseModel):
     """Model for version status information."""
+
+    model_config = ConfigDict(extra="forbid")
 
     latest: str | None = None
     supported: list[str] | None = None

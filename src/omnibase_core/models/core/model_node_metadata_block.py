@@ -9,7 +9,14 @@ import enum
 from typing import Annotated, Any, ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_serializer,
+    field_validator,
+)
 
 from omnibase_core.enums import EnumLifecycle, EnumMetaType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -186,7 +193,7 @@ class ModelNodeMetadataBlock(BaseModel):
         },
     )
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     # Canonicalization/canonicalizer policy (not Pydantic config)
     canonicalization_policy: ClassVar[ModelCanonicalizationPolicy] = (
@@ -288,7 +295,7 @@ class ModelNodeMetadataBlock(BaseModel):
         d = {k: v for k, v in d.items() if v not in (None, "", [], {})}
         return ModelSerializableDict(data=d)
 
-    @field_validator("entrypoint", mode="before")
+    @field_validator("entrypoint", mode="before", json_schema_input_type=str)
     @classmethod
     def validate_entrypoint(cls, value: Any) -> EntrypointBlock:
         if isinstance(value, EntrypointBlock):
@@ -301,6 +308,11 @@ class ModelNodeMetadataBlock(BaseModel):
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=msg,
         )
+
+    @field_serializer("entrypoint", when_used="json")
+    def serialize_entrypoint(self, value: EntrypointBlock) -> str:
+        """Serialize entrypoints through their canonical URI wire authority."""
+        return value.to_uri()
 
     @field_validator("namespace", mode="before")
     @classmethod

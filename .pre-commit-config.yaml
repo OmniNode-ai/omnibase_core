@@ -834,7 +834,7 @@ repos:
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: uv run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '430', '--exclude-regex', '^src/omnibase_core/protocols/']
+        args: ['--allow-invalid', '422', '--exclude-regex', '^src/omnibase_core/protocols/']
         language: system
         pass_filenames: false
         files: ^src/.*\.py$
@@ -2013,12 +2013,12 @@ repos:
 
   # KB doc gate (OMN-16589) — keeps repo markdown inside the allowed set.
   #
-  # OMN-16606: advanced 82a3394c (omniclaude#2047, 2026-08-26) -> 3e6d14da so
-  # this pin MATCHES the one the required CI check resolves its validator at:
-  # `.github/workflows/kb-doc-gate.yml` calls
-  # `omniclaude/.github/workflows/kb-doc-gate-reusable.yml@3e6d14da...`, and the
-  # reusable checks the validator out at `github.job_workflow_sha`, i.e. that
-  # same SHA. The two had DRIFTED, and not cosmetically: 82a3394c's parser reads
+  # OMN-16606 advanced 82a3394c (omniclaude#2047, 2026-08-26) -> 3e6d14da to
+  # align this local hook with the required CI gate at that time. The required
+  # reusable caller now lives in `.github/workflows/ci.yml` (OMN-16589) and its
+  # immutable pin is the CI validator version's single source of truth because
+  # the reusable checks the validator out at `github.job_workflow_sha`.
+  # The old pins had DRIFTED, and not cosmetically: 82a3394c's parser reads
   # `exemptions:` and rejects `allowed:` as an unknown key (exit 2), while
   # 3e6d14da's reads `allowed:` and rejects `exemptions:` — so any per-repo
   # config entry is a guaranteed disagreement between the local hook and the
@@ -2029,8 +2029,8 @@ repos:
   # placement. The strict end-state this PR establishes is defined by the
   # STRICTER of the two, so the local hook must be the same one — otherwise a
   # commit passes locally and the required check fails, or worse, the reverse.
-  # Advancing the gate stays a one-line change in each of the two files, made
-  # together in one PR.
+  # Any intentional local/CI pin alignment remains a normal reviewed change to
+  # this hook and the ci.yml caller together.
   - repo: https://github.com/OmniNode-ai/omniclaude
     rev: 3e6d14da0d12923c32060252967d0f8759fcbb5e  # pragma: allowlist secret
     hooks:

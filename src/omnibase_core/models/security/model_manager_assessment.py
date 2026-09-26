@@ -3,11 +3,13 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelManagerAssessment(BaseModel):
     """Manager-specific assessment details."""
+
+    model_config = ConfigDict(extra="forbid")
 
     backend_security_level: str = Field(
         default=..., description="Backend security level"

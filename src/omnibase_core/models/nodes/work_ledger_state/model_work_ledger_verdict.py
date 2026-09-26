@@ -19,12 +19,15 @@ from omnibase_core.models.events.work.model_work_message_sent import (
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
+    ModelQuestionState,
+)
 
 __all__ = ["ModelWorkLedgerVerdict"]
 
 
 class ModelWorkLedgerVerdict(BaseModel):
-    """A status plus every hold, claim or message that produced it."""
+    """A status plus every hold, claim, message or question that produced it."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
@@ -37,6 +40,9 @@ class ModelWorkLedgerVerdict(BaseModel):
     )
     messages: tuple[ModelWorkMessageSent, ...] = Field(
         default=(), description="Unacknowledged messages that match the question."
+    )
+    questions: tuple[ModelQuestionState, ...] = Field(
+        default=(), description="Questions that match the question asked of the ledger."
     )
     undecided_reasons: tuple[str, ...] = Field(
         default=(), description="Why the answer is UNDECIDED, when it is."

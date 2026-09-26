@@ -7,11 +7,13 @@ ModelEncryptionAlgorithm: Encryption algorithm configuration.
 This model represents encryption algorithm specifications and parameters.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelEncryptionAlgorithm(BaseModel):
     """Encryption algorithm configuration and parameters."""
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(
         default=...,

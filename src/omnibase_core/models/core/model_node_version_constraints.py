@@ -3,13 +3,15 @@
 
 """ModelNodeVersionConstraints - Container for node version constraints in scenarios."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_semver_constraint import ModelSemVerConstraint
 
 
 class ModelNodeVersionConstraints(BaseModel):
     """Container for node version constraints in scenarios."""
+
+    model_config = ConfigDict(extra="forbid")
 
     constraints: dict[str, ModelSemVerConstraint] = Field(
         default_factory=dict,

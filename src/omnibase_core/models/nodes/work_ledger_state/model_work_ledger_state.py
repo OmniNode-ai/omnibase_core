@@ -28,15 +28,21 @@ from omnibase_core.models.events.work.model_work_message_sent import (
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_invalid_question_ref import (
+    ModelInvalidQuestionRef,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_invalid_release import (
     ModelInvalidRelease,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
+    ModelQuestionState,
 )
 
 __all__ = ["ModelWorkLedgerState"]
 
 
 class ModelWorkLedgerState(BaseModel):
-    """Holds in force, open claims, messages and acks, and every reason for doubt."""
+    """Holds in force, open claims, messages, acks, questions, and every reason for doubt."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
@@ -73,6 +79,20 @@ class ModelWorkLedgerState(BaseModel):
     )
     acks: tuple[ModelWorkMessageAcked, ...] = Field(
         default=(), description="Every acknowledgement, sorted by event_id."
+    )
+    questions: tuple[ModelQuestionState, ...] = Field(
+        default=(),
+        description=(
+            "Every question put to the operator with its status (OPEN, ANSWERED or "
+            "WITHDRAWN), sorted by the question's event_id."
+        ),
+    )
+    invalid_question_refs: tuple[ModelInvalidQuestionRef, ...] = Field(
+        default=(),
+        description=(
+            "Answer and withdrawal references that name no question, sorted by the "
+            "referring event_id and then the target."
+        ),
     )
 
     @property

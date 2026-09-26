@@ -395,6 +395,7 @@ jobs:
           git push origin "$BRANCH"
 
       - name: Open pull request
+        id: open_pr
         if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -414,6 +415,17 @@ jobs:
             exit 0
           fi
 
+          # OMN-18202 AC1: this body carries NO evidence ticket/source stamp.
+          # It used to re-cite the RELEASING PR's own companion verbatim, which
+          # binds no receipt to THIS PR: occ-preflight resolves the stamped
+          # change-control commit and fails with pr_ticket_mismatch, and no
+          # rerun clears it. Nor can it be repaired later: the downstream
+          # autobind stamp writer refuses to replace a stamp naming a MERGED
+          # companion (OMN-18089), and the release's companion always is.
+          # Live on the 0.47.23 wave (omniclaude#2338, omnimemory#533).
+          # The downstream repo's own OCC autobind mints a companion bound to
+          # this PR and PATCHes the stamp in, so it is the only writer.
+          # omnibase_infra's copy of this generator got the same fix (#3998).
           gh pr create \
             --repo "OmniNode-ai/${REPO_NAME}" \
             --title "chore(deps): bump ${{ steps.vars.outputs.pkg_hyphen }} to ${{ steps.vars.outputs.version }} (${{ steps.vars.outputs.ticket }})" \
@@ -426,13 +438,14 @@ jobs:
           - Updates `pyproject.toml` exact pin (`==X.Y.Z`) to match, when this repo pins that exactly
           - No other source code changes
 
-          ## Cascade provenance (OMN-16286)
+          ## Cascade provenance (OMN-16286, OMN-18202)
 
           This PR carries no dedicated testing of its own beyond this repo's own
-          CI running against the new lockfile. Its cited evidence below is the
-          upstream release's own Evidence-Ticket/Evidence-Source pair, which
-          already proved the released package version -- reused honestly rather
-          than fabricated or exempted:
+          CI running against the new lockfile. It deliberately carries no
+          evidence stamp of its own at creation: this repo's OCC autobind mints
+          a companion bound to THIS PR's own commit and adds the stamp once
+          that companion exists (OMN-18202 AC1). The upstream release that
+          triggered this bump already proved the released package version:
 
           - Source repo: `OmniNode-ai/${{ steps.vars.outputs.package }}`
           - Released version: `${{ steps.vars.outputs.version }}`
@@ -445,13 +458,33 @@ jobs:
 
           - [ ] CI passes (lockfile resolution is valid)
           - [ ] Downstream tests pass with the new dependency version
-
-          Evidence-Ticket: ${{ steps.vars.outputs.ticket }}
-          Evidence-Source: ${{ steps.vars.outputs.evidence_source }}
           PREOF
           )" \
             --head "$BRANCH" \
             --base dev
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Verify no foreign Evidence-Source stamp was emitted (OMN-18202)
+        # Only a PR THIS run created. A PR found already open may predate the
+        # fix and carry a stamp this run did not write.
+        if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false' && steps.open_pr.outputs.created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO_NAME: ${{ matrix.repo }}
+          BRANCH: ${{ steps.vars.outputs.branch }}
+        run: |
+          # Read back the PR this run just opened and fail the cascade run if
+          # its body carries an evidence ticket/source line. The generator
+          # never writes one, so any occurrence is a companion bound to a
+          # DIFFERENT PR, which is the pr_ticket_mismatch shape removed above.
+          BODY=$(gh pr view "$BRANCH" \
+            --repo "OmniNode-ai/${REPO_NAME}" \
+            --json body --jq '.body')
+          if printf '%s\n' "$BODY" | grep -qE '^Evidence-(Ticket|Source):'; then
+            echo "::error::OMN-18202: the cascade opened a bump PR on OmniNode-ai/${REPO_NAME} (branch ${BRANCH}) whose body already carries an evidence ticket/source line. The generator must never emit one; the downstream repo's own occ-autobind is the only writer of that field."
+            exit 1
+          fi
+          echo "OK: no foreign evidence stamp on the PR this run opened."
 
       - name: Skip summary
         if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'true'

@@ -7,7 +7,7 @@ Permission action model for defining allowed actions in permission constraints.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelPermissionAction(BaseModel):
@@ -16,10 +16,11 @@ class ModelPermissionAction(BaseModel):
     Defines specific actions that can be performed on resources.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     action_id: UUID = Field(
         default=...,
         description="Unique action identifier",
-        pattern="^[a-z][a-z0-9_-]*$",
     )
 
     action_name: str = Field(default=..., description="Human-readable action name")

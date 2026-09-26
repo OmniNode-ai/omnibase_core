@@ -150,6 +150,8 @@ WORK_EVENT_PARTITION_KEY_FIELDS: Mapping[EnumWorkEventKind, str] = MappingProxyT
         EnumWorkEventKind.FRICTION_RECORDED: "actor_key",
         EnumWorkEventKind.CONSENT_RECORDED: "actor_key",
         EnumWorkEventKind.LEDGER_EPOCH_OPENED: "actor_key",
+        EnumWorkEventKind.QUESTION_ASKED: "actor_key",
+        EnumWorkEventKind.QUESTION_WITHDRAWN: "actor_key",
     }
 )
 """The ``partition_key_field`` the emit registry must declare for each kind.

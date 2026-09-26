@@ -25,7 +25,7 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -38,6 +38,8 @@ class ModelOnexVersionInfo(BaseModel):
         protocol_version (ModelSemVer): The protocol version.
         schema_version (ModelSemVer): The schema version.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     metadata_version: ModelSemVer
     protocol_version: ModelSemVer

@@ -3,7 +3,7 @@
 
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 "\nModelPermissionMetadata: Additional metadata for permissions.\n\nThis model provides structured metadata for permissions without using Any types.\n"
 from pydantic import BaseModel
@@ -11,6 +11,8 @@ from pydantic import BaseModel
 
 class ModelPermissionMetadata(BaseModel):
     """Additional metadata for permissions."""
+
+    model_config = ConfigDict(extra="forbid")
 
     tags: list[str] = Field(default_factory=list, description="Metadata tags")
     category: str | None = Field(default=None, description="Permission category")
