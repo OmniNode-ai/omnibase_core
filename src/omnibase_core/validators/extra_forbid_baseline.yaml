@@ -771,7 +771,6 @@ violations:
   - "omnibase_core.models.node_metadata.model_node_connection_settings:ModelNodeConnectionSettings"
   - "omnibase_core.models.node_metadata.model_node_core_info:ModelNodeCoreInfo"
   - "omnibase_core.models.node_metadata.model_node_core_info_summary:ModelNodeCoreInfoSummary"
-  - "omnibase_core.models.node_metadata.model_node_core_metadata_class:ModelNodeCoreMetadata"
   - "omnibase_core.models.node_metadata.model_node_execution_settings:ModelNodeExecutionSettings"
   - "omnibase_core.models.node_metadata.model_node_feature_flags:ModelNodeFeatureFlags"
   - "omnibase_core.models.node_metadata.model_node_information:ModelNodeInformation"
