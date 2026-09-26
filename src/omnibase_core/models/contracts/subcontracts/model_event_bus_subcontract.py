@@ -220,6 +220,11 @@ class ModelEventBusSubcontract(BaseModel):
         description="Topic suffixes this node subscribes to. Format: onex.{kind}.{producer}.{event-name}.v{n}",
     )
 
+    signed_ingress_topics: list[str] = Field(
+        default_factory=list,
+        description="Subscribed topics that require a verified signed gateway envelope before dispatch.",
+    )
+
     dlq_topics: list[str] = Field(
         default_factory=list,
         description="Dead-letter topic suffixes for inbound messages that cannot be "
@@ -243,7 +248,13 @@ class ModelEventBusSubcontract(BaseModel):
         description="Request-response pattern configuration for RPC-style Kafka communication",
     )
 
-    @field_validator("publish_topics", "subscribe_topics", "dlq_topics", mode="after")
+    @field_validator(
+        "publish_topics",
+        "subscribe_topics",
+        "signed_ingress_topics",
+        "dlq_topics",
+        mode="after",
+    )
     @classmethod
     def validate_topic_suffixes(cls, topics: list[str]) -> list[str]:
         """Validate each topic suffix against ONEX naming convention."""
@@ -258,6 +269,10 @@ class ModelEventBusSubcontract(BaseModel):
     @model_validator(mode="after")
     def validate_event_bus_configuration(self) -> "ModelEventBusSubcontract":
         """Validate event bus configuration fields after model construction."""
+        if len(self.signed_ingress_topics) != len(set(self.signed_ingress_topics)):
+            raise ValueError("signed_ingress_topics must not contain duplicates")
+        if not set(self.signed_ingress_topics).issubset(self.subscribe_topics):
+            raise ValueError("signed_ingress_topics must be subscribed topics")
         # Validate event_bus_type
         allowed_bus_types = ["memory", "hybrid", "distributed"]
         if self.event_bus_type not in allowed_bus_types:
