@@ -3,6 +3,7 @@
 
 """Event bus models for ONEX message handling."""
 
+from .model_archive_replay_provenance import ModelArchiveReplayProvenance
 from .model_consumer_group_iam_patterns import ModelConsumerGroupIamPatterns
 from .model_consumer_group_iam_source import ModelConsumerGroupIamSource
 from .model_consumer_group_scope import ModelConsumerGroupScope
@@ -26,6 +27,7 @@ from .model_transport_publish_acknowledgement import (
 )
 
 __all__ = [
+    "ModelArchiveReplayProvenance",
     "ModelConsumerGroupIamPatterns",
     "ModelConsumerGroupIamSource",
     "ModelConsumerGroupScope",
