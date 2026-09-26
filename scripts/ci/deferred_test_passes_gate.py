@@ -9,7 +9,7 @@ job it fails on that job's own running check. ``defer_test_passes_driver.py``
 records such items instead of judging them; this module judges them in the
 ``CI Summary`` job, after the CI Summary verdict itself is SUCCESS.
 
-Same pass set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL), with five
+Same pass set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL), with six
 differences, each because the in-job evaluation could not work or because
 ``gh pr checks`` is not how GitHub reads a head:
 
@@ -34,6 +34,17 @@ differences, each because the in-job evaluation could not work or because
 * A still-running check is PENDING, polled until the deadline and then a
   failure; a cancellation or failure inside ``ci_summary_gate``'s measured
   replacement windows (OMN-18355, OMN-17864) is PENDING rather than final.
+* A cancelled matrix placeholder is dropped once its matrix expanded on this
+  head. When a run is cancelled before a matrix is evaluated, GitHub leaves one
+  row whose name still carries the unexpanded ``${{ ... }}`` expression. No
+  later row can carry that name, so latest-wins would keep the cancellation for
+  ever (omnibase_core#1772: CI run 36155199260, cancelled by its concurrency
+  group, left ``Tests (Split ${{ matrix.split }}/...)`` beside run 36155334716,
+  which expanded and passed the same matrix). Such a row is superseded when any
+  other row's name matches the placeholder with each expression standing for
+  non-empty text; the expanded copies are then judged under their own names.
+  With no expanded copy the placeholder stays the verdict, and a placeholder
+  that failed rather than was cancelled is always judged.
 
 Exit codes: ``0`` success, ``1`` failure.
 """
@@ -42,6 +53,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import time
 from datetime import UTC, datetime
@@ -138,6 +150,40 @@ def _latest_by_name(rows: list[dict[str, object]]) -> dict[str, JobState]:
     return {name: state for name, (_, state) in best.items()}
 
 
+_EXPRESSION = re.compile(r"\$\{\{.*?\}\}")
+
+
+def _placeholder_pattern(name: str) -> re.Pattern[str] | None:
+    """The expanded-name pattern of a matrix placeholder, or ``None``."""
+
+    parts = _EXPRESSION.split(name)
+    if len(parts) == 1:
+        return None
+    return re.compile(".+".join(re.escape(part) for part in parts))
+
+
+def _drop_superseded_placeholders(
+    latest: dict[str, JobState],
+) -> tuple[dict[str, JobState], list[str]]:
+    """Drop cancelled matrix placeholders whose matrix expanded on this head."""
+
+    expanded = [name for name in latest if _placeholder_pattern(name) is None]
+    kept: dict[str, JobState] = {}
+    dropped: list[str] = []
+    for name, st in latest.items():
+        pattern = _placeholder_pattern(name)
+        if (
+            pattern is not None
+            and st.status == "completed"
+            and st.conclusion == "cancelled"
+            and any(pattern.fullmatch(other) for other in expanded)
+        ):
+            dropped.append(name)
+            continue
+        kept[name] = st
+    return kept, sorted(dropped)
+
+
 def _is_actions_row(row: dict[str, object]) -> bool:
     app = row.get("app")
     if not isinstance(app, dict) or not app.get("slug"):
@@ -151,6 +197,7 @@ def evaluate_checks(
     """Judge one head's ``commits/{sha}/check-runs`` rows."""
 
     latest = _latest_by_name([row for row in check_runs if _is_actions_row(row)])
+    latest, superseded = _drop_superseded_placeholders(latest)
     others = {name: st for name, st in latest.items() if name != SELF_JOB_NAME}
     if not others:
         return EXIT_FAILURE, "  no checks observed besides CI Summary"
@@ -168,6 +215,11 @@ def evaluate_checks(
         else:
             failures.append(f"{name} ({st.conclusion})")
     lines = [f"  checks observed: {len(others)} (latest per name, CI Summary excluded)"]
+    if superseded:
+        lines.append(
+            "  cancelled matrix placeholders superseded by their expanded copies: "
+            + ", ".join(superseded)
+        )
     if failures:
         lines.append("  not green: " + ", ".join(sorted(failures)))
     if pending:
