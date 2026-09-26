@@ -123,6 +123,43 @@ class ModelDelegationResult(BaseModel):
             "None for completed results and legacy failure producers."
         ),
     )
+    failure_class: str | None = Field(
+        default=None,
+        description=(
+            "Originating error class of a terminal failure, e.g. "
+            "'CustomerKeyRefusedError' or 'ProtocolConfigurationError'. The "
+            "TYPED half of what was previously flattened into "
+            "terminal_failure_reason as f'{class}: {code}' -- a shape "
+            "downstream readers had to split on ': ' with no contract behind "
+            "it (OMN-17372). None on a success, and None on a failure whose "
+            "producer has not been migrated to attribute itself."
+        ),
+    )
+    failure_code: str | None = Field(
+        default=None,
+        description=(
+            "Canonical ONEX error code for a terminal failure, e.g. "
+            "'ONEX_MARKET_CUSTOMER_PROVIDER_KEY_ABSENT'. Absent when the "
+            "failure carried no code -- reported as absent rather than "
+            "guessed at, the same posture "
+            "ModelBoundaryFailureTerminal.failure_code takes upstream. Never "
+            "carried without failure_class: the code is the specific half of "
+            "a pair whose general half is always derivable."
+        ),
+    )
+    remediation: str | None = Field(
+        default=None,
+        description=(
+            "What the CALLER must do about this failure, when there is a "
+            "caller-actionable answer. Boundary-safe phrasing only: the text "
+            "here crosses the consume boundary through "
+            "sanitize_error_message, which collapses any message containing a "
+            "sensitive token to a redaction marker, so a remediation naming a "
+            "credential endpoint belongs in the typed refusal payload at the "
+            "raise site and never on this field. None when the failure is not "
+            "caller-actionable."
+        ),
+    )
     routing_tiers_hash: str | None = Field(
         default=None,
         description="SHA-256 of serialized routing_tiers.yaml at execution time.",
@@ -251,6 +288,48 @@ class ModelDelegationResult(BaseModel):
         if self.quality_passed and self.terminal_failure_cause is not None:
             msg = "completed delegation cannot carry terminal_failure_cause"
             raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def validate_typed_failure_attribution(self) -> Self:
+        """Keep the typed failure attribution honest in both directions.
+
+        OMN-17372. Two invariants, and one deliberately absent third:
+
+        * a SUCCESS may not name a failure. A completed delegation carrying a
+          failure class, code or remediation is contradictory terminal truth,
+          the same class of defect the quality-bar checks above already reject.
+        * a code or a remediation may not travel without a ``failure_class``.
+          Both are the specific halves of a pair whose general half is always
+          derivable at the raise site, and a bare code with no class is a
+          producer bug rather than a partial answer.
+
+        The converse -- "a FAILED terminal MUST name its class" -- is enforced
+        at the PRODUCER (omnimarket's single ``_emit_terminal`` builder), NOT
+        here. This DTO version-skews against its producer: a released core
+        rejecting an unattributed failure, consumed by an omnimarket that has
+        not yet learned to populate the field, would reject EVERY delegation
+        failure terminal at construction -- no terminal published, the
+        orchestrator FSM parked forever, and the gateway's workflow row stuck
+        at ``published``. That is exactly the silent-stall class OMN-17397 and
+        OMN-17445 exist to close, so the requirement lives where it cannot
+        re-open them.
+        """
+        if self.quality_passed:
+            for field_name in ("failure_class", "failure_code", "remediation"):
+                if getattr(self, field_name) is not None:
+                    msg = f"completed delegation cannot carry {field_name}"
+                    raise ValueError(msg)
+
+        if self.failure_class is not None and not self.failure_class.strip():
+            msg = "failure_class must not be blank when present"
+            raise ValueError(msg)
+
+        if self.failure_class is None:
+            for field_name in ("failure_code", "remediation"):
+                if getattr(self, field_name) is not None:
+                    msg = f"{field_name} requires failure_class"
+                    raise ValueError(msg)
         return self
 
 
