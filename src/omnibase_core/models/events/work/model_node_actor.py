@@ -16,7 +16,6 @@ from typing import Literal
 from pydantic import Field, field_validator
 
 from omnibase_core.enums.enum_actor_kind import EnumActorKind
-from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
 from omnibase_core.models.events.model_event_payload_base import ModelEventPayloadBase
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -37,12 +36,17 @@ class ModelNodeActor(ModelEventPayloadBase):
         max_length=128,
         description="Node identifier, e.g. 'node_pr_lifecycle_orchestrator'.",
     )
-    runtime_lane: EnumRuntimeLane = Field(
+    runtime_lane: str = Field(
         ...,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[a-z0-9][a-z0-9-]*$",
         description=(
-            "Lane this invocation runs in. Load-bearing for arbitration: the same "
-            "node runs in several lanes, and a stability-lane sweep must not be "
-            "mistaken for the dev-lane one holding a claim."
+            "Lane id this invocation runs in, as the deployment's runtime.lane "
+            "overlay declares it (OMN-19746). Load-bearing for arbitration: the "
+            "same node runs in several lanes, and one lane's sweep must not be "
+            "mistaken for another lane's holding a claim. Any deployment's lane "
+            "id, not a closed set: core names no lane."
         ),
     )
     contract_version: ModelSemVer = Field(
@@ -68,4 +72,4 @@ class ModelNodeActor(ModelEventPayloadBase):
         Includes ``runtime_lane`` so two lanes running the same node do not
         share a narrative partition and interleave each other's ordering.
         """
-        return f"{EnumActorKind.NODE.value}:{self.node_id}@{self.runtime_lane.value}"
+        return f"{EnumActorKind.NODE.value}:{self.node_id}@{self.runtime_lane}"

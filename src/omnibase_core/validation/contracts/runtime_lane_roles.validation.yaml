@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: runtime_lane_roles
+  validator_name: Runtime Lane Roles Validator
+  validator_description: |
+    Enforces that a node contract's top-level runtime_lane_roles is a
+    non-empty list of roles from EnumRuntimeLaneRole. A contract names the
+    lane roles it needs and never a lane; the lanes and their roles come from
+    the deployment's runtime.lane overlay document.
+    Plan: knowledge-base-internal beta/plans/2026-09-26-runtime-lane-overlays-plan.md (LO1).
+    Linear: OMN-19746.
+
+  target_patterns:
+    - "**/contract.yaml"
+    - "**/handler_contract.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: runtime_lane_role_unknown
+      description: >-
+        Reject a contract whose runtime_lane_roles is empty, malformed, or names a value outside EnumRuntimeLaneRole
+        (a misspelt role or a lane id written where a role belongs). Such a contract is scoped to a role
+        no deployment can hold and is detached everywhere.
+      severity: error
+      enabled: true
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
