@@ -1,14 +1,20 @@
 # SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# KB Doc Gate — thin caller. OMN-17172 (fleet rollout; OMN-16589 built the gate).
+# KB Doc Gate — manual caller. OMN-17172 (fleet rollout; OMN-16589 built the gate).
 #
-# Canonical docs live in the knowledge-base repo. This gate keeps this repo's
-# markdown inside the allowed set stated by the operator ruling of 2026-09-01:
-# root README.md, root CLAUDE.md or anything under .claude/, CHANGELOG*.md,
-# LICENSE*, root SECURITY.md, .github/**, skills|commands|agents/**, and the
-# tests/**/{fixtures,data,golden}/** subtrees. Everything else is documentation
-# that must leave.
+# MIGRATED INTO ci.yml (OMN-16589): the pull-request caller now lives there as
+# job id `kb-doc-gate`, preserving the live required dev context byte-for-byte
+# as `kb-doc-gate / kb-doc-gate` while permanently closing this standalone
+# file's pull-request-workflow-budget waiver. This file remains available only
+# for manual/ad-hoc invocation, with a distinct job id so a dispatch cannot
+# produce a duplicate required context.
+#
+# Canonical docs live in the knowledge-base repo. The gate keeps this repo's
+# markdown inside the operator-approved set: root README.md, root CLAUDE.md or
+# anything under .claude/, CHANGELOG*.md, LICENSE*, root SECURITY.md,
+# .github/**, skills|commands|agents/**, and tests/**/{fixtures,data,golden}/**.
+# Everything else is documentation that must leave.
 #
 # mode: diff — fails a PR that ADDS or MODIFIES markdown outside that set.
 # Deletions always pass (that is the migration doing its job), and a rename is
@@ -18,31 +24,17 @@
 # lands and its residual doc count reaches zero. Doing it earlier blocks every
 # unrelated PR against the existing sprawl.
 #
-# Validator + reusable workflow live in omniclaude (mirrors deploy-gate.yml's
-# thin-caller pattern). Pinned by immutable SHA, not @main: omniclaude's main is
-# release-synced and carries neither the reusable workflow nor
-# scripts/kb_doc_gate.py. The pin is a SINGLE source of truth — the reusable
-# checks its validator out at github.job_workflow_sha, i.e. this very SHA — so
-# advancing the gate is one line here, via a normal PR.
-#
-# REQUIRED status check: the surfaced context is 'kb-doc-gate / kb-doc-gate'
-# (this job's id / the reusable job's name). Removing this file wedges the
-# branch rather than silently dropping the gate.
+# Validator + reusable workflow live in omniclaude. The immutable caller pin is
+# still the validator version's single source of truth: the reusable checks its
+# validator out at github.job_workflow_sha, i.e. the caller's pinned SHA.
 
 name: KB Doc Gate
 
 on:
-  pull_request:
-    branches: [dev]
-
-# OMN-19639: cancel only superseded pull request runs.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
+  workflow_dispatch: {}
 
 jobs:
-  kb-doc-gate:
+  manual-kb-doc-gate:
     uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
     with:
       mode: diff
