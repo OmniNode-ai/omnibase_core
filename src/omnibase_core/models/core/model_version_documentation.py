@@ -7,13 +7,15 @@ Version Documentation Model - Tier 3 Metadata.
 Pydantic model for version documentation information.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_version_file import ModelVersionFile
 
 
 class ModelVersionDocumentation(BaseModel):
     """Version documentation information."""
+
+    model_config = ConfigDict(extra="forbid")
 
     documentation_files: list[ModelVersionFile] = Field(
         default_factory=list,

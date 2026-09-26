@@ -4,7 +4,7 @@
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_core_metadata import ModelMetadata
 from omnibase_core.models.core.model_regeneration_target import ModelRegenerationTarget
@@ -19,6 +19,8 @@ class ModelTemplateContext(BaseModel):
     Canonical context model for template rendering in node_manager.
     Add fields as needed for your node generation and template logic.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     node_name: str
     node_class: str

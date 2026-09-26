@@ -17,7 +17,7 @@ class SampleMetadataModel(BaseModel):
     """Sample model for testing."""
 
     name: str
-    version_str: str  # Using version_str to avoid string version validation
+    version: str
     hash: str
     last_modified_at: str
     description: str
@@ -31,7 +31,7 @@ class TestCanonicalizeMetadataBlock:
         """Test basic canonicalization with dictionary input."""
         metadata_dict = {
             "name": "test_node",
-            "version_str": "1.0.0",
+            "version": "1.0.0",
             "hash": "abc123",
             "last_modified_at": "2025-01-01T00:00:00",
             "description": "Test node",
@@ -128,7 +128,7 @@ class TestCanonicalizeMetadataBlock:
 
     def test_comment_prefix(self):
         """Test adding comment prefix to each line."""
-        metadata_dict = {"name": "test", "version_str": "1.0.0"}
+        metadata_dict = {"name": "test", "version": "1.0.0"}
 
         result = canonicalize_metadata_block(
             metadata_dict,
