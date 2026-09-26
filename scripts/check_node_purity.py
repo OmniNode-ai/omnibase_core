@@ -1889,7 +1889,8 @@ def main() -> int:
         "--file",
         "-f",
         type=Path,
-        help="Check a specific file instead of all node files",
+        nargs="+",
+        help="Check one or more specific files instead of all node files",
     )
     parser.add_argument(
         "--src-dir",
@@ -1922,10 +1923,12 @@ def main() -> int:
 
     # Find files to analyze
     if args.file:
-        if not args.file.exists():
-            print(f"Error: File not found: {args.file}", file=sys.stderr)
+        missing_files = [file_path for file_path in args.file if not file_path.exists()]
+        if missing_files:
+            missing = ", ".join(str(file_path) for file_path in missing_files)
+            print(f"Error: File not found: {missing}", file=sys.stderr)
             return 2
-        node_files = [args.file]
+        node_files = args.file
     else:
         node_files = find_node_files(src_dir)
 

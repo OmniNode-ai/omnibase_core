@@ -16,6 +16,7 @@ Ticket: OMN-156
 from __future__ import annotations
 
 import ast
+import json
 import sys
 import textwrap
 from pathlib import Path
@@ -42,6 +43,7 @@ from check_node_purity import (
     ViolationType,
     _safe_relative_path,
     analyze_file,
+    main,
 )
 
 # ==============================================================================
@@ -1695,3 +1697,69 @@ class TestReadModeVsWriteModeDistinction:
         assert len(open_violations) == 1
         # Verify it's the write that was flagged (line 8-9 in dedented source)
         assert open_violations[0].line_number > 5  # Should be from bad_write method
+
+
+@pytest.mark.timeout(30)
+@pytest.mark.unit
+class TestExplicitFileSelection:
+    """The local hook passes every selected node path after ``--file``."""
+
+    def test_multiple_explicit_files_preserve_each_selected_result(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        clean = tmp_path / "node clean.py"
+        clean.write_text(
+            "from omnibase_core.infrastructure.node_core_base import NodeCoreBase\n\n"
+            "class NodeCleanCompute(NodeCoreBase):\n    pass\n",
+            encoding="utf-8",
+        )
+        impure = tmp_path / "node impure.py"
+        impure.write_text(
+            "import requests\n"
+            "from omnibase_core.infrastructure.node_core_base import NodeCoreBase\n\n"
+            "class NodeImpureCompute(NodeCoreBase):\n    pass\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "check_node_purity.py",
+                "--json",
+                "--file",
+                str(clean),
+                str(impure),
+            ],
+        )
+
+        assert main() == 1
+
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["summary"] == {
+            "total_files": 2,
+            "pure_files": 1,
+            "impure_files": 1,
+        }
+        assert [result["file"] for result in payload["results"]] == [
+            str(clean),
+            str(impure),
+        ]
+
+    def test_missing_explicit_file_fails_without_falling_back_to_discovery(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        missing = tmp_path / "node missing.py"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            ["check_node_purity.py", "--file", str(missing)],
+        )
+
+        assert main() == 2
+        assert capsys.readouterr().err == f"Error: File not found: {missing}\n"

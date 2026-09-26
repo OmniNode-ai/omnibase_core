@@ -1749,18 +1749,15 @@ repos:
       # - No class-level mutable state
       # - No caching decorators that introduce state
       # EFFECT and ORCHESTRATOR nodes are excluded (allowed to have side effects)
-      # RUNS UNCONDITIONALLY: always_run=true ensures this runs on EVERY push
-      # regardless of which files changed. The script (not the hook) internally
-      # discovers and scans ALL node files (~2-5s runtime). No file pattern filter
-      # is configured at the hook level - the script handles all file discovery.
-      # NOTE: Base node classes (node_compute.py, node_reducer.py) have pre-existing
-      # Any usages that need cleanup in a separate ticket
+      # Local feedback is limited to node files in the outgoing push diff. The
+      # merge-required CI job retains the full discovery scan, including unchanged
+      # nodes, as the authoritative repository-wide purity check.
       - id: check-node-purity
-        name: ONEX Node Purity Validation
-        entry: uv run python scripts/check_node_purity.py
+        name: ONEX Node Purity Validation (outgoing node files)
+        entry: uv run python scripts/check_node_purity.py --file
         language: system
-        pass_filenames: false
-        always_run: true
+        pass_filenames: true
+        files: ^src/omnibase_core/(nodes|infrastructure)/node_[^/]*\.py$
         stages: [pre-push]
 
       # OMN-4801: Forbidden/decommissioned pattern scanner
