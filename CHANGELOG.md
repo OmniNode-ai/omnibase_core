@@ -1,3 +1,9 @@
+## v0.47.18 (2026-09-19)
+
+### Release
+- Cut omnibase_core from dev at 0.47.18. The dev line already declared 0.47.18 while the latest published release was v0.47.17, so this entry records the release cut without another version or dependency-pin change.
+- This cut includes the canonical delegation output-contract primitives: declared output shape and typed refusal models, exact deliverable extraction evidence, response-contract conveyance evidence, and task-class budget evidence or refusal.
+
 ## v0.47.17 (2026-09-18)
 
 ### Release
