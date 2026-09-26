@@ -818,9 +818,6 @@ DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
         "call-reject-skip-token / scan / reject-skip-gate-token",
         "call-reject-skip-token / occ-preflight / eligibility",
     ),
-    ("call-occ-companion-effect.yml", "occ-companion-effect"): (
-        "occ-companion-effect / Publish occ-companion-effect command",
-    ),
 }
 
 EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
