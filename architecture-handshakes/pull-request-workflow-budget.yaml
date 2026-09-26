@@ -192,9 +192,18 @@ waivers:
       The manual, implementer-adjacent OCC evidence-companion authoring step for every omnibase_core PR
       (Codex hand-authoring every companion because the born path could never fire -- no call-occ-autobind.yml
       or call-occ-companion-effect.yml existed in this repo before this ticket). #magic___^_^___line
+  # BOUNDED RENEWAL (OMN-16589 waiver, carried by OMN-19639, 2026-09-26): this
+  # waiver expired 2026-09-25 and fails WAIVER_EXPIRED on every commit and PR
+  # run touching a `pull_request` workflow file in this repo. Renewed seven
+  # days per the bounded-renewal pattern OMN-16359 used for the
+  # call-occ-companion-effect.yml waiver above; the same renewal is proposed in
+  # omnibase_core#1781. No migration or retirement decision is made here and the
+  # P1 pilot is unchanged. OMN-16589 remains the owning ticket and must renew
+  # explicitly, or close via the OMN-16281 migrate-into-ci.yml pattern, before
+  # 2026-10-02.
   - workflow_file: kb-doc-gate.yml
     ticket: OMN-16589
-    expires: "2026-09-25"
+    expires: "2026-10-02"
     justification: >-
       Pilot wiring (P1) of the org-wide KB doc gate per operator direction (2026-08-26): a hook that stops
       new markdown docs from being created in non-KB repos, plus a stub-size cap on edits to existing
