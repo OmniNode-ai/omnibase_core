@@ -712,6 +712,11 @@ from omnibase_core.cli.cli_refresh_credentials import refresh_credentials
 
 cli.add_command(refresh_credentials)
 
+# Register auth command group (login, status, token, logout) [OMN-15922]
+from omnibase_core.cli.cli_auth import auth_group
+
+cli.add_command(auth_group)
+
 # Register hooks command group (list, mask, enable, disable) [OMN-9614]
 from omnibase_core.cli.cli_hooks import hooks_group
 
