@@ -56,6 +56,12 @@ from omnibase_core.models.execution_graph_replay.model_execution_graph_stored_ch
 from omnibase_core.models.execution_graph_replay.model_execution_graph_stored_verdict_annotation import (
     ModelExecutionGraphStoredVerdictAnnotation,
 )
+from omnibase_core.models.execution_graph_replay.model_execution_graph_terminal_refusal import (
+    ModelExecutionGraphTerminalRefusal,
+)
+from omnibase_core.models.execution_graph_replay.model_execution_graph_terminal_result import (
+    ModelExecutionGraphTerminalResult,
+)
 from omnibase_core.models.execution_graph_replay.model_execution_graph_topology_version import (
     ModelExecutionGraphTopologyVersion,
 )
@@ -92,6 +98,8 @@ __all__ = [
     "ModelExecutionGraphStoredChainAnnotation",
     "ModelExecutionGraphStoredVerdictAnnotation",
     "ModelExecutionGraphTopologyVersion",
+    "ModelExecutionGraphTerminalRefusal",
+    "ModelExecutionGraphTerminalResult",
     "ModelExecutionGraphUnresolved",
     "ModelExecutionGraphVerdict",
 ]
