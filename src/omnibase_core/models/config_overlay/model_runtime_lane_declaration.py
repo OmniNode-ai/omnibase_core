@@ -50,11 +50,14 @@ _ROLE_VALUES: Final[frozenset[str]] = frozenset(
 )
 
 
-def normalize_runtime_lane_roles(value: object) -> tuple[EnumRuntimeLaneRole, ...]:
+def normalize_runtime_lane_roles(
+    value: object, *, allow_empty: bool = False
+) -> tuple[EnumRuntimeLaneRole, ...]:
     """Parse a role list (or one role) into roles, de-duplicated in order.
 
-    Raises ``ValueError`` on an empty list, a non-string entry or a role
-    outside :class:`EnumRuntimeLaneRole`, naming the vocabulary.
+    Raises ``ValueError`` on a non-string entry, a role outside
+    :class:`EnumRuntimeLaneRole` (naming the vocabulary), or an empty list
+    unless ``allow_empty``.
     """
     problem: str | None = None
     raw_values: tuple[object, ...] = ()
@@ -64,7 +67,7 @@ def normalize_runtime_lane_roles(value: object) -> tuple[EnumRuntimeLaneRole, ..
         raw_values = tuple(value)
     else:
         problem = "roles must be a role name or a list of role names"
-    if problem is None and not raw_values:
+    if problem is None and not raw_values and not allow_empty:
         problem = "roles must name at least one role"
     roles: list[EnumRuntimeLaneRole] = []
     for raw in raw_values if problem is None else ():
@@ -106,8 +109,10 @@ class ModelRuntimeLaneDeclaration(BaseModel):
     )
     roles: tuple[EnumRuntimeLaneRole, ...] = Field(
         ...,
-        min_length=1,
-        description="What the lane is for. De-duplicated in declaration order.",
+        description=(
+            "What the lane is for, de-duplicated in declaration order. Empty is "
+            "valid and means no role-gated contract attaches on this lane."
+        ),
     )
     description: str = Field(
         ..., min_length=1, description="What this deployment is, for a reader."
@@ -116,7 +121,7 @@ class ModelRuntimeLaneDeclaration(BaseModel):
     @field_validator("roles", mode="before")
     @classmethod
     def _parse_roles(cls, value: object) -> tuple[EnumRuntimeLaneRole, ...]:
-        return normalize_runtime_lane_roles(value)
+        return normalize_runtime_lane_roles(value, allow_empty=True)
 
     def has_roles(self, required: tuple[EnumRuntimeLaneRole, ...]) -> bool:
         """Return whether this lane holds every role in ``required``."""
@@ -178,7 +183,7 @@ class ModelRuntimeLaneDeclaration(BaseModel):
                     f"overlay document at {where}. Whoever runs this runtime "
                     f"supplies that document (schema {key.schema_ref}, "
                     f"schema_version {RUNTIME_LANE_SCHEMA_VERSION}) declaring "
-                    "lane_id, roles and description; this runtime refuses to "
+                    "lane_id, roles (may be empty) and description; this runtime refuses to "
                     "start without it."
                 ),
                 error_code=EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,

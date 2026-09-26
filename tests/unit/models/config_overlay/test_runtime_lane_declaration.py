@@ -42,7 +42,7 @@ def _content(**overrides: JsonType) -> dict[str, JsonType]:
     body: dict[str, JsonType] = {
         "schema_version": "runtime_lane.v1",
         "lane_id": _LANE,
-        "roles": ["dev", "lab"],
+        "roles": ["lab", "fault_injection"],
         "description": "A customer's edge deployment",
     }
     body.update(overrides)
@@ -67,7 +67,10 @@ def _document(content: dict[str, JsonType]) -> ModelConfigOverlayDocument:
 def test_a_valid_declaration_validates_and_is_frozen() -> None:
     declaration = ModelRuntimeLaneDeclaration.model_validate(_content())
     assert declaration.lane_id == _LANE
-    assert declaration.roles == (EnumRuntimeLaneRole.DEV, EnumRuntimeLaneRole.LAB)
+    assert declaration.roles == (
+        EnumRuntimeLaneRole.LAB,
+        EnumRuntimeLaneRole.FAULT_INJECTION,
+    )
     with pytest.raises(ValidationError):
         declaration.lane_id = "other"  # type: ignore[misc]
 
@@ -77,16 +80,24 @@ def test_an_unknown_role_is_refused() -> None:
         ModelRuntimeLaneDeclaration.model_validate(_content(roles=["labb"]))
 
 
-def test_an_empty_role_list_is_refused() -> None:
-    with pytest.raises(ValidationError, match="roles"):
-        ModelRuntimeLaneDeclaration.model_validate(_content(roles=[]))
+def test_an_empty_role_list_is_a_lane_with_no_role() -> None:
+    """Most lanes, and every first lane of a customer, need no role (decision 2)."""
+    declaration = ModelRuntimeLaneDeclaration.model_validate(_content(roles=[]))
+    assert declaration.roles == ()
+    assert not declaration.has_roles((EnumRuntimeLaneRole.LAB,))
+    assert not ModelRuntimeLaneRoleRequirement.model_validate(
+        {"roles": ["lab"]}
+    ).admits(declaration)
 
 
 def test_duplicate_roles_are_collapsed_in_declaration_order() -> None:
     declaration = ModelRuntimeLaneDeclaration.model_validate(
-        _content(roles=["lab", "dev", "lab"])
+        _content(roles=["lab", "fault_injection", "lab"])
     )
-    assert declaration.roles == (EnumRuntimeLaneRole.LAB, EnumRuntimeLaneRole.DEV)
+    assert declaration.roles == (
+        EnumRuntimeLaneRole.LAB,
+        EnumRuntimeLaneRole.FAULT_INJECTION,
+    )
 
 
 @pytest.mark.parametrize("lane_id", ["", "Dev", "a/b", "../x", "-lead", "x" * 65])
@@ -123,9 +134,12 @@ def test_every_field_is_required() -> None:
 def test_has_roles_is_all_of() -> None:
     declaration = ModelRuntimeLaneDeclaration.model_validate(_content())
     assert declaration.has_roles((EnumRuntimeLaneRole.LAB,))
-    assert declaration.has_roles((EnumRuntimeLaneRole.LAB, EnumRuntimeLaneRole.DEV))
-    assert not declaration.has_roles(
-        (EnumRuntimeLaneRole.LAB, EnumRuntimeLaneRole.PRODUCTION)
+    assert declaration.has_roles(
+        (EnumRuntimeLaneRole.LAB, EnumRuntimeLaneRole.FAULT_INJECTION)
+    )
+    lab_only = ModelRuntimeLaneDeclaration.model_validate(_content(roles=["lab"]))
+    assert not lab_only.has_roles(
+        (EnumRuntimeLaneRole.LAB, EnumRuntimeLaneRole.FAULT_INJECTION)
     )
 
 
@@ -133,12 +147,12 @@ def test_has_roles_is_all_of() -> None:
 
 
 def test_a_requirement_admits_a_lane_holding_every_role() -> None:
-    declaration = ModelRuntimeLaneDeclaration.model_validate(_content())
+    declaration = ModelRuntimeLaneDeclaration.model_validate(_content(roles=["lab"]))
     assert ModelRuntimeLaneRoleRequirement.model_validate({"roles": ["lab"]}).admits(
         declaration
     )
     assert not ModelRuntimeLaneRoleRequirement.model_validate(
-        {"roles": ["lab", "proof"]}
+        {"roles": ["lab", "fault_injection"]}
     ).admits(declaration)
 
 
@@ -251,15 +265,5 @@ def test_resolve_refuses_a_document_declaring_another_lane_naming_both() -> None
 
 
 def test_the_role_vocabulary_is_the_closed_set_the_plan_names() -> None:
-    assert {role.value for role in EnumRuntimeLaneRole} == {
-        "lab",
-        "dev",
-        "proof",
-        "read_only",
-        "collaborator",
-        "ephemeral",
-        "fault_injection",
-        "staging",
-        "production",
-        "local",
-    }
+    """Only roles code reads (plan decision 2): lab and fault_injection."""
+    assert {role.value for role in EnumRuntimeLaneRole} == {"lab", "fault_injection"}

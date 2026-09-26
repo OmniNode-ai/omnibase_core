@@ -1,18 +1,10 @@
 {
   "$defs": {
     "EnumRuntimeLaneRole": {
-      "description": "A role a deployment's overlay may grant its runtime lane.",
+      "description": "A role a deployment's overlay may grant its runtime lane.\n\nOnly roles that code reads are declared (plan decision 2): a role exists to\nadmit role-gated contracts or to switch a behaviour on. A role is added in\nthe same core change as the first code that reads it.",
       "enum": [
         "lab",
-        "dev",
-        "proof",
-        "read_only",
-        "collaborator",
-        "ephemeral",
-        "fault_injection",
-        "staging",
-        "production",
-        "local"
+        "fault_injection"
       ],
       "title": "EnumRuntimeLaneRole",
       "type": "string"
@@ -36,11 +28,10 @@
       "type": "string"
     },
     "roles": {
-      "description": "What the lane is for. De-duplicated in declaration order.",
+      "description": "What the lane is for, de-duplicated in declaration order. Empty is valid and means no role-gated contract attaches on this lane.",
       "items": {
         "$ref": "#/$defs/EnumRuntimeLaneRole"
       },
-      "minItems": 1,
       "title": "Roles",
       "type": "array"
     },

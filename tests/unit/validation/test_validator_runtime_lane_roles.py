@@ -36,7 +36,7 @@ def _codes(tmp_path: Path) -> list[str]:
 
 
 def test_known_roles_pass(tmp_path: Path) -> None:
-    _write(tmp_path, "name: node_example\nruntime_lane_roles: [lab, dev]\n")
+    _write(tmp_path, "name: node_example\nruntime_lane_roles: [lab, fault_injection]\n")
     assert _codes(tmp_path) == []
 
 

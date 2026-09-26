@@ -13,7 +13,8 @@ The vocabulary is closed, like the runtime profiles in
 ``constants_runtime_profiles``. A new role is new product behaviour and takes a
 core release; a new lane never does. A contract that needs a kind of lane
 declares ``runtime_lane_roles`` and is attached only where the lane's overlay
-grants every role it names.
+grants every role it names. A lane that needs no role declares
+``roles: []``.
 """
 
 from __future__ import annotations
@@ -23,37 +24,21 @@ from enum import StrEnum, unique
 
 @unique
 class EnumRuntimeLaneRole(StrEnum):
-    """A role a deployment's overlay may grant its runtime lane."""
+    """A role a deployment's overlay may grant its runtime lane.
+
+    Only roles that code reads are declared (plan decision 2): a role exists to
+    admit role-gated contracts or to switch a behaviour on. A role is added in
+    the same core change as the first code that reads it.
+    """
 
     LAB = "lab"
-    """A lab-first verification surface whose health is keyed per lane."""
-
-    DEV = "dev"
-    """A mutable development deployment."""
-
-    PROOF = "proof"
-    """A governed proof lane whose results are integration evidence."""
-
-    READ_ONLY = "read_only"
-    """A lane agents observe and never mutate."""
-
-    COLLABORATOR = "collaborator"
-    """A lane owned by an outside collaborator; never a proof lane."""
-
-    EPHEMERAL = "ephemeral"
-    """A lane created and destroyed for one run."""
+    """A lab-first verification surface whose health is keyed per lane. Read by
+    the auto-wiring ownership filter (the lab lane-health contract) and by the
+    runtime-health event's lane keying."""
 
     FAULT_INJECTION = "fault_injection"
-    """A lane on which synthetic provider fault routes may be materialised."""
-
-    STAGING = "staging"
-    """The promotion target before production."""
-
-    PRODUCTION = "production"
-    """A lane that serves customers."""
-
-    LOCAL = "local"
-    """A single-machine install."""
+    """A lane on which synthetic provider fault routes may be materialised. Read
+    by the fault-route gate."""
 
 
 __all__ = ["EnumRuntimeLaneRole"]
