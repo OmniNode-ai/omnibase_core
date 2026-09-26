@@ -4,8 +4,9 @@
 
 """Precheck for the OCC born-path manual replay entrypoint (OMN-14993).
 
-`call-occ-autobind.yml` and `call-occ-companion-effect.yml` gained a
-`workflow_dispatch` trigger so an operator can manually re-request a
+`call-occ-autobind.yml` gained a `workflow_dispatch` trigger; the companion-
+effect caller now lives in `ci.yml` as job `occ-companion-effect` and carries no
+manual replay entrypoint. The trigger lets an operator manually re-request a
 machine mint for a PR whose original `pull_request` event was swallowed
 (live incident: the pre-fix 422 bug in `node_occ_companion_effect`,
 OMN-14981/OMN-14939). That entrypoint only works for a PR that is
