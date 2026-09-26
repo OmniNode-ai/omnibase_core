@@ -118,6 +118,24 @@ class TestArtifactStoreWrite:
         ]
         assert leftovers == []
 
+    def test_atomic_write_cleans_up_when_interrupted(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Cleanup still runs for interruption-class failures before re-raising."""
+
+        class WriteInterrupted(BaseException):
+            pass
+
+        def raise_interruption(_source: Path, _destination: Path) -> Path:
+            raise WriteInterrupted
+
+        monkeypatch.setattr(Path, "replace", raise_interruption)
+
+        with pytest.raises(WriteInterrupted):
+            ArtifactStore._atomic_write(tmp_path / "blob", b"payload")
+
+        assert list(tmp_path.iterdir()) == []
+
     def test_write_is_idempotent_on_existing_hash(
         self, store: ArtifactStore, tmp_path: Path
     ) -> None:

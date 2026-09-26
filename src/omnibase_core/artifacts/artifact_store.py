@@ -573,6 +573,6 @@ class ArtifactStore:
             with os.fdopen(fd, "wb") as handle:
                 handle.write(data)
             tmp_path.replace(dest)
-        except BaseException:
+        except BaseException:  # fallback-ok: cleanup before re-raising every abort
             tmp_path.unlink(missing_ok=True)  # cleanup-resilience-ok: remove temp file
             raise
