@@ -2139,6 +2139,22 @@ repos:
     hooks:
       - id: secrets-baseline-wired
 
+  # OMN-19677: the debt baseline itself is a shrink-only contract. The same
+  # immutable omniclaude commit supplies this hook and the required CI job.
+  - repo: https://github.com/OmniNode-ai/omniclaude
+    rev: 3faefdcd5750b05f69d2efcb8cf200bc359483c3  # pragma: allowlist secret
+    hooks:
+      - id: anti-growth-baseline
+        name: Pydantic extra="forbid" baseline can only shrink (OMN-19677)
+        args:
+          - --baseline
+          - src/omnibase_core/validators/extra_forbid_baseline.yaml
+          - --parser
+          - yaml-list:violations
+          - --base-ref
+          - origin/dev
+        files: ^src/omnibase_core/validators/extra_forbid_baseline\.yaml$
+
 # ---------------------------------------------------------------------------
 # RETIRED 2026-09-11 (OMN-18176): the governed impacted-test selector
 # `prepush-smart-tests` (OMN-13973 / WS7 OMN-14655) no longer runs at

@@ -1877,8 +1877,12 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      # OMN-19677: anti-growth-baseline compares the baseline with its merge-base
+      # against origin/dev; a shallow checkout has no origin/dev.
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -3122,6 +3126,13 @@ jobs:
   # data-loss bugs came from exactly that (OMN-14490/14506/14513/14514). Blocks NEW
   # models outright, blocks MODIFIED baselined models, and --check-stale forces the
   # frozen baseline count down (it may never grow).
+  pydantic-extra-forbid-baseline-oneway:
+    name: Pydantic extra="forbid" Baseline One-way (OMN-19677)
+    uses: OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@3faefdcd5750b05f69d2efcb8cf200bc359483c3
+    with:
+      baseline-path: src/omnibase_core/validators/extra_forbid_baseline.yaml
+      parser: yaml-list:violations
+
   pydantic-extra-forbid:
     name: Pydantic extra="forbid" Ratchet (OMN-14515)
     needs: [zone-filter]

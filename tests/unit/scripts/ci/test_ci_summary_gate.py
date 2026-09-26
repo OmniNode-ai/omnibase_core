@@ -211,6 +211,14 @@ class TestCiSummaryGate:
         code, _ = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
         assert code == EXIT_SUCCESS
 
+    def test_report_only_shadow_selection_failure_is_ignored(self) -> None:
+        # The comparison only uploads a counterfactual selection record. It has
+        # no pass/fail policy and is intentionally continue-on-error, so the
+        # required CI Summary must not turn this report-only surface into a gate.
+        jobs = _all_good() + [_job("Shadow Selection Compare", "failure")]
+        code, _ = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_SUCCESS
+
     def test_gate_contract_compliance_check_failure_is_failure(self) -> None:
         # The gating "Contract Compliance Check" is distinct from the allowlisted
         # orphan "Contract Compliance"; its failure MUST block.
