@@ -30,6 +30,9 @@ from omnibase_core.enums.ticket.enum_mock_strategy import (
     EnumMockStrategy,
     MockStrategy,
 )
+from omnibase_core.enums.ticket.enum_package_only_manifest_status import (
+    EnumPackageOnlyManifestStatus,
+)
 from omnibase_core.enums.ticket.enum_proof_tier import EnumProofTier
 from omnibase_core.enums.ticket.enum_ticket_class import EnumTicketClass
 from omnibase_core.enums.ticket.enum_ticket_types import (
@@ -81,4 +84,5 @@ __all__ = [
     # OMN-13338: tiered proof-packet enums
     "EnumProofTier",
     "EnumTicketClass",
+    "EnumPackageOnlyManifestStatus",
 ]
