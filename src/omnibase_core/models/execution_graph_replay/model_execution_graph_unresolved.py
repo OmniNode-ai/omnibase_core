@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.models.execution_graph_replay.model_enum_execution_graph_replay import (
+from omnibase_core.enums.execution_graph_replay import (
     EnumExecutionGraphUnresolvedReason,
 )
 from omnibase_core.models.execution_graph_replay.model_execution_graph_source_ref import (

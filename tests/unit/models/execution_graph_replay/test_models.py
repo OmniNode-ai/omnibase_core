@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.execution_graph_replay import (
+from omnibase_core.enums.execution_graph_replay import (
     EnumExecutionGraphAnchorKind,
     EnumExecutionGraphAnchorState,
     EnumExecutionGraphCursorMode,
@@ -18,6 +18,8 @@ from omnibase_core.models.execution_graph_replay import (
     EnumExecutionGraphUnresolvedReason,
     EnumExecutionGraphVerdictOutcome,
     EnumExecutionGraphVerdictStatus,
+)
+from omnibase_core.models.execution_graph_replay import (
     ModelExecutionGraph,
     ModelExecutionGraphAnchor,
     ModelExecutionGraphAnnotations,
