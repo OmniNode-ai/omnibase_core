@@ -76,8 +76,13 @@ repos:
   - name: omninode_infra
     owner: OmniNode-ai
     pin_sites:
+      # omninode_infra pins via an env-var indirection (OMNIBASE_CORE_COMMIT: <sha>,
+      # then `ref: ${{ env.OMNIBASE_CORE_COMMIT }}` at the checkout step), not an
+      # inline `ref: <sha>`. OMN-19848: the literal-ref pattern this used to carry
+      # never matched, so every publish-downstream-pin-bump.yml run since the
+      # migration raised ValueError before touching any other repo's pin site.
       - path: .github/workflows/check-handshake.yml
-        pattern: "ref:\\s*([0-9a-f]{40})"
+        pattern: "OMNIBASE_CORE_COMMIT:\\s*([0-9a-f]{40})"
 
   - name: omniweb
     owner: OmniNode-ai

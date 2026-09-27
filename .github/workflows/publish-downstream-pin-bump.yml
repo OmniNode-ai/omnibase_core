@@ -16,7 +16,11 @@
 #
 # Failures on a single downstream repo must NOT cascade — each matrix leg is
 # `continue-on-error: true` so a bad pin surface on one repo doesn't block the
-# rest. The job summary enumerates failures for human triage.
+# rest (`fail-fast: false` already keeps siblings running independently of
+# this). OMN-19848: that must not mean the failure is invisible. The `summary`
+# job queries this run's own jobs via the Actions API and fails the run when
+# any "Bump: <repo>" leg did not succeed, naming it in the run summary and as
+# an `::error::` annotation — no leg is declared optional today.
 
 name: Publish downstream pin bumps
 
@@ -118,6 +122,13 @@ jobs:
           repositories: ${{ matrix.repo }}
           permission-contents: write
           permission-pull-requests: write
+          # OMN-19848: every declared pin_site lives under .github/workflows/.
+          # GitHub refuses an App-authored push touching a workflow file unless
+          # the token also carries `workflows: write` — without this every leg
+          # failed identically at "Commit + push branch" with "refusing to allow
+          # a GitHub App to create or update workflow ... without `workflows`
+          # permission", before any PR was ever opened.
+          permission-workflows: write
 
       - name: Checkout downstream (${{ matrix.repo }})
         uses: actions/checkout@v7
@@ -233,9 +244,36 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
+    permissions:
+      actions: read
     steps:
       - name: Echo outcome
         run: |
           echo "Pin bump run for SHA ${{ needs.enumerate-repos.outputs.new_sha }}"
           echo "Repos attempted: ${{ needs.enumerate-repos.outputs.repos }}"
-          echo "Per-repo outcomes are in the bump matrix; failures are non-fatal but visible here."
+
+      # OMN-19848: each matrix leg is job-level continue-on-error, so a real
+      # leg failure never turned this workflow's own conclusion red — the run
+      # read "success" while every leg failed (docs/tracking/ROLLING_WORK_LEDGER.md
+      # FRICTION row, lane omninode-infra-core-bump-83, 2026-09-27T03:30:12Z).
+      # No leg is declared optional today, so any "Bump: <repo>" job that did
+      # not succeed fails this job — and with it the workflow's conclusion.
+      - name: Fail red on any real leg failure (no silent gates)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          FAILED=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --paginate \
+            --jq '.jobs[] | select(.name | startswith("Bump: ")) | select(.conclusion != "success" and .conclusion != "skipped") | "\(.name): \(.conclusion)"')
+          if [ -n "$FAILED" ]; then
+            {
+              echo "## Downstream pin-bump leg failures"
+              echo "$FAILED"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "$FAILED" | while IFS= read -r line; do
+              echo "::error::$line"
+            done
+            echo "One or more downstream bump legs did not succeed. See the errors above."
+            exit 1
+          fi
+          echo "All downstream bump legs succeeded (or had no changes)." | tee -a "$GITHUB_STEP_SUMMARY"
