@@ -194,7 +194,7 @@ jobs:
   # reusable checks its validator out at `github.job_workflow_sha`.
   kb-doc-gate:
     if: github.event_name == 'pull_request' && github.base_ref == 'dev'
-    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@6ccd525e2b6390869d18f8e00d1b36294aa5550a
     with:
       mode: diff
     permissions:
@@ -3343,7 +3343,7 @@ jobs:
   # diverge, and advancing the gate is those two lines changed together.
   secrets-baseline-wiring:
     name: secrets-baseline-wiring
-    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@a58fb5eab5ae66a8e7fcb7f6bcac8c3e48632ee1
+    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@6ccd525e2b6390869d18f8e00d1b36294aa5550a
 
   quality-gate:
     name: Quality Gate
