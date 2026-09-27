@@ -53,6 +53,24 @@ def test_ci_has_no_base_branch_filter() -> None:
     assert "branches" not in _pull_request_trigger()
 
 
+def test_standalone_companion_caller_is_not_restored() -> None:
+    """OMN-16359 prevents the duplicate-producer cancellation from returning."""
+    workflows = REPO_ROOT / ".github" / "workflows"
+    standalone = workflows / "call-occ-companion-effect.yml"
+    reusable = "call-occ-companion-effect-reusable.yml"
+
+    assert not standalone.exists()
+    assert reusable in WORKFLOW.read_text(encoding="utf-8")
+    other_producers = [
+        path
+        for path in workflows.iterdir()
+        if path.is_file()
+        and path != WORKFLOW
+        and reusable in path.read_text(encoding="utf-8")
+    ]
+    assert other_producers == []
+
+
 def test_ci_job_preserves_required_reusable_contract() -> None:
     doc: dict[Any, Any] = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
     jobs = doc["jobs"]

@@ -7,7 +7,7 @@ Dynamic Event Type Model.
 enables plugin extensibility and contract-driven event type registration.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_json_schema import ModelJsonSchema
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -19,6 +19,8 @@ class ModelEventType(BaseModel):
 
     to register their own event types dynamically.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     event_name: str = Field(
         default=...,

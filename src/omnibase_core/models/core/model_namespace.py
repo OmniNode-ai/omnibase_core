@@ -7,7 +7,7 @@ Namespace model.
 
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -20,6 +20,8 @@ class ModelNamespace(BaseModel):
     Pattern: <filetype>://<prefix>.<subdirs>.<stem> (filetype is the extension, e.g., python, yaml, json, md)
     Serializes as a single-line URI string, never as a mapping.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     value: str
 

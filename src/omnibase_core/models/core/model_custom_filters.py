@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -29,6 +29,8 @@ class ModelCustomFilters(BaseModel):
 
     Replaces Dict[str, Any] for custom_filters fields with typed filters.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # union-ok: discriminated_model_union - All filter types share filter_type discriminator field
     filters: dict[

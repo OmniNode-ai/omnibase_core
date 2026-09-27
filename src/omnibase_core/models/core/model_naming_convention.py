@@ -25,9 +25,10 @@
 # === /OmniNode:Metadata ===
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelNamingConventionResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     valid: bool
     reason: str = ""

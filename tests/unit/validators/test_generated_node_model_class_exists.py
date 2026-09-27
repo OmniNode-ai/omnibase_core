@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.validators.generated_node_model_class_exists import (
+    _iter_generated_node_contracts,
     main,
     validate_file,
     validate_paths,
@@ -80,6 +81,14 @@ def _write_node(tmp_path: Path, contract: str, handler: str | None) -> Path:
 def test_matching_handler_passes(tmp_path: Path) -> None:
     contract_path = _write_node(tmp_path, _CONTRACT, _HANDLER_MATCHING)
     assert validate_file(contract_path) == []
+
+
+def test_changed_handler_selects_its_sibling_contract(tmp_path: Path) -> None:
+    contract_path = _write_node(tmp_path, _CONTRACT, _HANDLER_MATCHING)
+
+    assert list(
+        _iter_generated_node_contracts([contract_path.parent / "handler.py"])
+    ) == [contract_path]
 
 
 def test_mismatched_handler_fails(tmp_path: Path) -> None:

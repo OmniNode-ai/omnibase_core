@@ -14,4 +14,4 @@ class ModelDbTableRef(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     name: str
-    access: str  # "read", "write", "read_write"
+    access: str  # "read", "write", "read_write", "read_insert", "read_write_delete"

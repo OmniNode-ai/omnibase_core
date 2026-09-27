@@ -20,7 +20,6 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.enum_actor_kind import EnumActorKind
 from omnibase_core.enums.enum_proof_class import EnumProofClass
-from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.enums.enum_work_outcome import EnumWorkOutcome
 from omnibase_core.enums.governance.enum_pr_state import EnumPRState
@@ -55,7 +54,7 @@ def _session_actor() -> ModelSessionActor:
 def _node_actor() -> ModelNodeActor:
     return ModelNodeActor(
         node_id="node_pr_lifecycle_orchestrator",
-        runtime_lane=EnumRuntimeLane.STABILITY_TEST,
+        runtime_lane="stability-test",
         contract_version=ModelSemVer(major=1, minor=4, patch=0),
         run_id=uuid.UUID("11111111-2222-3333-4444-555555555555"),
     )
@@ -219,7 +218,7 @@ def test_node_actor_round_trips_with_discriminator() -> None:
     restored = ModelWorkRulingRecorded.model_validate_json(original.model_dump_json())
     assert isinstance(restored.actor, ModelNodeActor)
     assert restored.actor.kind is EnumActorKind.NODE
-    assert restored.actor.runtime_lane is EnumRuntimeLane.STABILITY_TEST
+    assert restored.actor.runtime_lane == "stability-test"
     assert restored == original
 
 
@@ -247,12 +246,12 @@ def test_node_actor_fields_are_rejected_on_a_session_discriminator() -> None:
         ModelWorkRulingRecorded.model_validate(payload)
 
 
-def test_runtime_lane_rejects_an_unknown_lane() -> None:
-    """runtime_lane is load-bearing for claim arbitration — it is a closed set."""
+def test_runtime_lane_rejects_a_value_that_is_not_a_lane_id() -> None:
+    """runtime_lane is a lane id (a slug), never free text (OMN-19746)."""
     with pytest.raises(ValidationError):
         ModelNodeActor(
             node_id="node_pr_lifecycle_orchestrator",
-            runtime_lane="not-a-lane",  # type: ignore[arg-type]
+            runtime_lane="Not A Lane",
             contract_version=ModelSemVer(major=1, minor=4, patch=0),
             run_id=uuid.uuid4(),
         )
@@ -270,7 +269,7 @@ def test_actor_key_is_derived_for_a_session_actor() -> None:
 
 def test_actor_key_carries_the_runtime_lane_for_a_node_actor() -> None:
     """Two lanes running the same node must not share a narrative partition key."""
-    dev = _node_actor().model_copy(update={"runtime_lane": EnumRuntimeLane.DEV})
+    dev = _node_actor().model_copy(update={"runtime_lane": "dev"})
     stability = _node_actor()
     assert _ruling(actor=dev).actor_key != _ruling(actor=stability).actor_key
     assert (

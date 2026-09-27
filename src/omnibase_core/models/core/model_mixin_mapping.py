@@ -71,8 +71,4 @@ class ModelMixinMapping(BaseModel):
         return self
 
 
-from omnibase_core.models.core.model_mixin_mapping_collection import (
-    ModelMixinMappingCollection,
-)
-
-__all__ = ["ModelMixinMapping", "ModelMixinMappingCollection"]
+__all__ = ["ModelMixinMapping"]

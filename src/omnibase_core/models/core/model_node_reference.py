@@ -8,7 +8,7 @@ Flexible node reference model that replaces EnumTargetNode
 to support local, remote, and third-party node references.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_capability import ModelCapability
 from omnibase_core.models.core.model_node_metadata import (
@@ -23,6 +23,8 @@ class ModelNodeReference(BaseModel):
     Supports local nodes, remote nodes, and third-party nodes
     with namespaces for isolation and extensibility.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     node_name: str = Field(
         default=..., description="Node name", pattern="^[a-z][a-z0-9_]*$"

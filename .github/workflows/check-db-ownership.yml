@@ -21,6 +21,12 @@ on:
     types: [opened, edited, synchronize, reopened]
   workflow_dispatch:
 
+# OMN-19639: cancel only superseded pull request runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
 env:
   UV_VERSION: "0.8.3"
   PYTHON_VERSION: "3.12"
@@ -116,14 +122,16 @@ jobs:
       - name: DB ownership summary
         if: always() && steps.changed.outputs.run_full == 'true'
         run: |
-          echo "## DB Ownership CI Twin (OMN-2150)" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Mirrors runtime assertion B1:" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Provisions temp SQLite database" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Runs db_metadata migration" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Verifies owner_service matches expected value" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Validates Pydantic model roundtrip" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Detects wrong ownership and missing table" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## DB Ownership CI Twin (OMN-2150)"
+            echo ""
+            echo "Mirrors runtime assertion B1:"
+            echo "- Provisions temp SQLite database"
+            echo "- Runs db_metadata migration"
+            echo "- Verifies owner_service matches expected value"
+            echo "- Validates Pydantic model roundtrip"
+            echo "- Detects wrong ownership and missing table"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Short-circuit summary (no relevant changes)
         if: steps.changed.outputs.run_full != 'true'

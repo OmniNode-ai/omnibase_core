@@ -5,11 +5,13 @@
 FilterOperator model.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFilterOperator(BaseModel):
     """Filter operator configuration."""
+
+    model_config = ConfigDict(extra="forbid")
 
     operator: str = Field(
         default=...,

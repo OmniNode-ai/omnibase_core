@@ -7,7 +7,6 @@ Node Core Metadata Model.
 Core node metadata with essential identification and status information.
 """
 
-from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,10 +14,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-
-if TYPE_CHECKING:
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeCoreMetadata(BaseModel):
@@ -55,7 +52,7 @@ class ModelNodeCoreMetadata(BaseModel):
     )
 
     # Version (1 field, but structured)
-    version: "ModelSemVer | None" = Field(default=None, description="Node version")
+    version: ModelSemVer | None = Field(default=None, description="Node version")
 
     def is_active(self) -> bool:
         """Check if node is active."""
@@ -101,7 +98,7 @@ class ModelNodeCoreMetadata(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

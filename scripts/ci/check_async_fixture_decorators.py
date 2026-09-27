@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import ast
 import sys
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -48,31 +49,45 @@ def _is_bare_pytest_fixture(decorator: ast.expr) -> bool:
     return False
 
 
-def find_violations() -> list[tuple[Path, int, str]]:
+def _python_files(paths: Sequence[Path] | None) -> Iterable[Path]:
+    if paths is None:
+        for scan_root in SCAN_ROOTS:
+            root = REPO_ROOT / scan_root
+            if root.is_dir():
+                yield from sorted(root.rglob("*.py"))
+        return
+
+    for path in paths:
+        if path.is_file() and path.suffix == ".py":
+            yield path
+        elif path.is_dir():
+            yield from sorted(path.rglob("*.py"))
+
+
+def find_violations(paths: Sequence[Path] | None = None) -> list[tuple[Path, int, str]]:
     violations: list[tuple[Path, int, str]] = []
-    for scan_root in SCAN_ROOTS:
-        root = REPO_ROOT / scan_root
-        if not root.is_dir():
+    for path in _python_files(paths):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
             continue
-        for path in sorted(root.rglob("*.py")):
-            try:
-                tree = ast.parse(path.read_text(encoding="utf-8"))
-            except (SyntaxError, UnicodeDecodeError):
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.AsyncFunctionDef):
                 continue
-            for node in ast.walk(tree):
-                if not isinstance(node, ast.AsyncFunctionDef):
-                    continue
-                for decorator in node.decorator_list:
-                    if _is_bare_pytest_fixture(decorator):
-                        violations.append(
-                            (path.relative_to(REPO_ROOT), node.lineno, node.name)
-                        )
-                        break
+            for decorator in node.decorator_list:
+                if _is_bare_pytest_fixture(decorator):
+                    try:
+                        display_path = path.relative_to(REPO_ROOT)
+                    except ValueError:
+                        display_path = path
+                    violations.append((display_path, node.lineno, node.name))
+                    break
     return violations
 
 
-def main() -> int:
-    violations = find_violations()
+def main(argv: Sequence[str] | None = None) -> int:
+    raw_paths = sys.argv[1:] if argv is None else argv
+    violations = find_violations([Path(value) for value in raw_paths] or None)
     if not violations:
         sys.stdout.write("async-fixture-decorator gate: OK (0 violations)\n")
         return 0

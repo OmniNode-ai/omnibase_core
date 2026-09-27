@@ -22,6 +22,12 @@ on:
   pull_request:
     branches: [main, develop, dev]
 
+# OMN-19639: cancel only superseded pull request runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
 env:
   PYTHON_VERSION: "3.12"
   UV_VERSION: "0.8.3"

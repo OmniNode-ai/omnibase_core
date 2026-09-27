@@ -107,91 +107,20 @@ waivers:
   # zero branch-protection mutation. See
   # architecture-handshakes/standalone-validator-debt.yaml
   # (migrated_into_ci_yml).
-  # OMN-16359 bounded renewal (2026-08-21): this waiver's original expiry
-  # (2026-08-23) was two days out with no closure ticket -- the exact
-  # WAIVER_EXPIRED fail-closed shape that took down every core dev PR in
-  # OMN-16280 (sibling waiver, validator-no-unguarded-git-subprocess.yml).
-  # OMN-16359 is the closure ticket; DO NOT let this waiver expire silently
-  # again -- renew explicitly or escalate before the date below.
-  #
-  # Also corrects a factual error in the justification below that predates
-  # this renewal: the original text claimed this caller is "non-required...
-  # does not add a check to the PR's required-status surface or block
-  # merges." That is false as of this renewal (and was already false when
-  # written) -- .github/required-checks.yaml's "occ-companion-effect /
-  # Publish occ-companion-effect command" row (mode: REQUIRED,
-  # caller_workflow: call-occ-companion-effect.yml) and this workflow file's
-  # own header comment both confirm it IS a live, directly-required dev
-  # branch-protection context. Do not carry the stale "non-required" claim
-  # forward again.
-  #
-  # NOT closed via the OMN-16281 pattern (migrate the job into ci.yml with a
-  # byte-identical job name) in this same PR, because the two workflows'
-  # pull_request trigger surfaces genuinely differ and a naive copy would
-  # silently reopen two already-fixed bugs: call-occ-companion-effect.yml
-  # listens for `[opened, synchronize, reopened, ready_for_review]` with NO
-  # `branches:` filter (deliberate -- closes the OMN-14987 draft-PR gap and
-  # the #2377 stacked-PR vector), while ci.yml's own pull_request trigger has
-  # no `types:` (opened/synchronize/reopened only, no ready_for_review) and
-  # filters `branches: [main, dev]`. Structural migration is scoped to
-  # OMN-16359 and requires reconciling that trigger-surface gap first (see
-  # ticket for the two options considered).
-  #
-  # OMN-16359 renewal (2026-09-21): the prior renewal above (2026-08-21) said
-  # not to renew a third time without landing the migration or getting an
-  # explicit operator call. This is that call. Operator ruling at 2026-09-21
-  # ~14:45Z, recorded in docs/tracking/ROLLING_WORK_LEDGER.md:3524 item (c):
-  # "omnibase_core workflow-budget waiver OMN-16359 renewed seven days,
-  # migration scheduled separately." Renewed expires 2026-09-20 ->
-  # 2026-09-27 (seven days). The structural migration into ci.yml remains
-  # scheduled separately and is NOT landed in this change.
-  #
-  # RESTORED 2026-09-21 (same change as the renewal above). omnibase_core#1730
-  # ("feat(OMN-18996): deliver core delegation source slice", unrelated to
-  # workflow governance) merged to dev at 0e051b49 from a stale branch whose
-  # tree predated this whole renewal chain, and its squash diff DELETED both
-  # this waiver entry AND .github/workflows/call-occ-companion-effect.yml
-  # outright -- collateral damage, not a migration (ci.yml's own diff in that
-  # merge gained only 18 lines, nowhere near this caller's ~150-line reusable
-  # invocation). Between 0e051b49 and this restoring merge, the
-  # "occ-companion-effect / Publish occ-companion-effect command" required
-  # dev branch-protection context (.github/required-checks.yaml) had no
-  # producing workflow left to fire it -- worse than WAIVER_EXPIRED, because
-  # that at least clears on renewal; an absent required check never clears on
-  # its own. This entry and the workflow file are restored byte-for-byte from
-  # the pre-deletion dev head (origin/dev@0e051b49~1, i.e. HEAD~1 of the
-  # deleting merge) rather than from the older OMN-16359 renewal commit
-  # d3069b2d: three commits landed on the workflow file between d3069b2d and
-  # the deletion (0149fc61 OMN-14160, b2348e12 OMN-18334, 53055e39 OMN-18012),
-  # and the last of those added the `secrets: inherit` / KAFKA_SASL_* wiring
-  # the publisher now requires because the dev-lane broker enabled SASL on
-  # 2026-09-07 -- restoring the older byte-identical d3069b2d text would have
-  # reintroduced a *different*, silent failure (the publisher fail-fasting on
-  # the declared SASL lane with no credentials), not a clean revert. See
-  # OMN-18996 for the collateral-deletion comment and OMN-18906 for the
-  # missing-gate follow-up (a PR deleting/renaming a workflow that produces a
-  # required-checks.yaml / branch-protection context should be refused,
-  # #1730 is the falsifier).
-  - workflow_file: call-occ-companion-effect.yml
-    ticket: OMN-16359
-    expires: "2026-09-27"
-    justification: >-
-      Fan-out of the proven omnibase_infra OCC-companion-effect born-path caller (OMN-14941 canary, PR
-      #2394, discriminating readback passed on infra#2393 -> OCC#4618). Thin `uses:` caller of an omniclaude-hosted
-      reusable (own concurrency group, no interaction with ci.yml's job graph) that publishes a Kafka
-      command for the .201 dev-lane effects runtime to consume out of band. It IS a directly-required
-      dev branch-protection context ("occ-companion-effect / Publish occ-companion-effect command", mode:
-      REQUIRED in .github/required-checks.yaml) -- the prior justification's "non-required, does not block
-      merges" claim was incorrect and is corrected here. Waived rather than budget-bumped so the count
-      lock stays flat; structural closure (migrate into ci.yml, same pattern OMN-16281 proved for the
-      sibling waiver) is tracked on OMN-16359 and blocked on reconciling this workflow's wider pull_request
-      trigger surface against ci.yml's narrower one -- see OMN-16359 for the two migration options under
-      consideration. This is a bounded renewal, not an indefinite one: do not renew a third time without
-      landing the migration or getting an explicit operator call, per the OMN-16281 precedent.
-    retires: >-
-      The manual, implementer-adjacent OCC evidence-companion authoring step for every omnibase_core PR
-      (Codex hand-authoring every companion because the born path could never fire -- no call-occ-autobind.yml
-      or call-occ-companion-effect.yml existed in this repo before this ticket). #magic___^_^___line
+  # call-occ-companion-effect.yml waiver (OMN-14990 origin, OMN-16359 renewals)
+  # PERMANENTLY CLOSED by OMN-16359: #1730 (0e051b49) migrated the caller into
+  # ci.yml as the `occ-companion-effect` job, keeping the byte-identical required
+  # context "occ-companion-effect / Publish occ-companion-effect command"; its
+  # required-checks.yaml row was repointed to ci.yml. ci.yml already carries the
+  # same five pull_request activity types with no branches filter, so the trigger-
+  # surface gap that blocked migration no longer exists. The 2026-09-21 "restore"
+  # (#1731, e2fabbea) misread that migration as collateral deletion and re-added
+  # the standalone file, which duplicated the same context in the same
+  # concurrency group and cancelled against ci.yml (runs 36236317013 and
+  # 36232360053 on omnibase_core#1784). The standalone file is deleted outright, not retired to
+  # workflow_dispatch, because this repository's companion caller has no manual
+  # replay. Budget stays flat at 30 because ci.yml was already allowlisted. Do NOT
+  # restore the standalone file: re-adding it recreates the duplicate producer.
   - workflow_file: advisory-job-gate.yml
     ticket: OMN-18796
     expires: "2026-11-30"
@@ -251,6 +180,6 @@ metadata:
     - OMN-16280  # urgent unblock: renewed the expired validator-no-unguarded-git-subprocess.yml waiver
     - OMN-16281  # permanent closure follow-through for that waiver -- do not renew a third time
     - OMN-14990  # origin ticket for the call-occ-companion-effect.yml waiver
-    - OMN-16359  # bounded renewal + structural-closure ticket for the call-occ-companion-effect.yml waiver -- do not renew a third time
+    - OMN-16359  # call-occ-companion-effect.yml waiver permanently closed: caller lives in ci.yml, standalone file deleted
     - OMN-16589  # kb-doc-gate.yml waiver permanently closed by folding the caller into ci.yml
     - OMN-14160  # call-occ-autobind.yml waiver -- the fan-out destination the 2026-07-24 pass skipped

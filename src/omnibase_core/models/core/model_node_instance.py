@@ -8,7 +8,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 "\nNode Instance Model\n\nNode instance with health and load information for advanced\ninstance management and service discovery.\n"
 from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
 from omnibase_core.models.configuration.model_load_metrics import ModelLoadMetrics
@@ -26,6 +26,8 @@ class ModelNodeInstance(BaseModel):
     This model represents a running node instance with comprehensive
     health, load, and capability information for advanced management.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     reference: ModelNodeReference = Field(default=..., description="Node reference")
     status: EnumNodeStatus = Field(default=..., description="Current node status")

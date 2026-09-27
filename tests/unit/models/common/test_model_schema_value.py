@@ -519,10 +519,10 @@ class TestModelSchemaValueEdgeCases:
         assert schema.string_value == "test"
 
     def test_very_large_number(self):
-        """Test handling of very large numbers."""
+        """Reject integers that canonical float storage cannot represent exactly."""
         large = 10**100
-        schema = ModelSchemaValue.from_value(large)
-        assert schema.value_type == "number"
+        with pytest.raises(ModelOnexError):
+            ModelSchemaValue.from_value(large)
 
     def test_negative_float(self):
         """Test handling of negative float."""

@@ -30,11 +30,13 @@ Model for tracking skipped files and their reasons.
 
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelSkippedFileReason(BaseModel):
     """Model for tracking skipped files and their reasons."""
+
+    model_config = ConfigDict(extra="forbid")
 
     file: Path
     reason: str

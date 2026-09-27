@@ -7,7 +7,7 @@ The ModelMixinPreset class for defining
 preset configurations for common use cases.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
@@ -19,6 +19,8 @@ class ModelMixinPreset(BaseModel):
         description: Preset description
         config: Configuration values
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     description: str = Field(..., description="Preset description")
     config: SerializedDict = Field(default_factory=dict, description="Config values")

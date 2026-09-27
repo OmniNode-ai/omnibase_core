@@ -5,7 +5,7 @@
 CLI command model for node command specification.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_event_type import ModelEventType
@@ -13,6 +13,8 @@ from omnibase_core.models.core.model_event_type import ModelEventType
 
 class ModelCLICommand(BaseModel):
     """Model for CLI command specification."""
+
+    model_config = ConfigDict(extra="forbid")
 
     command_name: str = Field(
         default=...,

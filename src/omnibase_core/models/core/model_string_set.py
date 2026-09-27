@@ -5,7 +5,7 @@
 
 from collections.abc import Iterator
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelStringSet(BaseModel):
@@ -16,14 +16,18 @@ class ModelStringSet(BaseModel):
     requiring specific typed models instead of generic types.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     elements: list[str] = Field(
         default_factory=list,
         description="List of unique string elements",
     )
 
-    def __post_init__(self) -> None:
-        """Ensure uniqueness of elements."""
-        self.elements = list(dict.fromkeys(self.elements))
+    @field_validator("elements", mode="after")
+    @classmethod
+    def normalize_elements(cls, value: list[str]) -> list[str]:
+        """Preserve first-seen order while enforcing the set invariant."""
+        return list(dict.fromkeys(value))
 
     def add(self, element: str) -> None:
         """Add an element to the set."""

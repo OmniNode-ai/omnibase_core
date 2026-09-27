@@ -6,11 +6,13 @@ from pydantic import Field
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nDependencies model for node introspection.\n"
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ModelDependencies(BaseModel):
     """Model for node dependencies specification."""
+
+    model_config = ConfigDict(extra="forbid")
 
     runtime: list[str] = Field(
         default_factory=list, description="Required runtime dependencies"

@@ -7,6 +7,10 @@ Frozen, ``extra="forbid"`` schemas for the three overlay keys core owns
 (``llm.catalog``, ``llm.pricing``, ``embedding.endpoint``), the document
 envelope every source returns, and the scope a document is read for. None of
 them defaults to a model, an endpoint or a price.
+
+``runtime.lane`` (OMN-19746): the typed declaration of a deployment's runtime
+lane and its roles, and the startup refusals a runtime applies to it. It names
+no lane.
 """
 
 from omnibase_core.models.config_overlay.model_config_overlay_document import (
@@ -39,8 +43,15 @@ from omnibase_core.models.config_overlay.model_llm_pricing_overlay import (
 from omnibase_core.models.config_overlay.model_llm_runner_cost_policy import (
     ModelLlmRunnerCostPolicy,
 )
+from omnibase_core.models.config_overlay.model_runtime_lane_declaration import (
+    RUNTIME_LANE_ENV_VAR,
+    RUNTIME_LANE_SCHEMA_VERSION,
+    ModelRuntimeLaneDeclaration,
+)
 
 __all__ = [
+    "RUNTIME_LANE_ENV_VAR",
+    "RUNTIME_LANE_SCHEMA_VERSION",
     "ModelConfigOverlayDocument",
     "ModelConfigOverlayScope",
     "ModelEmbeddingEndpointOverlay",
@@ -51,4 +62,5 @@ __all__ = [
     "ModelLlmPricingEvidence",
     "ModelLlmPricingOverlay",
     "ModelLlmRunnerCostPolicy",
+    "ModelRuntimeLaneDeclaration",
 ]

@@ -35,9 +35,10 @@ Two things are asserted here:
    workflow file itself catches this class.
 
 Scope note: ``MANUAL_REPLAY_WORKFLOWS`` lists only the autobind caller here.
-omnibase_core's ``call-occ-companion-effect.yml`` deliberately carries no
-``workflow_dispatch`` trigger, unlike omniclaude's, so asserting one over it
-would be a false refusal about a surface it never declared.
+omnibase_core's companion-effect caller in ``ci.yml`` (job
+``occ-companion-effect``) deliberately carries no ``workflow_dispatch`` trigger,
+unlike omniclaude's, so asserting one over it would be a false refusal about a
+surface it never declared.
 """
 
 from __future__ import annotations

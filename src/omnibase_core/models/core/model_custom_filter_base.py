@@ -9,13 +9,15 @@ Provides common fields and functionality for typed filter models.
 
 from abc import ABC
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCustomFilterBase(BaseModel, ABC):
     """Base class for all custom filters."""
+
+    model_config = ConfigDict(extra="forbid")
 
     filter_type: str = Field(default=..., description="Type of custom filter")
     enabled: bool = Field(default=True, description="Whether filter is active")

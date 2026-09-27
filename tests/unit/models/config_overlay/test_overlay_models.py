@@ -254,13 +254,15 @@ def test_scope_segments_are_single_safe_path_parts(segment: str) -> None:
         ModelConfigOverlayScope.model_validate({"environment": "lab", "lane": segment})
 
 
-def test_the_five_overlay_keys_and_their_owners() -> None:
+def test_the_overlay_keys_and_their_owners() -> None:
     assert {k.value: k.schema_ref for k in EnumConfigOverlayKey} == {
         "delegation.lane_overlay": "omnibase_infra:bifrost_lane_overlay",
         "routing.tiers": "omnimarket:routing_tiers",
         "llm.catalog": "omnibase_core:llm_catalog",
         "llm.pricing": "omnibase_core:llm_pricing",
         "embedding.endpoint": "omnibase_core:embedding_endpoint",
+        "runtime.lane": "omnibase_core:runtime_lane",
+        "runtime.bus_lane": "omnibase_infra:bus_lane",
     }
     assert {s.value for s in EnumConfigOverlaySource} == {"store", "local-home"}
     assert {t.value for t in EnumLlmTierClass} == {"local", "cheap_cloud", "frontier"}

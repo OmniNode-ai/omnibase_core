@@ -7,7 +7,7 @@ Node introspection response model for ONEX nodes.
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
@@ -30,6 +30,8 @@ class ModelNodeIntrospectionResponse(BaseModel):
     This is the standardized format that all ONEX nodes must return
     when called with the --introspect command.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     node_metadata: ModelNodeMetadataInfo = Field(
         default=...,

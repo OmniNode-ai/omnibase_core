@@ -55,6 +55,14 @@ REGISTERED_RUNTIME_LANES: frozenset[str] = LAB_RUNTIME_LANES | frozenset(
         "sim-202",
         "prepr-1",
         "prepr-2",
+        # Per-host dev deploy lanes, each its own compose project on its own lab
+        # host (omnibase_infra docker-compose.dev-105/200/202.yml declare these
+        # in ONEX_RUNTIME_LANE). Registered so each runtime can name itself;
+        # they are not lab lanes, so the lab lane-health projection stays off
+        # them without a discovery error (OMN-18769 AC6 unchanged).
+        "compose-dev-105",
+        "compose-dev-200",
+        "compose-dev-202",
         # Cloud namespaces. Registered so a deployment there can name itself
         # without a core release; nothing here makes any node attach there.
         "onex-dev",

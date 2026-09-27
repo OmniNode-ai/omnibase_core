@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "ticket": "OMN-19760",
+  "note": "burn-down only: remove entries as lane-name branching is replaced by role checks",
+  "count": 2,
+  "violations": [
+    {
+      "path": "src/omnibase_core/constants/constants_runtime_lanes.py",
+      "rule": "lane-literal-collection",
+      "fingerprint": "sha256:38daaf517a3982c10086543f7ddf276353ac74df57ccff91de5981025a847282"
+    },
+    {
+      "path": "src/omnibase_core/constants/constants_runtime_lanes.py",
+      "rule": "lane-literal-collection",
+      "fingerprint": "sha256:9dc65e53607ff844dbcd5f6eceb4af92a4f9b88a7d764c33573feca1b77a8803"
+    }
+  ]
+}

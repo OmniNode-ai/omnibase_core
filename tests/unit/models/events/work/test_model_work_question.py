@@ -25,7 +25,6 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_question_withdrawal_reason import (
     EnumQuestionWithdrawalReason,
 )
-from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.models.events.work import (
     WORK_EVENT_PARTITION_KEY_FIELDS,
@@ -210,7 +209,7 @@ def test_withdrawal_by_a_lane_is_valid() -> None:
 def test_withdrawal_by_a_node_is_valid() -> None:
     node = ModelNodeActor(
         node_id="node_ledger_reconcile",
-        runtime_lane=EnumRuntimeLane.DEV,
+        runtime_lane="dev",
         contract_version=ModelSemVer(major=1, minor=0, patch=0),
         run_id=uuid.UUID("44444444-4444-4444-8444-444444444444"),
     )

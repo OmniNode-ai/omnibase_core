@@ -110,7 +110,6 @@ class TestCommandRegistration:
         """Test command registration creates qualified name mapping."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
-            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="third_party",
             node_type="plugin",
@@ -225,7 +224,6 @@ class TestCommandRetrieval:
         """Test retrieving command by qualified name."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
-            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="plugin_ns",
             node_type="plugin",
@@ -337,7 +335,6 @@ class TestCommandRetrieval:
         """Test get_all_commands doesn't return duplicates for qualified names."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
-            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="plugin",
             node_type="plugin",
@@ -368,7 +365,6 @@ class TestCommandRetrieval:
         """Test retrieving all command names."""
         registry = ModelCliCommandRegistry()
         node_ref = ModelNodeReference(
-            version=DEFAULT_VERSION,
             node_name="test_node",
             namespace="ns",
             node_type="plugin",

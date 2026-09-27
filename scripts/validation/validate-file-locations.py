@@ -171,15 +171,21 @@ class FileLocationValidator:
         self.repo_path = repo_path
         self.violations: list[FileLocationViolation] = []
 
-    def validate(self) -> bool:
+    def validate(self, paths: list[Path] | None = None) -> bool:
         """
         Validate all file locations in the repository.
 
         Returns:
             True if all files are in correct locations, False otherwise
         """
-        # Find all Python files
-        for py_file in self.repo_path.rglob("*.py"):
+        python_files: list[Path] = []
+        for path in paths or [self.repo_path]:
+            if path.is_file() and path.suffix == ".py":
+                python_files.append(path)
+            elif path.is_dir():
+                python_files.extend(path.rglob("*.py"))
+
+        for py_file in python_files:
             # Skip __pycache__, archived, tests, virtual environments
             if any(
                 skip in str(py_file)
@@ -345,10 +351,10 @@ def main() -> int:
         description="Validate ONEX file locations based on naming conventions"
     )
     parser.add_argument(
-        "repo_path",
-        nargs="?",
-        default=".",
-        help="Path to repository root (default: current directory)",
+        "paths",
+        nargs="*",
+        default=["."],
+        help="Python files or directories to validate (default: current directory)",
     )
     parser.add_argument(
         "--verbose",
@@ -359,13 +365,14 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    repo_path = Path(args.repo_path).resolve()
-    if not repo_path.exists():
-        print(f"❌ Error: Repository path does not exist: {repo_path}")
+    paths = [Path(value).resolve() for value in args.paths]
+    missing = [path for path in paths if not path.exists()]
+    if missing:
+        print(f"❌ Error: Path does not exist: {missing[0]}")
         return 1
 
-    validator = FileLocationValidator(repo_path)
-    is_valid = validator.validate()
+    validator = FileLocationValidator(Path.cwd().resolve())
+    is_valid = validator.validate(paths)
 
     if is_valid:
         if args.verbose:

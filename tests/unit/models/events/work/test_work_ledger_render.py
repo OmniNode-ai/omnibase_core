@@ -35,7 +35,6 @@ from omnibase_core.enums.enum_hold_block import EnumHoldBlock
 from omnibase_core.enums.enum_question_withdrawal_reason import (
     EnumQuestionWithdrawalReason,
 )
-from omnibase_core.enums.enum_runtime_lane import EnumRuntimeLane
 from omnibase_core.enums.enum_surface_result import EnumSurfaceResult
 from omnibase_core.enums.enum_work_outcome import EnumWorkOutcome
 from omnibase_core.enums.governance.enum_pr_state import EnumPRState
@@ -655,7 +654,7 @@ def test_emitted_at_renders_in_utc_to_the_second() -> None:
 def test_node_actor_lane_is_one_grammar_token() -> None:
     actor = ModelNodeActor(
         node_id="node_pr_lifecycle_orchestrator",
-        runtime_lane=EnumRuntimeLane.STABILITY_TEST,
+        runtime_lane="stability-test",
         contract_version=ModelSemVer(major=1, minor=0, patch=0),
         run_id=_id(500),
     )

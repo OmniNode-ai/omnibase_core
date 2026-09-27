@@ -8,7 +8,7 @@ This model replaces dictionary usage in CLI tool execution by providing
 a structured representation of advanced parameters.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types import SerializedDict
@@ -21,6 +21,8 @@ class ModelAdvancedParams(BaseModel):
     This model provides structured fields for common advanced parameters
     while maintaining flexibility through typed dictionaries.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # Common advanced parameters
     parallel_execution: bool | None = Field(

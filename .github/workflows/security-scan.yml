@@ -16,6 +16,12 @@ on:
     # Run weekly on Monday at 06:00 UTC
     - cron: "0 6 * * 1"
 
+# OMN-19639: cancel only superseded pull request runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
 jobs:
   occ-preflight:
     uses: ./.github/workflows/occ-preflight.yml

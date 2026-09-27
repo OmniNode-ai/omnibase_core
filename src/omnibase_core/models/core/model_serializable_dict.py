@@ -9,7 +9,7 @@ Strongly typed model for serializable dictionary data.
 
 from collections.abc import ItemsView, KeysView, ValuesView
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelSerializableDict(BaseModel):
@@ -18,6 +18,8 @@ class ModelSerializableDict(BaseModel):
 
     Represents dictionary data that can be serialized with proper type safety.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     data: dict[str, str] = Field(
         default_factory=dict,

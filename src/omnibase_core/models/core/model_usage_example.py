@@ -7,11 +7,13 @@ Model for introspection usage examples.
 Provides a typed structure for tool usage examples with generic type support.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelUsageExample[InputT, OutputT](BaseModel):
     """Model representing a usage example for introspection with typed input/output."""
+
+    model_config = ConfigDict(extra="forbid")
 
     description: str = Field(
         default=...,

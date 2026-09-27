@@ -37,6 +37,7 @@ import sys
 import threading
 from collections.abc import Iterator
 from pathlib import Path
+from types import TracebackType
 from typing import TypedDict
 
 
@@ -68,17 +69,22 @@ class TimeoutContext:
         self.timer: threading.Timer | None = None
         self.timed_out = False
 
-    def _timeout_handler(self):
+    def _timeout_handler(self) -> None:
         """Called when timeout occurs."""
         self.timed_out = True
         logging.error(self.error_message)
 
-    def __enter__(self):
+    def __enter__(self) -> "TimeoutContext":
         self.timer = threading.Timer(self.seconds, self._timeout_handler)
         self.timer.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         if self.timer:
             self.timer.cancel()
         if self.timed_out:
@@ -334,7 +340,12 @@ class ArchivedImportValidator:
             return
 
         # Group violations by severity
-        violations_by_severity = {"critical": [], "high": [], "medium": [], "low": []}
+        violations_by_severity: dict[str, list[ArchiveViolation]] = {
+            "critical": [],
+            "high": [],
+            "medium": [],
+            "low": [],
+        }
 
         for violation in self.violations:
             severity = violation["severity"]
@@ -361,7 +372,7 @@ class ArchivedImportValidator:
             )
 
             # Group by violation type for better organization
-            violations_by_type = {}
+            violations_by_type: dict[str, list[ArchiveViolation]] = {}
             for violation in severity_violations:
                 violation_type = violation["violation_type"]
                 if violation_type not in violations_by_type:
@@ -429,7 +440,7 @@ class ArchivedImportValidator:
         print("4. 🧪 TEST: Verify imports work with current codebase structure")
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Validate against archived path imports in ONEX framework",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -437,7 +448,7 @@ def main():
     )
 
     parser.add_argument(
-        "path", nargs="?", default="src", help="Path to analyze (default: src)"
+        "paths", nargs="*", default=["src"], help="Files or directories to analyze"
     )
 
     parser.add_argument(
@@ -471,21 +482,25 @@ def main():
     try:
         validator = ArchivedImportValidator(max_violations=args.max_violations)
 
-        # Validate the specified directory
-        path = Path(args.path).resolve()
-        logging.debug(f"Validating archived imports in: {path}")
+        for raw_path in args.paths:
+            path = Path(raw_path).resolve()
+            logging.debug(f"Validating archived imports in: {path}")
 
-        if not path.exists():
-            logging.error(f"Path does not exist: {path}")
-            print(f"❌ ERROR: Path does not exist: {path}")
-            sys.exit(1)
+            if not path.exists():
+                logging.error(f"Path does not exist: {path}")
+                print(f"❌ ERROR: Path does not exist: {path}")
+                sys.exit(1)
 
-        if not os.access(path, os.R_OK):
-            logging.error(f"Cannot read path: {path}")
-            print(f"❌ ERROR: Cannot read path: {path}")
-            sys.exit(1)
+            if not os.access(path, os.R_OK):
+                logging.error(f"Cannot read path: {path}")
+                print(f"❌ ERROR: Cannot read path: {path}")
+                sys.exit(1)
 
-        validator.validate_directory(path)
+            if path.is_file():
+                if path.suffix == ".py":
+                    validator.validate_file(path)
+            else:
+                validator.validate_directory(path)
 
         # Generate report
         if not args.quiet:

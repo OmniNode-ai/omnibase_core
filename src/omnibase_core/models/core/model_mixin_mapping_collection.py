@@ -8,7 +8,7 @@ Serialized as ``mixin_mappings.yaml`` for review and migration tracking.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_mixin_mapping import ModelMixinMapping
 
@@ -20,6 +20,8 @@ class ModelMixinMappingCollection(BaseModel):
 
     Serialized as ``mixin_mappings.yaml`` for review and migration tracking.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     mixins: list[ModelMixinMapping] = Field(
         default_factory=list,

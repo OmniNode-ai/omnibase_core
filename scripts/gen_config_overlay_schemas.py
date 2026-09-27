@@ -24,6 +24,7 @@ from omnibase_core.models.config_overlay import (
     ModelEmbeddingEndpointOverlay,
     ModelLlmCatalogOverlay,
     ModelLlmPricingOverlay,
+    ModelRuntimeLaneDeclaration,
 )
 
 if TYPE_CHECKING:
@@ -43,6 +44,7 @@ SCHEMA_EXPORTS: dict[str, type[BaseModel]] = {
     "embedding_endpoint.schema.json": ModelEmbeddingEndpointOverlay,
     "llm_catalog.schema.json": ModelLlmCatalogOverlay,
     "llm_pricing.schema.json": ModelLlmPricingOverlay,
+    "runtime_lane.schema.json": ModelRuntimeLaneDeclaration,
 }
 
 

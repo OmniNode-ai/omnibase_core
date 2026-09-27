@@ -228,6 +228,11 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
 def discover_yaml_files_optimized(base_path: Path) -> Iterator[Path]:
     """Discover YAML files in base_path, skipping archived and invalid fixture dirs."""
+    if base_path.is_file():
+        if base_path.suffix in {".yaml", ".yml"}:
+            yield base_path
+        return
+
     try:
         # Single walk through directory tree with immediate filtering
         for root, dirs, files in os.walk(base_path):
@@ -287,29 +292,29 @@ def setup_timeout_handler() -> None:
     """Legacy no-op for backward compatibility. Use timeout_context() instead."""
 
 
-def main():
+def main() -> int:
     """CLI entry point: parse args, discover YAML files, validate, report results."""
     try:
         parser = argparse.ArgumentParser(description="Validate YAML contracts")
-        parser.add_argument("path", nargs="?", default=".", help="Path to validate")
+        parser.add_argument("paths", nargs="*", default=["."], help="Paths to validate")
         args = parser.parse_args()
     except SystemExit as e:
-        return e.code if e.code is not None else 1
+        return e.code if isinstance(e.code, int) else 1
     except Exception as e:
         print(f"❌ Error parsing arguments: {e}")
         return 1
 
     try:
-        base_path = Path(args.path)
+        base_paths = [Path(value) for value in args.paths]
 
-        # Check if base path exists and is accessible
-        if not base_path.exists():
-            print(f"❌ Path does not exist: {base_path}")
-            return 1
+        for base_path in base_paths:
+            if not base_path.exists():
+                print(f"❌ Path does not exist: {base_path}")
+                return 1
 
-        if not os.access(base_path, os.R_OK):
-            print(f"❌ Cannot read path: {base_path}")
-            return 1
+            if not os.access(base_path, os.R_OK):
+                print(f"❌ Cannot read path: {base_path}")
+                return 1
 
     except OSError as e:
         print(f"❌ OS error accessing path: {e}")
@@ -323,7 +328,11 @@ def main():
         yaml_files = []
 
         with timeout_context("file_discovery"):
-            yaml_files = list(discover_yaml_files_optimized(base_path))
+            yaml_files = [
+                yaml_file
+                for base_path in base_paths
+                for yaml_file in discover_yaml_files_optimized(base_path)
+            ]
 
     except timeout_utils.TimeoutError:
         print("❌ Timeout during file discovery")
@@ -346,7 +355,7 @@ def main():
     processed_files = 0
 
     # Validation with cross-platform timeout and cleanup
-    def cleanup_on_timeout():
+    def cleanup_on_timeout() -> None:
         """Cleanup function for timeout scenarios."""
         print(
             f"\n⚠️  Validation interrupted after processing {processed_files}/{len(yaml_files)} files"

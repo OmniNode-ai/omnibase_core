@@ -7,7 +7,7 @@ The ModelMixinProperty class for defining
 properties in mixin code patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMixinProperty(BaseModel):
@@ -18,6 +18,8 @@ class ModelMixinProperty(BaseModel):
         type: Property type annotation
         description: Property description
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     name: str = Field(..., description="Property name")
     type: str = Field(..., description="Property type annotation")

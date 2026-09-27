@@ -7,7 +7,7 @@ The ModelMixinPerformanceUseCase class for defining
 performance characteristics for specific use cases.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelMixinPerformanceUseCase(BaseModel):
@@ -18,6 +18,8 @@ class ModelMixinPerformanceUseCase(BaseModel):
         recommended_config: Recommended preset name
         expected_overhead: Expected overhead description
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     use_case: str = Field(..., description="Use case name")
     recommended_config: str = Field(..., description="Recommended preset")

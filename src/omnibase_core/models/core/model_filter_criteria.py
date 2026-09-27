@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
-from .model_custom_filter import ModelCustomFilters
+from .model_custom_filters import ModelCustomFilters
 from .model_filter_condition import ModelFilterCondition
 from .model_filter_operator import ModelFilterOperator
 

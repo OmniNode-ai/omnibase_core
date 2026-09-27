@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .model_feature_flag_metadata import ModelFeatureFlagMetadata
 from .model_feature_flag_summary import ModelFeatureFlagSummary
@@ -33,6 +33,8 @@ class ModelFeatureFlags(BaseModel):
     This model provides a structured way to manage feature flags
     across different environments and contexts.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     flags: dict[str, bool] = Field(
         default_factory=dict,

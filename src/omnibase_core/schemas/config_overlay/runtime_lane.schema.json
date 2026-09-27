@@ -1,0 +1,53 @@
+{
+  "$defs": {
+    "EnumRuntimeLaneRole": {
+      "description": "A role a deployment's overlay may grant its runtime lane.\n\nOnly roles that code reads are declared (plan decision 2): a role exists to\nadmit role-gated contracts or to switch a behaviour on. A role is added in\nthe same core change as the first code that reads it.",
+      "enum": [
+        "lab",
+        "fault_injection"
+      ],
+      "title": "EnumRuntimeLaneRole",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The body of a ``runtime.lane`` overlay document.",
+  "properties": {
+    "description": {
+      "description": "What this deployment is, for a reader.",
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "lane_id": {
+      "description": "The lane's id: the value its runtime declares in ONEX_RUNTIME_LANE and the scope segment the document is stored under.",
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "title": "Lane Id",
+      "type": "string"
+    },
+    "roles": {
+      "description": "What the lane is for, de-duplicated in declaration order. Empty is valid and means no role-gated contract attaches on this lane.",
+      "items": {
+        "$ref": "#/$defs/EnumRuntimeLaneRole"
+      },
+      "title": "Roles",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "runtime_lane.v1",
+      "description": "Version tag of this document's schema.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "lane_id",
+    "roles",
+    "description"
+  ],
+  "title": "ModelRuntimeLaneDeclaration",
+  "type": "object"
+}

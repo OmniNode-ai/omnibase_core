@@ -5,13 +5,15 @@
 CLI interface model for node CLI specification.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_cli_command import ModelCLICommand
 
 
 class ModelCLIInterface(BaseModel):
     """Model for CLI interface specification."""
+
+    model_config = ConfigDict(extra="forbid")
 
     entrypoint: str = Field(default=..., description="CLI entrypoint command")
     commands: list[ModelCLICommand] = Field(
