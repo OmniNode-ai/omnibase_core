@@ -9,7 +9,7 @@ job it fails on that job's own running check. ``defer_test_passes_driver.py``
 records such items instead of judging them; this module judges them in the
 ``CI Summary`` job, after the CI Summary verdict itself is SUCCESS.
 
-Same pass set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL), with six
+Same pass set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL), with seven
 differences, each because the in-job evaluation could not work or because
 ``gh pr checks`` is not how GitHub reads a head:
 
@@ -45,6 +45,22 @@ differences, each because the in-job evaluation could not work or because
   non-empty text; the expanded copies are then judged under their own names.
   With no expanded copy the placeholder stays the verdict, and a placeholder
   that failed rather than was cancelled is always judged.
+* A cancellation that its own workflow superseded is not a verdict (OMN-17427).
+  A ``cancelled`` row is PENDING while a newer run of the same workflow is
+  still running on this head, and is superseded (reported, not judged) when a
+  newer run of that workflow on this head has finished, or when GitHub
+  cancelled the row's run for a newer run in its concurrency group (the run's
+  cancelled job carries GitHub's own annotation ``Canceling since a higher
+  priority waiting request for <group> exists``). Measured on
+  omnibase_core#1795, #1794 and #1793 (CI runs 36328548514, 36306444633,
+  36306138828): ``auto-merge.yml`` keys its concurrency group on the PR
+  number, a ``check_suite`` run on ``dev`` resolved to the same group and
+  cancelled the head's run (``Enable Auto-Merge``, ``Resolve PR (fanout
+  guard)``), and the replacement ran on a different sha, so no row on this
+  head ever replaced the cancellation and every CI Summary on the head
+  failed until someone re-ran the Auto-Merge run by hand. A failure is never
+  superseded this way, a row with no run URL is judged as before, and an
+  unreadable annotation leaves the row judged.
 
 Exit codes: ``0`` success, ``1`` failure.
 """
@@ -84,6 +100,11 @@ CONTRACT_COMPLIANCE_JOB = "Contract Compliance Check"
 GOOD_CONCLUSIONS: frozenset[str] = frozenset({"success", "skipped", "neutral"})
 ACTIONS_APP_SLUG = "github-actions"
 
+# GitHub's own annotation on a job it cancelled because a newer run entered the
+# same concurrency group (OMN-17427). Read from check-runs/{id}/annotations.
+CONCURRENCY_CANCEL_MARKER = "Canceling since a higher priority waiting request for "
+_RUN_ID_RE = re.compile(r"/actions/runs/(\d+)")
+
 
 def record_required(jobs: list[dict[str, object]], run_attempt: int | None) -> bool:
     """Whether Contract Compliance Check must have produced a deferral record.
@@ -120,34 +141,118 @@ def load_record(path: Path) -> list[dict[str, object]]:
     return deferred
 
 
-def _latest_by_name(rows: list[dict[str, object]]) -> dict[str, JobState]:
-    """One row per name, latest ``(started_at, id)`` wins; skipped rows compete."""
+def _latest_rows(rows: list[dict[str, object]]) -> dict[str, dict[str, object]]:
+    """One raw row per name, latest ``(started_at, id)`` wins; skipped rows compete."""
 
-    best: dict[str, tuple[tuple[str, int], JobState]] = {}
+    best: dict[str, tuple[tuple[str, int], dict[str, object]]] = {}
     for raw in rows:
         name = str(raw.get("name") or "")
         if not name:
             continue
-        try:
-            row_id = int(str(raw.get("id") or 0))
-        except ValueError:
-            row_id = 0
-        key = (str(raw.get("started_at") or ""), row_id)
+        key = (str(raw.get("started_at") or ""), _int(raw, "id"))
         if name in best and key <= best[name][0]:
             continue
-        conclusion = raw.get("conclusion")
-        completed_at = raw.get("completed_at")
-        best[name] = (
-            key,
-            JobState(
-                name=name,
-                status=str(raw.get("status") or ""),
-                conclusion=None if conclusion is None else str(conclusion),
-                run_attempt=1,
-                completed_at=None if completed_at is None else str(completed_at),
-            ),
+        best[name] = (key, raw)
+    return {name: raw for name, (_, raw) in best.items()}
+
+
+def _state(name: str, raw: dict[str, object]) -> JobState:
+    conclusion = raw.get("conclusion")
+    completed_at = raw.get("completed_at")
+    return JobState(
+        name=name,
+        status=str(raw.get("status") or ""),
+        conclusion=None if conclusion is None else str(conclusion),
+        run_attempt=1,
+        completed_at=None if completed_at is None else str(completed_at),
+    )
+
+
+def _latest_by_name(rows: list[dict[str, object]]) -> dict[str, JobState]:
+    """One row per name, latest ``(started_at, id)`` wins; skipped rows compete."""
+
+    return {name: _state(name, raw) for name, raw in _latest_rows(rows).items()}
+
+
+def _int(raw: dict[str, object], key: str) -> int:
+    try:
+        return int(str(raw.get(key) or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def check_run_workflow_run_id(raw: dict[str, object]) -> int | None:
+    """The Actions run that wrote this check-run, from its own URL, or ``None``."""
+
+    for key in ("html_url", "details_url"):
+        match = _RUN_ID_RE.search(str(raw.get(key) or ""))
+        if match:
+            return int(match.group(1))
+    return None
+
+
+def is_concurrency_cancellation(messages: list[str]) -> bool:
+    """Whether a cancelled job's annotations say GitHub cancelled it for a newer
+    run in the same concurrency group."""
+
+    return any(CONCURRENCY_CANCEL_MARKER in message for message in messages)
+
+
+def cancelled_supersession(
+    raw: dict[str, object],
+    workflow_runs: list[dict[str, object]] | None,
+    concurrency_cancelled_runs: frozenset[int],
+    own_run_ids: frozenset[int],
+) -> tuple[str, str] | None:
+    """How a ``cancelled`` row's own workflow superseded it, or ``None`` (OMN-17427).
+
+    ``("pending", why)`` while a newer run of the same workflow is still running
+    on this head (other than the run judging it, whose own jobs the CI Summary
+    verdict already judged); ``("superseded", why)`` when a newer run of that
+    workflow on this head has finished, or when GitHub cancelled the row's run
+    for a newer run in its concurrency group. ``None`` leaves the row judged as
+    before: no run URL, a run missing from the payload, no payload, or no
+    concurrency annotation.
+    """
+
+    run_id = check_run_workflow_run_id(raw)
+    if run_id is None:
+        return None
+    own = next((r for r in workflow_runs or [] if _int(r, "id") == run_id), None)
+    workflow_id = 0 if own is None else _int(own, "workflow_id")
+    newer = [
+        r
+        for r in workflow_runs or []
+        if workflow_id
+        and _int(r, "workflow_id") == workflow_id
+        and _int(r, "id") > run_id
+    ]
+    running = [
+        r
+        for r in newer
+        if str(r.get("status") or "") != "completed"
+        and _int(r, "id") not in own_run_ids
+    ]
+    if running:
+        latest = max(running, key=lambda r: _int(r, "id"))
+        return (
+            "pending",
+            f"run {_int(latest, 'id')} of the same workflow is "
+            f"{latest.get('status')} on this head",
         )
-    return {name: state for name, (_, state) in best.items()}
+    if newer:
+        latest = max(newer, key=lambda r: _int(r, "id"))
+        return (
+            "superseded",
+            f"run {run_id} superseded by run {_int(latest, 'id')} of the same "
+            "workflow on this head",
+        )
+    if run_id in concurrency_cancelled_runs:
+        return (
+            "superseded",
+            f"run {run_id} cancelled by its concurrency group for a newer run",
+        )
+    return None
 
 
 _EXPRESSION = re.compile(r"\$\{\{.*?\}\}")
@@ -191,23 +296,61 @@ def _is_actions_row(row: dict[str, object]) -> bool:
     return app.get("slug") == ACTIONS_APP_SLUG
 
 
+def cancelled_run_ids(check_runs: list[dict[str, object]]) -> list[int]:
+    """The runs whose cancelled row is the latest of its name (the only rows the
+    concurrency annotation is ever read for)."""
+
+    latest = _latest_rows([row for row in check_runs if _is_actions_row(row)])
+    ids = {
+        run_id
+        for name, raw in latest.items()
+        if name != SELF_JOB_NAME
+        and raw.get("status") == "completed"
+        and raw.get("conclusion") == "cancelled"
+        and (run_id := check_run_workflow_run_id(raw)) is not None
+    }
+    return sorted(ids)
+
+
 def evaluate_checks(
-    check_runs: list[dict[str, object]], *, now: datetime | None
+    check_runs: list[dict[str, object]],
+    *,
+    now: datetime | None,
+    workflow_runs: list[dict[str, object]] | None = None,
+    concurrency_cancelled_runs: frozenset[int] = frozenset(),
+    own_run_ids: frozenset[int] = frozenset(),
 ) -> tuple[int, str]:
     """Judge one head's ``commits/{sha}/check-runs`` rows."""
 
-    latest = _latest_by_name([row for row in check_runs if _is_actions_row(row)])
+    raw_latest = _latest_rows([row for row in check_runs if _is_actions_row(row)])
+    latest = {name: _state(name, raw) for name, raw in raw_latest.items()}
     latest, superseded = _drop_superseded_placeholders(latest)
     others = {name: st for name, st in latest.items() if name != SELF_JOB_NAME}
     if not others:
         return EXIT_FAILURE, "  no checks observed besides CI Summary"
     failures: list[str] = []
     pending: list[str] = []
+    replaced: list[str] = []
     for name, st in others.items():
         if st.status != "completed":
             pending.append(f"{name} ({st.status})")
-        elif st.conclusion in GOOD_CONCLUSIONS:
             continue
+        if st.conclusion in GOOD_CONCLUSIONS:
+            continue
+        verdict = (
+            cancelled_supersession(
+                raw_latest[name],
+                workflow_runs,
+                concurrency_cancelled_runs,
+                own_run_ids,
+            )
+            if st.conclusion == "cancelled"
+            else None
+        )
+        if verdict is not None and verdict[0] == "pending":
+            pending.append(f"{name} (cancelled; {verdict[1]})")
+        elif verdict is not None:
+            replaced.append(f"{name} ({verdict[1]})")
         elif verdict_is_provisional(st, now):
             pending.append(
                 f"{name} ({st.conclusion}, awaiting its automatic replacement)"
@@ -219,6 +362,11 @@ def evaluate_checks(
         lines.append(
             "  cancelled matrix placeholders superseded by their expanded copies: "
             + ", ".join(superseded)
+        )
+    if replaced:
+        lines.append(
+            "  cancellations superseded by their own workflow (not judged): "
+            + ", ".join(sorted(replaced))
         )
     if failures:
         lines.append("  not green: " + ", ".join(sorted(failures)))
@@ -251,6 +399,47 @@ def _gh_json_lines(path: str, jq: str) -> list[dict[str, object]] | None:
         print(f"  gh api {path} returned malformed JSON", flush=True)  # noqa: T201
         return None
     return rows if all(isinstance(row, dict) for row in rows) else None
+
+
+def _workflow_runs(repo: str, head: str) -> list[dict[str, object]] | None:
+    return _gh_json_lines(
+        f"repos/{repo}/actions/runs?head_sha={head}&per_page=100",
+        ".workflow_runs[] | {id, workflow_id, status, conclusion, event}",
+    )
+
+
+def _run_cancelled_by_concurrency(repo: str, run_id: int) -> bool:
+    """Whether GitHub annotated a cancelled job of this run as a concurrency
+    cancellation. Any unreadable page answers ``False``: the row stays judged."""
+
+    jobs = _gh_json_lines(
+        f"repos/{repo}/actions/runs/{run_id}/jobs?filter=latest&per_page=100",
+        ".jobs[] | {id, conclusion}",
+    )
+    for job in jobs or []:
+        if job.get("conclusion") != "cancelled":
+            continue
+        notes = _gh_json_lines(
+            f"repos/{repo}/check-runs/{_int(job, 'id')}/annotations?per_page=100",
+            ".[] | {message}",
+        )
+        if notes and is_concurrency_cancellation(
+            [str(note.get("message") or "") for note in notes]
+        ):
+            return True
+    return False
+
+
+def own_workflow_run_ids(
+    jobs: list[dict[str, object]], current_run_id: int | None
+) -> frozenset[int]:
+    """This CI run's id, from ``--current-run-id`` and the jobs payload rows."""
+
+    ids = {_int(raw, "run_id") for raw in jobs if isinstance(raw, dict)}
+    if current_run_id:
+        ids.add(current_run_id)
+    ids.discard(0)
+    return frozenset(ids)
 
 
 def _pr_target(deferred: list[dict[str, object]]) -> tuple[str, str]:
@@ -286,6 +475,13 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="The head this run gates (pull_request). Empty: the recorded PR's head.",
     )
+    parser.add_argument(
+        "--current-run-id",
+        type=int,
+        default=None,
+        help="This workflow run's id (github.run_id). A newer run of a cancelled "
+        "row's workflow that is this run is not waited on (OMN-17427).",
+    )
     parser.add_argument("--deadline-seconds", type=int, default=2400)
     parser.add_argument("--poll-interval-seconds", type=int, default=60)
     args = parser.parse_args(argv)
@@ -315,14 +511,34 @@ def main(argv: list[str] | None = None) -> int:
         f"{repo}#{pr_number} at {head}",
         flush=True,
     )
+    own_run_ids = own_workflow_run_ids(jobs, args.current_run_id)
+    concurrency_cancelled: dict[int, bool] = {}
     deadline = time.monotonic() + args.deadline_seconds
     report = "  no poll completed"
     while True:
         check_runs = _gh_json_lines(
             f"repos/{repo}/commits/{head}/check-runs?per_page=100", ".check_runs[]"
         )
+        workflow_runs = (
+            _workflow_runs(repo, head)
+            if check_runs is not None and cancelled_run_ids(check_runs)
+            else None
+        )
         if check_runs is not None:
-            code, report = evaluate_checks(check_runs, now=datetime.now(UTC))
+            for run_id in cancelled_run_ids(check_runs):
+                if run_id not in concurrency_cancelled:
+                    concurrency_cancelled[run_id] = _run_cancelled_by_concurrency(
+                        repo, run_id
+                    )
+            code, report = evaluate_checks(
+                check_runs,
+                now=datetime.now(UTC),
+                workflow_runs=workflow_runs,
+                concurrency_cancelled_runs=frozenset(
+                    run_id for run_id, hit in concurrency_cancelled.items() if hit
+                ),
+                own_run_ids=own_run_ids,
+            )
             print(report, flush=True)  # noqa: T201
             if code == EXIT_SUCCESS:
                 print("Deferred test_passes: SUCCESS")  # noqa: T201
