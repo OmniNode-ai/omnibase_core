@@ -14,6 +14,7 @@ from __future__ import annotations
 import ast
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -94,6 +95,194 @@ def test_contract_bindings_default_handler_with_module() -> None:
 def test_contract_bindings_none_when_handler_id_only() -> None:
     # handler_id-only contracts fall back to the node package at classify time.
     assert _contract_bindings({"handler_id": "node.x", "input_model": "pkg.M"}) == []
+
+
+# --------------------------------------------------------------------------- #
+# Classifier — inherited handles
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("binding", ["named", "unnamed", "reexport"])
+@pytest.mark.parametrize(
+    "base_module", ["pkg.nodes.node_x.handlers.base", "pkg.shared.base"]
+)
+@pytest.mark.parametrize("relative_import", [False, True])
+def test_inherited_handle_is_canonical(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    binding: str,
+    base_module: str,
+    relative_import: bool,
+) -> None:
+    monkeypatch.setattr(mod, "SRC_ROOT", tmp_path)
+    node = tmp_path / "pkg/nodes/node_x"
+    handlers = node / "handlers"
+    handlers.mkdir(parents=True)
+    base = tmp_path / (base_module.replace(".", "/") + ".py")
+    base.parent.mkdir(parents=True, exist_ok=True)
+    base.write_text(
+        "class HandlerBase:\n"
+        "    async def handle(self, command: ModelCommand) -> ModelResult: ...\n",
+        encoding="utf-8",
+    )
+    imported_module = base_module
+    if relative_import:
+        imported_module = ".base" if base.parent == handlers else "....shared.base"
+    runtime = handlers / "runtime.py"
+    runtime.write_text(
+        f"from {imported_module} import HandlerBase as Parent\n"
+        "class HandlerRuntime(Parent):\n"
+        "    def __init__(self) -> None: ...\n",
+        encoding="utf-8",
+    )
+    module = "pkg.nodes.node_x.handlers.runtime"
+    class_binding = "  class: HandlerRuntime\n"
+    if binding == "unnamed":
+        class_binding = ""
+    elif binding == "reexport":
+        (handlers / "export.py").write_text(
+            f"from {module} import HandlerRuntime as HandlerExport\n",
+            encoding="utf-8",
+        )
+        module = "pkg.nodes.node_x.handlers.export"
+        class_binding = "  class: HandlerExport\n"
+    contract = node / "contract.yaml"
+    contract.write_text(
+        f"handler:\n  module: {module}\n{class_binding}", encoding="utf-8"
+    )
+
+    finding = mod.classify_node(contract)
+
+    assert finding.category == "canonical"
+    assert finding.is_canonical
+    fn, cls, path = mod._resolve_handler(
+        mod._module_to_files(module),
+        None if binding == "unnamed" else class_binding.split(": ")[1].strip(),
+    )
+    assert fn is not None
+    assert cls is not None and cls.name == "HandlerBase"
+    assert path == base
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("with_operation", [False, True])
+def test_no_handle_in_ancestors_stays_noncanonical(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, with_operation: bool
+) -> None:
+    monkeypatch.setattr(mod, "SRC_ROOT", tmp_path)
+    node = tmp_path / "pkg/nodes/node_x"
+    node.mkdir(parents=True)
+    (node / "base.py").write_text("class Base: ...\n", encoding="utf-8")
+    (node / "handler.py").write_text(
+        "from pkg.nodes.node_x.base import Base\n"
+        "class HandlerRuntime(Base):\n"
+        + ("    def execute(self, command): ...\n" if with_operation else "    pass\n"),
+        encoding="utf-8",
+    )
+    contract = node / "contract.yaml"
+    contract.write_text(
+        "handler:\n  module: pkg.nodes.node_x.handler\n  class: HandlerRuntime\n",
+        encoding="utf-8",
+    )
+
+    finding = mod.classify_node(contract)
+
+    assert finding.category == ("op_method" if with_operation else "empty")
+    assert not finding.is_canonical
+    assert evaluate([finding], baseline=[]).failed
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("direct_handle", [False, True])
+def test_inherited_handle_checks_defining_module_for_envelope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, direct_handle: bool
+) -> None:
+    monkeypatch.setattr(mod, "SRC_ROOT", tmp_path)
+    node = tmp_path / "pkg/nodes/node_x"
+    node.mkdir(parents=True)
+    (node / "base.py").write_text(
+        "from elsewhere import ModelEventEnvelope\n"
+        "class Base:\n"
+        "    def handle(self, request: ModelRequest) -> ModelResult: ...\n",
+        encoding="utf-8",
+    )
+    (node / "handler.py").write_text(
+        "from pkg.nodes.node_x.base import Base\n"
+        "class HandlerRuntime(Base):\n"
+        + ("    def handle(self, request): ...\n" if direct_handle else "    pass\n"),
+        encoding="utf-8",
+    )
+    contract = node / "contract.yaml"
+    contract.write_text(
+        "handler:\n  module: pkg.nodes.node_x.handler\n  class: HandlerRuntime\n",
+        encoding="utf-8",
+    )
+
+    finding = mod.classify_node(contract)
+
+    assert finding.category == ("canonical" if direct_handle else "envelope_in_core")
+    assert finding.is_canonical is direct_handle
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "source",
+    ["class A(A): ...", "class A(B): ...\nclass B(A): ..."],
+)
+def test_handle_mro_cycle_terminates(tmp_path: Path, source: str) -> None:
+    tree = ast.parse(source)
+    cls = tree.body[0]
+    assert isinstance(cls, ast.ClassDef)
+    assert mod._handle_via_mro(cls, [(tmp_path / "cycle.py", tree)]) == (
+        None,
+        None,
+        None,
+    )
+
+
+@pytest.mark.unit
+def test_handle_mro_depth_and_breadth_first_order(tmp_path: Path) -> None:
+    tree = ast.parse(
+        "class Child(Left, module.Right): ...\n"
+        "class Left(Root): ...\n"
+        "class Right:\n"
+        "    def handle(self, request): ...\n"
+        "class Root:\n"
+        "    def handle(self, request): ...\n"
+    )
+    child = tree.body[0]
+    left = tree.body[1]
+    assert isinstance(child, ast.ClassDef)
+    assert isinstance(left, ast.ClassDef)
+    parsed = [(tmp_path / "hierarchy.py", tree)]
+    assert mod._base_class_names(child) == ["Left", "Right"]
+    assert mod._handle_via_mro(child, parsed, max_depth=0) == (None, None, None)
+    fn, defining_class, path = mod._handle_via_mro(child, parsed, max_depth=1)
+    assert fn is not None
+    assert defining_class is not None and defining_class.name == "Right"
+    assert path == parsed[0][0]
+    assert mod._handle_via_mro(left, parsed, max_depth=1)[1] is tree.body[3]
+
+
+@pytest.mark.unit
+def test_new_node_without_handler_stays_no_binding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(mod, "SRC_ROOT", tmp_path)
+    node = tmp_path / "pkg/nodes/node_new"
+    node.mkdir(parents=True)
+    (node / "__init__.py").write_text("", encoding="utf-8")
+    contract = node / "contract.yaml"
+    contract.write_text("name: node_new\n", encoding="utf-8")
+
+    finding = mod.classify_node(contract)
+
+    assert finding.category == "no_binding"
+    assert not finding.is_canonical
+    result = evaluate([finding], baseline=[])
+    assert result.failed
+    assert result.new_non_canonical == ("pkg.nodes.node_new",)
 
 
 # --------------------------------------------------------------------------- #
