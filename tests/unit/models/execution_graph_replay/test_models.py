@@ -67,18 +67,18 @@ def node(
     )
 
 
-def test_source_cursor_is_partition_scoped_offset_bound_and_rejects_negative_positions() -> (
+def test_source_cursor_is_partition_scoped_ingest_bound_and_rejects_nonpositive_positions() -> (
     None
 ):
     cursor = ModelExecutionGraphSourceCursor(
         topic="onex.evt.omnimarket.delegation-request.v1",
         partition=1,
-        max_kafka_offset=42,
+        max_ingest_watermark=42,
     )
     assert (
         cursor.topic,
         cursor.partition,
-        cursor.max_kafka_offset,
+        cursor.max_ingest_watermark,
     ) == (
         "onex.evt.omnimarket.delegation-request.v1",
         1,
@@ -86,11 +86,11 @@ def test_source_cursor_is_partition_scoped_offset_bound_and_rejects_negative_pos
     )
     with pytest.raises(ValidationError):
         ModelExecutionGraphSourceCursor(
-            topic=cursor.topic, partition=-1, max_kafka_offset=0
+            topic=cursor.topic, partition=-1, max_ingest_watermark=1
         )
     with pytest.raises(ValidationError):
         ModelExecutionGraphSourceCursor(
-            topic=cursor.topic, partition=0, max_kafka_offset=-1
+            topic=cursor.topic, partition=0, max_ingest_watermark=0
         )
 
 
@@ -117,7 +117,7 @@ def test_request_has_no_tenant_override_and_rejects_duplicate_cursor_keys() -> N
             ModelExecutionGraphSourceCursor(
                 topic=source_ref().topic,
                 partition=0,
-                max_kafka_offset=30,
+                max_ingest_watermark=30,
             )
         ],
     )
@@ -186,7 +186,7 @@ def test_read_model_splits_deterministic_replay_from_labels_and_current_annotati
                 ModelExecutionGraphSourceCursor(
                     topic=ref.topic,
                     partition=ref.partition,
-                    max_kafka_offset=100,
+                    max_ingest_watermark=100,
                 )
             ],
             correlation_id=CORRELATION_ID,
