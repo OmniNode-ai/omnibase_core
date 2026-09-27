@@ -1154,7 +1154,7 @@ class TestModelRoutingIntent:
             correlation_id=corr_id,
             emitted_at=datetime.now(tz=UTC),
         )
-        intent = ModelRoutingIntent(payload=req)
+        intent = ModelRoutingIntent(payload=req, tenant_id="test-tenant")
         assert intent.intent == "routing_reducer"
         assert intent.min_tier_name is None
 
@@ -1166,7 +1166,9 @@ class TestModelRoutingIntent:
             correlation_id=corr_id,
             emitted_at=datetime.now(tz=UTC),
         )
-        intent = ModelRoutingIntent(payload=req, min_tier_name="cheap_cloud")
+        intent = ModelRoutingIntent(
+            payload=req, tenant_id="test-tenant", min_tier_name="cheap_cloud"
+        )
         assert intent.min_tier_name == "cheap_cloud"
 
     def test_excluded_backend_refs_defaults_empty(self) -> None:
@@ -1177,7 +1179,7 @@ class TestModelRoutingIntent:
             correlation_id=corr_id,
             emitted_at=datetime.now(tz=UTC),
         )
-        intent = ModelRoutingIntent(payload=req)
+        intent = ModelRoutingIntent(payload=req, tenant_id="test-tenant")
         assert intent.excluded_backend_refs == ()
 
     def test_excluded_backend_refs_round_trips(self) -> None:
@@ -1192,6 +1194,7 @@ class TestModelRoutingIntent:
         )
         intent = ModelRoutingIntent(
             payload=req,
+            tenant_id="test-tenant",
             min_tier_name="local",
             excluded_backend_refs=("local-heavy-reasoning",),
         )
@@ -1206,7 +1209,20 @@ class TestModelRoutingIntent:
             emitted_at=datetime.now(tz=UTC),
         )
         with pytest.raises(ValidationError):
-            ModelRoutingIntent(intent="wrong", payload=req)
+            ModelRoutingIntent(intent="wrong", payload=req, tenant_id="test-tenant")
+
+    def test_tenant_id_is_required_and_nonblank(self) -> None:
+        req = ModelDelegationRequest(
+            prompt="test",
+            task_type="test",
+            correlation_id=uuid.uuid4(),
+            emitted_at=datetime.now(tz=UTC),
+        )
+        with pytest.raises(ValidationError, match="tenant_id"):
+            ModelRoutingIntent(payload=req)
+        for tenant_id in ("", " "):
+            with pytest.raises(ValidationError, match="tenant_id"):
+                ModelRoutingIntent(payload=req, tenant_id=tenant_id)
 
 
 @pytest.mark.unit

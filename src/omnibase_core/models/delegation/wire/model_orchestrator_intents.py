@@ -32,6 +32,12 @@ class ModelRoutingIntent(BaseModel):
 
     intent: Literal["routing_reducer"] = Field(default="routing_reducer")
     payload: ModelDelegationRequest
+    # string-id-ok: tenant is a named tenant slug, not a UUID.
+    tenant_id: str = Field(
+        ...,
+        min_length=1,
+        description="Required tenant identity for this routing request.",
+    )
     min_tier_name: str | None = Field(
         default=None,
         description=(
@@ -59,6 +65,13 @@ class ModelRoutingIntent(BaseModel):
             "of deterministically re-selecting the one that just failed."
         ),
     )
+
+    @field_validator("tenant_id")
+    @classmethod
+    def validate_tenant_id(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("tenant_id must be nonblank")
+        return value
 
 
 class ModelInferenceIntent(BaseModel):

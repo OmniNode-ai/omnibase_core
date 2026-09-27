@@ -68,7 +68,12 @@ class _RoutingIntentFanoutHandler:
 
     def handle(self, request: object) -> tuple[ModelRoutingIntent, ...]:
         _ = request
-        return (ModelRoutingIntent(payload=_delegation_request(self._correlation_id)),)
+        return (
+            ModelRoutingIntent(
+                payload=_delegation_request(self._correlation_id),
+                tenant_id="test-tenant",
+            ),
+        )
 
 
 class _CapturingRoutingHandler:
