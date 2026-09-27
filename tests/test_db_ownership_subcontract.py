@@ -74,7 +74,7 @@ def test_db_tables_default_empty():
 
 
 def test_db_table_declaration_access_literal():
-    """access field must be Literal['read','write','read_write']."""
+    """Unknown access modes must not enter a deployment contract."""
     from omnibase_core.models.contracts.subcontracts.model_db_ownership_subcontract import (
         ModelDbTableDeclaration,
     )
@@ -98,6 +98,32 @@ def test_db_table_declaration_access_literal():
             access="invalid_access",  # type: ignore[arg-type]
             role="aggregates",
         )
+
+
+@pytest.mark.parametrize("access", ["read_insert", "read_write_delete"])
+def test_new_access_modes_survive_contract_round_trip(access: str):
+    """Deployment contracts must preserve both new modes for downstream grant checks."""
+    from omnibase_core.models.contracts.subcontracts.model_db_ownership_subcontract import (
+        ModelDbOwnershipSubcontract,
+    )
+
+    payload = {
+        "db_tables": [
+            {
+                "name": "runner_fleet_liveness",
+                "database_ref": "application",
+                "schema": "omninode_internal",
+                "migration": "0001_runner_fleet_liveness.sql",
+                "access": access,
+                "role": "liveness",
+            }
+        ]
+    }
+    contract = ModelDbOwnershipSubcontract.model_validate(payload)
+    serialized = contract.model_dump(mode="json")
+
+    assert serialized["db_tables"][0]["access"] == access
+    assert ModelDbOwnershipSubcontract.model_validate(serialized) == contract
 
 
 def test_db_table_declaration_requires_database_ref_and_schema():

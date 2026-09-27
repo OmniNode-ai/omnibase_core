@@ -42,7 +42,9 @@ class ModelDbTableDeclaration(BaseModel):
         description="Schema reference whose topology domain is authoritative.",
     )
     migration: str = Field(..., min_length=1)
-    access: Literal["read", "write", "read_write"] = "write"
+    access: Literal[
+        "read", "write", "read_write", "read_insert", "read_write_delete"
+    ] = "write"
     role: str = Field(
         ...,
         min_length=1,
