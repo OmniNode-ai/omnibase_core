@@ -124,6 +124,43 @@ The fix is ORDERING, NOT PERMISSION, and the distinction is the whole design:
   the elapsed budget -- distinct from the absent-outcome text, so a lost race
   and a genuine no-outcome case are told apart on the PR (AC3).
 
+The evidence tree is the durable tip, not the cited commit (OMN-19398)
+-------------------------------------------------------------------------
+The stamp names WHERE the evidence first landed; it is not a cap on which
+evidence exists. Until OMN-19398 a ``PROCEED`` handed the downstream checkout
+the cited companion's own merge commit, which stays fixed forever once the
+companion merges. Any record merged to onex_change_control AFTER that --
+a corrective PASS supersede, which is the designed remedy for a false FAIL --
+was therefore invisible to every later run of this gate, and the author could
+not repoint the stamp either: the body-stamp guard (OMN-18335) refuses a body
+edit that drops the live stamp line, and the Receipt Gate refuses a body with
+two. Measured live on omnimarket#2886 head ``19f04dd660``: the stamp cites
+OCC#11472 (merged 2026-09-26T17:36:34Z at ``0f4c21e95d``), the corrective
+record ``test_passes.supersede.2886.0003.yaml`` merged in OCC#11646 at
+2026-09-27T14:23:11Z, and eligibility read ``nonpass_receipt`` on every rerun
+because the checkout was ``0f4c21e95d``.
+
+So a ``PROCEED`` now resolves the cited, durable commit to the CURRENT tip of
+the first onex_change_control durable branch that CONTAINS it
+(:func:`advance_to_durable_tip`). Nothing about what qualifies moves:
+
+* the cited evidence is still required to be durable -- a companion must be
+  MERGED and a SHA stamp must be an ancestor of a durable branch -- before
+  any tip is read, and the tip is used only when it provably contains the
+  cited commit (compare status ``identical`` or ``behind``), so the tree
+  checked out is a strict superset of the cited one;
+* every record in that tree reached a durable branch through
+  onex_change_control's own gates, the same bar the cited commit met;
+* the validator's binding is untouched -- a receipt still counts only when it
+  names this PR's number or one of its commit SHAs, is PASS, and is
+  hash-bound -- so a tree with no valid record for this PR still fails;
+* the tip is read ONCE per run and pinned as the ``sha`` output, so invariant
+  I1 (one resolution, every step reads the snapshot) still holds and the job
+  log names the exact tree evaluated.
+
+Any failed read (the tip, or the containment compare) keeps the cited commit,
+which is exactly the pre-OMN-19398 behaviour and never a weaker one.
+
 A ``merge_group`` (or any non-``pull_request``) event always ``PROCEED``s
 immediately, never waits. Invariant I2 in ``occ-preflight.yml``'s own header
 requires a ``merge_group`` run to re-validate fully against the pinned
@@ -177,6 +214,7 @@ EVIDENCE_SOURCE_RE: Final[re.Pattern[str]] = re.compile(
 )
 OCC_PR_REF_RE: Final[re.Pattern[str]] = re.compile(r"^OCC#(\d+)$", re.IGNORECASE)
 HEX_SHA_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{7,40}$")
+FULL_SHA_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{40}$")
 
 _ENFORCED_EVENT: Final[str] = "pull_request"
 
@@ -828,6 +866,19 @@ def decide_preflight_wait(
     )
 
 
+@dataclass(frozen=True)
+class ModelDurableTipResolution:
+    """The OCC tree a ``PROCEED`` evaluates (OMN-19398).
+
+    ``fell_back`` is True when no durable tip could be proven to contain the
+    cited commit, so ``sha`` IS the cited commit -- the pre-OMN-19398 tree.
+    """
+
+    sha: str
+    note: str
+    fell_back: bool
+
+
 class GhPort(Protocol):
     """The live GitHub reads this poll needs."""
 
@@ -846,6 +897,10 @@ class GhPort(Protocol):
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str
     ) -> ModelAutobindOutcomeRead: ...
+
+    def read_branch_tip(self, *, occ_repo: str, branch: str) -> str | None: ...
+
+    def tip_contains_sha(self, *, occ_repo: str, tip: str, sha: str) -> bool: ...
 
 
 class GhCli:
@@ -994,6 +1049,32 @@ class GhCli:
             status=EnumAutobindReadStatus.READ, outcome=outcome, reason=reason
         )
 
+    def read_branch_tip(self, *, occ_repo: str, branch: str) -> str | None:
+        """The full commit SHA *branch* points at right now, or ``None``."""
+        raw = self._run(
+            ["gh", "api", f"repos/{occ_repo}/commits/{branch}", "--jq", ".sha"]
+        )
+        text = raw.strip().lower() if raw is not None else ""
+        return text if FULL_SHA_RE.match(text) else None
+
+    def tip_contains_sha(self, *, occ_repo: str, tip: str, sha: str) -> bool:
+        """True only when *sha* is *tip* or an ancestor of it.
+
+        Compares against the exact *tip* SHA already read, never the branch
+        name, so the branch advancing between the two reads cannot make the
+        answer describe a different commit than the one checked out.
+        """
+        raw = self._run(
+            [
+                "gh",
+                "api",
+                f"repos/{occ_repo}/compare/{tip}...{sha}",
+                "--jq",
+                ".status",
+            ]
+        )
+        return raw is not None and raw.strip() in ("identical", "behind")
+
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
     ) -> bool:
@@ -1056,6 +1137,56 @@ def _resolve_facts(
 
     # Malformed; decide_preflight_wait reports this itself from pr_body.
     return pr_body, None, False, "", _AUTOBIND_NOT_CONSULTED
+
+
+def advance_to_durable_tip(
+    client: GhPort,
+    *,
+    occ_repo: str,
+    cited_sha: str,
+    branches: tuple[str, ...] = OCC_DURABLE_BRANCHES,
+) -> ModelDurableTipResolution:
+    """Resolve an already-durable cited OCC commit to the tree to evaluate.
+
+    ``sha`` is the current tip of the first branch in *branches* whose tip
+    contains *cited_sha*, or *cited_sha* itself (``fell_back``) when no tip can
+    be read or none provably contains it. See the OMN-19398 section of
+    the module docstring for why the cited commit alone is not enough and why
+    the tip is never weaker.
+
+    Called only after :func:`decide_preflight_wait` returned ``PROCEED``, so the
+    cited commit's durability has already been established; this function adds
+    newer durable records and never removes the cited ones.
+    """
+    for branch in branches:
+        tip = client.read_branch_tip(occ_repo=occ_repo, branch=branch)
+        if tip is None:
+            continue
+        if tip == cited_sha.lower():
+            return ModelDurableTipResolution(
+                sha=tip,
+                note=f"cited OCC commit {cited_sha} is the current {branch} tip",
+                fell_back=False,
+            )
+        if client.tip_contains_sha(occ_repo=occ_repo, tip=tip, sha=cited_sha):
+            return ModelDurableTipResolution(
+                sha=tip,
+                note=(
+                    f"cited OCC commit {cited_sha} is contained in the current "
+                    f"{branch} tip {tip}; evaluating that tip so evidence merged "
+                    "after the cited companion is visible (OMN-19398)"
+                ),
+                fell_back=False,
+            )
+    return ModelDurableTipResolution(
+        sha=cited_sha,
+        note=(
+            f"no readable OCC durable-branch tip {branches} provably contains "
+            f"{cited_sha}; evaluating the cited commit itself (pre-OMN-19398 "
+            "behaviour)"
+        ),
+        fell_back=True,
+    )
 
 
 def _write_github_output(name: str, value: str, *, github_output_path: str) -> None:
@@ -1214,10 +1345,24 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
 
         if decision.outcome is EnumPreflightWaitOutcome.PROCEED:
             if resolved_sha:
-                _write_github_output(
-                    "sha", resolved_sha, github_output_path=args.github_output_path
+                resolution = advance_to_durable_tip(
+                    client, occ_repo=args.occ_repo, cited_sha=resolved_sha
                 )
-                print(f"::notice::Evidence-Source resolved to OCC SHA: {resolved_sha}")
+                level = "warning" if resolution.fell_back else "notice"
+                print(f"::{level}::{resolution.note}")
+                evaluated_sha = resolution.sha
+                _write_github_output(
+                    "sha", evaluated_sha, github_output_path=args.github_output_path
+                )
+                _write_github_output(
+                    "cited_sha",
+                    resolved_sha,
+                    github_output_path=args.github_output_path,
+                )
+                print(
+                    "::notice::Evidence-Source cited OCC SHA "
+                    f"{resolved_sha}; evaluating OCC SHA {evaluated_sha}"
+                )
             return EXIT_OK
 
         if decision.is_terminal_failure:

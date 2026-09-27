@@ -119,6 +119,12 @@ class _ScriptedGh:
     ) -> bool:
         raise AssertionError("the pin-only probe must not resolve ancestry")
 
+    def read_branch_tip(self, *, occ_repo: str, branch: str) -> str | None:
+        raise AssertionError("the pin-only probe must not read an OCC branch tip")
+
+    def tip_contains_sha(self, *, occ_repo: str, tip: str, sha: str) -> bool:
+        raise AssertionError("the pin-only probe must not resolve containment")
+
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str
     ) -> ModelAutobindOutcomeRead:
@@ -160,7 +166,7 @@ def _wait(
     return wait_for_no_companion_required(
         repo=REPO,
         pr_number=PR_NUMBER,
-        client=gh,  # type: ignore[arg-type]
+        client=gh,
         deadline_seconds=deadline_seconds,
         poll_interval_seconds=5,
         sleep=_sleep,
@@ -231,7 +237,7 @@ def test_the_cli_resolves_the_race_end_to_end(tmp_path: Any) -> None:
                 "--no-companion-poll-interval-seconds",
                 "0",
             ],
-            gh=gh,  # type: ignore[arg-type]
+            gh=gh,
         )
         == EXIT_OK
     )
@@ -334,7 +340,7 @@ def test_the_timeout_exits_non_zero_through_the_cli(tmp_path: Any) -> None:
                 "--no-companion-poll-interval-seconds",
                 "0",
             ],
-            gh=gh,  # type: ignore[arg-type]
+            gh=gh,
         )
         == EXIT_ERROR
     )
