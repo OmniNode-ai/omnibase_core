@@ -140,4 +140,4 @@ def test_no_escalation_requires_a_backend_pin() -> None:
 def test_request_is_frozen() -> None:
     request = ModelDelegationDispatchRequest.model_validate(_REQUIRED)
     with pytest.raises(ValidationError):
-        request.prompt = "changed"  # type: ignore[misc]
+        request.prompt = "changed"

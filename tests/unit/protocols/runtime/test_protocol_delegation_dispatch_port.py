@@ -138,6 +138,7 @@ def _run_mypy_strict(tmp_path: Path, source: str) -> tuple[str, int]:
     return stdout + stderr, exit_status
 
 
+@pytest.mark.timeout(300)  # a cold mypy cache analyses the model graph
 def test_a_conforming_port_passes_mypy_strict(tmp_path: Path) -> None:
     """Positive control: the same harness reports a conforming port as clean."""
     output, exit_status = _run_mypy_strict(tmp_path, _CONFORMING_MODULE)
@@ -145,6 +146,7 @@ def test_a_conforming_port_passes_mypy_strict(tmp_path: Path) -> None:
     assert exit_status == 0, output
 
 
+@pytest.mark.timeout(300)  # a cold mypy cache analyses the model graph
 def test_the_keyword_only_signature_fails_mypy_strict(tmp_path: Path) -> None:
     output, exit_status = _run_mypy_strict(tmp_path, _KEYWORD_ONLY_MODULE)
 
@@ -168,6 +170,7 @@ def test_isinstance_cannot_see_the_signature() -> None:
     assert isinstance(_KeywordOnlyPort(), ProtocolDelegationDispatchPort)
 
 
+@pytest.mark.asyncio
 async def test_a_conforming_port_round_trips_a_request() -> None:
     port: ProtocolDelegationDispatchPort[
         ModelDelegationDispatchRequest, ModelDelegationDispatchResult

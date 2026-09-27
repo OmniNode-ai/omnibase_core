@@ -15,6 +15,7 @@ Design Principles:
 - Provide complete type hints for mypy strict mode compliance
 
 Module Organization:
+- protocol_delegation_dispatch_port.py: Delegation dispatch port (OMN-19838)
 - protocol_handler_registry.py: Handler registry protocol for DI abstraction
 - protocol_message_handler.py: Category-based message handler protocol
 
@@ -40,6 +41,9 @@ Related:
    Added ProtocolHandlerRegistry for handler registry abstraction.
 """
 
+from omnibase_core.protocols.runtime.protocol_delegation_dispatch_port import (
+    ProtocolDelegationDispatchPort,
+)
 from omnibase_core.protocols.runtime.protocol_handler_registry import (
     ProtocolHandlerRegistry,
 )
@@ -82,6 +86,7 @@ from omnibase_core.protocols.runtime.protocol_transport_producer import (
 )
 
 __all__ = [
+    "ProtocolDelegationDispatchPort",
     "ProtocolHandlerRegistry",
     "ProtocolHarnessInferenceAdapter",
     "ProtocolHarnessProjectionStore",
