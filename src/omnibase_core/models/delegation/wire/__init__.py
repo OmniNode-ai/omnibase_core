@@ -44,6 +44,12 @@ from omnibase_core.models.delegation.wire.model_delegation_contract_evidence imp
 from omnibase_core.models.delegation.wire.model_delegation_deliverable_evidence import (
     ModelDelegationDeliverableEvidence,
 )
+from omnibase_core.models.delegation.wire.model_delegation_dispatch_request import (
+    ModelDelegationDispatchRequest,
+)
+from omnibase_core.models.delegation.wire.model_delegation_dispatch_result import (
+    ModelDelegationDispatchResult,
+)
 from omnibase_core.models.delegation.wire.model_delegation_failed import (
     ModelDelegationFailed,
 )
@@ -146,6 +152,8 @@ __all__: list[str] = [
     "ModelDelegationCircuitBreakerConfig",
     "ModelDelegationCompleted",
     "ModelDelegationConfig",
+    "ModelDelegationDispatchRequest",
+    "ModelDelegationDispatchResult",
     "ModelDelegationEventEnvelope",
     "ModelDelegationFailed",
     "ModelDelegationFailoverConfig",
