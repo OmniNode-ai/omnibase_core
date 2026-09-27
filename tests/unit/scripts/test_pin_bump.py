@@ -177,3 +177,91 @@ def test_invalid_sha_rejected(tmp_repo: Path) -> None:
     site = PinSite(path=str(f.relative_to(tmp_repo)), pattern=r"ref:\s*([0-9a-f]{40})")
     with pytest.raises(ValueError, match="40-char lowercase hex"):
         bump_file(tmp_repo, site, "not-a-sha")
+
+
+# --- Regression coverage for the env-var-indirection pin shape (OMN-19848) ---
+#
+# omninode_infra's check-handshake.yml moved from an inline `ref: <sha>` to an
+# env-var indirection (`OMNIBASE_CORE_COMMIT: <sha>` at the job/env level, then
+# `ref: ${{ env.OMNIBASE_CORE_COMMIT }}` at the checkout step). The manifest's
+# pin_sites pattern for omninode_infra was never updated to match, so every
+# publish-downstream-pin-bump.yml run since has raised ValueError instead of
+# bumping the pin (docs/tracking/ROLLING_WORK_LEDGER.md FRICTION row,
+# lane omninode-infra-core-bump-83, 2026-09-27T03:30:12Z).
+
+
+def _make_env_var_indirection_handshake(root: Path, sha: str) -> Path:
+    """Reproduce omninode_infra's actual check-handshake.yml pin shape."""
+    p = root / ".github" / "workflows" / "check-handshake.yml"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        "name: Check Architecture Handshake\n"
+        "env:\n"
+        "  # Pinned to omnibase_core main as of 2026-02-09.\n"
+        "  # Update by running: gh api repos/OmniNode-ai/omnibase_core/commits/main --jq '.sha'\n"
+        f"  OMNIBASE_CORE_COMMIT: {sha}\n"
+        "jobs:\n"
+        "  check-handshake:\n"
+        "    steps:\n"
+        "      - name: Checkout omnibase_core\n"
+        "        uses: actions/checkout@v6\n"
+        "        with:\n"
+        "          repository: OmniNode-ai/omnibase_core\n"
+        "          ref: ${{ env.OMNIBASE_CORE_COMMIT }}\n"
+        "          path: omnibase_core\n"
+    )
+    return p
+
+
+def test_bump_file_matches_env_var_indirection_pattern(tmp_repo: Path) -> None:
+    """Positive: the corrected pattern matches the OMNIBASE_CORE_COMMIT line."""
+    f = _make_env_var_indirection_handshake(tmp_repo, OLD_SHA)
+    site = PinSite(
+        path=str(f.relative_to(tmp_repo)),
+        pattern=r"OMNIBASE_CORE_COMMIT:\s*([0-9a-f]{40})",
+    )
+    result = bump_file(tmp_repo, site, NEW_SHA)
+    assert result.changed is True
+    assert result.old_sha == OLD_SHA
+    content = f.read_text()
+    assert f"OMNIBASE_CORE_COMMIT: {NEW_SHA}" in content
+    # the literal-ref checkout line is untouched (it's an expression, not a SHA)
+    assert "ref: ${{ env.OMNIBASE_CORE_COMMIT }}" in content
+
+
+def test_bump_file_raises_on_stale_ref_pattern_against_env_var_indirection(
+    tmp_repo: Path,
+) -> None:
+    """Negative regression: the OLD (pre-fix) manifest pattern must fail loudly,
+    not silently no-op, against the env-var-indirection shape — this is the
+    exact ValueError every publish-downstream-pin-bump.yml run hit."""
+    f = _make_env_var_indirection_handshake(tmp_repo, OLD_SHA)
+    site = PinSite(path=str(f.relative_to(tmp_repo)), pattern=r"ref:\s*([0-9a-f]{40})")
+    with pytest.raises(ValueError, match="no match"):
+        bump_file(tmp_repo, site, NEW_SHA)
+
+
+def test_shipped_manifest_omninode_infra_pattern_matches_its_own_pin_shape(
+    tmp_repo: Path,
+) -> None:
+    """Guards the actual docs/downstream-repos.yaml entry: omninode_infra pins via
+    OMNIBASE_CORE_COMMIT env-var indirection, not an inline `ref: <sha>`, so the
+    manifest's declared pattern for it must match that shape. Fails RED against
+    the pre-fix manifest pattern `ref:\\s*([0-9a-f]{40})`."""
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    manifest = load_manifest(manifest_path)
+    entry = next(r for r in manifest.repos if r.name == "omninode_infra")
+    site = next(
+        s for s in entry.pin_sites if s.path == ".github/workflows/check-handshake.yml"
+    )
+
+    f = _make_env_var_indirection_handshake(tmp_repo, OLD_SHA)
+    result = bump_file(
+        tmp_repo,
+        PinSite(path=str(f.relative_to(tmp_repo)), pattern=site.pattern),
+        NEW_SHA,
+    )
+    assert result.changed is True
+    assert result.old_sha == OLD_SHA
