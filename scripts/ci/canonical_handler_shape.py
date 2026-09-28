@@ -23,6 +23,8 @@ runtime adapter, NOT a per-node wrapper). Concretely a node is canonical when:
   ``**kwargs`` method; and
 * the resolved handler module does not import/reference ``ModelEventEnvelope``
   (C-core: no envelope type in the core).
+  ``handle`` may be inherited: the classifier walks the MRO and checks the
+  defining ancestor's module for the envelope reference.
 
 Everything else is non-canonical: no handler binding, an unresolved
 (phantom) binding, a class with only operation-named methods (no ``handle``),
@@ -82,6 +84,7 @@ import ast
 import importlib.util
 import os
 import sys
+from collections import deque
 from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
@@ -228,6 +231,86 @@ def _handle_method(cls: ast.ClassDef) -> ast.FunctionDef | ast.AsyncFunctionDef 
     return None
 
 
+def _base_class_names(cls: ast.ClassDef) -> list[str]:
+    """Extract simple and qualified base names in declaration order."""
+    return [
+        base.id if isinstance(base, ast.Name) else base.attr
+        for base in cls.bases
+        if isinstance(base, (ast.Name, ast.Attribute))
+    ]
+
+
+def _resolve_class_by_name(
+    name: str,
+    parsed: list[tuple[Path, ast.Module]],
+    seen_files: set[Path],
+) -> tuple[ast.ClassDef | None, Path | None, list[tuple[Path, ast.Module]]]:
+    """Find a local or imported base, retaining newly parsed source files."""
+    for path, tree in parsed:
+        for cls in _classes(tree):
+            if cls.name == name:
+                return cls, path, parsed
+    for path, tree in list(parsed):
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ImportFrom) or not node.module:
+                continue
+            module = node.module
+            if node.level:
+                try:
+                    parts = path.parent.relative_to(SRC_ROOT).parts
+                except ValueError:
+                    continue
+                if node.level > len(parts):
+                    continue
+                module = ".".join((*parts[: len(parts) - node.level + 1], module))
+            for alias in node.names:
+                if (alias.asname or alias.name) != name:
+                    continue
+                for target in _module_to_files(module):
+                    if target not in seen_files:
+                        seen_files.add(target)
+                        try:
+                            imported = ast.parse(target.read_text(encoding="utf-8"))
+                        except (OSError, SyntaxError):
+                            continue
+                        parsed.append((target, imported))
+                    for cached_path, imported in parsed:
+                        if cached_path != target:
+                            continue
+                        for cls in _classes(imported):
+                            if cls.name == alias.name:
+                                return cls, target, parsed
+    return None, None, parsed
+
+
+def _handle_via_mro(
+    cls: ast.ClassDef,
+    parsed: list[tuple[Path, ast.Module]],
+    *,
+    max_depth: int = 8,
+) -> tuple[
+    ast.FunctionDef | ast.AsyncFunctionDef | None, ast.ClassDef | None, Path | None
+]:
+    """Search ancestors breadth-first, bounded by depth and visited class names."""
+    parsed = list(parsed)
+    seen_files = {path for path, _tree in parsed}
+    visited = {cls.name}
+    pending = deque((name, 1) for name in _base_class_names(cls))
+    while pending:
+        name, depth = pending.popleft()
+        if depth > max_depth or name in visited:
+            continue
+        visited.add(name)
+        base, path, parsed = _resolve_class_by_name(name, parsed, seen_files)
+        if base is None:
+            continue
+        fn = _handle_method(base)
+        if fn is not None:
+            return fn, base, path
+        pending.extend((name, depth + 1) for name in _base_class_names(base))
+    return None, None, None
+
+
 def _operation_methods(cls: ast.ClassDef) -> list[str]:
     out: list[str] = []
     for m in cls.body:
@@ -328,7 +411,14 @@ def _follow_reexport(
                             continue
                         for c in _classes(t2):
                             if c.name == alias.name:
-                                return _handle_method(c), c, target
+                                fn = _handle_method(c)
+                                if fn is None:
+                                    inherited = _handle_via_mro(
+                                        c, [(target, t2), *parsed]
+                                    )
+                                    if inherited[0] is not None:
+                                        return inherited
+                                return fn, c, target
     return None, None, None
 
 
@@ -350,6 +440,10 @@ def _resolve_handler(
             for c in _classes(tree):
                 if c.name == cls_name:
                     fn = _handle_method(c)
+                    if fn is None:
+                        inherited = _handle_via_mro(c, parsed)
+                        if inherited[0] is not None:
+                            return inherited
                     if fn or _operation_methods(c):
                         return fn, c, f
     # any class with a handle
@@ -358,6 +452,9 @@ def _resolve_handler(
             fn = _handle_method(c)
             if fn is not None:
                 return fn, c, f
+            inherited = _handle_via_mro(c, parsed)
+            if inherited[0] is not None:
+                return inherited
     # named class re-exported from another module (follow the import)
     if cls_name:
         rfn, rc, rf = _follow_reexport(parsed, cls_name)
@@ -372,6 +469,9 @@ def _resolve_handler(
     for f, tree in parsed:
         for c in _classes(tree):
             if c.name.startswith(("Handler", "Node")):
+                inherited = _handle_via_mro(c, parsed)
+                if inherited[0] is not None:
+                    return inherited
                 return None, c, f
     return None, None, None
 
