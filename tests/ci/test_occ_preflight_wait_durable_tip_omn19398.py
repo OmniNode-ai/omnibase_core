@@ -19,7 +19,6 @@ from scripts.ci.occ_preflight_wait import (
     OCC_DURABLE_BRANCHES,
     EnumAutobindReadStatus,
     ModelAutobindOutcomeRead,
-    advance_to_durable_tip,
     main,
 )
 
@@ -206,11 +205,12 @@ def test_non_ancestor_sha_stamp_never_reads_a_tip(tmp_path: Path) -> None:
     assert gh.tip_reads == []
 
 
-def test_advance_reports_fallback_explicitly() -> None:
-    resolution = advance_to_durable_tip(
-        _FakeGh(tips={"dev": None, "main": None}),
-        occ_repo="OmniNode-ai/onex_change_control",
-        cited_sha=CITED_11472_MERGE,
-    )
-    assert resolution.fell_back is True
-    assert resolution.sha == CITED_11472_MERGE
+def test_fallback_to_the_cited_sha_is_reported_as_a_warning(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A fallback is the pre-OMN-19398 tree; the job log must say so."""
+    gh = _FakeGh(tips={"dev": None, "main": None})
+    rc, outputs = _run(gh, tmp_path)
+    assert rc == 0
+    assert outputs["cited_sha"] == CITED_11472_MERGE
+    assert "::warning::no readable OCC durable-branch tip" in capsys.readouterr().out
