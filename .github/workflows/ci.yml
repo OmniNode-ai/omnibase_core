@@ -4910,5 +4910,6 @@ jobs:
             --run-attempt "${RUN_ATTEMPT}" \
             --record deferred-record/record.json \
             --head-sha "${HEAD_SHA}" \
+            --current-run-id "${RUN_ID}" \
             --deadline-seconds 2400 \
             --poll-interval-seconds 60

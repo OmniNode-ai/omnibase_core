@@ -27,8 +27,11 @@ from scripts.ci.deferred_test_passes_gate import (
     EXIT_FAILURE,
     EXIT_PENDING,
     EXIT_SUCCESS,
+    cancelled_run_ids,
     evaluate_checks,
+    is_concurrency_cancellation,
     load_record,
+    own_workflow_run_ids,
     record_required,
 )
 
@@ -612,3 +615,184 @@ def test_ci_summary_evaluates_deferred_items_after_its_verdict() -> None:
     assert "contract-compliance-deferred" in step["run"]
     assert job["permissions"]["pull-requests"] == "read"
     assert job["permissions"]["actions"] == "read"
+
+
+# --- OMN-17427: a cancellation its own workflow superseded -------------------
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "omn17427_deferred"
+AUTO_MERGE_WF = 111
+CI_WF = 222
+
+
+def _run_row(
+    name: str, conclusion: str | None, run_id: int, **kw: object
+) -> dict[str, object]:
+    row = _row(name, conclusion, **kw)  # type: ignore[arg-type]
+    row["html_url"] = f"https://github.com/o/r/actions/runs/{run_id}/job/{row['id']}"
+    return row
+
+
+def _wf_run(
+    run_id: int, workflow_id: int, status: str = "completed"
+) -> dict[str, object]:
+    return {
+        "id": run_id,
+        "workflow_id": workflow_id,
+        "status": status,
+        "conclusion": "cancelled" if status == "completed" else None,
+        "event": "pull_request",
+    }
+
+
+AUTO_MERGE_CANCELLED = [
+    _row("Tests Gate", "success"),
+    _run_row("Enable Auto-Merge", "cancelled", 500, row_id=2),
+    _run_row("Resolve PR (fanout guard)", "cancelled", 500, row_id=3),
+    SELF,
+]
+
+
+def test_a_concurrency_cancellation_is_superseded_not_judged() -> None:
+    """omnibase_core#1795 shape: auto-merge.yml's per-PR concurrency group let a
+    check_suite run on dev cancel the head's run, so no row on this head ever
+    replaced the cancellation. GitHub's annotation says why it was cancelled."""
+    runs = [_wf_run(500, AUTO_MERGE_WF)]
+    code, report = evaluate_checks(
+        AUTO_MERGE_CANCELLED,
+        now=NOW,
+        workflow_runs=runs,
+        concurrency_cancelled_runs=frozenset({500}),
+    )
+    assert code == EXIT_SUCCESS, report
+    assert "cancelled by its concurrency group" in report
+    # Positive control: without the annotation the same rows still fail.
+    code, report = evaluate_checks(AUTO_MERGE_CANCELLED, now=NOW, workflow_runs=runs)
+    assert code == EXIT_FAILURE
+    assert "Enable Auto-Merge (cancelled)" in report
+
+
+def test_a_newer_run_of_the_same_workflow_holds_then_supersedes() -> None:
+    running = [_wf_run(500, AUTO_MERGE_WF), _wf_run(600, AUTO_MERGE_WF, "queued")]
+    code, report = evaluate_checks(AUTO_MERGE_CANCELLED, now=NOW, workflow_runs=running)
+    assert code == EXIT_PENDING, report
+    assert "run 600 of the same workflow is queued" in report
+    finished = [_wf_run(500, AUTO_MERGE_WF), _wf_run(600, AUTO_MERGE_WF)]
+    code, report = evaluate_checks(
+        AUTO_MERGE_CANCELLED, now=NOW, workflow_runs=finished
+    )
+    assert code == EXIT_SUCCESS, report
+    assert "superseded by run 600" in report
+    # A newer run of ANOTHER workflow is not a replacement.
+    other = [_wf_run(500, AUTO_MERGE_WF), _wf_run(600, CI_WF)]
+    assert (
+        evaluate_checks(AUTO_MERGE_CANCELLED, now=NOW, workflow_runs=other)[0]
+        == EXIT_FAILURE
+    )
+
+
+def test_the_judging_run_is_never_waited_on_as_a_replacement() -> None:
+    """A row an older CI run left cancelled, replaced by the run doing the
+    judging: waiting on that run would wait on itself until the deadline."""
+    checks = [_row("Tests Gate", "success"), _run_row("Old Job", "cancelled", 700)]
+    runs = [_wf_run(700, CI_WF), _wf_run(800, CI_WF, "in_progress")]
+    code, report = evaluate_checks(
+        checks, now=NOW, workflow_runs=runs, own_run_ids=frozenset({800})
+    )
+    assert code == EXIT_SUCCESS, report
+    assert evaluate_checks(checks, now=NOW, workflow_runs=runs)[0] == EXIT_PENDING
+
+
+def test_a_failure_is_never_superseded_and_a_row_without_a_run_is_judged() -> None:
+    failed = [_run_row("Enable Auto-Merge", "failure", 500)]
+    runs = [_wf_run(500, AUTO_MERGE_WF), _wf_run(600, AUTO_MERGE_WF)]
+    assert (
+        evaluate_checks(
+            failed,
+            now=NOW,
+            workflow_runs=runs,
+            concurrency_cancelled_runs=frozenset({500}),
+        )[0]
+        == EXIT_FAILURE
+    )
+    no_url = [_row("Enable Auto-Merge", "cancelled")]
+    assert (
+        evaluate_checks(
+            no_url,
+            now=NOW,
+            workflow_runs=runs,
+            concurrency_cancelled_runs=frozenset({500}),
+        )[0]
+        == EXIT_FAILURE
+    )
+
+
+def test_concurrency_marker_and_helpers() -> None:
+    assert is_concurrency_cancellation(
+        [
+            "Canceling since a higher priority waiting request for "
+            "auto-merge-1795 exists",
+            "The operation was canceled.",
+        ]
+    )
+    assert not is_concurrency_cancellation(["The operation was canceled."])
+    assert cancelled_run_ids(AUTO_MERGE_CANCELLED) == [500]
+    assert own_workflow_run_ids([{"run_id": 9}, {"run_id": 9}], 10) == frozenset(
+        {9, 10}
+    )
+
+
+@pytest.mark.parametrize(
+    ("fixture", "own_run"),
+    [
+        ("core1795_at_152044.json", 36328548514),
+        ("core1794_at_085759.json", 36306444633),
+    ],
+)
+def test_replay_of_the_measured_false_reds(fixture: str, own_run: int) -> None:
+    """Replay of the head as the deferred step read it: omnibase_core#1795 CI run
+    36328548514 attempt 1 (log 15:20:44Z: ``not green: Enable Auto-Merge
+    (cancelled), Resolve PR (fanout guard) (cancelled)``) and omnibase_core#1794
+    CI run 36306444633 attempt 1 (log 08:57:59Z, same line). Reconstructed from
+    live check-runs with each later re-run attempt replaced by the attempt
+    current at that instant; 150 and 149 rows observed, as each log reports."""
+    snap = json.loads((FIXTURES / fixture).read_text(encoding="utf-8"))
+    now = datetime.fromisoformat(snap["at"].replace("Z", "+00:00"))
+    old_code, old_report = evaluate_checks(snap["check_runs"], now=now)
+    assert old_code == EXIT_FAILURE
+    assert (
+        "not green: Enable Auto-Merge (cancelled), Resolve PR (fanout guard) "
+        "(cancelled)" in old_report
+    )
+    concurrency = frozenset(
+        int(run_id)
+        for run_id, notes in snap["cancelled_run_annotations"].items()
+        if is_concurrency_cancellation(notes)
+    )
+    new_code, new_report = evaluate_checks(
+        snap["check_runs"],
+        now=now,
+        workflow_runs=snap["workflow_runs"],
+        concurrency_cancelled_runs=concurrency,
+        own_run_ids=frozenset({own_run}),
+    )
+    assert new_code == EXIT_SUCCESS, new_report
+    assert "not green" not in new_report
+
+
+def test_gate_cli_reads_the_concurrency_annotation(tmp_path: Path) -> None:
+    record = _write_record(tmp_path, [_ITEM])
+    rows = "\n".join(json.dumps(row) for row in AUTO_MERGE_CANCELLED)
+    run = json.dumps(_wf_run(500, AUTO_MERGE_WF))
+    note = "Canceling since a higher priority waiting request for auto-merge-7 exists"
+    script = (
+        'case "$*" in\n'
+        f"  *\"commits/{HEAD}/check-runs\"*) cat <<'JSON'\n{rows}\nJSON\n ;;\n"
+        f"  *\"actions/runs?head_sha={HEAD}\"*) echo '{run}' ;;\n"
+        '  *"actions/runs/500/jobs"*) echo \'{"id": 41, "conclusion": "cancelled"}\' ;;\n'
+        f'  *"check-runs/41/annotations"*) echo \'{{"message": "{note}"}}\' ;;\n'
+        '  *) echo "unexpected gh $*" >&2; exit 8 ;;\n'
+        "esac\n"
+    )
+    result = _run_gate(tmp_path, record=record, gh_script=script)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "cancelled by its concurrency group" in result.stdout
