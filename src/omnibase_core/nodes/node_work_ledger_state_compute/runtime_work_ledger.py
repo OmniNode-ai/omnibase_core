@@ -13,6 +13,21 @@ access happens here, never in the handler. ``omnibase_core.cli`` may not import
 ``omnibase_core.nodes`` (the core-execution-tier-no-nodes import-linter
 contract), so the console script targets this module directly.
 
+``--source projection|local|auto`` (OMN-20002) picks where the events come from,
+before or after the subcommand. Not given, the ledger is the local file exactly as
+above and the header is unchanged. Given, the header gains cells after ``epoch=``::
+
+    ... epoch=<uuid|none> [projection_fault=<kind>] source=<s> [tail=<n>] [watermark=<applied>/<end> lag=<n>]
+
+- ``local``: the local file only (``source=local``).
+- ``projection``: the projection-api snapshot only, from ``ONEX_WORK_LEDGER_PROJECTION_URL``
+  (``source=projection``). Any projection fault is UNDECIDED; the local file is never read.
+- ``auto``: the projection plus the local tail, the buffer events the projection has not
+  confirmed, folded together (``source=union tail=<n>``; ``source=projection`` when there is
+  no local buffer). On a projection fault the local buffer alone is folded and the header
+  says ``projection_fault=<kind> source=local-only``; with no readable buffer either the
+  answer is UNDECIDED (``source=unavailable``). A missing buffer is never CLEAR.
+
 Usage::
 
     onex-work-ledger held --repo omnibase_infra --pr 4005 --action merge \\
@@ -45,16 +60,24 @@ import hashlib
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Final
+from typing import Final, NamedTuple
 
 from pydantic import ValidationError
 
+from omnibase_core.cli.cli_work_ledger_projection import (
+    PROJECTION_TOPIC,
+    fetch_projection_snapshot,
+    local_tail,
+)
 from omnibase_core.cli.cli_work_ledger_render import (
     MD_LEDGER_PATH_ENV,
     run_render,
 )
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
 from omnibase_core.enums.enum_question_status import EnumQuestionStatus
+from omnibase_core.errors.error_work_ledger_projection import (
+    WorkLedgerProjectionError,
+)
 from omnibase_core.models.events.work.model_hold_scope import ModelHoldScope
 from omnibase_core.models.events.work.model_pr_key import ModelPrKey
 from omnibase_core.models.events.work.model_work_ledger_line import (
@@ -96,6 +119,7 @@ __all__ = ["EXIT_UNDECIDED", "main"]
 EXIT_UNDECIDED: Final = 2
 """Exit code of every answer that is not certain. Never 0."""
 
+_SOURCE_CHOICES: Final = ("projection", "local", "auto")
 _RUNTIME_CHOICES: Final = ("yes", "no", "unknown")
 _QUESTION_STATUS_CHOICES: Final = (
     *(status.value for status in EnumQuestionStatus),
@@ -139,6 +163,86 @@ def _fold(lines: tuple[str, ...], doubt: str | None) -> ModelWorkLedgerState:
         return state
     return state.model_copy(
         update={"undecided_reasons": tuple(sorted({*state.undecided_reasons, doubt}))}
+    )
+
+
+class _Source(NamedTuple):
+    """What the events were read from: the header cells, and the folded lines."""
+
+    path: str
+    sha256: str | None
+    lines: tuple[str, ...]
+    doubt: str | None
+    extras: str
+    """Header cells appended after ``epoch=``; empty for the default local read."""
+
+
+def _lines_sha256(lines: tuple[str, ...]) -> str:
+    return hashlib.sha256("".join(f"{line}\n" for line in lines).encode()).hexdigest()
+
+
+def _watermark_cells(applied: int, end: int, lag: int) -> str:
+    return f" watermark={applied}/{end} lag={lag}"
+
+
+def _resolve_source(mode: str | None) -> _Source:
+    """Read the events for ``--source``. Never raises; every doubt is recorded."""
+    if mode is None or mode == "local":
+        path, sha256, local_lines, local_doubt = _read_ledger()
+        return _Source(
+            path,
+            sha256,
+            local_lines,
+            local_doubt,
+            "" if mode is None else " source=local",
+        )
+    projection_path = f"projection:{PROJECTION_TOPIC}"
+    try:
+        snapshot = fetch_projection_snapshot()
+    except WorkLedgerProjectionError as fault:
+        if mode == "projection":
+            return _Source(
+                projection_path, None, (), fault.reason, " source=projection"
+            )
+        path, sha256, local_lines, local_doubt = _read_ledger()
+        fault_cell = f" projection_fault={fault.kind}"
+        if local_doubt is not None:
+            # No readable buffer either: nothing to answer from, and never CLEAR.
+            return _Source(
+                path,
+                sha256,
+                (),
+                f"{fault.reason}; {local_doubt}",
+                f"{fault_cell} source=unavailable",
+            )
+        return _Source(
+            path, sha256, local_lines, None, f"{fault_cell} source=local-only"
+        )
+    projected = tuple(row.record for row in snapshot.rows)
+    watermark = _watermark_cells(
+        snapshot.applied_offset, snapshot.end_offset, snapshot.lag_records
+    )
+    projection_only = _Source(
+        projection_path,
+        _lines_sha256(projected),
+        projected,
+        None,
+        f" source=projection{watermark}",
+    )
+    if mode == "projection":
+        return projection_only
+    path, _, local_lines, local_doubt = _read_ledger()
+    if local_doubt is not None:
+        # A reachable projection is not blocked by a missing local buffer.
+        return projection_only
+    tail = local_tail(local_lines, snapshot)
+    folded = (*projected, *tail)
+    return _Source(
+        path,
+        _lines_sha256(folded),
+        folded,
+        None,
+        f" source=union tail={len(tail)}{watermark}",
     )
 
 
@@ -335,9 +439,27 @@ def _build_parser() -> argparse.ArgumentParser:
             "2 UNDECIDED."
         ),
     )
+    parser.add_argument(
+        "--source",
+        choices=_SOURCE_CHOICES,
+        default=None,
+        help=(
+            "Where the events come from: the local file (local), the projection "
+            "snapshot named by ONEX_WORK_LEDGER_PROJECTION_URL (projection), or "
+            "both, with the local tail folded in and the local file alone on a "
+            "projection fault (auto). Not given: the local file, header unchanged."
+        ),
+    )
+    query = argparse.ArgumentParser(add_help=False)
+    query.add_argument(
+        "--source",
+        choices=_SOURCE_CHOICES,
+        default=argparse.SUPPRESS,
+        help="Same as the option before the subcommand.",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    held = sub.add_parser("held", help="Is an action on one PR held?")
+    held = sub.add_parser("held", help="Is an action on one PR held?", parents=[query])
     held.add_argument("--repo", required=True)
     held.add_argument("--pr", required=True, type=int)
     held.add_argument(
@@ -345,20 +467,28 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     _add_runtime_option(held)
 
-    pauses = sub.add_parser("pauses", help="Repo and all-repo holds covering a repo.")
+    pauses = sub.add_parser(
+        "pauses", help="Repo and all-repo holds covering a repo.", parents=[query]
+    )
     pauses.add_argument("--repo", required=True)
     _add_runtime_option(pauses)
 
-    claims = sub.add_parser("claims", help="Open claims matching every filter given.")
+    claims = sub.add_parser(
+        "claims", help="Open claims matching every filter given.", parents=[query]
+    )
     claims.add_argument("--ticket")
     claims.add_argument("--repo")
     claims.add_argument("--pr", type=int)
     claims.add_argument("--lane")
 
-    inbox_parser = sub.add_parser("inbox", help="Unacknowledged items for a lane.")
+    inbox_parser = sub.add_parser(
+        "inbox", help="Unacknowledged items for a lane.", parents=[query]
+    )
     inbox_parser.add_argument("--lane", required=True)
 
-    surface = sub.add_parser("surface", help="The lease in force on a surface.")
+    surface = sub.add_parser(
+        "surface", help="The lease in force on a surface.", parents=[query]
+    )
     surface.add_argument("--surface", required=True)
 
     questions_parser = sub.add_parser(
@@ -367,12 +497,17 @@ def _build_parser() -> argparse.ArgumentParser:
             "Questions put to the operator, by status: open (the default), "
             "answered, withdrawn or any."
         ),
+        parents=[query],
     )
     questions_parser.add_argument(
         "--status", default="open", choices=_QUESTION_STATUS_CHOICES
     )
     questions_parser.add_argument("--ticket")
-    sub.add_parser("health", help="Counts, last event, epoch and reasons for doubt.")
+    sub.add_parser(
+        "health",
+        help="Counts, last event, epoch and reasons for doubt.",
+        parents=[query],
+    )
 
     render = sub.add_parser(
         "render",
@@ -395,10 +530,17 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _header(
-    path: str, sha256: str | None, line_count: int, state: ModelWorkLedgerState
+    path: str,
+    sha256: str | None,
+    line_count: int,
+    state: ModelWorkLedgerState,
+    extras: str = "",
 ) -> str:
     epoch = "none" if state.epoch is None else str(state.epoch.event_id)
-    return f"ledger={path} sha256={sha256 or 'none'} lines={line_count} epoch={epoch}"
+    return (
+        f"ledger={path} sha256={sha256 or 'none'} lines={line_count} "
+        f"epoch={epoch}{extras}"
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -406,12 +548,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     if args.command == "render":
+        if args.source is not None:
+            parser.error("render: --source does not apply to render")
         code, out = run_render("repair" if args.repair else "check", args.md)
         sys.stdout.write("\n".join(out) + "\n")
         return code
     if args.command == "claims" and (args.repo is None) != (args.pr is None):
         parser.error("claims: --repo and --pr are given together")
-    path, sha256, ledger_lines, doubt = _read_ledger()
+    path, sha256, ledger_lines, doubt, extras = _resolve_source(args.source)
     state = _fold(ledger_lines, doubt)
     try:
         code, out = _answer(args, state)
@@ -424,7 +568,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"reason=invalid argument: {_one_line(str(first['loc']))}: "
             f"{_one_line(str(first['msg']))}",
         ]
-    header = _header(path, sha256, len(ledger_lines), state)
+    header = _header(path, sha256, len(ledger_lines), state, extras)
     sys.stdout.write("\n".join([header, *out]) + "\n")
     return code
 
