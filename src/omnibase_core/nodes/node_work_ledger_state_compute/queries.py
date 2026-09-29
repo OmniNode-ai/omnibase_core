@@ -19,6 +19,7 @@ from omnibase_core.enums.enum_work_ledger_verdict_status import (
 from omnibase_core.models.events.work.model_actor import ModelActor
 from omnibase_core.models.events.work.model_pr_key import ModelPrKey
 from omnibase_core.models.events.work.model_session_actor import ModelSessionActor
+from omnibase_core.models.events.work.model_work_name_rules import normalize_work_name
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
@@ -37,6 +38,7 @@ from omnibase_core.nodes.node_work_ledger_state_compute.scope_math import (
 )
 
 __all__ = [
+    "ROLL_INVARIANT_EXCLUDED_QUERIES",
     "actor_lane",
     "health",
     "inbox",
@@ -46,6 +48,17 @@ __all__ = [
     "questions",
     "surface_lease",
 ]
+
+ROLL_INVARIANT_EXCLUDED_QUERIES: frozenset[str] = frozenset({"health"})
+"""Queries the roll invariant ``fold(archive union live) == fold(live)`` does not cover.
+
+``health`` counts lines, events and invalid releases. A roll moves closed events
+into the archive, so ``line_count`` and ``event_count`` of the live fold differ
+from those of the whole ledger whatever the roll carries, and carrying invalid
+releases through the roll could not make ``health`` invariant. Every other query
+answers the same from the live file alone. The roll's property test imports
+this set rather than spelling the exclusion again.
+"""
 
 _CLEAR = EnumWorkLedgerVerdictStatus.CLEAR
 _HELD = EnumWorkLedgerVerdictStatus.HELD
@@ -139,7 +152,10 @@ def open_claims(
         for claim in state.open_claims
         if (wanted_ticket is None or claim.ticket_id.upper() == wanted_ticket)
         and (pr is None or pr in claim.prs)
-        and (lane is None or actor_lane(claim.actor) == lane)
+        and (
+            lane is None
+            or normalize_work_name(actor_lane(claim.actor)) == normalize_work_name(lane)
+        )
     )
     return ModelWorkLedgerVerdict(
         status=_FOUND if matching else _CLEAR, claims=matching
@@ -154,7 +170,12 @@ def inbox(state: ModelWorkLedgerState, lane: str) -> ModelWorkLedgerVerdict:
     """
     if not state.decidable:
         return _undecided(state)
-    acked = {ack.re for ack in state.acks if actor_lane(ack.actor) == lane}
+    lane = normalize_work_name(lane)
+    acked = {
+        ack.re
+        for ack in state.acks
+        if normalize_work_name(actor_lane(ack.actor)) == lane
+    }
     messages = tuple(
         message
         for message in state.messages
@@ -191,6 +212,7 @@ def surface_lease(state: ModelWorkLedgerState, surface: str) -> ModelWorkLedgerV
     """Holds in force on ``surface``. An expired, unreleased lease still answers HELD."""
     if not state.decidable:
         return _undecided(state)
+    surface = normalize_work_name(surface)
     matching = tuple(
         held
         for held in state.holds_in_force

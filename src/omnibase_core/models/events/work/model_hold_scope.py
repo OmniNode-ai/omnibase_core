@@ -16,10 +16,13 @@ from pydantic import Field, field_serializer, field_validator, model_validator
 
 from omnibase_core.models.events.model_event_payload_base import ModelEventPayloadBase
 from omnibase_core.models.events.work.model_pr_key import REPO_NAME_PATTERN, ModelPrKey
+from omnibase_core.models.events.work.model_work_name_rules import (
+    LANE_NAME_PATTERN,
+    SURFACE_NAME_PATTERN,
+    normalize_work_names,
+)
 
 __all__ = ["ModelHoldScope"]
-
-_NAME_MAX_LENGTH = 128
 
 
 class ModelHoldScope(ModelEventPayloadBase):
@@ -40,12 +43,16 @@ class ModelHoldScope(ModelEventPayloadBase):
         default=False,
         description="Covers every repository. Refused together with a non-empty repos.",
     )
-    surfaces: frozenset[str] = Field(
+    surfaces: frozenset[Annotated[str, Field(pattern=SURFACE_NAME_PATTERN)]] = Field(
         default_factory=frozenset,
-        description="Proof surfaces covered, e.g. 'dogfood-105'. A lease names these.",
+        description=(
+            "Proof surfaces covered, e.g. 'dogfood-105'. A lease names these. "
+            "Stripped and lower-cased, so one surface has one spelling."
+        ),
     )
-    lanes: frozenset[str] = Field(
-        default_factory=frozenset, description="Lanes covered."
+    lanes: frozenset[Annotated[str, Field(pattern=LANE_NAME_PATTERN)]] = Field(
+        default_factory=frozenset,
+        description="Lanes covered, stripped and lower-cased.",
     )
 
     @field_validator("repos", mode="before")
@@ -58,16 +65,11 @@ class ModelHoldScope(ModelEventPayloadBase):
             )
         return raw
 
-    @field_validator("surfaces", "lanes")
+    @field_validator("surfaces", "lanes", mode="before")
     @classmethod
-    def _reject_blank_names(cls, raw: frozenset[str]) -> frozenset[str]:
-        for name in raw:
-            if not name.strip() or len(name) > _NAME_MAX_LENGTH:
-                raise ValueError(
-                    f"{name!r} must be non-blank and at most "
-                    f"{_NAME_MAX_LENGTH} characters"
-                )
-        return raw
+    def _normalise_names(cls, raw: object) -> object:
+        """Strip and lower-case before the pattern check, as ``repos`` does."""
+        return normalize_work_names(raw)
 
     @model_validator(mode="after")
     def _one_non_empty_spelling(self) -> ModelHoldScope:

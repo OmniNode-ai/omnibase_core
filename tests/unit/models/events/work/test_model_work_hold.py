@@ -297,3 +297,124 @@ def test_hold_models_are_frozen_and_forbid_extra() -> None:
         _placed(consent="yes")
     with pytest.raises(ValidationError):
         ModelPrKey(repo="omnibase_core", number=1, state="open")  # type: ignore[call-arg]
+
+
+# ---------------------------------------------------------------------------
+# S6 — surface and lane names have one canonical spelling
+# ---------------------------------------------------------------------------
+
+
+def test_s6_surfaces_are_case_and_whitespace_insensitive() -> None:
+    mixed = ModelHoldScope(surfaces=frozenset({"201-Dev-Runtime"}))
+    padded = ModelHoldScope(surfaces=frozenset({"  201-dev-runtime "}))
+
+    assert mixed == padded
+    assert hash(mixed) == hash(padded)
+    assert len({mixed, padded}) == 1
+    assert mixed.surfaces == padded.surfaces == frozenset({"201-dev-runtime"})
+
+
+def test_s6_lanes_are_case_and_whitespace_insensitive() -> None:
+    mixed_scope = ModelHoldScope(lanes=frozenset({"Lane-A"}))
+    padded_scope = ModelHoldScope(lanes=frozenset({"  lane-a "}))
+    assert mixed_scope == padded_scope
+    assert hash(mixed_scope) == hash(padded_scope)
+    assert len({mixed_scope, padded_scope}) == 1
+    assert mixed_scope.lanes == padded_scope.lanes == frozenset({"lane-a"})
+
+    mixed_recipients = ModelRecipients(lanes=frozenset({"Lane-A"}))
+    padded_recipients = ModelRecipients(lanes=frozenset({"  lane-a "}))
+    assert mixed_recipients == padded_recipients
+    assert hash(mixed_recipients) == hash(padded_recipients)
+    assert len({mixed_recipients, padded_recipients}) == 1
+    assert mixed_recipients.lanes == padded_recipients.lanes == frozenset({"lane-a"})
+
+
+def test_s6_two_spellings_in_one_set_collapse() -> None:
+    spellings = frozenset({"Dogfood-105", "dogfood-105"})
+
+    assert ModelHoldScope(surfaces=spellings).surfaces == frozenset({"dogfood-105"})
+    assert ModelHoldScope(lanes=spellings).lanes == frozenset({"dogfood-105"})
+    assert ModelRecipients(lanes=spellings).lanes == frozenset({"dogfood-105"})
+
+
+_S6_LANE_NAMES = (
+    "codex:handoff-auto-merge-guard",
+    "Codex-OMN19728-Market-harness",
+    "orchestrator-83",
+    "prove-omnibase_infra-4304-84k",
+)
+_S6_SURFACE_NAMES = (
+    ".201-dev-deploy-agent",
+    "mac-scratch:c1-omn19087",
+    "201-scratchdb:delegation-w1-attribution",
+    "105-compose-dev",
+    "prepr-1-201",
+    ".leading-dot",
+)
+
+
+@pytest.mark.parametrize(
+    ("kind", "name"),
+    [
+        *(
+            pytest.param("surface", name, id=f"surface-{name}")
+            for name in _S6_SURFACE_NAMES
+        ),
+        *(
+            pytest.param("scope-lane", name, id=f"scope-lane-{name}")
+            for name in _S6_LANE_NAMES
+        ),
+        *(
+            pytest.param("recipient-lane", name, id=f"recipient-lane-{name}")
+            for name in _S6_LANE_NAMES
+        ),
+    ],
+)
+def test_s6_real_ledger_names_are_accepted(kind: str, name: str) -> None:
+    padded = f"  {name}  "
+    if kind == "surface":
+        stored = ModelHoldScope(surfaces=frozenset({padded})).surfaces
+    elif kind == "scope-lane":
+        stored = ModelHoldScope(lanes=frozenset({padded})).lanes
+    else:
+        stored = ModelRecipients(lanes=frozenset({padded})).lanes
+
+    assert stored == frozenset({name.lower()})
+
+
+_S6_ILLEGAL_NAMES = (
+    ("", "empty"),
+    ("   ", "spaces"),
+    ("two words", "embedded-space"),
+    ("has/slash", "slash"),
+    ("lane\nname", "newline"),
+    ("a" * 129, "overlong"),
+)
+
+
+@pytest.mark.parametrize(
+    ("kind", "name"),
+    [
+        *(
+            pytest.param("surface", name, id=f"surface-{label}")
+            for name, label in _S6_ILLEGAL_NAMES
+        ),
+        *(
+            pytest.param("scope-lane", name, id=f"scope-lane-{label}")
+            for name, label in (*_S6_ILLEGAL_NAMES, (".leading-dot", "leading-dot"))
+        ),
+        *(
+            pytest.param("recipient-lane", name, id=f"recipient-lane-{label}")
+            for name, label in (*_S6_ILLEGAL_NAMES, (".leading-dot", "leading-dot"))
+        ),
+    ],
+)
+def test_s6_illegal_names_are_refused(kind: str, name: str) -> None:
+    with pytest.raises(ValidationError):
+        if kind == "surface":
+            ModelHoldScope(surfaces=frozenset({name}))
+        elif kind == "scope-lane":
+            ModelHoldScope(lanes=frozenset({name}))
+        else:
+            ModelRecipients(lanes=frozenset({name}))
