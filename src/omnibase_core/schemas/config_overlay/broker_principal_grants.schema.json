@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "EnumBrokerGrantOperation": {
+      "description": "An operation a broker grant permits.",
+      "enum": [
+        "read",
+        "write",
+        "describe"
+      ],
+      "title": "EnumBrokerGrantOperation",
+      "type": "string"
+    },
+    "EnumBrokerGrantResourceType": {
+      "description": "A broker resource to which a principal's grant applies.",
+      "enum": [
+        "topic",
+        "group"
+      ],
+      "title": "EnumBrokerGrantResourceType",
+      "type": "string"
+    },
+    "ModelBrokerExtraGrant": {
+      "additionalProperties": false,
+      "description": "Additional access a deployment grants to a broker principal.",
+      "properties": {
+        "operation": {
+          "$ref": "#/$defs/EnumBrokerGrantOperation",
+          "description": "Permitted operation."
+        },
+        "reason": {
+          "description": "Why this extra access is needed.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Reason",
+          "type": "string"
+        },
+        "resource_name": {
+          "description": "Broker resource name.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Resource Name",
+          "type": "string"
+        },
+        "resource_type": {
+          "$ref": "#/$defs/EnumBrokerGrantResourceType",
+          "description": "Kind of broker resource."
+        }
+      },
+      "required": [
+        "resource_type",
+        "resource_name",
+        "operation",
+        "reason"
+      ],
+      "title": "ModelBrokerExtraGrant",
+      "type": "object"
+    },
+    "ModelBrokerPrincipalDeclaration": {
+      "additionalProperties": false,
+      "description": "A principal's contract-derived, profile-derived and additional grants.",
+      "properties": {
+        "broker_id": {
+          "description": "Broker on which access is declared.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Broker Id",
+          "type": "string"
+        },
+        "client_profile": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "\\S",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Client access profile, or null for contract-only access.",
+          "title": "Client Profile"
+        },
+        "contract_set": {
+          "description": "Contracts from which to derive access; may be empty with a profile.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Contract Set",
+          "type": "array"
+        },
+        "extra_grants": {
+          "description": "Explicit additional grants; may be empty.",
+          "items": {
+            "$ref": "#/$defs/ModelBrokerExtraGrant"
+          },
+          "title": "Extra Grants",
+          "type": "array"
+        },
+        "principal": {
+          "description": "Broker principal name.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Principal",
+          "type": "string"
+        }
+      },
+      "required": [
+        "principal",
+        "broker_id",
+        "contract_set",
+        "client_profile",
+        "extra_grants"
+      ],
+      "title": "ModelBrokerPrincipalDeclaration",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Broker access declared by a deployment.",
+  "properties": {
+    "principals": {
+      "description": "Principals whose access is declared.",
+      "items": {
+        "$ref": "#/$defs/ModelBrokerPrincipalDeclaration"
+      },
+      "minItems": 1,
+      "title": "Principals",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "broker_principal_grants.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "principals"
+  ],
+  "title": "ModelBrokerPrincipalGrantsOverlay",
+  "type": "object"
+}

@@ -19,9 +19,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from omnibase_core.models.config_overlay import (
+    ModelBrokerPrincipalGrantsOverlay,
     ModelConfigOverlayDocument,
     ModelConfigOverlayScope,
     ModelEmbeddingEndpointOverlay,
+    ModelHostSettingsOverlay,
+    ModelLaneServicesOverlay,
     ModelLlmCatalogOverlay,
     ModelLlmPricingOverlay,
     ModelRuntimeLaneDeclaration,
@@ -39,6 +42,9 @@ SCHEMA_DIR = (
 )
 
 SCHEMA_EXPORTS: dict[str, type[BaseModel]] = {
+    "broker_principal_grants.schema.json": ModelBrokerPrincipalGrantsOverlay,
+    "host_settings.schema.json": ModelHostSettingsOverlay,
+    "lane_services.schema.json": ModelLaneServicesOverlay,
     "config_overlay_document.schema.json": ModelConfigOverlayDocument,
     "config_overlay_scope.schema.json": ModelConfigOverlayScope,
     "embedding_endpoint.schema.json": ModelEmbeddingEndpointOverlay,

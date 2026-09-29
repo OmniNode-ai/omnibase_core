@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "EnumServiceRestartPolicy": {
+      "description": "When a deployment should restart a service.",
+      "enum": [
+        "no",
+        "always",
+        "on-failure",
+        "unless-stopped"
+      ],
+      "title": "EnumServiceRestartPolicy",
+      "type": "string"
+    },
+    "ModelLaneOneShotJob": {
+      "additionalProperties": false,
+      "description": "A job and the declared service it prepares.",
+      "properties": {
+        "job_name": {
+          "description": "Preparation job name.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Job Name",
+          "type": "string"
+        },
+        "prepares_service": {
+          "description": "Name of the declared service this job prepares.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Prepares Service",
+          "type": "string"
+        }
+      },
+      "required": [
+        "job_name",
+        "prepares_service"
+      ],
+      "title": "ModelLaneOneShotJob",
+      "type": "object"
+    },
+    "ModelLaneServiceDeclaration": {
+      "additionalProperties": false,
+      "description": "A service name and its required restart policy.",
+      "properties": {
+        "restart_policy": {
+          "$ref": "#/$defs/EnumServiceRestartPolicy",
+          "description": "When the service should restart."
+        },
+        "service_name": {
+          "description": "Declared service name.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Service Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "service_name",
+        "restart_policy"
+      ],
+      "title": "ModelLaneServiceDeclaration",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Services and preparation jobs declared for a runtime lane.",
+  "properties": {
+    "lane_id": {
+      "description": "Runtime lane whose services are declared.",
+      "maxLength": 64,
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "title": "Lane Id",
+      "type": "string"
+    },
+    "one_shot_jobs": {
+      "description": "Jobs preparing declared services; may be empty.",
+      "items": {
+        "$ref": "#/$defs/ModelLaneOneShotJob"
+      },
+      "title": "One Shot Jobs",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "lane_services.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "services": {
+      "description": "Services declared for this lane.",
+      "items": {
+        "$ref": "#/$defs/ModelLaneServiceDeclaration"
+      },
+      "minItems": 1,
+      "title": "Services",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "lane_id",
+    "services",
+    "one_shot_jobs"
+  ],
+  "title": "ModelLaneServicesOverlay",
+  "type": "object"
+}

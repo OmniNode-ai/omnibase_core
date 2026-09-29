@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "ModelHostDeclaration": {
+      "additionalProperties": false,
+      "description": "Kernel, unit, network and power settings declared for one host.",
+      "properties": {
+        "host_id": {
+          "description": "Host whose settings are declared.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Host Id",
+          "type": "string"
+        },
+        "kernel_parameters": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Kernel parameter values by name.",
+          "title": "Kernel Parameters",
+          "type": "object"
+        },
+        "network_interfaces": {
+          "description": "Declared network interface settings; may be empty.",
+          "items": {
+            "$ref": "#/$defs/ModelHostNetworkInterfaceSetting"
+          },
+          "title": "Network Interfaces",
+          "type": "array"
+        },
+        "power_settings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Power settings by name.",
+          "title": "Power Settings",
+          "type": "object"
+        },
+        "systemd_units": {
+          "description": "Declared systemd units; may be empty.",
+          "items": {
+            "$ref": "#/$defs/ModelHostSystemdUnit"
+          },
+          "title": "Systemd Units",
+          "type": "array"
+        }
+      },
+      "required": [
+        "host_id",
+        "kernel_parameters",
+        "systemd_units",
+        "network_interfaces",
+        "power_settings"
+      ],
+      "title": "ModelHostDeclaration",
+      "type": "object"
+    },
+    "ModelHostNetworkInterfaceSetting": {
+      "additionalProperties": false,
+      "description": "A named interface and its declared setting values.",
+      "properties": {
+        "interface": {
+          "description": "Network interface name.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Interface",
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Interface settings by name.",
+          "title": "Settings",
+          "type": "object"
+        }
+      },
+      "required": [
+        "interface",
+        "settings"
+      ],
+      "title": "ModelHostNetworkInterfaceSetting",
+      "type": "object"
+    },
+    "ModelHostSystemdDropIn": {
+      "additionalProperties": false,
+      "description": "A drop-in file identified by name and content digest.",
+      "properties": {
+        "content_sha256": {
+          "description": "Lowercase SHA-256 digest of file content.",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "file_name": {
+          "description": "Drop-in file name.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "File Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file_name",
+        "content_sha256"
+      ],
+      "title": "ModelHostSystemdDropIn",
+      "type": "object"
+    },
+    "ModelHostSystemdUnit": {
+      "additionalProperties": false,
+      "description": "A host's systemd unit and its declared drop-in files.",
+      "properties": {
+        "content_sha256": {
+          "description": "Lowercase SHA-256 digest of unit content.",
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "drop_ins": {
+          "description": "Declared drop-in files; may be empty.",
+          "items": {
+            "$ref": "#/$defs/ModelHostSystemdDropIn"
+          },
+          "title": "Drop Ins",
+          "type": "array"
+        },
+        "unit_name": {
+          "description": "Systemd unit name.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Unit Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit_name",
+        "content_sha256",
+        "drop_ins"
+      ],
+      "title": "ModelHostSystemdUnit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Host configuration declared by a deployment.",
+  "properties": {
+    "hosts": {
+      "description": "Hosts whose configuration is declared.",
+      "items": {
+        "$ref": "#/$defs/ModelHostDeclaration"
+      },
+      "minItems": 1,
+      "title": "Hosts",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "host_settings.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "hosts"
+  ],
+  "title": "ModelHostSettingsOverlay",
+  "type": "object"
+}

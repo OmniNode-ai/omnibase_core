@@ -14,6 +14,10 @@ repository and schema that owns it through :attr:`EnumConfigOverlayKey.schema_re
 runtime lane, its roles and its bus transport. They are read at the scope
 ``(environment, lane)`` like every other key, so a lane exists because its
 overlay document exists, never because a package names it.
+
+``broker.principal_grants``, ``host.settings`` and ``lane.services``
+(OMN-19933) declare deployment-owned broker access, host configuration and
+lane services. Core owns their schemas without naming deployment values.
 """
 
 from __future__ import annotations
@@ -32,6 +36,9 @@ class EnumConfigOverlayKey(StrEnum):
     EMBEDDING_ENDPOINT = "embedding.endpoint"
     RUNTIME_LANE = "runtime.lane"
     RUNTIME_BUS_LANE = "runtime.bus_lane"
+    BROKER_PRINCIPAL_GRANTS = "broker.principal_grants"
+    HOST_SETTINGS = "host.settings"
+    LANE_SERVICES = "lane.services"
 
     @property
     def schema_ref(self) -> str:
@@ -50,6 +57,9 @@ _SCHEMA_REFS: dict[EnumConfigOverlayKey, str] = {
     EnumConfigOverlayKey.EMBEDDING_ENDPOINT: "omnibase_core:embedding_endpoint",
     EnumConfigOverlayKey.RUNTIME_LANE: "omnibase_core:runtime_lane",
     EnumConfigOverlayKey.RUNTIME_BUS_LANE: "omnibase_infra:bus_lane",
+    EnumConfigOverlayKey.BROKER_PRINCIPAL_GRANTS: "omnibase_core:broker_principal_grants",
+    EnumConfigOverlayKey.HOST_SETTINGS: "omnibase_core:host_settings",
+    EnumConfigOverlayKey.LANE_SERVICES: "omnibase_core:lane_services",
 }
 
 

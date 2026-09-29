@@ -9,7 +9,10 @@
         "llm.pricing",
         "embedding.endpoint",
         "runtime.lane",
-        "runtime.bus_lane"
+        "runtime.bus_lane",
+        "broker.principal_grants",
+        "host.settings",
+        "lane.services"
       ],
       "title": "EnumConfigOverlayKey",
       "type": "string"
