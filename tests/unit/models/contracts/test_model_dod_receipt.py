@@ -583,3 +583,46 @@ class TestModelDodReceiptRuntimeOps:
             fields["mutation_verb"] = verb
             receipt = ModelDodReceipt(**fields)
             assert receipt.mutation_verb == verb
+
+
+@pytest.mark.unit
+class TestModelDodReceiptGoalContract:
+    """OMN-20024 (GC.1): disposition receipts and the optional goal_id."""
+
+    def test_disposition_self_attested_advisory(self) -> None:
+        fields = _base_fields()
+        fields["check_type"] = "disposition"
+        fields["check_value"] = "lane-verdict"
+        fields["runner"] = "engine-A"
+        fields["verifier"] = "engine-A"
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.ADVISORY
+        round_tripped = ModelDodReceipt.model_validate_json(receipt.model_dump_json())
+        assert round_tripped.status is not EnumReceiptStatus.PASS
+        assert round_tripped.status is EnumReceiptStatus.ADVISORY
+
+    def test_disposition_independent_verifier_passes(self) -> None:
+        fields = _base_fields()
+        fields["check_type"] = "disposition"
+        fields["check_value"] = "lane-verdict"
+        fields["probe_stdout"] = ""
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.status is EnumReceiptStatus.PASS
+
+    def test_goal_id_optional_and_round_trips(self) -> None:
+        assert ModelDodReceipt(**_base_fields()).goal_id is None
+        fields = _base_fields()
+        fields["goal_id"] = "goal-123"
+        receipt = ModelDodReceipt(**fields)
+        assert receipt.goal_id == "goal-123"
+        assert (
+            ModelDodReceipt.model_validate_json(receipt.model_dump_json()).goal_id
+            == "goal-123"
+        )
+
+    @pytest.mark.parametrize("goal_id", ["", "   ", "\t\n"])
+    def test_goal_id_rejects_empty_or_whitespace(self, goal_id: str) -> None:
+        fields = _base_fields()
+        fields["goal_id"] = goal_id
+        with pytest.raises(ValidationError):
+            ModelDodReceipt(**fields)

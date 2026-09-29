@@ -9,7 +9,7 @@ from enum import StrEnum
 
 
 class EnumDodCheckType(StrEnum):
-    """Allowed mechanical check types for DoD evidence checks.
+    """Allowed check types for DoD evidence checks.
 
     Members
     -------
@@ -39,6 +39,9 @@ class EnumDodCheckType(StrEnum):
         Assert that a semantic grading receipt exists at the canonical path, produced
         by node_pr_semantic_grader_llm_effect. Phase 1: ADVISORY status passes.
         Phase 2 (after calibration): hard fail when anti_pattern_present >= 0.7.
+    DISPOSITION
+        The calling lane's recorded verdict on an answer no executable check
+        can settle. The verifier is the lane, never the engine.
     """
 
     TEST_EXISTS = "test_exists"
@@ -52,6 +55,7 @@ class EnumDodCheckType(StrEnum):
     RUNTIME_SHA_MATCH = "runtime_sha_match"
     COMMAND_EXIT_0 = "command_exit_0"
     SEMANTIC_GRADING = "semantic_grading"
+    DISPOSITION = "disposition"
 
 
 __all__ = ["EnumDodCheckType"]
