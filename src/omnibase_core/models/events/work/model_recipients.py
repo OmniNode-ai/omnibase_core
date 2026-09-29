@@ -5,9 +5,15 @@
 
 from __future__ import annotations
 
+from typing import Annotated
+
 from pydantic import Field, field_serializer, field_validator, model_validator
 
 from omnibase_core.models.events.model_event_payload_base import ModelEventPayloadBase
+from omnibase_core.models.events.work.model_work_name_rules import (
+    LANE_NAME_PATTERN,
+    normalize_work_names,
+)
 
 __all__ = ["ModelRecipients"]
 
@@ -15,24 +21,20 @@ __all__ = ["ModelRecipients"]
 class ModelRecipients(ModelEventPayloadBase):
     """Named lanes, every lane, the operator, or any combination. Never nobody."""
 
-    lanes: frozenset[str] = Field(
+    lanes: frozenset[Annotated[str, Field(pattern=LANE_NAME_PATTERN)]] = Field(
         default_factory=frozenset,
-        description="Lane names the event is addressed to.",
+        description="Lane names the event is addressed to, stripped and lower-cased.",
     )
     all_lanes: bool = Field(
         default=False, description="Addressed to every lane (the old to=all)."
     )
     operator: bool = Field(default=False, description="Addressed to the operator.")
 
-    @field_validator("lanes")
+    @field_validator("lanes", mode="before")
     @classmethod
-    def _reject_blank_lanes(cls, raw: frozenset[str]) -> frozenset[str]:
-        for lane in raw:
-            if not lane.strip() or len(lane) > 128:
-                raise ValueError(
-                    f"lane name {lane!r} must be non-blank and at most 128 characters"
-                )
-        return raw
+    def _normalise_lanes(cls, raw: object) -> object:
+        """Strip and lower-case before the pattern check, as repos are."""
+        return normalize_work_names(raw)
 
     @model_validator(mode="after")
     def _names_someone(self) -> ModelRecipients:
