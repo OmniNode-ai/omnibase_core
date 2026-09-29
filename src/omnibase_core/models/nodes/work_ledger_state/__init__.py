@@ -26,6 +26,12 @@ from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input i
 from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_health import (
     ModelWorkLedgerHealth,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_projection_row import (
+    ModelWorkLedgerProjectionRow,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_projection_snapshot import (
+    ModelWorkLedgerProjectionSnapshot,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_state import (
     ModelWorkLedgerState,
 )
@@ -37,6 +43,8 @@ __all__ = [
     "ModelHoldInForce",
     "ModelInvalidQuestionRef",
     "ModelInvalidRelease",
+    "ModelWorkLedgerProjectionRow",
+    "ModelWorkLedgerProjectionSnapshot",
     "ModelQuestionState",
     "ModelWorkLedgerFoldInput",
     "ModelWorkLedgerHealth",
