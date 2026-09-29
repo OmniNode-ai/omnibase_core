@@ -4,6 +4,8 @@
 """Event bus models for ONEX message handling."""
 
 from .model_archive_replay_provenance import ModelArchiveReplayProvenance
+from .model_bus_binding import ModelBusBinding
+from .model_bus_group_describe import ModelBusGroupDescribe
 from .model_consumer_group_iam_patterns import ModelConsumerGroupIamPatterns
 from .model_consumer_group_iam_source import ModelConsumerGroupIamSource
 from .model_consumer_group_scope import ModelConsumerGroupScope
@@ -22,12 +24,15 @@ from .model_primary_dlq_wire_payload import ModelPrimaryDlqWirePayload
 from .model_producer_health_status import ModelProducerHealthStatus
 from .model_producer_message import ModelProducerMessage
 from .model_quarantine_wire_payload import ModelQuarantineWirePayload
+from .model_resolved_bus_bindings import ModelResolvedBusBindings
 from .model_transport_publish_acknowledgement import (
     ModelTransportPublishAcknowledgement,
 )
 
 __all__ = [
     "ModelArchiveReplayProvenance",
+    "ModelBusBinding",
+    "ModelBusGroupDescribe",
     "ModelConsumerGroupIamPatterns",
     "ModelConsumerGroupIamSource",
     "ModelConsumerGroupScope",
@@ -46,5 +51,6 @@ __all__ = [
     "ModelProducerMessage",
     "ModelPrimaryDlqWirePayload",
     "ModelQuarantineWirePayload",
+    "ModelResolvedBusBindings",
     "ModelTransportPublishAcknowledgement",
 ]
