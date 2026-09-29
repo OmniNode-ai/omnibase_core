@@ -620,8 +620,9 @@ class TestModelDodReceiptGoalContract:
             == "goal-123"
         )
 
-    def test_goal_id_rejects_empty(self) -> None:
+    @pytest.mark.parametrize("goal_id", ["", "   ", "\t\n"])
+    def test_goal_id_rejects_empty_or_whitespace(self, goal_id: str) -> None:
         fields = _base_fields()
-        fields["goal_id"] = ""
+        fields["goal_id"] = goal_id
         with pytest.raises(ValidationError):
             ModelDodReceipt(**fields)

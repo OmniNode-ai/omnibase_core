@@ -136,6 +136,17 @@ class ModelDodReceipt(BaseModel):
         min_length=1,
         description="Goal this receipt proves. None for receipts without a goal binding.",
     )
+
+    @field_validator("goal_id")
+    @classmethod
+    def _goal_id_must_contain_non_whitespace(cls, value: str | None) -> str | None:
+        """Reject an optional goal ID that contains no identity characters."""
+        if value is not None and not value.strip():
+            raise ValueError(
+                "goal_id must contain at least one non-whitespace character"
+            )
+        return value
+
     # string-id-ok: evidence item IDs are human-readable slugs from the contract YAML (e.g., 'dod-001'), not UUIDs
     evidence_item_id: str = Field(
         ..., min_length=1, description="dod_evidence[].id this receipt covers"

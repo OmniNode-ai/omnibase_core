@@ -13,7 +13,7 @@ from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
 class ModelDodEvidenceCheck(BaseModel):
     """A single verifiable check within a DoD evidence item.
 
-    check_type must be an EnumDodCheckType value (10 check types supported).
+    check_type must be an EnumDodCheckType value (12 check types supported).
     check_value is either a plain string command/path or a dict[str, str] for structured checks (e.g. grep pattern+path).
     cwd supports template tokens: ${OMNI_HOME}, ${PR_NUMBER}, ${REPO}, ${TICKET_ID}.
     """
