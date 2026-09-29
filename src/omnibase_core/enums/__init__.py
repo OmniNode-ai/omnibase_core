@@ -37,6 +37,7 @@ from .enum_backoff_strategy import EnumBackoffStrategy
 # Binding function enums (Operation Bindings DSL - OMN-1410)
 from .enum_binding_function import EnumBindingFunction
 from .enum_binding_order_direction import EnumBindingOrderDirection
+from .enum_bus_binding_direction import EnumBusBindingDirection
 from .enum_business_logic_pattern import EnumBusinessLogicPattern
 
 # Case mode enums (contract-driven NodeCompute v1.0)
@@ -788,6 +789,7 @@ __all__ = [
     "EnumComputationType",
     # Consumer group purpose domain (event bus subscription)
     "EnumConsumerGroupPurpose",
+    "EnumBusBindingDirection",
     "EnumReservedGroupPrefix",
     # Contract-driven NodeCompute v1.0 domain
     "EnumCaseMode",
