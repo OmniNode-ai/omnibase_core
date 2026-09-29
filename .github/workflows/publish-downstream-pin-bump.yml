@@ -195,7 +195,19 @@ jobs:
         run: |
           SHORT="${NEW_SHA:0:12}"
           BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
-          TITLE="chore(ci): bump omnibase_core pin to ${SHORT} [bot]"
+          # OMN-19848: the ticket token belongs in the TITLE, not only the commit
+          # message. The downstream OCC autobind and Receipt Gate read the PR
+          # title, and a title without it left every bot PR with no companion.
+          TITLE="chore(ci): bump omnibase_core pin to ${SHORT} [bot] [OMN-9050]"
+          # OMN-19848: open against the downstream repo's own default branch. A
+          # hardcoded main opened every dev-default repo's PR against the
+          # release-synced branch (OMN-16289), where main-target-guard rejects it
+          # and the PR carries the whole dev-ahead-of-main history.
+          BASE=$(gh api "repos/OmniNode-ai/${REPO}" --jq '.default_branch')
+          if [[ -z "$BASE" || "$BASE" == "null" ]]; then
+            echo "::error::could not resolve the default branch of OmniNode-ai/${REPO}"
+            exit 1
+          fi
           BODY=$(cat <<EOF
           Automated pin bump emitted by \`omnibase_core/publish-downstream-pin-bump.yml\`.
 
@@ -216,14 +228,14 @@ jobs:
             PR_URL=$(gh pr create \
               --repo "OmniNode-ai/${REPO}" \
               --head "$BRANCH" \
-              --base main \
+              --base "$BASE" \
               --title "$TITLE" \
               --body "$BODY")
             echo "Created: $PR_URL"
           else
             echo "Existing PR found: $PR_URL — updating body"
             PR_NUMBER=$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')
-            gh pr edit "$PR_NUMBER" --repo "OmniNode-ai/${REPO}" --title "$TITLE" --body "$BODY" || true
+            gh pr edit "$PR_NUMBER" --repo "OmniNode-ai/${REPO}" --base "$BASE" --title "$TITLE" --body "$BODY" || true
           fi
 
           PR_NUMBER=$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')
