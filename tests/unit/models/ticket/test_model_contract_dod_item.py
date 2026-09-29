@@ -184,8 +184,8 @@ class TestModelContractDodItemExtendedChecks:
 
     def test_check_with_cwd_none_is_default(self) -> None:
         check = ModelDodEvidenceCheck(
-            check_type=EnumDodCheckType.FILE_EXISTS,
-            check_value="docs/plans/some-plan.md",
+            check_type=EnumDodCheckType.COMMAND,
+            check_value="test -f docs/plans/some-plan.md",
         )
         item = ModelContractDodItem(
             id="dod-012",
@@ -208,3 +208,69 @@ class TestModelContractDodItemExtendedChecks:
         )
         assert item.checks[0].check_type == EnumDodCheckType.SEMANTIC_GRADING
         assert item.checks[0].check_type == "semantic_grading"
+
+
+@pytest.mark.unit
+class TestModelContractDodItemGoalContract:
+    """OMN-20024 (GC.1): the goal contract spine amendment."""
+
+    def test_sole_file_exists_rejected(self) -> None:
+        with pytest.raises(
+            ValidationError, match="DOD_EVIDENCE_FILE_EXISTS_SOLE_CHECK"
+        ):
+            ModelContractDodItem(
+                id="dod-sole",
+                description="only a file_exists check",
+                checks=[
+                    ModelDodEvidenceCheck(
+                        check_type=EnumDodCheckType.FILE_EXISTS, check_value="a.txt"
+                    )
+                ],
+            )
+
+    def test_file_exists_paired_with_stronger_check_still_parses(self) -> None:
+        item = ModelContractDodItem(
+            id="dod-paired",
+            description="paired",
+            checks=[
+                ModelDodEvidenceCheck(
+                    check_type=EnumDodCheckType.FILE_EXISTS, check_value="a.txt"
+                ),
+                ModelDodEvidenceCheck(
+                    check_type=EnumDodCheckType.COMMAND, check_value="true"
+                ),
+            ],
+        )
+        assert len(item.checks) == 2
+
+    def test_item_with_no_checks_still_parses(self) -> None:
+        assert ModelContractDodItem(id="dod-empty", description="none").checks == []
+
+    def test_disposition_check_type_added_and_old_members_kept(self) -> None:
+        old = {
+            "test_exists",
+            "test_passes",
+            "file_exists",
+            "grep",
+            "command",
+            "endpoint",
+            "behavior_proven",
+            "rendered_output",
+            "runtime_sha_match",
+            "command_exit_0",
+            "semantic_grading",
+        }
+        assert old <= {m.value for m in EnumDodCheckType}
+        assert EnumDodCheckType.DISPOSITION == "disposition"
+
+    def test_disposition_only_item_parses(self) -> None:
+        item = ModelContractDodItem(
+            id="dod-disp",
+            description="judged by the calling lane",
+            checks=[
+                ModelDodEvidenceCheck(
+                    check_type=EnumDodCheckType.DISPOSITION, check_value="lane-verdict"
+                )
+            ],
+        )
+        assert item.checks[0].check_type == "disposition"

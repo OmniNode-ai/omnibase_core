@@ -12,6 +12,9 @@ Design rule: ticket contracts declare intent (what must be proved).
 Receipts declare fact (what was proved, when, by whom, with what output).
 A ticket is not Done without every declared check having a PASS receipt.
 
+``goal_id`` optionally binds a receipt to a goal; omitted values default to
+``None`` so existing receipts continue to parse unchanged.
+
 Receipts are stored at:
     onex_change_control/drift/dod_receipts/<OMN-XXXX>/<evidence-item-id>/<check-type>.yaml
 
@@ -30,7 +33,8 @@ self-attested or structurally-weak proof from satisfying the gate:
    carry distinct meaning that ADVISORY would erase. Identity strings
    are compared after stripping surrounding whitespace, so
    ``"worker-A"`` and ``"worker-A "`` cannot be used to bypass this
-   rule.
+   rule. This includes ``disposition`` receipts: the verifier is the
+   calling lane, never the engine.
 2. ``check_type == "file_exists"`` AND ``status == PASS`` → status
    auto-downgraded to ``ADVISORY``. File presence proves a write, not
    that the behavior under test occurred. ``FAIL`` and ``PENDING`` are
@@ -125,6 +129,12 @@ class ModelDodReceipt(BaseModel):
     )
     ticket_id: str = Field(
         ..., description="Linear ticket this receipt proves (e.g., OMN-9084)"
+    )
+    # string-id-ok: goal ids are opaque caller-issued identifiers (delegate correlation id, lane or session goal), not always UUIDs
+    goal_id: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Goal this receipt proves. None for receipts without a goal binding.",
     )
     # string-id-ok: evidence item IDs are human-readable slugs from the contract YAML (e.g., 'dod-001'), not UUIDs
     evidence_item_id: str = Field(

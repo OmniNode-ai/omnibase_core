@@ -16,19 +16,28 @@ Field inventory (from OCC model_ticket_contract.py line 103, plus OMN-15392):
   evidence_artifact
 
 Security constraints: _MAX_STRING_LENGTH = 10000, _MAX_LIST_ITEMS = 1000.
+
+Validation rules: items whose only check type is ``file_exists`` are
+rejected with the shared ``SOLE_FILE_EXISTS_ERROR_TOKEN`` message. Items
+with no checks remain valid. Pairing ``file_exists`` with a stronger check
+is structurally permitted, but its receipt is still downgraded to ADVISORY
+by the runtime receipt gate.
 """
 
 from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.ticket.enum_dod_evidence_execution_scope import (
     EnumDodEvidenceExecutionScope,
 )
 from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
     ModelDodEvidenceCheck,
+)
+from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
+    SOLE_FILE_EXISTS_ERROR_TOKEN,
 )
 
 _MAX_STRING_LENGTH = 10000
@@ -104,6 +113,26 @@ class ModelContractDodItem(BaseModel):
         description="Path to evidence artifact (e.g., test output, screenshot)",
         max_length=_MAX_STRING_LENGTH,
     )
+
+    @model_validator(mode="after")
+    def reject_sole_file_exists_check(self) -> ModelContractDodItem:
+        """Reject sole-file-existence proof while allowing items with no checks."""
+        if not self.checks:
+            return self
+        types_present = {check.check_type for check in self.checks}
+        if types_present == {"file_exists"}:
+            msg = (
+                f"{SOLE_FILE_EXISTS_ERROR_TOKEN}: file_exists is weak proof and "
+                "cannot be the sole check_type for a dod_evidence item. The "
+                "receipt file pointing at itself is tautological — the receipt "
+                "becomes its own evidence. Replace file_exists with one of: "
+                "command, test_passes, endpoint, grep, test_exists. Pairing "
+                "file_exists alongside a stronger check is permitted here but "
+                "will not pass the runtime receipt gate, which downgrades every "
+                "file_exists receipt to ADVISORY and rejects non-PASS receipts."
+            )
+            raise ValueError(msg)
+        return self
 
 
 __all__ = ["ModelContractDodItem"]
