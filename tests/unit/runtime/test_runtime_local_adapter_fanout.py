@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""LocalRuntimeBusAdapter def-B multi-event (fan-out) publish tests (OMN-14403 §6ii).
+"""LocalRuntimeBusAdapter typed result-transport tests (OMN-17859).
 
 Barrier-2 RED->GREEN for the RuntimeLocal path: a def-B handler that returns a
 ``Sequence[BaseModel]`` (fan-out) or a single ``BaseModel`` whose topic varies by
 class must publish to the contract-declared topic(s) via ``published_events`` —
-NOT collapse to a single ``output_topic``. The seam is default-OFF; these tests
-assert both the OFF (unchanged / warn-drop) and ON (publish N) behavior.
+NOT collapse to a single ``output_topic``. ``response`` preserves the returned
+collection without publishing; only explicit ``event_fanout`` publishes N events.
 """
 
 from __future__ import annotations
@@ -14,10 +14,14 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from typing import cast
+from uuid import uuid4
 
 import pytest
 from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
     ProtocolLocalRuntimeBus,
 )
@@ -57,29 +61,78 @@ _PUBLISHED = {"Alpha": "onex.evt.omni.alpha.v1", "Beta": "onex.evt.omni.beta.v1"
 class _FanoutHandler:
     """def-B fan-out: one input -> a two-element sequence of distinct classes."""
 
-    def handle(self, request: ModelInput) -> tuple[BaseModel, ...]:
+    def handle(self, request: ModelInput) -> tuple[ModelAlpha | ModelBeta, ...]:
         return (ModelAlpha(value=request.value), ModelBeta(value=request.value))
 
 
 class _FanoutWithUnmappedHandler:
     """def-B fan-out containing a class absent from published_events."""
 
-    def handle(self, request: ModelInput) -> tuple[BaseModel, ...]:
+    def handle(self, request: ModelInput) -> tuple[ModelAlpha | ModelGamma, ...]:
         return (ModelAlpha(value=request.value), ModelGamma(value=request.value))
+
+
+class _OpaqueFanoutHandler:
+    """Returns a mixed batch that cannot be routed as typed events."""
+
+    def handle(self, request: ModelInput) -> tuple[object, ...]:
+        return (ModelAlpha(value=request.value), {"value": request.value})
 
 
 class _SingleAlphaHandler:
     """def-B single-emit whose topic must come from published_events (Alpha)."""
 
-    def handle(self, request: ModelInput) -> BaseModel:
+    def handle(self, request: ModelInput) -> ModelAlpha:
         return ModelAlpha(value=request.value)
 
 
 class _SingleUnmappedHandler:
     """def-B single-emit of a class ABSENT from published_events (fail-closed)."""
 
-    def handle(self, request: ModelInput) -> BaseModel:
+    def handle(self, request: ModelInput) -> ModelGamma:
         return ModelGamma(value=request.value)
+
+
+class _ResponseListHandler:
+    """Returns an ordered response collection, never a publish batch."""
+
+    def handle(self, request: ModelInput) -> ModelHandlerOutput[list[ModelAlpha]]:
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+            handler_id="response-list",
+            result=[
+                ModelAlpha(value=request.value),
+                ModelAlpha(value=request.value + 1),
+            ],
+        )
+
+
+class _ResponseScalarHandler:
+    def handle(self, request: ModelInput) -> ModelHandlerOutput[ModelAlpha]:
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+            handler_id="response-scalar",
+            result=ModelAlpha(value=request.value),
+        )
+
+
+class _RawResponseScalarHandler:
+    def handle(self, request: ModelInput) -> ModelAlpha:
+        return ModelAlpha(value=request.value)
+
+
+class _RawResponseListHandler:
+    def handle(self, request: ModelInput) -> list[ModelAlpha]:
+        return [ModelAlpha(value=request.value), ModelAlpha(value=request.value + 1)]
+
+
+class _LyingUnmappedFanoutHandler:
+    """Declares valid ownership but returns a later unmapped element at runtime."""
+
+    def handle(self, request: ModelInput) -> tuple[ModelAlpha, ...]:
+        return (ModelAlpha(value=request.value), ModelGamma(value=request.value))  # type: ignore[return-value]
 
 
 class _FakeBus:
@@ -117,10 +170,11 @@ def _adapter(
     handler: object,
     bus: _FakeBus,
     *,
-    seam_enabled: bool,
+    result_transport: EnumResultTransport,
     published_events: dict[str, str] | None,
     output_topic: str | None = "onex.evt.fallback.v1",
     on_error: Callable[[], None] | None = None,
+    on_result: Callable[[object], None] | None = None,
 ) -> LocalRuntimeBusAdapter:
     return LocalRuntimeBusAdapter(
         handler=cast(ProtocolLocalRuntimeCallableTarget, handler),
@@ -129,16 +183,20 @@ def _adapter(
         output_topic=output_topic,
         bus=cast(ProtocolLocalRuntimeBus, bus),
         on_error=on_error,
+        on_result=on_result,
         published_events=published_events,
-        multi_event_seam_enabled=seam_enabled,
+        result_transport=result_transport,
     )
 
 
 @pytest.mark.asyncio
-async def test_fanout_seam_on_publishes_two_topics_in_order() -> None:
+async def test_explicit_event_fanout_publishes_two_topics_in_order() -> None:
     bus = _FakeBus()
     adapter = _adapter(
-        _FanoutHandler(), bus, seam_enabled=True, published_events=_PUBLISHED
+        _FanoutHandler(),
+        bus,
+        result_transport=EnumResultTransport.EVENT_FANOUT,
+        published_events=_PUBLISHED,
     )
     await adapter.on_message(_msg(7))
 
@@ -157,21 +215,88 @@ async def test_fanout_seam_on_publishes_two_topics_in_order() -> None:
 
 
 @pytest.mark.asyncio
-async def test_fanout_seam_off_drops_and_publishes_nothing() -> None:
+async def test_response_list_preserves_order_and_publishes_nothing() -> None:
     bus = _FakeBus()
+    results: list[object] = []
     adapter = _adapter(
-        _FanoutHandler(), bus, seam_enabled=False, published_events=_PUBLISHED
+        _ResponseListHandler(),
+        bus,
+        result_transport=EnumResultTransport.RESPONSE,
+        published_events=_PUBLISHED,
+        on_result=results.append,
     )
     await adapter.on_message(_msg(7))
-    # Seam OFF: warn-drop the sequence, publish nothing (the census channel).
+
+    assert results == [[ModelAlpha(value=7), ModelAlpha(value=8)]]
     assert bus.published == []
 
 
 @pytest.mark.asyncio
-async def test_single_emit_seam_on_routes_via_published_events() -> None:
+async def test_response_scalar_exposes_result_not_output_wrapper() -> None:
+    bus = _FakeBus()
+    results: list[object] = []
+    adapter = _adapter(
+        _ResponseScalarHandler(),
+        bus,
+        result_transport=EnumResultTransport.RESPONSE,
+        published_events=None,
+        on_result=results.append,
+    )
+
+    await adapter.on_message(_msg(7))
+
+    assert results == [ModelAlpha(value=7)]
+    assert bus.published == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("handler", "expected"),
+    [
+        (_RawResponseScalarHandler(), ModelAlpha(value=7)),
+        (
+            _RawResponseListHandler(),
+            [ModelAlpha(value=7), ModelAlpha(value=8)],
+        ),
+    ],
+)
+async def test_raw_response_preserves_scalar_or_ordered_list(
+    handler: object, expected: object
+) -> None:
+    bus = _FakeBus()
+    results: list[object] = []
+    adapter = _adapter(
+        handler,
+        bus,
+        result_transport=EnumResultTransport.RESPONSE,
+        published_events=None,
+        on_result=results.append,
+    )
+
+    await adapter.on_message(_msg(7))
+
+    assert results == [expected]
+    assert bus.published == []
+
+
+def test_response_without_sink_fails_at_adapter_registration() -> None:
+    with pytest.raises(ModelOnexError, match="on_result response sink"):
+        _adapter(
+            _ResponseScalarHandler(),
+            _FakeBus(),
+            result_transport=EnumResultTransport.RESPONSE,
+            published_events=None,
+        )
+
+
+@pytest.mark.asyncio
+async def test_explicit_event_fanout_single_emit_routes_via_published_events() -> None:
     bus = _FakeBus()
     adapter = _adapter(
-        _SingleAlphaHandler(), bus, seam_enabled=True, published_events=_PUBLISHED
+        _SingleAlphaHandler(),
+        bus,
+        result_transport=EnumResultTransport.EVENT_FANOUT,
+        published_events=_PUBLISHED,
     )
     await adapter.on_message(_msg(3))
     # Topic comes from the model's class, NOT the single output_topic.
@@ -179,62 +304,71 @@ async def test_single_emit_seam_on_routes_via_published_events() -> None:
 
 
 @pytest.mark.asyncio
-async def test_single_emit_seam_off_uses_output_topic() -> None:
+async def test_explicit_event_fanout_without_mapping_fails_closed() -> None:
     bus = _FakeBus()
-    adapter = _adapter(
-        _SingleAlphaHandler(), bus, seam_enabled=False, published_events=_PUBLISHED
-    )
-    await adapter.on_message(_msg(3))
-    # Seam OFF: unchanged — single output_topic path.
-    assert [topic for topic, _ in bus.published] == ["onex.evt.fallback.v1"]
-
-
-@pytest.mark.asyncio
-async def test_single_emit_seam_on_no_published_events_uses_output_topic() -> None:
-    bus = _FakeBus()
-    adapter = _adapter(
-        _SingleAlphaHandler(), bus, seam_enabled=True, published_events=None
-    )
-    await adapter.on_message(_msg(3))
-    # No published_events declared -> unchanged single output_topic path.
-    assert [topic for topic, _ in bus.published] == ["onex.evt.fallback.v1"]
+    with pytest.raises(ModelOnexError, match="not owned by contract"):
+        _adapter(
+            _SingleAlphaHandler(),
+            bus,
+            result_transport=EnumResultTransport.EVENT_FANOUT,
+            published_events=None,
+        )
+    assert bus.published == []
 
 
 @pytest.mark.asyncio
 async def test_single_emit_unmapped_class_fails_closed() -> None:
     bus = _FakeBus()
-    errors: list[bool] = []
-
-    def _on_error() -> None:
-        errors.append(True)
-
-    adapter = _adapter(
-        _SingleUnmappedHandler(),
-        bus,
-        seam_enabled=True,
-        published_events=_PUBLISHED,
-        on_error=_on_error,
-    )
-    await adapter.on_message(_msg(1))
-    # Fail-closed: unmapped class raises inside publish -> on_error, nothing sent.
+    with pytest.raises(ModelOnexError, match="not owned by contract"):
+        _adapter(
+            _SingleUnmappedHandler(),
+            bus,
+            result_transport=EnumResultTransport.EVENT_FANOUT,
+            published_events=_PUBLISHED,
+        )
     assert bus.published == []
-    assert errors == [True]
 
 
 @pytest.mark.asyncio
 async def test_fanout_batch_unmapped_class_fails_closed() -> None:
     bus = _FakeBus()
+    with pytest.raises(ModelOnexError, match="not owned by contract"):
+        _adapter(
+            _FanoutWithUnmappedHandler(),
+            bus,
+            result_transport=EnumResultTransport.EVENT_FANOUT,
+            published_events=_PUBLISHED,
+        )
+    assert bus.published == []
+
+
+@pytest.mark.asyncio
+async def test_fanout_opaque_batch_fails_before_any_send() -> None:
+    """A mixed batch is rejected as a whole, never partially cross-published."""
+    bus = _FakeBus()
+    with pytest.raises(ModelOnexError, match="opaque or mixed"):
+        _adapter(
+            _OpaqueFanoutHandler(),
+            bus,
+            result_transport=EnumResultTransport.EVENT_FANOUT,
+            published_events=_PUBLISHED,
+        )
+    assert bus.published == []
+
+
+@pytest.mark.asyncio
+async def test_lying_fanout_batch_is_fully_resolved_before_any_send() -> None:
+    bus = _FakeBus()
     errors: list[bool] = []
     adapter = _adapter(
-        _FanoutWithUnmappedHandler(),
+        _LyingUnmappedFanoutHandler(),
         bus,
-        seam_enabled=True,
+        result_transport=EnumResultTransport.EVENT_FANOUT,
         published_events=_PUBLISHED,
         on_error=lambda: errors.append(True),
     )
 
     await adapter.on_message(_msg(1))
 
-    # Fail-closed: unmapped element aborts the whole batch before publishing.
     assert bus.published == []
     assert errors == [True]

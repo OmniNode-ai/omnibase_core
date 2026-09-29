@@ -20,6 +20,7 @@ from typing import cast
 
 import pytest
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_profile_reference import (
     ModelProfileReference,
@@ -60,6 +61,12 @@ from omnibase_core.validation.validator_backend_secret_discipline import (
 )
 
 pytestmark = pytest.mark.unit
+
+_PUBLISHED_EVENTS = {
+    "BackendSecretDisciplineOutput": "onex.evt.core.backend-secret-discipline-result.v1",  # pragma: allowlist secret (topic name, not a credential)
+    "ContractResolveOutput": "onex.evt.core.contract-resolve-completed.v1",
+    "RoutingAuthorityCheckOutput": "onex.evt.core.routing-authority-check-completed.v1",
+}
 
 
 class _FakeBus:
@@ -104,6 +111,8 @@ def _adapter(
         input_model_cls=input_model_cls,
         output_topic=output_topic,
         bus=cast(ProtocolLocalRuntimeBus, bus),
+        published_events=_PUBLISHED_EVENTS,
+        result_transport=EnumResultTransport.EVENT_FANOUT,
     )
     return adapter, bus
 

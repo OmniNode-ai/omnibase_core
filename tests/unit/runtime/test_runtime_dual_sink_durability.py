@@ -39,6 +39,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, ConfigDict, ValidationError
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_delivery_failure_evidence import (
     ModelDeliveryFailureEvidence,
@@ -601,6 +602,7 @@ def _route() -> DispatchRoute:
         handler=ExplodingHandler(),  # type: ignore[arg-type]
         published_events={"ModelEchoed": OUT_TOPIC},
         input_model_cls=ModelEcho,
+        result_transport=EnumResultTransport.EVENT_FANOUT,
     )
 
 

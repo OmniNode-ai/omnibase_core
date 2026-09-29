@@ -66,15 +66,23 @@ class ModelClientModeCommand(BaseModel):
     prompt: str = Field(default="")
 
 
+class ModelClientModeCompleted(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: str
+    correlation_id: str
+    prompt: str
+
+
 class HandlerClientModeEcho:
     """Host-mode handler: echoes the command back on the terminal topic."""
 
-    async def handle(self, payload: ModelClientModeCommand) -> dict[str, str]:
-        return {
-            "status": "success",
-            "correlation_id": str(payload.correlation_id),
-            "prompt": payload.prompt,
-        }
+    async def handle(self, payload: ModelClientModeCommand) -> ModelClientModeCompleted:
+        return ModelClientModeCompleted(
+            status="success",
+            correlation_id=str(payload.correlation_id),
+            prompt=payload.prompt,
+        )
 
 
 class _RecordedMessage:
@@ -147,11 +155,15 @@ def _write_contract(target: Path) -> None:
             "subscribe_topics": [_COMMAND_TOPIC],
             "publish_topics": [_TERMINAL_TOPIC],
         },
+        "published_events": [
+            {"event_type": "ClientModeCompleted", "topic": _TERMINAL_TOPIC}
+        ],
         "handler_routing": {
             "routing_strategy": "operation_match",
             "handlers": [
                 {
                     "operation": "start",
+                    "result_transport": "event_fanout",
                     "handler": {
                         "module": _MODULE,
                         "name": "HandlerClientModeEcho",
@@ -458,11 +470,15 @@ async def test_client_mode_refuses_an_unattributable_command(tmp_path: Path) -> 
             "subscribe_topics": [_COMMAND_TOPIC],
             "publish_topics": [_TERMINAL_TOPIC],
         },
+        "published_events": [
+            {"event_type": "ClientModeCompleted", "topic": _TERMINAL_TOPIC}
+        ],
         "handler_routing": {
             "routing_strategy": "operation_match",
             "handlers": [
                 {
                     "operation": "start",
+                    "result_transport": "event_fanout",
                     "handler": {"module": _MODULE, "name": "HandlerClientModeEcho"},
                     "event_model": {"module": _MODULE, "name": "ModelNoCorrelation"},
                 }

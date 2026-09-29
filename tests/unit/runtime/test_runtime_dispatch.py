@@ -24,13 +24,15 @@ The handlers here are def-B (``handle(request: ModelX) -> ModelY``) and never im
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from uuid import UUID, uuid4, uuid5
 
 import pytest
 from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.protocols.runtime.protocol_transport_consumer import (
     ProtocolTransportConsumer,
@@ -49,6 +51,7 @@ pytestmark = pytest.mark.asyncio
 
 # --- topics -----------------------------------------------------------------
 IN_TOPIC = "onex.cmd.omnitest.double.v1"
+RESPONSE_IN_TOPIC = "onex.cmd.omnitest.response.v1"
 DONE_TOPIC = "onex.evt.omnitest.double-done.v1"
 AUDIT_TOPIC = "onex.evt.omnitest.double-audited.v1"
 
@@ -89,6 +92,48 @@ class FanoutHandler:
         return [
             ModelDoubled(doubled=request.n * 2),
             ModelDoubleAudited(original=request.n),
+        ]
+
+
+class ResponseListHandler:
+    """Returns an ordered typed collection for the response result path."""
+
+    async def handle(
+        self, request: ModelDoubleCommand
+    ) -> ModelHandlerOutput[list[ModelDoubled]]:
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+            handler_id="response-list",
+            result=[
+                ModelDoubled(doubled=request.n * 2),
+                ModelDoubled(doubled=request.n * 3),
+            ],
+        )
+
+
+class ResponseScalarHandler:
+    async def handle(
+        self, request: ModelDoubleCommand
+    ) -> ModelHandlerOutput[ModelDoubled]:
+        return ModelHandlerOutput.for_compute(
+            input_envelope_id=uuid4(),
+            correlation_id=uuid4(),
+            handler_id="response-scalar",
+            result=ModelDoubled(doubled=request.n * 2),
+        )
+
+
+class RawResponseScalarHandler:
+    async def handle(self, request: ModelDoubleCommand) -> ModelDoubled:
+        return ModelDoubled(doubled=request.n * 2)
+
+
+class RawResponseListHandler:
+    async def handle(self, request: ModelDoubleCommand) -> list[ModelDoubled]:
+        return [
+            ModelDoubled(doubled=request.n * 2),
+            ModelDoubled(doubled=request.n * 3),
         ]
 
 
@@ -170,12 +215,16 @@ def _route(
     published_events: dict[str, str],
     *,
     input_model_cls: type[BaseModel] | None = None,
+    result_transport: EnumResultTransport = EnumResultTransport.EVENT_FANOUT,
+    on_result: Callable[[object], None] | None = None,
 ) -> DispatchRoute:
     return DispatchRoute(
         name=name,
         handler=handler,  # type: ignore[arg-type]  # def-B handler satisfies ProtocolLocalRuntimeCallableTarget structurally
         published_events=published_events,
         input_model_cls=input_model_cls,
+        result_transport=result_transport,
+        on_result=on_result,
     )
 
 
@@ -240,6 +289,140 @@ class TestCoercion:
 
 
 # --- fan-out ----------------------------------------------------------------
+class TestResponseTransport:
+    async def test_default_response_preserves_order_and_sends_no_events(
+        self, broker: InMemoryBroker, producer: InMemoryTransport
+    ) -> None:
+        """Omitting transport keeps the exact ordered handler result on response."""
+        results: list[object] = []
+        await _seed(producer, IN_TOPIC, ModelDoubleCommand(n=4), correlation_id=uuid4())
+        consumer = _consumer(broker, group="node", topics=[IN_TOPIC])
+        route = DispatchRoute(
+            name="node_response",
+            handler=ResponseListHandler(),
+            published_events={"Doubled": DONE_TOPIC},
+            input_model_cls=ModelDoubleCommand,
+            on_result=results.append,
+        )
+        assert route.result_transport is EnumResultTransport.RESPONSE
+        rd = RuntimeDispatch(
+            consumer=consumer, producer=producer, routing_map={IN_TOPIC: route}
+        )
+
+        assert await rd.drain() == 1
+
+        assert results == [[ModelDoubled(doubled=8), ModelDoubled(doubled=12)]]
+        assert list(broker.records(DONE_TOPIC, 0)) == []
+        assert list(broker.records(AUDIT_TOPIC, 0)) == []
+
+    async def test_response_scalar_exposes_result_not_output_wrapper(
+        self, broker: InMemoryBroker, producer: InMemoryTransport
+    ) -> None:
+        results: list[object] = []
+        await _seed(producer, IN_TOPIC, ModelDoubleCommand(n=5), correlation_id=uuid4())
+        route = DispatchRoute(
+            name="node_response_scalar",
+            handler=ResponseScalarHandler(),
+            published_events={},
+            input_model_cls=ModelDoubleCommand,
+            on_result=results.append,
+        )
+        dispatch = RuntimeDispatch(
+            consumer=_consumer(broker, group="node", topics=[IN_TOPIC]),
+            producer=producer,
+            routing_map={IN_TOPIC: route},
+        )
+
+        assert await dispatch.drain() == 1
+        assert results == [ModelDoubled(doubled=10)]
+        assert list(broker.records(DONE_TOPIC, 0)) == []
+
+    @pytest.mark.parametrize(
+        ("handler", "expected"),
+        [
+            (RawResponseScalarHandler(), ModelDoubled(doubled=10)),
+            (
+                RawResponseListHandler(),
+                [ModelDoubled(doubled=10), ModelDoubled(doubled=15)],
+            ),
+        ],
+    )
+    async def test_raw_response_preserves_scalar_or_ordered_list(
+        self,
+        broker: InMemoryBroker,
+        producer: InMemoryTransport,
+        handler: object,
+        expected: object,
+    ) -> None:
+        results: list[object] = []
+        await _seed(producer, IN_TOPIC, ModelDoubleCommand(n=5), correlation_id=uuid4())
+        route = DispatchRoute(
+            name="raw-response",
+            handler=handler,  # type: ignore[arg-type]
+            published_events={"Doubled": DONE_TOPIC},
+            input_model_cls=ModelDoubleCommand,
+            on_result=results.append,
+        )
+        dispatch = RuntimeDispatch(
+            consumer=_consumer(broker, group="node", topics=[IN_TOPIC]),
+            producer=producer,
+            routing_map={IN_TOPIC: route},
+        )
+
+        assert await dispatch.drain() == 1
+        assert results == [expected]
+        assert list(broker.records(DONE_TOPIC, 0)) == []
+
+    def test_response_route_without_sink_fails_at_registration(self) -> None:
+        with pytest.raises(ModelOnexError, match="on_result response sink"):
+            DispatchRoute(
+                name="missing-response-sink",
+                handler=ResponseScalarHandler(),
+                published_events={},
+                input_model_cls=ModelDoubleCommand,
+            )
+
+    async def test_response_and_fanout_routes_do_not_cross_publish(
+        self, broker: InMemoryBroker, producer: InMemoryTransport
+    ) -> None:
+        """Two operations prove transport selection belongs to each route, not output type."""
+        results: list[object] = []
+        await _seed(
+            producer,
+            RESPONSE_IN_TOPIC,
+            ModelDoubleCommand(n=2),
+            correlation_id=uuid4(),
+        )
+        await _seed(producer, IN_TOPIC, ModelDoubleCommand(n=3), correlation_id=uuid4())
+        response_route = DispatchRoute(
+            name="response-operation",
+            handler=ResponseScalarHandler(),
+            published_events={"Doubled": AUDIT_TOPIC},
+            input_model_cls=ModelDoubleCommand,
+            on_result=results.append,
+        )
+        fanout_route = _route(
+            "fanout-operation",
+            DoublerHandler(),
+            {"Doubled": DONE_TOPIC},
+            input_model_cls=ModelDoubleCommand,
+        )
+        dispatch = RuntimeDispatch(
+            consumer=_consumer(
+                broker, group="node", topics=[RESPONSE_IN_TOPIC, IN_TOPIC]
+            ),
+            producer=producer,
+            routing_map={RESPONSE_IN_TOPIC: response_route, IN_TOPIC: fanout_route},
+        )
+
+        assert await dispatch.drain() == 2
+        assert results == [ModelDoubled(doubled=4)]
+        assert [event.payload for event in await _drain_topic(broker, DONE_TOPIC)] == [
+            {"doubled": 6}
+        ]
+        assert list(broker.records(AUDIT_TOPIC, 0)) == []
+
+
 class TestFanout:
     async def test_multi_event_fanout_ordered_to_distinct_topics(
         self, broker: InMemoryBroker, producer: InMemoryTransport
@@ -575,12 +758,9 @@ class TestRouting:
     ) -> None:
         consumer = _consumer(broker, group="node", topics=[IN_TOPIC])
         # Two distinct classes -> same topic violates injectivity (I4 boot check).
-        bad_route = _route(
-            "bad",
-            FanoutHandler(),
-            {"Doubled": DONE_TOPIC, "DoubleAudited": DONE_TOPIC},
-        )
         with pytest.raises(ModelOnexError, match="injective"):
-            RuntimeDispatch(
-                consumer=consumer, producer=producer, routing_map={IN_TOPIC: bad_route}
+            _route(
+                "bad",
+                FanoutHandler(),
+                {"Doubled": DONE_TOPIC, "DoubleAudited": DONE_TOPIC},
             )

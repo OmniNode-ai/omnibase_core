@@ -33,6 +33,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.runtime.model_delivery_context import ModelDeliveryContext
 from omnibase_core.runtime.runtime_dispatch import DispatchRoute, RuntimeDispatch
@@ -102,6 +103,7 @@ def _route(handler: EchoHandler) -> DispatchRoute:
         handler=handler,  # type: ignore[arg-type]
         published_events={"ModelEchoed": OUT_TOPIC},
         input_model_cls=ModelEcho,
+        result_transport=EnumResultTransport.EVENT_FANOUT,
     )
 
 

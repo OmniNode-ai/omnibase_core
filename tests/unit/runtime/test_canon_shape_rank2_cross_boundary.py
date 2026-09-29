@@ -23,6 +23,7 @@ from typing import cast
 
 import pytest
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.models.nodes.compliance_evidence.model_compliance_check_entry import (
     ModelComplianceCheckEntry,
 )
@@ -72,6 +73,12 @@ from omnibase_core.runtime.runtime_local_adapter import LocalRuntimeBusAdapter
 
 pytestmark = pytest.mark.unit
 
+_PUBLISHED_EVENTS = {
+    "ComplianceScanResponse": "onex.evt.core.compliance-scan-batch-completed.v1",
+    "ComplianceReportReduceResponse": "onex.evt.core.compliance-report-updated.v1",
+    "ComplianceEvidenceOutput": "onex.evt.core.compliance-scan-completed.v1",
+}
+
 
 class _FakeBus:
     """Records ``publish`` calls; the adapter needs only ``publish`` here."""
@@ -115,6 +122,8 @@ def _adapter(
         input_model_cls=input_model_cls,
         output_topic=output_topic,
         bus=cast(ProtocolLocalRuntimeBus, bus),
+        published_events=_PUBLISHED_EVENTS,
+        result_transport=EnumResultTransport.EVENT_FANOUT,
     )
     return adapter, bus
 

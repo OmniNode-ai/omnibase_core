@@ -10,6 +10,9 @@ observe once reconciled to this module.
 
 from __future__ import annotations
 
+import typing
+from collections.abc import Sequence
+
 import pytest
 from pydantic import BaseModel, ConfigDict
 
@@ -22,6 +25,7 @@ from omnibase_core.runtime.runtime_fanout_resolver import (
     resolve_fanout_emissions,
     resolve_fanout_topics,
     resolve_published_topic,
+    validate_event_fanout_handler,
 )
 
 
@@ -51,6 +55,42 @@ class ModelWithEmbeddedTopic(BaseModel):
 class ModelEventEnvelope(BaseModel):
     model_config = ConfigDict(extra="forbid")
     payload: int = 0
+
+
+class _ConcreteFanoutHandler:
+    def handle(self, request: object) -> tuple[ModelAlpha | ModelBeta, ...]:
+        _ = request
+        return (ModelAlpha(), ModelBeta())
+
+
+class _OpaqueFanoutHandler:
+    def handle(self, request: object) -> Sequence[BaseModel]:
+        _ = request
+        return (ModelAlpha(),)
+
+
+class _MixedFanoutHandler:
+    def handle(self, request: object) -> ModelAlpha | str:
+        _ = request
+        return ModelAlpha()
+
+
+class _UnmappedFanoutHandler:
+    def handle(self, request: object) -> ModelGamma:
+        _ = request
+        return ModelGamma()
+
+
+class _TypingSequenceFanoutHandler:
+    def handle(self, request: object) -> typing.Sequence[ModelAlpha]:
+        _ = request
+        return (ModelAlpha(),)
+
+
+class _ForwardReferenceFanoutHandler:
+    def handle(self, request: object) -> tuple[ModelAlpha | ModelBeta, ...]:
+        _ = request
+        return (ModelAlpha(), ModelBeta())
 
 
 _PUBLISHED = {
@@ -95,6 +135,41 @@ class TestResolvePublishedTopic:
         # Gamma is not in the map -> raise, never fall back to a single topic.
         with pytest.raises(ModelOnexError, match="not declared in the contract"):
             resolve_published_topic(_PUBLISHED, ModelGamma())
+
+
+class TestValidateEventFanoutHandler:
+    def test_concrete_declared_models_with_complete_ownership_pass(self) -> None:
+        validate_event_fanout_handler(
+            _ConcreteFanoutHandler(), _PUBLISHED, context="test-concrete"
+        )
+
+    def test_typing_sequence_of_concrete_model_passes(self) -> None:
+        validate_event_fanout_handler(
+            _TypingSequenceFanoutHandler(), _PUBLISHED, context="test-sequence"
+        )
+
+    def test_forward_reference_of_concrete_models_passes(self) -> None:
+        validate_event_fanout_handler(
+            _ForwardReferenceFanoutHandler(), _PUBLISHED, context="test-forward-ref"
+        )
+
+    def test_opaque_base_sequence_is_rejected_at_registration(self) -> None:
+        with pytest.raises(ModelOnexError, match="opaque or mixed"):
+            validate_event_fanout_handler(
+                _OpaqueFanoutHandler(), _PUBLISHED, context="test-opaque"
+            )
+
+    def test_mixed_union_is_rejected_at_registration(self) -> None:
+        with pytest.raises(ModelOnexError, match="opaque or mixed"):
+            validate_event_fanout_handler(
+                _MixedFanoutHandler(), _PUBLISHED, context="test-mixed"
+            )
+
+    def test_incomplete_declared_ownership_is_rejected_at_registration(self) -> None:
+        with pytest.raises(ModelOnexError, match="not owned by contract"):
+            validate_event_fanout_handler(
+                _UnmappedFanoutHandler(), _PUBLISHED, context="test-unmapped"
+            )
 
 
 class TestNormalizeFanoutElements:

@@ -21,13 +21,14 @@ import json
 import uuid as _uuid_module
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.enums.enum_terminal_outcome import EnumTerminalOutcome
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
@@ -134,18 +135,124 @@ def test_load_published_events_map_rejects_conflicting_duplicates(
 
 
 @pytest.mark.unit
-def test_load_published_events_map_allows_identical_duplicates(
+def test_load_published_events_map_rejects_identical_duplicates_for_event_fanout(
     workflow_path: Path,
 ) -> None:
     runtime = RuntimeLocal(workflow_path=workflow_path)
     runtime._contract = {
         "published_events": [
+            {"event_type": "ModelAlpha", "topic": "onex.evt.alpha.created.v1"},
+            {"event_type": "ModelAlpha", "topic": "onex.evt.alpha.created.v1"},
+        ]
+    }
+
+    with pytest.raises(ModelOnexError, match="more than once"):
+        runtime._load_published_events_map(require_complete=True)
+
+
+@pytest.mark.unit
+def test_load_published_events_map_rejects_canonical_class_duplicates_for_event_fanout(
+    workflow_path: Path,
+) -> None:
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    runtime._contract = {
+        "published_events": [
+            {"event_type": "Alpha", "topic": "onex.evt.alpha.created.v1"},
+            {"event_type": "ModelAlpha", "topic": "onex.evt.alpha.created.v1"},
+        ]
+    }
+
+    with pytest.raises(ModelOnexError, match="more than once"):
+        runtime._load_published_events_map(require_complete=True)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "published_events",
+    [
+        None,
+        {},
+        [],
+        ["not-a-map"],
+        [{"event_type": "ModelAlpha"}],
+        [{"topic": "alpha.created.v1"}],
+        [{"event_type": "", "topic": "alpha.created.v1"}],
+    ],
+)
+def test_load_published_events_map_rejects_incomplete_raw_map_for_event_fanout(
+    workflow_path: Path,
+    published_events: object,
+) -> None:
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    runtime._contract = {"published_events": published_events}
+
+    with pytest.raises(ModelOnexError, match="explicit event_fanout"):
+        runtime._load_published_events_map(require_complete=True)
+
+
+@pytest.mark.unit
+def test_load_published_events_map_preserves_response_only_legacy_behavior(
+    workflow_path: Path,
+) -> None:
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    runtime._contract = {
+        "published_events": [
+            "legacy-non-map",
             {"event_type": "ModelAlpha", "topic": "alpha.created.v1"},
             {"event_type": "ModelAlpha", "topic": "alpha.created.v1"},
         ]
     }
 
     assert runtime._load_published_events_map() == {"ModelAlpha": "alpha.created.v1"}
+
+
+@pytest.mark.unit
+def test_resolved_routing_entry_defaults_to_response_transport(
+    workflow_path: Path,
+) -> None:
+    """The RuntimeLocal composition root forwards the omitted default explicitly."""
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+    entries = runtime._resolve_routing_entries(
+        {
+            "handlers": [
+                {
+                    "handler": {"module": "test.handlers", "name": "Response"},
+                    "event_model": {"module": "test.models", "name": "Request"},
+                }
+            ]
+        },
+        ["onex.cmd.test.request.v1"],
+        ["onex.evt.test.response.v1"],
+    )
+
+    assert entries[0].result_transport is EnumResultTransport.RESPONSE
+
+
+@pytest.mark.unit
+def test_resolved_routing_entry_rejects_unknown_result_transport(
+    workflow_path: Path,
+) -> None:
+    runtime = RuntimeLocal(workflow_path=workflow_path)
+
+    with pytest.raises(ModelOnexError) as exc_info:
+        runtime._resolve_routing_entries(
+            {
+                "handlers": [
+                    {
+                        "handler": {"module": "test.handlers", "name": "Bad"},
+                        "event_model": {
+                            "module": "test.models",
+                            "name": "Request",
+                        },
+                        "result_transport": "publish_everywhere",
+                    }
+                ]
+            },
+            ["onex.cmd.test.request.v1"],
+            ["onex.evt.test.response.v1"],
+        )
+
+    assert exc_info.value.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
 
 
 @pytest.mark.unit
@@ -648,7 +755,9 @@ class _ProgressBeforeCompletionHandler:
     def __init__(self, event_bus: ProtocolLocalRuntimeBus) -> None:
         self._event_bus = event_bus
 
-    async def handle(self, payload: _ModelRequiresOnlyCorrelationId) -> dict[str, str]:
+    async def handle(
+        self, payload: _ModelRequiresOnlyCorrelationId
+    ) -> ModelProgressCompleted:
         await self._event_bus.publish(
             _PROGRESS_TOPIC,
             None,
@@ -660,11 +769,19 @@ class _ProgressBeforeCompletionHandler:
                 }
             ).encode("utf-8"),
         )
-        return {
-            "status": "success",
-            "kind": "completed",
-            "correlation_id": str(payload.correlation_id),
-        }
+        return ModelProgressCompleted(
+            status="success",
+            kind="completed",
+            correlation_id=str(payload.correlation_id),
+        )
+
+
+class ModelProgressCompleted(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: str
+    kind: str
+    correlation_id: str
 
 
 def _write_event_driven_progress_contract(target: Path) -> None:
@@ -675,11 +792,15 @@ def _write_event_driven_progress_contract(target: Path) -> None:
             "subscribe_topics": ["onex.cmd.omn13865.start.v1"],
             "publish_topics": [_PROGRESS_TOPIC, _COMPLETED_TOPIC],
         },
+        "published_events": [
+            {"event_type": "ProgressCompleted", "topic": _COMPLETED_TOPIC}
+        ],
         "handler_routing": {
             "routing_strategy": "operation_match",
             "handlers": [
                 {
                     "operation": "start",
+                    "result_transport": "event_fanout",
                     "handler": {
                         "module": _THIS_MODULE_FOR_IDENTITY,
                         "name": "_ProgressBeforeCompletionHandler",
@@ -722,7 +843,98 @@ async def test_event_driven_runtime_waits_for_declared_terminal_event(
     assert result == EnumWorkflowResult.COMPLETED
     workflow_data = json.loads((state_root / "workflow_result.json").read_text())
     assert workflow_data["terminal_payload"]["kind"] == "completed"
-    assert workflow_data["handler_result"]["kind"] == "completed"
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+@pytest.mark.parametrize("host_handlers", [True, False], ids=["host", "client"])
+@pytest.mark.parametrize(
+    ("published_events", "case"),
+    [
+        ("not-a-list", "non-list"),
+        ([], "empty"),
+        ([{"event_type": "ProgressCompleted"}], "malformed-entry"),
+        (
+            [{"event_type": "   ", "topic": _COMPLETED_TOPIC}],
+            "whitespace-event-type",
+        ),
+        (
+            [{"event_type": "ProgressCompleted", "topic": "   "}],
+            "whitespace-topic",
+        ),
+        (
+            [{"event_type": " ProgressCompleted ", "topic": _COMPLETED_TOPIC}],
+            "padded-event-type",
+        ),
+        (
+            [{"event_type": "ProgressCompleted", "topic": f" {_COMPLETED_TOPIC} "}],
+            "padded-topic",
+        ),
+        (
+            [{"event_type": "ProgressCompleted", "topic": "not a topic"}],
+            "noncanonical-topic",
+        ),
+        (
+            [{"event_type": "ProgressCompleted", "topic": "foo.bar"}],
+            "syntax-valid-noncanonical-topic",
+        ),
+        (
+            [
+                {"event_type": "ProgressCompleted", "topic": _COMPLETED_TOPIC},
+                {"event_type": "ProgressCompleted", "topic": _COMPLETED_TOPIC},
+            ],
+            "identical-duplicate",
+        ),
+        (
+            [
+                {"event_type": "ProgressCompleted", "topic": _COMPLETED_TOPIC},
+                {"event_type": "ModelProgressCompleted", "topic": _COMPLETED_TOPIC},
+            ],
+            "model-prefix-alias-duplicate",
+        ),
+        (
+            [
+                {"event_type": "OtherEvent", "topic": _COMPLETED_TOPIC},
+                {"event_type": "SecondEvent", "topic": _COMPLETED_TOPIC},
+            ],
+            "non-injective",
+        ),
+        (
+            [{"event_type": "OtherEvent", "topic": _COMPLETED_TOPIC}],
+            "incomplete-handler-ownership",
+        ),
+    ],
+)
+async def test_event_fanout_invalid_published_events_fails_before_bus_send(
+    tmp_path: Path,
+    published_events: object,
+    case: str,
+    host_handlers: bool,
+) -> None:
+    """Fan-out contracts fail before either host/client subscription or send."""
+    contract_path = tmp_path / f"{case}.yaml"
+    _write_event_driven_progress_contract(contract_path)
+    contract = yaml.safe_load(contract_path.read_text(encoding="utf-8"))
+    contract["published_events"] = published_events
+    contract_path.write_text(yaml.safe_dump(contract), encoding="utf-8")
+
+    bus = MagicMock(spec=ProtocolLocalRuntimeBus)
+    bus.start = AsyncMock()
+    bus.close = AsyncMock()
+    bus.subscribe = AsyncMock()
+    bus.publish = AsyncMock()
+    runtime = RuntimeLocal(
+        workflow_path=contract_path,
+        state_root=tmp_path / "state",
+        host_handlers=host_handlers,
+    )
+
+    with patch.object(runtime, "_create_event_bus", return_value=bus):
+        result = await runtime.run_async()
+
+    assert result is EnumWorkflowResult.FAILED
+    bus.subscribe.assert_not_awaited()
+    bus.publish.assert_not_awaited()
 
 
 def _write_contract_for_model(
@@ -1392,11 +1604,15 @@ def _write_bare_terminal_contract(target: Path) -> None:
             "subscribe_topics": ["onex.cmd.omn17962.start.v1"],
             "publish_topics": [_BARE_TERMINAL_TOPIC],
         },
+        "published_events": [
+            {"event_type": "_ModelBareDomainTerminal", "topic": _BARE_TERMINAL_TOPIC}
+        ],
         "handler_routing": {
             "routing_strategy": "operation_match",
             "handlers": [
                 {
                     "operation": "start",
+                    "result_transport": "event_fanout",
                     "handler": {
                         "module": _THIS_MODULE_FOR_IDENTITY,
                         "name": "_BareDomainTerminalHandler",
@@ -1450,7 +1666,10 @@ async def test_bare_domain_terminal_without_correlation_is_this_run(
     )
     workflow_data = json.loads((state_root / "workflow_result.json").read_text())
     assert workflow_data["terminal_payload"]["artifact_written"] is True
-    assert workflow_data["handler_result"]["status"] == "success"
+    assert workflow_data["terminal_payload"]["status"] == "success"
+    # OMN-17859: an explicit event_fanout route publishes its result and hands
+    # nothing to the response sink, so the run's own output is the terminal.
+    assert "handler_result" not in workflow_data
 
 
 @pytest.mark.unit

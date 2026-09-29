@@ -36,6 +36,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.enums.enum_terminal_outcome import EnumTerminalOutcome
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -57,6 +58,7 @@ from omnibase_core.protocols.runtime.protocol_local_runtime_payload_model import
     ProtocolLocalRuntimePayloadModel,
 )
 from omnibase_core.runtime.contract_terminal_topics import resolve_terminal_topics
+from omnibase_core.topics import build_topic
 
 logger = logging.getLogger(__name__)
 
@@ -248,6 +250,7 @@ class ResolvedRoutingEntry:
     event_model_class: str
     input_topic: str
     output_topic: str
+    result_transport: EnumResultTransport
 
 
 def _exit_code_for(result: EnumWorkflowResult) -> int:
@@ -1174,42 +1177,117 @@ class RuntimeLocal:
 
         return errors
 
-    def _load_published_events_map(self) -> dict[str, str]:
+    def _load_published_events_map(
+        self,
+        *,
+        require_complete: bool = False,
+    ) -> dict[str, str]:
         """Parse the contract's top-level ``published_events`` class -> topic map.
 
         Mirrors ``omnibase_infra`` ``load_published_events_map`` but reads the
         already-loaded contract dict (no file re-read): each entry is
-        ``{event_type: <short class name>, topic: <topic>}``. Malformed entries are
-        skipped; the map is validated for injectivity by the caller at boot.
-        Returns ``{}`` when the contract declares no ``published_events``.
+        ``{event_type: <short class name>, topic: <topic>}``.
+
+        ``published_events`` predates typed result transport and response-only
+        contracts may retain its permissive legacy shape.  An explicit
+        ``event_fanout`` route is different: it makes this list the sole output
+        topic authority, so it must be a non-empty, losslessly parseable map
+        before adapter registration.  In that strict mode, reject malformed raw
+        values and duplicate class entries *before* dict construction would hide
+        them.  The caller still checks injectivity after parsing.
         """
         raw = self._contract.get("published_events")
         if not isinstance(raw, list):
+            if require_complete:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                    message=(
+                        "explicit event_fanout requires a non-empty "
+                        "published_events list of {event_type, topic} entries."
+                    ),
+                )
             return {}
+        if require_complete and not raw:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                message=(
+                    "explicit event_fanout requires a non-empty "
+                    "published_events list of {event_type, topic} entries."
+                ),
+            )
         result: dict[str, str] = {}
-        for entry in raw:
+        strict_class_names: set[str] = set()
+        for index, entry in enumerate(raw):
             if not isinstance(entry, dict):
+                if require_complete:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                        message=(
+                            "explicit event_fanout requires each "
+                            "published_events entry to be a mapping; "
+                            f"entry {index} is {entry!r}."
+                        ),
+                    )
                 continue
             event_type = entry.get("event_type")
             topic = entry.get("topic")
-            if (
+            valid = (
                 isinstance(event_type, str)
-                and event_type
+                and bool(event_type.strip())
+                and event_type == event_type.strip()
                 and isinstance(topic, str)
-                and topic
-            ):
-                prior_topic = result.get(event_type)
-                if prior_topic is not None and prior_topic != topic:
+                and bool(topic.strip())
+                and topic == topic.strip()
+            )
+            if not valid:
+                if require_complete:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                        message=(
+                            "explicit event_fanout requires each "
+                            "published_events entry to declare non-empty string "
+                            f"event_type and topic; entry {index} is {entry!r}."
+                        ),
+                    )
+                continue
+
+            assert isinstance(event_type, str)
+            assert isinstance(topic, str)
+            if require_complete:
+                try:
+                    build_topic(topic)
+                except ModelOnexError as exc:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                        message=(
+                            "explicit event_fanout published_events entry "
+                            f"{index} has a noncanonical topic {topic!r}."
+                        ),
+                    ) from exc
+            canonical_event_type = event_type.removeprefix("Model")
+            if require_complete and canonical_event_type in strict_class_names:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                    message=(
+                        "published_events declares event class "
+                        f"{canonical_event_type!r} more than once; reconcile the "
+                        "duplicate entry."
+                    ),
+                )
+            strict_class_names.add(canonical_event_type)
+            prior_topic = result.get(event_type)
+            if prior_topic is not None:
+                if require_complete or prior_topic != topic:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
                         message=(
                             "published_events declares event_type "
-                            f"{event_type!r} twice with different topics "
+                            f"{event_type!r} more than once "
                             f"({prior_topic!r} and {topic!r}); reconcile the "
                             "duplicate entry."
                         ),
                     )
-                result[event_type] = topic
+            result[event_type] = topic
         return result
 
     def _resolve_routing_entries(
@@ -1260,6 +1338,21 @@ class RuntimeLocal:
                     else publish_topics[0]
                 )
 
+            raw_result_transport = entry.get(
+                "result_transport", EnumResultTransport.RESPONSE
+            )
+            try:
+                result_transport = EnumResultTransport(raw_result_transport)
+            except (TypeError, ValueError) as exc:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                    message=(
+                        f"handler entry {i} declares unsupported result_transport "
+                        f"{raw_result_transport!r}; expected one of "
+                        f"{[transport.value for transport in EnumResultTransport]!r}."
+                    ),
+                ) from exc
+
             resolved.append(
                 ResolvedRoutingEntry(
                     handler_module=str(hd.get("module", "")),
@@ -1269,6 +1362,7 @@ class RuntimeLocal:
                     event_model_class=str(em.get("name", "")),
                     input_topic=input_topic,
                     output_topic=output_topic,
+                    result_transport=result_transport,
                 )
             )
 
@@ -1402,10 +1496,10 @@ class RuntimeLocal:
         )
         from omnibase_core.runtime.runtime_fanout_resolver import (
             assert_published_events_injective,
+            validate_event_fanout_handler,
         )
         from omnibase_core.runtime.runtime_local_adapter import (
             LocalRuntimeBusAdapter,
-            multi_event_publish_seam_enabled,
         )
 
         routing = self._as_workflow_map(self._contract.get("handler_routing", {}))
@@ -1447,6 +1541,47 @@ class RuntimeLocal:
         resolved_entries = self._resolve_routing_entries(
             routing, subscribe_topics, publish_topics
         )
+
+        # Contract-level published_events is the sole topic authority for an
+        # explicit event_fanout route. Validate it before branching into host or
+        # client mode: a client must not bind its terminal consumer or publish a
+        # command for a contract whose remote handler cannot be proven safe.
+        requires_event_fanout = any(
+            entry.result_transport is EnumResultTransport.EVENT_FANOUT
+            for entry in resolved_entries
+        )
+        published_events = self._load_published_events_map(
+            require_complete=requires_event_fanout,
+        )
+        if requires_event_fanout:
+            contract_context = str(self._contract.get("name", "<workflow>"))
+            assert_published_events_injective(
+                published_events,
+                context=contract_context,
+            )
+            for entry in resolved_entries:
+                if entry.result_transport is not EnumResultTransport.EVENT_FANOUT:
+                    continue
+                try:
+                    handler_module = importlib.import_module(entry.handler_module)
+                    handler_type = getattr(handler_module, entry.handler_class)
+                except (ImportError, AttributeError) as exc:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                        message=(
+                            "explicit event_fanout handler could not be resolved "
+                            f"for preflight: {entry.handler_module}."
+                            f"{entry.handler_class}."
+                        ),
+                    ) from exc
+                validate_event_fanout_handler(
+                    handler_type,
+                    published_events,
+                    context=(
+                        "RuntimeLocal explicit event_fanout preflight "
+                        f"for {entry.handler_name!r}"
+                    ),
+                )
 
         # --- 3. Log the routing graph ---
         logger.info("RuntimeLocal: routing graph:")
@@ -1565,18 +1700,6 @@ class RuntimeLocal:
                 len(resolved_entries),
             )
         else:
-            # OMN-14403 §6ii: load the contract's published_events class -> topic map
-            # (when declared) so a def-B fan-out / multi-topic handler's emitted class
-            # resolves its own publish topic instead of the single per-entry
-            # output_topic, and assert the map is injective at boot. Default-OFF seam:
-            # when OFF this map is loaded but unused (single output_topic path).
-            published_events = self._load_published_events_map()
-            if published_events:
-                assert_published_events_injective(
-                    published_events,
-                    context=str(self._contract.get("name", "<workflow>")),
-                )
-            multi_event_seam_enabled = multi_event_publish_seam_enabled()
 
             def _fail_callback() -> None:
                 self._result = EnumWorkflowResult.FAILED
@@ -1616,9 +1739,12 @@ class RuntimeLocal:
                     return _cb
 
                 def _make_result_cb(
-                    output_topic: str,
+                    entry: ResolvedRoutingEntry,
                 ) -> Callable[[object], None] | None:
-                    if output_topic not in terminal_topic_names:
+                    if (
+                        entry.result_transport is not EnumResultTransport.RESPONSE
+                        and entry.output_topic not in terminal_topic_names
+                    ):
                         return None
 
                     def _cb(result: object) -> None:
@@ -1635,10 +1761,10 @@ class RuntimeLocal:
                     output_topic=entry.output_topic or None,
                     bus=bus,
                     on_error=_make_fail_cb(entry.handler_name),
-                    on_result=_make_result_cb(entry.output_topic),
+                    on_result=_make_result_cb(entry),
                     published_events=published_events,
-                    multi_event_seam_enabled=multi_event_seam_enabled,
                     expected_correlation_id=self._expected_correlation_id,
+                    result_transport=entry.result_transport,
                 )
 
                 if not entry.input_topic:

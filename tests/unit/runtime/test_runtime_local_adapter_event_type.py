@@ -27,6 +27,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     ModelDelegationRequest,
 )
@@ -113,6 +114,8 @@ def _adapter(
     published_events: dict[str, str],
     input_model_cls: type | None,
     on_error: Callable[[], None] | None = None,
+    on_result: Callable[[object], None] | None = None,
+    result_transport: EnumResultTransport = EnumResultTransport.EVENT_FANOUT,
 ) -> LocalRuntimeBusAdapter:
     return LocalRuntimeBusAdapter(
         handler=cast(ProtocolLocalRuntimeCallableTarget, handler),
@@ -121,8 +124,9 @@ def _adapter(
         output_topic="onex.evt.fallback.v1",
         bus=cast(ProtocolLocalRuntimeBus, bus),
         on_error=on_error,
+        on_result=on_result,
         published_events=published_events,
-        multi_event_seam_enabled=True,
+        result_transport=result_transport,
     )
 
 
@@ -214,6 +218,8 @@ async def test_enveloped_message_round_trips_through_consume() -> None:
         consume_bus,
         published_events={},
         input_model_cls=ModelRoutingIntent,
+        on_result=lambda _: None,
+        result_transport=EnumResultTransport.RESPONSE,
     )
 
     await consume_adapter.on_message(_FakeMsg(enveloped_bytes))

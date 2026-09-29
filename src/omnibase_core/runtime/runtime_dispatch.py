@@ -66,6 +66,7 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_delivery_disposition import EnumDeliveryDisposition
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_delivery_failure_evidence import (
     ModelDeliveryFailureEvidence,
@@ -88,8 +89,12 @@ from omnibase_core.runtime.runtime_fanout_resolver import (
     assert_published_events_injective,
     is_fanout_sequence,
     resolve_fanout_topics,
+    validate_event_fanout_handler,
 )
-from omnibase_core.runtime.runtime_local_adapter import _invoke_handle_method
+from omnibase_core.runtime.runtime_local_adapter import (
+    _extract_response_result,
+    _invoke_handle_method,
+)
 
 __all__ = ["DispatchRoute", "RuntimeDispatch"]
 
@@ -194,6 +199,12 @@ class DispatchRoute:
     published_events: Mapping[str, str]
     """Contract ``published_events`` class-name -> topic map for fan-out routing."""
 
+    result_transport: EnumResultTransport = EnumResultTransport.RESPONSE
+    """Contract-declared transport for this handler's typed result."""
+
+    on_result: Callable[[object], None] | None = None
+    """Response-path sink. Never used to publish events."""
+
     input_model_cls: type[BaseModel] | None = None
     """Declared def-B input model for a ``payload_type_match`` route.
 
@@ -205,6 +216,33 @@ class DispatchRoute:
 
     node_kind: EnumNodeKind | None = None
     """Node kind (informational in S4; drives projection->publish ordering from S8)."""
+
+    def __post_init__(self) -> None:
+        """Reject response loss and unowned fan-out before the poll loop starts."""
+        if self.result_transport is EnumResultTransport.RESPONSE:
+            if self.on_result is None:
+                raise ModelOnexError(
+                    message=(
+                        f"RuntimeDispatch route {self.name!r} uses response transport "
+                        "without an on_result response sink."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                )
+            return
+        if self.result_transport is EnumResultTransport.EVENT_FANOUT:
+            validate_event_fanout_handler(
+                self.handler,
+                self.published_events,
+                context=f"RuntimeDispatch route {self.name!r}",
+            )
+            return
+        raise ModelOnexError(
+            message=(
+                f"RuntimeDispatch route {self.name!r} has unsupported "
+                f"result_transport {self.result_transport!r}"
+            ),
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+        )
 
 
 class RuntimeDispatch:
@@ -534,11 +572,19 @@ class RuntimeDispatch:
     ) -> list[tuple[str, BaseModel]]:
         """Normalize a def-B handler return into ordered ``(topic, payload)`` pairs.
 
-        A ``None`` return emits nothing; a single ``BaseModel`` is a one-element
-        fan-out; a ``Sequence[BaseModel]`` is a fan-out batch. Every element routes
-        through the shared fail-closed ``runtime_fanout_resolver`` (an unmapped or
-        carrier element raises).
+        ``response`` preserves the exact handler result via ``on_result`` and emits
+        nothing. Only explicit ``event_fanout`` turns a ``BaseModel`` or ordered
+        ``Sequence[BaseModel]`` into outbound events, resolved exclusively through
+        the shared fail-closed ``runtime_fanout_resolver``.
         """
+        if route.result_transport is EnumResultTransport.RESPONSE:
+            assert route.on_result is not None
+            route.on_result(
+                _extract_response_result(
+                    result, context=f"RuntimeDispatch route {route.name!r}"
+                )
+            )
+            return []
         if result is None:
             return []
         elements: list[object]

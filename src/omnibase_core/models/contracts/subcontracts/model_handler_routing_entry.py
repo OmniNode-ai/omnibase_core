@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
 
 
@@ -43,6 +44,14 @@ class ModelHandlerRoutingEntry(BaseModel):
     operation: str | None = Field(
         default=None,
         description="Operation name (operation_match strategy)",
+    )
+    result_transport: EnumResultTransport = Field(
+        default=EnumResultTransport.RESPONSE,
+        description=(
+            "Contract-declared result transport. response preserves the typed result "
+            "without publishing; event_fanout authorizes publication exclusively via "
+            "the contract-level published_events map."
+        ),
     )
     event_type: str | None = Field(
         default=None,

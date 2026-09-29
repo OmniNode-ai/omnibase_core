@@ -76,6 +76,14 @@ class ModelIsolationCommand(BaseModel):
     prompt: str = Field(default="")
 
 
+class ModelIsolationCompleted(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: str
+    correlation_id: str
+    prompt: str
+
+
 class HandlerIsolationEcho:
     """Host-mode handler: echoes this run's correlation onto the terminal topic.
 
@@ -85,18 +93,18 @@ class HandlerIsolationEcho:
     sequential one that passes vacuously.
     """
 
-    async def handle(self, payload: ModelIsolationCommand) -> dict[str, str]:
+    async def handle(self, payload: ModelIsolationCommand) -> ModelIsolationCompleted:
         # The prompt carries this run's think-time so a concurrent test can put
         # the slow run in the terminal wait at the exact moment the fast run's
         # terminal lands. Without a real yield inside the publish chain, two
         # gathered ``run_async`` coroutines run one after the other and every
         # "concurrent" assertion passes vacuously.
         await asyncio.sleep(0.30 if payload.prompt == "slow" else 0.01)
-        return {
-            "status": "success",
-            "correlation_id": str(payload.correlation_id),
-            "prompt": payload.prompt,
-        }
+        return ModelIsolationCompleted(
+            status="success",
+            correlation_id=str(payload.correlation_id),
+            prompt=payload.prompt,
+        )
 
 
 # Which handler INSTANCE observed which correlation. A module-level registry is
@@ -115,14 +123,14 @@ class HandlerIsolationRecorder:
     execution is invisible.
     """
 
-    async def handle(self, payload: ModelIsolationCommand) -> dict[str, str]:
+    async def handle(self, payload: ModelIsolationCommand) -> ModelIsolationCompleted:
         _HANDLER_OBSERVATIONS.append((self, str(payload.correlation_id)))
         await asyncio.sleep(0.30 if payload.prompt == "slow" else 0.01)
-        return {
-            "status": "success",
-            "correlation_id": str(payload.correlation_id),
-            "prompt": payload.prompt,
-        }
+        return ModelIsolationCompleted(
+            status="success",
+            correlation_id=str(payload.correlation_id),
+            prompt=payload.prompt,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -250,11 +258,15 @@ def _write_contract(
             "subscribe_topics": [_COMMAND_TOPIC],
             "publish_topics": [_TERMINAL_TOPIC],
         },
+        "published_events": [
+            {"event_type": "IsolationCompleted", "topic": _TERMINAL_TOPIC}
+        ],
         "handler_routing": {
             "routing_strategy": "operation_match",
             "handlers": [
                 {
                     "operation": "start",
+                    "result_transport": "event_fanout",
                     "handler": {"module": _MODULE, "name": handler_name},
                     "event_model": {"module": _MODULE, "name": "ModelIsolationCommand"},
                     "output_topic": _TERMINAL_TOPIC,

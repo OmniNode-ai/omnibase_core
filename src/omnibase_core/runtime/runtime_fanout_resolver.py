@@ -41,6 +41,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
+from types import UnionType
+from typing import Union, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
@@ -56,6 +58,7 @@ __all__ = [
     "resolve_fanout_emissions",
     "resolve_fanout_topics",
     "resolve_published_topic",
+    "validate_event_fanout_handler",
 ]
 
 # Routing carriers a fan-out sequence must never contain. A carrier smuggled into
@@ -81,6 +84,122 @@ def is_fanout_sequence(result: object) -> bool:
 def _short_name(class_name: str) -> str:
     """Return the applier's short spelling of a class name (``Model`` stripped)."""
     return class_name.removeprefix("Model")
+
+
+def validate_event_fanout_handler(
+    handler: object,
+    published_events: Mapping[str, str],
+    *,
+    context: str,
+) -> None:
+    """Validate a fan-out handler's declared output ownership before dispatch.
+
+    Explicit ``event_fanout`` is a contract-owned operation, not a runtime guess.
+    Its return annotation must name concrete ``BaseModel`` event classes (a single
+    model or an ordered homogeneous/fixed tuple/list of concrete models) and the
+    contract's sole topic authority must cover every declared class. Opaque bases,
+    untyped containers, and mixed scalar/model unions cannot prove ownership, so
+    they are rejected at route/adapter registration before any producer send.
+    """
+    handle = getattr(handler, "handle", None)
+    if handle is None or not callable(handle):
+        raise ModelOnexError(
+            message=f"{context}: event_fanout handler has no callable handle method.",
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+        )
+    try:
+        annotation = get_type_hints(handle).get("return")
+    except (NameError, TypeError) as exc:
+        raise ModelOnexError(
+            message=(
+                f"{context}: event_fanout handler return annotation could not be "
+                "resolved; declare concrete BaseModel event types."
+            ),
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+        ) from exc
+    declared = _declared_fanout_models(annotation, context=context)
+    assert_published_events_injective(published_events, context=context)
+    for model_type in declared:
+        class_name = model_type.__name__
+        if class_name in CARRIER_CLASS_NAMES or "topic" in model_type.model_fields:
+            raise ModelOnexError(
+                message=(
+                    f"{context}: event_fanout declared type {class_name!r} is a "
+                    "routing carrier or declares topic ownership; emitted topics must "
+                    "come only from contract published_events."
+                ),
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            )
+        if (
+            _short_name(class_name) not in published_events
+            and class_name not in published_events
+        ):
+            raise ModelOnexError(
+                message=(
+                    f"{context}: event_fanout declared type {class_name!r} is not "
+                    "owned by contract published_events; no output-topic fallback "
+                    "exists."
+                ),
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            )
+
+
+def _declared_fanout_models(
+    annotation: object, *, context: str
+) -> tuple[type[BaseModel], ...]:
+    """Extract concrete event models from a supported fan-out return annotation."""
+    if annotation is None:
+        raise ModelOnexError(
+            message=(
+                f"{context}: event_fanout requires a concrete return annotation; "
+                "unannotated output cannot establish topic ownership."
+            ),
+            error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+        )
+    origin = get_origin(annotation)
+    if origin in (Union, UnionType):
+        return _declared_union_models(get_args(annotation), context=context)
+    if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+        if annotation is BaseModel:
+            return _raise_opaque_annotation(annotation, context=context)
+        return (annotation,)
+    if origin in (list, tuple, Sequence):
+        args = tuple(arg for arg in get_args(annotation) if arg is not Ellipsis)
+        if not args:
+            return _raise_opaque_annotation(annotation, context=context)
+        models: list[type[BaseModel]] = []
+        for arg in args:
+            models.extend(_declared_fanout_models(arg, context=context))
+        return tuple(dict.fromkeys(models))
+    return _raise_opaque_annotation(annotation, context=context)
+
+
+def _declared_union_models(
+    args: tuple[object, ...], *, context: str
+) -> tuple[type[BaseModel], ...]:
+    if not args:
+        return _raise_opaque_annotation("empty union", context=context)
+    models: list[type[BaseModel]] = []
+    for arg in args:
+        if (
+            not (isinstance(arg, type) and issubclass(arg, BaseModel))
+            or arg is BaseModel
+        ):
+            return _raise_opaque_annotation(arg, context=context)
+        models.append(arg)
+    return tuple(dict.fromkeys(models))
+
+
+def _raise_opaque_annotation(
+    annotation: object, *, context: str
+) -> tuple[type[BaseModel], ...]:
+    raise ModelOnexError(
+        message=(
+            f"{context}: event_fanout return annotation {annotation!r} is opaque or "
+            "mixed; declare only concrete BaseModel event types."
+        ),
+        error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+    )
 
 
 def _reject_carrier(element: BaseModel, idx: int, message_type: str | None) -> None:

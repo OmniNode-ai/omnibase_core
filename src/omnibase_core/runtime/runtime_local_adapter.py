@@ -9,7 +9,6 @@ __all__ = ["LocalRuntimeBusAdapter"]
 import inspect
 import json
 import logging
-import os
 import time
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from typing import cast
@@ -18,7 +17,9 @@ from uuid import UUID, uuid4, uuid5
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_result_transport import EnumResultTransport
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
     ProtocolLocalRuntimeBus,
@@ -33,35 +34,18 @@ from omnibase_core.runtime.runtime_fanout_resolver import (
     is_fanout_sequence,
     resolve_fanout_emissions,
     resolve_published_topic,
+    validate_event_fanout_handler,
 )
 
 logger = logging.getLogger(__name__)
 
-# OMN-14403 §6ii — the def-B multi-event (fan-out) publish seam. Default OFF; the
-# canonical read on the Kafka path lives in
-# ``omnibase_infra.runtime.auto_wiring.handler_wiring`` — this is the mirror read
-# for the RuntimeLocal path so both runtimes gate on the same flag (Fable
-# refinement 3 / parity). While OFF the adapter's behavior is byte-for-byte
-# today's for single-emit/None returns; a fan-out sequence is warn-dropped (the
-# census channel that names affected handlers in live logs), never published.
-ENV_MULTI_EVENT_PUBLISH_SEAM = "ONEX_MULTI_EVENT_PUBLISH_SEAM"
 
-
-def multi_event_publish_seam_enabled() -> bool:
-    """Return True when the def-B fan-out publish seam is enabled (default: False)."""
-    return (
-        os.environ.get(  # env-var-ok: OMN-14403 def-B fan-out seam; mirrors the canonical omnibase_infra handler_wiring read
-            ENV_MULTI_EVENT_PUBLISH_SEAM, ""
-        )
-        .strip()
-        .lower()
-        in (
-            "1",
-            "true",
-            "yes",
-            "on",
-        )
-    )
+def _extract_response_result(result: object, *, context: str) -> object:
+    """Expose a response value without wrapping, converting, or publishing it."""
+    _ = context
+    if isinstance(result, ModelHandlerOutput):
+        return result.result
+    return result
 
 
 class LocalRuntimeBusAdapter:
@@ -70,16 +54,9 @@ class LocalRuntimeBusAdapter:
     Typed handlers are invoked with the validated input model as the sole
     request object. Legacy handlers that explicitly accept **kwargs are invoked
     with model.model_dump() as kwargs.
-    Results are serialized to JSON and published to the output topic.
-    Correlation IDs are preserved across input -> output.
-
-    A def-B handler may return a ``Sequence[BaseModel]`` (fan-out) or a single
-    ``BaseModel`` whose topic is resolved from the contract's ``published_events``
-    class -> topic map (OMN-14403 §6ii). Both go through the shared
-    ``runtime_fanout_resolver`` so this path and the Kafka path agree on what is
-    published. This behavior is gated by ``multi_event_seam_enabled`` (default
-    OFF); when OFF, single-emit/None returns are unchanged and a fan-out sequence
-    is warn-dropped.
+    ``response`` (the default) calls ``on_result`` with the exact typed handler
+    result and performs no publication. ``event_fanout`` is explicit and resolves
+    every returned event solely through contract-level ``published_events``.
 
     On handler error: logs the exception, sets the workflow terminal event
     to FAILED, and does NOT publish output.
@@ -95,8 +72,8 @@ class LocalRuntimeBusAdapter:
         on_error: Callable[[], None] | None = None,
         on_result: Callable[[object], None] | None = None,
         published_events: Mapping[str, str] | None = None,
-        multi_event_seam_enabled: bool = False,
         expected_correlation_id: UUID | None = None,
+        result_transport: EnumResultTransport = EnumResultTransport.RESPONSE,
     ) -> None:
         self.handler = handler
         self.handler_name = handler_name
@@ -108,13 +85,8 @@ class LocalRuntimeBusAdapter:
         self.bus = bus
         self.on_error = on_error
         self.on_result = on_result
-        # OMN-14403 §6ii: the contract's published_events class -> topic map. When
-        # present (and the seam is ON), a returned event's topic is resolved from
-        # its class via this map instead of the single ``output_topic`` — the only
-        # correct routing for a multi-topic / fan-out ORCHESTRATOR whose emitted
-        # class varies per phase. None/empty keeps the single-``output_topic`` path.
+        # Contract-level published_events is the sole event-topic authority.
         self.published_events: Mapping[str, str] = published_events or {}
-        self.multi_event_seam_enabled = multi_event_seam_enabled
         # OMN-15660 AC2, handler half. The correlation id THIS invocation put on
         # the wire, or ``None`` when nothing correlated reached it. Armed, it is
         # the refusal operand in ``_correlation_matches``: a message that names
@@ -123,6 +95,30 @@ class LocalRuntimeBusAdapter:
         # so a run-scoped group still sees every other run's records; the
         # refusal is the actual isolation boundary.
         self.expected_correlation_id = expected_correlation_id
+        self.result_transport = result_transport
+        if result_transport is EnumResultTransport.RESPONSE:
+            if on_result is None:
+                raise ModelOnexError(
+                    message=(
+                        f"LocalRuntimeBusAdapter: response handler {handler_name!r} "
+                        "requires an on_result response sink."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                )
+        elif result_transport is EnumResultTransport.EVENT_FANOUT:
+            validate_event_fanout_handler(
+                handler,
+                self.published_events,
+                context=f"LocalRuntimeBusAdapter handler {handler_name!r}",
+            )
+        else:
+            raise ModelOnexError(
+                message=(
+                    f"LocalRuntimeBusAdapter: unsupported result_transport "
+                    f"{result_transport!r} for {handler_name!r}"
+                ),
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+            )
 
     def _correlation_matches(self, correlation_id: str | None) -> bool:
         """Whether a handler input belongs to THIS invocation (OMN-15660 AC2).
@@ -236,17 +232,23 @@ class LocalRuntimeBusAdapter:
             correlation_id,
         )
 
-        # 3. Publish output
+        if self.result_transport is EnumResultTransport.RESPONSE:
+            # Constructor validation makes this a real response API, never a
+            # best-effort callback that silently discards a compute result.
+            assert self.on_result is not None
+            self.on_result(
+                _extract_response_result(
+                    result,
+                    context=f"LocalRuntimeBusAdapter handler {self.handler_name!r}",
+                )
+            )
+            return
+
+        # 3. Explicit event fan-out output.
         if result is None:
             return
-        if self.on_result:
-            self.on_result(result)
 
-        # 3a. def-B fan-out (Sequence[BaseModel]) — OMN-14403 §6ii. Each element's
-        # topic is resolved from the contract's published_events and one message
-        # is published per element, so a multi-topic ORCHESTRATOR is representable.
-        # While the seam is OFF the sequence is warn-dropped (the census channel)
-        # rather than published — no longer silent, but no behavior change either.
+        # 3a. Explicit event fan-out (Sequence[BaseModel]).
         if is_fanout_sequence(result):
             await self._publish_fanout(cast("Sequence[object]", result), correlation_id)
             return
@@ -265,7 +267,7 @@ class LocalRuntimeBusAdapter:
                     message=(
                         f"LocalRuntimeBusAdapter: handler {self.handler.__class__.__name__!r}"
                         f" returned unsupported type {type(result).__name__!r};"
-                        " expected BaseModel, Sequence[BaseModel], dict, or None"
+                        " expected BaseModel, Sequence[BaseModel], or None"
                     ),
                     error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
                 )
@@ -288,47 +290,29 @@ class LocalRuntimeBusAdapter:
     def _resolve_single_emit_topic(self, result: object) -> str | None:
         """Resolve the topic for a single-emit result, or None to publish nothing.
 
-        A ``BaseModel`` routes via the contract's ``published_events`` when the seam
-        is ON and the contract declares one (the per-phase orchestrator case, whose
-        emitted class varies per phase and so cannot use a single ``output_topic``);
-        otherwise it falls back to ``output_topic``. Fail-closed: an unmapped class
-        under an active published_events map raises rather than misrouting. A dict
-        keeps the legacy ``output_topic`` path.
+        Explicit ``event_fanout`` resolves every emitted ``BaseModel`` through the
+        contract's ``published_events`` map. There is no output-topic fallback.
         """
-        if (
-            isinstance(result, BaseModel)
-            and self.multi_event_seam_enabled
-            and self.published_events
-        ):
+        if isinstance(result, BaseModel):
             return resolve_published_topic(
                 self.published_events, result, message_type=self.handler_name
             )
-        return self.output_topic or None
+        raise ModelOnexError(
+            message=(
+                f"LocalRuntimeBusAdapter: event_fanout handler "
+                f"{self.handler_name!r} returned unsupported {type(result).__name__!r}"
+            ),
+            error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
+        )
 
     async def _publish_fanout(
         self, elements: Sequence[object], correlation_id: str | None
     ) -> None:
         """Publish a def-B fan-out sequence, one message per resolved topic (§6ii).
 
-        Seam OFF: warn-drop the sequence (census channel), publish nothing — the
-        pre-seam behavior for wired handlers, now visible in logs. Seam ON: resolve
-        each element's topic via the shared resolver (fail-closed on unmapped /
-        carrier) and publish N messages in return order.
+        Resolve each element's topic via the shared resolver (fail-closed on
+        unmapped / carrier) and publish N messages in return order.
         """
-        if not self.multi_event_seam_enabled:
-            if elements:
-                logger.warning(
-                    "LocalRuntimeBusAdapter: handler %s returned a %d-element "
-                    "sequence which is being DROPPED (not published) — set %s=1 to "
-                    "publish it as a fan-out batch (OMN-14403). element_types=%s "
-                    "(correlation_id=%s)",
-                    self.handler_name,
-                    len(elements),
-                    ENV_MULTI_EVENT_PUBLISH_SEAM,
-                    sorted({type(element).__name__ for element in elements}),
-                    correlation_id,
-                )
-            return
         try:
             # Resolve (topic, event_type, payload) triples. ``resolve_fanout_emissions``
             # is FAIL-CLOSED on a topic that yields no derivable event_type — an

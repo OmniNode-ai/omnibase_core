@@ -407,6 +407,7 @@ from .enum_resource_unit import EnumResourceUnit
 from .enum_response_header_transformation_type import (
     EnumResponseHeaderTransformationType,
 )
+from .enum_result_transport import EnumResultTransport
 from .enum_retrieval_source_type import EnumRetrievalSourceType
 from .enum_return_type import EnumReturnType
 
@@ -665,6 +666,7 @@ __all__ = [
     "EnumNodeType",
     "EnumOperationStatus",  # Canonical operation status (OMN-1310)
     "EnumExecutionStatus",  # Canonical execution status (OMN-1310)
+    "EnumResultTransport",
     "EnumFeatureFlagCategory",  # Feature flag categories (OMN-5566)
     "EnumFeatureFlagGateType",  # Feature flag gate types (OMN-7776)
     "EnumValidationLevel",
