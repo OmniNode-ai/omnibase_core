@@ -91,6 +91,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import yaml
 from pydantic import ValidationError
@@ -103,6 +104,9 @@ from omnibase_core.models.contracts.ticket.model_receipt_check_result import (
 )
 from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
     ModelReceiptGateResult,
+)
+from omnibase_core.utils.util_contract_schema_version import (
+    validate_contract_schema_version,
 )
 from omnibase_core.validation.completion_verify import verify as _completion_verify
 from omnibase_core.validation.runtime_sha_match import (
@@ -648,15 +652,71 @@ def compute_contract_entry_sha256(contract_data: object, evidence_item_id: str) 
         raise ContractEntryNotFoundError(
             f"dod_evidence item {evidence_item_id!r} not found in contract"
         )
+    is_goal_contract = False
+    if isinstance(contract_data, dict):
+        try:
+            UUID(str(contract_data.get("goal_id", "")))
+            UUID(str(contract_data.get("contract_revision", "")))
+            schema_version = contract_data.get("schema_version")
+        except (TypeError, ValueError):
+            pass
+        else:
+            if isinstance(schema_version, str):
+                try:
+                    validate_contract_schema_version(schema_version)
+                except ValueError:
+                    pass
+                else:
+                    repository = contract_data.get("repository")
+                    if isinstance(repository, str):
+                        parts = repository.split("/")
+                        is_goal_contract = (
+                            len(parts) == 2
+                            and all(part.strip() for part in parts)
+                            and all(
+                                contract_data.get(key) is not None
+                                for key in (
+                                    "repository",
+                                    "goal_id",
+                                    "contract_revision",
+                                    "schema_version",
+                                )
+                            )
+                        )
+    if is_goal_contract:
+        # OR.2 extends the same canonical header+entry construction for a
+        # repository-owned goal contract. Ticket receipts keep the historical
+        # HEADER_FIELDS byte representation exactly.
+        header_fields: tuple[str, ...] = (
+            "repository",
+            "goal_id",
+            "contract_revision",
+            "schema_version",
+        )
+    else:
+        header_fields = HEADER_FIELDS
     header = {
         key: (contract_data.get(key) if isinstance(contract_data, dict) else None)
-        for key in HEADER_FIELDS
+        for key in header_fields
     }
     canonical = {"header": header, "entry": entry}
     blob = json.dumps(
         canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     )
     return f"sha256:{hashlib.sha256(blob.encode('utf-8')).hexdigest()}"
+
+
+def compute_canonical_contract_sha256(contract_data: object) -> str:
+    """Hash parsed contract content as canonical UTF-8 JSON.
+
+    Formatting-only changes (including a final newline) do not change this
+    digest. The repo-owned source bytes and formatter result are checked
+    separately at the admission boundary.
+    """
+    canonical = json.dumps(
+        contract_data, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
 
 
 def check_receipt_contract_binding(
@@ -2008,6 +2068,7 @@ __all__ = [
     "check_receipt_contract_binding",
     "classify_evidence_class",
     "classify_evidence_source_stamp",
+    "compute_canonical_contract_sha256",
     "compute_contract_entry_sha256",
     "compute_contract_sha256",
     "parse_evidence_source",

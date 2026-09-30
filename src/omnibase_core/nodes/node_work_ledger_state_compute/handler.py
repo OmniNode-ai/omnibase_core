@@ -348,13 +348,70 @@ def fold_work_events(
                 f"{revision.goal_id}"
             )
 
+    goal_revision_resolution_events = tuple(
+        sorted(
+            (
+                event
+                for event in distinct
+                if isinstance(event, ModelWorkRulingRecorded)
+                and event.goal_revision_resolution is not None
+            ),
+            key=_by_id,
+        )
+    )
+    resolutions_by_parent: dict[uuid.UUID, list[ModelWorkRulingRecorded]] = {}
+    for event in goal_revision_resolution_events:
+        resolution = event.goal_revision_resolution
+        assert resolution is not None
+        claim = claims_by_id.get(resolution.goal_id)
+        if claim is None:
+            reasons.add(
+                f"fork resolution {event.event_id} references missing goal "
+                f"{resolution.goal_id}"
+            )
+            continue
+        if event.ticket_id is not None and event.ticket_id != claim.ticket_id:
+            reasons.add(
+                f"fork resolution {event.event_id} ticket {event.ticket_id} does not "
+                f"match goal {resolution.goal_id} ticket {claim.ticket_id}"
+            )
+            continue
+        competing = revision_children.get(resolution.fork_parent_revision_id, [])
+        if len(competing) < 2:
+            reasons.add(
+                f"fork resolution {event.event_id} does not name a current fork "
+                f"at {resolution.fork_parent_revision_id}"
+            )
+            continue
+        if {revision.event_id for revision in competing} != set(
+            resolution.competing_revision_ids
+        ):
+            reasons.add(
+                f"fork resolution {event.event_id} does not name every competing "
+                f"revision at {resolution.fork_parent_revision_id}"
+            )
+            continue
+        if any(revision.goal_id != resolution.goal_id for revision in competing):
+            reasons.add(f"fork resolution {event.event_id} crosses goal boundaries")
+            continue
+        resolutions_by_parent.setdefault(resolution.fork_parent_revision_id, []).append(
+            event
+        )
+
     for replaced_id, children in revision_children.items():
         if len(children) > 1:
-            child_ids = ", ".join(
-                str(event.event_id) for event in sorted(children, key=_by_id)
-            )
+            if len(resolutions_by_parent.get(replaced_id, [])) != 1:
+                child_ids = ", ".join(
+                    str(event.event_id) for event in sorted(children, key=_by_id)
+                )
+                reasons.add(
+                    f"goal revision fork at {replaced_id}: competing revisions "
+                    f"{child_ids} require exactly one authorized resolution"
+                )
+    for parent_id, resolutions in resolutions_by_parent.items():
+        if len(resolutions) > 1:
             reasons.add(
-                f"goal revision fork at {replaced_id}: competing revisions {child_ids}"
+                f"goal revision fork at {parent_id} has multiple resolution rulings"
             )
 
     for revision in goal_revisions:
@@ -462,6 +519,7 @@ def fold_work_events(
             and e.event_id not in closed_claims
         ),
         goal_revisions=goal_revisions,
+        goal_revision_resolution_events=goal_revision_resolution_events,
         messages=tuple(e for e in distinct if isinstance(e, ModelWorkMessageSent)),
         acks=tuple(e for e in distinct if isinstance(e, ModelWorkMessageAcked)),
         questions=questions,

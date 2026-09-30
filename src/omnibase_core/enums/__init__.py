@@ -200,6 +200,9 @@ from .enum_gate_type import EnumGateType
 # GitHub Actions enums
 from .enum_github_action_event import EnumGithubActionEvent
 from .enum_github_runner_os import EnumGithubRunnerOs
+from .enum_goal_attempt_status import EnumGoalAttemptStatus
+from .enum_goal_proof_kind import EnumGoalProofKind
+from .enum_goal_subject_kind import EnumGoalSubjectKind
 
 # Group and organization enums
 from .enum_group_status import EnumGroupStatus
@@ -674,6 +677,9 @@ __all__ = [
     "EnumNumericValueType",
     # Orchestrator domain (from nodes)
     "EnumActionStatus",
+    "EnumGoalAttemptStatus",
+    "EnumGoalProofKind",
+    "EnumGoalSubjectKind",
     "EnumActionType",
     "EnumBranchCondition",
     # Reducer domain (from nodes)

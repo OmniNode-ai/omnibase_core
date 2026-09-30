@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 from decimal import Decimal
+from pathlib import PurePosixPath
 from typing import Literal
 
 from pydantic import Field, field_serializer, field_validator, model_validator
@@ -27,20 +29,41 @@ __all__ = ["ModelWorkClaimRequested"]
 
 
 class ModelWorkClaimRequested(ModelWorkEventBase):
-    """A claimant asks to own a ticket.
+    """Open a legacy ticket claim or an explicitly source-bound goal.
 
-    ``ticket_id`` is narrowed to required: it is this kind's partition key, and
-    a null key cannot arbitrate.
+    Legacy mode requires ``ticket_id`` and preserves that exact arbitration key.
+    Goal mode requires the complete source tuple and uses repository+goal identity;
+    a ticket, when present, is correlation only.
     """
 
     kind: Literal[EnumWorkEventKind.CLAIM_REQUESTED] = Field(
         default=EnumWorkEventKind.CLAIM_REQUESTED, frozen=True
     )
-    ticket_id: str = Field(
-        ...,
-        min_length=1,
+    ticket_id: str | None = Field(
+        default=None,
         max_length=64,
-        description="Ticket being claimed. Required — this is the partition key.",
+        description="Optional ticket correlation. It is not goal identity.",
+    )
+    goal_id: uuid.UUID | None = Field(
+        default=None,
+        description="Opening goal identity; must equal this event's event_id.",
+    )
+    repository: str | None = Field(
+        default=None,
+        description="Exact repository identity bound by the goal contract.",
+    )
+    contract_source_commit_sha: str | None = Field(
+        default=None, description="Immutable Git commit containing the goal contract."
+    )
+    contract_path: PurePosixPath | None = Field(
+        default=None, description="Repository-relative path to the goal contract."
+    )
+    contract_sha256: str | None = Field(
+        default=None, description="Canonical digest of the goal contract contents."
+    )
+    authorization_policy_revision: uuid.UUID | None = Field(
+        default=None,
+        description="Protected policy revision authorizing this goal opening.",
     )
     dod_evidence: tuple[ModelContractDodItem, ...] = Field(
         default=(),
@@ -110,7 +133,68 @@ class ModelWorkClaimRequested(ModelWorkEventBase):
             raise ValueError(
                 "contract_schema_version is required when dod_evidence is present"
             )
+        goal_source_fields = (
+            self.repository,
+            self.contract_source_commit_sha,
+            self.contract_path,
+            self.contract_sha256,
+            self.authorization_policy_revision,
+        )
+        if self.goal_id is None:
+            if any(value is not None for value in goal_source_fields):
+                raise ValueError("goal contract source fields require goal_id")
+            if self.ticket_id is None:
+                raise ValueError("legacy claim requires ticket_id")
+            return self
+        if self.goal_id != self.event_id:
+            raise ValueError("opening goal_id must equal the claim event_id")
+        if any(value is None for value in goal_source_fields) or (
+            self.contract_schema_version is None
+        ):
+            raise ValueError("goal opening requires every source and policy field")
+        if not self.dod_evidence:
+            raise ValueError("goal opening requires a non-empty contract")
         return self
+
+    @field_validator("repository")
+    @classmethod
+    def _repository_is_canonical(cls, value: str | None) -> str | None:
+        if value is not None and not re.fullmatch(
+            r"^[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*$", value
+        ):
+            raise ValueError("repository must be canonical owner/repository")
+        return value
+
+    @field_validator("contract_source_commit_sha")
+    @classmethod
+    def _source_commit_is_canonical(cls, value: str | None) -> str | None:
+        if value is not None and not re.fullmatch(r"^[0-9a-f]{40}$", value):
+            raise ValueError(
+                "contract source commit must be a full lowercase Git SHA-1"
+            )
+        return value
+
+    @field_validator("contract_path")
+    @classmethod
+    def _contract_path_is_repository_relative(
+        cls, value: PurePosixPath | None
+    ) -> PurePosixPath | None:
+        if value is not None and (
+            value.is_absolute()
+            or ".." in value.parts
+            or value.parts[:2] != ("contracts", "goals")
+        ):
+            raise ValueError(
+                "contract_path must be repository-relative under contracts/goals/"
+            )
+        return value
+
+    @field_validator("contract_sha256")
+    @classmethod
+    def _contract_digest_is_canonical(cls, value: str | None) -> str | None:
+        if value is not None and not re.fullmatch(r"^sha256:[0-9a-f]{64}$", value):
+            raise ValueError("contract_sha256 must use sha256:<64 lowercase hex>")
+        return value
 
     @field_serializer("prs")
     def _serialize_prs_sorted(self, value: frozenset[ModelPrKey]) -> list[ModelPrKey]:

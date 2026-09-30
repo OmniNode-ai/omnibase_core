@@ -26,6 +26,9 @@ from omnibase_core.enums.enum_proof_class import EnumProofClass
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
 from omnibase_core.models.events.model_event_payload_base import ModelEventPayloadBase
 from omnibase_core.models.events.work.model_actor import ModelActor
+from omnibase_core.utils.util_repository_identity import (
+    canonical_repository_partition_key,
+)
 
 __all__ = [
     "SUMMARY_MAX_LENGTH",
@@ -72,6 +75,14 @@ class ModelWorkEventBase(ModelEventPayloadBase):
             "Flat partition key for the narrative domain, derived from 'actor'. "
             "Derived rather than nested because the emit registry resolves a "
             "partition key with a flat payload.get() and cannot walk a dotted path."
+        ),
+    )
+    work_partition_key: str = Field(
+        default="",
+        description=(
+            "Derived partition key for work arbitration. Legacy events retain their "
+            "exact ticket_id; explicit goals use the repository/goal identity; "
+            "narrative events use actor_key."
         ),
     )
     ticket_id: str | None = Field(
@@ -132,16 +143,48 @@ class ModelWorkEventBase(ModelEventPayloadBase):
             )
         return self
 
+    @model_validator(mode="after")
+    def _derive_and_check_work_partition_key(self) -> ModelWorkEventBase:
+        """Derive one flat bus key while preserving legacy ticket key bytes."""
+        goal_id = getattr(self, "goal_id", None)
+        repository = getattr(self, "repository", None)
+        resolution = getattr(self, "goal_revision_resolution", None)
+        if resolution is not None:
+            goal_id = resolution.goal_id
+            repository = resolution.repository
+
+        if goal_id is not None and repository is not None:
+            expected = (
+                f"goal:{canonical_repository_partition_key(repository)}:{goal_id}"
+            )
+        elif self.ticket_id is not None:
+            expected = self.ticket_id
+        else:
+            expected = self.actor_key
+
+        if not self.work_partition_key:
+            object.__setattr__(self, "work_partition_key", expected)
+            self.__pydantic_fields_set__.add("work_partition_key")
+            return self
+        if self.work_partition_key != expected:
+            raise ValueError(
+                "work_partition_key does not match the event's typed identity "
+                f"(expected {expected!r})"
+            )
+        return self
+
 
 WORK_EVENT_PARTITION_KEY_FIELDS: Mapping[EnumWorkEventKind, str] = MappingProxyType(
     {
-        # Arbitration domain: total order per ticket, by partition offset.
-        EnumWorkEventKind.CLAIM_REQUESTED: "ticket_id",
-        EnumWorkEventKind.GOAL_REVISED: "ticket_id",
+        # Arbitration domain: a complete source-bound goal uses its scoped
+        # repository/goal key; the legacy ticket form keeps the raw ticket key.
+        EnumWorkEventKind.CLAIM_REQUESTED: "work_partition_key",
+        EnumWorkEventKind.GOAL_REVISED: "work_partition_key",
         EnumWorkEventKind.CLAIM_RELEASED: "ticket_id",
-        # Narrative domain: total order per actor, by partition offset.
+        # A structured goal ruling uses the same goal key; ordinary rulings and
+        # other narrative events retain their actor partition.
         EnumWorkEventKind.RESULT_RECORDED: "actor_key",
-        EnumWorkEventKind.RULING_RECORDED: "actor_key",
+        EnumWorkEventKind.RULING_RECORDED: "work_partition_key",
         EnumWorkEventKind.CORRECTION_RECORDED: "actor_key",
         EnumWorkEventKind.HOLD_PLACED: "actor_key",
         EnumWorkEventKind.HOLD_RELEASED: "actor_key",
@@ -164,5 +207,7 @@ A single key breaks one of them. Cross-domain global ordering is not claimed.
 
 Every value here must be a flat top-level field of ``ModelWorkEventBase``:
 ``node_emit_daemon/event_registry.py`` resolves the key with a plain
-``payload.get(field)`` and would key on ``None`` for a dotted path.
+``payload.get(field)`` and would key on ``None`` for a dotted path. The value is
+computed from the typed goal identity when present and otherwise keeps the
+existing ticket or actor partition unchanged.
 """

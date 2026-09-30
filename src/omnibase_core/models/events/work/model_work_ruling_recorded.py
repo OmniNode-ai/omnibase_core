@@ -15,6 +15,9 @@ from omnibase_core.models.events.work.model_work_event_base import (
     SUMMARY_MAX_LENGTH,
     ModelWorkEventBase,
 )
+from omnibase_core.models.events.work.model_work_goal_revision_resolution import (
+    ModelWorkGoalRevisionResolution,
+)
 
 __all__ = ["ModelWorkRulingRecorded"]
 
@@ -46,6 +49,14 @@ class ModelWorkRulingRecorded(ModelWorkEventBase):
             "event_ids of the work.question.asked events this ruling answers. The "
             "operator's typed answer: a question is answered only by a ruling or a "
             "consent that names it here."
+        ),
+    )
+    goal_revision_resolution: ModelWorkGoalRevisionResolution | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Structured authorization selecting one head of a goal revision fork. "
+            "Narrative operator_words are never parsed for this decision."
         ),
     )
 

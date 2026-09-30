@@ -39,6 +39,22 @@ class EnumOccEligibilityReason(StrEnum):
     # `test_passes` check, so "non-PASS" pointed four separate lanes at the
     # wrong remedy (hand-author a receipt) on 2026-08-28 alone.
     AWAITING_RUNNER_RECEIPT = "awaiting_runner_receipt"
+    # OR.2: goal-mode failures retain explicit source/subject reasons rather
+    # than collapsing into ticket/body mismatch or timeout-like outcomes.
+    GOAL_CONTRACT_INVALID = "goal_contract_invalid"
+    CONTRACT_FORMAT_INVALID = "contract_format_invalid"
+    GOAL_SUBJECT_MISMATCH = "goal_subject_mismatch"
+    GOAL_ADMISSION_UNAVAILABLE = "goal_admission_unavailable"
+    GOAL_ADMISSION_INCOMPLETE = "goal_admission_incomplete"
+    GOAL_ATTEMPT_NONPASS = "goal_attempt_nonpass"
+    GOAL_DEADLINE_EXPIRED = "goal_deadline_expired"
+    GOAL_MUTATION_PENDING = "goal_mutation_pending"
+    GOAL_ATTESTATION_INVALID = "goal_attestation_invalid"
+    GOAL_CRITERION_COVERAGE_MISSING = "goal_criterion_coverage_missing"
+    GOAL_CRITERION_BASELINE_MISMATCH = "goal_criterion_baseline_mismatch"
+    GOAL_REVISION_HISTORY_INVALID = "goal_revision_history_invalid"
+    GOAL_REVISION_FORK_UNRESOLVED = "goal_revision_fork_unresolved"
+    GOAL_REVISION_NOT_CURRENT = "goal_revision_not_current"
 
     def legacy_external_value(self) -> str:
         """Return the v0.46-compatible reason value for exhaustive consumers."""

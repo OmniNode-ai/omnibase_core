@@ -45,6 +45,9 @@ from omnibase_core.models.events.work.model_work_friction_recorded import (
 from omnibase_core.models.events.work.model_work_goal_revised import (
     ModelWorkGoalRevised,
 )
+from omnibase_core.models.events.work.model_work_goal_revision_resolution import (
+    ModelWorkGoalRevisionResolution,
+)
 from omnibase_core.models.events.work.model_work_hold_placed import (
     ModelWorkHoldPlaced,
 )
@@ -111,6 +114,7 @@ __all__ = [
     "ModelWorkEventBase",
     "ModelWorkFrictionRecorded",
     "ModelWorkGoalRevised",
+    "ModelWorkGoalRevisionResolution",
     "ModelWorkHoldPlaced",
     "ModelWorkHoldReleased",
     "ModelWorkLedgerEpochOpened",

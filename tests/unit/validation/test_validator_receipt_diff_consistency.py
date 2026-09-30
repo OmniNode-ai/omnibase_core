@@ -218,6 +218,25 @@ class TestContractUnmodified:
             EnumDiffAttestation.CONTRACT_UNMODIFIED
         ]
 
+    def test_ticket_free_goal_receipt_skips_legacy_ticket_contract_path(self) -> None:
+        receipt = _make_receipt(
+            ticket_id=None,
+            goal_id="00000000-0000-4000-8000-000000000001",
+            repository="OmniNode-ai/omnibase_core",
+            contract_revision="00000000-0000-4000-8000-000000000002",
+            contract_schema_version="1.0.0",
+            attempt_id="00000000-0000-4000-8000-000000000003",
+            attempt_sequence=1,
+            attempt_result_sha256="sha256:" + "a" * 64,
+            commit_sha="a" * 40,
+            tree_sha="b" * 40,
+            diff_attestations=[EnumDiffAttestation.CONTRACT_UNMODIFIED],
+        )
+
+        assert (
+            check_diff_consistency(receipt, [("M", "contracts/OMN-13501.yaml")]) == []
+        )
+
 
 class TestStatusNormalization:
     def test_rename_score_counts_as_mutation(self) -> None:

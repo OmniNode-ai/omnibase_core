@@ -14,7 +14,7 @@ from __future__ import annotations
 import ast
 import json
 from datetime import datetime, timedelta
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -30,6 +30,9 @@ from omnibase_core.models.events.work import (
     ModelRecipients,
     ModelWorkEvent,
 )
+from omnibase_core.models.events.work.model_work_claim_requested import (
+    ModelWorkClaimRequested,
+)
 from omnibase_core.models.events.work.model_work_ledger_line import (
     complete_ledger_lines,
 )
@@ -37,6 +40,7 @@ from omnibase_core.models.nodes.work_ledger_state import (
     ModelWorkLedgerFoldInput,
     ModelWorkLedgerState,
 )
+from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
 from omnibase_core.nodes.node_work_ledger_state_compute import (
     NodeWorkLedgerStateCompute,
     handler,
@@ -57,6 +61,7 @@ from omnibase_core.nodes.node_work_ledger_state_compute.queries import (
 from .work_ledger_events import (
     T0,
     ack,
+    actor,
     claim,
     claim_release,
     eid,
@@ -389,6 +394,28 @@ def test_claims_open_until_released_or_closed() -> None:
     assert open_claims(state, ticket_id="OMN-2").status is S.CLEAR
     assert open_claims(state, ticket_id="OMN-2").exit_code == 0
     assert open_claims(state, ticket_id="OMN-1").exit_code == 3
+
+
+def test_ticket_free_goal_claim_is_visible_without_ticket_filter() -> None:
+    goal_event_id = eid(25)
+    goal_claim = ModelWorkClaimRequested(
+        event_id=goal_event_id,
+        emitted_at=T0,
+        actor=actor("goal-lane"),
+        summary="source-bound goal claim",
+        goal_id=goal_event_id,
+        repository="OmniNode-ai/omnibase_core",
+        contract_source_commit_sha="a" * 40,
+        contract_path=PurePosixPath("contracts/goals/goal.yaml"),
+        contract_sha256="sha256:" + "b" * 64,
+        authorization_policy_revision=eid(26),
+        dod_evidence=(ModelContractDodItem(id="dod-1", description="criterion"),),
+        contract_schema_version="1.0.0",
+    )
+    state = _fold(line(epoch()), line(goal_claim))
+
+    assert open_claims(state).status is S.FOUND
+    assert open_claims(state, ticket_id="OMN-25").status is S.CLEAR
 
 
 # --------------------------------------------------------------------------- #
