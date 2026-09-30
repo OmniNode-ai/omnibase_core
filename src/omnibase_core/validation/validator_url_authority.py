@@ -16,9 +16,16 @@ non-Python on-prem-facing config/script files (see below):
    VCS display permalinks, and JSON-schema refs (audit cosmetic-exclusion
    class 1K).
 
-2. **env-url-read** — ``os.environ[...]`` subscript or ``os.environ.get(...)``
-   call whose variable NAME ends in ``_URL`` or ``_ENDPOINT``.  API-key /
-   token / secret variable names do NOT end in those suffixes and remain legal.
+2. **env-url-read** — a process-environment read whose variable NAME ends in
+   ``_URL``, ``_DSN`` or ``_ENDPOINT`` (``*_DB_URL`` / ``DATABASE_URL`` are
+   ``_URL``).  Two matchers feed this one rule: a line regex for the literal
+   ``os.environ[...]`` / ``os.environ.get(...)`` spelling, and (OMN-20177) an
+   AST pass that also sees ``os.getenv(...)``, ``from os import environ /
+   getenv`` (aliased or not), ``import os as <alias>``, and a key held in a
+   string constant — ``_ENV_DSN = "X_DB_URL"`` then
+   ``os.environ.get(_ENV_DSN)``, the shape omnimarket#3134 used to read a
+   Postgres DSN past the regex.  API-key / token / secret variable names do
+   NOT end in those suffixes and remain legal.
 
 3. **url-const-assignment** — module-level constant assignment whose name
    ends in ``URL`` or ``ENDPOINT``, sourced from ``os.environ`` or a bare
@@ -129,6 +136,7 @@ Schema Version:
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import re
@@ -175,6 +183,13 @@ _NON_ENDPOINT_MARKERS: Final[tuple[str, ...]] = (
 # 2. ``*_URL`` / ``*_ENDPOINT`` env read.
 _ENV_URL_READ: Final[re.Pattern[str]] = re.compile(
     r"""os\.environ(?:\.get\(\s*|\[\s*)["'][A-Z0-9_]*(?:_URL|_ENDPOINT)["']""",
+)
+
+# 2b. (OMN-20177) The env-var NAME shape the AST env-read pass flags.  A
+#     connection target — URL, DSN or endpoint — read from the process
+#     environment instead of resolving from a contract.
+_ENV_URL_NAME: Final[re.Pattern[str]] = re.compile(
+    r"""^(?:[A-Z0-9_]*_)?(?:URL|DSN|ENDPOINT)$""",
 )
 
 # 3. ``*_URL`` / ``*_ENDPOINT`` module-constant assignment.
@@ -309,6 +324,16 @@ _DEFAULT_BASELINE: Final[Path] = (
     Path(__file__).parent / "baselines" / "url_authority_baseline.json"
 )
 
+# OMN-20177 widening seed.  Widening a matcher surfaces debt that already sat
+# in the tree; that debt is recorded HERE, in its own file, so the primary
+# baseline keeps its never-grow invariant and this file carries its own
+# burn-down-only check (``url-authority-gate.yml``).  Each entry names the
+# rule, the reason it was seeded and the owning ticket.  It is read beside
+# whichever primary baseline is in use (same directory, this basename).  The
+# basename ends in ``url_authority_baseline.json`` so the detect-secrets
+# filter that already covers sha256-fingerprint baselines covers it too.
+_WIDENING_BASELINE_NAME: Final[str] = "widening_url_authority_baseline.json"
+
 
 # ---------------------------------------------------------------------------
 # Fingerprinting helpers
@@ -397,6 +422,125 @@ def _match_rule(raw_line: str, stripped: str) -> str | None:
     return None
 
 
+def _string_constants(tree: ast.AST) -> dict[str, set[str]]:
+    """Map every simple name / attribute name bound to a str literal in the file.
+
+    Covers ``NAME = "X"``, ``NAME: Final[str] = "X"`` and ``self.NAME = "X"``
+    at any scope.  A name bound to several literals keeps all of them, so an
+    env read through it is flagged when ANY value is URL-shaped.
+    """
+    bound: dict[str, set[str]] = {}
+
+    def _bind(target: ast.expr, value: ast.expr | None) -> None:
+        if not (isinstance(value, ast.Constant) and isinstance(value.value, str)):
+            return
+        if isinstance(target, ast.Name):
+            bound.setdefault(target.id, set()).add(value.value)
+        elif isinstance(target, ast.Attribute):
+            bound.setdefault(target.attr, set()).add(value.value)
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                _bind(target, node.value)
+        elif isinstance(node, ast.AnnAssign):
+            _bind(node.target, node.value)
+    return bound
+
+
+def _env_key_values(key: ast.expr, constants: dict[str, set[str]]) -> set[str]:
+    """Resolve an env-read key expression to the literal names it can carry."""
+    if isinstance(key, ast.Constant) and isinstance(key.value, str):
+        return {key.value}
+    if isinstance(key, ast.Name):
+        return constants.get(key.id, set())
+    if isinstance(key, ast.Attribute):
+        return constants.get(key.attr, set())
+    return set()
+
+
+def _ast_env_url_read_lines(source: str) -> set[int]:
+    """Line numbers of URL/DSN/ENDPOINT-shaped env reads (OMN-20177).
+
+    The line regex ``_ENV_URL_READ`` only matches a quoted key written inside
+    ``os.environ[...]`` / ``os.environ.get(...)``.  This pass resolves the
+    read forms and key indirections that regex cannot see:
+
+    * ``os.environ[k]`` (load context only), ``os.environ.get(k, ...)``,
+      ``os.getenv(k, ...)``, with ``os`` under any ``import os as <alias>``;
+    * ``environ[k]`` / ``environ.get(k)`` / ``getenv(k)`` after
+      ``from os import environ`` / ``getenv`` (aliases included);
+    * ``k`` a string literal, or a name / attribute bound to a string literal
+      anywhere in the same file.
+
+    Returns an empty set when the file does not parse; the regex pass still
+    runs on it.
+    """
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError):
+        return set()
+
+    os_aliases: set[str] = set()
+    environ_aliases: set[str] = set()
+    getenv_aliases: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == "os":
+                    os_aliases.add(alias.asname or "os")
+        elif isinstance(node, ast.ImportFrom) and node.module == "os":
+            for alias in node.names:
+                if alias.name == "environ":
+                    environ_aliases.add(alias.asname or "environ")
+                elif alias.name == "getenv":
+                    getenv_aliases.add(alias.asname or "getenv")
+    if not (os_aliases or environ_aliases or getenv_aliases):
+        return set()
+
+    def _is_environ(expr: ast.expr) -> bool:
+        if isinstance(expr, ast.Name):
+            return expr.id in environ_aliases
+        return (
+            isinstance(expr, ast.Attribute)
+            and expr.attr == "environ"
+            and isinstance(expr.value, ast.Name)
+            and expr.value.id in os_aliases
+        )
+
+    def _is_getenv(expr: ast.expr) -> bool:
+        if isinstance(expr, ast.Name):
+            return expr.id in getenv_aliases
+        return (
+            isinstance(expr, ast.Attribute)
+            and expr.attr == "getenv"
+            and isinstance(expr.value, ast.Name)
+            and expr.value.id in os_aliases
+        )
+
+    constants = _string_constants(tree)
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        key: ast.expr | None = None
+        lineno = 0
+        if isinstance(node, ast.Subscript):
+            if isinstance(node.ctx, ast.Load) and _is_environ(node.value):
+                key, lineno = node.slice, node.lineno
+        elif isinstance(node, ast.Call) and node.args:
+            func = node.func
+            if _is_getenv(func) or (
+                isinstance(func, ast.Attribute)
+                and func.attr == "get"
+                and _is_environ(func.value)
+            ):
+                key, lineno = node.args[0], node.lineno
+        if key is None:
+            continue
+        if any(_ENV_URL_NAME.match(v) for v in _env_key_values(key, constants)):
+            lines.add(lineno)
+    return lines
+
+
 def _match_msk_rule(raw_line: str) -> str | None:
     """Return RULE_MSK_DIRECT_BROKER when the line carries a direct-MSK
     literal (OMN-15692), else None.
@@ -477,6 +621,7 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
     # state here closes that gap.
     py_docstring_delim: str | None = None
     in_tf_block_comment = False
+    ast_env_url_lines = _ast_env_url_read_lines(source) if is_python else set()
     for index, raw_line in enumerate(source.splitlines(), start=1):
         stripped = raw_line.strip()
 
@@ -513,6 +658,8 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
             continue
 
         rule = _match_rule(raw_line, stripped) if is_python else None
+        if rule is None and index in ast_env_url_lines:
+            rule = RULE_ENV_URL_READ
         if rule == RULE_ENV_URL_READ and _CONFIG_PATH_ANNOTATION in raw_line:
             # Config-PATH env reads annotated with contract-config-ok are exempt.
             rule = None
@@ -603,6 +750,13 @@ def load_baseline(baseline_path: Path) -> set[str]:
         for e in entries
         if isinstance(e, dict) and "fingerprint" in e
     }
+
+
+def load_effective_baseline(baseline_path: Path) -> set[str]:
+    """Primary baseline plus the OMN-20177 widening seed beside it."""
+    return load_baseline(baseline_path) | load_baseline(
+        baseline_path.parent / _WIDENING_BASELINE_NAME
+    )
 
 
 def partition_against_baseline(
@@ -708,7 +862,7 @@ class ValidatorUrlAuthority(ValidatorBase):
 
     def _get_baseline(self) -> set[str]:
         if self._baseline is None:
-            self._baseline = load_baseline(self._baseline_path)
+            self._baseline = load_effective_baseline(self._baseline_path)
         return self._baseline
 
     def _validate_file(
@@ -786,7 +940,12 @@ def _update_baseline(
     repo_before = {e["fingerprint"] for e in prior_entries if e.get("repo") == repo}
     other_entries = [e for e in prior_entries if e.get("repo") != repo]
 
-    fresh_violations = scan_tree(repo, repo_root)
+    # Debt recorded in the widening seed stays there; it never migrates into
+    # the primary baseline (which would read as growth).
+    widening = load_baseline(baseline_path.parent / _WIDENING_BASELINE_NAME)
+    fresh_violations = [
+        v for v in scan_tree(repo, repo_root) if v.fingerprint not in widening
+    ]
     fresh: list[dict[str, str]] = [
         {
             "repo": v.repo,
@@ -901,14 +1060,14 @@ def main(argv: list[str] | None = None) -> int:
                 rel = str(p)
             violations.extend(scan_source(args.repo, rel, source))
 
-    baseline = load_baseline(baseline_path)
+    baseline = load_effective_baseline(baseline_path)
     new, grandfathered = partition_against_baseline(violations, baseline)
 
     if new:
         _err(
             f"URL-AUTHORITY GATE FAILED: {len(new)} NEW violation(s) — every URL must "
             "resolve from a contract (routing authority / integration catalog), not a "
-            "literal or a *_URL/*_ENDPOINT env read.\n"
+            "literal or a *_URL/*_DSN/*_ENDPOINT env read.\n"
         )
         for v in new:
             _err(f"  [{v.rule}] {v.repo}/{v.path}:{v.line}")
