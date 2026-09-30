@@ -37,7 +37,8 @@ Verdict model (mirrors ci_summary_gate exit codes)
 --------------------------------------------------
 * ``PASS`` (0)    — evidence is durable, or the gate does not apply
   (non-PR event; trusted dependency-bot author, mirroring occ-preflight's
-  OMN-13762 exemption).
+  OMN-13762 exemption; or the OCC writer app when the producer's head-SHA-bound
+  outcome is the dependency-pin-only verdict, OMN-20161).
 * ``PENDING`` (2) — evidence may still become durable without a new commit:
   Evidence-Source not yet PATCHed onto the body by occ-autobind, companion
   still OPEN (auto-merge in flight), or a transient API error. The runner
@@ -73,7 +74,7 @@ OCC_DURABLE_BRANCHES: tuple[str, ...] = ("dev", "main")
 
 # Mirrors occ-preflight's OMN-13762 dependency-bot exemption
 # (validator_receipt_gate.DEPENDENCY_BOT_AUTHORS): bot-authored dependency
-# bumps structurally cannot cite OCC evidence.
+# bumps structurally cannot cite OCC evidence. This is the UNCONDITIONAL set.
 DEPENDENCY_BOT_AUTHORS: frozenset[str] = frozenset(
     {
         "dependabot[bot]",
@@ -84,6 +85,23 @@ DEPENDENCY_BOT_AUTHORS: frozenset[str] = frozenset(
         "renovate",
     }
 )
+
+# OMN-20161: the OCC writer app is exempt ONLY when the producer's outcome for
+# the PR's current head SHA is the dependency-pin-only DECLINE. Mirrors
+# validator_receipt_gate.OCC_WRITER_BOT_AUTHORS; a parity test pins the two.
+OCC_WRITER_BOT_AUTHORS: frozenset[str] = frozenset(
+    {
+        "onexbot-occ-writer[bot]",
+        "app/onexbot-occ-writer",
+        "onexbot-occ-writer",
+    }
+)
+
+# OMN-20161 -- the one DECLINED reason meaning "this PR owes no companion".
+# Mirrors occ_preflight_wait.AUTOBIND_NO_COMPANION_REQUIRED_REASONS; a parity
+# test pins the two so the fleet's definition of the exemption cannot split.
+AUTOBIND_OUTCOME_DECLINED = "DECLINED"
+AUTOBIND_NO_COMPANION_REQUIRED_REASONS: tuple[str, ...] = ("skip:DEPENDENCY_PIN_ONLY",)
 
 # Events on which the gate enforces (mirrors occ-preflight's event scope).
 ENFORCED_EVENTS: frozenset[str] = frozenset({"pull_request", "merge_group"})
@@ -247,6 +265,41 @@ def read_autobind_outcome(
     return None
 
 
+def is_no_companion_required(reason: str) -> bool:
+    """Whether a DECLINED ``reason=`` names the dependency-pin-only verdict.
+
+    Matched on the reason TOKEN at the start of the field, never on prose after
+    it, so a message that merely mentions the token cannot read as the verdict.
+    """
+    return any(
+        reason.strip().startswith(marker)
+        for marker in AUTOBIND_NO_COMPANION_REQUIRED_REASONS
+    )
+
+
+def _pin_only_outcome_proven(fetcher: GhFetcher, repo: str, head_sha: str) -> bool:
+    """True only when *head_sha* carries a DECLINED, pin-only producer outcome.
+
+    Fails CLOSED in every other shape: no head SHA, an unreadable check-run
+    list, an absent outcome, MINTED/ERROR, or any other DECLINED reason all
+    return False, leaving the gate exactly where it was. The check-runs are
+    fetched for *head_sha* alone, so an outcome bound to another commit is
+    invisible here.
+    """
+    if not head_sha:
+        return False
+    check_runs = fetcher.check_runs(repo, head_sha)
+    if check_runs is None:
+        return False
+    parsed = read_autobind_outcome(check_runs)
+    if parsed is None:
+        return False
+    outcome, reason = parsed
+    if outcome.strip().upper() != AUTOBIND_OUTCOME_DECLINED:
+        return False
+    return is_no_companion_required(reason)
+
+
 def resolve_pr_number(
     event_name: str, pr_number: str, merge_group_head_ref: str
 ) -> str:
@@ -332,6 +385,21 @@ def evaluate_once(
             )
 
         head_sha = str(pr_data.get("headRefOid") or "")
+
+        # OMN-20161: the writer app is exempt only on the derived verdict, and
+        # before the Evidence-Source stamp is consulted, so a pin-only PR that
+        # already cites a hand companion is still exempt. Humans and near-miss
+        # logins never reach the outcome read.
+        if author in OCC_WRITER_BOT_AUTHORS and _pin_only_outcome_proven(
+            fetcher, repo, head_sha
+        ):
+            return Verdict(
+                EXIT_PASS,
+                f"OCC writer app '{author}' with a dependency-pin-only producer "
+                f"outcome bound to head {head_sha[:12]} "
+                f"({AUTOBIND_NO_COMPANION_REQUIRED_REASONS[0]}) — no OCC evidence "
+                "companion is owed (OMN-20161)",
+            )
 
         evidence_source = parse_evidence_source(str(pr_data.get("body") or ""))
     else:
