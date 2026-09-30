@@ -47,6 +47,13 @@ class ModelWorkResultRecorded(ModelWorkEventBase):
         default_factory=frozenset,
         description="event_ids of the work.claim.requested events this result closes.",
     )
+    contract_revision: uuid.UUID | None = Field(
+        default=None,
+        description=(
+            "event_id of the opening claim or goal-revised event whose contract "
+            "this result closes against. Explicit because results partition by actor."
+        ),
+    )
     friction_refs: frozenset[uuid.UUID] = Field(
         default_factory=frozenset,
         description="event_ids of the work.friction.recorded events this result cites.",

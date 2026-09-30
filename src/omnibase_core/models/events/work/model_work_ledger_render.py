@@ -35,6 +35,7 @@ rendered row before anything is written.
 
 from __future__ import annotations
 
+import json
 import re
 import uuid
 from collections.abc import Iterable, Mapping
@@ -65,6 +66,9 @@ from omnibase_core.models.events.work.model_work_correction_recorded import (
 from omnibase_core.models.events.work.model_work_event_union import ModelWorkEvent
 from omnibase_core.models.events.work.model_work_friction_recorded import (
     ModelWorkFrictionRecorded,
+)
+from omnibase_core.models.events.work.model_work_goal_revised import (
+    ModelWorkGoalRevised,
 )
 from omnibase_core.models.events.work.model_work_hold_placed import (
     ModelWorkHoldPlaced,
@@ -106,6 +110,7 @@ from omnibase_core.models.events.work.model_work_ruling_recorded import (
 from omnibase_core.models.events.work.model_work_status_recorded import (
     ModelWorkStatusRecorded,
 )
+from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
 
 __all__ = [
     "EPOCH_BANNER_ROW_TYPE",
@@ -124,6 +129,7 @@ TYPED_SOURCE_CELL: Final = "src=typed"
 ROW_TYPE_BY_KIND: Final[Mapping[EnumWorkEventKind, str]] = MappingProxyType(
     {
         EnumWorkEventKind.CLAIM_REQUESTED: "CLAIM",
+        EnumWorkEventKind.GOAL_REVISED: "STATUS",
         EnumWorkEventKind.STATUS_RECORDED: "STATUS",
         EnumWorkEventKind.RESULT_RECORDED: "TERMINAL",
         EnumWorkEventKind.FRICTION_RECORDED: "FRICTION",
@@ -211,6 +217,8 @@ def render_ledger_row(
         body = _status_cells(event)
     elif isinstance(event, ModelWorkResultRecorded):
         body = _result_cells(event, index)
+    elif isinstance(event, ModelWorkGoalRevised):
+        body = _goal_revised_cells(event)
     elif isinstance(event, ModelWorkFrictionRecorded):
         body = _friction_cells(event)
     elif isinstance(event, ModelWorkCorrectionRecorded):
@@ -240,6 +248,12 @@ def _claim_cells(event: ModelWorkClaimRequested) -> list[str]:
         cells.append(f"pr={_pr_keys(event.prs)}")
     if event.consent_ref is not None:
         cells.append(f"consent-event={event.consent_ref}")
+    if event.parent_goal_id is not None:
+        cells.append(f"parent-goal={event.parent_goal_id}")
+    if event.contract_schema_version is not None:
+        cells.append(f"contract-schema={event.contract_schema_version}")
+    if event.dod_evidence:
+        cells.append(f"dod-evidence={_contract_json(event.dod_evidence)}")
     if event.scope_text is not None:
         cells.append(f"scope={_text(event.scope_text)}")
     if event.est_lane_hours is not None:
@@ -249,6 +263,28 @@ def _claim_cells(event: ModelWorkClaimRequested) -> list[str]:
             f"displaces {displaces}; ({event.ticket_id})"
         )
     return cells
+
+
+def _goal_revised_cells(event: ModelWorkGoalRevised) -> list[str]:
+    return [
+        f"ticket={event.ticket_id}",
+        f"goal={event.goal_id}",
+        f"contract-schema={event.contract_schema_version}",
+        f"replaces={event.replaces}",
+        f"reason={_text(event.reason)}",
+        f"dod-evidence={_contract_json(event.dod_evidence)}",
+    ]
+
+
+def _contract_json(items: tuple[ModelContractDodItem, ...]) -> str:
+    """Render the complete contract in a stable, single ledger cell."""
+    return _text(
+        json.dumps(
+            [item.model_dump(mode="json") for item in items],
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
 
 
 def _claim_release_cells(

@@ -56,6 +56,9 @@ from omnibase_core.models.events.work.model_work_claim_requested import (
     ModelWorkClaimRequested,
 )
 from omnibase_core.models.events.work.model_work_event_union import ModelWorkEvent
+from omnibase_core.models.events.work.model_work_goal_revised import (
+    ModelWorkGoalRevised,
+)
 from omnibase_core.models.events.work.model_work_hold_placed import ModelWorkHoldPlaced
 from omnibase_core.models.events.work.model_work_hold_released import (
     ModelWorkHoldReleased,
@@ -294,12 +297,146 @@ def fold_work_events(
             )
         )
 
-    closed_claims: set[uuid.UUID] = set()
-    for event in distinct:
-        if isinstance(event, ModelWorkClaimReleased):
-            closed_claims.add(event.claim_event_id)
-        elif isinstance(event, ModelWorkResultRecorded):
-            closed_claims.update(event.closes_claims)
+    closed_claims: set[uuid.UUID] = {
+        event.claim_event_id
+        for event in distinct
+        if isinstance(event, ModelWorkClaimReleased)
+    }
+    results = tuple(
+        event for event in distinct if isinstance(event, ModelWorkResultRecorded)
+    )
+
+    goal_revisions = tuple(
+        sorted(
+            (event for event in distinct if isinstance(event, ModelWorkGoalRevised)),
+            key=_by_id,
+        )
+    )
+    claims_by_id = {
+        event.event_id: event
+        for event in distinct
+        if isinstance(event, ModelWorkClaimRequested)
+    }
+    revisions_by_id = {event.event_id: event for event in goal_revisions}
+    revision_children: dict[uuid.UUID, list[ModelWorkGoalRevised]] = {}
+    for revision in goal_revisions:
+        claim = claims_by_id.get(revision.goal_id)
+        if claim is None:
+            reasons.add(
+                f"goal revision {revision.event_id} references missing opening claim "
+                f"{revision.goal_id}"
+            )
+        elif claim.ticket_id != revision.ticket_id:
+            reasons.add(
+                f"goal revision {revision.event_id} ticket {revision.ticket_id} "
+                f"does not match opening claim {revision.goal_id} ticket {claim.ticket_id}"
+            )
+
+        revision_children.setdefault(revision.replaces, []).append(revision)
+        if revision.replaces == revision.goal_id:
+            continue
+        replaced = revisions_by_id.get(revision.replaces)
+        if replaced is None:
+            reasons.add(
+                f"goal revision {revision.event_id} replaces missing revision "
+                f"{revision.replaces}"
+            )
+        elif replaced.goal_id != revision.goal_id:
+            reasons.add(
+                f"goal revision {revision.event_id} replaces revision "
+                f"{revision.replaces} from goal {replaced.goal_id}, not goal "
+                f"{revision.goal_id}"
+            )
+
+    for replaced_id, children in revision_children.items():
+        if len(children) > 1:
+            child_ids = ", ".join(
+                str(event.event_id) for event in sorted(children, key=_by_id)
+            )
+            reasons.add(
+                f"goal revision fork at {replaced_id}: competing revisions {child_ids}"
+            )
+
+    for revision in goal_revisions:
+        path: list[uuid.UUID] = []
+        positions: dict[uuid.UUID, int] = {}
+        current_id = revision.event_id
+        while current_id != revision.goal_id:
+            current = revisions_by_id.get(current_id)
+            if current is None or current.goal_id != revision.goal_id:
+                break
+            cycle_start = positions.get(current_id)
+            if cycle_start is not None:
+                cycle_ids = sorted(str(event_id) for event_id in path[cycle_start:])
+                reasons.add(
+                    f"goal revision cycle for {revision.goal_id}: "
+                    f"{', '.join(cycle_ids)}"
+                )
+                break
+            positions[current_id] = len(path)
+            path.append(current_id)
+            current_id = current.replaces
+
+    for result in results:
+        for claim_id in sorted(result.closes_claims, key=str):
+            claim = claims_by_id.get(claim_id)
+            if claim is None or not claim.dod_evidence:
+                closed_claims.add(claim_id)
+                continue
+
+            contract_revision = result.contract_revision
+            if contract_revision is None:
+                reasons.add(
+                    f"result {result.event_id} closes contract-bearing goal "
+                    f"{claim_id} without contract_revision"
+                )
+                continue
+            if contract_revision == claim.event_id:
+                closed_claims.add(claim_id)
+                continue
+
+            bound_revision = revisions_by_id.get(contract_revision)
+            if bound_revision is None:
+                other_claim = claims_by_id.get(contract_revision)
+                if other_claim is None:
+                    reasons.add(
+                        f"result {result.event_id} closes contract-bearing goal "
+                        f"{claim_id} with unknown contract_revision "
+                        f"{contract_revision}"
+                    )
+                else:
+                    reasons.add(
+                        f"result {result.event_id} contract_revision "
+                        f"{contract_revision} names opening claim for goal "
+                        f"{other_claim.event_id}, not closing goal {claim_id}"
+                    )
+                continue
+            current_id = bound_revision.event_id
+            visited_revisions: set[uuid.UUID] = set()
+            valid_chain = False
+            while current_id != claim_id:
+                if current_id in visited_revisions:
+                    break
+                visited_revisions.add(current_id)
+                current = revisions_by_id.get(current_id)
+                if (
+                    current is None
+                    or current.goal_id != claim_id
+                    or current.ticket_id != claim.ticket_id
+                ):
+                    break
+                current_id = current.replaces
+            else:
+                valid_chain = True
+
+            if not valid_chain:
+                reasons.add(
+                    f"result {result.event_id} contract_revision "
+                    f"{contract_revision} does not follow a valid revision chain "
+                    f"for closing goal {claim_id} on ticket {claim.ticket_id}"
+                )
+                continue
+            closed_claims.add(claim_id)
 
     questions, invalid_question_refs = _fold_questions(distinct, by_id)
 
@@ -324,6 +461,7 @@ def fold_work_events(
             if isinstance(e, ModelWorkClaimRequested)
             and e.event_id not in closed_claims
         ),
+        goal_revisions=goal_revisions,
         messages=tuple(e for e in distinct if isinstance(e, ModelWorkMessageSent)),
         acks=tuple(e for e in distinct if isinstance(e, ModelWorkMessageAcked)),
         questions=questions,

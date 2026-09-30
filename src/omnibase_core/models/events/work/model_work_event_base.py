@@ -137,6 +137,7 @@ WORK_EVENT_PARTITION_KEY_FIELDS: Mapping[EnumWorkEventKind, str] = MappingProxyT
     {
         # Arbitration domain: total order per ticket, by partition offset.
         EnumWorkEventKind.CLAIM_REQUESTED: "ticket_id",
+        EnumWorkEventKind.GOAL_REVISED: "ticket_id",
         EnumWorkEventKind.CLAIM_RELEASED: "ticket_id",
         # Narrative domain: total order per actor, by partition offset.
         EnumWorkEventKind.RESULT_RECORDED: "actor_key",

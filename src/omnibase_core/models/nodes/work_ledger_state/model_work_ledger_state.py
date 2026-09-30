@@ -16,6 +16,9 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from omnibase_core.models.events.work.model_work_claim_requested import (
     ModelWorkClaimRequested,
 )
+from omnibase_core.models.events.work.model_work_goal_revised import (
+    ModelWorkGoalRevised,
+)
 from omnibase_core.models.events.work.model_work_ledger_epoch_opened import (
     ModelWorkLedgerEpochOpened,
 )
@@ -73,6 +76,13 @@ class ModelWorkLedgerState(BaseModel):
     open_claims: tuple[ModelWorkClaimRequested, ...] = Field(
         default=(),
         description="Claims neither released nor closed, sorted by event_id.",
+    )
+    goal_revisions: tuple[ModelWorkGoalRevised, ...] = Field(
+        default=(),
+        description=(
+            "Every distinct goal revision event in event_id order. The replaces "
+            "links preserve each branch; forks also make the ledger undecided."
+        ),
     )
     messages: tuple[ModelWorkMessageSent, ...] = Field(
         default=(), description="Every message, sorted by event_id."
