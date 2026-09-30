@@ -154,6 +154,34 @@ jobs:
               ;;
           esac
 
+      # OMN-17864 follow-up: the wait driver below used to be invoked by a
+      # workspace-relative path (`python3 scripts/ci/occ_preflight_wait.py`).
+      # That only resolves for omnibase_core's own 41 local
+      # `uses: ./.github/workflows/occ-preflight.yml` callers, where
+      # GITHUB_WORKSPACE already IS the omnibase_core checkout ("Check out PR
+      # head", above). For every EXTERNAL caller, GITHUB_WORKSPACE is the
+      # CALLER's repository, which has no such file -- an unconditional hard
+      # fail (exit 2, "No such file or directory") in ~8s, live-confirmed on
+      # omniclaude#2201 job 104912265991. This checkout fetches the module
+      # into a path OUTSIDE the workspace so it resolves for every caller;
+      # the `hashFiles` guard skips it when the file is already present
+      # locally (omnibase_core's own PRs), so a PR to omnibase_core that
+      # edits this very module continues to test its own edit rather than
+      # silently running the core-ref default instead.
+      - name: Check out omnibase_core (for occ_preflight_wait.py)
+        if: steps.event_scope.outputs.required == 'true' && github.repository != 'OmniNode-ai/onex_change_control' && ! hashFiles('scripts/ci/occ_preflight_wait.py')
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnibase_core
+          # actions/checkout REFUSES a path outside GITHUB_WORKSPACE, so this is
+          # workspace-relative, mirroring the proven .occ-preflight-deps/ checkouts
+          # further down this job. A distinct leaf keeps it from colliding with the
+          # later validator checkout, which cleans the path it is given.
+          path: .occ-preflight-deps/omnibase_core_wait
+          ref: ${{ inputs.core-ref }}
+          fetch-depth: 1
+          persist-credentials: false
+
       # OMN-13762: Dependency-bot PRs (Dependabot, Renovate) are authored by bots
       # that structurally cannot cite a Linear ticket, an Evidence-Source, or an
       # OCC receipt. Detect a trusted dependency-bot author up front from
@@ -161,11 +189,18 @@ jobs:
       # skip the eligibility steps below. The job still concludes `success` (its
       # remaining steps are skipped, not failed), so the
       # `occ-preflight / eligibility` status check passes WITHOUT a skip token.
-      # The allowlist mirrors validator_receipt_gate.DEPENDENCY_BOT_AUTHORS.
+      # Two allowlists, both mirrored from validator_receipt_gate: the first
+      # `case` arm is DEPENDENCY_BOT_AUTHORS (exempt unconditionally); the second
+      # is OCC_WRITER_BOT_AUTHORS, the OCC writer app, exempt ONLY when the
+      # existing pin-only probe (occ_preflight_wait.py --check-no-companion-required)
+      # proves the producer's head-SHA-bound outcome is dependency-pin-only
+      # (OMN-20161). That probe needs occ_preflight_wait.py, so its early
+      # "Check out omnibase_core" step now runs BEFORE this one.
       - name: Detect dependency-bot author (occ-preflight exemption)
         id: bot_exempt
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
@@ -200,6 +235,29 @@ jobs:
           case "$author_login" in
             "dependabot[bot]"|"app/dependabot"|"dependabot"|"renovate[bot]"|"app/renovate"|"renovate")
               exempt="true"
+              ;;
+            "onexbot-occ-writer[bot]"|"app/onexbot-occ-writer"|"onexbot-occ-writer")
+              # OMN-20161: the OCC writer app is exempt ONLY when the producer's
+              # head-SHA-bound outcome says dependency-pin-only. The verdict is
+              # the existing probe's exit status (0 = pin-only); the reason token
+              # is defined once in occ_preflight_wait.py and is not re-spelled
+              # here. Every other shape -- probe failure, absent or unreadable
+              # outcome, MINTED, another reason, another head SHA, a missing
+              # probe file -- leaves exempt=false and the gate exactly as it was.
+              # Nothing in the PR body is read, and this runs before any
+              # Evidence-Source stamp is consulted.
+              if [ -f "$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py" ]; then
+                pin_probe="$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py"
+              else
+                pin_probe="$GITHUB_WORKSPACE/.occ-preflight-deps/omnibase_core_wait/scripts/ci/occ_preflight_wait.py"
+              fi
+              if [ -n "$resolved_pr_num" ] && [ -f "$pin_probe" ] && python3 "$pin_probe" \
+                   --check-no-companion-required \
+                   --repo "$GH_REPO" \
+                   --pr-number "$resolved_pr_num"; then
+                exempt="true"
+                echo "::notice::OCC writer app '${author_login}' authored a dependency-pin-only change (producer outcome bound to this head SHA, OMN-20161); the evidence gate is not applicable."
+              fi
               ;;
           esac
 
@@ -276,34 +334,6 @@ jobs:
             : > /tmp/pr_branch.txt
             : > /tmp/pr_number.txt
           fi
-
-      # OMN-17864 follow-up: the wait driver below used to be invoked by a
-      # workspace-relative path (`python3 scripts/ci/occ_preflight_wait.py`).
-      # That only resolves for omnibase_core's own 41 local
-      # `uses: ./.github/workflows/occ-preflight.yml` callers, where
-      # GITHUB_WORKSPACE already IS the omnibase_core checkout ("Check out PR
-      # head", above). For every EXTERNAL caller, GITHUB_WORKSPACE is the
-      # CALLER's repository, which has no such file -- an unconditional hard
-      # fail (exit 2, "No such file or directory") in ~8s, live-confirmed on
-      # omniclaude#2201 job 104912265991. This checkout fetches the module
-      # into a path OUTSIDE the workspace so it resolves for every caller;
-      # the `hashFiles` guard skips it when the file is already present
-      # locally (omnibase_core's own PRs), so a PR to omnibase_core that
-      # edits this very module continues to test its own edit rather than
-      # silently running the core-ref default instead.
-      - name: Check out omnibase_core (for occ_preflight_wait.py)
-        if: steps.event_scope.outputs.required == 'true' && steps.bot_exempt.outputs.exempt != 'true' && github.repository != 'OmniNode-ai/onex_change_control' && ! hashFiles('scripts/ci/occ_preflight_wait.py')
-        uses: actions/checkout@v7
-        with:
-          repository: OmniNode-ai/omnibase_core
-          # actions/checkout REFUSES a path outside GITHUB_WORKSPACE, so this is
-          # workspace-relative, mirroring the proven .occ-preflight-deps/ checkouts
-          # further down this job. A distinct leaf keeps it from colliding with the
-          # later validator checkout, which cleans the path it is given.
-          path: .occ-preflight-deps/omnibase_core_wait
-          ref: ${{ inputs.core-ref }}
-          fetch-depth: 1
-          persist-credentials: false
 
       # I1: Resolve Evidence-Source to an exact OCC SHA before checkout.
       # I4: OCC fetch failure is a hard FAIL — no fallback to stale/cached evidence.

@@ -124,10 +124,14 @@ _CONTRACT_SHA256_REQUIRED_AFTER = datetime(2026, 4, 30, 0, 0, 0, tzinfo=UTC)
 # change) does not apply. The receipt-gate and occ-preflight reusable workflows
 # short-circuit their evidence steps for these authors, identifying the author
 # from GitHub-verified PR metadata (never from PR body text). This frozenset is
-# the canonical allowlist mirrored by the bash `case` guards in
+# the canonical UNCONDITIONAL allowlist mirrored by the first bash `case` arm in
 # ``.github/workflows/receipt-gate.yml`` and ``.github/workflows/occ-preflight.yml``.
 # Both the gh CLI login form ("app/dependabot") and the raw API/event login form
 # ("dependabot[bot]") are listed because the two surfaces report differently.
+#
+# There are two sets, deliberately. DEPENDENCY_BOT_AUTHORS is exempt always.
+# OCC_WRITER_BOT_AUTHORS (below) is exempt ONLY when the producer's head-SHA-bound
+# outcome proves the PR is dependency-pin-only (OMN-20161).
 DEPENDENCY_BOT_AUTHORS: frozenset[str] = frozenset(
     {
         "dependabot[bot]",
@@ -139,17 +143,43 @@ DEPENDENCY_BOT_AUTHORS: frozenset[str] = frozenset(
     }
 )
 
+# OMN-20161: the OCC writer app (``onexbot-occ-writer``) opens pin-only bump PRs
+# that the autobind producer declines with the dependency-pin-only verdict. It is
+# NOT in DEPENDENCY_BOT_AUTHORS: it also authors PRs that do owe evidence, so it
+# is exempt only when that verdict is proven for the PR's current head SHA. The
+# proof is the existing probe (``occ_preflight_wait.py
+# --check-no-companion-required``) in the workflows and this repo's own outcome
+# reader in ``scripts/ci/check_occ_companion_merged.py``; it is never re-derived
+# or re-spelled here. The three logins are the gh CLI form, the raw API/event
+# form and the bare form. Mirrored by the second `case` arm of each workflow.
+OCC_WRITER_BOT_AUTHORS: frozenset[str] = frozenset(
+    {
+        "onexbot-occ-writer[bot]",
+        "app/onexbot-occ-writer",
+        "onexbot-occ-writer",
+    }
+)
 
-def is_dependency_bot_author(author_login: str | None) -> bool:
-    """Return True when ``author_login`` is a trusted dependency-bot identity.
+
+def is_dependency_bot_author(
+    author_login: str | None, *, pin_only_proven: bool = False
+) -> bool:
+    """Return True when ``author_login`` is exempt from the evidence gates.
 
     Used to decide whether the receipt / OCC evidence gates apply. The match is
-    exact against :data:`DEPENDENCY_BOT_AUTHORS`; a near-miss login (e.g.
-    ``dependabot-fork``) is NOT exempt. ``None``/empty is never exempt.
+    exact; a near-miss login (e.g. ``dependabot-fork``) is NOT exempt.
+    ``None``/empty is never exempt.
+
+    * :data:`DEPENDENCY_BOT_AUTHORS` are exempt regardless of ``pin_only_proven``.
+    * :data:`OCC_WRITER_BOT_AUTHORS` are exempt only when ``pin_only_proven`` is
+      True, i.e. the caller has already obtained the producer's head-SHA-bound
+      dependency-pin-only verdict (OMN-20161). This function never derives it.
     """
     if not author_login:
         return False
-    return author_login in DEPENDENCY_BOT_AUTHORS
+    if author_login in DEPENDENCY_BOT_AUTHORS:
+        return True
+    return pin_only_proven and author_login in OCC_WRITER_BOT_AUTHORS
 
 
 TICKET_PATTERN = re.compile(r"\bOMN-(\d+)\b", re.IGNORECASE)
