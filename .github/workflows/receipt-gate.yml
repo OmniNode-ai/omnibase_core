@@ -591,6 +591,19 @@ jobs:
       # The OMN-16432 target-aware fix that justified the old pin is an
       # ancestor of this one and is retained.
       #
+      # OMN-20132: advanced from a03b10720db3 to the squash commit of
+      # omnibase_core#1748 (d35ae63d3687), the first sha whose ModelDodReceipt
+      # declares tree_sha. At a03b10720db3 the model forbids extra fields, so
+      # any receipt written by current tooling with tree_sha failed verify /
+      # verify with extra_forbidden (omnibase_infra run 36666535806, job
+      # 109732292568). Receipts without tree_sha still validate: the field is
+      # optional. a03b10720db3 is an ancestor of the new ref, so the OMN-19050
+      # supersede-latch fix is retained. Between the two refs the gate's entry
+      # points changed by one file, validator_occ_merge_eligibility.py
+      # (+18/-2); the evidence-commit-binding and receipt-gate CLIs are
+      # byte-identical. tests/ci/test_receipt_gate_validator_pin_omn20132.py
+      # pins the floor.
+      #
       # `ref: main` still cannot be used: main is release-synced and no
       # published release carries the fix. v0.47.20 is the latest, tagged
       # 3afa3528 on 2026-09-20; the fix merged 2026-09-21 and
@@ -609,7 +622,7 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_core
           path: .receipt-gate-deps/omnibase_core
-          ref: a03b10720db364575b0477003da95b46de765950
+          ref: d35ae63d3687c13c006015f1d220749bd6fed87c
           fetch-depth: 1
 
       - name: Install omnibase_core
