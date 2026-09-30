@@ -199,6 +199,28 @@ _DEFERRAL_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Pre-commit prints hook IDs as status-row labels followed by dot padding and
+# a terminal result. These two repository hooks include the marker names in
+# their labels, so literal captured `Passed`/`Skipped` rows are metadata, not
+# evidence that the receipt itself is deferred. Keep this allowlist structural
+# and exact: arbitrary output containing those marker words, failed rows, or
+# extra prose must remain visible to Rule B.
+_PRECOMMIT_TODO_HOOK_STATUS_RE = re.compile(
+    r"^\s*(?:"
+    r"No agent-left TODO/FIXME/HACK markers"
+    r"(?: — COMPUTE/bus \(OMN-13480\))?"
+    r"|No untracked TODO/FIXME/HACK comments"
+    r")\.{2,}(?:Passed|Skipped)\s*$"
+)
+
+
+def _without_precommit_todo_hook_status_rows(text: str) -> str:
+    """Mask only the exact successful pre-commit hook rows listed above."""
+    return "\n".join(
+        "" if _PRECOMMIT_TODO_HOOK_STATUS_RE.fullmatch(line) else line
+        for line in text.splitlines()
+    )
+
 
 def _check_rule_b(receipt: ModelDodReceipt) -> HonestyViolation | None:
     """Rule B: PASS receipt whose proof text contains deferral language.
@@ -215,7 +237,7 @@ def _check_rule_b(receipt: ModelDodReceipt) -> HonestyViolation | None:
         ("probe_stdout", receipt.probe_stdout),
         ("actual_output", receipt.actual_output or ""),
     ):
-        m = _DEFERRAL_RE.search(text)
+        m = _DEFERRAL_RE.search(_without_precommit_todo_hook_status_rows(text))
         if m:
             return HonestyViolation(
                 rule=EnumHonestyRule.PENDING_IN_PASS,
