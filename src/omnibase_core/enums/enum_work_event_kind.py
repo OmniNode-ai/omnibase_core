@@ -20,14 +20,17 @@ from enum import StrEnum, unique
 class EnumWorkEventKind(StrEnum):
     """Work-event kinds, split across two partition-key domains.
 
-    ``CLAIM_REQUESTED`` / ``CLAIM_RELEASED`` are the arbitration domain and
-    partition on ``ticket_id``. Every other kind is the narrative domain and
-    partitions on ``actor_key``. See
+    ``CLAIM_REQUESTED``, ``GOAL_REVISED`` and ``CLAIM_RELEASED`` are the
+    arbitration domain and partition on ``ticket_id``. Every other kind is the
+    narrative domain and partitions on ``actor_key``. See
     ``omnibase_core.models.events.work.WORK_EVENT_PARTITION_KEY_FIELDS``.
     """
 
     CLAIM_REQUESTED = "work.claim.requested"
     """A claimant asks to own a ticket. Arbitrated by partition offset order."""
+
+    GOAL_REVISED = "work.goal.revised"
+    """An append-only replacement contract, linked to the revision it supersedes."""
 
     CLAIM_RELEASED = "work.claim.released"
     """A claimant gives up ownership of a ticket it previously requested."""

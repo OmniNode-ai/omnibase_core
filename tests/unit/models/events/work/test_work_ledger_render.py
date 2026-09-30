@@ -54,6 +54,7 @@ from omnibase_core.models.events.work import (
     ModelWorkCorrectionRecorded,
     ModelWorkEvent,
     ModelWorkFrictionRecorded,
+    ModelWorkGoalRevised,
     ModelWorkHoldPlaced,
     ModelWorkHoldReleased,
     ModelWorkLedgerEpochOpened,
@@ -111,6 +112,7 @@ RULING_ACK_ID = _id(16)
 QUESTION_ID = _id(17)
 WITHDRAWAL_ID = _id(18)
 ANSWER_ID = _id(19)
+GOAL_REVISED_ID = _id(20)
 
 MERGE_SHA = (
     "7e" * 20
@@ -169,6 +171,21 @@ def _claim_release() -> ModelWorkClaimReleased:
         summary="giving the ticket back",
         ticket_id="OMN-16182",
         claim_event_id=CLAIM_ID,
+    )
+
+
+def _goal_revised() -> ModelWorkGoalRevised:
+    return ModelWorkGoalRevised(
+        event_id=GOAL_REVISED_ID,
+        emitted_at=_at(19),
+        actor=_actor("lane-a"),
+        summary="the goal contract changed",
+        ticket_id="OMN-16182",
+        goal_id=CLAIM_ID,
+        dod_evidence=(),
+        contract_schema_version="1.0.0",
+        reason="clarify the acceptance contract",
+        replaces=CLAIM_ID,
     )
 
 
@@ -397,6 +414,7 @@ def _all_events() -> list[ModelWorkEvent]:
         _epoch(),
         _consent(),
         _claim(),
+        _goal_revised(),
         _claim_release(),
         _hold(),
         _lease(),
@@ -438,6 +456,15 @@ GOLDEN: dict[str, str] = {
         "2026-09-24T12:02:00Z | RELEASE | lane=lane-a | re=2026-09-24T12:01:00Z"
         " | ticket=OMN-16182 | re-event=00000000-0000-4000-8000-000000000002"
         f" | {EV}000000000003 | src=typed | giving the ticket back"
+    ),
+    "goal_revised": (
+        "2026-09-24T12:19:00Z | STATUS | lane=lane-a | ticket=OMN-16182"
+        " | goal=00000000-0000-4000-8000-000000000002"
+        " | contract-schema=1.0.0"
+        " | replaces=00000000-0000-4000-8000-000000000002"
+        " | reason=clarify the acceptance contract | dod-evidence=[]"
+        " | event=00000000-0000-4000-8000-000000000020 | src=typed"
+        " | the goal contract changed"
     ),
     "hold": (
         "2026-09-24T12:03:00Z | HOLD | lane=merge-drain-7f"
@@ -559,6 +586,7 @@ GOLDEN: dict[str, str] = {
 FIXTURES = {
     "epoch": _epoch,
     "claim": _claim,
+    "goal_revised": _goal_revised,
     "claim_release": _claim_release,
     "hold": _hold,
     "lease": _lease,
@@ -591,13 +619,14 @@ def test_golden_row_per_kind(name: str) -> None:
 def test_every_kind_has_a_golden_row() -> None:
     kinds = {FIXTURES[name]().kind for name in FIXTURES}
     assert kinds == set(ROW_TYPE_BY_KIND)
-    assert len(ROW_TYPE_BY_KIND) == 15
+    assert len(ROW_TYPE_BY_KIND) == 16
 
 
 def test_row_type_mapping_is_the_plan_table() -> None:
     by_value = {kind.value: row_type for kind, row_type in ROW_TYPE_BY_KIND.items()}
     assert by_value == {
         "work.claim.requested": "CLAIM",
+        "work.goal.revised": "STATUS",
         "work.status.recorded": "STATUS",
         "work.result.recorded": "TERMINAL",
         "work.friction.recorded": "FRICTION",

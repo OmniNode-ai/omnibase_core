@@ -33,6 +33,7 @@ from omnibase_core.models.events.work import (
     ModelWorkClaimRequested,
     ModelWorkCorrectionRecorded,
     ModelWorkEventBase,
+    ModelWorkGoalRevised,
     ModelWorkResultRecorded,
     ModelWorkRulingRecorded,
 )
@@ -370,6 +371,7 @@ def test_narrative_kinds_allow_an_absent_ticket_id() -> None:
 def test_each_model_pins_its_kind() -> None:
     expected = {
         ModelWorkClaimRequested: EnumWorkEventKind.CLAIM_REQUESTED,
+        ModelWorkGoalRevised: EnumWorkEventKind.GOAL_REVISED,
         ModelWorkClaimReleased: EnumWorkEventKind.CLAIM_RELEASED,
         ModelWorkResultRecorded: EnumWorkEventKind.RESULT_RECORDED,
         ModelWorkRulingRecorded: EnumWorkEventKind.RULING_RECORDED,
@@ -492,6 +494,7 @@ def test_summary_rejects_blank() -> None:
 def test_event_kind_values_are_the_registry_event_types() -> None:
     assert {kind.value for kind in EnumWorkEventKind} == {
         "work.claim.requested",
+        "work.goal.revised",
         "work.claim.released",
         "work.result.recorded",
         "work.ruling.recorded",

@@ -23,7 +23,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
@@ -68,14 +67,10 @@ from omnibase_core.models.ticket.model_interface_provided import (
 )
 from omnibase_core.models.ticket.model_requirement import ModelRequirement
 from omnibase_core.models.ticket.model_verification_step import ModelVerificationStep
-from omnibase_core.utils.util_decorators import allow_dict_str_any, allow_string_id
-
-# SemVer pattern (basic only: major.minor.patch, no pre-release or build metadata).
-# Ported from onex_change_control.validation.patterns.SEMVER_PATTERN.
-# Rejects leading zeros per SemVer spec.
-_SEMVER_PATTERN: re.Pattern[str] = re.compile(
-    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$"
+from omnibase_core.utils.util_contract_schema_version import (
+    validate_contract_schema_version,
 )
+from omnibase_core.utils.util_decorators import allow_dict_str_any, allow_string_id
 
 # Security constraints (matching OCC values to prevent DoS)
 _MAX_STRING_LENGTH = 10000
@@ -322,14 +317,7 @@ class ModelTicketContract(BaseModel):
           - Pre-release suffixes (e.g., "1.0.0-alpha")
           - Build metadata (e.g., "1.0.0+build")
         """
-        if not _SEMVER_PATTERN.match(v):
-            msg = (
-                f"schema_version: invalid SemVer format {v!r}. "
-                "Expected major.minor.patch (e.g., '1.0.0'). "
-                "Pre-release suffixes and build metadata are not supported."
-            )
-            raise ValueError(msg)
-        return v
+        return validate_contract_schema_version(v)
 
     @model_validator(mode="after")
     def _validate_interface_constraints(self) -> ModelTicketContract:
