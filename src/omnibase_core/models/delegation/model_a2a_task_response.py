@@ -15,7 +15,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 class ModelA2ATaskResponse(BaseModel):
     """Response from an A2A peer's task submission or poll endpoint."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     remote_task_handle: str
     status: EnumAgentTaskLifecycleType

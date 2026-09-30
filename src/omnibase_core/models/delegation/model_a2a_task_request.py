@@ -14,7 +14,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 class ModelA2ATaskRequest(BaseModel):
     """Request payload for submitting a task to a remote A2A peer."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     skill_ref: str
     input: dict[str, ModelSchemaValue]

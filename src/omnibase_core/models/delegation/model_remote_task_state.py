@@ -23,7 +23,7 @@ class ModelRemoteTaskState(BaseModel):
     Used to resume unfinished remote tasks after service restart.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     task_id: UUID
     invocation_kind: EnumInvocationKind
