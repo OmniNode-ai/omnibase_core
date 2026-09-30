@@ -22,6 +22,18 @@ PR citing the same ticket. :func:`install_pr_scope` reports such an item WARN
 without executing it. Items bound to this PR and items bound to no PR run
 unchanged, and supersession is still decided over the whole contract.
 
+Change-control-tree items (OMN-19384): the autobind producer (omnimarket
+``occ_evidence_stamp.ADMISSIBILITY_VALIDATOR_CHECK_VALUE``) mints
+``dod-occ-evidence-admissibility-validator-pr-<n>`` with the one check
+``uv run pytest tests/test_evidence_admissibility.py -q`` and no cwd. Its
+executor, by the producer's own contract, is the change-control runner in the
+change-control checkout; it states no fact about the product change. That
+id names no repo, so the PR scope above cannot prove a same-number item foreign
+and runs it, and it exits 4 or 5 here on every release, pin-bump and docs PR,
+each then needing a hand supersession. :func:`change_control_tree_only` reports
+such an item WARN when the file it runs is absent from this workspace, and runs
+it unchanged when the file is present.
+
 It runs inside the pinned checker's environment (``uv run`` from that checkout),
 so every other check type executes exactly as the pinned runner executes it.
 
@@ -103,6 +115,34 @@ def pr_binding_outside(item_id: object, *, repo: str, pr_number: int) -> str | N
     return None
 
 
+# The exact check the autobind producer mints for the change-control
+# admissibility validator, and the file it runs (OMN-15247 R21b, OMN-19384).
+_CHANGE_CONTROL_CHECK_VALUE = "uv run pytest tests/test_evidence_admissibility.py -q"
+_CHANGE_CONTROL_TEST_FILE = "tests/test_evidence_admissibility.py"
+
+
+def change_control_tree_only(item: object, workspace: Path) -> bool:
+    """True when an item is the minted change-control check and cannot run here.
+
+    Every check of the item must be that exact ``command``, and the file it
+    runs must be absent from ``workspace``. Anything else, including the same
+    check in a tree that has the file, runs as the pinned runner runs it.
+    """
+    if not isinstance(item, dict):
+        return False
+    checks = item.get("checks")
+    if not isinstance(checks, list) or not checks:
+        return False
+    for check in checks:
+        if not isinstance(check, dict):
+            return False
+        if check.get("check_type") != "command":
+            return False
+        if str(check.get("check_value", "")).strip() != _CHANGE_CONTROL_CHECK_VALUE:
+            return False
+    return not (workspace / _CHANGE_CONTROL_TEST_FILE).is_file()
+
+
 def install_pr_scope(checker: ModuleType) -> None:
     """Wrap the pinned runner's item loop so it executes only this PR's items."""
     run_dod_checks = getattr(checker, "_run_dod_checks", None)
@@ -149,6 +189,18 @@ def install_pr_scope(checker: ModuleType) -> None:
                     f"\n[DoD {item_id}]\n  [~] superseded: {detail}", flush=True
                 )
                 results.append((str(item_id), "superseded", warn, detail))
+                continue
+            if change_control_tree_only(item, Path(workspace)):
+                detail = (
+                    f"NOT RUN HERE -- change-control check ({_CHANGE_CONTROL_TEST_FILE} "
+                    "is absent from this tree); the change-control runner executes it "
+                    "in its own checkout (OMN-19384)."
+                )
+                print(  # noqa: T201 - CI log line
+                    f"\n[DoD {item_id}]\n  [~] change_control_scope: {detail}",
+                    flush=True,
+                )
+                results.append((str(item_id), "change_control_scope", warn, detail))
                 continue
             kept.append(item)
         results.extend(run_dod_checks(kept, workspace, context))

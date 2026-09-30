@@ -236,7 +236,7 @@ def _run_driver(
         json.dumps({"dod_evidence": dod_evidence}), encoding="utf-8"
     )
     workspace = tmp_path / "workspace"
-    workspace.mkdir()
+    workspace.mkdir(exist_ok=True)
     result = subprocess.run(
         [
             sys.executable,
@@ -316,7 +316,7 @@ def test_a_failing_unbound_item_still_blocks(tmp_path: Path) -> None:
     assert result.returncode == 1, result.stdout + result.stderr
 
 
-def test_an_admissibility_item_minted_for_this_pr_still_runs(tmp_path: Path) -> None:
+def test_an_own_pr_echo_item_with_an_occ_id_still_runs(tmp_path: Path) -> None:
     """dod-occ-...-pr-<this pr> names no repo, so it is not provably foreign."""
     own_admissibility = {
         **_FOREIGN_ADMISSIBILITY,
@@ -325,6 +325,55 @@ def test_an_admissibility_item_minted_for_this_pr_still_runs(tmp_path: Path) -> 
     result, ran = _run_driver(tmp_path, [own_admissibility])
     assert result.returncode == 1, result.stdout + result.stderr
     assert ran == ["foreign-ran"]
+
+
+_MINTED_CHECK = "uv run pytest tests/test_evidence_admissibility.py -q"
+
+
+def _minted_admissibility(pr: int) -> dict[str, object]:
+    return {
+        "id": f"dod-occ-evidence-admissibility-validator-pr-{pr}",
+        "description": "Hosted OCC evidence admissibility validator (OMN-15247).",
+        "source": "generated",
+        "checks": [{"check_type": "command", "check_value": _MINTED_CHECK}],
+    }
+
+
+def test_the_minted_change_control_check_is_not_run_in_a_product_tree(
+    tmp_path: Path,
+) -> None:
+    """OMN-19384: the omnibase_core#1818 shape, own-PR minted item, no file here."""
+    result, ran = _run_driver(tmp_path, [_minted_admissibility(PR), _OWN])
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert ran == ["own-ran"]
+    assert "[SUMMARY] OMN-1: 1/2 PASS, 1 WARN, 0 BLOCK" in result.stdout
+    assert "[~] change_control_scope: NOT RUN HERE" in result.stdout
+
+
+def test_the_minted_check_still_runs_where_its_file_exists(tmp_path: Path) -> None:
+    """A tree carrying the file (the change-control checkout) executes it unchanged."""
+    workspace = tmp_path / "workspace"
+    (workspace / "tests").mkdir(parents=True)
+    (workspace / "tests/test_evidence_admissibility.py").write_text(
+        "", encoding="utf-8"
+    )
+    result, _ = _run_driver(tmp_path, [_minted_admissibility(PR)])
+    assert "change_control_scope" not in result.stdout
+    assert "command: Command " in result.stdout
+
+
+def test_an_item_mixing_the_minted_check_with_another_still_runs(
+    tmp_path: Path,
+) -> None:
+    mixed = _minted_admissibility(PR)
+    mixed["checks"] = [
+        {"check_type": "command", "check_value": _MINTED_CHECK},
+        {"check_type": "command", "check_value": "echo mixed-ran >> ran.log"},
+    ]
+    result, ran = _run_driver(tmp_path, [mixed])
+    assert "change_control_scope" not in result.stdout
+    assert ran == ["mixed-ran"]
+    assert result.returncode == 1, result.stdout + result.stderr
 
 
 def test_supersession_by_an_out_of_scope_item_is_still_honoured(
