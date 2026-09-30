@@ -8,6 +8,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "scripts" / "zone_diff_filter.py"
 # Make the package importable in subprocess — mirrors what uv run does.
@@ -49,6 +53,23 @@ def test_mixed_zone_exits_1() -> None:
         "docs-only",
     )
     assert rc == 1
+
+
+@pytest.mark.parametrize(
+    ("diff", "expected"),
+    [
+        ("allowlists/x.yaml", 1),
+        ("docs/x.md,allowlists/x.yaml", 1),
+        ("examples/contracts/x.yaml", 1),
+        ("docs/x.md,examples/contracts/x.yaml", 1),
+        ("docs/x.md,README.md", 0),
+        ("contracts/x.yaml,drift/dod_receipts/x.yaml,.evidence/x.yaml", 0),
+    ],
+)
+def test_docs_only_policy_and_prefix_boundaries(diff: str, expected: int) -> None:
+    assert (
+        _run({"ZONE_DIFF_FILTER_FAKE_DIFF": diff}, "--check", "docs-only") == expected
+    )
 
 
 def test_empty_diff_exits_0() -> None:
@@ -142,3 +163,19 @@ def test_staged_standalone_package_still_rejects_production(tmp_path: Path) -> N
     """Staging must not weaken the verdict — mixed diffs still exit 1."""
     pkg_root = _staged_pkg(tmp_path, init_body="")
     assert _run_with_pkg_root(pkg_root, "README.md,src/omnibase_core/x.py") == 1
+
+
+@pytest.mark.parametrize(
+    ("diff", "expected"),
+    [
+        ("allowlists/x.yaml", 1),
+        ("docs/x.md,allowlists/x.yaml", 1),
+        ("examples/contracts/x.yaml", 1),
+        ("docs/x.md,README.md,contracts/x.yaml,.evidence/x.yaml", 0),
+    ],
+)
+def test_staged_policy_and_prefix_boundaries(
+    tmp_path: Path, diff: str, expected: int
+) -> None:
+    pkg_root = _staged_pkg(tmp_path, init_body="")
+    assert _run_with_pkg_root(pkg_root, diff) == expected
