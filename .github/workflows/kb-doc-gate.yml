@@ -35,6 +35,6 @@ on:
 
 jobs:
   manual-kb-doc-gate:
-    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@6ccd525e2b6390869d18f8e00d1b36294aa5550a
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55
     with:
       mode: diff
