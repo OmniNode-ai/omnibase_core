@@ -1,0 +1,907 @@
+{
+  "schema_version": "1.0.0",
+  "ticket": "OMN-20177",
+  "burn_down_only": true,
+  "count": 99,
+  "by_repo": {
+    "omnibase_core": 1,
+    "omnibase_infra": 21,
+    "omniclaude": 28,
+    "omniintelligence": 14,
+    "omnimarket": 29,
+    "omnimemory": 6
+  },
+  "violations": [
+    {
+      "repo": "omnibase_core",
+      "path": "examples/demo/handlers/support_assistant/handler_local.py",
+      "rule": "env-url-read",
+      "fingerprint": "b2b0dab4eae1b95c046ead89aeefbc563ab6707bce4644b9b6b00fa4c42b44c2",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_core@528514586"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/apply_application_database_acl.py",
+      "rule": "env-url-read",
+      "fingerprint": "fe2d6309b050a187943794b0eccbce5f7633a40a86675356ae08797ef4167821",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/backfill_capabilities.py",
+      "rule": "env-url-read",
+      "fingerprint": "25f463ebde3a6bc0cc21189dea9efa0166da2cc79ab3b3da6043564d45775f16",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/backfill_capabilities.py",
+      "rule": "env-url-read",
+      "fingerprint": "b179edea81e695f92b6058d0fb47160d600ed6aaef6eda7be6e18b173d461373",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/ci/bulk_pr_throttle.py",
+      "rule": "env-url-read",
+      "fingerprint": "4721fee284b57d2a197d83bac63abd52ae6cacf15ac57a5575769d99e57baa75",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/ci/prove_application_database_acl.py",
+      "rule": "env-url-read",
+      "fingerprint": "71b4b5f550bea8d21e9475ce93a68985598028b6862ffad23048c211a159ba54",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/ci/prove_application_database_domain_enforcement.py",
+      "rule": "env-url-read",
+      "fingerprint": "64789802d69062fbe41efae4507751921d6e81a46083e519566fdfa4978153cf",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/ci/prove_tenant_uuid_conversion.py",
+      "rule": "env-url-read",
+      "fingerprint": "3f463fc9b3cbbc03b02239852704a02709bb7360643d218e53ba2cfc3c1cdf62",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/publish_test_failure_baseline.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "64897ca4efd8a1ab95fcd8c22cc00b71f238cddc76df8d367a546a1c2750475b",
+      "reason": "existing url-const-assignment debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "scripts/recompute_measured_pricing.py",
+      "rule": "env-url-read",
+      "fingerprint": "41d239a1d6a88dea191f1d57e61fa2516c945180f4ce002f6ee60b546c94e708",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/cli/infra_test/_helpers.py",
+      "rule": "env-url-read",
+      "fingerprint": "56070f512386f12ea60db323cc1f0c540a80a55f6eefa733d141336968752c64",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/cli/infra_test/introspect.py",
+      "rule": "env-url-read",
+      "fingerprint": "1baf5f256548d442b72c5135bd39e3510aefb368dbe7502869fc24f3b949daf7",
+      "reason": "existing env-url-read debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_llm_completion_effect/handlers/handler_llm_completion.py",
+      "rule": "env-url-read",
+      "fingerprint": "7d4082cae115767821b7777fa11b5829879f692a4ebe47c9b7c0e59b401aafab",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_registration_orchestrator/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "0a0bf907aa4312c885b39af134c4ce7d5b108069d63f8aec7828bd0d5f3e3b9c",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_registration_orchestrator/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "5ab25598f79bf2980dead7e064bf2b9dd1542cdc8789a418f84717c508ee0f62",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_registration_orchestrator/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "ebc234cb00d91226d60395c46f55089fa8fcf894139b7bd4db6f75b656ce8e57",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_runtime_source_attestor_effect/handlers/handler_source_attestation.py",
+      "rule": "url-const-assignment",
+      "fingerprint": "6cd7b1a24ff30ffdff6cf00f435587b349f101e7efc34814869f91f0fb9c5e3d",
+      "reason": "existing url-const-assignment debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_vector_store_effect/handlers/handler_vector_search.py",
+      "rule": "env-url-read",
+      "fingerprint": "b7c81fb4c7ba947104d0a9990be71b3187b48c717420bde5c04d4c407a8eaf2c",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/nodes/node_vector_store_effect/handlers/handler_vector_upsert.py",
+      "rule": "env-url-read",
+      "fingerprint": "60ec65cb7c0ba9d38d32293ea8dbc2f8d6ca79d9e70881758804ddb0fcd12cf9",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/runtime/runtime_host_process.py",
+      "rule": "env-url-read",
+      "fingerprint": "edac8741aef9d3f7d87795c37646c1a3efa3086b5da10e88ce4920c056614e57",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/runtime/service_kernel.py",
+      "rule": "env-url-read",
+      "fingerprint": "79df15f4a22eb2a8f4d71b70d68289fd83201558b0ad740b01bb05889716fc43",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omnibase_infra",
+      "path": "src/omnibase_infra/runtime/util_schema_fingerprint.py",
+      "rule": "env-url-read",
+      "fingerprint": "4b9eabf97afd6f80c36b5f697a80f5f7446ad66ea98714cda018a8d5848e0787",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnibase_infra@b4a8e5171"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/capability_probe.py",
+      "rule": "localhost-literal",
+      "fingerprint": "68daca8c741f269250431815b07f6d2ea22291c9d6696490f1ad83b18ed36ea7",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/capability_probe.py",
+      "rule": "localhost-literal",
+      "fingerprint": "a97f223576e1263a95f5a06f127ceae8f04ab29e3c66ad48a25f6132a0e38215",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/combined_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "c3f525f7e03fdd5b1e938008bf76fa0a216e673b8c94fad033a93b9e6d424398",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/context_injection_wrapper.py",
+      "rule": "localhost-literal",
+      "fingerprint": "73d4a0d005dfd6c7224f1ff84c302eb7c0ce2b9fbb5fb27f8608ae1a18c3a3ce",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/memory_fabric_client.py",
+      "rule": "localhost-literal",
+      "fingerprint": "ab59edb9c3cef20f3d49eb0cc708e5288123f25b2ec35eca024169fa3400893f",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/persona_context_client.py",
+      "rule": "localhost-literal",
+      "fingerprint": "4049c65d72805052df7b31bf26511549d6e9c1106f530c33f31cc1c68d610ead",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/shadow_validation.py",
+      "rule": "localhost-literal",
+      "fingerprint": "bd9283f098dc0c855feff9e2a54cf3face8d78123f7cbffe58a283cdb5a98c34",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/shadow_validation.py",
+      "rule": "localhost-literal",
+      "fingerprint": "c15ef8b79798595df4c4633e6d67b7052b35c6b11052e458eda5503ac9c8c786",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/shadow_validation.py",
+      "rule": "localhost-literal",
+      "fingerprint": "e02396cf2a33141bd7cc1b42391a7966c6ef2e63cceb88c4880b541069e24379",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/skill_suggestion_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "6887c3c802e96a94b80d6f022b1195687fa6752bae9e1e13068d5b875170225c",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/skill_suggestion_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "ef09eff68f529eac2526ef0d0b8299bfcdde9f28e87bfc28a94046e9d11b86d8",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/skill_usage_logger.py",
+      "rule": "env-url-read",
+      "fingerprint": "40da0be25faa239e981929664e948d8128e55c673056620417b6bd4db8830059",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/hooks/lib/skill_usage_logger.py",
+      "rule": "env-url-read",
+      "fingerprint": "bf05354eee02e782e1bd0acc08a312d0e19355128b8399748e1ee99c5ac46396",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_lib/contract_generator/generate_contract.py",
+      "rule": "localhost-literal",
+      "fingerprint": "c74cf32eda7726f6eeaa085e2ad4a319cac1c1ff7596d700daaa9f01534fd996",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_lib/decision_store/semantic_check.py",
+      "rule": "localhost-literal",
+      "fingerprint": "dde8e1e2cd2e6b4ff219f1b2c78fecb1797541bde03c1eef92c37df1fd0125e0",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_lib/status/status.py",
+      "rule": "localhost-literal",
+      "fingerprint": "5435a035f822aee4545c158d6bcc1dbcfac52223cdea74f90785c06291ee6e0d",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/_lib/status/status.py",
+      "rule": "localhost-literal",
+      "fingerprint": "ae7557b39ae3ffb8037e819b8ee0aae99316f407c9838d77b48ac411484e8f0e",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "plugins/onex/skills/system_status/check_database_health/_lib/execute.py",
+      "rule": "localhost-literal",
+      "fingerprint": "5054d71aab4f6bc6f6abc027b80f931c3f1e663eaf06d19ec21f728d0ea665ff",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "scripts/worktree_reaper.py",
+      "rule": "localhost-literal",
+      "fingerprint": "9fde865d752cb1567598a582e7a3ceb173a41c9274598f233ff5e86f1b6a896c",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/lib/skill_suggestion_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "8ead3ef19ad242c96995080cbe2eef294427d0b050be2899643eb562ef59ea72",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/lib/skill_suggestion_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "b41f5ddb0e9a7237d5863596b725471c961e48abb4a58c720fde27b34f2a9dcd",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/lib/skill_usage_logger.py",
+      "rule": "env-url-read",
+      "fingerprint": "44a0f639f8b99e1f4588b4a158205c4a3a43c8bb725c1bc96fefafdad6365aa4",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/lib/skill_usage_logger.py",
+      "rule": "env-url-read",
+      "fingerprint": "d683232c64b7758cf4e661415784c37ffcb02593d5909f678628eb4c40c8f8ae",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/hooks/spool_drain.py",
+      "rule": "env-url-read",
+      "fingerprint": "727111c57d2541ca2b08c99d4db48a416c8686a55411b5b0701bd797f1caa38a",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/core/manifest_injector.py",
+      "rule": "env-url-read",
+      "fingerprint": "73c4b2ee9a5520c0d52a525528e111e14b2fd50713ef63e84a50f1c804145f19",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/core/manifest_injector.py",
+      "rule": "localhost-literal",
+      "fingerprint": "e3bd05c6f169e9150187719ac3a36adae71a0a873e2ab54372174c39be82e988",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/lib/utils/validator_quality.py",
+      "rule": "localhost-literal",
+      "fingerprint": "89384e0e5ab54b56033694ba7d5217cf31b53a179413e84dd9e28a5cd768e68e",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniclaude",
+      "path": "src/omniclaude/verification/local_verifier.py",
+      "rule": "env-url-read",
+      "fingerprint": "b584966b2beae322cec93f756f0d7d9e741432697c7a952090753a8cd831b78d",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniclaude@b9c212eb0"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/backfill_episodes.py",
+      "rule": "env-url-read",
+      "fingerprint": "e3209888319933d739b84175ff53b0c98d784bee9245a717073edef1a518b2c8",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "scripts/migration/apply_migrations.py",
+      "rule": "env-url-read",
+      "fingerprint": "609902623df1033caf5b0ff6d9091d4bc1c7ad3993673248994daf60d32c27c6",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/api/app.py",
+      "rule": "env-url-read",
+      "fingerprint": "cf1399cf62dfe2b659e9d4e2fb4851be9d9dca0e5ee8401d4ba2fe8b21c5383d",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/bloom_eval_cli/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "554340a786fd5962f2600fe87577d388f71f6459cb421a7d9498d4553c5ccedb",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/bloom_eval_cli/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "ddd2504580b6b52f64be3ce16035db4dd696600cb718734c6a789359ebf05e28",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/code_projection/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "41c4e85ebd21304b7d505d79eded4015a08d89dcb8e1c8c2b00d083b2f1f4014",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/code_projection/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "b2550f89de84186dbe3e7ee5c833a78835d660ed54c4407fe929fa9e3e279bba",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/code_projection/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "ec7fb3686a38b39a756431f51de4c05fd9aba12ec6f1fcf186d7a391fa72edbf",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/decision_store/__main__.py",
+      "rule": "env-url-read",
+      "fingerprint": "2b4ea7b375f7c403d9dba699e51fe75302b992a66dd917a911ce553321a98377",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/rl/data_sources/postgres_source.py",
+      "rule": "env-url-read",
+      "fingerprint": "d8214672a5a5095c44215bedb3a3fbffe59ac3d8dd9ecb99d360e21d8d3521f3",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/runtime/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "3c453a8d7a2c93ae923cd88b2c1058173961ad82867742ca4ad5cd69711a3ae7",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/runtime/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "57b76c014de60c799ba0fbdcc1b7c53ee18533ee6361bc19909ad73218ce08e7",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/runtime/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "61eb01b68fc110e92e5ee22fa09f9d2f4be402f474bd410eb69ebe6129cab834",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omniintelligence",
+      "path": "src/omniintelligence/runtime/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "adedfa808d4e61a5642d5592a602728b5ccbc11a1e79b19627dcbff3b13e39b2",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omniintelligence@21615a0d"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/ci/install_canary/run_install_canary.py",
+      "rule": "localhost-literal",
+      "fingerprint": "0593721c801a7265bac652b6382078d4df90acc7332747dada75e3831c77e204",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/ci/install_canary/run_install_canary.py",
+      "rule": "localhost-literal",
+      "fingerprint": "e7604c3ce21a668554a89c40555a0b2a7feec68d6bb2c2cda30886cb8f0e91a5",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/generation/drive_validator_generation.py",
+      "rule": "localhost-literal",
+      "fingerprint": "017f89587c836e71584688632475c2725b3173c3d1a9430e2630b92ec8075f08",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/lane_liveness_reader.py",
+      "rule": "env-url-read",
+      "fingerprint": "a04cc6cea45e47176d305db4ab3a681a70c968621d897bd0ef298ebdac507680",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/verify_omn15359_ac3_replay.py",
+      "rule": "env-url-read",
+      "fingerprint": "841a3274cbd98ecb0dffa461f79546815507540f1be021531aa069564220abee",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/verify_omn15359_ac3_replay.py",
+      "rule": "env-url-read",
+      "fingerprint": "be11236389da82d26b140e65ab3e1016fc5cc090dc1f4a7e17b53d7888f27870",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "scripts/verify_omn15359_ac3_replay.py",
+      "rule": "env-url-read",
+      "fingerprint": "f82299adbe9c6d362835df5e43779045829525995b12264a96b6e055f83a2bb1",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/adapters/asyncpg_adapter.py",
+      "rule": "env-url-read",
+      "fingerprint": "2da251c5ae69d14373e66f5534c105aa2b5db6502f49dc6ccf6debae804be63d",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/cli/commands/trace.py",
+      "rule": "env-url-read",
+      "fingerprint": "05ae73ea1254407e63494aa6c9ae50d35138ef9d14886cd2265beb944e444c7d",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/inference/bridge_config_loader.py",
+      "rule": "env-url-read",
+      "fingerprint": "84495663b5482e1147ab509a65d8da28f07ee6a6e04935821bc855f454e39db4",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_data_verification/handlers/datasource_postgres.py",
+      "rule": "env-url-read",
+      "fingerprint": "37bb4a8407b9d0bca4dfcf7dadce5491fb4504badd4267504bc4ef6a330ab595",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_decision_store_orchestrator/adapters/postgres_decision_store.py",
+      "rule": "env-url-read",
+      "fingerprint": "24c0df8d15181308cdb13f1b96f7bc1281077387e1a204c03b31f34dc75684fb",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_drift_detector/handlers/handler_demo_drift_detector.py",
+      "rule": "env-url-read",
+      "fingerprint": "66d079701b36d4fcd62edc9293af93fbfe3797d0af0754db407e414318cb5443",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_drift_detector/handlers/handler_demo_drift_detector.py",
+      "rule": "localhost-literal",
+      "fingerprint": "a6dad38530b19a3878373a86334c626bd393c1c3c78bc93e611bc804aa94f4a9",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_rehearsal/handlers/handler_demo_rehearsal.py",
+      "rule": "localhost-literal",
+      "fingerprint": "3fd0ce5fcbdc25599a8d0a69086519cf41787df1777eb9422c7509142f395b19",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_demo_rehearsal/handlers/handler_demo_rehearsal.py",
+      "rule": "env-url-read",
+      "fingerprint": "a33340b57b42089c79fa65ecd468b0acc78125ad0d7f50a106a1ded054523d88",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_generation_consumer/validator_corpora/corpus_hardcoded_localhost_url.py",
+      "rule": "localhost-literal",
+      "fingerprint": "01a5667b1dd994371b8b407066d4ff868fafc2b19b1eefb5233550320d03e700",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_generation_consumer/validator_corpora/corpus_hardcoded_localhost_url.py",
+      "rule": "localhost-literal",
+      "fingerprint": "45fbb8fe22edad5e649c02252603301a652087661e8be9773e2b72c773ef513d",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_generation_consumer/validator_corpora/corpus_hardcoded_localhost_url.py",
+      "rule": "localhost-literal",
+      "fingerprint": "53e9e503ce36a1e7d8ce4692ab3d48a68b2759dfd5a1cecdb71d034e72cf668f",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_generation_consumer/validator_corpora/corpus_hardcoded_localhost_url.py",
+      "rule": "localhost-literal",
+      "fingerprint": "8eed904bf58f15311baf81a7821d464ca3f57983e6b655895cfe487b28660ea1",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_generation_consumer/validator_corpora/corpus_hardcoded_localhost_url.py",
+      "rule": "localhost-literal",
+      "fingerprint": "a6bd85b2ef3881ef81380e106f20e124b98c638a1b09274cb9f5071fba3d2ed5",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_generation_consumer/validator_corpora/corpus_hardcoded_localhost_url.py",
+      "rule": "localhost-literal",
+      "fingerprint": "a9593310dc20cb3ad0134303880c7494f443c56e39eb51a6c233ebc4711b4d0e",
+      "reason": "existing localhost-literal debt the repo never ran against (its CI pinned an omnibase_core older than the rule); seeded at the OMN-20177 pin bump",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_house_routing_overlay_effect/handlers/handler_house_routing_overlay_write.py",
+      "rule": "env-url-read",
+      "fingerprint": "33aa15bb4666ee492e376b569414345938b551539f2fc95095803459fc8f9fae",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/nodes/node_swarm_fleet_discovery_effect/handlers/handler_swarm_fleet_discovery.py",
+      "rule": "env-url-read",
+      "fingerprint": "ae0a08e881a4234df4ce4fa1a28ad8120240470cdfe5702dd40b2231d36d5e5d",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/routing/dod_overlay.py",
+      "rule": "env-url-read",
+      "fingerprint": "4332c8abc28572ef7be59f237d10786feaf42ff71973eb0a4fadec4b0f2414c8",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/routing/dod_overlay.py",
+      "rule": "env-url-read",
+      "fingerprint": "88115e9494e6c505986a741df316832a580c5c46b5e8f0571c015d4299b5f735",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/routing/dod_overlay.py",
+      "rule": "env-url-read",
+      "fingerprint": "934a1f563e701418745f2782d4ae971036c0ea58323faee74661836fc579d0bc",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/routing/roi_overlay.py",
+      "rule": "env-url-read",
+      "fingerprint": "eadd3657cc0e007c3f1905b3fd2b8fe933ea4057236d0194c5fa365a3e6166a3",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimarket",
+      "path": "src/omnimarket/routing/tenant_overlay_resolver.py",
+      "rule": "env-url-read",
+      "fingerprint": "cdaddd3bcf0fd6d2d915313c5d15f7d9842620d033ffc35ea0acbf096120520a",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimarket@39fe015da"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/nodes/node_navigation_history_reducer/handlers/handler_navigation_history_reducer.py",
+      "rule": "env-url-read",
+      "fingerprint": "ee572355b36c52b9febea036f05506ede164a0c6f21a8f7476b3019727b9b6a9",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimemory@bb3514b"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/runtime/dispatch_handlers.py",
+      "rule": "env-url-read",
+      "fingerprint": "a61c9e1441128199eada146b7758316b63d63882c0cb3b1fbded110221b31a14",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimemory@bb3514b"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/runtime/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "8a163d60bee0615f80607a208c48b97c2f3d410206cb10295ad3c01be8a658ee",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimemory@bb3514b"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/runtime/plugin.py",
+      "rule": "env-url-read",
+      "fingerprint": "fec33dcc22d1cdb6c8fb9f8f9185390acb7d706cd0fa3e45fa3e03d830b32687",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimemory@bb3514b"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/settings.py",
+      "rule": "env-url-read",
+      "fingerprint": "3bd1e58232fcd36dec7098069d2bab74527238dea2c403143c1c90789978d1c7",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimemory@bb3514b"
+    },
+    {
+      "repo": "omnimemory",
+      "path": "src/omnimemory/settings.py",
+      "rule": "env-url-read",
+      "fingerprint": "d125e6b94d2bcd2206eec71d350be3479c337ca6e44b441ec95b01b3e3ae1f9e",
+      "reason": "matcher widened by OMN-20177 (AST env read: DSN suffix, os.getenv, from-os import, key held in a constant)",
+      "owner_ticket": "OMN-12803",
+      "seeded_at": "omnimemory@bb3514b"
+    }
+  ]
+}

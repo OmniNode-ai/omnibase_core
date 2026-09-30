@@ -1359,3 +1359,170 @@ class TestIntegrationCatalogStructure:
         assert "linear.graphql_api" in ids, (
             "linear.graphql_api entry missing from external_apis."
         )
+
+
+# ---------------------------------------------------------------------------
+# OMN-20177: AST env-read pass (DSN suffix, os.getenv, from-os imports,
+# key held in a string constant)
+# ---------------------------------------------------------------------------
+
+
+def _env_rules(src: str, path: str = "src/pkg/a.py") -> list[str]:
+    return [v.rule for v in scan_source("r", path, textwrap.dedent(src))]
+
+
+@pytest.mark.unit
+class TestAstEnvUrlRead:
+    def test_omn20154_dsn_key_held_in_module_constant_detected(self) -> None:
+        """The omnimarket#3134 shape: the key lives in a constant, the read is
+        ``os.environ.get(<constant>, "")``. The line regex passed it."""
+        src = """\
+            import os
+
+            _ENV_DSN = "OMNIDASH_ANALYTICS_DB_URL"
+
+
+            def resolve_provider_quota_reader():
+                dsn = os.environ.get(_ENV_DSN, "").strip()
+                return dsn or None
+            """
+        vs = scan_source(
+            "omnimarket",
+            "src/omnimarket/inference/provider_quota_state.py",
+            textwrap.dedent(src),
+        )
+        assert [(v.rule, v.line) for v in vs] == [(RULE_ENV_URL_READ, 7)]
+        assert vs[0].snippet == 'dsn = os.environ.get(_ENV_DSN, "").strip()'
+
+    @pytest.mark.parametrize(
+        "src",
+        [
+            'import os\nx = os.getenv("REDIS_URL")\n',
+            'import os\nx = os.environ["POSTGRES_DSN"]\n',
+            'import os\nx = os.environ.get("DSN")\n',
+            'import os\nx = os.getenv("ANALYTICS_DB_URL", "")\n',
+            'import os as _os\nx = _os.environ.get("DATABASE_URL")\n',
+            'from os import environ\nx = environ["INGEST_ENDPOINT"]\n',
+            'from os import environ as E\nK = "X_ENDPOINT"\nx = E.get(K)\n',
+            'from os import getenv\nK: str = "BUS_DSN"\nx = getenv(K)\n',
+            (
+                "import os\nclass C:\n    KEY = 'A_DB_URL'\n"
+                "    def f(self):\n        return os.environ.get(self.KEY)\n"
+            ),
+        ],
+    )
+    def test_url_shaped_env_read_detected(self, src: str) -> None:
+        assert _env_rules(src) == [RULE_ENV_URL_READ]
+
+    @pytest.mark.parametrize(
+        "src",
+        [
+            'import os\nK = "OPENAI_API_KEY"\nx = os.environ.get(K)\n',
+            'import os\nx = os.getenv("BIFROST_CONTRACT_PATH")\n',
+            'import os\nx = os.getenv("URL_TIMEOUT_SECONDS")\n',
+            'import os\nx = os.getenv("DSN_POOL_SIZE")\n',
+            'import os\nK = "X_DB_URL"\nos.environ[K] = "set-by-bootstrap"\n',
+            "import os\nx = os.environ.get(compute_key())\n",
+            # No os import at all: a same-named local helper is not an env read.
+            'K = "X_DB_URL"\nx = environ.get(K)\n',
+        ],
+    )
+    def test_non_url_env_read_or_non_env_not_detected(self, src: str) -> None:
+        assert _env_rules(src) == []
+
+    def test_suppression_annotation_clears_ast_finding(self) -> None:
+        src = (
+            'import os\n_K = "X_DSN"\n'
+            "x = os.environ.get(_K)  # url-authority-ok: bootstrap seam\n"
+        )
+        assert _env_rules(src) == []
+
+    def test_test_path_not_scanned(self) -> None:
+        src = 'import os\n_K = "X_DSN"\nx = os.environ.get(_K)\n'
+        assert _env_rules(src, path="tests/unit/test_a.py") == []
+
+    def test_unparseable_file_falls_back_to_regex(self) -> None:
+        src = 'import os\nx = os.environ["A_URL"]\ndef broken(:\n'
+        assert _env_rules(src) == [RULE_ENV_URL_READ]
+
+    def test_fingerprint_matches_regex_path_for_literal_reads(self) -> None:
+        """A literal read the regex already caught keeps its fingerprint, so
+        widening the matcher does not churn grandfathered baseline entries."""
+        src = 'import os\nx = os.environ.get("A_SERVICE_URL")\n'
+        (v,) = scan_source("r", "src/pkg/a.py", src)
+        assert v.fingerprint == make_fingerprint(
+            "r", "src/pkg/a.py", 'x = os.environ.get("A_SERVICE_URL")'
+        )
+
+
+@pytest.mark.unit
+class TestWideningSeedBaseline:
+    """OMN-20177: the widening seed sits beside the primary baseline."""
+
+    def _write(self, path: Path, fps: list[str]) -> None:
+        path.write_text(
+            json.dumps({"violations": [{"repo": "r", "fingerprint": f} for f in fps]}),
+            encoding="utf-8",
+        )
+
+    def test_seed_fingerprints_grandfather_in_cli(self, tmp_path: Path) -> None:
+        from omnibase_core.validation.validator_url_authority import (
+            _WIDENING_BASELINE_NAME,
+            main,
+        )
+
+        repo = tmp_path / "repo"
+        (repo / "src").mkdir(parents=True)
+        src = 'import os\n_K = "X_DSN"\nx = os.environ.get(_K)\n'
+        (repo / "src" / "a.py").write_text(src, encoding="utf-8")
+        primary = tmp_path / "b" / "url_authority_baseline.json"
+        primary.parent.mkdir()
+        self._write(primary, [])
+        args = ["--all", "--repo", "r", "--repo-root", str(repo)]
+        assert main([*args, "--baseline", str(primary)]) == 1
+        fp = make_fingerprint("r", "src/a.py", "x = os.environ.get(_K)")
+        self._write(primary.parent / _WIDENING_BASELINE_NAME, [fp])
+        assert main([*args, "--baseline", str(primary)]) == 0
+
+    def test_update_baseline_does_not_pull_seed_into_primary(
+        self, tmp_path: Path
+    ) -> None:
+        from omnibase_core.validation.validator_url_authority import (
+            _WIDENING_BASELINE_NAME,
+            main,
+        )
+
+        repo = tmp_path / "repo"
+        (repo / "src").mkdir(parents=True)
+        (repo / "src" / "a.py").write_text(
+            'import os\nx = os.getenv("A_DB_URL")\n', encoding="utf-8"
+        )
+        primary = tmp_path / "b" / "url_authority_baseline.json"
+        primary.parent.mkdir()
+        self._write(primary, [])
+        fp = make_fingerprint("r", "src/a.py", 'x = os.getenv("A_DB_URL")')
+        self._write(primary.parent / _WIDENING_BASELINE_NAME, [fp])
+        rc = main(
+            [
+                "--update-baseline",
+                "--repo",
+                "r",
+                "--repo-root",
+                str(repo),
+                "--baseline",
+                str(primary),
+            ]
+        )
+        assert rc == 0
+        written = json.loads(primary.read_text(encoding="utf-8"))
+        assert written["violations"] == []
+
+    def test_committed_seed_entries_carry_reason_and_owner(self) -> None:
+        from omnibase_core.validation import validator_url_authority as mod
+
+        seed = mod._DEFAULT_BASELINE.parent / mod._WIDENING_BASELINE_NAME
+        doc = json.loads(seed.read_text(encoding="utf-8"))
+        assert doc["count"] == len(doc["violations"])
+        for entry in doc["violations"]:
+            assert entry["reason"] and entry["owner_ticket"]
+            assert entry["rule"] != RULE_MSK_DIRECT_BROKER

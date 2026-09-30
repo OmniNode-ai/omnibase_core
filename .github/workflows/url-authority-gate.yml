@@ -129,3 +129,51 @@ jobs:
               f"{len(head_all)} total (<= prior {len(prior_all)})."
           )
           PY
+
+      # OMN-20177: the widening seed is burn-down only from the commit that
+      # introduced it. Every entry names its reason and owning ticket, and a
+      # rule-5 (msk-direct-broker-endpoint) entry is refused outright: that
+      # rule is not suppressible, so it cannot be grandfathered either.
+      - name: Assert widening seed did not grow (OMN-20177)
+        run: |
+          uv run python - <<'PY'
+          import json
+          import subprocess
+          import sys
+          from pathlib import Path
+
+          seed = Path(
+              "src/omnibase_core/validation/baselines/widening_url_authority_baseline.json"
+          )
+          head = json.loads(seed.read_text())
+          bad = [
+              e for e in head["violations"]
+              if not e.get("reason") or not e.get("owner_ticket")
+              or e.get("rule") == "msk-direct-broker-endpoint"
+          ]
+          if bad:
+              sys.stderr.write(
+                  "URL-AUTHORITY WIDENING SEED INVALID: "
+                  f"{len(bad)} entr(y|ies) lack reason/owner_ticket or carry the "
+                  f"non-suppressible msk rule: {bad[:3]}\n"
+              )
+              sys.exit(1)
+          head_all = {e["fingerprint"] for e in head["violations"]}
+          base_ref = "origin/${{ github.base_ref || 'dev' }}"
+          try:
+              prior = json.loads(
+                  subprocess.check_output(["git", "show", f"{base_ref}:{seed}"], text=True)
+              )
+          except subprocess.CalledProcessError:
+              print(f"URL-AUTHORITY WIDENING SEED OK (initial): {len(head_all)} entries.")
+              sys.exit(0)
+          grew = head_all - {e["fingerprint"] for e in prior["violations"]}
+          if grew:
+              sys.stderr.write(
+                  "URL-AUTHORITY WIDENING SEED GREW: "
+                  f"{len(grew)} fingerprint(s) added. It is burn-down only; fix the "
+                  "read or annotate it with # url-authority-ok: <reason>.\n"
+              )
+              sys.exit(1)
+          print(f"URL-AUTHORITY WIDENING SEED OK: {len(head_all)} entries.")
+          PY
