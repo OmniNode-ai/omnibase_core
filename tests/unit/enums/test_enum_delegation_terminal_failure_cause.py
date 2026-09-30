@@ -38,6 +38,10 @@ GATE_DECIDED_WIRE_VALUE = "quality_gate_refused"
 TIMEOUT_WIRE_VALUE = "timeout"
 NO_TERMINAL_WIRE_VALUE = "no_terminal"
 
+# OMN-20117: the wire value for a run whose runtime shut down under it, spelled
+# as a literal for the same reason as the values above.
+RUNTIME_SHUTDOWN_WIRE_VALUE = "runtime_shutdown"
+
 # Every member and the exact wire string it serialises to. Adding a member here
 # is deliberate: this constant is what makes a silent vocabulary change fail.
 EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
@@ -47,6 +51,14 @@ EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
     EnumDelegationTerminalFailureCause.QUALITY_GATE_REFUSED: "quality_gate_refused",
     EnumDelegationTerminalFailureCause.TIMEOUT: TIMEOUT_WIRE_VALUE,
     EnumDelegationTerminalFailureCause.NO_TERMINAL: NO_TERMINAL_WIRE_VALUE,
+}
+
+# Every wire value the vocabulary carries. RUNTIME_SHUTDOWN_WIRE_VALUE is added
+# as a literal rather than as a member key above, so its absence fails the
+# vocabulary test instead of the module import.
+EXPECTED_WIRE_VALUES: set[str] = {
+    *EXPECTED_MEMBERS.values(),
+    RUNTIME_SHUTDOWN_WIRE_VALUE,
 }
 
 
@@ -83,7 +95,9 @@ class TestEnumDelegationTerminalFailureCause:
         Guards the direction the parametrized tests cannot: they prove every
         expected member is present, this proves no unexpected one is.
         """
-        assert set(EnumDelegationTerminalFailureCause) == set(EXPECTED_MEMBERS)
+        assert {
+            member.value for member in EnumDelegationTerminalFailureCause
+        } == EXPECTED_WIRE_VALUES
 
     def test_causes_are_mutually_distinct(self) -> None:
         """Auth, quota and generic provider failures are three separate facts.
@@ -176,6 +190,28 @@ class TestEnumDelegationTerminalFailureCause:
         assert no_terminal not in provider_causes
         assert not timeout.value.startswith("provider_")
         assert not no_terminal.value.startswith("provider_")
+
+    def test_a_run_cut_off_by_its_runtime_shutting_down_has_a_member(self) -> None:
+        """OMN-20117: a redeploy can land while a delegation is in flight.
+
+        Measured on the .201 dev lane on 2026-09-29: a collaborator's delegate
+        request arrived one second before the deploy agent recreated every
+        runtime container, and the caller waited out its 300 s window with no
+        terminal at all. The handler that was cut off can now answer its
+        cancellation, and it needs a cause that names what decided the run: the
+        runtime stopping under it. Not ``TIMEOUT`` (the run's own budget did not
+        run out), not ``NO_TERMINAL`` (the run does report itself), and not a
+        provider cause (no provider was at fault).
+        """
+        shutdown = EnumDelegationTerminalFailureCause(RUNTIME_SHUTDOWN_WIRE_VALUE)
+        provider_causes = {
+            EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED,
+            EnumDelegationTerminalFailureCause.AUTH_FAILED,
+            EnumDelegationTerminalFailureCause.PROVIDER_ERROR,
+        }
+        assert shutdown not in provider_causes
+        assert shutdown is not EnumDelegationTerminalFailureCause.TIMEOUT
+        assert shutdown is not EnumDelegationTerminalFailureCause.NO_TERMINAL
 
     def test_enum_is_a_string_enum(self) -> None:
         """Members must be ``str`` so they serialise without a custom encoder."""

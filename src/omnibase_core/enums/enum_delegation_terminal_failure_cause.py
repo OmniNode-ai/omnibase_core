@@ -89,5 +89,19 @@ class EnumDelegationTerminalFailureCause(str, Enum):
     the terminal itself never arrived.
     """
 
+    RUNTIME_SHUTDOWN = "runtime_shutdown"
+    """The runtime running the handler shut down before the run finished.
+
+    Emitted by the handler when a redeploy, restart or stop cancels it while
+    the delegation is still in flight (OMN-20117), so the caller is told the
+    run was cut off instead of waiting out its window for a terminal that will
+    never come. Measured on the .201 dev lane on 2026-09-29: a request arrived
+    one second before the deploy agent recreated every runtime container, and
+    its caller waited 300 s for nothing. Distinct from ``TIMEOUT``, because the
+    run's own budget did not run out; from ``NO_TERMINAL``, because the run
+    does report itself; and from every provider member, because no provider
+    was at fault. The run can be retried as is.
+    """
+
 
 __all__: list[str] = ["EnumDelegationTerminalFailureCause"]
