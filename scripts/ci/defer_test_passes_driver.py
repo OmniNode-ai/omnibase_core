@@ -22,17 +22,17 @@ PR citing the same ticket. :func:`install_pr_scope` reports such an item WARN
 without executing it. Items bound to this PR and items bound to no PR run
 unchanged, and supersession is still decided over the whole contract.
 
-Change-control-tree items (OMN-19384): the autobind producer (omnimarket
-``occ_evidence_stamp.ADMISSIBILITY_VALIDATOR_CHECK_VALUE``) mints
-``dod-occ-evidence-admissibility-validator-pr-<n>`` with the one check
-``uv run pytest tests/test_evidence_admissibility.py -q`` and no cwd. Its
-executor, by the producer's own contract, is the change-control runner in the
-change-control checkout; it states no fact about the product change. That
-id names no repo, so the PR scope above cannot prove a same-number item foreign
-and runs it, and it exits 4 or 5 here on every release, pin-bump and docs PR,
-each then needing a hand supersession. :func:`change_control_tree_only` reports
-such an item WARN when the file it runs is absent from this workspace, and runs
-it unchanged when the file is present.
+Repo scope (OMN-19384): a check whose ``cwd`` is ``${OMNI_HOME}/<repo>``
+declares the repo it runs in. The autobind producer mints the change-control
+admissibility validator (``uv run pytest tests/test_evidence_admissibility.py
+-q``, a file only onex_change_control has) with
+``cwd: ${OMNI_HOME}/onex_change_control``, and the behaviour-proof item with its
+own product repo. The pinned runner ignores ``cwd`` and would run such an item
+in this checkout, where it exits 4 or 5 and BLOCKs. :func:`declared_repo_outside`
+reports an item whose every check declares one other repo as not this repo's
+item: it is neither run nor counted, and the log says so. An item that declares
+no repo runs exactly as before, so a test file missing from this repo still
+fails here.
 
 It runs inside the pinned checker's environment (``uv run`` from that checkout),
 so every other check type executes exactly as the pinned runner executes it.
@@ -115,32 +115,38 @@ def pr_binding_outside(item_id: object, *, repo: str, pr_number: int) -> str | N
     return None
 
 
-# The exact check the autobind producer mints for the change-control
-# admissibility validator, and the file it runs (OMN-15247 R21b, OMN-19384).
-_CHANGE_CONTROL_CHECK_VALUE = "uv run pytest tests/test_evidence_admissibility.py -q"
-_CHANGE_CONTROL_TEST_FILE = "tests/test_evidence_admissibility.py"
+# A check's ``cwd`` of ``${OMNI_HOME}/<repo>[/<path>]`` names the repo checkout
+# it runs in (``ModelDodCheck.cwd``; the producer's ``behavior_proof_cwd`` and
+# ``ADMISSIBILITY_VALIDATOR_CWD``).
+_DECLARED_REPO_CWD = re.compile(r"^\$\{OMNI_HOME\}/(?P<repo>[^/$]+)(?:/|$)")
 
 
-def change_control_tree_only(item: object, workspace: Path) -> bool:
-    """True when an item is the minted change-control check and cannot run here.
+def declared_repo_outside(item: object, *, repo: str) -> str | None:
+    """Name the other repo an item declares it runs in, or None.
 
-    Every check of the item must be that exact ``command``, and the file it
-    runs must be absent from ``workspace``. Anything else, including the same
-    check in a tree that has the file, runs as the pinned runner runs it.
+    Every check must declare ``cwd: ${OMNI_HOME}/<repo>`` and all must name the
+    same repo, and that repo must differ from this one (``owner/name``). An item
+    with any check that declares no repo, or that names this repo, returns None
+    and runs.
     """
     if not isinstance(item, dict):
-        return False
+        return None
     checks = item.get("checks")
     if not isinstance(checks, list) or not checks:
-        return False
+        return None
+    declared: set[str] = set()
     for check in checks:
-        if not isinstance(check, dict):
-            return False
-        if check.get("check_type") != "command":
-            return False
-        if str(check.get("check_value", "")).strip() != _CHANGE_CONTROL_CHECK_VALUE:
-            return False
-    return not (workspace / _CHANGE_CONTROL_TEST_FILE).is_file()
+        cwd = check.get("cwd") if isinstance(check, dict) else None
+        match = _DECLARED_REPO_CWD.match(cwd.strip()) if isinstance(cwd, str) else None
+        if match is None:
+            return None
+        declared.add(match["repo"])
+    if len(declared) != 1:
+        return None
+    owner = declared.pop()
+    if owner == repo.rpartition("/")[2]:
+        return None
+    return owner
 
 
 def install_pr_scope(checker: ModuleType) -> None:
@@ -166,6 +172,16 @@ def install_pr_scope(checker: ModuleType) -> None:
         for item in dod_evidence:
             item_id = item.get("id") if isinstance(item, dict) else None
             other = pr_binding_outside(item_id, repo=repo, pr_number=pr_number)
+            owner = declared_repo_outside(item, repo=repo)
+            if other is None and owner is not None:
+                print(  # noqa: T201 - CI log line
+                    f"\n[DoD {item_id}]\n  [~] repo_scope: NOT THIS REPO'S ITEM -- "
+                    f"its checks declare cwd ${{OMNI_HOME}}/{owner}, not {repo}; "
+                    f"{owner}'s own compliance run executes it. Not run and not "
+                    "counted here.",
+                    flush=True,
+                )
+                continue
             if other is None:
                 in_scope.append(item)
                 continue
@@ -189,18 +205,6 @@ def install_pr_scope(checker: ModuleType) -> None:
                     f"\n[DoD {item_id}]\n  [~] superseded: {detail}", flush=True
                 )
                 results.append((str(item_id), "superseded", warn, detail))
-                continue
-            if change_control_tree_only(item, Path(workspace)):
-                detail = (
-                    f"NOT RUN HERE -- change-control check ({_CHANGE_CONTROL_TEST_FILE} "
-                    "is absent from this tree); the change-control runner executes it "
-                    "in its own checkout (OMN-19384)."
-                )
-                print(  # noqa: T201 - CI log line
-                    f"\n[DoD {item_id}]\n  [~] change_control_scope: {detail}",
-                    flush=True,
-                )
-                results.append((str(item_id), "change_control_scope", warn, detail))
                 continue
             kept.append(item)
         results.extend(run_dod_checks(kept, workspace, context))
