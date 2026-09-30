@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.47.26"
+version = "0.47.27"
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -49,6 +49,13 @@ dependencies = [
     # fixed 49.0.0). The previous <50.0.0 ceiling made the fixed release
     # unreachable, blocking every runtime candidate rebuild (omnibase_infra
     # build-workspace-candidate-runtime.yml run 30878868464).
+    # Platform consequence, decided 2026-09-30: the floor stays. PyPI ships no
+    # macOS x86_64 wheel for cryptography 50, so on Intel macOS uv builds it from
+    # source, which needs a Rust toolchain and OpenSSL 3 (brew install openssl@3
+    # rust, OPENSSL_DIR=$(brew --prefix openssl@3)). Intel macOS is a supported
+    # from-source platform, documented in the public Supported Platforms guide
+    # and exercised by the nightly install canary. Lowering the floor to get
+    # wheels would reopen both CVEs above, so it is not an option.
     "cryptography>=50.0.0,<51.0.0",
     "jsonschema>=4.25.1,<5.0.0",
     "httpx>=0.27.0,<1.0.0",
