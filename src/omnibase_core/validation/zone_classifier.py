@@ -10,17 +10,15 @@ from omnibase_core.enums.enum_file_zone import EnumFileZone
 
 _GENERATED_MARKERS = ("__pycache__", "dist/", ".generated.", "node_modules/")
 _TEST_PREFIXES = ("tests/", "test/")
-# Declarative-evidence trees: contract YAML, DoD receipts, allowlists,
-# legacy .evidence/. These never affect runtime — receipt-gate validates
-# them independently — so they short-circuit the heavy CI matrix the same
-# way docs do. Production contract.yaml inside src/ is unaffected because
-# the PRODUCTION check runs first.
+# Top-level documentation and declarative-evidence trees: contract YAML,
+# DoD receipts, and legacy .evidence/. Allowlists are policy inputs and must
+# run the quality matrix. Production contract.yaml inside src/ is unaffected
+# because the PRODUCTION check runs first.
 _DOCS_PREFIXES = (
     "docs/",
     "standards/",
     "contracts/",
     "drift/dod_receipts/",
-    "allowlists/",
     ".evidence/",
 )
 _BUILD_PREFIXES = ("scripts/",)
@@ -31,11 +29,17 @@ _CONFIG_SUFFIXES = (".yaml", ".yml", ".toml", ".json", ".ini")
 def classify_path(path: Path) -> EnumFileZone:
     """Classify *path* into its EnumFileZone.
 
-    Priority order: generated > production > test > config > docs > build.
+    Priority: generated > production > test > build names > docs > config > build.
+    Docs, test, and build prefixes are relative to the repository root (the current
+    working directory), including when an existing file resolves to an
+    absolute path.
     Symlinks are resolved before classification so the target's directory
     structure determines the zone, not the link location.
     """
     resolved = path.resolve() if path.exists() else path
+    repo_root = Path.cwd().resolve()
+    if resolved.is_absolute() and resolved.is_relative_to(repo_root):
+        resolved = resolved.relative_to(repo_root)
     s = resolved.as_posix()
 
     if any(m in s for m in _GENERATED_MARKERS):
@@ -44,26 +48,19 @@ def classify_path(path: Path) -> EnumFileZone:
     if "/src/" in f"/{s}" or s.startswith("src/"):
         return EnumFileZone.PRODUCTION
 
-    if any(s.startswith(p) or f"/{p}" in f"/{s}" for p in _TEST_PREFIXES):
+    if s.startswith(_TEST_PREFIXES):
         return EnumFileZone.TEST
 
     if resolved.name in _BUILD_NAMES:
         return EnumFileZone.BUILD
 
-    # Match prefixes anywhere in the path: when the file actually exists on
-    # disk, `resolved` is an absolute path (e.g. /repo/contracts/foo.yaml),
-    # so a plain startswith("contracts/") would miss it. Mirrors the TEST
-    # check's pattern.
-    if (
-        any(s.startswith(p) or f"/{p}" in f"/{s}" for p in _DOCS_PREFIXES)
-        or resolved.suffix == ".md"
-    ):
+    if s.startswith(_DOCS_PREFIXES) or resolved.suffix == ".md":
         return EnumFileZone.DOCS
 
     if resolved.suffix in _CONFIG_SUFFIXES:
         return EnumFileZone.CONFIG
 
-    if any(s.startswith(p) for p in _BUILD_PREFIXES):
+    if s.startswith(_BUILD_PREFIXES):
         return EnumFileZone.BUILD
 
     return EnumFileZone.PRODUCTION

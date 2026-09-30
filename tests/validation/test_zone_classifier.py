@@ -42,6 +42,10 @@ def test_classify_docs() -> None:
     assert classify_path(Path("docs/architecture.md")) == EnumFileZone.DOCS
 
 
+def test_classify_readme() -> None:
+    assert classify_path(Path("README.md")) == EnumFileZone.DOCS
+
+
 def test_classify_contracts_yaml_is_docs() -> None:
     # Top-level contracts/ holds OCC ticket contracts — declarative evidence,
     # no runtime impact, must skip the heavy matrix.
@@ -55,8 +59,73 @@ def test_classify_dod_receipts_yaml_is_docs() -> None:
     )
 
 
-def test_classify_allowlists_yaml_is_docs() -> None:
-    assert classify_path(Path("allowlists/skip_tokens.yaml")) == EnumFileZone.DOCS
+def test_classify_allowlists_yaml_is_config() -> None:
+    assert classify_path(Path("allowlists/x.yaml")) == EnumFileZone.CONFIG
+
+
+@pytest.mark.parametrize(
+    "prefix",
+    ["docs", "standards", "contracts", "drift/dod_receipts", ".evidence"],
+)
+def test_docs_prefixes_are_root_anchored(prefix: str) -> None:
+    assert classify_path(Path(prefix) / "x.yaml") == EnumFileZone.DOCS
+    assert classify_path(Path("examples") / prefix / "x.yaml") == EnumFileZone.CONFIG
+
+
+@pytest.mark.parametrize("prefix", ["tests", "test"])
+def test_test_prefixes_are_root_anchored(prefix: str) -> None:
+    assert classify_path(Path(prefix) / "x.py") == EnumFileZone.TEST
+    assert classify_path(Path("examples") / prefix / "x.py") == EnumFileZone.PRODUCTION
+
+
+@pytest.mark.parametrize(
+    ("relative_path", "expected"),
+    [
+        ("docs/x.yaml", EnumFileZone.DOCS),
+        ("standards/x.yaml", EnumFileZone.DOCS),
+        ("contracts/x.yaml", EnumFileZone.DOCS),
+        ("drift/dod_receipts/x.yaml", EnumFileZone.DOCS),
+        (".evidence/x.yaml", EnumFileZone.DOCS),
+        ("allowlists/x.yaml", EnumFileZone.CONFIG),
+        ("tests/x.py", EnumFileZone.TEST),
+        ("test/x.py", EnumFileZone.TEST),
+        ("scripts/x.sh", EnumFileZone.BUILD),
+    ],
+)
+def test_existing_paths_are_root_anchored(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    relative_path: str,
+    expected: EnumFileZone,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    nested_zone = (
+        EnumFileZone.CONFIG
+        if Path(relative_path).suffix == ".yaml"
+        else EnumFileZone.PRODUCTION
+    )
+    for parent, zone in [
+        (tmp_path, expected),
+        (tmp_path / "examples", nested_zone),
+    ]:
+        target = parent / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("")
+        assert classify_path(target) == zone
+        assert classify_path(target.relative_to(tmp_path)) == zone
+
+
+def test_docs_symlink_to_policy_is_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    target = tmp_path / "allowlists" / "x.yaml"
+    target.parent.mkdir()
+    target.write_text("")
+    link = tmp_path / "docs" / "x.yaml"
+    link.parent.mkdir()
+    link.symlink_to(target)
+    assert classify_path(link) == EnumFileZone.CONFIG
 
 
 def test_classify_evidence_yaml_is_docs() -> None:
@@ -97,21 +166,28 @@ def test_workflow_yaml_stays_config() -> None:
 
 def test_classify_build() -> None:
     assert classify_path(Path("scripts/deploy.sh")) == EnumFileZone.BUILD
+    assert classify_path(Path("examples/scripts/deploy.sh")) == EnumFileZone.PRODUCTION
 
 
-def test_existing_contracts_file_classifies_as_docs(tmp_path: Path) -> None:
+def test_existing_contracts_file_classifies_as_docs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     # Regression for CodeRabbit finding on PR #1023: when the changed file
     # actually exists on disk, classify_path() previously resolved it to an
     # absolute path (e.g. /tmp/.../contracts/X.yaml) and the bare
     # `s.startswith("contracts/")` check missed it, dropping the file into
     # CONFIG and defeating the docs-only short-circuit in CI.
+    monkeypatch.chdir(tmp_path)
     target = tmp_path / "contracts" / "OMN-1234.yaml"
     target.parent.mkdir(parents=True)
     target.write_text("---\n")
     assert classify_path(target) == EnumFileZone.DOCS
 
 
-def test_existing_dod_receipts_file_classifies_as_docs(tmp_path: Path) -> None:
+def test_existing_dod_receipts_file_classifies_as_docs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
     target = (
         tmp_path / "drift" / "dod_receipts" / "OMN-1234" / "dod-001" / "command.yaml"
     )

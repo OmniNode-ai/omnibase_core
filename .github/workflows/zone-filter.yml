@@ -1,10 +1,10 @@
 name: Zone Filter (Reusable)
 
 # Classifies the caller PR's diff using omnibase_core's zone_classifier.
-# Emits docs_only=true when every changed file is in the DOCS zone (which
-# now includes contracts/, drift/dod_receipts/, allowlists/, .evidence/),
-# letting caller workflows skip heavy CI matrix jobs on pure
-# documentation/declarative-evidence PRs.
+# Emits docs_only=true when every changed file is in the DOCS zone, including
+# top-level contracts/, drift/dod_receipts/, and .evidence/. Caller workflows
+# can skip heavy CI matrix jobs on documentation/declarative-evidence PRs.
+# Allowlists are policy inputs and must run the full matrix.
 #
 # Source of truth lives in OmniNode-ai/omnibase_core. This reusable
 # workflow shallow-checks-out the classifier and runs it against the
