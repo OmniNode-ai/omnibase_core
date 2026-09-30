@@ -360,6 +360,73 @@ class TestRuleBStructuralContextOMN14410:
         )
 
 
+@pytest.mark.unit
+class TestRuleBPrecommitHookStatusRows:
+    """Literal TODO marker hook labels are metadata only in exact status rows."""
+
+    @pytest.mark.parametrize(
+        "hook_line",
+        [
+            "No agent-left TODO/FIXME/HACK markers — COMPUTE/bus (OMN-13480)"
+            ".......................................Skipped",
+            "No untracked TODO/FIXME/HACK comments"
+            ".................................................................Passed",
+            "No agent-left TODO/FIXME/HACK markers"
+            ".................................................................Passed",
+        ],
+    )
+    @pytest.mark.parametrize("field_name", ["probe_stdout", "actual_output"])
+    def test_exact_successful_hook_status_rows_pass_rule_b(
+        self, hook_line: str, field_name: str
+    ) -> None:
+        kwargs = {field_name: hook_line}
+        receipt = _make_receipt(**kwargs)
+        violations = check_receipt_honesty(receipt)
+        assert not any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected literal successful hook status row to pass Rule B, got: {violations}"
+        )
+
+    @pytest.mark.parametrize(
+        "hook_like_line",
+        [
+            "No agent-left TODO/FIXME/HACK markers"
+            ".................................................................Failed",
+            "No untracked TODO/FIXME/HACK comments"
+            ".................................................................Passed; TODO remains",
+            "Observed TODO/FIXME/HACK markers"
+            ".................................................................Passed",
+            "No agent-left TODO/FIXME/HACK markers — COMPUTE/bus (OMN-99999)"
+            ".......................................Passed",
+            "No agent-left TODO/FIXME/HACK markers — ambiguous status",
+        ],
+    )
+    def test_failed_or_ambiguous_hook_like_lines_still_fail_rule_b(
+        self, hook_like_line: str
+    ) -> None:
+        receipt = _make_receipt(probe_stdout=hook_like_line)
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected malformed/failed hook-like line to remain blocking, got: {violations}"
+        )
+
+    @pytest.mark.parametrize(
+        "narrative",
+        [
+            "TODO: not implemented",
+            "pre-commit hook TODO still pending",
+            "No agent-left TODO/FIXME/HACK markers, but the check was not yet run",
+        ],
+    )
+    def test_ordinary_deferral_narrative_still_fails_rule_b(
+        self, narrative: str
+    ) -> None:
+        receipt = _make_receipt(probe_stdout=narrative)
+        violations = check_receipt_honesty(receipt)
+        assert any(v.rule == EnumHonestyRule.PENDING_IN_PASS for v in violations), (
+            f"Expected ordinary deferral narrative to remain blocking, got: {violations}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # OMN-14410 round 1 — independent verification caught a false-PASS: the
 # first fix made the closing quote in the lookahead OPTIONAL (``"?``), which
