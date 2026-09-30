@@ -12,7 +12,7 @@ from omnibase_core.enums.enum_agent_protocol import EnumAgentProtocol
 class ModelTargetAgent(BaseModel):
     """Descriptor for a remote agent that can be invoked via a delegation protocol."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     target_ref: str
     base_url: str

@@ -11,7 +11,7 @@ from omnibase_core.enums.governance.enum_dogfood_status import EnumDogfoodStatus
 class ModelDelegationHealth(BaseModel):
     """Health of the delegation classifier and per-task-type routing."""
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     task_type_coverage: dict[str, EnumDogfoodStatus] = Field(
         default_factory=dict, description="Per-task-type classifier coverage status"

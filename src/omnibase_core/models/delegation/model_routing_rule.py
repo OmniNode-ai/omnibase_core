@@ -18,7 +18,7 @@ class ModelRoutingRule(BaseModel):
     AGENT rules require agent_protocol; MODEL rules require model_backend.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     capability: EnumAgentCapability
     invocation_kind: EnumInvocationKind
