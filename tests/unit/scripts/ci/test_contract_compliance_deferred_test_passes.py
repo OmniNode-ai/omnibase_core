@@ -75,6 +75,14 @@ def _check_test_passes(_check_value, _workspace, pr_number, repo):
 _CHECK_RUNNERS = {"test_passes": _check_test_passes}
 
 
+def _superseded_dod_ids(_dod_evidence):
+    return set()
+
+
+def _run_dod_checks(_dod_evidence, _workspace, _context):
+    return []
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--pr", required=True, type=int)
