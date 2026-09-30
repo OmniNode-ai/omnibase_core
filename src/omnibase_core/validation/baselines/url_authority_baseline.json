@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "count": 212,
+  "count": 211,
   "violations": [
     {
       "repo": "omnibase_core",
@@ -295,12 +295,6 @@
       "path": "src/omnibase_infra/nodes/node_llm_completion_effect/handlers/handler_llm_completion.py",
       "rule": "env-url-read",
       "fingerprint": "bf676524f882d4df7f7b46064addbb914fd54a96bc6752fd964f706e70a8558c"
-    },
-    {
-      "repo": "omnibase_infra",
-      "path": "src/omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/config_loader_bifrost.py",
-      "rule": "public-https-literal",
-      "fingerprint": "47e0418035bf9a0217e8f192583686deeaed027cc594d042cf547ad329c2ff53"
     },
     {
       "repo": "omnibase_infra",
