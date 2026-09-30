@@ -1,3 +1,14 @@
+## v0.47.27 (2026-09-30)
+
+### Release
+- Cut omnibase-core from dev at 0.47.27 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.26.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.26
+- feat: a delegation cut off by its runtime shutting down has a terminal cause (#1817)
+- docs: record the cryptography floor decision and its Intel macOS consequence beside the pin (#1816)
+
 ## v0.47.26 (2026-09-30)
 
 ### Release
