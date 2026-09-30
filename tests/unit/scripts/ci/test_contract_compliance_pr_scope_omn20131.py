@@ -386,3 +386,90 @@ def test_driver_fails_closed_when_the_pinned_item_loop_is_absent(
     assert result.returncode == 1
     assert "_run_dod_checks" in result.stderr
     assert not (tmp_path / "record.json").exists()
+
+
+# OMN-19384: a check's cwd ${OMNI_HOME}/<repo> declares the repo it runs in.
+_MINTED_CHECK = "uv run pytest tests/test_evidence_admissibility.py -q"
+_CHANGE_CONTROL_CWD = "${OMNI_HOME}/onex_change_control"
+
+
+def _minted(cwd: str | None, *, pr: int = PR) -> dict[str, object]:
+    """The producer's own-PR admissibility item; ``echo`` proves whether it ran."""
+    check: dict[str, str] = {
+        "check_type": "command",
+        "check_value": f"echo minted-ran >> ran.log; {_MINTED_CHECK}",
+    }
+    if cwd is not None:
+        check["cwd"] = cwd
+    return {
+        "id": f"dod-occ-evidence-admissibility-validator-pr-{pr}",
+        "description": "Hosted OCC evidence admissibility validator (OMN-15247).",
+        "source": "generated",
+        "checks": [check],
+    }
+
+
+def test_an_item_declaring_another_repo_is_neither_run_nor_counted(
+    tmp_path: Path,
+) -> None:
+    """The omnibase_core#1818 shape once the producer declares its repo."""
+    result, ran = _run_driver(tmp_path, [_minted(_CHANGE_CONTROL_CWD), _OWN])
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert ran == ["own-ran"]
+    assert "[SUMMARY] OMN-1: 1/1 PASS, 0 WARN, 0 BLOCK" in result.stdout
+    assert (
+        "[~] repo_scope: NOT THIS REPO'S ITEM -- its checks declare cwd "
+        "${OMNI_HOME}/onex_change_control" in result.stdout
+    )
+
+
+def test_the_minted_check_with_no_declared_repo_still_fails_here(
+    tmp_path: Path,
+) -> None:
+    """No declaration and tests/test_evidence_admissibility.py absent: BLOCK."""
+    result, ran = _run_driver(tmp_path, [_minted(None), _OWN])
+    assert not (tmp_path / "workspace/tests/test_evidence_admissibility.py").exists()
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert ran == ["minted-ran", "own-ran"]
+    assert "[SUMMARY] OMN-1: 1/2 PASS, 0 WARN, 1 BLOCK" in result.stdout
+    assert "repo_scope" not in result.stdout
+
+
+def test_an_item_declaring_this_repo_still_runs(tmp_path: Path) -> None:
+    this_repo = "${OMNI_HOME}/" + REPO.rpartition("/")[2]
+    result, ran = _run_driver(tmp_path, [_minted(this_repo)])
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert ran == ["minted-ran"]
+    assert "repo_scope" not in result.stdout
+
+
+def test_an_item_with_one_undeclared_check_still_runs(tmp_path: Path) -> None:
+    mixed = _minted(_CHANGE_CONTROL_CWD)
+    mixed["checks"] = [
+        *mixed["checks"],  # type: ignore[misc]
+        {"check_type": "command", "check_value": "echo mixed-ran >> ran.log"},
+    ]
+    result, ran = _run_driver(tmp_path, [mixed])
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert ran == ["minted-ran", "mixed-ran"]
+    assert "repo_scope" not in result.stdout
+
+
+def test_a_superseding_item_of_another_repo_still_supersedes(
+    tmp_path: Path,
+) -> None:
+    own_red = {
+        **_OWN,
+        "checks": [
+            {"check_type": "command", "check_value": "echo own-ran >> ran.log; exit 3"}
+        ],
+    }
+    superseding = {
+        **_minted(_CHANGE_CONTROL_CWD),
+        "evidence_artifact": f"supersedes_dod_evidence:{_OWN['id']}",
+    }
+    result, ran = _run_driver(tmp_path, [own_red, superseding])
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert ran == []
+    assert "[SUMMARY] OMN-1: 0/1 PASS, 1 WARN, 0 BLOCK" in result.stdout
+    assert "[~] repo_scope: NOT THIS REPO'S ITEM" in result.stdout

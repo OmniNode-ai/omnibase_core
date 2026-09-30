@@ -22,6 +22,18 @@ PR citing the same ticket. :func:`install_pr_scope` reports such an item WARN
 without executing it. Items bound to this PR and items bound to no PR run
 unchanged, and supersession is still decided over the whole contract.
 
+Repo scope (OMN-19384): a check whose ``cwd`` is ``${OMNI_HOME}/<repo>``
+declares the repo it runs in. The autobind producer mints the change-control
+admissibility validator (``uv run pytest tests/test_evidence_admissibility.py
+-q``, a file only onex_change_control has) with
+``cwd: ${OMNI_HOME}/onex_change_control``, and the behaviour-proof item with its
+own product repo. The pinned runner ignores ``cwd`` and would run such an item
+in this checkout, where it exits 4 or 5 and BLOCKs. :func:`declared_repo_outside`
+reports an item whose every check declares one other repo as not this repo's
+item: it is neither run nor counted, and the log says so. An item that declares
+no repo runs exactly as before, so a test file missing from this repo still
+fails here.
+
 It runs inside the pinned checker's environment (``uv run`` from that checkout),
 so every other check type executes exactly as the pinned runner executes it.
 
@@ -103,6 +115,40 @@ def pr_binding_outside(item_id: object, *, repo: str, pr_number: int) -> str | N
     return None
 
 
+# A check's ``cwd`` of ``${OMNI_HOME}/<repo>[/<path>]`` names the repo checkout
+# it runs in (``ModelDodCheck.cwd``; the producer's ``behavior_proof_cwd`` and
+# ``ADMISSIBILITY_VALIDATOR_CWD``).
+_DECLARED_REPO_CWD = re.compile(r"^\$\{OMNI_HOME\}/(?P<repo>[^/$]+)(?:/|$)")
+
+
+def declared_repo_outside(item: object, *, repo: str) -> str | None:
+    """Name the other repo an item declares it runs in, or None.
+
+    Every check must declare ``cwd: ${OMNI_HOME}/<repo>`` and all must name the
+    same repo, and that repo must differ from this one (``owner/name``). An item
+    with any check that declares no repo, or that names this repo, returns None
+    and runs.
+    """
+    if not isinstance(item, dict):
+        return None
+    checks = item.get("checks")
+    if not isinstance(checks, list) or not checks:
+        return None
+    declared: set[str] = set()
+    for check in checks:
+        cwd = check.get("cwd") if isinstance(check, dict) else None
+        match = _DECLARED_REPO_CWD.match(cwd.strip()) if isinstance(cwd, str) else None
+        if match is None:
+            return None
+        declared.add(match["repo"])
+    if len(declared) != 1:
+        return None
+    owner = declared.pop()
+    if owner == repo.rpartition("/")[2]:
+        return None
+    return owner
+
+
 def install_pr_scope(checker: ModuleType) -> None:
     """Wrap the pinned runner's item loop so it executes only this PR's items."""
     run_dod_checks = getattr(checker, "_run_dod_checks", None)
@@ -126,6 +172,16 @@ def install_pr_scope(checker: ModuleType) -> None:
         for item in dod_evidence:
             item_id = item.get("id") if isinstance(item, dict) else None
             other = pr_binding_outside(item_id, repo=repo, pr_number=pr_number)
+            owner = declared_repo_outside(item, repo=repo)
+            if other is None and owner is not None:
+                print(  # noqa: T201 - CI log line
+                    f"\n[DoD {item_id}]\n  [~] repo_scope: NOT THIS REPO'S ITEM -- "
+                    f"its checks declare cwd ${{OMNI_HOME}}/{owner}, not {repo}; "
+                    f"{owner}'s own compliance run executes it. Not run and not "
+                    "counted here.",
+                    flush=True,
+                )
+                continue
             if other is None:
                 in_scope.append(item)
                 continue
