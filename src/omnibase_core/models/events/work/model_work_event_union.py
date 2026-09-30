@@ -26,6 +26,9 @@ from omnibase_core.models.events.work.model_work_correction_recorded import (
 from omnibase_core.models.events.work.model_work_friction_recorded import (
     ModelWorkFrictionRecorded,
 )
+from omnibase_core.models.events.work.model_work_goal_revised import (
+    ModelWorkGoalRevised,
+)
 from omnibase_core.models.events.work.model_work_hold_placed import (
     ModelWorkHoldPlaced,
 )
@@ -65,6 +68,7 @@ __all__ = ["ModelWorkEvent"]
 ModelWorkEvent = Annotated[
     # union-ok: discriminated_union - each member pins a Literal kind; Field(discriminator="kind") below
     ModelWorkClaimRequested
+    | ModelWorkGoalRevised
     | ModelWorkClaimReleased
     | ModelWorkResultRecorded
     | ModelWorkRulingRecorded

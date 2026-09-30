@@ -6,7 +6,7 @@
 
 Covers the three acceptance criteria of task T3:
 
-- AC1: for each of the 15 kinds (13 from T1-T2, two question kinds from T17, OMN-19620), ``parse(dump(x)) == x`` and
+- AC1: for each of the 16 kinds (13 from T1-T2, two question kinds from T17, OMN-19620, and GC.5), ``parse(dump(x)) == x`` and
   ``dump(parse(dump(x))) == dump(x)`` byte for byte, by one fixture per kind
   and by a Hypothesis round trip.
 - AC2: an unknown ``schema``, an unknown ``kind``, an extra field, a naive
@@ -59,6 +59,7 @@ from omnibase_core.models.events.work import (
     ModelWorkEvent,
     ModelWorkEventBase,
     ModelWorkFrictionRecorded,
+    ModelWorkGoalRevised,
     ModelWorkHoldPlaced,
     ModelWorkHoldReleased,
     ModelWorkLedgerEpochOpened,
@@ -128,6 +129,18 @@ def _claim_requested() -> ModelWorkEventBase:
 
 def _claim_released() -> ModelWorkEventBase:
     return ModelWorkClaimReleased(**_base(claim_event_id=_REF_A))  # type: ignore[arg-type]  # NOTE(OMN-16177): kwargs dict built by _base
+
+
+def _goal_revised() -> ModelWorkEventBase:
+    return ModelWorkGoalRevised(
+        **_base(
+            goal_id=_REF_A,
+            dod_evidence=(),
+            contract_schema_version="1.0.0",
+            reason="replace the full goal contract",
+            replaces=_REF_A,
+        )
+    )  # type: ignore[arg-type]
 
 
 def _result() -> ModelWorkEventBase:
@@ -300,6 +313,7 @@ def _question_withdrawn() -> ModelWorkEventBase:
 
 _FIXTURES: dict[EnumWorkEventKind, Callable[[], ModelWorkEventBase]] = {
     EnumWorkEventKind.CLAIM_REQUESTED: _claim_requested,
+    EnumWorkEventKind.GOAL_REVISED: _goal_revised,
     EnumWorkEventKind.CLAIM_RELEASED: _claim_released,
     EnumWorkEventKind.RESULT_RECORDED: _result,
     EnumWorkEventKind.RULING_RECORDED: _ruling,
@@ -322,22 +336,22 @@ def _record(event: ModelWorkEventBase) -> ModelWorkLedgerRecord:
 
 
 # ---------------------------------------------------------------------------
-# The union covers exactly the 15 kinds
+# The union covers exactly the 16 kinds
 # ---------------------------------------------------------------------------
 
 
 def test_fixture_per_kind_covers_every_kind() -> None:
     assert set(_FIXTURES) == set(EnumWorkEventKind)
-    assert len(_FIXTURES) == 15
+    assert len(_FIXTURES) == 16
     for kind, build in _FIXTURES.items():
         assert build().kind == kind
 
 
-def test_union_members_are_the_fifteen_kind_models() -> None:
+def test_union_members_are_the_sixteen_kind_models() -> None:
     union_args = get_args(get_args(ModelWorkEvent)[0])
     members = {model.model_fields["kind"].default for model in union_args}
     assert members == set(EnumWorkEventKind)
-    assert len(union_args) == 15
+    assert len(union_args) == 16
 
 
 def test_record_discriminates_to_the_concrete_kind() -> None:
@@ -435,6 +449,7 @@ _TICKET_REQUIRED = frozenset(
     {
         EnumWorkEventKind.CLAIM_REQUESTED,
         EnumWorkEventKind.CLAIM_RELEASED,
+        EnumWorkEventKind.GOAL_REVISED,
         EnumWorkEventKind.FRICTION_RECORDED,
     }
 )
@@ -470,13 +485,13 @@ def test_round_trip_property(
         "emitted_at": emitted_at,
         "summary": summary,
     }
-    # Claim and friction events must name their ticket; the rest may omit it.
+    # Claim, revision, release, and friction events must name their ticket.
     if ticket_id is not None or kind not in _TICKET_REQUIRED:
         update["ticket_id"] = ticket_id
     # A lease must expire after it is placed; keep the fixture's lease one hour long.
     if kind is EnumWorkEventKind.HOLD_PLACED:
         update["expires_at"] = emitted_at + timedelta(hours=1)
-    data = fixture.model_dump()
+    data = fixture.model_dump(mode="json")
     data.update(update)
     event = type(fixture).model_validate(data)
     record = _record(event)
