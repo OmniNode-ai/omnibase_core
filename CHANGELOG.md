@@ -1,3 +1,13 @@
+## v0.47.26 (2026-09-30)
+
+### Release
+- Cut omnibase-core from dev at 0.47.26 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.25.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.25
+- feat(work-events): add goal contract revision spine (#1808)
+
 ## v0.47.24 (2026-09-26)
 
 ### Release
