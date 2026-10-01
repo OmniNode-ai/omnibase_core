@@ -1,3 +1,21 @@
+## v0.47.28 (2026-10-01)
+
+### Release
+- Cut omnibase-core from dev at 0.47.28 by the scheduled release train.
+- 9 release-relevant commit(s) merged since v0.47.27.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.27
+- chore: backfill hand_authored provenance stamps on the 16 grandfathered core nodes (#1826)
+- fix: ModelInvocationCommand and ModelAgentTaskLifecycleEvent forbid unknown payload keys (#1828)
+- feat(core): implement trusted goal admission (#1829)
+- fix: drop the expired ModelHandlerRoutingEntry extra=forbid waiver that turned dev red (#1825)
+- fix: drop the url-authority baseline row for a deleted bifrost config loader (#1824)
+- fix: URL Authority Gate sees DSN env reads, os.getenv, from-os imports and a key held in a constant (#1821)
+- fix: six delegation wire models reject unknown fields instead of dropping them (#1823)
+- fix: the docs-only zone no longer counts allowlists/ as docs, and zone prefixes anchor at the repo root (#1822)
+- : writer app is exempt from the OCC evidence gates only when pin-only is proven (#1820)
+
 ## v0.47.27 (2026-09-30)
 
 ### Release
