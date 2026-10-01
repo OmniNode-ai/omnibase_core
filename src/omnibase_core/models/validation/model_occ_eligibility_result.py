@@ -54,6 +54,13 @@ class ModelOccEligibilityResult(BaseModel):
     criterion_coverage_sha256: str | None = Field(default=None)
     evaluation_observation_id: UUID | None = Field(default=None)
     deadline_event_id: UUID | None = Field(default=None)
+    admission_observation_id: UUID | None = Field(default=None)
+    admission_observation_sha256: str | None = Field(
+        default=None, pattern=r"^sha256:[0-9a-f]{64}$"
+    )
+    dependency_admission_observation_refs: dict[str, tuple[UUID, str]] = Field(
+        default_factory=dict
+    )
     evaluation_observed_at: AwareDatetime | None = Field(default=None)
     evaluation_observation_sha256: str | None = Field(default=None)
     evaluation_deadline_status: Literal["open", "expired"] | None = None
@@ -177,6 +184,21 @@ class ModelOccEligibilityResult(BaseModel):
                 if self.evaluation_observation_id is not None
                 else None
             ),
+            "admission_observation_id": (
+                str(self.admission_observation_id)
+                if self.admission_observation_id is not None
+                else None
+            ),
+            "admission_observation_sha256": self.admission_observation_sha256,
+            "dependency_admission_observation_refs": {
+                dependency_id: {
+                    "observation_id": str(reference[0]),
+                    "observation_sha256": reference[1],
+                }
+                for dependency_id, reference in sorted(
+                    self.dependency_admission_observation_refs.items()
+                )
+            },
             "deadline_event_id": (
                 str(self.deadline_event_id)
                 if self.deadline_event_id is not None
