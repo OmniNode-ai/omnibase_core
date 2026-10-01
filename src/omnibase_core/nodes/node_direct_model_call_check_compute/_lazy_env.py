@@ -4,19 +4,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Iterator, Mapping
 
 from omnibase_core.nodes.node_direct_model_call_check_compute._constants import _Event
 from omnibase_core.nodes.node_direct_model_call_check_compute._module import (
     _Module,
 )
 from omnibase_core.nodes.node_direct_model_call_check_compute._value import _EMPTY, _Val
-
-if TYPE_CHECKING:
-    from omnibase_core.nodes.node_direct_model_call_check_compute._analyzer import (
-        _Analyzer,
-    )
 
 
 class _LazyEnv(Mapping[str, _Val]):
@@ -28,14 +22,14 @@ class _LazyEnv(Mapping[str, _Val]):
 
     def __init__(
         self,
-        analyzer: _Analyzer,
+        apply: Callable[[_LazyEnv, _Val, _Event], _Val],
         module: _Module,
         qual: str,
         preset: dict[str, _Val],
         events: dict[str, list[_Event]],
         depth: int,
     ) -> None:
-        self.analyzer = analyzer
+        self._apply = apply
         self.module = module
         self.qual = qual
         self.depth = depth
@@ -58,7 +52,7 @@ class _LazyEnv(Mapping[str, _Val]):
         self._busy.add(name)
         try:
             for event in self._events.get(name, ()):
-                current = self.analyzer._apply(self, current, event)
+                current = self._apply(self, current, event)
         finally:
             self._busy.discard(name)
         self._memo[name] = current

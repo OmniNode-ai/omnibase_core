@@ -195,7 +195,7 @@ class _Analyzer:
         if events is None:
             events = _events(self._statements(node))
             self._event_cache[id(node)] = events
-        return _LazyEnv(self, module, qual, preset, events, depth)
+        return _LazyEnv(self._apply, module, qual, preset, events, depth)
 
     def _apply(
         self,

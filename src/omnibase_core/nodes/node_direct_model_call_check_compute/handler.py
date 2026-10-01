@@ -112,13 +112,6 @@ class HandlerDirectModelCallCompute:
                     for e in request.baseline
                     if e.expires < request.today
                 )
-        passed = not (
-            comparison.new
-            or comparison.stale
-            or comparison.expired
-            or grown
-            or problems
-        )
         return ModelDirectModelCallCheckOutput(
             findings=findings,
             new=comparison.new,
@@ -127,5 +120,11 @@ class HandlerDirectModelCallCompute:
             grown=tuple(grown),
             problems=tuple(problems),
             notes=tuple(notes),
-            passed=passed,
+            passed=not (
+                comparison.new
+                or comparison.stale
+                or comparison.expired
+                or grown
+                or problems
+            ),
         )
