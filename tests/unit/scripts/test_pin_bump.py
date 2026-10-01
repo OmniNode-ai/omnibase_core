@@ -265,3 +265,97 @@ def test_shipped_manifest_omninode_infra_pattern_matches_its_own_pin_shape(
     )
     assert result.changed is True
     assert result.old_sha == OLD_SHA
+
+
+FOREIGN_SHA = "1b0d2f0374bca1f39d9bab22a02251208cdce196"  # pragma: allowlist secret
+
+
+def _make_ci_with_foreign_ref(root: Path, *, core_sha: str | None) -> Path:
+    """A ci.yml shape like omniclaude's: onex_change_control checkouts pin a ref,
+    the omnibase_core checkout may or may not."""
+    p = root / ".github" / "workflows" / "ci.yml"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    core_ref = f"          ref: {core_sha}\n" if core_sha else ""
+    p.write_text(
+        "jobs:\n"
+        "  gate:\n"
+        "    steps:\n"
+        "      - name: Checkout onex_change_control validator\n"
+        "        uses: actions/checkout@v7\n"
+        "        with:\n"
+        "          repository: OmniNode-ai/onex_change_control\n"
+        f"          ref: {FOREIGN_SHA}  # pragma: allowlist secret\n"
+        "          path: onex_change_control\n"
+        "      - name: Checkout omnibase_core\n"
+        "        uses: actions/checkout@v7\n"
+        "        with:\n"
+        "          repository: OmniNode-ai/omnibase_core\n"
+        f"{core_ref}"
+        "          path: omnibase_core\n"
+    )
+    return p
+
+
+def test_bump_file_foreign_repository_ref_is_untouched(tmp_repo: Path) -> None:
+    f = _make_ci_with_foreign_ref(tmp_repo, core_sha=OLD_SHA)
+    site = PinSite(path=str(f.relative_to(tmp_repo)), pattern=r"ref:\s*([0-9a-f]{40})")
+    result = bump_file(tmp_repo, site, NEW_SHA)
+    content = f.read_text()
+    assert result.old_sha == OLD_SHA
+    assert FOREIGN_SHA in content
+    assert f"ref: {NEW_SHA}" in content
+    assert OLD_SHA not in content
+
+
+def test_bump_file_foreign_repository_only_raises_and_writes_nothing(
+    tmp_repo: Path,
+) -> None:
+    f = _make_ci_with_foreign_ref(tmp_repo, core_sha=None)
+    before = f.read_text()
+    site = PinSite(path=str(f.relative_to(tmp_repo)), pattern=r"ref:\s*([0-9a-f]{40})")
+    with pytest.raises(ValueError, match="no match"):
+        bump_file(tmp_repo, site, NEW_SHA)
+    assert f.read_text() == before
+
+
+def test_shipped_manifest_never_rewrites_a_foreign_ref(tmp_repo: Path) -> None:
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    manifest = load_manifest(manifest_path)
+    for entry in manifest.repos:
+        for site in entry.pin_sites:
+            f = _make_ci_with_foreign_ref(tmp_repo, core_sha=OLD_SHA)
+            target = tmp_repo / site.path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(f.read_text())
+            try:
+                bump_file(tmp_repo, site, NEW_SHA)
+            except ValueError:
+                pass  # shape of this file is not the ci.yml shape; nothing written
+            assert FOREIGN_SHA in target.read_text(), (entry.name, site.path)
+
+
+def test_shipped_manifest_omniclaude_ci_yml_is_not_a_pin_site() -> None:
+    """omniclaude ci.yml holds no omnibase_core ref pin; declaring it made the bot
+    rewrite an onex_change_control ref (omniclaude#2458)."""
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    manifest = load_manifest(manifest_path)
+    entry = next(r for r in manifest.repos if r.name == "omniclaude")
+    assert [s.path for s in entry.pin_sites] == [
+        ".github/workflows/check-handshake.yml"
+    ]
+
+
+def test_shipped_manifest_omnidash_onex_schema_compat_is_not_a_pin_site() -> None:
+    """omnidash onex-schema-compat.yml pins onex_change_control, not omnibase_core."""
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    manifest = load_manifest(manifest_path)
+    entry = next(r for r in manifest.repos if r.name == "omnidash")
+    assert ".github/workflows/onex-schema-compat.yml" not in [
+        s.path for s in entry.pin_sites
+    ]
