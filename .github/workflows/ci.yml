@@ -50,6 +50,10 @@ concurrency:
 
 env:
   UV_VERSION: "0.8.3"
+  # Public hosted runners occasionally stall while streaming locked wheels.
+  # Match the existing contract-check install timeout below so dependency
+  # setup can tolerate slow reads without changing dependency resolution.
+  UV_HTTP_TIMEOUT: "600"
   PYTHON_VERSION: "3.12"
   # GitHub-hosted PR runners and merge-queue self-hosted runners have reproduced
   # xdist worker crashes under the former four-worker split load. Every full
