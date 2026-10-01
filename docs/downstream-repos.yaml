@@ -43,8 +43,6 @@ repos:
     pin_sites:
       - path: .github/workflows/check-handshake.yml
         pattern: "ref:\\s*([0-9a-f]{40})"
-      - path: .github/workflows/ci.yml
-        pattern: "ref:\\s*([0-9a-f]{40})"
 
   - name: omnidash
     owner: OmniNode-ai
@@ -52,8 +50,6 @@ repos:
       - path: .github/workflows/check-handshake.yml
         pattern: "ref:\\s*([0-9a-f]{40})"
       - path: .github/workflows/type-sync-check.yml
-        pattern: "ref:\\s*([0-9a-f]{40})"
-      - path: .github/workflows/onex-schema-compat.yml
         pattern: "ref:\\s*([0-9a-f]{40})"
 
   - name: omniintelligence

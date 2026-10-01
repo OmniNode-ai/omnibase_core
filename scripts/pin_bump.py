@@ -39,6 +39,11 @@ BANNER_ANY_OLD_RE = re.compile(
 )
 
 
+CORE_REPOSITORY = "OmniNode-ai/omnibase_core"
+STEP_START_RE = re.compile(r"^[ \t]*-[ \t]+\S", re.MULTILINE)
+REPOSITORY_LINE_RE = re.compile(r"^[ \t]*repository:[ \t]*(\S+)", re.MULTILINE)
+
+
 class PinSite(BaseModel):
     path: str
     pattern: str
@@ -91,6 +96,29 @@ def _rewrite_banner(content: str, new_sha: str) -> str:
     return content
 
 
+def _step_repository(content: str, pos: int) -> str | None:
+    """The `repository:` declared by the workflow step that contains ``pos``, if any."""
+    starts = [m.start() for m in STEP_START_RE.finditer(content)]
+    begin = max((s for s in starts if s <= pos), default=0)
+    end = min((s for s in starts if s > pos), default=len(content))
+    found = REPOSITORY_LINE_RE.search(content[begin:end])
+    return found.group(1).strip("\"'") if found else None
+
+
+def _first_core_match(content: str, compiled: re.Pattern[str]) -> re.Match[str] | None:
+    """First match not owned by a different repository's checkout step.
+
+    A pin site pattern such as ``ref:\\s*(<sha>)`` also matches the pinned ref of an
+    onex_change_control or omnibase_infra checkout in the same file. Only a match whose
+    step names no repository (an env-var pin) or names omnibase_core is a core pin.
+    """
+    for m in compiled.finditer(content):
+        owner = _step_repository(content, m.start(1))
+        if owner is None or owner == CORE_REPOSITORY:
+            return m
+    return None
+
+
 def bump_file(repo_root: Path, site: PinSite, new_sha: str) -> BumpResult:
     _validate_sha(new_sha)
     target = repo_root / site.path
@@ -101,10 +129,11 @@ def bump_file(repo_root: Path, site: PinSite, new_sha: str) -> BumpResult:
             f"pattern {site.pattern!r} must have exactly one capture group over the SHA"
             f" (has {compiled.groups})",
         )
-    m = compiled.search(content)
+    m = _first_core_match(content, compiled)
     if m is None:
         raise ValueError(
-            f"no match for pattern {site.pattern!r} in {site.path!r}",
+            f"no match for pattern {site.pattern!r} in {site.path!r}"
+            f" owned by {CORE_REPOSITORY}",
         )
     old_sha = m.group(1)
     if old_sha == new_sha:
