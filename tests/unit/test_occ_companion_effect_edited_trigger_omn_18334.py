@@ -9,6 +9,7 @@ description-edit, draft-to-ready, reopen, and stacked-PR coverage.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -77,9 +78,10 @@ def test_ci_job_preserves_required_reusable_contract() -> None:
     assert isinstance(jobs, dict)
     job = jobs["occ-companion-effect"]
     assert isinstance(job, dict)
-    assert job.get("uses") == (
-        "OmniNode-ai/omniclaude/.github/workflows/"
-        "call-occ-companion-effect-reusable.yml@dev"
+    assert re.fullmatch(
+        r"OmniNode-ai/omniclaude/\.github/workflows/"
+        r"call-occ-companion-effect-reusable\.yml@[0-9a-f]{40}",
+        str(job.get("uses")),
     )
     assert job.get("secrets") == "inherit"
     assert job.get("with") == {"lane": "dev"}
