@@ -823,7 +823,7 @@
     which is the primary remedy; this hook prevents reintroduction. Precedent: OMN-14744 (per-file fix
     that did not hold).
   language: system
-  entry: python -m omnibase_core.validators.no_unguarded_git_subprocess tests
+  entry: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess tests
   types: [python]
   files: ^tests/.*\.py$
   pass_filenames: false
