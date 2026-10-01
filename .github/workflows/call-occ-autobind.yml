@@ -169,7 +169,7 @@ jobs:
     # tests/ci/test_workflow_uses_refs_resolve.py pins this expectation, and its
     # live sibling in tests/integration/ci/ fails closed on any cross-repo
     # `uses:` ref that stops resolving.
-    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-autobind-reusable.yml@dev
+    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-autobind-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
     # pragma: allowlist secret -- `secrets: inherit` is a GHA syntax keyword,
     # not a literal secret; the repo secret scanner's Secret Keyword heuristic
     # false-positives on the word "secrets:" here.
@@ -229,7 +229,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: OmniNode-ai/omnimarket
-          ref: dev
+          # OMN-20001: release tag v0.4.276, not live dev; the three sparse
+          # paths below are identical at v0.4.276 and omnimarket dev. Bump =
+          # consumer PR that moves this sha after running this workflow.
+          ref: e11987165b960cb86cdeab7d0ad3fe1884bb2572
           path: .occ-autobind-src
           persist-credentials: false
           sparse-checkout: |

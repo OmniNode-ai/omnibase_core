@@ -34,6 +34,6 @@ jobs:
   deploy-gate:
     needs: occ-preflight
     if: always()
-    uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@main
+    uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
     with:
       contracts-dir: contracts

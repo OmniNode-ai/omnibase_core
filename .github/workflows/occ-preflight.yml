@@ -516,7 +516,8 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_compat
           path: .occ-preflight-deps/omnibase_compat
-          ref: dev
+          # OMN-20001: release tag v0.5.7, not live dev
+          ref: 65aed95fa710748654e37d5c15c5446e779fdf52
           fetch-depth: 1
           persist-credentials: false
 
