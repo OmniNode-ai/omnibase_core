@@ -828,3 +828,21 @@
   files: ^tests/.*\.py$
   pass_filenames: false
   stages: [pre-commit]
+
+- id: canonical-file-shape
+  name: Canonical-file-shape ratchet (OMN-20304)
+  description: >
+    Operator ruling 2026-10-01 (OMN-20297): no new scripts, plugins or exceptions in any repository. Refuses
+    a new code file outside src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/ and docs/
+    (new scripts/, plugins/, tools/, bin/ and skill-directory code included), new imperative lines in
+    a SKILL.md (the omniclaude OMN-12237 thin-shim patterns), and any new baseline, allowlist, waiver,
+    exemption or suppression entry. Existing files live in the shrink-only baseline .onex_ratchets/canonical_file_shape_baseline.txt
+    (create it once with --write-baseline). There is no allowlist and no suppression comment. Checks the
+    whole index against HEAD. CI runs the same hook after `git reset --soft <merge-base>`, so the index
+    holds the pull request's change.
+  language: python
+  entry: python -m omnibase_core.validators.canonical_file_shape
+  pass_filenames: false
+  always_run: true
+  require_serial: true
+  stages: [pre-commit]

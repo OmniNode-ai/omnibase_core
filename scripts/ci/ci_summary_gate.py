@@ -302,6 +302,7 @@ SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
     "Duplicate Registry Ids",  # duplicate-registry-ids (OMN-14401)
     "Hardcoded Topic Validator",  # hardcoded-topic-validator (OMN-14430)
     "Runtime Identity Validator",  # runtime-identity-validator (OMN-17308)
+    "Canonical File Shape (OMN-20304)",  # canonical-file-shape (OMN-20304)
 )
 
 # Conclusions that count as "provably passed".

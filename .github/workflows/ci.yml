@@ -2250,6 +2250,86 @@ jobs:
             omnibase_core.validation.validator_receipt_runtime_identity \
             --receipts-dir .
 
+  # Canonical-file-shape ratchet (OMN-20304). Operator ruling 2026-10-01: no new
+  # scripts, plugins or exceptions in any repository. Refuses a new code file
+  # outside src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/
+  # and docs/, new imperative lines in a SKILL.md, and any new baseline,
+  # allowlist, waiver or suppression entry. Existing files sit in the
+  # shrink-only .onex_ratchets/canonical_file_shape_baseline.txt. The job is
+  # unconditional (no `if:`, no `needs:`), and is listed in
+  # SPEC_REQUIRED_VALIDATOR_JOBS. Its positive-control step plants a bad
+  # sample on every run and fails unless the ratchet refuses it.
+  canonical-file-shape:
+    name: Canonical File Shape (OMN-20304)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run ratchet unit tests
+        run: uv run pytest tests/unit/validators/test_canonical_file_shape.py -v
+
+      - name: Positive control (planted bad sample refused, clean sample accepted)
+        run: |
+          set -u
+          mkdir -p scripts tests
+          printf 'print("planted")\n' > scripts/zz_canary_planted.py
+          git add scripts/zz_canary_planted.py
+          if uv run python -m omnibase_core.validators.canonical_file_shape; then
+            echo "POSITIVE CONTROL FAILED: planted scripts/zz_canary_planted.py was accepted"
+            exit 1
+          fi
+          echo "positive control: planted bad sample refused"
+          git rm -q --cached scripts/zz_canary_planted.py
+          rm scripts/zz_canary_planted.py
+          printf 'def test_canary() -> None:\n    assert True\n' > tests/zz_canary_clean.py
+          git add tests/zz_canary_clean.py
+          uv run python -m omnibase_core.validators.canonical_file_shape
+          echo "positive control: clean sample accepted"
+          git rm -q --cached tests/zz_canary_clean.py
+          rm tests/zz_canary_clean.py
+
+      - name: Refuse new non-canonical files and new exceptions
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          MQ_BASE: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -u
+          base="${PR_BASE:-${MQ_BASE:-${PUSH_BEFORE:-}}}"
+          if [ -n "$base" ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="$(git merge-base "$base" HEAD)"
+            uv run python -m omnibase_core.validators.canonical_file_shape --base "$base" --head HEAD
+          else
+            echo "no base revision on this event; checking the tree against the baseline only"
+            uv run python -m omnibase_core.validators.canonical_file_shape --head HEAD
+          fi
+
   # Migrated from validator-banned-compose-vars.yml (OMN-14877, OMN-14430
   # fast-follow). NOTE: this validator had NO pre-commit hook in omnibase_core
   # (audited 2026-07-21) — migrating it here as a required-gating ci.yml job is
