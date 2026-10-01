@@ -37,6 +37,14 @@ This ratchet looks at every tracked file in the repository and refuses:
     a changed code or config file carrying more suppression comments than at
     the base revision.
 
+One declared file is not an exception: the shrink-only list a gate requires.
+The direct-model-call gate (OMN-20295) keeps one per repository, and the
+repository declares its path in its own ``.pre-commit-config.yaml`` as the
+``--baseline`` argument of the ``check-direct-model-call`` hook taken from
+omnibase_core. That file is read from the head revision, and the gate itself
+enforces that its list only shrinks. A baseline-named file nothing declares is
+still refused.
+
 There is no allowlist, no suppression comment and no option that widens the
 canonical locations. The only state is the shrink-only baseline file, default
 ``.onex_ratchets/canonical_file_shape_baseline.txt``.
@@ -64,12 +72,17 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+import yaml
+
 from omnibase_core.models.validation.model_canonical_file_shape_finding import (
     ModelCanonicalFileShapeFinding,
 )
 
 DEFAULT_BASELINE = ".onex_ratchets/canonical_file_shape_baseline.txt"
 TICKET = "OMN-20304"
+PRE_COMMIT_CONFIG = ".pre-commit-config.yaml"
+GATE_HOOK_ID = "check-direct-model-call"
+GATE_REPO_URL = re.compile(r"omnibase_core(\.git)?/?$")
 INDEX = ":"
 
 CODE_EXTENSIONS: frozenset[str] = frozenset(
@@ -257,8 +270,43 @@ def is_canonical_location(path: str) -> bool:
     return len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
 
 
-def is_exception_file(path: str, baseline_path: str) -> bool:
-    if path == baseline_path:
+def declared_gate_baselines(text: str | None) -> frozenset[str]:
+    """Paths a ``check-direct-model-call`` hook names with ``--baseline``.
+
+    Read from a ``.pre-commit-config.yaml``. Only the hook that the
+    omnibase_core repository provides counts; a local hook of the same id does
+    not.
+    """
+    if text is None:
+        return frozenset()
+    try:
+        config = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return frozenset()
+    if not isinstance(config, dict):
+        return frozenset()
+    declared: set[str] = set()
+    for entry in config.get("repos") or []:
+        if not isinstance(entry, dict) or not GATE_REPO_URL.search(
+            str(entry.get("repo", ""))
+        ):
+            continue
+        for hook in entry.get("hooks") or []:
+            if not isinstance(hook, dict) or hook.get("id") != GATE_HOOK_ID:
+                continue
+            args = [str(a) for a in hook.get("args") or []]
+            for i, arg in enumerate(args):
+                if arg == "--baseline" and i + 1 < len(args):
+                    declared.add(args[i + 1])
+                elif arg.startswith("--baseline="):
+                    declared.add(arg.split("=", 1)[1])
+    return frozenset(PurePosixPath(p).as_posix() for p in declared)
+
+
+def is_exception_file(
+    path: str, baseline_path: str, declared: frozenset[str] = frozenset()
+) -> bool:
+    if path == baseline_path or path in declared:
         return False
     suffix = _suffix(path)
     if suffix in CODE_EXTENSIONS or suffix in PROSE_EXTENSIONS:
@@ -331,6 +379,9 @@ def check(
 ) -> list[ModelCanonicalFileShapeFinding]:
     """Every finding for ``head`` against the baseline and the ``base`` revision."""
     findings: list[ModelCanonicalFileShapeFinding] = []
+    declared = declared_gate_baselines(
+        _decode(repo.read_blobs(head, [PRE_COMMIT_CONFIG])[PRE_COMMIT_CONFIG])
+    )
     head_baseline = parse_baseline(
         _decode(repo.read_blobs(head, [baseline_path])[baseline_path])
     )
@@ -383,12 +434,18 @@ def check(
         if new_text is None:
             continue
         old_text = _decode(base_text.get(old or path))
-        findings.extend(_diff_findings(path, new_text, old_text, baseline_path))
+        findings.extend(
+            _diff_findings(path, new_text, old_text, baseline_path, declared)
+        )
     return findings
 
 
 def _diff_findings(
-    path: str, new_text: str, old_text: str | None, baseline_path: str
+    path: str,
+    new_text: str,
+    old_text: str | None,
+    baseline_path: str,
+    declared: frozenset[str],
 ) -> list[ModelCanonicalFileShapeFinding]:
     findings: list[ModelCanonicalFileShapeFinding] = []
     if PurePosixPath(path).name == "SKILL.md":
@@ -405,7 +462,7 @@ def _diff_findings(
                     ),
                 )
             )
-    if is_exception_file(path, baseline_path):
+    if is_exception_file(path, baseline_path, declared):
         if old_text is None:
             findings.append(
                 ModelCanonicalFileShapeFinding(
