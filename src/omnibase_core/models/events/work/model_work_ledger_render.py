@@ -473,6 +473,18 @@ def _ruling_cells(
         cells.append(f"amends={event.amends}")
     if event.supersedes is not None:
         cells.append(f"supersedes={event.supersedes}")
+    if event.goal_revision_resolution is not None:
+        resolution = event.goal_revision_resolution
+        competing = ",".join(
+            sorted(
+                str(revision_id) for revision_id in resolution.competing_revision_ids
+            )
+        )
+        cells.append(
+            "goal-revision-resolution="
+            f"goal:{resolution.goal_id};parent:{resolution.fork_parent_revision_id};"
+            f"heads:{competing};selected:{resolution.selected_revision_id}"
+        )
     cells.extend(_answers_cells(event.answers, index))
     cells.append(_quoted(event.operator_words))
     return cells

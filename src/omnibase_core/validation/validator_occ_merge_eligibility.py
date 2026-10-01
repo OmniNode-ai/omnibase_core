@@ -11,21 +11,77 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from typing import Any, cast
+from urllib.parse import urlparse
+from uuid import UUID
 
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.crypto.crypto_ed25519_signer import verify_base64
+from omnibase_core.enums.enum_goal_attempt_status import EnumGoalAttemptStatus
 from omnibase_core.enums.enum_occ_eligibility_reason import EnumOccEligibilityReason
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
+from omnibase_core.errors.error_goal_admission_provider import (
+    GoalAdmissionProviderError,
+)
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
+    ModelDodEvidenceCheck,
+)
+from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
+    ModelDodEvidenceItem,
+)
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
+from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
+from omnibase_core.models.validation.model_goal_attempt_allocation_snapshot import (
+    ModelGoalAttemptAllocationSnapshot,
+)
+from omnibase_core.models.validation.model_goal_criterion_baseline import (
+    ModelGoalCriterionBaseline,
+)
+from omnibase_core.models.validation.model_goal_evaluation_observation import (
+    ModelGoalEvaluationObservation,
+)
+from omnibase_core.models.validation.model_goal_execution_result import (
+    ModelGoalExecutionResult,
+)
+from omnibase_core.models.validation.model_goal_fork_resolution_record import (
+    ModelGoalForkResolutionRecord,
+)
+from omnibase_core.models.validation.model_goal_mutation_state import (
+    ModelGoalMutationState,
+)
+from omnibase_core.models.validation.model_goal_revision_history_snapshot import (
+    ModelGoalRevisionHistorySnapshot,
+)
+from omnibase_core.models.validation.model_goal_subject_manifest import (
+    ModelGoalSubjectManifest,
+)
+from omnibase_core.models.validation.model_goal_verification_attempt import (
+    ModelGoalVerificationAttempt,
+)
+from omnibase_core.models.validation.model_goal_verifier_policy import (
+    ModelGoalVerifierPolicy,
+)
 from omnibase_core.models.validation.model_occ_eligibility_input import (
     ModelOccEligibilityInput,
 )
 from omnibase_core.models.validation.model_occ_eligibility_result import (
     ModelOccEligibilityResult,
+)
+from omnibase_core.utils.util_goal_verification import (
+    compute_goal_execution_request_sha256,
+)
+from omnibase_core.validation.protocol_goal_admission_provider import (
+    ProtocolGoalAdmissionProvider,
 )
 from omnibase_core.validation.validator_receipt_gate import (
     _CONTRACT_SHA256_REQUIRED_AFTER,
@@ -33,6 +89,7 @@ from omnibase_core.validation.validator_receipt_gate import (
     _honestly_superseded_dod_ids,
     _iter_dod_evidence,
     check_receipt_contract_binding,
+    compute_canonical_contract_sha256,
 )
 from omnibase_core.validation.validator_receipt_supersession import (
     resolve_supersession,
@@ -159,11 +216,2047 @@ def _receipt_bound_to_pr(
     return receipt.commit_sha.lower() in shas
 
 
+class _DuplicateKeySafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects ambiguous duplicate mapping keys."""
+
+
+def _construct_unique_mapping(
+    loader: _DuplicateKeySafeLoader,
+    node: yaml.MappingNode,
+    deep: bool = False,
+) -> dict[object, object]:
+    mapping: dict[object, object] = {}
+    for key_node, value_node in node.value:
+        key = cast(Any, loader).construct_object(key_node, deep=deep)
+        try:
+            duplicate = key in mapping
+        except TypeError as exc:
+            raise yaml.constructor.ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                "unhashable mapping key",
+                key_node.start_mark,
+            ) from exc
+        if duplicate:
+            raise yaml.constructor.ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                f"duplicate key {key!r}",
+                key_node.start_mark,
+            )
+        mapping[key] = cast(Any, loader).construct_object(value_node, deep=deep)
+    return mapping
+
+
+_DuplicateKeySafeLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_unique_mapping,
+)
+
+
+def _goal_result(
+    snapshot: ModelOccEligibilityInput,
+    *,
+    allocation: ModelGoalAttemptAllocationSnapshot | None,
+    eligible: bool,
+    reason: EnumOccEligibilityReason,
+    detail: str,
+    contract_hashes: dict[str, str] | None = None,
+    receipt_ids: tuple[str, ...] = (),
+    missing: tuple[str, ...] = (),
+    stale: tuple[str, ...] = (),
+    goal_revision_history_sha256: str | None = None,
+    goal_policy_revision: UUID | None = None,
+    goal_revision_history_store_revision: UUID | None = None,
+    criterion_baseline_sha256: str | None = None,
+    criterion_coverage_sha256: str | None = None,
+    evaluation_observation: ModelGoalEvaluationObservation | None = None,
+    mutation_state: ModelGoalMutationState | None = None,
+) -> ModelOccEligibilityResult:
+    """Build a goal verdict with its explicit source/subject provenance."""
+    assert snapshot.goal_id is not None
+    assert snapshot.contract_revision is not None
+    assert snapshot.contract_schema_version is not None
+    assert snapshot.goal_contract_path is not None
+    assert snapshot.goal_contract_source_commit_sha is not None
+    assert snapshot.goal_contract_sha256 is not None
+    assert snapshot.subject_commit_sha is not None
+    assert snapshot.subject_tree_sha is not None
+    selected_attempt: ModelGoalVerificationAttempt | None = None
+    if allocation is not None and allocation.attempts:
+        selected_attempt = max(
+            allocation.attempts,
+            key=lambda item: item.sequence,
+        )
+    return ModelOccEligibilityResult(
+        eligible=eligible,
+        reason=reason,
+        ticket_ids=(snapshot.goal_ticket_id,) if snapshot.goal_ticket_id else (),
+        occ_commit_sha=snapshot.occ_commit_sha,
+        contract_hashes=contract_hashes or {},
+        receipt_ids=receipt_ids,
+        missing_or_nonpass_receipts=missing,
+        stale_receipt_bindings=stale,
+        detail=detail,
+        goal_id=snapshot.goal_id,
+        repository=snapshot.repo,
+        contract_revision=snapshot.contract_revision,
+        contract_schema_version=snapshot.contract_schema_version,
+        goal_contract_path=snapshot.goal_contract_path,
+        goal_contract_source_commit_sha=snapshot.goal_contract_source_commit_sha,
+        goal_contract_sha256=snapshot.goal_contract_sha256,
+        subject_commit_sha=snapshot.subject_commit_sha,
+        subject_tree_sha=snapshot.subject_tree_sha,
+        attempt_id=selected_attempt.attempt_id if selected_attempt else None,
+        attempt_sequence=selected_attempt.sequence if selected_attempt else None,
+        attempt_watermark_sequence=(
+            allocation.watermark_sequence if allocation else None
+        ),
+        attempt_store_revision=(allocation.store_revision if allocation else None),
+        attempt_snapshot_sha256=(allocation.snapshot_sha256 if allocation else None),
+        goal_revision_history_sha256=goal_revision_history_sha256,
+        goal_policy_revision=goal_policy_revision,
+        goal_revision_history_store_revision=goal_revision_history_store_revision,
+        criterion_baseline_sha256=criterion_baseline_sha256,
+        criterion_coverage_sha256=criterion_coverage_sha256,
+        evaluation_observation_id=(
+            evaluation_observation.observation_id
+            if evaluation_observation is not None
+            else None
+        ),
+        deadline_event_id=(
+            evaluation_observation.deadline_event_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_observed_at=(
+            evaluation_observation.observed_at
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_observation_sha256=(
+            evaluation_observation.content_sha256()
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_deadline_status=(
+            evaluation_observation.deadline_status
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_deadline_recorded_at=(
+            evaluation_observation.deadline_recorded_at
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_subject_kind=(
+            evaluation_observation.subject_kind
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_commit_source=(
+            evaluation_observation.commit_source
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_subject_ref=(
+            evaluation_observation.subject_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_subject_repository=(
+            evaluation_observation.subject_repository
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_pull_request_number=(
+            evaluation_observation.pull_request_number
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_base_repository=(
+            evaluation_observation.base_repository
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_base_ref=(
+            evaluation_observation.base_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_id=(
+            evaluation_observation.merge_group_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_base_sha=(
+            evaluation_observation.merge_group_base_sha
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_base_tree_sha=(
+            evaluation_observation.merge_group_base_tree_sha
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_head_sha=(
+            evaluation_observation.merge_group_head_sha
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_head_tree_sha=(
+            evaluation_observation.merge_group_head_tree_sha
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_delivery_id=(
+            evaluation_observation.merge_group_delivery_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_ref=(
+            evaluation_observation.merge_group_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_base_ref=(
+            evaluation_observation.merge_group_base_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_head_ref=(
+            evaluation_observation.merge_group_head_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_source_checkpoint_id=(
+            evaluation_observation.merge_group_source_checkpoint_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_source_body_sha256=(
+            evaluation_observation.merge_group_source_body_sha256
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_received_at=(
+            evaluation_observation.merge_group_received_at
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_deployment_id=(
+            evaluation_observation.deployment_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_environment_id=(
+            evaluation_observation.environment_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_runtime_instance_id=(
+            evaluation_observation.runtime_instance_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_artifact_sha256=(
+            evaluation_observation.artifact_sha256
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_runtime_config_sha256=(
+            evaluation_observation.runtime_config_sha256
+            if evaluation_observation is not None
+            else None
+        ),
+        goal_mutation_store_revision=(
+            mutation_state.store_revision if mutation_state is not None else None
+        ),
+        goal_mutation_state_sha256=(
+            mutation_state.content_sha256() if mutation_state is not None else None
+        ),
+        goal_mutation_intent_id=(
+            mutation_state.intent.intent_id
+            if mutation_state is not None and mutation_state.intent is not None
+            else None
+        ),
+    )
+
+
+def _git(
+    repository: Path,
+    *arguments: str,
+    timeout_seconds: float = 10.0,
+) -> subprocess.CompletedProcess[bytes]:
+    """Run a bounded Git read using an argument vector, never a shell."""
+    return subprocess.run(
+        ("git", "-C", str(repository), *arguments),
+        check=False,
+        capture_output=True,
+        timeout=timeout_seconds,
+    )
+
+
+def _remote_repository(remote: str) -> str | None:
+    """Extract owner/repository from an HTTPS or SSH Git remote URL."""
+    if remote.startswith("git@github.com:"):
+        path = remote.split(":", 1)[1]
+    else:
+        parsed = urlparse(remote)
+        if parsed.scheme not in {"https", "ssh", "git"}:
+            return None
+        if parsed.hostname not in {"github.com", "www.github.com"}:
+            return None
+        path = parsed.path.lstrip("/")
+    path = path.removesuffix(".git").strip("/")
+    parts = path.split("/")
+    if len(parts) != 2 or not all(parts):
+        return None
+    return f"{parts[0]}/{parts[1]}"
+
+
+def _goal_formatter_result(
+    repository: Path,
+    source_commit: str,
+    contract_path: str,
+    contract_bytes: bytes,
+) -> tuple[EnumOccEligibilityReason | None, str]:
+    """Check the committed contract with the repository's pinned yamlfmt."""
+    config_result = _git(repository, "show", f"{source_commit}:.pre-commit-config.yaml")
+    fmt_result = _git(repository, "show", f"{source_commit}:.yamlfmt")
+    if config_result.returncode or fmt_result.returncode:
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the source revision does not expose the repository formatter policy",
+        )
+    try:
+        config = yaml.load(config_result.stdout, Loader=yaml.SafeLoader)
+        entries = config.get("repos", []) if isinstance(config, dict) else []
+        pinned = any(
+            isinstance(entry, dict)
+            and entry.get("repo") == "https://github.com/google/yamlfmt"
+            and entry.get("rev") == "v0.21.0"
+            for entry in entries
+        )
+    except (UnicodeDecodeError, yaml.YAMLError, AttributeError):
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the source revision formatter policy could not be read",
+        )
+    if not pinned:
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the source revision does not pin the supported yamlfmt version",
+        )
+
+    formatter = shutil.which("yamlfmt")
+    if formatter is None:
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the pinned yamlfmt executable is unavailable",
+        )
+    try:
+        version = subprocess.run(
+            (formatter, "-version"),
+            check=False,
+            capture_output=True,
+            timeout=5.0,
+            text=True,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the pinned yamlfmt executable is unavailable",
+        )
+    if version.returncode or not version.stdout.strip().startswith("yamlfmt 0.21.0"):
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the available formatter does not match the committed yamlfmt pin",
+        )
+
+    with tempfile.TemporaryDirectory(prefix="omn20070-goal-format-") as temp_dir:
+        directory = Path(temp_dir)
+        config_path = directory / ".yamlfmt"
+        source_path = directory / Path(contract_path).name
+        config_path.write_bytes(fmt_result.stdout)
+        source_path.write_bytes(contract_bytes)
+        try:
+            checked = subprocess.run(
+                (
+                    formatter,
+                    "-lint",
+                    "-conf",
+                    str(config_path),
+                    "-no_global_conf",
+                    str(source_path),
+                ),
+                check=False,
+                capture_output=True,
+                timeout=10.0,
+                text=True,
+            )
+        except subprocess.TimeoutExpired:
+            return (
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                "the pinned contract formatter timed out",
+            )
+        except OSError:
+            return (
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                "the pinned contract formatter could not be executed",
+            )
+    if checked.returncode:
+        return (
+            EnumOccEligibilityReason.CONTRACT_FORMAT_INVALID,
+            "the committed goal contract fails the repository's pinned yamlfmt policy",
+        )
+    return None, ""
+
+
+def _validate_goal_eligibility(
+    snapshot: ModelOccEligibilityInput,
+    *,
+    allocation: ModelGoalAttemptAllocationSnapshot | None,
+    admission_provider: ProtocolGoalAdmissionProvider,
+) -> ModelOccEligibilityResult:
+    """Validate explicit goal source, subject, and receipt bindings."""
+    assert snapshot.goal_id is not None
+    assert snapshot.contract_revision is not None
+    assert snapshot.contract_schema_version is not None
+    assert snapshot.goal_contract_root is not None
+    assert snapshot.goal_contract_path is not None
+    assert snapshot.goal_contract_source_commit_sha is not None
+    assert snapshot.goal_contract_sha256 is not None
+    assert snapshot.subject_commit_sha is not None
+    assert snapshot.subject_tree_sha is not None
+
+    provenance = {
+        "goal_id": snapshot.goal_id,
+        "repository": snapshot.repo,
+        "contract_revision": snapshot.contract_revision,
+        "contract_schema_version": snapshot.contract_schema_version,
+        "goal_contract_path": snapshot.goal_contract_path,
+        "goal_contract_source_commit_sha": snapshot.goal_contract_source_commit_sha,
+        "goal_contract_sha256": snapshot.goal_contract_sha256,
+        "subject_commit_sha": snapshot.subject_commit_sha,
+        "subject_tree_sha": snapshot.subject_tree_sha,
+    }
+    mutation_state: ModelGoalMutationState | None = None
+
+    def result(
+        eligible: bool,
+        reason: EnumOccEligibilityReason,
+        detail: str,
+        *,
+        hashes: dict[str, str] | None = None,
+        receipts: tuple[str, ...] = (),
+        missing: tuple[str, ...] = (),
+        stale: tuple[str, ...] = (),
+        goal_revision_history_sha256: str | None = None,
+        goal_policy_revision: UUID | None = None,
+        goal_revision_history_store_revision: UUID | None = None,
+        criterion_baseline_sha256: str | None = None,
+        criterion_coverage_sha256: str | None = None,
+        evaluation_observation: ModelGoalEvaluationObservation | None = None,
+        mutation_state_override: ModelGoalMutationState | None = None,
+    ) -> ModelOccEligibilityResult:
+        return _goal_result(
+            snapshot,
+            allocation=allocation,
+            eligible=eligible,
+            reason=reason,
+            detail=detail,
+            contract_hashes=hashes,
+            receipt_ids=receipts,
+            missing=missing,
+            stale=stale,
+            goal_revision_history_sha256=goal_revision_history_sha256,
+            goal_policy_revision=goal_policy_revision,
+            goal_revision_history_store_revision=goal_revision_history_store_revision,
+            criterion_baseline_sha256=criterion_baseline_sha256,
+            criterion_coverage_sha256=criterion_coverage_sha256,
+            evaluation_observation=evaluation_observation,
+            mutation_state=mutation_state_override or mutation_state,
+        )
+
+    root = snapshot.goal_contract_root
+    try:
+        remote_result = _git(root, "remote", "get-url", "origin")
+    except (OSError, subprocess.TimeoutExpired):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the goal contract repository remote could not be inspected",
+        )
+    if remote_result.returncode:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the goal contract repository has no readable origin remote",
+        )
+    remote_repo = _remote_repository(
+        remote_result.stdout.decode("utf-8", "replace").strip()
+    )
+    if remote_repo is None or remote_repo.casefold() != snapshot.repo.casefold():
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+            "the goal source repository remote does not match the declared repository",
+        )
+
+    try:
+        source = _git(
+            root,
+            "show",
+            f"{snapshot.goal_contract_source_commit_sha}:{snapshot.goal_contract_path.as_posix()}",
+        )
+        subject_tree = _git(
+            root,
+            "rev-parse",
+            f"{snapshot.subject_commit_sha}^{{tree}}",
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "Git source or subject proof could not be read",
+        )
+    if source.returncode:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the declared contract path is absent at its immutable source commit",
+        )
+    if (
+        subject_tree.returncode
+        or subject_tree.stdout.decode().strip() != snapshot.subject_tree_sha
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+            "the declared subject tree does not match the Git tree for subject_commit_sha",
+        )
+    format_reason, format_detail = _goal_formatter_result(
+        root,
+        snapshot.goal_contract_source_commit_sha,
+        snapshot.goal_contract_path.as_posix(),
+        source.stdout,
+    )
+    if format_reason is not None:
+        return result(False, format_reason, format_detail)
+
+    try:
+        source_text = source.stdout.decode("utf-8")
+        # The custom loader subclasses SafeLoader and only rejects duplicate
+        # mapping keys; it never constructs arbitrary Python objects.
+        contract = yaml.load(
+            source_text,
+            Loader=_DuplicateKeySafeLoader,  # noqa: S506
+        )
+    except (UnicodeDecodeError, yaml.YAMLError) as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            f"the immutable goal contract is not unambiguous UTF-8 YAML: {exc.__class__.__name__}",
+        )
+    if not isinstance(contract, dict):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the immutable goal contract root must be a mapping",
+        )
+    try:
+        contract_goal_id = UUID(str(contract.get("goal_id", "")))
+        contract_revision = UUID(str(contract.get("contract_revision", "")))
+    except ValueError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the immutable goal contract must declare UUID goal_id and contract_revision",
+        )
+    if (
+        contract.get("repository") != snapshot.repo
+        or contract_goal_id != snapshot.goal_id
+        or contract_revision != snapshot.contract_revision
+        or contract.get("schema_version")
+        != snapshot.contract_schema_version.to_string()
+        or (
+            snapshot.goal_ticket_id is not None
+            and contract.get("ticket_id") != snapshot.goal_ticket_id
+        )
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the immutable contract identity differs from the explicit goal snapshot",
+        )
+    if compute_canonical_contract_sha256(contract) != snapshot.goal_contract_sha256:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the immutable goal contract canonical digest does not match the declaration",
+        )
+    raw_manifest = contract.get("subject_manifest")
+    if not isinstance(raw_manifest, dict):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the immutable goal subject manifest is absent or invalid: mapping required",
+        )
+    try:
+        contract_manifest = ModelGoalSubjectManifest.model_validate(raw_manifest)
+    except ValidationError as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the immutable goal subject manifest is absent or invalid: "
+            f"{exc.__class__.__name__}",
+        )
+    if contract_manifest.required_subject_kind == "commit":
+        if contract_manifest.commit_source == "pull_request":
+            if (
+                snapshot.pr_number is None
+                or snapshot.subject_commit_sha
+                not in _normalize_sha_set(snapshot.pr_commit_shas)
+                or contract_manifest.subject_ref is None
+                or snapshot.pr_branch
+                != contract_manifest.subject_ref.removeprefix("refs/heads/")
+            ):
+                return result(
+                    False,
+                    EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                    "the PR subject does not match the protected PR ref and head",
+                )
+        elif snapshot.pr_number is not None or snapshot.pr_commit_shas:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                "the protected branch subject cannot include PR metadata",
+            )
+    # PR metadata on the legacy envelope is not authority for merge-group or
+    # deployment subjects. Those modes resolve only from their typed protected
+    # observation fields below.
+    try:
+        contract_manifest.validate_for_owner(
+            repository=snapshot.repo, goal_id=snapshot.goal_id
+        )
+    except ModelOnexError as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            f"the immutable goal subject manifest has an invalid dependency cycle: {exc}",
+        )
+    raw_items = contract.get("dod_evidence")
+    if not isinstance(raw_items, list) or not raw_items:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the goal contract must declare at least one evidence item",
+        )
+    try:
+        evidence_items = tuple(
+            ModelDodEvidenceItem.model_validate(raw_item) for raw_item in raw_items
+        )
+    except ValidationError as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            f"the goal contract evidence is structurally invalid: {exc.__class__.__name__}",
+        )
+
+    entries: dict[
+        tuple[str, str], tuple[ModelDodEvidenceItem, ModelDodEvidenceCheck]
+    ] = {}
+    for item in evidence_items:
+        if (
+            not item.id
+            or item.id in {".", ".."}
+            or "/" in item.id
+            or "\\" in item.id
+            or "\x00" in item.id
+        ):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+                "goal evidence item id must be a single safe path component",
+            )
+        for check in item.checks:
+            key = (item.id, check.check_type.value)
+            if key in entries:
+                return result(
+                    False,
+                    EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+                    "the goal contract repeats an item/check key",
+                )
+            entries[key] = (item, check)
+    if not entries:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CONTRACT_INVALID,
+            "the goal contract has no declared checks",
+        )
+
+    try:
+        policy = admission_provider.get_policy(
+            repository=snapshot.repo,
+            goal_id=snapshot.goal_id,
+            contract_revision=snapshot.contract_revision,
+        )
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the protected verifier policy could not be read",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    if (
+        policy is None
+        or policy.criterion_baseline is None
+        or policy.subject_manifest is None
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "no protected goal verifier policy and criterion baseline are configured",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    if (
+        policy.repository != snapshot.repo
+        or policy.goal_id != snapshot.goal_id
+        or policy.contract_revision != snapshot.contract_revision
+        or policy.subject_manifest != contract_manifest
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            "protected verifier policy is bound to a different goal revision",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+
+    try:
+        revision_history = admission_provider.read_current_revision_history(
+            repository=snapshot.repo,
+            goal_id=snapshot.goal_id,
+        )
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the trusted goal revision history could not be read",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    if revision_history is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "no complete trusted goal revision history is available",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    revision_reason, revision_detail, revision_history_digest = (
+        _validate_goal_revision_history(
+            snapshot, revision_history, admission_provider=admission_provider
+        )
+    )
+    if revision_reason is not None:
+        return result(
+            False,
+            revision_reason,
+            revision_detail,
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    assert revision_history_digest is not None
+
+    coverage_result = _validate_goal_criterion_coverage(
+        root=root,
+        subject_commit_sha=snapshot.subject_commit_sha,
+        evidence_items=evidence_items,
+        policy=policy,
+    )
+    coverage_reason, coverage_detail, baseline_digest, coverage_digest = coverage_result
+    if coverage_reason is not None:
+        return result(
+            False,
+            coverage_reason,
+            coverage_detail,
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    assert baseline_digest is not None
+    assert coverage_digest is not None
+
+    try:
+        observation = admission_provider.get_evaluation_observation(
+            repository=snapshot.repo,
+            goal_id=snapshot.goal_id,
+            contract_revision=snapshot.contract_revision,
+            subject_commit_sha=snapshot.subject_commit_sha,
+            subject_tree_sha=snapshot.subject_tree_sha,
+        )
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the protected evaluation observation could not be read",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    if observation is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "no protected evaluation observation and deadline event are available",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+        )
+    if (
+        observation.repository != snapshot.repo
+        or observation.goal_id != snapshot.goal_id
+        or observation.contract_revision != snapshot.contract_revision
+        or observation.subject_commit_sha != snapshot.subject_commit_sha
+        or observation.subject_tree_sha != snapshot.subject_tree_sha
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            "the protected evaluation observation is bound to a different subject",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            evaluation_observation=observation,
+        )
+    try:
+        contract_manifest.validate_observation_subject(observation)
+    except ModelOnexError as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            f"protected subject manifest does not match the evaluation observation: {exc}",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            evaluation_observation=observation,
+        )
+    if contract_manifest.required_subject_kind == "commit":
+        if contract_manifest.commit_source == "pull_request":
+            assert snapshot.pr_number is not None
+        try:
+            current_source = admission_provider.read_current_commit_source(
+                repository=snapshot.repo,
+                goal_id=snapshot.goal_id,
+                contract_revision=snapshot.contract_revision,
+                manifest=contract_manifest,
+                pull_request_number=snapshot.pr_number,
+            )
+        except (GoalAdmissionProviderError, AttributeError):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                "the current protected commit source could not be read",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if current_source is None:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                "the current protected commit source is unavailable",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if (
+            current_source.repository != snapshot.repo
+            or current_source.goal_id != snapshot.goal_id
+            or current_source.contract_revision != snapshot.contract_revision
+            or current_source.commit_source != contract_manifest.commit_source
+            or current_source.subject_ref != contract_manifest.subject_ref
+            or current_source.subject_repository != observation.subject_repository
+            or current_source.subject_commit_sha != snapshot.subject_commit_sha
+            or current_source.subject_commit_sha != observation.subject_commit_sha
+            or current_source.subject_tree_sha != snapshot.subject_tree_sha
+            or current_source.subject_tree_sha != observation.subject_tree_sha
+            or current_source.pull_request_number != observation.pull_request_number
+            or current_source.base_repository != observation.base_repository
+            or current_source.base_ref != contract_manifest.base_ref
+            or current_source.base_ref != observation.base_ref
+            or current_source.observed_at < observation.observed_at
+            or current_source.observed_at > observation.deadline_at
+        ):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                "current PR/branch source readback differs from the protected subject",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+    elif contract_manifest.required_subject_kind == "merge_group":
+        try:
+            current_group = admission_provider.read_current_merge_group_source(
+                repository=snapshot.repo,
+                goal_id=snapshot.goal_id,
+                contract_revision=snapshot.contract_revision,
+                observation=observation,
+            )
+        except (GoalAdmissionProviderError, AttributeError):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                "the retained merge-group source could not be read",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if current_group is None:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                "no current authenticated merge-group source is available",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if (
+            current_group.repository != snapshot.repo
+            or current_group.goal_id != snapshot.goal_id
+            or current_group.contract_revision != snapshot.contract_revision
+            or current_group.delivery_id != observation.merge_group_delivery_id
+            or current_group.merge_group_id != observation.merge_group_id
+            or current_group.merge_group_ref != observation.merge_group_ref
+            or current_group.base_ref != observation.merge_group_base_ref
+            or current_group.head_ref != observation.merge_group_head_ref
+            or current_group.base_sha != observation.merge_group_base_sha
+            or current_group.base_tree_sha != observation.merge_group_base_tree_sha
+            or current_group.head_sha != observation.merge_group_head_sha
+            or current_group.head_tree_sha != observation.merge_group_head_tree_sha
+            or current_group.head_sha != snapshot.subject_commit_sha
+            or current_group.head_tree_sha != snapshot.subject_tree_sha
+            or current_group.source_checkpoint_id
+            != observation.merge_group_source_checkpoint_id
+            or current_group.source_body_sha256
+            != observation.merge_group_source_body_sha256
+            or current_group.received_at != observation.merge_group_received_at
+            or current_group.observed_at < observation.observed_at
+            or current_group.observed_at > observation.deadline_at
+        ):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                "current merge-group readback differs from the retained subject delivery",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+
+    try:
+        mutation_state = admission_provider.read_current_goal_mutation_state(
+            repository=snapshot.repo,
+            goal_id=snapshot.goal_id,
+        )
+    except (GoalAdmissionProviderError, AttributeError):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the protected goal mutation barrier could not be read",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            evaluation_observation=observation,
+        )
+    if (
+        mutation_state is None
+        or mutation_state.repository != snapshot.repo
+        or mutation_state.goal_id != snapshot.goal_id
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "no current protected goal mutation barrier snapshot is available",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            evaluation_observation=observation,
+        )
+    if mutation_state.status != "clear":
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_MUTATION_PENDING,
+            "an unresolved or confirmed-but-not-activated mutation blocks admission",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            goal_revision_history_sha256=revision_history_digest,
+            goal_policy_revision=policy.policy_revision,
+            goal_revision_history_store_revision=revision_history.store_revision,
+            criterion_baseline_sha256=baseline_digest,
+            criterion_coverage_sha256=coverage_digest,
+            evaluation_observation=observation,
+            mutation_state_override=mutation_state,
+        )
+    if observation.deadline_status == "expired":
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_DEADLINE_EXPIRED,
+            "a trusted persisted deadline occurrence blocks this goal subject",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            goal_revision_history_sha256=revision_history_digest,
+            goal_policy_revision=policy.policy_revision,
+            goal_revision_history_store_revision=revision_history.store_revision,
+            criterion_baseline_sha256=baseline_digest,
+            criterion_coverage_sha256=coverage_digest,
+            evaluation_observation=observation,
+        )
+
+    if allocation is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "no authoritative durable attempt allocation snapshot was supplied",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            goal_revision_history_sha256=revision_history_digest,
+            goal_policy_revision=policy.policy_revision,
+            goal_revision_history_store_revision=revision_history.store_revision,
+            criterion_baseline_sha256=baseline_digest,
+            criterion_coverage_sha256=coverage_digest,
+            evaluation_observation=observation,
+        )
+    if (
+        allocation.goal_id != snapshot.goal_id
+        or allocation.repository != snapshot.repo
+        or allocation.contract_revision != snapshot.contract_revision
+        or allocation.subject_commit_sha != snapshot.subject_commit_sha
+        or allocation.subject_tree_sha != snapshot.subject_tree_sha
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+            "attempt allocation partition does not match the verified goal subject",
+            evaluation_observation=observation,
+        )
+    selected_attempt = max(allocation.attempts, key=lambda attempt: attempt.sequence)
+    if selected_attempt.status is not EnumGoalAttemptStatus.PASS:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTEMPT_NONPASS,
+            "highest allocated attempt "
+            f"{selected_attempt.sequence} is {selected_attempt.status.value}; "
+            "an older PASS cannot admit this subject",
+            hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
+            goal_revision_history_sha256=revision_history_digest,
+            goal_policy_revision=policy.policy_revision,
+            goal_revision_history_store_revision=revision_history.store_revision,
+            criterion_baseline_sha256=baseline_digest,
+            criterion_coverage_sha256=coverage_digest,
+            evaluation_observation=observation,
+        )
+
+    contract_digest = compute_canonical_contract_sha256(contract)
+    # In goal mode the retained signed execution result R is the check evidence.
+    # Per-check YAML files remain a legacy ticket/OCC input and are never read
+    # through a caller-selected filesystem path here.
+    passed_receipts: list[str] = []
+
+    try:
+        attestation = admission_provider.get_attestation(
+            repository=snapshot.repo,
+            goal_id=snapshot.goal_id,
+            contract_revision=snapshot.contract_revision,
+            subject_commit_sha=snapshot.subject_commit_sha,
+            subject_tree_sha=snapshot.subject_tree_sha,
+            attempt_id=selected_attempt.attempt_id,
+            attempt_sequence=selected_attempt.sequence,
+            store_revision=allocation.store_revision,
+        )
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the trusted supervisor attestation could not be read",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    if attestation is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "the selected attempt has no trusted supervisor attestation",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    try:
+        contract_manifest.validate_observation_subject(observation)
+        contract_manifest.validate_parent_integration_criterion(
+            protected_criterion_ids={
+                requirement.criterion_id
+                for requirement in policy.criterion_baseline.requirements
+            }
+        )
+    except ModelOnexError as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            f"protected subject manifest does not match policy or observation: {exc}",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    try:
+        execution_receipt = admission_provider.get_execution_receipt(
+            repository=snapshot.repo,
+            goal_id=snapshot.goal_id,
+            contract_revision=snapshot.contract_revision,
+            subject_commit_sha=snapshot.subject_commit_sha,
+            subject_tree_sha=snapshot.subject_tree_sha,
+            attempt_id=selected_attempt.attempt_id,
+            attempt_sequence=selected_attempt.sequence,
+        )
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the trusted isolated-execution receipt could not be read",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    if execution_receipt is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "the selected PASS attempt has no isolated-execution receipt",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    assert selected_attempt.result_sha256 is not None
+    try:
+        result_bytes = admission_provider.read_artifact_bytes(
+            selected_attempt.result_sha256
+        )
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "the immutable execution result R could not be validated",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    if result_bytes is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "the immutable execution result R could not be validated",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    try:
+        execution_result = ModelGoalExecutionResult.model_validate_json(result_bytes)
+    except (ValidationError, ValueError):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "the immutable execution result R could not be validated",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    expected_request_sha256 = compute_goal_execution_request_sha256(
+        repository=snapshot.repo,
+        goal_id=snapshot.goal_id,
+        contract_revision=snapshot.contract_revision,
+        contract_sha256=contract_digest,
+        policy_revision=policy.policy_revision,
+        verifier_artifact_sha256=policy.verifier_artifact_sha256,
+        criterion_baseline_sha256=baseline_digest,
+        revision_history_sha256=revision_history_digest,
+        evaluation_observation_sha256=observation.content_sha256(),
+        subject_manifest_sha256=contract_manifest.content_sha256(),
+        attempt_id=selected_attempt.attempt_id,
+        attempt_sequence=selected_attempt.sequence,
+        subject_kind=contract_manifest.required_subject_kind,
+        subject_commit_sha=snapshot.subject_commit_sha,
+        subject_tree_sha=snapshot.subject_tree_sha,
+    )
+    attempt_snapshot = allocation.snapshot_sha256
+    if (
+        execution_result.attempt_id != selected_attempt.attempt_id
+        or execution_result.content_sha256() != selected_attempt.result_sha256
+        or execution_result.artifact_sha256
+        != tuple(sorted(selected_attempt.artifact_sha256))
+        or selected_attempt.running_store_revision is None
+        or selected_attempt.running_snapshot_sha256 is None
+        or execution_receipt.execution_record_id != attestation.execution_record_id
+        or execution_receipt.issuer_domain != policy.issuer_domain
+        or execution_receipt.repository != snapshot.repo
+        or execution_receipt.goal_id != snapshot.goal_id
+        or execution_receipt.contract_revision != snapshot.contract_revision
+        or execution_receipt.contract_schema_version.to_string()
+        != snapshot.contract_schema_version.to_string()
+        or execution_receipt.contract_path != snapshot.goal_contract_path
+        or execution_receipt.contract_source_commit_sha
+        != snapshot.goal_contract_source_commit_sha
+        or execution_receipt.contract_sha256 != contract_digest
+        or execution_receipt.subject_commit_sha != snapshot.subject_commit_sha
+        or execution_receipt.subject_tree_sha != snapshot.subject_tree_sha
+        or execution_receipt.attempt_id != selected_attempt.attempt_id
+        or execution_receipt.attempt_sequence != selected_attempt.sequence
+        or execution_receipt.running_attempt_store_revision
+        != selected_attempt.running_store_revision
+        or execution_receipt.running_attempt_snapshot_sha256
+        != selected_attempt.running_snapshot_sha256
+        or execution_receipt.execution_request_sha256 != expected_request_sha256
+        or selected_attempt.execution_request_sha256 != expected_request_sha256
+        or execution_receipt.result_sha256 != execution_result.content_sha256()
+        or execution_receipt.artifact_sha256 != execution_result.artifact_sha256
+        or execution_receipt.subject_manifest_sha256
+        != contract_manifest.content_sha256()
+        or execution_receipt.evaluation_observation_sha256
+        != observation.content_sha256()
+        or execution_receipt.verifier_artifact_sha256 != policy.verifier_artifact_sha256
+        or execution_receipt.policy_revision != policy.policy_revision
+        or execution_receipt.execution_identity
+        not in policy.allowed_execution_identities
+        or execution_receipt.started_at < observation.observed_at
+        or execution_receipt.completed_at > observation.deadline_at
+        or selected_attempt.result_sha256 != execution_receipt.result_sha256
+        or selected_attempt.running_store_revision == allocation.store_revision
+        or attempt_snapshot == execution_receipt.running_attempt_snapshot_sha256
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            "isolated execution receipt, R, or allocation snapshot has inconsistent bindings",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    try:
+        contract_manifest.validate_parent_integration_result(execution_result)
+    except ModelOnexError as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CRITERION_COVERAGE_MISSING,
+            str(exc),
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    protected_checks = {
+        (
+            requirement.criterion_id,
+            check.item_id,
+            check.check_type,
+            check.check_value_sha256,
+        )
+        for requirement in policy.criterion_baseline.requirements
+        for check in requirement.required_checks
+    }
+    result_checks = {
+        (
+            outcome.criterion_id,
+            outcome.item_id,
+            outcome.check_type,
+            outcome.check_value_sha256,
+        ): outcome.outcome
+        for outcome in execution_result.raw_check_outcomes
+    }
+    criterion_outcomes = {
+        item.criterion_id: item.outcome for item in execution_result.criterion_evidence
+    }
+    protected_selectors = {
+        selector
+        for requirement in policy.criterion_baseline.requirements
+        for selector in requirement.required_test_selectors
+    }
+    observed_selectors = {
+        item.selector: item.outcome for item in execution_result.selector_outcomes
+    }
+    coverage_mismatch = []
+    if set(result_checks) != protected_checks:
+        coverage_mismatch.append("check bindings")
+    if any(outcome != "passed" for outcome in result_checks.values()):
+        coverage_mismatch.append("check outcomes")
+    expected_criteria = {
+        requirement.criterion_id
+        for requirement in policy.criterion_baseline.requirements
+    }
+    if set(criterion_outcomes) != expected_criteria:
+        coverage_mismatch.append("criterion bindings")
+    if any(outcome != "passed" for outcome in criterion_outcomes.values()):
+        coverage_mismatch.append("criterion outcomes")
+    if set(observed_selectors) != protected_selectors:
+        coverage_mismatch.append("selector bindings")
+    if any(outcome != "passed" for outcome in observed_selectors.values()):
+        coverage_mismatch.append("selector outcomes")
+    if coverage_mismatch:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_CRITERION_COVERAGE_MISSING,
+            "execution result R does not pass the exact protected criterion/check/selector baseline",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    expected_artifacts = tuple(sorted(selected_attempt.artifact_sha256))
+    if (
+        attestation.issuer_domain != policy.issuer_domain
+        or attestation.goal_id != snapshot.goal_id
+        or attestation.repository != snapshot.repo
+        or attestation.contract_revision != snapshot.contract_revision
+        or attestation.contract_schema_version.to_string()
+        != snapshot.contract_schema_version.to_string()
+        or attestation.contract_path != snapshot.goal_contract_path
+        or attestation.contract_source_commit_sha
+        != snapshot.goal_contract_source_commit_sha
+        or attestation.contract_sha256 != contract_digest
+        or attestation.subject_commit_sha != snapshot.subject_commit_sha
+        or attestation.subject_tree_sha != snapshot.subject_tree_sha
+        or attestation.attempt_id != selected_attempt.attempt_id
+        or attestation.attempt_sequence != selected_attempt.sequence
+        or attestation.attempt_result_sha256 != selected_attempt.result_sha256
+        or attestation.execution_record_id != execution_receipt.execution_record_id
+        or attestation.execution_receipt_sha256 != execution_receipt.content_sha256()
+        or tuple(sorted(attestation.attempt_artifact_sha256)) != expected_artifacts
+        or attestation.attempt_store_revision != allocation.store_revision
+        or attestation.attempt_snapshot_sha256 != allocation.snapshot_sha256
+        or attestation.verifier_artifact_sha256 != policy.verifier_artifact_sha256
+        or attestation.policy_revision != policy.policy_revision
+        or attestation.criterion_baseline_sha256 != baseline_digest
+        or attestation.criterion_coverage_sha256 != coverage_digest
+        or attestation.revision_history_sha256 != revision_history_digest
+        or attestation.evaluation_observation_id != observation.observation_id
+        or attestation.deadline_event_id != observation.deadline_event_id
+        or attestation.subject_manifest_sha256 != contract_manifest.content_sha256()
+        or attestation.evaluation_observation_sha256 != observation.content_sha256()
+        or attestation.execution_identity not in policy.allowed_execution_identities
+        or not attestation.is_fresh_at(
+            observation.observed_at,
+            max_age_seconds=policy.max_attestation_age_seconds,
+        )
+        or observation.observed_at > observation.deadline_at
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            "supervisor evidence does not match the active protected policy or goal subject",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    try:
+        trust_root = admission_provider.get_domain_trust_root(policy.issuer_domain)
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the supervisor trust root could not be read",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    if trust_root is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "the supervisor issuer has no active trusted key",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    dependency_artifacts: set[str] = set()
+    dependency_issuer_by_id = {
+        binding.dependency_id: binding.issuer_domain
+        for binding in policy.dependency_issuer_bindings
+    }
+    if set(dependency_issuer_by_id) != {
+        pin.dependency_id for pin in contract_manifest.dependencies
+    }:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "protected policy must bind exactly one trusted issuer domain per dependency",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    for pin in contract_manifest.dependencies:
+        try:
+            dependency_evidence = admission_provider.get_dependency_evidence(
+                dependency=pin
+            )
+        except GoalAdmissionProviderError:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                f"protected dependency evidence {pin.dependency_id!r} could not be read",
+                hashes={str(snapshot.goal_id): contract_digest},
+                receipts=tuple(sorted(passed_receipts)),
+            )
+        if dependency_evidence is None:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                f"protected dependency evidence {pin.dependency_id!r} is unavailable",
+                hashes={str(snapshot.goal_id): contract_digest},
+                receipts=tuple(sorted(passed_receipts)),
+            )
+        dependency_attestation, dependency_observation = dependency_evidence
+        expected_dependency_issuer = dependency_issuer_by_id[pin.dependency_id]
+        try:
+            dependency_key = admission_provider.get_domain_trust_root(
+                expected_dependency_issuer
+            )
+        except GoalAdmissionProviderError:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                f"dependency trust root {dependency_attestation.issuer_domain!r} could not be read",
+                hashes={str(snapshot.goal_id): contract_digest},
+                receipts=tuple(sorted(passed_receipts)),
+            )
+        if (
+            dependency_key is None
+            or dependency_attestation.issuer_domain != expected_dependency_issuer
+            or not pin.matches_signed_evidence(
+                attestation=dependency_attestation,
+                observation=dependency_observation,
+            )
+            or not dependency_attestation.binds_evaluation_observation(
+                dependency_observation
+            )
+            or not dependency_attestation.is_fresh_at(
+                dependency_observation.observed_at,
+                max_age_seconds=policy.max_attestation_age_seconds,
+            )
+            or not verify_base64(
+                dependency_key,
+                dependency_attestation.signing_payload(),
+                dependency_attestation.signature,
+            )
+        ):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+                f"dependency evidence {pin.dependency_id!r} does not match its trusted pin",
+                hashes={str(snapshot.goal_id): contract_digest},
+                receipts=tuple(sorted(passed_receipts)),
+            )
+        dependency_artifacts.update(pin.artifact_sha256)
+    if not verify_base64(
+        trust_root,
+        execution_receipt.signing_payload(),
+        execution_receipt.signature,
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            "the isolated-execution receipt signature is invalid",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    if not verify_base64(
+        trust_root,
+        attestation.signing_payload(),
+        attestation.signature,
+    ):
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            "the supervisor attestation signature is invalid",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    try:
+        contract_manifest.validate_produced_evidence(
+            result=execution_result,
+            receipt=execution_receipt,
+            attestation=attestation,
+            observation=observation,
+        )
+        contract_manifest.validate_no_self_reference(
+            repository=snapshot.repo,
+            goal_id=snapshot.goal_id,
+            final_attestation=attestation,
+        )
+    except ModelOnexError as exc:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+            f"contract manifest evidence binding failed: {exc}",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
+    artifact_digests = {
+        policy.verifier_artifact_sha256,
+        selected_attempt.result_sha256,
+        *selected_attempt.artifact_sha256,
+        *execution_result.artifact_sha256,
+        *dependency_artifacts,
+    }
+    for digest in sorted(artifact_digests):
+        try:
+            artifact_bytes = admission_provider.read_artifact_bytes(digest)
+        except GoalAdmissionProviderError:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                "a pinned verifier or execution artifact could not be read",
+                hashes={str(snapshot.goal_id): contract_digest},
+                receipts=tuple(sorted(passed_receipts)),
+            )
+        if artifact_bytes is None:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                "a pinned verifier or execution artifact is unavailable",
+                hashes={str(snapshot.goal_id): contract_digest},
+                receipts=tuple(sorted(passed_receipts)),
+            )
+        actual_digest = f"sha256:{hashlib.sha256(artifact_bytes).hexdigest()}"
+        if actual_digest != digest:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID,
+                "retained verifier or execution artifact bytes do not match their digest",
+                hashes={str(snapshot.goal_id): contract_digest},
+                receipts=tuple(sorted(passed_receipts)),
+            )
+
+    return result(
+        True,
+        EnumOccEligibilityReason.ELIGIBLE,
+        "the current goal source, subject, protected checks, allocated attempt, "
+        "signed execution receipt, and supervisor attestation verify; the caller "
+        "must still publish this verdict through its serialized required-context effect",
+        hashes={str(snapshot.goal_id): contract_digest},
+        receipts=tuple(sorted(passed_receipts)),
+        goal_revision_history_sha256=revision_history_digest,
+        goal_policy_revision=policy.policy_revision,
+        goal_revision_history_store_revision=revision_history.store_revision,
+        criterion_baseline_sha256=baseline_digest,
+        criterion_coverage_sha256=coverage_digest,
+        evaluation_observation=observation,
+    )
+
+
+def _validate_goal_criterion_coverage(
+    *,
+    root: Path,
+    subject_commit_sha: str,
+    evidence_items: tuple[ModelDodEvidenceItem, ...],
+    policy: ModelGoalVerifierPolicy,
+) -> tuple[
+    EnumOccEligibilityReason | None,
+    str,
+    str | None,
+    str | None,
+]:
+    """Match author-declared AC bindings to protected checks and test bytes."""
+    baseline = policy.criterion_baseline
+    if baseline is None:
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "protected criterion baseline is unavailable",
+            None,
+            None,
+        )
+
+    expected: dict[str, set[tuple[str, str, str]]] = {
+        requirement.criterion_id: {
+            (
+                check.item_id,
+                check.check_type.value,
+                check.check_value_sha256,
+            )
+            for check in requirement.required_checks
+        }
+        for requirement in baseline.requirements
+    }
+    actual: dict[str, set[tuple[str, str, str]]] = {
+        criterion_id: set() for criterion_id in expected
+    }
+    for item in evidence_items:
+        if len(set(item.binds_ac)) != len(item.binds_ac):
+            return (
+                EnumOccEligibilityReason.GOAL_CRITERION_BASELINE_MISMATCH,
+                "an evidence item repeats an acceptance-criterion binding",
+                None,
+                None,
+            )
+        for criterion_id in item.binds_ac:
+            if criterion_id not in expected:
+                return (
+                    EnumOccEligibilityReason.GOAL_CRITERION_BASELINE_MISMATCH,
+                    "goal contract binds a criterion outside the protected baseline",
+                    None,
+                    None,
+                )
+            for check in item.checks:
+                value_digest = compute_goal_check_value_sha256(check.check_value)
+                actual[criterion_id].add(
+                    (item.id, check.check_type.value, value_digest)
+                )
+
+    missing_criteria = tuple(
+        criterion_id for criterion_id, bindings in actual.items() if not bindings
+    )
+    if missing_criteria:
+        return (
+            EnumOccEligibilityReason.GOAL_CRITERION_COVERAGE_MISSING,
+            "required acceptance criteria have no check bindings: "
+            + ", ".join(sorted(missing_criteria)),
+            None,
+            None,
+        )
+    missing_bindings = {
+        criterion_id: expected[criterion_id] - actual[criterion_id]
+        for criterion_id in expected
+        if expected[criterion_id] - actual[criterion_id]
+    }
+    extra_bindings = {
+        criterion_id: actual[criterion_id] - expected[criterion_id]
+        for criterion_id in expected
+        if actual[criterion_id] - expected[criterion_id]
+    }
+    if missing_bindings and not extra_bindings:
+        return (
+            EnumOccEligibilityReason.GOAL_CRITERION_COVERAGE_MISSING,
+            "goal contract omits protected required checks for criteria: "
+            + ", ".join(sorted(missing_bindings)),
+            None,
+            None,
+        )
+    if missing_bindings or extra_bindings:
+        return (
+            EnumOccEligibilityReason.GOAL_CRITERION_BASELINE_MISMATCH,
+            "goal contract check bindings do not exactly match the protected criterion baseline",
+            None,
+            None,
+        )
+
+    protected_files: set[tuple[str, str]] = set()
+    for requirement in baseline.requirements:
+        for baseline_file in requirement.test_and_fixture_files:
+            try:
+                content = _git(
+                    root,
+                    "show",
+                    f"{subject_commit_sha}:{baseline_file.path.as_posix()}",
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                return (
+                    EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                    "a protected criterion test/fixture could not be read from the subject commit",
+                    None,
+                    None,
+                )
+            if content.returncode:
+                return (
+                    EnumOccEligibilityReason.GOAL_CRITERION_BASELINE_MISMATCH,
+                    "a protected criterion test/fixture is absent from the subject commit",
+                    None,
+                    None,
+                )
+            actual_digest = f"sha256:{hashlib.sha256(content.stdout).hexdigest()}"
+            if actual_digest != baseline_file.sha256:
+                return (
+                    EnumOccEligibilityReason.GOAL_CRITERION_BASELINE_MISMATCH,
+                    "a protected criterion test/fixture differs from the protected baseline",
+                    None,
+                    None,
+                )
+            protected_files.add((baseline_file.path.as_posix(), actual_digest))
+
+    baseline_digest = baseline.content_sha256()
+    coverage_digest = compute_goal_criterion_coverage_sha256(
+        evidence_items=evidence_items,
+        baseline=baseline,
+        protected_file_sha256=dict(protected_files),
+    )
+    return None, "", baseline_digest, coverage_digest
+
+
+def _validate_goal_revision_history(
+    snapshot: ModelOccEligibilityInput,
+    history: ModelGoalRevisionHistorySnapshot,
+    *,
+    admission_provider: ProtocolGoalAdmissionProvider,
+) -> tuple[
+    EnumOccEligibilityReason | None,
+    str,
+    str | None,
+]:
+    """Validate the append-only revision DAG and explicit resolution of forks."""
+    assert snapshot.goal_id is not None
+    assert snapshot.contract_revision is not None
+    assert snapshot.contract_schema_version is not None
+    assert snapshot.goal_contract_path is not None
+    assert snapshot.goal_contract_source_commit_sha is not None
+    assert snapshot.goal_contract_sha256 is not None
+
+    if history.repository != snapshot.repo or history.goal_id != snapshot.goal_id:
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+            "revision history belongs to another repository or goal",
+            None,
+        )
+    if history.content_sha256() != history.snapshot_sha256:
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+            "revision history digest does not match its complete contents",
+            None,
+        )
+    revisions_by_id = {record.revision_id: record for record in history.revisions}
+    if len(revisions_by_id) != len(history.revisions):
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+            "revision history repeats a revision id",
+            None,
+        )
+    revision_policies_by_id = {
+        policy.policy_revision: policy
+        for policy in history.revision_authorization_policies
+    }
+    if len(revision_policies_by_id) != len(history.revision_authorization_policies):
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+            "revision history repeats an authorization policy revision",
+            None,
+        )
+    for revision_policy in history.revision_authorization_policies:
+        if (
+            revision_policy.repository != snapshot.repo
+            or revision_policy.goal_id != snapshot.goal_id
+            or revision_policy.content_sha256() != revision_policy.policy_sha256
+        ):
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "revision authorization policy is invalid or belongs to another goal",
+                None,
+            )
+    try:
+        work_ledger_key_provider = admission_provider.get_work_ledger_key_provider()
+    except GoalAdmissionProviderError:
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the Work Ledger event trust keys could not be read",
+            None,
+        )
+    if work_ledger_key_provider is None:
+        return (
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "no protected Work Ledger event signing keys are configured",
+            None,
+        )
+
+    for revision in history.revisions:
+        source_event = revision.source_event
+        event_policy_revision = source_event.authorization_policy_revision
+        authorization_policy = (
+            revision_policies_by_id.get(event_policy_revision)
+            if event_policy_revision is not None
+            else None
+        )
+        if (
+            authorization_policy is None
+            or authorization_policy.repository != revision.repository
+            or authorization_policy.goal_id != revision.goal_id
+            or source_event.actor.actor_key
+            not in authorization_policy.allowed_actor_keys
+            or revision.source_envelope.runtime_id
+            not in authorization_policy.allowed_event_runtime_ids
+        ):
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "goal opening/revision issuer is not authorized by its named historical policy",
+                None,
+            )
+        try:
+            envelope_is_authentic = revision.source_envelope.verify_signature(
+                work_ledger_key_provider
+            )
+        except ModelOnexError:
+            envelope_is_authentic = False
+        if not envelope_is_authentic:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "goal opening/revision lacks an authentic signed Work Ledger envelope",
+                None,
+            )
+
+    for resolution in history.fork_resolutions:
+        authorization_policy = revision_policies_by_id.get(
+            resolution.resolution_policy_revision
+        )
+        if (
+            authorization_policy is None
+            or resolution.repository != snapshot.repo
+            or resolution.authorization_event.actor.actor_key
+            not in authorization_policy.allowed_actor_keys
+        ):
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "fork resolution lacks an authorized Work Ledger actor under its named policy revision",
+                None,
+            )
+        signer = resolution.authorization_envelope.runtime_id
+        if signer not in authorization_policy.allowed_event_runtime_ids:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "fork resolution envelope signer is not authorized by its named policy revision",
+                None,
+            )
+        try:
+            envelope_is_authentic = resolution.authorization_envelope.verify_signature(
+                work_ledger_key_provider
+            )
+        except ModelOnexError:
+            envelope_is_authentic = False
+        if not envelope_is_authentic:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "fork resolution does not have an authentic signed Work Ledger envelope",
+                None,
+            )
+    opening = revisions_by_id.get(snapshot.goal_id)
+    if opening is None or opening.replaces_revision_id is not None:
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+            "revision history must contain the opening claim as its root revision",
+            None,
+        )
+    children: dict[UUID, list[UUID]] = {}
+    for revision in history.revisions:
+        if revision.goal_id != snapshot.goal_id or revision.repository != snapshot.repo:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "revision history contains a cross-goal or cross-repository edge",
+                None,
+            )
+        if revision.revision_id == snapshot.goal_id:
+            continue
+        parent_id = revision.replaces_revision_id
+        if parent_id is None or parent_id not in revisions_by_id:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "revision edge points to a missing predecessor",
+                None,
+            )
+        children.setdefault(parent_id, []).append(revision.revision_id)
+        visited: set[UUID] = set()
+        current_id = revision.revision_id
+        while current_id != snapshot.goal_id:
+            if current_id in visited:
+                return (
+                    EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                    "revision history contains a cycle",
+                    None,
+                )
+            visited.add(current_id)
+            current = revisions_by_id.get(current_id)
+            if current is None or current.replaces_revision_id is None:
+                return (
+                    EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                    "revision chain does not reach its opening claim",
+                    None,
+                )
+            current_id = current.replaces_revision_id
+
+    resolutions_by_parent: dict[UUID, list[ModelGoalForkResolutionRecord]] = {}
+    for resolution in history.fork_resolutions:
+        if resolution.goal_id != snapshot.goal_id:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "fork resolution belongs to another goal",
+                None,
+            )
+        resolutions_by_parent.setdefault(resolution.fork_parent_revision_id, []).append(
+            resolution
+        )
+    for parent_id, child_ids in children.items():
+        resolutions = resolutions_by_parent.get(parent_id, [])
+        if len(child_ids) > 1 and not resolutions:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_FORK_UNRESOLVED,
+                "revision fork has competing heads without an authorized resolution",
+                None,
+            )
+        if len(child_ids) > 1:
+            if len(resolutions) != 1 or set(
+                resolutions[0].competing_revision_ids
+            ) != set(child_ids):
+                return (
+                    EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                    "fork resolution does not name every competing revision exactly once",
+                    None,
+                )
+        elif resolutions:
+            return (
+                EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+                "fork resolution names a revision point with no competing heads",
+                None,
+            )
+    if any(parent_id not in children for parent_id in resolutions_by_parent):
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+            "fork resolution refers to an unknown revision point",
+            None,
+        )
+
+    current_revision_id = snapshot.goal_id
+    while children.get(current_revision_id):
+        child_ids = children[current_revision_id]
+        if len(child_ids) == 1:
+            current_revision_id = child_ids[0]
+            continue
+        resolution = resolutions_by_parent[current_revision_id][0]
+        current_revision_id = resolution.selected_revision_id
+    if current_revision_id != snapshot.contract_revision:
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_NOT_CURRENT,
+            "requested contract revision is not the authorized current revision head",
+            None,
+        )
+    current = revisions_by_id[current_revision_id]
+    if (
+        current.contract_schema_version != snapshot.contract_schema_version
+        or current.contract_path != snapshot.goal_contract_path
+        or current.contract_source_commit_sha
+        != snapshot.goal_contract_source_commit_sha
+        or current.contract_sha256 != snapshot.goal_contract_sha256
+    ):
+        return (
+            EnumOccEligibilityReason.GOAL_REVISION_HISTORY_INVALID,
+            "current revision source pin differs from the requested goal contract",
+            None,
+        )
+    return None, "", history.snapshot_sha256
+
+
+def compute_goal_criterion_coverage_sha256(
+    *,
+    evidence_items: tuple[ModelDodEvidenceItem | ModelContractDodItem, ...],
+    baseline: ModelGoalCriterionBaseline,
+    protected_file_sha256: dict[str, str] | None = None,
+) -> str:
+    """Return the canonical digest signed for verified criterion coverage.
+
+    The validator calls this only after checking the candidate bindings against
+    the protected baseline and reading each pinned file from the immutable
+    subject commit. ``protected_file_sha256`` is therefore a verification
+    result, not caller-provided authority.
+    """
+    requirement_ids = {item.criterion_id for item in baseline.requirements}
+    bindings: dict[str, set[tuple[str, str, str]]] = {
+        criterion_id: set() for criterion_id in requirement_ids
+    }
+    for item in evidence_items:
+        for criterion_id in item.binds_ac:
+            if criterion_id not in bindings:
+                continue
+            for check in item.checks:
+                check_value_sha256 = compute_goal_check_value_sha256(check.check_value)
+                bindings[criterion_id].add(
+                    (item.id, check.check_type.value, check_value_sha256)
+                )
+    if protected_file_sha256 is None:
+        protected_files = {
+            (
+                baseline_file.path.as_posix(),
+                baseline_file.sha256,
+            )
+            for requirement in baseline.requirements
+            for baseline_file in requirement.test_and_fixture_files
+        }
+    else:
+        protected_files = set(protected_file_sha256.items())
+    payload = {
+        "criterion_bindings": {
+            criterion_id: [list(binding) for binding in sorted(criterion_bindings)]
+            for criterion_id, criterion_bindings in sorted(bindings.items())
+        },
+        "protected_files": sorted(protected_files),
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+
+def compute_goal_check_value_sha256(check_value: str | dict[str, str]) -> str:
+    """Digest one typed check value using canonical compact JSON bytes."""
+    canonical = json.dumps(
+        check_value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(canonical).hexdigest()}"
+
+
 def validate_occ_merge_eligibility(
     snapshot: ModelOccEligibilityInput,
+    *,
+    goal_admission_provider: ProtocolGoalAdmissionProvider | None = None,
 ) -> ModelOccEligibilityResult:
     """Validate PR merge eligibility against a pinned OCC evidence snapshot."""
 
+    if snapshot.goal_id is not None:
+        if goal_admission_provider is None:
+            return _goal_result(
+                snapshot,
+                allocation=None,
+                eligible=False,
+                reason=EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                detail=(
+                    "goal admission requires a trusted attempt, policy, "
+                    "attestation, and artifact provider"
+                ),
+            )
+        assert snapshot.contract_revision is not None
+        assert snapshot.subject_commit_sha is not None
+        assert snapshot.subject_tree_sha is not None
+        try:
+            allocation = goal_admission_provider.read_current_attempt_snapshot(
+                repository=snapshot.repo,
+                goal_id=snapshot.goal_id,
+                contract_revision=snapshot.contract_revision,
+                subject_commit_sha=snapshot.subject_commit_sha,
+                subject_tree_sha=snapshot.subject_tree_sha,
+            )
+        except GoalAdmissionProviderError:
+            return _goal_result(
+                snapshot,
+                allocation=None,
+                eligible=False,
+                reason=EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                detail="the authoritative attempt store could not be read",
+            )
+        if allocation is None:
+            return _goal_result(
+                snapshot,
+                allocation=None,
+                eligible=False,
+                reason=EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                detail="no durable attempt allocation exists for this exact subject",
+            )
+        if (
+            allocation.goal_id != snapshot.goal_id
+            or allocation.repository != snapshot.repo
+            or allocation.contract_revision != snapshot.contract_revision
+            or allocation.subject_commit_sha != snapshot.subject_commit_sha
+            or allocation.subject_tree_sha != snapshot.subject_tree_sha
+        ):
+            return _goal_result(
+                snapshot,
+                allocation=allocation,
+                eligible=False,
+                reason=EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                detail="the authoritative attempt store returned another subject partition",
+            )
+        return _validate_goal_eligibility(
+            snapshot,
+            allocation=allocation,
+            admission_provider=goal_admission_provider,
+        )
+
+    # The input model enforces this for legacy OCC mode. Keep the narrowed
+    # contract explicit now that goal mode permits a missing PR number.
+    assert snapshot.pr_number is not None
+    assert snapshot.occ_commit_sha is not None
+    assert snapshot.contracts_dir is not None
+    assert snapshot.receipts_dir is not None
     ticket_ids = tuple(_extract_ticket_ids(snapshot.pr_body, snapshot.pr_title))
     if not ticket_ids:
         return ModelOccEligibilityResult(

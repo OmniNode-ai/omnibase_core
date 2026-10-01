@@ -207,7 +207,10 @@ def check_diff_consistency(
                 )
             )
 
-    if EnumDiffAttestation.CONTRACT_UNMODIFIED in enforced:
+    if (
+        EnumDiffAttestation.CONTRACT_UNMODIFIED in enforced
+        and resolved_ticket is not None
+    ):
         detail = _check_contract_unmodified(entries, resolved_ticket)
         if detail is not None:
             violations.append(

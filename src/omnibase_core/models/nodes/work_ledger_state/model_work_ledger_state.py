@@ -28,6 +28,9 @@ from omnibase_core.models.events.work.model_work_message_acked import (
 from omnibase_core.models.events.work.model_work_message_sent import (
     ModelWorkMessageSent,
 )
+from omnibase_core.models.events.work.model_work_ruling_recorded import (
+    ModelWorkRulingRecorded,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
@@ -82,6 +85,13 @@ class ModelWorkLedgerState(BaseModel):
         description=(
             "Every distinct goal revision event in event_id order. The replaces "
             "links preserve each branch; forks also make the ledger undecided."
+        ),
+    )
+    goal_revision_resolution_events: tuple[ModelWorkRulingRecorded, ...] = Field(
+        default=(),
+        description=(
+            "Operator ruling events with structured goal fork resolutions. The "
+            "complete event payloads preserve every authorization record."
         ),
     )
     messages: tuple[ModelWorkMessageSent, ...] = Field(

@@ -55,19 +55,33 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
+from omnibase_core.constants.constants_goal_admission import _REPOSITORY_RE
 from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_proof_packet import ModelProofPacket
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.utils.util_contract_schema_version import (
+    validate_contract_schema_version,
+)
 
 _TICKET_ID_RE = re.compile(r"^OMN-\d+$")
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 _SHA256_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 # A full git object id: 40 hex for a SHA-1 repository, 64 for SHA-256.
 _TREE_SHA_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
+_GOAL_SHA256_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 # SemVer 2.0.0 — official regex from https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
 # Rejects leading zeros in numeric core (e.g. "01.0.0"), allows pre-release
 # identifiers with dot-separated alphanumerics and hyphens (e.g. "1.0.0-rc.1"),
@@ -127,14 +141,50 @@ class ModelDodReceipt(BaseModel):
             "SemVer 2.0.0 regex (see ``_SEMVER_RE``)."
         ),
     )
-    ticket_id: str = Field(
-        ..., description="Linear ticket this receipt proves (e.g., OMN-9084)"
+    ticket_id: str | None = Field(
+        default=None,
+        description=(
+            "Linear correlation for a ticket-bound receipt. None only for a "
+            "UUID goal receipt with complete repository and subject binding."
+        ),
     )
     # string-id-ok: goal ids are opaque caller-issued identifiers (delegate correlation id, lane or session goal), not always UUIDs
     goal_id: str | None = Field(
         default=None,
         min_length=1,
         description="Goal this receipt proves. None for receipts without a goal binding.",
+    )
+
+    # OR.2: new goal receipts bind to one repository and immutable contract
+    # revision. Ticket-only legacy receipts leave all three fields absent.
+    repository: str | None = Field(
+        default=None,
+        description="Canonical owner/repository identity of the receipt subject.",
+    )
+    contract_revision: UUID | None = Field(
+        default=None,
+        description="Immutable revision identity of the goal contract.",
+    )
+    contract_schema_version: ModelSemVer | None = Field(
+        default=None,
+        description="Declared version of the goal contract that was checked.",
+    )
+    attempt_id: UUID | None = Field(
+        default=None,
+        description="Immutable pre-execution goal attempt identity.",
+    )
+    attempt_sequence: int | None = Field(
+        default=None,
+        ge=1,
+        description="Durable goal-partition attempt allocation sequence.",
+    )
+    attempt_result_sha256: str | None = Field(
+        default=None,
+        description="Digest of the selected immutable attempt result.",
+    )
+    artifact_sha256: tuple[str, ...] = Field(
+        default_factory=tuple,
+        description="Digests of the independently retained attempt artifacts.",
     )
 
     @field_validator("goal_id")
@@ -426,10 +476,44 @@ class ModelDodReceipt(BaseModel):
 
     @field_validator("ticket_id")
     @classmethod
-    def _validate_ticket_id(cls, v: str) -> str:
+    def _validate_ticket_id(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
         if not _TICKET_ID_RE.match(v):
             raise ValueError(f"ticket_id must match OMN-\\d+, got: {v!r}")
         return v
+
+    @field_validator("repository")
+    @classmethod
+    def _validate_repository(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not _REPOSITORY_RE.fullmatch(value):
+            raise ValueError("repository must be the canonical owner/repository")
+        return value
+
+    @field_validator(
+        "contract_schema_version", mode="before", json_schema_input_type=str
+    )
+    @classmethod
+    def _validate_contract_schema_version(cls, value: object) -> ModelSemVer | None:
+        if value is None:
+            return None
+        if isinstance(value, ModelSemVer):
+            validate_contract_schema_version(value.to_string())
+            return value
+        if not isinstance(value, str):
+            raise ValueError("contract_schema_version must be a SemVer string")
+        validate_contract_schema_version(value)
+        return ModelSemVer.parse(value)
+
+    @field_serializer(
+        "contract_schema_version", when_used="json", return_type=str | None
+    )
+    def _serialize_contract_schema_version(
+        self, value: ModelSemVer | None
+    ) -> str | None:
+        return value.to_string() if value is not None else None
 
     @field_validator("commit_sha")
     @classmethod
@@ -554,6 +638,78 @@ class ModelDodReceipt(BaseModel):
         raise ``ValueError`` because a mis-declared runtime-ops receipt is
         structurally invalid, not merely weak.
         """
+        goal_binding = any(
+            value is not None
+            for value in (
+                self.repository,
+                self.contract_revision,
+                self.contract_schema_version,
+            )
+        )
+        if self.ticket_id is None:
+            if self.goal_id is None:
+                raise ValueError("ticket_id=None requires a goal_id")
+            try:
+                UUID(self.goal_id)
+            except ValueError as exc:
+                raise ValueError(
+                    "ticket-free goal_id must be a UUID; ticket ids are not synthesized"
+                ) from exc
+            if not goal_binding or any(
+                value is None
+                for value in (
+                    self.repository,
+                    self.contract_revision,
+                    self.contract_schema_version,
+                )
+            ):
+                raise ValueError(
+                    "ticket-free goal receipts require repository, contract_revision, "
+                    "and contract_schema_version"
+                )
+        elif goal_binding and (
+            self.goal_id is None
+            or self.repository is None
+            or self.contract_revision is None
+            or self.contract_schema_version is None
+        ):
+            raise ValueError(
+                "goal-bound ticket receipts require goal_id, repository, "
+                "contract_revision, and contract_schema_version together"
+            )
+        if goal_binding:
+            if self.goal_id is None:
+                raise ValueError("goal-bound receipts require goal_id")
+            try:
+                UUID(self.goal_id)
+            except ValueError as exc:
+                raise ValueError("goal-bound receipt goal_id must be a UUID") from exc
+            if len(self.commit_sha) != 40:
+                raise ValueError(
+                    "goal-bound receipt commit_sha must be a full Git object id"
+                )
+            if self.tree_sha is None:
+                raise ValueError("goal-bound receipts require an exact tree_sha")
+            if len(self.tree_sha) != 40:
+                raise ValueError(
+                    "goal-bound receipt tree_sha must be a full SHA-1 Git object id"
+                )
+            if self.attempt_id is None or self.attempt_sequence is None:
+                raise ValueError(
+                    "goal-bound receipts require attempt_id and attempt_sequence"
+                )
+            if self.attempt_result_sha256 is None:
+                raise ValueError("goal-bound receipts require attempt_result_sha256")
+            if not _GOAL_SHA256_RE.fullmatch(self.attempt_result_sha256):
+                raise ValueError(
+                    "attempt_result_sha256 must use sha256:<64 lowercase hex>"
+                )
+            if any(
+                not _GOAL_SHA256_RE.fullmatch(value) for value in self.artifact_sha256
+            ):
+                raise ValueError(
+                    "artifact_sha256 entries must use sha256:<64 lowercase hex>"
+                )
         # RUNTIME_OPS structural invariants (G2a). A receipt of this class is a
         # no-PR, no-source-change runtime-ops proof; it must be complete and must
         # not smuggle a PR/source binding in.

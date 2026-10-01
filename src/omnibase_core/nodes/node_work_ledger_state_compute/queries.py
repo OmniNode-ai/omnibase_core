@@ -150,7 +150,12 @@ def open_claims(
     matching = tuple(
         claim
         for claim in state.open_claims
-        if (wanted_ticket is None or claim.ticket_id.upper() == wanted_ticket)
+        if (
+            wanted_ticket is None
+            or (
+                claim.ticket_id is not None and claim.ticket_id.upper() == wanted_ticket
+            )
+        )
         and (pr is None or pr in claim.prs)
         and (
             lane is None

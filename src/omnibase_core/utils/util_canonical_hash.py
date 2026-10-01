@@ -90,7 +90,7 @@ def compute_canonical_hash(obj: object) -> str:
     """
     # Pydantic models expose model_dump(); fall back to __dict__ then identity.
     if hasattr(obj, "model_dump"):
-        raw: Any = obj.model_dump()  # noqa: model-dump-bare
+        raw: Any = obj.model_dump(mode="python")
     elif isinstance(obj, dict):
         raw = obj
     else:
