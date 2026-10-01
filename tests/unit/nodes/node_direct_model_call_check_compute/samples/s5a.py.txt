@@ -1,0 +1,9 @@
+import json
+import urllib.request
+
+
+def ask(prompt: str) -> str:
+    body = json.dumps({"model": "m", "messages": [{"role": "user", "content": prompt}]}).encode()
+    req = urllib.request.Request("http://model-host.invalid:8000/v1/chat/completions", data=body)
+    with urllib.request.urlopen(req) as resp:
+        return resp.read().decode()

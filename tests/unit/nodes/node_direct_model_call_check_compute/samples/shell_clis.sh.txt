@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+review() {
+  claude -p "review this diff"
+}
+generate() {
+  llama-cli -m model.gguf -p "$1"
+}

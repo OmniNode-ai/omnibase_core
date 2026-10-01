@@ -1,0 +1,5 @@
+from s5c import run_agent
+
+
+def go() -> str:
+    return run_agent("fix it")
