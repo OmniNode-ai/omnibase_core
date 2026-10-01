@@ -1934,7 +1934,7 @@ repos:
       # whole worktree, not a per-file list.
       - id: check-release-identity
         name: No code merged onto a published version without a bump (OMN-13411)
-        entry: uv run python scripts/check_release_identity.py
+        entry: uv run python scripts/check_release_identity.py --base origin/dev
         language: system
         files: ^(src/.*\.py|pyproject\.toml)$
         pass_filenames: false

@@ -59,7 +59,10 @@ DEPENDENCY_GUARD_PROFILES = {
     "pull-request-workflow-ratchet": ("uv sync --frozen --no-dev", 20),
 }
 
-NO_DEV_WORKFLOW_EXECUTION_CONTRACT = "d7dfb006ec524bc384a900b284fc56cbf2a3d7d00a9e1709906ed4e5aebb0d8e"  # pragma: allowlist secret
+# OMN-20200: workflow-level UV_HTTP_TIMEOUT is raised to 600s to match the
+# existing locked-dependency install precedent after hosted CI repeatedly
+# timed out reading different locked wheels at the 30s default.
+NO_DEV_WORKFLOW_EXECUTION_CONTRACT = "cc8d80029ade3512b57b1d5f28a86923defe1570e55af79ea46073152de688ac"  # pragma: allowlist secret
 
 # SHA-256 over canonical JSON of each complete audited guard job. No job key is
 # excluded: steps, env, defaults, container, runs-on, if, continue-on-error,

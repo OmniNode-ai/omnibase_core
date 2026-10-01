@@ -171,19 +171,23 @@ def _packaged_source_changed(base: str | None, explicit: list[str]) -> bool:
     if explicit:
         files = explicit
     elif base:
-        diff = _git(["diff", "--name-only", f"{base}...HEAD"])
-        files = [f for f in diff.splitlines() if f.strip()]
-        if not files:
-            # No commits of our own: look for uncommitted edits, still anchored on
-            # the MERGE BASE (OMN-18058). Never the two-dot ``git diff <base>``:
-            # that form describes the difference between two trees, so on a stale
-            # base it reports every packaged-source file a PEER landed on the base
-            # branch as this branch's change, arming this version gate against a
-            # branch that touched no packaged source at all.
-            merge_base = _git(["merge-base", base, "HEAD"])
-            if merge_base:
-                diff = _git(["diff", "--name-only", merge_base])
-                files = [f for f in diff.splitlines() if f.strip()]
+        # A configured base is an assertion that this comparison is trustworthy.
+        # Do not turn a missing ref into an exemption: that is the permissive
+        # failure mode this gate is meant to prevent.
+        if not _git(["rev-parse", "--verify", "--quiet", f"{base}^{{commit}}"]):
+            return True
+
+        # Include the committed branch delta and every staged/unstaged edit. The
+        # pending sets matter even when a branch already has unrelated commits.
+        merge_base = _git(["merge-base", base, "HEAD"])
+        if not merge_base:
+            return True
+        diffs = (
+            _git(["diff", "--name-only", f"{base}...HEAD"]),
+            _git(["diff", "--cached", "--name-only"]),
+            _git(["diff", "--name-only"]),
+        )
+        files = [f for diff in diffs for f in diff.splitlines() if f.strip()]
     else:
         # No base and no explicit list: cannot prove the diff is exempt — enforce.
         return True
