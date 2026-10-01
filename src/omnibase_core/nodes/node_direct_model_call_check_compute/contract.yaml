@@ -4,6 +4,8 @@
 
 # ONEX contract for the direct_model_call_check COMPUTE node (OMN-20295).
 # A model call must sit inside a sanctioned delegation node package. The
+# paired EFFECT node (node_direct_model_call_check_effect) reads the repository,
+# the policy and the baseline; this node judges them without I/O. The
 # server-side backstop for calls no static gate can see is OMN-20299.
 
 name: node_direct_model_call_check_compute
@@ -18,8 +20,12 @@ description: >
   base_url resolves to a model endpoint or provider host; the exec of a model CLI (crush, codex, claude
   -p, llama-cli and others) from Python or shell; a model SDK import; and any function in another file
   that calls one of those. Pre-existing sites live in a shrink-only per-repository baseline; crush sites
-  name OMN-20290 for removal.
+  name OMN-20290 for removal. Pure: no filesystem, network, environment or clock access.
+input_model: omnibase_core.models.nodes.direct_model_call_check.model_direct_model_call_check_input.ModelDirectModelCallCheckInput
+output_model: omnibase_core.models.nodes.direct_model_call_check.model_direct_model_call_check_output.ModelDirectModelCallCheckOutput
+
 handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
   default_handler: handler:HandlerDirectModelCallCompute
 
 descriptor:
