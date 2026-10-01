@@ -118,6 +118,18 @@ class TestModelInvocationCommand:
                 target_ref="qwen3",
             )
 
+    def test_unknown_key_rejected(self) -> None:
+        payload = {
+            "task_id": _TASK_ID,
+            "correlation_id": _CORR_ID,
+            "invocation_kind": EnumInvocationKind.AGENT,
+            "agent_protocol": EnumAgentProtocol.A2A,
+            "target_ref": "adk-scout",
+            "unexpected_field": "x",
+        }
+        with pytest.raises(ValidationError, match="unexpected_field"):
+            ModelInvocationCommand.model_validate(payload)
+
 
 @pytest.mark.unit
 class TestModelAgentTaskLifecycleEvent:
@@ -143,6 +155,17 @@ class TestModelAgentTaskLifecycleEvent:
         )
         assert evt.error == "timeout"
         assert evt.artifact is not None and "k" in evt.artifact
+
+    def test_unknown_key_rejected(self) -> None:
+        payload = {
+            "task_id": _TASK_ID,
+            "correlation_id": _CORR_ID,
+            "lifecycle_type": EnumAgentTaskLifecycleType.SUBMITTED,
+            "occurred_at": _NOW,
+            "unexpected_field": "x",
+        }
+        with pytest.raises(ValidationError, match="unexpected_field"):
+            ModelAgentTaskLifecycleEvent.model_validate(payload)
 
 
 @pytest.mark.unit

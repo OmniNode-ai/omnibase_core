@@ -8,7 +8,7 @@
 # an entry here becomes compliant, forcing the count down. Do not hand-add.
 #
 # scan roots: src/omnibase_core
-# count: 1103
+# count: 1101
 #
 # Regenerate: python -m omnibase_core.validators.pydantic_extra_forbid \
 #     --write-baseline src/omnibase_core
@@ -541,8 +541,6 @@ violations:
   - "omnibase_core.models.core.model_yaml_state:ModelYamlState"
   - "omnibase_core.models.core.model_yaml_with_examples:ModelYamlWithExamples"
   - "omnibase_core.models.dedup.model_action_dedup_base:ModelActionDedupBase"
-  - "omnibase_core.models.delegation.model_agent_task_lifecycle_event:ModelAgentTaskLifecycleEvent"
-  - "omnibase_core.models.delegation.model_invocation_command:ModelInvocationCommand"
   - "omnibase_core.models.detection.model_service_detection_config:ModelServiceDetectionConfig"
   - "omnibase_core.models.discovery.model_current_tool_availability:ModelCurrentToolAvailability"
   - "omnibase_core.models.discovery.model_custommetrics:ModelCustomMetrics"
