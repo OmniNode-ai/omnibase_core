@@ -45,6 +45,11 @@ from omnibase_core.models.validation.model_goal_revision_authorization_policy im
 from omnibase_core.models.validation.model_goal_revision_history_snapshot import (
     ModelGoalRevisionHistorySnapshot,
 )
+from tests.unit.models.validation.test_goal_supervisor_contract_models import (
+    _execution_result,
+    _request_for_revision,
+    _running_request,
+)
 from tests.unit.validation.test_occ_merge_eligibility_goal_coverage_revision import (
     _WORK_ACTOR,
     _WORK_LEDGER_KEYPAIR,
@@ -229,6 +234,59 @@ def _signed_revision_record(
         source_event=event,
         source_envelope=envelope,
     )
+
+
+def test_revised_supervisor_request_and_result_preserve_event_wire_type(
+    tmp_path: Path,
+) -> None:
+    _fixture, revisions = _source_chain_fixture(tmp_path)
+    opening = _signed_revision_record(
+        revision_id=GOAL_ID,
+        parent_id=None,
+        revision=revisions["opening"],
+    )
+    revised = _signed_revision_record(
+        revision_id=CONTRACT_REVISION,
+        parent_id=GOAL_ID,
+        revision=revisions["revision"],
+    )
+    history = _signed_history((opening, revised))
+    request = _request_for_revision(
+        _running_request(_EMITTED_AT),
+        contract=revised,
+        revision_history=history,
+        subject_commit_sha=str(revisions["revision"]["source_commit"]),
+        subject_tree_sha=str(revisions["revision"]["source_tree"]),
+    )
+    request_wire = request.model_dump_json()
+    restored_request = type(request).model_validate_json(request_wire)
+    restored_request_dict = type(request).model_validate(
+        request.model_dump(mode="json")
+    )
+
+    for restored in (restored_request, restored_request_dict):
+        assert type(restored.contract.source_event) is ModelWorkGoalRevised
+        assert type(restored.contract.source_envelope.payload) is ModelWorkGoalRevised
+        assert restored.contract.source_event.event_id == CONTRACT_REVISION
+        assert restored.contract.source_envelope.payload.event_id == CONTRACT_REVISION
+        assert restored.contract.source_event == request.contract.source_event
+        assert restored.model_dump_json() == request_wire
+
+    execution = _execution_result(request)
+    execution_wire = execution.model_dump_json()
+    restored_execution = type(execution).model_validate_json(execution_wire)
+    restored_execution_dict = type(execution).model_validate(
+        execution.model_dump(mode="json")
+    )
+    for restored in (restored_execution, restored_execution_dict):
+        assert type(restored.request.contract.source_event) is ModelWorkGoalRevised
+        assert (
+            type(restored.request.contract.source_envelope.payload)
+            is ModelWorkGoalRevised
+        )
+        assert restored.request.contract.source_event.event_id == CONTRACT_REVISION
+        assert restored.model_dump_json() == execution_wire
+        assert restored.execution_receipt == execution.execution_receipt
 
 
 def _signed_history(
