@@ -447,10 +447,10 @@ class _AttemptStoreOnlyProvider:
         return None
 
     def get_domain_trust_root(self, domain_id: str):
-        del domain_id
+        return None
 
     def read_artifact_bytes(self, digest: str):
-        del digest
+        return None
 
 
 def _snapshot_allocation(

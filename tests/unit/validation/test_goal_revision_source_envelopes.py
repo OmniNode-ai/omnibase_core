@@ -494,8 +494,8 @@ def test_signed_revision_source_requires_historical_actor_and_runtime_authority(
     opening = _signed_revision_record(
         revision_id=GOAL_ID, parent_id=None, revision=revisions["opening"]
     )
+    untrusted_runtime_key = generate_keypair()
     if bad_source == "unknown-runtime":
-        untrusted_runtime_key = generate_keypair()
         record = _signed_revision_record(
             revision_id=CONTRACT_REVISION,
             parent_id=GOAL_ID,
