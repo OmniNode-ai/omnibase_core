@@ -313,6 +313,38 @@ def test_omn18058_empty_branch_diff_never_attributes_a_peers_packaged_source(
     assert mod._packaged_source_changed("origin/dev", []) is True
 
 
+@pytest.mark.unit
+def test_release_identity_base_comparison_fails_closed_when_ref_is_missing(
+    mod, monkeypatch
+):
+    """A missing configured base cannot silently exempt packaged-source changes."""
+    monkeypatch.setattr(mod, "_git", lambda args: "")
+
+    assert mod._packaged_source_changed("origin/dev", []) is True
+
+
+@pytest.mark.unit
+def test_release_identity_base_comparison_includes_pending_src_edits(mod, monkeypatch):
+    """Pending src edits remain visible beside an existing non-src branch delta."""
+
+    def fake_git(args):
+        if args[:3] == ["rev-parse", "--verify", "--quiet"]:
+            return "a" * 40
+        if args[:2] == ["merge-base", "origin/dev"]:
+            return "b" * 40
+        if args[:2] == ["diff", "--name-only"] and len(args) == 3:
+            return "tests/already-committed.py"
+        if args == ["diff", "--cached", "--name-only"]:
+            return "src/pending_staged.py"
+        if args == ["diff", "--name-only"]:
+            return "src/pending_unstaged.py"
+        return ""
+
+    monkeypatch.setattr(mod, "_git", fake_git)
+
+    assert mod._packaged_source_changed("origin/dev", []) is True
+
+
 # ---------------------------------------------------------------------------
 # OMN-18443 — the collector must read ONE clock.
 #
