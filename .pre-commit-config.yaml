@@ -74,6 +74,7 @@ repos:
         entry: uv run ruff format --force-exclude
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^(src|tests)/.*\.py$
         stages: [pre-commit]
 
@@ -82,6 +83,7 @@ repos:
         entry: uv run ruff check --force-exclude --fix --exit-non-zero-on-fix
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^(src|tests)/.*\.py$
         stages: [pre-commit]
         # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
@@ -95,6 +97,7 @@ repos:
         files: ^src/omnibase_core/.*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         pass_filenames: true  # Only check changed files, not entire codebase
+        require_serial: true
         stages: [pre-push]  # Moved to pre-push: ~1-5s for changed files only
 
       # PYRIGHT CHANGED-FILES-ONLY (pass_filenames: true)
@@ -123,6 +126,7 @@ repos:
         files: ^src/omnibase_core/.*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         pass_filenames: true  # Only check changed files, CI does full scan
+        require_serial: true
         stages: [pre-push]  # ~1-5s for changed files only
 
       # Evidence-Source SHAPE check (OMN-14682)
@@ -196,6 +200,7 @@ repos:
         entry: uv run python scripts/ci/check_async_fixture_decorators.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^((src|tests)/.*\.py|scripts/ci/check_async_fixture_decorators\.py)$
         stages: [pre-commit]
 
@@ -215,6 +220,7 @@ repos:
         entry: uv run python scripts/ci/canonical_handler_shape.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^(src/omnibase_core/(.*/)?nodes/.*/contract\.yaml|src/omnibase_core/(.*/)?nodes/.*\.py|src/omnibase_core/runtime/runtime_local(_adapter)?\.py|src/omnibase_core/mixins/mixin_envelope_extraction\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/canonical_handler_shape_baseline\.py|scripts/ci/test_selection_adjacency\.yaml|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-commit]
 
@@ -370,6 +376,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
@@ -382,6 +389,7 @@ repos:
         entry: .pre-commit-hooks/reject-deploy-gate-skip-token.sh
         language: script
         pass_filenames: true
+        require_serial: true
         always_run: true
         stages: [pre-commit]
         exclude: ^tests/.*fixtures/
@@ -390,12 +398,14 @@ repos:
         entry: .pre-commit-hooks/reject-deploy-gate-skip-token.sh
         language: script
         pass_filenames: true
+        require_serial: true
         stages: [commit-msg]
       - id: strip-ai-coauthor-trailer
         name: Strip AI-generated Co-Authored-By trailers from commit messages
         entry: perl -i -ne 'print unless /^co-authored-by:.*claude.*noreply\@anthropic\.com/i'
         language: system
         pass_filenames: true
+        require_serial: true
         stages: [commit-msg]
 
       # Required-Check Skip-Vector Guard (OMN-14863, fan-out from OMN-14854
@@ -423,6 +433,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
@@ -437,6 +448,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
@@ -451,6 +463,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
@@ -466,6 +479,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
@@ -479,6 +493,7 @@ repos:
           124
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
         stages: [pre-commit]
@@ -507,6 +522,7 @@ repos:
         types: [python]
         files: ^src/omnibase_core/.*\.py$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-14891: no test may shell out to git while able to inherit GIT_DIR /
@@ -524,6 +540,7 @@ repos:
         types: [python]
         files: ^tests/.*\.py$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-14350: non-canonical lifecycle-word class ratchet (omnibase_core canary).
@@ -538,6 +555,7 @@ repos:
         types: [python]
         files: ^src/omnibase_core/.*\.py$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # C7 / OMN-14907: count-locked ratchet over pull_request-triggered workflow
@@ -623,6 +641,7 @@ repos:
         language: system
         files: (^|/)contract\.yaml$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13324: require handlers[0].operation on every dispatched node contract.
@@ -637,6 +656,7 @@ repos:
         language: system
         files: (^|/)contract\.yaml$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13028: require an 'event_model' on command-category handler entries.
@@ -651,6 +671,7 @@ repos:
         language: system
         files: (^|/)contract\.yaml$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13609 (WS-C Phase 1.1): a generated node's contract-declared inline
@@ -666,6 +687,7 @@ repos:
         language: system
         files: (^|/)(contract\.yaml|handler\.py)$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # CLASS vs FILE Naming Conventions:
@@ -705,6 +727,7 @@ repos:
         entry: uv run python scripts/validation/validate-file-locations.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/).*\.py$
         stages: [pre-commit]
@@ -753,6 +776,7 @@ repos:
         entry: uv run python scripts/validation/validate-string-versions.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^.*\.(py|yaml|yml)$
         exclude: ^(tests/fixtures/validation/|archived/|archive/|contracts/OMN-[0-9]+\.yaml$|src/omnibase_core/protocols/|src/omnibase_core/validation/validator_|src/omnibase_core/validation/visitor_|src/omnibase_core/models/contracts/subcontracts/model_validator_|src/omnibase_core/types/typed_dict_demo\.py|examples/contracts/handlers/|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/doctor/doctor_check_base\.py$)
         stages: [pre-commit]
@@ -762,6 +786,7 @@ repos:
         entry: uv run python scripts/validation/validate-archived-imports.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(archived/|archive/|tests/fixtures/validation/).*$
         stages: [pre-commit]
@@ -771,6 +796,7 @@ repos:
         entry: uv run python scripts/validation/validate-no-backward-compatibility.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(scripts/validation/validate-no-backward-compatibility\.py|archived/.*)$
         stages: [pre-commit]
@@ -782,6 +808,7 @@ repos:
         entry: uv run python scripts/validation/validate-no-manual-yaml.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^.*\.py$
         exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/skip_count_ratchet\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
         stages: [pre-commit]
@@ -802,6 +829,7 @@ repos:
         entry: uv run python scripts/validation/validate-pydantic-patterns.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -819,6 +847,7 @@ repos:
         types: [python]
         files: ^src/omnibase_core/
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # UNION VALIDATION THRESHOLD (whole-tree ratchet, OMN-19515):
@@ -847,6 +876,7 @@ repos:
         entry: uv run python scripts/validation/validate-contracts.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: (^|/)contract\.ya?ml$
         stages: [pre-commit]
 
@@ -855,6 +885,7 @@ repos:
         entry: uv run python scripts/validation/audit_optional.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -864,6 +895,7 @@ repos:
         entry: uv run python scripts/validation/check_stub_implementations.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         # src/omnibase_core/validation/todo_marker/ is excluded for the same reason it
         # is excluded from no-untracked-todos below: that validator's own docstrings
@@ -879,6 +911,7 @@ repos:
         entry: uv run python scripts/validation/check_no_fallbacks.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|src/omnibase_core/validation/scripts/).*\.py$
         stages: [pre-commit]
@@ -888,6 +921,7 @@ repos:
         entry: uv run python scripts/validation/check_error_raising.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
@@ -903,6 +937,7 @@ repos:
         entry: uv run python scripts/validation/check_no_print_statements.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/validation/|src/omnibase_core/scripts/|.*example.*).*\.py$
         stages: [pre-commit]
@@ -913,6 +948,7 @@ repos:
         entry: uv run python scripts/validation/check_ai_slop.py --strict
         types_or: [python, markdown]
         pass_filenames: true
+        require_serial: true
         # CHANGELOG.md is excluded because migration guide step headers (Step N: ...)
         # are a systematic false positive for the step_narration detector.
         # Numbered steps in changelogs and migration guides are genuine documentation,
@@ -929,6 +965,7 @@ repos:
         entry: uv run python scripts/validation/validate-no-enhancement-prefixes.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -956,6 +993,7 @@ repos:
         entry: env -u PYTHONPATH uv run python -m omnibase_core.validators.dispatch_surface_test_required
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^(src|tests)/.*\.py$
         stages: [pre-commit]
 
@@ -991,6 +1029,7 @@ repos:
         entry: uv run python scripts/validate_no_env_fallbacks.py
         language: system
         pass_filenames: true
+        require_serial: true
         types_or: [python, shell]
         stages: [pre-commit]
 
@@ -1003,6 +1042,7 @@ repos:
         entry: uv run python scripts/validation/validate_no_except_swallow.py --report
         language: system
         pass_filenames: true
+        require_serial: true
         types: [python]
         stages: [pre-commit]
 
@@ -1015,6 +1055,7 @@ repos:
         entry: uv run python scripts/validation/validate_no_none_guard_publish.py --report
         language: system
         pass_filenames: true
+        require_serial: true
         types: [python]
         stages: [pre-commit]
 
@@ -1027,6 +1068,7 @@ repos:
         entry: uv run python scripts/validation/validate_no_import_none_fallback.py --report
         language: system
         pass_filenames: true
+        require_serial: true
         types: [python]
         stages: [pre-commit]
 
@@ -1039,6 +1081,7 @@ repos:
         entry: uv run python scripts/validation/validate_spdx_headers.py
         language: system
         pass_filenames: true
+        require_serial: true
         # NOTE: The files: pattern covers src/, tests/, scripts/, and examples/
         # subdirectories.  Root-level Makefile and Dockerfile are eligible per
         # cli_spdx.py INCLUDED_FILENAMES but are NOT matched by this pattern.
@@ -1064,6 +1107,7 @@ repos:
         entry: uv run python scripts/validation/validate-single-class-per-file.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         # Exclusions:
         # - protocols/: Protocol types define interfaces, not implementations
@@ -1110,6 +1154,7 @@ repos:
         entry: uv run python scripts/validation/validate-enum-model-imports.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/omnibase_core/enums/.*\.py$
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
@@ -1123,6 +1168,7 @@ repos:
         entry: uv run python -m omnibase_core.validation.checker_enum_member_casing
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
@@ -1132,6 +1178,7 @@ repos:
         entry: uv run python scripts/validation/validate-typeddict-patterns.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -1145,6 +1192,7 @@ repos:
         entry: uv run python scripts/validation/validate-dict-any-usage.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         # model_epic_state.py: dict[str, Any] used for unstructured ticket_metadata field (pre-existing, OMN-4405)
         # runtime_local.py: pre-existing dict[str, Any] in runtime dispatch internals
@@ -1174,6 +1222,7 @@ repos:
         entry: uv run python scripts/validation/validate-no-pydantic-bypass.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -1184,6 +1233,7 @@ repos:
         entry: uv run python scripts/validation/validate-secrets.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -1194,6 +1244,7 @@ repos:
         entry: uv run python scripts/validation/validate-hardcoded-env-vars.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -1230,6 +1281,7 @@ repos:
             tests/unit/validation/test_validation_utils_edge_cases\.py$
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-14401: reject config/registry YAML files declaring duplicate ids over
@@ -1281,6 +1333,7 @@ repos:
             tests/unit/validation/test_validation_utils_edge_cases\.py$
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13294 (G2): hardcoded private-IP (RFC1918) literals, executed as a
@@ -1318,6 +1371,7 @@ repos:
             docs/
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-19252: no NEW hardcoded lab model configuration (task A1 of the
@@ -1338,6 +1392,7 @@ repos:
         language: system
         types: [text]
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13497: ban hand-written fakes/stubs of the platform's OWN inference /
@@ -1366,6 +1421,7 @@ repos:
             archive/
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13480 (G2, SEA-dogfood): agent-left TODO/FIXME/HACK unfinished-work
@@ -1395,6 +1451,7 @@ repos:
             docs/
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13480 (G2 residual of OMN-13294, SEA-dogfood): hardcoded
@@ -1431,6 +1488,7 @@ repos:
             docs/
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13509 (G2, SEA-dogfood): block any sibling dependency pin
@@ -1460,6 +1518,7 @@ repos:
             archive/
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13294 (G2, SEA-dogfood): hardcoded onex.<a>.<b>.<c> event-topic string
@@ -1493,6 +1552,7 @@ repos:
             docs/
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-13572: doc-content scan — block local-environment traces (LAN IPs,
@@ -1522,6 +1582,7 @@ repos:
             tests/
           )
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # Receipt-Honesty Gate (OMN-12791 validator / OMN-12825 self-consume)
@@ -1537,6 +1598,7 @@ repos:
         types: [yaml]
         files: drift/dod_receipts/.*\.yaml$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # Runtime-Identity Gate (OMN-17308, epic OMN-17306)
@@ -1560,6 +1622,7 @@ repos:
         language: system
         types: [json]
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # URL Authority Gate (OMN-12818, PR-2 of OMN-12803).
@@ -1585,6 +1648,7 @@ repos:
         language: system
         files: (^|/)Dockerfile(\.[^/]*)?$|(^|/)\.env(\.[^/]*)?$|\.(py|ya?ml|sh|env|cfg|conf|toml|ini|json|tf)$
         pass_filenames: true
+        require_serial: true
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
@@ -1601,6 +1665,7 @@ repos:
         language: system
         types_or: [yaml]
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # No datetime.utcnow() usage (OMN-14656, revives OMN-2362). Timezone-naive
@@ -1615,6 +1680,7 @@ repos:
         language: system
         files: ^src/.*\.py$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # No localhost/hardcoded-endpoint fallback defaults (OMN-14659). Scoped to
@@ -1626,6 +1692,7 @@ repos:
         language: system
         files: ^src/.*\.(py|sh|bash)$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # No hardcoded internal IP literals (OMN-14659, self-wired OMN-14665).
@@ -1642,6 +1709,7 @@ repos:
         language: system
         files: ^src/.*\.(py|ya?ml)$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # No direct Kafka producer usage outside the shared publisher layer
@@ -1657,6 +1725,7 @@ repos:
         language: system
         files: ^src/.*\.py$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # No raw sqlite3.connect() outside *_adapter.py (OMN-14659, self-wired
@@ -1672,6 +1741,7 @@ repos:
         language: system
         files: ^src/.*\.py$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # No I/O outside EFFECT node packages (OMN-14694 seed → OMN-14662 collapse).
@@ -1690,6 +1760,7 @@ repos:
         language: system
         files: ^src/.*(\.py|/contract\.yaml)$
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # Canonical Inference Gate (OMN-13219).
@@ -1706,6 +1777,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: true
+        require_serial: true
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
@@ -1714,6 +1786,7 @@ repos:
         entry: uv run python scripts/validation/validate-exception-handling.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/.*\.py$
         exclude: ^(tests/|archived/|archive/|scripts/validation/).*\.py$
         stages: [pre-commit]
@@ -1767,6 +1840,7 @@ repos:
         entry: uv run python scripts/validation/validate-no-kafka-listener-apis.py
         language: system
         pass_filenames: true
+        require_serial: true
         files: ^src/omnibase_core/.*\.py$
         exclude: ^tests/.*\.py$
         stages: [pre-commit]
@@ -1972,6 +2046,7 @@ repos:
         types: [python]
         files: ^src/
         pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # OMN-4569: Block operational artifact files from being committed
@@ -2012,6 +2087,7 @@ repos:
         name: No untyped metadata dict fields
         language: system
         entry: uv run check-no-untyped-metadata
+        require_serial: true
         types: [python]
         exclude: ^tests/|^examples/|^scripts/
         stages: [pre-commit]
@@ -2024,9 +2100,11 @@ repos:
     rev: 8d7e85bc00e7f1b1306d1cb40949be1ab6e7e91a  # pragma: allowlist secret
     hooks:
       - id: no-hardcoded-topics
+        require_serial: true
         exclude: ^(src/omnibase_core/constants/constants_event_types\.py|src/omnibase_core/models/events/contract_registration/model_contract_deregistered_event\.py|src/omnibase_core/models/events/contract_registration/model_contract_registered_event\.py|src/omnibase_core/models/events/contract_registration/model_node_heartbeat_event\.py|src/omnibase_core/models/events/model_episode_event\.py|src/omnibase_core/models/events/model_git_hook_event\.py|src/omnibase_core/models/events/model_github_pr_status_event\.py|src/omnibase_core/models/events/model_linear_snapshot_event\.py|src/omnibase_core/models/events/validation/model_validation_run_completed_event\.py|src/omnibase_core/models/events/validation/model_validation_run_started_event\.py|src/omnibase_core/models/events/validation/model_validation_violations_batch_event\.py|src/omnibase_core/schemas/cli_contribution\.v1\.example\.yaml|src/omnibase_core/validation/validator_topic_suffix\.py)$
         stages: [pre-commit]
       - id: no-untracked-todos
+        require_serial: true
         # The todo-marker validator's own source names TODO/FIXME/HACK as its SUBJECT.
         # Both files already carry this repo's file-level escape hatch comment
         # (onex-allow-file-todo-marker, OMN-13480), which the validator itself honors;
@@ -2060,6 +2138,7 @@ repos:
     rev: 3e6d14da0d12923c32060252967d0f8759fcbb5e  # pragma: allowlist secret
     hooks:
       - id: kb-doc-gate
+        require_serial: true
 
   # Demo-path topic coherence gate (OMN-12777)
   # Scoped to demo-path contracts (metadata.demo_path: true).
@@ -2159,6 +2238,7 @@ repos:
     rev: 42b994826519e8d6bc21d0ca915803084c7c3955  # pragma: allowlist secret
     hooks:
       - id: secrets-baseline-wired
+        require_serial: true
 
   # OMN-19677: the debt baseline itself is a shrink-only contract. The same
   # immutable omniclaude commit supplies this hook and the required CI job.
@@ -2166,6 +2246,7 @@ repos:
     rev: 3faefdcd5750b05f69d2efcb8cf200bc359483c3  # pragma: allowlist secret
     hooks:
       - id: anti-growth-baseline
+        require_serial: true
         name: Pydantic extra="forbid" baseline can only shrink (OMN-19677)
         args:
           - --baseline
