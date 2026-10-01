@@ -850,14 +850,14 @@
 - id: check-direct-model-call
   name: Direct-model-call gate (OMN-20295)
   description: >
-    BLOCKING. A model call must sit inside a sanctioned delegation node package
-    (nodes/node_direct_model_call_check_compute/policy.yaml in omnibase_core, the only place a package is
-    sanctioned). Reads the AST and the repository's import and call graph, not literals: an HTTP request
-    whose URL, body or base_url resolves to a model endpoint or provider host, the exec of a model CLI
-    (crush, codex, claude -p, llama-cli and others) from Python or shell, a model SDK import, and a caller
-    of any of those in another file. Pre-existing sites live in the consumer's shrink-only
-    .onex_ratchets/direct_model_call_baseline.yaml (crush sites name OMN-20290); a new site, a new entry,
-    a later expiry or a stale entry fails. No suppression marker. Server-side backstop: OMN-20299.
+    BLOCKING. A model call must sit inside a sanctioned delegation node package (nodes/node_direct_model_call_check_compute/policy.yaml
+    in omnibase_core, the only place a package is sanctioned). Reads the AST and the repository's import
+    and call graph, not literals: an HTTP request whose URL, body or base_url resolves to a model endpoint
+    or provider host, the exec of a model CLI (crush, codex, claude -p, llama-cli and others) from Python
+    or shell, a model SDK import, and a caller of any of those in another file. Pre-existing sites live
+    in the consumer's shrink-only .onex_ratchets/direct_model_call_baseline.yaml (crush sites name OMN-20290);
+    a new site, a new entry, a later expiry or a stale entry fails. No suppression marker. Server-side
+    backstop: OMN-20299.
   language: python
   entry: python -m omnibase_core.nodes.node_direct_model_call_check_compute.runtime_direct_model_call
   pass_filenames: false

@@ -15,10 +15,10 @@ contract_version: {major: 1, minor: 0, patch: 0}
 description: >
   Refuse a direct model call outside the sanctioned delegation node packages named in policy.yaml. Reads
   the AST and the repository's import and call graph, not literals: an HTTP request whose URL, body or
-  base_url resolves to a model endpoint or provider host; the exec of a model CLI (crush, codex,
-  claude -p, llama-cli and others) from Python or shell; a model SDK import; and any function in another
-  file that calls one of those. Pre-existing sites live in a shrink-only per-repository baseline; crush
-  sites name OMN-20290 for removal.
+  base_url resolves to a model endpoint or provider host; the exec of a model CLI (crush, codex, claude
+  -p, llama-cli and others) from Python or shell; a model SDK import; and any function in another file
+  that calls one of those. Pre-existing sites live in a shrink-only per-repository baseline; crush sites
+  name OMN-20290 for removal.
 handler_routing:
   default_handler: handler:HandlerDirectModelCallCompute
 

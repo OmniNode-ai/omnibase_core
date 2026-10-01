@@ -489,6 +489,13 @@ def _split_shell(
     return commands
 
 
+def _is_wrapper_option(token: str) -> bool:
+    """A token a command wrapper consumes before the program it runs."""
+    if token.startswith("-") or token in {"run", "exec", "--", "tool"}:
+        return True
+    return bool(_ENV_ASSIGN_TOKEN.match(token)) or token.rstrip("smhd").isdigit()
+
+
 def _command_hits(
     policy: ModelDirectModelCallPolicy,
     positions: Sequence[_Val],
@@ -524,13 +531,7 @@ def _command_hits(
             index = 1
             while index < len(positions):
                 texts = positions[index].texts
-                if texts and all(
-                    t.startswith("-")
-                    or _ENV_ASSIGN_TOKEN.match(t)
-                    or t in {"run", "exec", "--", "tool"}
-                    or t.rstrip("smhd").isdigit()
-                    for t in texts
-                ):
+                if texts and all(_is_wrapper_option(t) for t in texts):
                     index += 1
                     continue
                 break
@@ -854,7 +855,7 @@ class _LazyEnv(Mapping[str, _Val]):
         if name in self._memo:
             return self._memo[name]
         if name not in self:
-            raise KeyError(name)
+            return _EMPTY
         current = self._preset.get(name, _EMPTY)
         if name in self._busy:
             return current

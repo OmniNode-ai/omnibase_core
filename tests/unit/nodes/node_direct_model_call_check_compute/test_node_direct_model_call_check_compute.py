@@ -12,6 +12,7 @@ must not.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from datetime import date
 from pathlib import Path
@@ -33,6 +34,9 @@ from omnibase_core.nodes.node_direct_model_call_check_compute.handler import (
 from omnibase_core.nodes.node_direct_model_call_check_compute.runtime_direct_model_call import (
     load_policy,
     main,
+)
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
 )
 
 pytestmark = pytest.mark.unit
@@ -148,7 +152,13 @@ def test_baseline_growth_against_base_is_refused() -> None:
 
 
 def _git(root: Path, *args: str) -> None:
-    subprocess.run(["git", *args], cwd=root, check=True, capture_output=True)
+    subprocess.run(
+        ["git", *args],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        env=scrub_git_location_env(os.environ),
+    )
 
 
 def test_cli_refuses_planted_sample_and_accepts_clean(tmp_path: Path) -> None:
