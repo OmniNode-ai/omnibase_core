@@ -21,7 +21,7 @@ class ModelAgentTaskLifecycleEvent(BaseModel):
     Emitted when the A2A transport reports a state transition on a remote task.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     task_id: UUID
     correlation_id: UUID

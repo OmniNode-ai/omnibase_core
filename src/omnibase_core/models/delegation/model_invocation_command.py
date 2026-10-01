@@ -20,7 +20,7 @@ class ModelInvocationCommand(BaseModel):
     the remote-agent invoke effect to act on the delegation request.
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     task_id: UUID
     correlation_id: UUID
