@@ -18,6 +18,7 @@ from omnibase_core.validators.canonical_file_shape import (
     INDEX,
     GitRepo,
     check,
+    declared_gate_baselines,
     count_suppressions,
     is_canonical_location,
     is_code_file,
@@ -195,6 +196,78 @@ def test_new_exception_file_refused(repo: Path) -> None:
     _write(repo, ".onex_ratchets/foo_waivers.yaml", "- x\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
+
+
+GATE_BASELINE = ".onex_ratchets/direct_model_call_baseline.yaml"
+
+
+def _gate_config(
+    baseline: str, url: str = "https://github.com/OmniNode-ai/omnibase_core"
+) -> str:
+    return (
+        "repos:\n"
+        f"  - repo: {url}\n"
+        "    rev: abc\n"
+        "    hooks:\n"
+        "      - id: check-direct-model-call\n"
+        f"        args: [--repo, r, --baseline, {baseline}, --base, HEAD]\n"
+    )
+
+
+def test_gate_declared_baseline_accepted(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_gate_declared_baseline_only_shrinks_by_gate(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gate")
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_undeclared_baseline_still_refused(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, ".onex_ratchets/other_baseline.yaml", "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_baseline_without_any_declaration_refused(repo: Path) -> None:
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_declaration_by_a_local_hook_does_not_count(repo: Path) -> None:
+    _write(
+        repo,
+        ".pre-commit-config.yaml",
+        _gate_config(GATE_BASELINE, url="local"),
+    )
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_declared_gate_baselines_forms() -> None:
+    assert declared_gate_baselines(None) == frozenset()
+    assert declared_gate_baselines("not: [valid") == frozenset()
+    text = (
+        "repos:\n"
+        "  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
+        "    hooks:\n"
+        "      - id: check-direct-model-call\n"
+        "        args: ['--baseline=x/y.yaml']\n"
+        "      - id: canonical-file-shape\n"
+        "        args: [--baseline, z.txt]\n"
+    )
+    assert declared_gate_baselines(text) == frozenset({"x/y.yaml"})
 
 
 def test_exception_entry_growth_refused(repo: Path) -> None:
