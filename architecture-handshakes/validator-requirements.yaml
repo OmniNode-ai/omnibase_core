@@ -741,6 +741,33 @@ required_validators:
     applies_to_repos:
       - omnibase_core
 
+  canonical-file-shape:
+    description: |
+      Operator ruling 2026-10-01 (OMN-20297): no new scripts, plugins or
+      exceptions in any repository. Refuses a new code file outside
+      src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/ and
+      docs/ (new scripts/, plugins/, tools/, bin/ and skill-directory code
+      included), new imperative lines in a SKILL.md (the omniclaude
+      OMN-12237 thin-shim patterns), and any new baseline, allowlist, waiver,
+      exemption or suppression entry. Existing files are listed in the
+      shrink-only .onex_ratchets/canonical_file_shape_baseline.txt. There is
+      no allowlist and no suppression comment. OMN-20304.
+    central_source: "omnibase_core.validators.canonical_file_shape"
+    pre_commit: required
+    ci_workflow: required
+    required_check_on_main: "CI Summary"
+    silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "canonical-file-shape"
+    ci_workflow_keywords:
+      - "canonical_file_shape"
+      - "canonical-file-shape"
+    excludes:
+      allowed: []
+      forbidden: []
+    applies_to_repos:
+      - omnibase_core
+
 # ---------------------------------------------------------------------------
 # Model B — failing-rollup enforcement (OMN-13574, epic OMN-13573)
 # ---------------------------------------------------------------------------
@@ -832,6 +859,8 @@ model_b_rollup_enforcement:
         # the ci-summary poller only sees jobs from its own run_id (OMN-14430),
         # and the OMN-14907 PR-workflow ratchet is count-locked.
         runtime-identity: ["runtime-identity-validator"]
+        # OMN-20304: canonical-file-shape runs as a ci.yml job, unconditional.
+        canonical-file-shape: ["canonical-file-shape"]
       # Machine-checkable intentional omissions. These validators are
       # ci_workflow: required and apply to omnibase_core, but are currently
       # grandfathered in validator-requirements-baseline.yaml as

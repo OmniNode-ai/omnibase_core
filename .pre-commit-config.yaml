@@ -525,6 +525,19 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-20304: canonical-file-shape ratchet. No new code file outside the
+      # canonical contract/node/handler/models/protocols/tests/docs locations,
+      # no new imperative lines in a SKILL.md, no new baseline, allowlist or
+      # suppression entry. Shrink-only baseline, no allowlist, no suppression.
+      - id: canonical-file-shape
+        name: Canonical-file-shape ratchet (OMN-20304)
+        entry: uv run python -m omnibase_core.validators.canonical_file_shape
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+        stages: [pre-commit]
+
       # OMN-14891: no test may shell out to git while able to inherit GIT_DIR /
       # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_COMMON_DIR from a git hook. Those
       # variables OVERRIDE `cwd=` and `git -C`, so a tmp_path fixture running under
