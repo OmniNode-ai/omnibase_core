@@ -844,5 +844,15 @@
   entry: python -m omnibase_core.validators.canonical_file_shape
   pass_filenames: false
   always_run: true
+- id: check-shape-gate-independence
+  name: Shape-gate detectors never depend on the OCC preflight (OMN-20298)
+  description: >
+    Refuse a workflow whose shape-gate detector job is skipped behind the change-control preflight (needs
+    on a preflight job without always()) or branches on the preflight result in a step. A detector must
+    run on every PR. No baseline, no allowlist, no suppression comment.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_shape_gate_independence
+  files: ^\.github/workflows/.*\.ya?ml$
+  pass_filenames: true
   require_serial: true
   stages: [pre-commit]
