@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -43,6 +43,9 @@ from omnibase_core.models.validation.model_goal_attempt_allocation_snapshot impo
 from omnibase_core.models.validation.model_goal_check_execution_outcome import (
     ModelGoalCheckExecutionOutcome,
 )
+from omnibase_core.models.validation.model_goal_commit_source_readback import (
+    ModelGoalCommitSourceReadback,
+)
 from omnibase_core.models.validation.model_goal_complete_absence_proof import (
     ModelGoalCompleteAbsenceProof,
 )
@@ -72,6 +75,9 @@ from omnibase_core.models.validation.model_goal_execution_result import (
 )
 from omnibase_core.models.validation.model_goal_fork_resolution_record import (
     ModelGoalForkResolutionRecord,
+)
+from omnibase_core.models.validation.model_goal_merge_group_source_readback import (
+    ModelGoalMergeGroupSourceReadback,
 )
 from omnibase_core.models.validation.model_goal_mutation_confirmation import (
     ModelGoalMutationConfirmation,
@@ -204,6 +210,9 @@ def _signed_external_dependency() -> tuple[
         subject_commit_sha=subject_commit,
         subject_tree_sha=subject_tree,
         subject_kind="commit",
+        commit_source="branch",
+        subject_ref="refs/heads/main",
+        subject_repository=repository,
         observed_at=_OBSERVED_AT,
         deadline_at=_OBSERVED_AT + timedelta(hours=1),
     )
@@ -537,6 +546,8 @@ class _FullProvider:
     execution_receipt: ModelGoalSupervisorExecutionReceipt | None
     history: ModelGoalRevisionHistorySnapshot
     observation: ModelGoalEvaluationObservation
+    current_commit_source: ModelGoalCommitSourceReadback | None
+    current_merge_group_source: ModelGoalMergeGroupSourceReadback | None
     trust_root: bytes
     artifacts: dict[str, bytes]
     ledger_key_provider: _WorkLedgerKeyProvider
@@ -557,6 +568,12 @@ class _FullProvider:
 
     def get_evaluation_observation(self, **_: Any):
         return self.observation
+
+    def read_current_commit_source(self, **_: Any):
+        return self.current_commit_source
+
+    def read_current_merge_group_source(self, **_: Any):
+        return self.current_merge_group_source
 
     def get_attestation(self, **_: Any):
         return self.attestation
@@ -584,12 +601,34 @@ class _FullProvider:
         return self.artifacts.get(digest)
 
 
+def _merge_group_observation_fields(fixture: dict[str, Any]) -> dict[str, Any]:
+    merge_group_ref = f"gh-readonly-queue/main/pr-123-{fixture['subject_commit']}"
+    return {
+        "merge_group_id": merge_group_ref,
+        "merge_group_delivery_id": UUID("00000000-0000-4000-8000-000000000321"),
+        "merge_group_ref": merge_group_ref,
+        "merge_group_base_ref": "main",
+        "merge_group_head_ref": merge_group_ref,
+        "merge_group_base_sha": str(fixture["base_commit"]),
+        "merge_group_base_tree_sha": "d" * 40,
+        "merge_group_head_sha": str(fixture["subject_commit"]),
+        "merge_group_head_tree_sha": str(fixture["subject_tree"]),
+        "merge_group_source_checkpoint_id": "topic:7:123",
+        "merge_group_source_body_sha256": _sha256(b"retained group event").removeprefix(
+            "sha256:"
+        ),
+        "merge_group_received_at": _OBSERVED_AT - timedelta(seconds=1),
+    }
+
+
 def _full_provider(
     fixture: dict[str, Any],
     *,
     baseline: ModelGoalCriterionBaseline | None = None,
     history: ModelGoalRevisionHistorySnapshot | None = None,
     observation: ModelGoalEvaluationObservation | None = None,
+    current_commit_source: ModelGoalCommitSourceReadback | None = None,
+    current_merge_group_source: ModelGoalMergeGroupSourceReadback | None = None,
     statuses: tuple[EnumGoalAttemptStatus, ...] = (EnumGoalAttemptStatus.PASS,),
     attempts_override: ModelGoalAttemptAllocationSnapshot | None = None,
     policy_override: dict[str, Any] | None = None,
@@ -650,22 +689,49 @@ def _full_provider(
     manifest = ModelGoalSubjectManifest.model_validate(
         fixture["contract"]["subject_manifest"]
     )
+    observation_values: dict[str, Any] = {
+        "observation_id": UUID("00000000-0000-4000-8000-000000000301"),
+        "deadline_event_id": UUID("00000000-0000-4000-8000-000000000302"),
+        "repository": REPOSITORY,
+        "goal_id": GOAL_ID,
+        "contract_revision": CONTRACT_REVISION,
+        "subject_commit_sha": str(fixture["subject_commit"]),
+        "subject_tree_sha": str(fixture["subject_tree"]),
+        "subject_kind": manifest.required_subject_kind,
+        "observed_at": _OBSERVED_AT,
+        "deadline_at": _OBSERVED_AT + timedelta(hours=1),
+        "deadline_status": "open",
+        "deadline_recorded_at": None,
+    }
+    if manifest.required_subject_kind.value == "merge_group":
+        observation_values.update(_merge_group_observation_fields(fixture))
+    elif manifest.required_subject_kind.value == "commit":
+        observation_values.update(
+            {
+                "commit_source": manifest.commit_source,
+                "subject_ref": manifest.subject_ref,
+                "subject_repository": REPOSITORY,
+                "pull_request_number": 123
+                if manifest.commit_source == "pull_request"
+                else None,
+                "base_repository": REPOSITORY
+                if manifest.commit_source == "pull_request"
+                else None,
+                "base_ref": manifest.base_ref,
+            }
+        )
+    elif manifest.required_subject_kind.value == "deployment":
+        observation_values.update(
+            {
+                "deployment_id": "deployment-42",
+                "environment_id": "production",
+                "runtime_instance_id": "runtime-prod-7",
+                "artifact_sha256": _sha256(b"deployed image digest"),
+                "runtime_config_sha256": _sha256(b"runtime config digest"),
+            }
+        )
     selected_observation = observation or ModelGoalEvaluationObservation(
-        observation_id=UUID("00000000-0000-4000-8000-000000000301"),
-        deadline_event_id=UUID("00000000-0000-4000-8000-000000000302"),
-        repository=REPOSITORY,
-        goal_id=GOAL_ID,
-        contract_revision=CONTRACT_REVISION,
-        subject_commit_sha=str(fixture["subject_commit"]),
-        subject_tree_sha=str(fixture["subject_tree"]),
-        subject_kind=manifest.required_subject_kind,
-        merge_group_id=f"test-merge-group-{fixture['subject_commit']}",
-        merge_group_base_sha=str(fixture["base_commit"]),
-        merge_group_head_sha=str(fixture["subject_commit"]),
-        observed_at=_OBSERVED_AT,
-        deadline_at=_OBSERVED_AT + timedelta(hours=1),
-        deadline_status="open",
-        deadline_recorded_at=None,
+        **observation_values,
     )
     verifier_digest = _sha256(_VERIFIER_BYTES)
     policy_values: dict[str, Any] = {
@@ -960,6 +1026,46 @@ def _full_provider(
             )
         }
     )
+    if (
+        current_commit_source is None
+        and manifest.required_subject_kind.value == "commit"
+    ):
+        current_commit_source = ModelGoalCommitSourceReadback(
+            repository=REPOSITORY,
+            goal_id=GOAL_ID,
+            contract_revision=CONTRACT_REVISION,
+            commit_source=manifest.commit_source,
+            subject_ref=manifest.subject_ref,
+            subject_repository=selected_observation.subject_repository,
+            subject_commit_sha=selected_observation.subject_commit_sha,
+            subject_tree_sha=selected_observation.subject_tree_sha,
+            pull_request_number=selected_observation.pull_request_number,
+            base_repository=selected_observation.base_repository,
+            base_ref=selected_observation.base_ref,
+            observed_at=selected_observation.observed_at,
+        )
+    if (
+        current_merge_group_source is None
+        and selected_observation.subject_kind.value == "merge_group"
+    ):
+        current_merge_group_source = ModelGoalMergeGroupSourceReadback(
+            repository=REPOSITORY,
+            goal_id=GOAL_ID,
+            contract_revision=CONTRACT_REVISION,
+            delivery_id=selected_observation.merge_group_delivery_id,
+            merge_group_id=selected_observation.merge_group_id,
+            merge_group_ref=selected_observation.merge_group_ref,
+            base_ref=selected_observation.merge_group_base_ref,
+            head_ref=selected_observation.merge_group_head_ref,
+            base_sha=selected_observation.merge_group_base_sha,
+            base_tree_sha=selected_observation.merge_group_base_tree_sha,
+            head_sha=selected_observation.merge_group_head_sha,
+            head_tree_sha=selected_observation.merge_group_head_tree_sha,
+            source_checkpoint_id=selected_observation.merge_group_source_checkpoint_id,
+            source_body_sha256=selected_observation.merge_group_source_body_sha256,
+            received_at=selected_observation.merge_group_received_at,
+            observed_at=selected_observation.observed_at + timedelta(seconds=1),
+        )
     return _FullProvider(
         attempts=attempts,
         policy=policy,
@@ -967,6 +1073,8 @@ def _full_provider(
         execution_receipt=execution_receipt,
         history=selected_history,
         observation=selected_observation,
+        current_commit_source=current_commit_source,
+        current_merge_group_source=current_merge_group_source,
         trust_root=keypair.public_key_bytes,
         artifacts={
             verifier_digest: verifier_artifact_bytes,
@@ -999,6 +1107,189 @@ def _public_result(fixture: dict[str, Any], provider: _FullProvider):
     return validate_occ_merge_eligibility(
         _input(fixture), goal_admission_provider=provider
     )
+
+
+def _commit_manifest(source: str) -> dict[str, Any]:
+    manifest: dict[str, Any] = {
+        "phase": "post_merge",
+        "required_subject_kind": "commit",
+        "commit_source": source,
+        "subject_ref": (
+            "refs/heads/jonah/omn-20070-goal-contract"
+            if source == "pull_request"
+            else "refs/heads/main"
+        ),
+        "dependencies": [],
+        "parent_integration_criterion_id": None,
+    }
+    if source == "pull_request":
+        manifest["base_ref"] = "refs/heads/main"
+    return manifest
+
+
+def _deployment_manifest() -> dict[str, Any]:
+    return {
+        "phase": "deployment",
+        "required_subject_kind": "deployment",
+        "dependencies": [],
+        "parent_integration_criterion_id": None,
+    }
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("source", ["pull_request", "branch"])
+def test_public_commit_admission_requires_matching_current_source_readback(
+    tmp_path: Path, source: str
+) -> None:
+    fixture = _coverage_fixture(
+        tmp_path,
+        subject_manifest=_commit_manifest(source),
+    )
+    valid_provider = _full_provider(fixture)
+
+    result = _public_result(fixture, valid_provider)
+
+    assert result.eligible is True
+    assert result.evaluation_commit_source == source
+    assert result.evaluation_subject_ref == _commit_manifest(source)["subject_ref"]
+    assert result.evaluation_subject_repository == REPOSITORY
+    assert result.evaluation_pull_request_number == (
+        123 if source == "pull_request" else None
+    )
+
+    assert valid_provider.current_commit_source is not None
+    mismatched_provider = _full_provider(
+        fixture,
+        current_commit_source=valid_provider.current_commit_source.model_copy(
+            update={"subject_ref": "refs/heads/other"}
+        ),
+    )
+    mismatch_result = _public_result(fixture, mismatched_provider)
+
+    assert mismatch_result.eligible is False
+    assert mismatch_result.reason is EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH
+
+
+@pytest.mark.unit
+def test_public_pull_request_readback_binds_fork_head_and_base_identity(
+    tmp_path: Path,
+) -> None:
+    fixture = _coverage_fixture(
+        tmp_path,
+        subject_manifest=_commit_manifest("pull_request"),
+    )
+    initial_provider = _full_provider(fixture)
+    assert initial_provider.current_commit_source is not None
+    fork_observation = initial_provider.observation.model_copy(
+        update={"subject_repository": "contributor/omnibase_core"}
+    )
+    fork_readback = initial_provider.current_commit_source.model_copy(
+        update={"subject_repository": "contributor/omnibase_core"}
+    )
+    fork_provider = _full_provider(
+        fixture,
+        observation=fork_observation,
+        current_commit_source=fork_readback,
+    )
+
+    fork_result = _public_result(fixture, fork_provider)
+
+    assert fork_result.eligible is True
+    assert fork_result.evaluation_subject_repository == "contributor/omnibase_core"
+    assert fork_result.evaluation_base_repository == REPOSITORY
+    assert fork_result.evaluation_base_ref == "refs/heads/main"
+
+    assert fork_provider.current_commit_source is not None
+    wrong_base_readback = fork_provider.current_commit_source.model_copy(
+        update={"base_ref": "refs/heads/other"}
+    )
+    wrong_base_provider = replace(
+        fork_provider, current_commit_source=wrong_base_readback
+    )
+    wrong_base_result = _public_result(fixture, wrong_base_provider)
+
+    assert wrong_base_result.eligible is False
+    assert wrong_base_result.reason is EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("changed_field", ["artifact_sha256", "runtime_config_sha256"])
+def test_public_deployment_admission_binds_signed_runtime_identity(
+    tmp_path: Path, changed_field: str
+) -> None:
+    fixture = _coverage_fixture(
+        tmp_path,
+        subject_manifest=_deployment_manifest(),
+    )
+    provider = _full_provider(fixture)
+
+    result = _public_result(fixture, provider)
+
+    assert result.eligible is True
+    assert result.evaluation_subject_kind == "deployment"
+    changed_observation = provider.observation.model_copy(
+        update={changed_field: _sha256(b"changed deployment identity")}
+    )
+    stale_provider = replace(provider, observation=changed_observation)
+    stale_result = _public_result(fixture, stale_provider)
+
+    assert stale_result.eligible is False
+    assert stale_result.reason is EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID
+
+
+@pytest.mark.unit
+def test_public_deployment_admission_blocks_persisted_expiry(
+    tmp_path: Path,
+) -> None:
+    fixture = _coverage_fixture(tmp_path, subject_manifest=_deployment_manifest())
+    provider = _full_provider(fixture)
+    deadline = provider.observation.deadline_at
+    expired_observation = provider.observation.model_copy(
+        update={
+            "deadline_status": "expired",
+            "deadline_recorded_at": deadline + timedelta(seconds=1),
+        }
+    )
+
+    result = _public_result(fixture, replace(provider, observation=expired_observation))
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_DEADLINE_EXPIRED
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("proof_kind", ["merge_result", "terminal"])
+def test_premerge_public_contract_refuses_its_own_completion_dependency(
+    tmp_path: Path, proof_kind: str
+) -> None:
+    self_dependency = ModelGoalDependencyProofPin(
+        dependency_id="self-completion",
+        proof_kind=proof_kind,
+        repository=REPOSITORY,
+        goal_id=GOAL_ID,
+        contract_revision=CONTRACT_REVISION,
+        contract_sha256=_sha256(b"self-referential contract"),
+        subject_kind="merge_group",
+        subject_commit_sha="a" * 40,
+        subject_tree_sha="b" * 40,
+        attestation_id=_OTHER_REVISION,
+        signed_attestation_sha256=_sha256(b"self-referential attestation"),
+        artifact_sha256=(_sha256(b"self-referential artifact"),),
+    )
+    manifest = {
+        "phase": "pre_merge",
+        "required_subject_kind": "merge_group",
+        "dependencies": [self_dependency.model_dump(mode="json")],
+        "parent_integration_criterion_id": CRITERION_ID,
+    }
+    fixture = _coverage_fixture(tmp_path, subject_manifest=manifest)
+    provider = _full_provider(fixture)
+
+    result = _public_result(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_CONTRACT_INVALID
+    assert "dependency cycle" in result.detail
 
 
 def _mutation_intent() -> tuple[ModelGoalMutationIntent, ModelGoalMutationContext]:
@@ -1305,6 +1596,50 @@ def test_public_resolver_accepts_complete_signed_proof_for_publisher(
     assert result.evaluation_observation_id == provider.observation.observation_id
     assert result.evaluation_deadline_status == "open"
     assert result.evaluation_deadline_recorded_at is None
+    assert result.evaluation_subject_kind == "merge_group"
+    assert result.evaluation_pull_request_number is None
+    assert result.evaluation_merge_group_id == provider.observation.merge_group_id
+    assert (
+        result.evaluation_merge_group_delivery_id
+        == provider.observation.merge_group_delivery_id
+    )
+    assert (
+        result.evaluation_merge_group_source_body_sha256
+        == provider.observation.merge_group_source_body_sha256
+    )
+
+
+@pytest.mark.unit
+def test_public_resolver_requires_current_retained_merge_group_readback(
+    tmp_path: Path,
+) -> None:
+    fixture = _coverage_fixture(tmp_path)
+    provider = _full_provider(fixture)
+    provider.current_merge_group_source = None
+
+    result = _public_result(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE
+
+
+@pytest.mark.unit
+def test_public_resolver_rejects_merge_group_readback_for_another_delivery(
+    tmp_path: Path,
+) -> None:
+    fixture = _coverage_fixture(tmp_path)
+    provider = _full_provider(fixture)
+    assert provider.current_merge_group_source is not None
+    provider.current_merge_group_source = (
+        provider.current_merge_group_source.model_copy(
+            update={"source_body_sha256": "c" * 64}
+        )
+    )
+
+    result = _public_result(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH
 
 
 @pytest.mark.unit
@@ -1339,9 +1674,7 @@ def test_public_resolver_blocks_persisted_expired_deadline_without_local_clock(
         subject_commit_sha=str(fixture["subject_commit"]),
         subject_tree_sha=str(fixture["subject_tree"]),
         subject_kind="merge_group",
-        merge_group_id=f"test-merge-group-{fixture['subject_commit']}",
-        merge_group_base_sha=str(fixture["base_commit"]),
-        merge_group_head_sha=str(fixture["subject_commit"]),
+        **_merge_group_observation_fields(fixture),
         observed_at=_OBSERVED_AT,
         deadline_at=deadline,
         deadline_status="expired",
@@ -1455,9 +1788,7 @@ def test_deadline_occurrence_state_requires_a_persisted_valid_transition(
             subject_commit_sha=str(fixture["subject_commit"]),
             subject_tree_sha=str(fixture["subject_tree"]),
             subject_kind="merge_group",
-            merge_group_id=f"test-merge-group-{fixture['subject_commit']}",
-            merge_group_base_sha=str(fixture["base_commit"]),
-            merge_group_head_sha=str(fixture["subject_commit"]),
+            **_merge_group_observation_fields(fixture),
             observed_at=_OBSERVED_AT,
             deadline_at=_OBSERVED_AT + timedelta(hours=1),
             deadline_status=deadline_status,
@@ -1511,9 +1842,10 @@ def test_public_resolver_rejects_observation_before_attestation_issue(
         subject_kind=ModelGoalSubjectManifest.model_validate(
             fixture["contract"]["subject_manifest"]
         ).required_subject_kind,
-        merge_group_id=f"test-merge-group-{fixture['subject_commit']}",
-        merge_group_base_sha=str(fixture["base_commit"]),
-        merge_group_head_sha=str(fixture["subject_commit"]),
+        **{
+            **_merge_group_observation_fields(fixture),
+            "merge_group_received_at": _OBSERVED_AT - timedelta(hours=2, seconds=1),
+        },
         observed_at=_OBSERVED_AT - timedelta(hours=2),
         deadline_at=_OBSERVED_AT - timedelta(hours=1),
     )
@@ -2302,6 +2634,9 @@ def test_public_resolver_rejects_typed_subject_kind_mismatch(
             subject_commit_sha=str(fixture["subject_commit"]),
             subject_tree_sha=str(fixture["subject_tree"]),
             subject_kind="commit",
+            commit_source="branch",
+            subject_ref="refs/heads/main",
+            subject_repository=REPOSITORY,
             observed_at=_OBSERVED_AT,
             deadline_at=_OBSERVED_AT + timedelta(hours=1),
         ),

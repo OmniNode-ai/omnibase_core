@@ -28,6 +28,7 @@ if TYPE_CHECKING:
 
 from omnibase_core.constants.constants_goal_admission import (
     _REPOSITORY_RE,
+    is_canonical_git_head_ref,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -51,6 +52,9 @@ class ModelGoalSubjectManifest(BaseModel):
 
     phase: Literal["pre_merge", "post_merge", "deployment"]
     required_subject_kind: EnumGoalSubjectKind
+    commit_source: Literal["pull_request", "branch"] | None = None
+    subject_ref: str | None = None
+    base_ref: str | None = None
     dependencies: tuple[ModelGoalDependencyProofPin, ...] = Field(default_factory=tuple)
     parent_integration_criterion_id: str | None = (
         Field(  # string-id-ok: protected criterion key
@@ -67,6 +71,31 @@ class ModelGoalSubjectManifest(BaseModel):
         }
         if self.required_subject_kind != phase_subject_kind[self.phase]:
             raise ValueError("manifest phase must require its canonical subject kind")
+        if self.required_subject_kind == EnumGoalSubjectKind.COMMIT:
+            if self.commit_source is None or self.subject_ref is None:
+                raise ValueError(
+                    "commit manifests require commit_source and exact subject_ref"
+                )
+            if not is_canonical_git_head_ref(self.subject_ref):
+                raise ValueError("subject_ref must be a fully qualified Git head ref")
+            if self.commit_source == "pull_request":
+                if self.base_ref is None or not is_canonical_git_head_ref(
+                    self.base_ref
+                ):
+                    raise ValueError(
+                        "pull-request manifests require an exact fully qualified base_ref"
+                    )
+            elif self.base_ref is not None:
+                raise ValueError(
+                    "branch manifests cannot declare a pull-request base_ref"
+                )
+        elif any(
+            value is not None
+            for value in (self.commit_source, self.subject_ref, self.base_ref)
+        ):
+            raise ValueError(
+                "merge-group and deployment manifests cannot declare commit source fields"
+            )
         names = [pin.dependency_id for pin in self.dependencies]
         if len(set(names)) != len(names):
             raise ValueError("dependency ids must be unique")
@@ -85,12 +114,24 @@ class ModelGoalSubjectManifest(BaseModel):
                 "recorded observation does not match manifest subject kind",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
+        if self.required_subject_kind == EnumGoalSubjectKind.COMMIT and (
+            observation.commit_source != self.commit_source
+            or observation.subject_ref != self.subject_ref
+            or observation.base_ref != self.base_ref
+        ):
+            raise ModelOnexError(
+                "recorded commit source does not match the sealed subject selector",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
 
     def content_sha256(self) -> str:
         """Return canonical content digest; contract digest remains the authority."""
         payload = {
             "phase": self.phase,
             "required_subject_kind": self.required_subject_kind,
+            "commit_source": self.commit_source,
+            "subject_ref": self.subject_ref,
+            "base_ref": self.base_ref,
             "dependencies": [
                 pin.model_dump(mode="json")
                 for pin in sorted(

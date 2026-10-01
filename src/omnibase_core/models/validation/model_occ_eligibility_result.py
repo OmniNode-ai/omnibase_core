@@ -59,13 +59,32 @@ class ModelOccEligibilityResult(BaseModel):
     evaluation_deadline_status: Literal["open", "expired"] | None = None
     evaluation_deadline_recorded_at: AwareDatetime | None = Field(default=None)
     evaluation_subject_kind: EnumGoalSubjectKind | None = None
+    evaluation_commit_source: Literal["pull_request", "branch"] | None = None
+    evaluation_subject_ref: str | None = None
+    evaluation_subject_repository: str | None = None
+    evaluation_pull_request_number: int | None = Field(default=None, ge=1)
+    evaluation_base_repository: str | None = None
+    evaluation_base_ref: str | None = None
     evaluation_merge_group_id: str | None = (
         Field(  # string-id-ok: GitHub merge-group identifier
             default=None
         )
     )
     evaluation_merge_group_base_sha: str | None = Field(default=None)
+    evaluation_merge_group_base_tree_sha: str | None = Field(default=None)
     evaluation_merge_group_head_sha: str | None = Field(default=None)
+    evaluation_merge_group_head_tree_sha: str | None = Field(default=None)
+    evaluation_merge_group_delivery_id: UUID | None = Field(default=None)
+    evaluation_merge_group_ref: str | None = None
+    evaluation_merge_group_base_ref: str | None = None
+    evaluation_merge_group_head_ref: str | None = None
+    evaluation_merge_group_source_checkpoint_id: str | None = (
+        Field(  # string-id-ok: Kafka checkpoint
+            default=None,
+        )
+    )
+    evaluation_merge_group_source_body_sha256: str | None = None
+    evaluation_merge_group_received_at: AwareDatetime | None = None
     evaluation_deployment_id: str | None = (
         Field(  # string-id-ok: deployment provider identifier
             default=None
@@ -180,9 +199,32 @@ class ModelOccEligibilityResult(BaseModel):
                 if self.evaluation_subject_kind is not None
                 else None
             ),
+            "evaluation_commit_source": self.evaluation_commit_source,
+            "evaluation_subject_ref": self.evaluation_subject_ref,
+            "evaluation_subject_repository": self.evaluation_subject_repository,
+            "evaluation_pull_request_number": self.evaluation_pull_request_number,
+            "evaluation_base_repository": self.evaluation_base_repository,
+            "evaluation_base_ref": self.evaluation_base_ref,
             "evaluation_merge_group_id": self.evaluation_merge_group_id,
             "evaluation_merge_group_base_sha": self.evaluation_merge_group_base_sha,
+            "evaluation_merge_group_base_tree_sha": self.evaluation_merge_group_base_tree_sha,
             "evaluation_merge_group_head_sha": self.evaluation_merge_group_head_sha,
+            "evaluation_merge_group_head_tree_sha": self.evaluation_merge_group_head_tree_sha,
+            "evaluation_merge_group_delivery_id": (
+                str(self.evaluation_merge_group_delivery_id)
+                if self.evaluation_merge_group_delivery_id is not None
+                else None
+            ),
+            "evaluation_merge_group_ref": self.evaluation_merge_group_ref,
+            "evaluation_merge_group_base_ref": self.evaluation_merge_group_base_ref,
+            "evaluation_merge_group_head_ref": self.evaluation_merge_group_head_ref,
+            "evaluation_merge_group_source_checkpoint_id": self.evaluation_merge_group_source_checkpoint_id,
+            "evaluation_merge_group_source_body_sha256": self.evaluation_merge_group_source_body_sha256,
+            "evaluation_merge_group_received_at": (
+                self.evaluation_merge_group_received_at.isoformat()
+                if self.evaluation_merge_group_received_at is not None
+                else None
+            ),
             "evaluation_deployment_id": self.evaluation_deployment_id,
             "evaluation_environment_id": self.evaluation_environment_id,
             "evaluation_runtime_instance_id": self.evaluation_runtime_instance_id,

@@ -33,7 +33,7 @@ class ModelOccEligibilityInput(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     repo: str = Field(..., min_length=1)
-    pr_number: int = Field(..., ge=1)
+    pr_number: int | None = Field(default=None, ge=1)
     pr_title: str = Field(default="")
     pr_body: str = Field(default="")
     pr_branch: str = Field(default="")
@@ -109,7 +109,16 @@ class ModelOccEligibilityInput(BaseModel):
                 raise ValueError(
                     "legacy OCC mode requires occ_commit_sha, contracts_dir, and receipts_dir"
                 )
+            if self.pr_number is None:
+                raise ValueError("legacy OCC mode requires a pull request number")
             return self
+
+        if self.pr_number is None and any(
+            (self.pr_title, self.pr_body, self.pr_branch, self.pr_commit_shas)
+        ):
+            raise ValueError(
+                "goal subjects without a pull request cannot carry PR metadata"
+            )
 
         occ_fields = (self.occ_commit_sha, self.contracts_dir, self.receipts_dir)
         if any(value is not None for value in occ_fields) and any(

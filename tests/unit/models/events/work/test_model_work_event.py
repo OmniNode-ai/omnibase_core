@@ -299,21 +299,29 @@ def test_actor_key_inconsistent_with_actor_is_rejected() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_claim_kinds_partition_on_ticket_id() -> None:
-    for kind in (
-        EnumWorkEventKind.CLAIM_REQUESTED,
-        EnumWorkEventKind.CLAIM_RELEASED,
-    ):
-        assert WORK_EVENT_PARTITION_KEY_FIELDS[kind] == "ticket_id"
+def test_claim_kinds_use_their_typed_partition_key() -> None:
+    assert (
+        WORK_EVENT_PARTITION_KEY_FIELDS[EnumWorkEventKind.CLAIM_REQUESTED]
+        == "work_partition_key"
+    )
+    assert (
+        WORK_EVENT_PARTITION_KEY_FIELDS[EnumWorkEventKind.CLAIM_RELEASED] == "ticket_id"
+    )
 
 
-def test_narrative_kinds_partition_on_actor_identity() -> None:
-    for kind in (
-        EnumWorkEventKind.RESULT_RECORDED,
-        EnumWorkEventKind.RULING_RECORDED,
-        EnumWorkEventKind.CORRECTION_RECORDED,
-    ):
-        assert WORK_EVENT_PARTITION_KEY_FIELDS[kind] == "actor_key"
+def test_narrative_and_structured_ruling_partition_keys_are_explicit() -> None:
+    assert (
+        WORK_EVENT_PARTITION_KEY_FIELDS[EnumWorkEventKind.RESULT_RECORDED]
+        == "actor_key"
+    )
+    assert (
+        WORK_EVENT_PARTITION_KEY_FIELDS[EnumWorkEventKind.RULING_RECORDED]
+        == "work_partition_key"
+    )
+    assert (
+        WORK_EVENT_PARTITION_KEY_FIELDS[EnumWorkEventKind.CORRECTION_RECORDED]
+        == "actor_key"
+    )
 
 
 def test_every_kind_declares_a_partition_key() -> None:

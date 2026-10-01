@@ -96,6 +96,21 @@ def _input(fixture: dict[str, Any]) -> ModelOccEligibilityInput:
             "pr_body": "",
         }
     )
+    manifest = contract.get("subject_manifest")
+    assert isinstance(manifest, dict)
+    if (
+        manifest.get("required_subject_kind") != "commit"
+        or manifest.get("commit_source") != "pull_request"
+    ):
+        fields.update(
+            {
+                "pr_number": None,
+                "pr_title": "",
+                "pr_branch": "",
+                "pr_commit_shas": (),
+                "pr_commit_texts": (),
+            }
+        )
     return ModelOccEligibilityInput.model_validate(fields)
 
 
@@ -364,6 +379,28 @@ def test_missing_protected_trust_component_fails_closed(
     assert result.eligible is False
     assert result.reason is EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE
     assert expected_detail in result.detail
+
+
+@pytest.mark.unit
+def test_matching_execution_identity_from_unauthenticated_channel_is_not_trusted(
+    tmp_path: Path,
+) -> None:
+    fixture = _goal_repo(tmp_path)
+    provider, _ = _trusted_provider(fixture)
+    assert provider.execution_receipt is not None
+    assert provider.execution_receipt.execution_identity == _EXECUTION_IDENTITY
+
+    # Repeating the protected verifier identity cannot authenticate a receipt.
+    provider.execution_receipt = provider.execution_receipt.model_copy(
+        update={"signature": "forged on an unauthenticated channel"}
+    )
+    provider.attestation = None
+
+    result = _evaluate(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE
+    assert "no trusted supervisor attestation" in result.detail
 
 
 @pytest.mark.unit

@@ -77,6 +77,9 @@ from omnibase_core.models.events.work import (
     parse_work_ledger_line,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.utils.util_repository_identity import (
+    canonical_repository_partition_key,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -488,6 +491,23 @@ def test_round_trip_property(
     # Claim, revision, release, and friction events must name their ticket.
     if ticket_id is not None or kind not in _TICKET_REQUIRED:
         update["ticket_id"] = ticket_id
+    goal_id = getattr(fixture, "goal_id", None)
+    repository = getattr(fixture, "repository", None)
+    resolution = getattr(fixture, "goal_revision_resolution", None)
+    if resolution is not None:
+        goal_id = resolution.goal_id
+        repository = resolution.repository
+    if goal_id is not None and repository is not None:
+        work_partition_key = (
+            f"goal:{canonical_repository_partition_key(repository)}:{goal_id}"
+        )
+    else:
+        effective_ticket_id = update.get("ticket_id", fixture.ticket_id)
+        if effective_ticket_id is not None:
+            work_partition_key = str(effective_ticket_id)
+        else:
+            work_partition_key = fixture.actor_key
+    update["work_partition_key"] = work_partition_key
     # A lease must expire after it is placed; keep the fixture's lease one hour long.
     if kind is EnumWorkEventKind.HOLD_PLACED:
         update["expires_at"] = emitted_at + timedelta(hours=1)

@@ -378,6 +378,8 @@ def _goal_snapshot(
     contract = fixture["contract"]
     assert isinstance(contract, dict)
     fields = _goal_snapshot_fields(repo_root)
+    manifest = contract.get("subject_manifest")
+    assert isinstance(manifest, dict)
     fields.update(
         {
             "goal_id": UUID(str(contract["goal_id"])),
@@ -395,6 +397,20 @@ def _goal_snapshot(
             "pr_body": f"Evidence-Ticket: {goal_ticket_id}" if goal_ticket_id else "",
         }
     )
+    if (
+        manifest.get("required_subject_kind") != "commit"
+        or manifest.get("commit_source") != "pull_request"
+    ):
+        fields.update(
+            {
+                "pr_number": None,
+                "pr_title": "",
+                "pr_body": "",
+                "pr_branch": "",
+                "pr_commit_shas": (),
+                "pr_commit_texts": (),
+            }
+        )
     return ModelOccEligibilityInput.model_validate(fields)
 
 
@@ -510,6 +526,22 @@ def test_ticketed_goal_correlation_is_explicit_and_does_not_replace_goal_identit
     assert snapshot.goal_id == GOAL_ID
     assert snapshot.goal_ticket_id == "OMN-20070"
     assert snapshot.goal_ticket_id != str(snapshot.goal_id)
+
+
+@pytest.mark.unit
+def test_goal_input_allows_non_pr_subject_without_pr_metadata(tmp_path: Path) -> None:
+    fields = _goal_snapshot_fields(tmp_path / "repo")
+    fields["pr_number"] = None
+    fields["pr_commit_shas"] = ()
+    fields["pr_title"] = ""
+    fields["pr_body"] = ""
+    fields["pr_branch"] = ""
+
+    snapshot = ModelOccEligibilityInput.model_validate(fields)
+
+    assert snapshot.pr_number is None
+    assert not snapshot.pr_commit_shas
+    assert snapshot.subject_commit_sha == SUBJECT_COMMIT_SHA
 
 
 @pytest.mark.unit
@@ -655,6 +687,20 @@ def test_legacy_ticket_snapshot_keeps_the_historical_input_shape(
 
 
 @pytest.mark.unit
+def test_legacy_ticket_snapshot_still_requires_pr_number(tmp_path: Path) -> None:
+    with pytest.raises(
+        ValidationError, match="legacy OCC mode requires a pull request number"
+    ):
+        ModelOccEligibilityInput(
+            repo="omnibase_core",
+            pr_number=None,
+            occ_commit_sha="e" * 40,
+            contracts_dir=tmp_path / "contracts",
+            receipts_dir=tmp_path / "receipts",
+        )
+
+
+@pytest.mark.unit
 def test_legacy_ticket_receipt_keeps_opaque_goal_id_parsing() -> None:
     receipt = ModelDodReceipt.model_validate(
         {
@@ -731,6 +777,30 @@ def test_goal_bound_receipt_rejects_abbreviated_subject_commit() -> None:
 
     with pytest.raises(ValidationError, match="full Git object id"):
         ModelDodReceipt.model_validate(payload)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "repository",
+    [
+        "owner with spaces/repo",
+        "owner/repo ",
+        " owner/repo",
+        "owner/repo/extra",
+    ],
+)
+def test_goal_bound_receipt_rejects_noncanonical_repository(repository: str) -> None:
+    with pytest.raises(ValidationError, match="canonical owner/repository"):
+        ModelDodReceipt.model_validate(_goal_receipt_payload(repository=repository))
+
+
+@pytest.mark.unit
+def test_goal_bound_receipt_preserves_canonical_repository_spelling() -> None:
+    receipt = ModelDodReceipt.model_validate(
+        _goal_receipt_payload(repository="Owner/Repo")
+    )
+
+    assert receipt.repository == "Owner/Repo"
 
 
 @pytest.mark.unit
@@ -863,7 +933,17 @@ def test_goal_resolution_refuses_canonical_contract_digest_mismatch(
 def test_goal_resolution_refuses_subject_commit_that_is_not_the_pr_head(
     tmp_path: Path,
 ) -> None:
-    fixture = _goal_repo(tmp_path)
+    contract = _goal_contract()
+    contract["subject_manifest"] = {
+        "phase": "post_merge",
+        "required_subject_kind": "commit",
+        "commit_source": "pull_request",
+        "subject_ref": "refs/heads/jonah/omn-20070-goal-contract",
+        "base_ref": "refs/heads/main",
+        "dependencies": [],
+        "parent_integration_criterion_id": None,
+    }
+    fixture = _goal_repo(tmp_path, contract=contract)
     snapshot = _goal_snapshot(fixture).model_copy(
         update={
             "subject_commit_sha": fixture["contract_source_commit"],

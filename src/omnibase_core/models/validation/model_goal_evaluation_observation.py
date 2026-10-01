@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime
 from typing import Literal
 from uuid import UUID
@@ -22,8 +23,19 @@ from pydantic import (
 from omnibase_core.constants.constants_goal_admission import (
     _REPOSITORY_RE,
     _SHA256_RE,
+    is_canonical_git_head_ref,
 )
 from omnibase_core.enums.enum_goal_subject_kind import EnumGoalSubjectKind
+
+_SAFE_MERGE_GROUP_REF_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
+
+
+def _is_safe_merge_group_ref(value: str) -> bool:
+    return (
+        bool(_SAFE_MERGE_GROUP_REF_RE.fullmatch(value))
+        and not value.startswith("/")
+        and all(part not in {"", ".", ".."} for part in value.split("/"))
+    )
 
 
 class ModelGoalEvaluationObservation(BaseModel):
@@ -39,11 +51,36 @@ class ModelGoalEvaluationObservation(BaseModel):
     subject_commit_sha: str = Field(..., pattern=r"^[0-9a-f]{40}$")
     subject_tree_sha: str = Field(..., pattern=r"^[0-9a-f]{40}$")
     subject_kind: EnumGoalSubjectKind = EnumGoalSubjectKind.COMMIT
+    commit_source: Literal["pull_request", "branch"] | None = None
+    subject_ref: str | None = None
+    subject_repository: str | None = None
+    pull_request_number: int | None = Field(default=None, ge=1)
+    base_repository: str | None = None
+    base_ref: str | None = None
     merge_group_id: str | None = Field(  # string-id-ok: GitHub merge-group identifier
         default=None, min_length=1, max_length=256
     )
+    merge_group_delivery_id: UUID | None = None
+    merge_group_ref: str | None = None
+    merge_group_base_ref: str | None = None
+    merge_group_head_ref: str | None = None
     merge_group_base_sha: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+    merge_group_base_tree_sha: str | None = Field(
+        default=None, pattern=r"^[0-9a-f]{40}$"
+    )
     merge_group_head_sha: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
+    merge_group_head_tree_sha: str | None = Field(
+        default=None, pattern=r"^[0-9a-f]{40}$"
+    )
+    merge_group_source_checkpoint_id: str | None = (
+        Field(  # string-id-ok: Kafka checkpoint
+            default=None,
+        )
+    )
+    merge_group_source_body_sha256: str | None = Field(
+        default=None, pattern=r"^[0-9a-f]{64}$"
+    )
+    merge_group_received_at: datetime | None = None
     deployment_id: str | None = Field(  # string-id-ok: deployment provider identifier
         default=None, min_length=1, max_length=256
     )
@@ -93,12 +130,52 @@ class ModelGoalEvaluationObservation(BaseModel):
             if self.deadline_recorded_at < self.deadline_at:
                 raise ValueError("deadline occurrence cannot precede its deadline")
         if self.subject_kind == "commit":
+            if self.commit_source is None or self.subject_ref is None:
+                raise ValueError(
+                    "commit observation requires commit_source and subject_ref"
+                )
+            if not is_canonical_git_head_ref(self.subject_ref):
+                raise ValueError("subject_ref must be a fully qualified Git head ref")
+            if self.subject_repository is None or not _REPOSITORY_RE.fullmatch(
+                self.subject_repository
+            ):
+                raise ValueError(
+                    "subject_repository must be canonical owner/repository"
+                )
+            if self.commit_source == "pull_request":
+                if (
+                    self.pull_request_number is None
+                    or self.base_repository != self.repository
+                    or self.base_ref is None
+                    or not is_canonical_git_head_ref(self.base_ref)
+                ):
+                    raise ValueError(
+                        "pull-request observation requires PR number and exact base repository/ref"
+                    )
+            elif (
+                self.subject_repository != self.repository
+                or self.pull_request_number is not None
+                or self.base_repository is not None
+                or self.base_ref is not None
+            ):
+                raise ValueError(
+                    "branch observation must use the goal repo and cannot carry PR fields"
+                )
             if any(
                 value is not None
                 for value in (
                     self.merge_group_id,
+                    self.merge_group_delivery_id,
+                    self.merge_group_ref,
+                    self.merge_group_base_ref,
+                    self.merge_group_head_ref,
                     self.merge_group_base_sha,
+                    self.merge_group_base_tree_sha,
                     self.merge_group_head_sha,
+                    self.merge_group_head_tree_sha,
+                    self.merge_group_source_checkpoint_id,
+                    self.merge_group_source_body_sha256,
+                    self.merge_group_received_at,
                     self.deployment_id,
                     self.environment_id,
                     self.runtime_instance_id,
@@ -110,11 +187,34 @@ class ModelGoalEvaluationObservation(BaseModel):
                     "commit observation cannot carry merge/deployment fields"
                 )
         elif self.subject_kind == "merge_group":
+            if any(
+                value is not None
+                for value in (
+                    self.commit_source,
+                    self.subject_ref,
+                    self.subject_repository,
+                    self.pull_request_number,
+                    self.base_repository,
+                    self.base_ref,
+                )
+            ):
+                raise ValueError(
+                    "merge-group observation cannot carry commit-source fields"
+                )
             if not all(
                 (
                     self.merge_group_id,
+                    self.merge_group_delivery_id,
+                    self.merge_group_ref,
+                    self.merge_group_base_ref,
+                    self.merge_group_head_ref,
                     self.merge_group_base_sha,
+                    self.merge_group_base_tree_sha,
                     self.merge_group_head_sha,
+                    self.merge_group_head_tree_sha,
+                    self.merge_group_source_checkpoint_id,
+                    self.merge_group_source_body_sha256,
+                    self.merge_group_received_at,
                 )
             ) or any(
                 value is not None
@@ -127,9 +227,49 @@ class ModelGoalEvaluationObservation(BaseModel):
                 )
             ):
                 raise ValueError(
-                    "merge-group observation requires exact group/base/head"
+                    "merge-group observation requires retained delivery and exact group/base/head identity"
                 )
+            if (
+                self.merge_group_id != self.merge_group_head_ref
+                or self.merge_group_ref != self.merge_group_head_ref
+                or self.merge_group_head_sha != self.subject_commit_sha
+                or self.merge_group_head_tree_sha != self.subject_tree_sha
+            ):
+                raise ValueError(
+                    "merge-group identity must match the exact selected head"
+                )
+            assert self.merge_group_received_at is not None
+            if (
+                self.merge_group_received_at.tzinfo is None
+                or self.merge_group_received_at.utcoffset() is None
+                or self.merge_group_received_at > self.observed_at
+            ):
+                raise ValueError(
+                    "retained merge-group delivery time must precede the observation"
+                )
+            for name in (
+                "merge_group_ref",
+                "merge_group_base_ref",
+                "merge_group_head_ref",
+            ):
+                value = getattr(self, name)
+                if value is None or not _is_safe_merge_group_ref(value):
+                    raise ValueError(f"{name} must be an exact safe merge-group ref")
         elif self.subject_kind == "deployment":
+            if any(
+                value is not None
+                for value in (
+                    self.commit_source,
+                    self.subject_ref,
+                    self.subject_repository,
+                    self.pull_request_number,
+                    self.base_repository,
+                    self.base_ref,
+                )
+            ):
+                raise ValueError(
+                    "deployment observation cannot carry commit-source fields"
+                )
             if not all(
                 (
                     self.deployment_id,
@@ -142,8 +282,17 @@ class ModelGoalEvaluationObservation(BaseModel):
                 value is not None
                 for value in (
                     self.merge_group_id,
+                    self.merge_group_delivery_id,
+                    self.merge_group_ref,
+                    self.merge_group_base_ref,
+                    self.merge_group_head_ref,
                     self.merge_group_base_sha,
+                    self.merge_group_base_tree_sha,
                     self.merge_group_head_sha,
+                    self.merge_group_head_tree_sha,
+                    self.merge_group_source_checkpoint_id,
+                    self.merge_group_source_body_sha256,
+                    self.merge_group_received_at,
                 )
             ):
                 raise ValueError(

@@ -354,6 +354,36 @@ def _goal_result(
             if evaluation_observation is not None
             else None
         ),
+        evaluation_commit_source=(
+            evaluation_observation.commit_source
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_subject_ref=(
+            evaluation_observation.subject_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_subject_repository=(
+            evaluation_observation.subject_repository
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_pull_request_number=(
+            evaluation_observation.pull_request_number
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_base_repository=(
+            evaluation_observation.base_repository
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_base_ref=(
+            evaluation_observation.base_ref
+            if evaluation_observation is not None
+            else None
+        ),
         evaluation_merge_group_id=(
             evaluation_observation.merge_group_id
             if evaluation_observation is not None
@@ -364,8 +394,53 @@ def _goal_result(
             if evaluation_observation is not None
             else None
         ),
+        evaluation_merge_group_base_tree_sha=(
+            evaluation_observation.merge_group_base_tree_sha
+            if evaluation_observation is not None
+            else None
+        ),
         evaluation_merge_group_head_sha=(
             evaluation_observation.merge_group_head_sha
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_head_tree_sha=(
+            evaluation_observation.merge_group_head_tree_sha
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_delivery_id=(
+            evaluation_observation.merge_group_delivery_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_ref=(
+            evaluation_observation.merge_group_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_base_ref=(
+            evaluation_observation.merge_group_base_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_head_ref=(
+            evaluation_observation.merge_group_head_ref
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_source_checkpoint_id=(
+            evaluation_observation.merge_group_source_checkpoint_id
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_source_body_sha256=(
+            evaluation_observation.merge_group_source_body_sha256
+            if evaluation_observation is not None
+            else None
+        ),
+        evaluation_merge_group_received_at=(
+            evaluation_observation.merge_group_received_at
             if evaluation_observation is not None
             else None
         ),
@@ -661,13 +736,6 @@ def _validate_goal_eligibility(
             EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
             "the declared subject tree does not match the Git tree for subject_commit_sha",
         )
-    if snapshot.subject_commit_sha not in _normalize_sha_set(snapshot.pr_commit_shas):
-        return result(
-            False,
-            EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
-            "the contract subject commit is not an observed commit on the PR",
-        )
-
     format_reason, format_detail = _goal_formatter_result(
         root,
         snapshot.goal_contract_source_commit_sha,
@@ -744,6 +812,30 @@ def _validate_goal_eligibility(
             "the immutable goal subject manifest is absent or invalid: "
             f"{exc.__class__.__name__}",
         )
+    if contract_manifest.required_subject_kind == "commit":
+        if contract_manifest.commit_source == "pull_request":
+            if (
+                snapshot.pr_number is None
+                or snapshot.subject_commit_sha
+                not in _normalize_sha_set(snapshot.pr_commit_shas)
+                or contract_manifest.subject_ref is None
+                or snapshot.pr_branch
+                != contract_manifest.subject_ref.removeprefix("refs/heads/")
+            ):
+                return result(
+                    False,
+                    EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                    "the PR subject does not match the protected PR ref and head",
+                )
+        elif snapshot.pr_number is not None or snapshot.pr_commit_shas:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                "the protected branch subject cannot include PR metadata",
+            )
+    # PR metadata on the legacy envelope is not authority for merge-group or
+    # deployment subjects. Those modes resolve only from their typed protected
+    # observation fields below.
     try:
         contract_manifest.validate_for_owner(
             repository=snapshot.repo, goal_id=snapshot.goal_id
@@ -937,6 +1029,124 @@ def _validate_goal_eligibility(
             hashes={str(snapshot.goal_id): compute_canonical_contract_sha256(contract)},
             evaluation_observation=observation,
         )
+    if contract_manifest.required_subject_kind == "commit":
+        if contract_manifest.commit_source == "pull_request":
+            assert snapshot.pr_number is not None
+        try:
+            current_source = admission_provider.read_current_commit_source(
+                repository=snapshot.repo,
+                goal_id=snapshot.goal_id,
+                contract_revision=snapshot.contract_revision,
+                manifest=contract_manifest,
+                pull_request_number=snapshot.pr_number,
+            )
+        except (GoalAdmissionProviderError, AttributeError):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                "the current protected commit source could not be read",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if current_source is None:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                "the current protected commit source is unavailable",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if (
+            current_source.repository != snapshot.repo
+            or current_source.goal_id != snapshot.goal_id
+            or current_source.contract_revision != snapshot.contract_revision
+            or current_source.commit_source != contract_manifest.commit_source
+            or current_source.subject_ref != contract_manifest.subject_ref
+            or current_source.subject_repository != observation.subject_repository
+            or current_source.subject_commit_sha != snapshot.subject_commit_sha
+            or current_source.subject_commit_sha != observation.subject_commit_sha
+            or current_source.subject_tree_sha != snapshot.subject_tree_sha
+            or current_source.subject_tree_sha != observation.subject_tree_sha
+            or current_source.pull_request_number != observation.pull_request_number
+            or current_source.base_repository != observation.base_repository
+            or current_source.base_ref != contract_manifest.base_ref
+            or current_source.base_ref != observation.base_ref
+            or current_source.observed_at < observation.observed_at
+            or current_source.observed_at > observation.deadline_at
+        ):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                "current PR/branch source readback differs from the protected subject",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+    elif contract_manifest.required_subject_kind == "merge_group":
+        try:
+            current_group = admission_provider.read_current_merge_group_source(
+                repository=snapshot.repo,
+                goal_id=snapshot.goal_id,
+                contract_revision=snapshot.contract_revision,
+                observation=observation,
+            )
+        except (GoalAdmissionProviderError, AttributeError):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+                "the retained merge-group source could not be read",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if current_group is None:
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+                "no current authenticated merge-group source is available",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
+        if (
+            current_group.repository != snapshot.repo
+            or current_group.goal_id != snapshot.goal_id
+            or current_group.contract_revision != snapshot.contract_revision
+            or current_group.delivery_id != observation.merge_group_delivery_id
+            or current_group.merge_group_id != observation.merge_group_id
+            or current_group.merge_group_ref != observation.merge_group_ref
+            or current_group.base_ref != observation.merge_group_base_ref
+            or current_group.head_ref != observation.merge_group_head_ref
+            or current_group.base_sha != observation.merge_group_base_sha
+            or current_group.base_tree_sha != observation.merge_group_base_tree_sha
+            or current_group.head_sha != observation.merge_group_head_sha
+            or current_group.head_tree_sha != observation.merge_group_head_tree_sha
+            or current_group.head_sha != snapshot.subject_commit_sha
+            or current_group.head_tree_sha != snapshot.subject_tree_sha
+            or current_group.source_checkpoint_id
+            != observation.merge_group_source_checkpoint_id
+            or current_group.source_body_sha256
+            != observation.merge_group_source_body_sha256
+            or current_group.received_at != observation.merge_group_received_at
+            or current_group.observed_at < observation.observed_at
+            or current_group.observed_at > observation.deadline_at
+        ):
+            return result(
+                False,
+                EnumOccEligibilityReason.GOAL_SUBJECT_MISMATCH,
+                "current merge-group readback differs from the retained subject delivery",
+                hashes={
+                    str(snapshot.goal_id): compute_canonical_contract_sha256(contract)
+                },
+                evaluation_observation=observation,
+            )
 
     try:
         mutation_state = admission_provider.read_current_goal_mutation_state(
@@ -2041,6 +2251,9 @@ def validate_occ_merge_eligibility(
             admission_provider=goal_admission_provider,
         )
 
+    # The input model enforces this for legacy OCC mode. Keep the narrowed
+    # contract explicit now that goal mode permits a missing PR number.
+    assert snapshot.pr_number is not None
     assert snapshot.occ_commit_sha is not None
     assert snapshot.contracts_dir is not None
     assert snapshot.receipts_dir is not None

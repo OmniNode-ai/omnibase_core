@@ -16,17 +16,26 @@ if TYPE_CHECKING:
     from omnibase_core.models.validation.model_goal_attempt_allocation_snapshot import (
         ModelGoalAttemptAllocationSnapshot,
     )
+    from omnibase_core.models.validation.model_goal_commit_source_readback import (
+        ModelGoalCommitSourceReadback,
+    )
     from omnibase_core.models.validation.model_goal_dependency_proof_pin import (
         ModelGoalDependencyProofPin,
     )
     from omnibase_core.models.validation.model_goal_evaluation_observation import (
         ModelGoalEvaluationObservation,
     )
+    from omnibase_core.models.validation.model_goal_merge_group_source_readback import (
+        ModelGoalMergeGroupSourceReadback,
+    )
     from omnibase_core.models.validation.model_goal_mutation_state import (
         ModelGoalMutationState,
     )
     from omnibase_core.models.validation.model_goal_revision_history_snapshot import (
         ModelGoalRevisionHistorySnapshot,
+    )
+    from omnibase_core.models.validation.model_goal_subject_manifest import (
+        ModelGoalSubjectManifest,
     )
     from omnibase_core.models.validation.model_goal_supervisor_attestation import (
         ModelGoalSupervisorAttestation,
@@ -128,6 +137,45 @@ class ProtocolGoalAdmissionProvider(Protocol):
         subject_tree_sha: str,
     ) -> ModelGoalEvaluationObservation | None:
         """Read protected recorded evaluation/deadline events for this subject."""
+        ...
+
+    def read_current_commit_source(
+        self,
+        *,
+        repository: str,
+        goal_id: UUID,
+        contract_revision: UUID,
+        manifest: ModelGoalSubjectManifest,
+        pull_request_number: int | None,
+    ) -> ModelGoalCommitSourceReadback | None:
+        """Read the current authenticated PR/branch source selected by policy.
+
+        For a PR, the readback binds the exact current head repository/ref/SHA/tree
+        and exact base repository/ref. For a branch, it reads the protected
+        repository's exact current ``refs/heads/...`` value. Implementations must
+        perform a fresh source read on every admission call; an old stored ref
+        observation alone is not current-source evidence.
+        """
+        ...
+
+    def read_current_merge_group_source(
+        self,
+        *,
+        repository: str,
+        goal_id: UUID,
+        contract_revision: UUID,
+        observation: ModelGoalEvaluationObservation,
+    ) -> ModelGoalMergeGroupSourceReadback | None:
+        """Revalidate a retained delivery and freshly read its current group.
+
+        Implementations select the immutable retained webhook by the exact
+        ``observation.merge_group_delivery_id``, verify original HMAC and
+        broker checkpoint, bind repository/goal/revision/group and all source
+        facts to the observation, then read current GitHub group refs, SHAs and
+        trees. A stale, missing, unverified, or changed delivery is unavailable
+        or mismatched; the stored observation alone is never current-source
+        authority.
+        """
         ...
 
     def read_current_revision_history(

@@ -66,6 +66,7 @@ from pydantic import (
     model_validator,
 )
 
+from omnibase_core.constants.constants_goal_admission import _REPOSITORY_RE
 from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
@@ -487,11 +488,9 @@ class ModelDodReceipt(BaseModel):
     def _validate_repository(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        normalized = value.strip()
-        parts = normalized.split("/")
-        if len(parts) != 2 or not all(parts):
+        if not _REPOSITORY_RE.fullmatch(value):
             raise ValueError("repository must be the canonical owner/repository")
-        return normalized
+        return value
 
     @field_validator(
         "contract_schema_version", mode="before", json_schema_input_type=str
