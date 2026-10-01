@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any
 from uuid import UUID
@@ -20,6 +20,9 @@ from omnibase_core.enums.enum_goal_attempt_status import EnumGoalAttemptStatus
 from omnibase_core.enums.enum_occ_eligibility_reason import EnumOccEligibilityReason
 from omnibase_core.errors.error_goal_admission_provider import (
     GoalAdmissionProviderError,
+)
+from omnibase_core.models.validation.model_goal_admission_observation import (
+    ModelGoalAdmissionObservation,
 )
 from omnibase_core.models.validation.model_goal_attempt_allocation_snapshot import (
     ModelGoalAttemptAllocationSnapshot,
@@ -437,8 +440,12 @@ def test_attestation_tampering_after_signature_fails_closed(tmp_path: Path) -> N
     provider, _ = _trusted_provider(fixture)
     assert provider.attempts is not None
     assert provider.attestation is not None
+    assert provider.admission_observation is not None
     provider.attestation = provider.attestation.model_copy(
         update={"signature": "tampered-after-signing"}
+    )
+    provider.admission_observation = provider.admission_observation.model_copy(
+        update={"attestation_sha256": provider.attestation.content_sha256()}
     )
 
     result = validate_occ_merge_eligibility(
@@ -454,21 +461,24 @@ def test_attestation_tampering_after_signature_fails_closed(tmp_path: Path) -> N
 @pytest.mark.parametrize(
     ("issued_offset", "expiry_offset"),
     [
-        (timedelta(days=-2), timedelta(days=-1)),
-        (timedelta(minutes=2), timedelta(hours=1)),
+        (timedelta(seconds=3), timedelta(seconds=3, milliseconds=500)),
+        (timedelta(seconds=5), timedelta(hours=1)),
     ],
     ids=["expired", "issued-in-future"],
 )
 def test_stale_or_future_signed_attestation_fails_closed(
     tmp_path: Path, issued_offset: timedelta, expiry_offset: timedelta
 ) -> None:
+    from tests.unit.validation.test_occ_merge_eligibility_goal_coverage_revision import (
+        _OBSERVED_AT,
+    )
+
     fixture = _goal_repo(tmp_path)
-    now = datetime.now(UTC)
-    issued_at = now + issued_offset
+    issued_at = _OBSERVED_AT + issued_offset
     provider, _ = _trusted_provider(
         fixture,
         issued_at=issued_at,
-        expires_at=now + expiry_offset,
+        expires_at=_OBSERVED_AT + expiry_offset,
     )
     assert provider.attempts is not None
 
@@ -623,6 +633,17 @@ def test_valid_signed_admission_with_complete_coverage_is_eligible(
     """A complete signed proof yields eligibility for Market's publisher."""
     fixture = _goal_repo(tmp_path)
     provider, attempts = _trusted_provider(fixture)
+    assert provider.execution_receipt is not None
+    assert provider.attestation is not None
+    assert provider.admission_observation is not None
+    assert (
+        provider.observation.observed_at
+        <= provider.execution_receipt.started_at
+        <= provider.execution_receipt.completed_at
+        <= provider.attestation.issued_at
+        <= provider.admission_observation.observed_at
+        <= provider.observation.deadline_at
+    )
 
     result = validate_occ_merge_eligibility(
         _input(fixture), goal_admission_provider=provider
@@ -633,6 +654,115 @@ def test_valid_signed_admission_with_complete_coverage_is_eligible(
     assert result.attempt_id == attempts.attempts[-1].attempt_id
     assert result.attempt_sequence == attempts.watermark_sequence
     assert result.attempt_snapshot_sha256 == attempts.snapshot_sha256
+    assert provider.admission_observation is not None
+    assert (
+        result.admission_observation_id == provider.admission_observation.observation_id
+    )
+    assert (
+        result.admission_observation_sha256
+        == provider.admission_observation.content_sha256()
+    )
+    serialized_result = result.as_dict()
+    assert serialized_result["admission_observation_id"] == str(
+        provider.admission_observation.observation_id
+    )
+    assert serialized_result["admission_observation_sha256"] == (
+        provider.admission_observation.content_sha256()
+    )
+    assert (
+        ModelGoalAdmissionObservation.model_validate_json(
+            provider.admission_observation.canonical_json()
+        )
+        == provider.admission_observation
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "timing_case",
+    [
+        "issued_before_completion",
+        "issued_after_final_observation",
+        "expired",
+    ],
+)
+def test_signed_admission_requires_fresh_post_execution_attestation(
+    tmp_path: Path, timing_case: str
+) -> None:
+    from tests.unit.validation.test_occ_merge_eligibility_goal_coverage_revision import (
+        _OBSERVED_AT,
+    )
+
+    fixture = _goal_repo(tmp_path)
+    if timing_case == "issued_before_completion":
+        issued_at = _OBSERVED_AT + timedelta(seconds=1)
+        expires_at = _OBSERVED_AT + timedelta(minutes=30)
+    elif timing_case == "issued_after_final_observation":
+        issued_at = _OBSERVED_AT + timedelta(seconds=5)
+        expires_at = _OBSERVED_AT + timedelta(minutes=30)
+    else:
+        issued_at = _OBSERVED_AT + timedelta(seconds=3)
+        expires_at = _OBSERVED_AT + timedelta(seconds=3, milliseconds=500)
+    provider, _ = _trusted_provider(
+        fixture,
+        issued_at=issued_at,
+        expires_at=expires_at,
+    )
+
+    result = _evaluate(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID
+
+
+@pytest.mark.unit
+def test_final_admission_observation_must_match_the_signed_subject(
+    tmp_path: Path,
+) -> None:
+    fixture = _goal_repo(tmp_path)
+    provider, _ = _trusted_provider(fixture)
+    assert provider.admission_observation is not None
+    provider.admission_observation = provider.admission_observation.model_copy(
+        update={"subject_tree_sha": "f" * 40}
+    )
+
+    result = _evaluate(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID
+
+
+@pytest.mark.unit
+def test_final_admission_observation_cannot_predate_attestation_issuance(
+    tmp_path: Path,
+) -> None:
+    fixture = _goal_repo(tmp_path)
+    provider, _ = _trusted_provider(fixture)
+    assert provider.attestation is not None
+    assert provider.admission_observation is not None
+    provider.admission_observation = provider.admission_observation.model_copy(
+        update={"observed_at": provider.attestation.issued_at - timedelta(seconds=1)}
+    )
+
+    result = _evaluate(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_ATTESTATION_INVALID
+
+
+@pytest.mark.unit
+def test_missing_current_final_admission_observation_fails_closed(
+    tmp_path: Path,
+) -> None:
+    fixture = _goal_repo(tmp_path)
+    provider, _ = _trusted_provider(fixture)
+    provider.admission_observation = None
+
+    result = _evaluate(fixture, provider)
+
+    assert result.eligible is False
+    assert result.reason is EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE
+    assert "no current protected final-admission observation" in result.detail
 
 
 @pytest.mark.unit

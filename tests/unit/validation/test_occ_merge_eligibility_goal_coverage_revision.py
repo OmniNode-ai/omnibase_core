@@ -37,6 +37,9 @@ from omnibase_core.models.events.work.model_work_goal_revision_resolution import
     ModelWorkGoalRevisionResolution,
 )
 from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
+from omnibase_core.models.validation.model_goal_admission_observation import (
+    ModelGoalAdmissionObservation,
+)
 from omnibase_core.models.validation.model_goal_attempt_allocation_snapshot import (
     ModelGoalAttemptAllocationSnapshot,
 )
@@ -60,6 +63,9 @@ from omnibase_core.models.validation.model_goal_criterion_execution_evidence imp
 )
 from omnibase_core.models.validation.model_goal_criterion_requirement import (
     ModelGoalCriterionRequirement,
+)
+from omnibase_core.models.validation.model_goal_dependency_admission_evidence import (
+    ModelGoalDependencyAdmissionEvidence,
 )
 from omnibase_core.models.validation.model_goal_dependency_issuer_binding import (
     ModelGoalDependencyIssuerBinding,
@@ -187,8 +193,7 @@ def _sha256(raw: bytes) -> str:
 
 def _signed_external_dependency() -> tuple[
     ModelGoalDependencyProofPin,
-    ModelGoalSupervisorAttestation,
-    ModelGoalEvaluationObservation,
+    ModelGoalDependencyAdmissionEvidence,
     bytes,
     bytes,
 ]:
@@ -201,6 +206,14 @@ def _signed_external_dependency() -> tuple[
     artifact = b"official infra dependency artifact"
     artifact_digest = _sha256(artifact)
     keypair = generate_keypair()
+    verifier_digest = _sha256(b"infra pinned verifier")
+    attempt_id = UUID("00000000-0000-4000-8000-000000000703")
+    execution_record_id = UUID("00000000-0000-4000-8000-000000000704")
+    attempt_store_revision = UUID("00000000-0000-4000-8000-000000000705")
+    running_store_revision = UUID("00000000-0000-4000-8000-000000000706")
+    attempt_result_sha256 = _sha256(b"infra execution result")
+    running_snapshot_sha256 = _sha256(b"infra running snapshot")
+    execution_request_sha256 = _sha256(b"infra execution request")
     observation = ModelGoalEvaluationObservation(
         observation_id=UUID("00000000-0000-4000-8000-000000000701"),
         deadline_event_id=UUID("00000000-0000-4000-8000-000000000702"),
@@ -216,6 +229,125 @@ def _signed_external_dependency() -> tuple[
         observed_at=_OBSERVED_AT,
         deadline_at=_OBSERVED_AT + timedelta(hours=1),
     )
+    manifest = ModelGoalSubjectManifest.model_validate(
+        {
+            "phase": "post_merge",
+            "required_subject_kind": "commit",
+            "commit_source": "branch",
+            "subject_ref": "refs/heads/main",
+            "dependencies": [],
+            "parent_integration_criterion_id": None,
+        }
+    )
+    baseline = ModelGoalCriterionBaseline(
+        requirements=(
+            ModelGoalCriterionRequirement(
+                criterion_id="infra-criterion",
+                criterion_definition="The pinned infrastructure check passed.",
+                required_checks=(
+                    ModelGoalRequiredCheckBinding(
+                        item_id="infra-check",
+                        check_type=EnumDodCheckType.COMMAND,
+                        check_value_sha256=_sha256(b"uv run pytest"),
+                    ),
+                ),
+                required_test_selectors=("tests/fixtures/infra_goal.py::test_proof",),
+                negative_control_selectors=(
+                    "tests/fixtures/infra_goal.py::test_proof",
+                ),
+                test_and_fixture_files=(
+                    ModelGoalProtectedBaselineFile(
+                        path="tests/fixtures/infra_goal.py",
+                        sha256=_sha256(b"protected infra test"),
+                    ),
+                ),
+            ),
+        )
+    )
+    policy = ModelGoalVerifierPolicy(
+        repository=repository,
+        goal_id=goal_id,
+        contract_revision=revision,
+        policy_revision=_THIRD_REVISION,
+        issuer_domain=_DEPENDENCY_ISSUER_DOMAIN,
+        verifier_artifact_sha256=verifier_digest,
+        allowed_execution_identities=("github-actions/infra-goal-verifier",),
+        max_attestation_age_seconds=3600,
+        criterion_baseline=baseline,
+        subject_manifest=manifest,
+    )
+    running_attempt = ModelGoalVerificationAttempt(
+        goal_id=goal_id,
+        repository=repository,
+        contract_revision=revision,
+        subject_commit_sha=subject_commit,
+        subject_tree_sha=subject_tree,
+        attempt_id=attempt_id,
+        sequence=1,
+        status=EnumGoalAttemptStatus.PASS,
+        execution_request_sha256=execution_request_sha256,
+        running_store_revision=running_store_revision,
+        running_snapshot_sha256=running_snapshot_sha256,
+        result_sha256=attempt_result_sha256,
+        artifact_sha256=(artifact_digest,),
+    )
+    attempt_values: dict[str, Any] = {
+        "goal_id": goal_id,
+        "repository": repository,
+        "contract_revision": revision,
+        "subject_commit_sha": subject_commit,
+        "subject_tree_sha": subject_tree,
+        "allocation_count": 1,
+        "watermark_sequence": 1,
+        "store_revision": attempt_store_revision,
+        "attempts": (running_attempt,),
+    }
+    attempts = ModelGoalAttemptAllocationSnapshot(
+        **attempt_values,
+        snapshot_sha256=ModelGoalAttemptAllocationSnapshot.compute_snapshot_sha256(
+            **attempt_values
+        ),
+    )
+    history_sha256 = _sha256(b"infra revision history")
+    coverage_sha256 = _sha256(b"infra criterion coverage")
+    execution_values: dict[str, Any] = {
+        "execution_record_id": execution_record_id,
+        "issuer_domain": _DEPENDENCY_ISSUER_DOMAIN,
+        "goal_id": goal_id,
+        "repository": repository,
+        "contract_revision": revision,
+        "contract_schema_version": CONTRACT_SCHEMA_VERSION,
+        "contract_path": "contracts/goals/infra.yaml",
+        "contract_source_commit_sha": "c" * 40,
+        "contract_sha256": contract_sha256,
+        "subject_commit_sha": subject_commit,
+        "subject_tree_sha": subject_tree,
+        "attempt_id": attempt_id,
+        "attempt_sequence": 1,
+        "running_attempt_store_revision": running_store_revision,
+        "running_attempt_snapshot_sha256": running_snapshot_sha256,
+        "execution_request_sha256": execution_request_sha256,
+        "result_sha256": attempt_result_sha256,
+        "artifact_sha256": (artifact_digest,),
+        "subject_manifest_sha256": manifest.content_sha256(),
+        "evaluation_observation_sha256": observation.content_sha256(),
+        "verifier_artifact_sha256": verifier_digest,
+        "policy_revision": policy.policy_revision,
+        "execution_identity": "github-actions/infra-goal-verifier",
+        "started_at": _OBSERVED_AT + timedelta(seconds=1),
+        "completed_at": _OBSERVED_AT + timedelta(seconds=2),
+        "signature": "pending-signature",
+    }
+    execution_receipt = ModelGoalSupervisorExecutionReceipt.model_validate(
+        execution_values
+    )
+    execution_receipt = execution_receipt.model_copy(
+        update={
+            "signature": sign_base64(
+                keypair.private_key_bytes, execution_receipt.signing_payload()
+            )
+        }
+    )
     attestation_values: dict[str, Any] = {
         "attestation_id": _FOURTH_REVISION,
         "issuer_domain": _DEPENDENCY_ISSUER_DOMAIN,
@@ -228,25 +360,25 @@ def _signed_external_dependency() -> tuple[
         "contract_sha256": contract_sha256,
         "subject_commit_sha": subject_commit,
         "subject_tree_sha": subject_tree,
-        "attempt_id": UUID("00000000-0000-4000-8000-000000000703"),
+        "attempt_id": attempt_id,
         "attempt_sequence": 1,
-        "execution_record_id": UUID("00000000-0000-4000-8000-000000000704"),
-        "execution_receipt_sha256": _sha256(b"infra execution receipt"),
-        "attempt_result_sha256": _sha256(b"infra execution result"),
+        "execution_record_id": execution_record_id,
+        "execution_receipt_sha256": execution_receipt.content_sha256(),
+        "attempt_result_sha256": attempt_result_sha256,
         "attempt_artifact_sha256": (artifact_digest,),
-        "subject_manifest_sha256": _sha256(b"infra subject manifest"),
+        "subject_manifest_sha256": manifest.content_sha256(),
         "evaluation_observation_sha256": observation.content_sha256(),
-        "attempt_store_revision": UUID("00000000-0000-4000-8000-000000000705"),
-        "attempt_snapshot_sha256": _sha256(b"infra allocation snapshot"),
-        "criterion_baseline_sha256": _sha256(b"infra protected baseline"),
-        "criterion_coverage_sha256": _sha256(b"infra criterion coverage"),
-        "revision_history_sha256": _sha256(b"infra revision history"),
+        "attempt_store_revision": attempts.store_revision,
+        "attempt_snapshot_sha256": attempts.snapshot_sha256,
+        "criterion_baseline_sha256": baseline.content_sha256(),
+        "criterion_coverage_sha256": coverage_sha256,
+        "revision_history_sha256": history_sha256,
         "evaluation_observation_id": observation.observation_id,
         "deadline_event_id": observation.deadline_event_id,
-        "verifier_artifact_sha256": _sha256(b"infra pinned verifier"),
-        "policy_revision": _THIRD_REVISION,
+        "verifier_artifact_sha256": verifier_digest,
+        "policy_revision": policy.policy_revision,
         "execution_identity": "github-actions/infra-goal-verifier",
-        "issued_at": _OBSERVED_AT - timedelta(minutes=1),
+        "issued_at": _OBSERVED_AT + timedelta(seconds=3),
         "expires_at": _OBSERVED_AT + timedelta(minutes=30),
         "signature": "pending-signature",
     }
@@ -257,6 +389,34 @@ def _signed_external_dependency() -> tuple[
                 keypair.private_key_bytes, attestation.signing_payload()
             )
         }
+    )
+    admission_observation = ModelGoalAdmissionObservation(
+        observation_id=UUID("00000000-0000-4000-8000-000000000708"),
+        repository=repository,
+        goal_id=goal_id,
+        contract_revision=revision,
+        subject_commit_sha=subject_commit,
+        subject_tree_sha=subject_tree,
+        attempt_id=attempt_id,
+        attempt_sequence=1,
+        attempt_store_revision=attempts.store_revision,
+        attempt_snapshot_sha256=attempts.snapshot_sha256,
+        contract_sha256=contract_sha256,
+        execution_record_id=execution_receipt.execution_record_id,
+        execution_receipt_sha256=execution_receipt.content_sha256(),
+        attestation_id=attestation.attestation_id,
+        attestation_sha256=attestation.content_sha256(),
+        policy_revision=policy.policy_revision,
+        policy_sha256=policy.content_sha256(),
+        verifier_artifact_sha256=policy.verifier_artifact_sha256,
+        criterion_baseline_sha256=baseline.content_sha256(),
+        criterion_coverage_sha256=coverage_sha256,
+        revision_history_sha256=history_sha256,
+        evaluation_observation_id=observation.observation_id,
+        evaluation_observation_sha256=observation.content_sha256(),
+        deadline_event_id=observation.deadline_event_id,
+        deadline_at=observation.deadline_at,
+        observed_at=_OBSERVED_AT + timedelta(seconds=4),
     )
     pin = ModelGoalDependencyProofPin(
         dependency_id="infra-published-core",
@@ -272,7 +432,15 @@ def _signed_external_dependency() -> tuple[
         signed_attestation_sha256=attestation.content_sha256(),
         artifact_sha256=(artifact_digest,),
     )
-    return pin, attestation, observation, keypair.public_key_bytes, artifact
+    evidence = ModelGoalDependencyAdmissionEvidence(
+        attempts=attempts,
+        policy=policy,
+        initial_observation=observation,
+        execution_receipt=execution_receipt,
+        attestation=attestation,
+        admission_observation=admission_observation,
+    )
+    return pin, evidence, keypair.public_key_bytes, artifact
 
 
 def _git(repo_root: Path, *args: str) -> str:
@@ -544,6 +712,7 @@ class _FullProvider:
     policy: ModelGoalVerifierPolicy
     attestation: ModelGoalSupervisorAttestation
     execution_receipt: ModelGoalSupervisorExecutionReceipt | None
+    admission_observation: ModelGoalAdmissionObservation | None
     history: ModelGoalRevisionHistorySnapshot
     observation: ModelGoalEvaluationObservation
     current_commit_source: ModelGoalCommitSourceReadback | None
@@ -552,9 +721,7 @@ class _FullProvider:
     artifacts: dict[str, bytes]
     ledger_key_provider: _WorkLedgerKeyProvider
     mutation_state: ModelGoalMutationState | None
-    dependency_evidence: (
-        tuple[ModelGoalSupervisorAttestation, ModelGoalEvaluationObservation] | None
-    ) = None
+    dependency_evidence: ModelGoalDependencyAdmissionEvidence | None = None
     dependency_trust_root: bytes | None = None
 
     def read_current_attempt_snapshot(self, **_: Any):
@@ -580,6 +747,9 @@ class _FullProvider:
 
     def get_execution_receipt(self, **_: Any):
         return self.execution_receipt
+
+    def read_current_admission_observation(self, **_: Any):
+        return self.admission_observation
 
     def get_dependency_evidence(self, **_: Any):
         return self.dependency_evidence
@@ -1012,8 +1182,10 @@ def _full_provider(
         "verifier_artifact_sha256": verifier_digest,
         "policy_revision": _POLICY_REVISION,
         "execution_identity": _EXECUTION_IDENTITY,
-        "issued_at": issued_at or _OBSERVED_AT - timedelta(minutes=1),
-        "expires_at": expires_at or _OBSERVED_AT + timedelta(minutes=30),
+        "issued_at": issued_at
+        or selected_observation.observed_at + timedelta(seconds=3),
+        "expires_at": expires_at
+        or selected_observation.observed_at + timedelta(minutes=30),
         "signature": "pending-signature",
     }
     if attestation_override:
@@ -1026,6 +1198,39 @@ def _full_provider(
             )
         }
     )
+    admission_observation = None
+    if (
+        execution_receipt is not None
+        and selected_attempt.status is EnumGoalAttemptStatus.PASS
+    ):
+        admission_observation = ModelGoalAdmissionObservation(
+            observation_id=UUID("00000000-0000-4000-8000-000000000408"),
+            repository=REPOSITORY,
+            goal_id=GOAL_ID,
+            contract_revision=CONTRACT_REVISION,
+            subject_commit_sha=str(fixture["subject_commit"]),
+            subject_tree_sha=str(fixture["subject_tree"]),
+            attempt_id=selected_attempt.attempt_id,
+            attempt_sequence=selected_attempt.sequence,
+            attempt_store_revision=attempts.store_revision,
+            attempt_snapshot_sha256=attempts.snapshot_sha256,
+            contract_sha256=_canonical_goal_sha256(fixture["contract"]),
+            execution_record_id=execution_receipt.execution_record_id,
+            execution_receipt_sha256=execution_receipt.content_sha256(),
+            attestation_id=attestation.attestation_id,
+            attestation_sha256=attestation.content_sha256(),
+            policy_revision=policy.policy_revision,
+            policy_sha256=policy.content_sha256(),
+            verifier_artifact_sha256=policy.verifier_artifact_sha256,
+            criterion_baseline_sha256=selected_baseline.content_sha256(),
+            criterion_coverage_sha256=coverage_digest,
+            revision_history_sha256=selected_history.snapshot_sha256,
+            evaluation_observation_id=selected_observation.observation_id,
+            evaluation_observation_sha256=selected_observation.content_sha256(),
+            deadline_event_id=selected_observation.deadline_event_id,
+            deadline_at=selected_observation.deadline_at,
+            observed_at=selected_observation.observed_at + timedelta(seconds=4),
+        )
     if (
         current_commit_source is None
         and manifest.required_subject_kind.value == "commit"
@@ -1071,6 +1276,7 @@ def _full_provider(
         policy=policy,
         attestation=attestation,
         execution_receipt=execution_receipt,
+        admission_observation=admission_observation,
         history=selected_history,
         observation=selected_observation,
         current_commit_source=current_commit_source,
@@ -1797,7 +2003,7 @@ def test_deadline_occurrence_state_requires_a_persisted_valid_transition(
 
 
 @pytest.mark.unit
-def test_public_resolver_uses_recorded_observation_not_local_clock(
+def test_public_resolver_uses_recorded_final_admission_time_not_local_clock(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     fixture = _coverage_fixture(tmp_path)
@@ -1812,7 +2018,9 @@ def test_public_resolver_uses_recorded_observation_not_local_clock(
     ) -> bool:
         observed.append(observed_at)
         return (
-            observed_at == provider.observation.observed_at and max_age_seconds == 3600
+            provider.admission_observation is not None
+            and observed_at == provider.admission_observation.observed_at
+            and max_age_seconds == 3600
         )
 
     monkeypatch.setattr(
@@ -1821,7 +2029,8 @@ def test_public_resolver_uses_recorded_observation_not_local_clock(
 
     result = _public_result(fixture, provider)
 
-    assert observed == [provider.observation.observed_at]
+    assert provider.admission_observation is not None
+    assert observed == [provider.admission_observation.observed_at]
     assert result.eligible is True
     assert result.reason is EnumOccEligibilityReason.ELIGIBLE
 
@@ -1849,7 +2058,12 @@ def test_public_resolver_rejects_observation_before_attestation_issue(
         observed_at=_OBSERVED_AT - timedelta(hours=2),
         deadline_at=_OBSERVED_AT - timedelta(hours=1),
     )
-    provider = _full_provider(fixture, observation=stale_observation)
+    provider = _full_provider(
+        fixture,
+        observation=stale_observation,
+        issued_at=_OBSERVED_AT - timedelta(minutes=1),
+        expires_at=_OBSERVED_AT + timedelta(minutes=1),
+    )
 
     result = _public_result(fixture, provider)
 
@@ -2697,7 +2911,7 @@ def test_public_resolver_requires_exact_trusted_dependency_evidence(
 def test_public_resolver_accepts_exact_signed_cross_repository_dependency(
     tmp_path: Path,
 ) -> None:
-    pin, attestation, observation, trust_root, artifact = _signed_external_dependency()
+    pin, dependency_evidence, trust_root, artifact = _signed_external_dependency()
     manifest = {
         "phase": "pre_merge",
         "required_subject_kind": "merge_group",
@@ -2716,7 +2930,7 @@ def test_public_resolver_accepts_exact_signed_cross_repository_dependency(
             )
         },
     )
-    provider.dependency_evidence = (attestation, observation)
+    provider.dependency_evidence = dependency_evidence
     provider.dependency_trust_root = trust_root
     provider.artifacts[pin.artifact_sha256[0]] = artifact
 
@@ -2724,6 +2938,18 @@ def test_public_resolver_accepts_exact_signed_cross_repository_dependency(
 
     assert result.eligible is True
     assert result.reason is EnumOccEligibilityReason.ELIGIBLE
+    dependency_observation = dependency_evidence.admission_observation
+    assert result.dependency_admission_observation_refs == {
+        pin.dependency_id: (
+            dependency_observation.observation_id,
+            dependency_observation.content_sha256(),
+        )
+    }
+    dependency_ref_dict = result.as_dict()["dependency_admission_observation_refs"]
+    assert dependency_ref_dict[pin.dependency_id] == {
+        "observation_id": str(dependency_observation.observation_id),
+        "observation_sha256": dependency_observation.content_sha256(),
+    }
 
 
 @pytest.mark.unit

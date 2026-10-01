@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from uuid import UUID
 
 from pydantic import (
@@ -84,3 +86,13 @@ class ModelGoalVerifierPolicy(BaseModel):
         if len(set(dependency_ids)) != len(dependency_ids):
             raise ValueError("dependency issuer bindings must be unique")
         return self
+
+    def content_sha256(self) -> str:
+        """Hash the full immutable policy using canonical JSON serialization."""
+        payload = json.dumps(
+            self.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+        return f"sha256:{hashlib.sha256(payload).hexdigest()}"

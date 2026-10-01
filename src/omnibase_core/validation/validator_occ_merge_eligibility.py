@@ -41,6 +41,9 @@ from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
 )
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
+from omnibase_core.models.validation.model_goal_admission_observation import (
+    ModelGoalAdmissionObservation,
+)
 from omnibase_core.models.validation.model_goal_attempt_allocation_snapshot import (
     ModelGoalAttemptAllocationSnapshot,
 )
@@ -64,6 +67,12 @@ from omnibase_core.models.validation.model_goal_revision_history_snapshot import
 )
 from omnibase_core.models.validation.model_goal_subject_manifest import (
     ModelGoalSubjectManifest,
+)
+from omnibase_core.models.validation.model_goal_supervisor_attestation import (
+    ModelGoalSupervisorAttestation,
+)
+from omnibase_core.models.validation.model_goal_supervisor_execution_receipt import (
+    ModelGoalSupervisorExecutionReceipt,
 )
 from omnibase_core.models.validation.model_goal_verification_attempt import (
     ModelGoalVerificationAttempt,
@@ -271,6 +280,8 @@ def _goal_result(
     criterion_baseline_sha256: str | None = None,
     criterion_coverage_sha256: str | None = None,
     evaluation_observation: ModelGoalEvaluationObservation | None = None,
+    admission_observation: ModelGoalAdmissionObservation | None = None,
+    dependency_admission_observation_refs: dict[str, tuple[UUID, str]] | None = None,
     mutation_state: ModelGoalMutationState | None = None,
 ) -> ModelOccEligibilityResult:
     """Build a goal verdict with its explicit source/subject provenance."""
@@ -338,6 +349,19 @@ def _goal_result(
             evaluation_observation.content_sha256()
             if evaluation_observation is not None
             else None
+        ),
+        admission_observation_id=(
+            admission_observation.observation_id
+            if admission_observation is not None
+            else None
+        ),
+        admission_observation_sha256=(
+            admission_observation.content_sha256()
+            if admission_observation is not None
+            else None
+        ),
+        dependency_admission_observation_refs=(
+            dependency_admission_observation_refs or {}
         ),
         evaluation_deadline_status=(
             evaluation_observation.deadline_status
@@ -642,6 +666,8 @@ def _validate_goal_eligibility(
         "subject_tree_sha": snapshot.subject_tree_sha,
     }
     mutation_state: ModelGoalMutationState | None = None
+    admission_observation: ModelGoalAdmissionObservation | None = None
+    dependency_admission_observation_refs: dict[str, tuple[UUID, str]] = {}
 
     def result(
         eligible: bool,
@@ -676,6 +702,8 @@ def _validate_goal_eligibility(
             criterion_baseline_sha256=criterion_baseline_sha256,
             criterion_coverage_sha256=criterion_coverage_sha256,
             evaluation_observation=evaluation_observation,
+            admission_observation=admission_observation,
+            dependency_admission_observation_refs=dependency_admission_observation_refs,
             mutation_state=mutation_state_override or mutation_state,
         )
 
@@ -1354,6 +1382,31 @@ def _validate_goal_eligibility(
             receipts=tuple(sorted(passed_receipts)),
         )
 
+    try:
+        admission_observation = admission_provider.read_current_admission_observation(
+            attempts=allocation,
+            policy=policy,
+            observation=observation,
+            execution_receipt=execution_receipt,
+            attestation=attestation,
+        )
+    except GoalAdmissionProviderError:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_UNAVAILABLE,
+            "the protected final-admission observation could not be read",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+    if admission_observation is None:
+        return result(
+            False,
+            EnumOccEligibilityReason.GOAL_ADMISSION_INCOMPLETE,
+            "the selected attempt has no current protected final-admission observation",
+            hashes={str(snapshot.goal_id): contract_digest},
+            receipts=tuple(sorted(passed_receipts)),
+        )
+
     expected_request_sha256 = compute_goal_execution_request_sha256(
         repository=snapshot.repo,
         goal_id=snapshot.goal_id,
@@ -1410,8 +1463,8 @@ def _validate_goal_eligibility(
         or execution_receipt.policy_revision != policy.policy_revision
         or execution_receipt.execution_identity
         not in policy.allowed_execution_identities
-        or execution_receipt.started_at < observation.observed_at
         or execution_receipt.completed_at > observation.deadline_at
+        or attestation.issued_at < execution_receipt.completed_at
         or selected_attempt.result_sha256 != execution_receipt.result_sha256
         or selected_attempt.running_store_revision == allocation.store_revision
         or attempt_snapshot == execution_receipt.running_attempt_snapshot_sha256
@@ -1523,11 +1576,18 @@ def _validate_goal_eligibility(
         or attestation.subject_manifest_sha256 != contract_manifest.content_sha256()
         or attestation.evaluation_observation_sha256 != observation.content_sha256()
         or attestation.execution_identity not in policy.allowed_execution_identities
-        or not attestation.is_fresh_at(
-            observation.observed_at,
-            max_age_seconds=policy.max_attestation_age_seconds,
+        or not _admission_observation_matches(
+            admission_observation=admission_observation,
+            attempts=allocation,
+            policy=policy,
+            observation=observation,
+            execution_receipt=execution_receipt,
+            attestation=attestation,
+            contract_sha256=contract_digest,
+            criterion_baseline_sha256=baseline_digest,
+            criterion_coverage_sha256=coverage_digest,
+            revision_history_sha256=revision_history_digest,
         )
-        or observation.observed_at > observation.deadline_at
     ):
         return result(
             False,
@@ -1591,7 +1651,16 @@ def _validate_goal_eligibility(
                 hashes={str(snapshot.goal_id): contract_digest},
                 receipts=tuple(sorted(passed_receipts)),
             )
-        dependency_attestation, dependency_observation = dependency_evidence
+        dependency_attempts = dependency_evidence.attempts
+        dependency_policy = dependency_evidence.policy
+        dependency_observation = dependency_evidence.initial_observation
+        dependency_execution = dependency_evidence.execution_receipt
+        dependency_attestation = dependency_evidence.attestation
+        dependency_admission_observation = dependency_evidence.admission_observation
+        dependency_admission_observation_refs[pin.dependency_id] = (
+            dependency_admission_observation.observation_id,
+            dependency_admission_observation.content_sha256(),
+        )
         expected_dependency_issuer = dependency_issuer_by_id[pin.dependency_id]
         try:
             dependency_key = admission_provider.get_domain_trust_root(
@@ -1605,9 +1674,42 @@ def _validate_goal_eligibility(
                 hashes={str(snapshot.goal_id): contract_digest},
                 receipts=tuple(sorted(passed_receipts)),
             )
+        dependency_baseline = dependency_policy.criterion_baseline
+        dependency_selected_attempt = max(
+            dependency_attempts.attempts, key=lambda attempt: attempt.sequence
+        )
         if (
             dependency_key is None
             or dependency_attestation.issuer_domain != expected_dependency_issuer
+            or dependency_policy.issuer_domain != expected_dependency_issuer
+            or dependency_policy.repository != pin.repository
+            or dependency_policy.goal_id != pin.goal_id
+            or dependency_policy.contract_revision != pin.contract_revision
+            or dependency_baseline is None
+            or dependency_baseline.content_sha256()
+            != dependency_attestation.criterion_baseline_sha256
+            or dependency_policy.subject_manifest is None
+            or dependency_policy.subject_manifest.content_sha256()
+            != dependency_attestation.subject_manifest_sha256
+            or dependency_policy.policy_revision
+            != dependency_attestation.policy_revision
+            or dependency_policy.verifier_artifact_sha256
+            != dependency_attestation.verifier_artifact_sha256
+            or dependency_policy.max_attestation_age_seconds < 1
+            or dependency_attempts.repository != pin.repository
+            or dependency_attempts.goal_id != pin.goal_id
+            or dependency_attempts.contract_revision != pin.contract_revision
+            or dependency_attempts.subject_commit_sha != pin.subject_commit_sha
+            or dependency_attempts.subject_tree_sha != pin.subject_tree_sha
+            or dependency_selected_attempt.status is not EnumGoalAttemptStatus.PASS
+            or dependency_attestation.attempt_id
+            != dependency_selected_attempt.attempt_id
+            or dependency_attestation.attempt_sequence
+            != dependency_selected_attempt.sequence
+            or dependency_attestation.attempt_store_revision
+            != dependency_attempts.store_revision
+            or dependency_attestation.attempt_snapshot_sha256
+            != dependency_attempts.snapshot_sha256
             or not pin.matches_signed_evidence(
                 attestation=dependency_attestation,
                 observation=dependency_observation,
@@ -1615,9 +1717,59 @@ def _validate_goal_eligibility(
             or not dependency_attestation.binds_evaluation_observation(
                 dependency_observation
             )
-            or not dependency_attestation.is_fresh_at(
-                dependency_observation.observed_at,
-                max_age_seconds=policy.max_attestation_age_seconds,
+            or dependency_observation.deadline_status != "open"
+            or dependency_observation.deadline_recorded_at is not None
+            or dependency_execution.issuer_domain != expected_dependency_issuer
+            or dependency_execution.repository != pin.repository
+            or dependency_execution.goal_id != pin.goal_id
+            or dependency_execution.contract_revision != pin.contract_revision
+            or dependency_execution.contract_schema_version.to_string()
+            != dependency_attestation.contract_schema_version.to_string()
+            or dependency_execution.contract_path
+            != dependency_attestation.contract_path
+            or dependency_execution.contract_source_commit_sha
+            != dependency_attestation.contract_source_commit_sha
+            or dependency_execution.contract_sha256 != pin.contract_sha256
+            or dependency_execution.subject_commit_sha != pin.subject_commit_sha
+            or dependency_execution.subject_tree_sha != pin.subject_tree_sha
+            or dependency_execution.attempt_id != dependency_selected_attempt.attempt_id
+            or dependency_execution.attempt_sequence
+            != dependency_selected_attempt.sequence
+            or dependency_execution.running_attempt_store_revision
+            != dependency_selected_attempt.running_store_revision
+            or dependency_execution.running_attempt_snapshot_sha256
+            != dependency_selected_attempt.running_snapshot_sha256
+            or dependency_execution.execution_request_sha256
+            != dependency_selected_attempt.execution_request_sha256
+            or dependency_execution.result_sha256
+            != dependency_selected_attempt.result_sha256
+            or dependency_execution.artifact_sha256
+            != dependency_selected_attempt.artifact_sha256
+            or dependency_execution.execution_record_id
+            != dependency_attestation.execution_record_id
+            or dependency_execution.content_sha256()
+            != dependency_attestation.execution_receipt_sha256
+            or dependency_execution.subject_manifest_sha256
+            != dependency_attestation.subject_manifest_sha256
+            or dependency_execution.policy_revision != dependency_policy.policy_revision
+            or dependency_execution.execution_identity
+            not in dependency_policy.allowed_execution_identities
+            or not _admission_observation_matches(
+                admission_observation=dependency_admission_observation,
+                attempts=dependency_attempts,
+                policy=dependency_policy,
+                observation=dependency_observation,
+                execution_receipt=dependency_execution,
+                attestation=dependency_attestation,
+                contract_sha256=pin.contract_sha256,
+                criterion_baseline_sha256=dependency_attestation.criterion_baseline_sha256,
+                criterion_coverage_sha256=dependency_attestation.criterion_coverage_sha256,
+                revision_history_sha256=dependency_attestation.revision_history_sha256,
+            )
+            or not verify_base64(
+                dependency_key,
+                dependency_execution.signing_payload(),
+                dependency_execution.signature,
             )
             or not verify_base64(
                 dependency_key,
@@ -2183,6 +2335,62 @@ def compute_goal_check_value_sha256(check_value: str | dict[str, str]) -> str:
         ensure_ascii=False,
     ).encode("utf-8")
     return f"sha256:{hashlib.sha256(canonical).hexdigest()}"
+
+
+def _admission_observation_matches(
+    *,
+    admission_observation: ModelGoalAdmissionObservation,
+    attempts: ModelGoalAttemptAllocationSnapshot,
+    policy: ModelGoalVerifierPolicy,
+    observation: ModelGoalEvaluationObservation,
+    execution_receipt: ModelGoalSupervisorExecutionReceipt,
+    attestation: ModelGoalSupervisorAttestation,
+    contract_sha256: str,
+    criterion_baseline_sha256: str,
+    criterion_coverage_sha256: str,
+    revision_history_sha256: str,
+) -> bool:
+    """Check the trusted final observation against the exact signed proof."""
+    selected_attempt = max(attempts.attempts, key=lambda attempt: attempt.sequence)
+    return (
+        admission_observation.repository == attempts.repository
+        and admission_observation.goal_id == attempts.goal_id
+        and admission_observation.contract_revision == attempts.contract_revision
+        and admission_observation.subject_commit_sha == attempts.subject_commit_sha
+        and admission_observation.subject_tree_sha == attempts.subject_tree_sha
+        and admission_observation.attempt_id == selected_attempt.attempt_id
+        and admission_observation.attempt_sequence == selected_attempt.sequence
+        and admission_observation.attempt_store_revision == attempts.store_revision
+        and admission_observation.attempt_snapshot_sha256 == attempts.snapshot_sha256
+        and admission_observation.contract_sha256 == contract_sha256
+        and admission_observation.execution_record_id
+        == execution_receipt.execution_record_id
+        and admission_observation.execution_receipt_sha256
+        == execution_receipt.content_sha256()
+        and admission_observation.attestation_id == attestation.attestation_id
+        and admission_observation.attestation_sha256 == attestation.content_sha256()
+        and admission_observation.policy_revision == policy.policy_revision
+        and admission_observation.policy_sha256 == policy.content_sha256()
+        and admission_observation.verifier_artifact_sha256
+        == policy.verifier_artifact_sha256
+        and admission_observation.criterion_baseline_sha256 == criterion_baseline_sha256
+        and admission_observation.criterion_coverage_sha256 == criterion_coverage_sha256
+        and admission_observation.revision_history_sha256 == revision_history_sha256
+        and admission_observation.evaluation_observation_id
+        == observation.observation_id
+        and admission_observation.evaluation_observation_sha256
+        == observation.content_sha256()
+        and admission_observation.deadline_event_id == observation.deadline_event_id
+        and admission_observation.deadline_at == observation.deadline_at
+        and observation.observed_at <= execution_receipt.started_at
+        and execution_receipt.completed_at <= attestation.issued_at
+        and attestation.issued_at <= admission_observation.observed_at
+        and admission_observation.observed_at <= observation.deadline_at
+        and attestation.is_fresh_at(
+            admission_observation.observed_at,
+            max_age_seconds=policy.max_attestation_age_seconds,
+        )
+    )
 
 
 def validate_occ_merge_eligibility(

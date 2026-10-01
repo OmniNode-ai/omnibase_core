@@ -13,11 +13,17 @@ from omnibase_core.validation.protocol_goal_work_ledger_key_provider import (
 )
 
 if TYPE_CHECKING:
+    from omnibase_core.models.validation.model_goal_admission_observation import (
+        ModelGoalAdmissionObservation,
+    )
     from omnibase_core.models.validation.model_goal_attempt_allocation_snapshot import (
         ModelGoalAttemptAllocationSnapshot,
     )
     from omnibase_core.models.validation.model_goal_commit_source_readback import (
         ModelGoalCommitSourceReadback,
+    )
+    from omnibase_core.models.validation.model_goal_dependency_admission_evidence import (
+        ModelGoalDependencyAdmissionEvidence,
     )
     from omnibase_core.models.validation.model_goal_dependency_proof_pin import (
         ModelGoalDependencyProofPin,
@@ -123,8 +129,28 @@ class ProtocolGoalAdmissionProvider(Protocol):
 
     def get_dependency_evidence(
         self, *, dependency: ModelGoalDependencyProofPin
-    ) -> tuple[ModelGoalSupervisorAttestation, ModelGoalEvaluationObservation] | None:
-        """Read exact protected signed evidence for one declared dependency pin."""
+    ) -> ModelGoalDependencyAdmissionEvidence | None:
+        """Read the current complete protected proof for one dependency pin."""
+        ...
+
+    def read_current_admission_observation(
+        self,
+        *,
+        attempts: ModelGoalAttemptAllocationSnapshot,
+        policy: ModelGoalVerifierPolicy,
+        observation: ModelGoalEvaluationObservation,
+        execution_receipt: ModelGoalSupervisorExecutionReceipt,
+        attestation: ModelGoalSupervisorAttestation,
+    ) -> ModelGoalAdmissionObservation | None:
+        """Read the current protected post-run observation of this exact proof.
+
+        The returned observation must be a fresh read from trusted admission
+        storage on every call, bound to the supplied signed attempt, policy,
+        initial deadline, execution receipt and supervisor attestation. Persist the
+        exact canonical payload durably before returning it; its content digest is
+        the retrieval key for replay. A cached or candidate-supplied timestamp is
+        not authority.
+        """
         ...
 
     def get_evaluation_observation(
