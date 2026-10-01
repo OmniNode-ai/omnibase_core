@@ -154,6 +154,7 @@ class ModelGoalSupervisorExecutionRequest(BaseModel):
             contract_revision=self.contract.revision_id,
             contract_sha256=self.contract.contract_sha256,
             policy_revision=self.policy.policy_revision,
+            policy_sha256=self.policy.content_sha256(),
             verifier_artifact_sha256=self.policy.verifier_artifact_sha256,
             criterion_baseline_sha256=baseline.content_sha256(),
             revision_history_sha256=self.revision_history.snapshot_sha256,

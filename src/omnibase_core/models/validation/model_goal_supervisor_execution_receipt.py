@@ -59,6 +59,7 @@ class ModelGoalSupervisorExecutionReceipt(BaseModel):
     evaluation_observation_sha256: str
     verifier_artifact_sha256: str
     policy_revision: UUID
+    policy_sha256: str
     execution_identity: str = Field(..., min_length=1, max_length=256)
     started_at: datetime
     completed_at: datetime
@@ -72,6 +73,7 @@ class ModelGoalSupervisorExecutionReceipt(BaseModel):
         "subject_manifest_sha256",
         "evaluation_observation_sha256",
         "verifier_artifact_sha256",
+        "policy_sha256",
     )
     @classmethod
     def _receipt_digests_are_canonical(cls, value: str) -> str:

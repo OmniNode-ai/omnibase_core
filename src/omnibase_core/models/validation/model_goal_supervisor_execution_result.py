@@ -61,6 +61,13 @@ class ModelGoalSupervisorExecutionResult(BaseModel):
             raise ValueError("completed_at must be after started_at")
         if self.result.attempt_id != self.request.attempt_id:
             raise ValueError("canonical result must bind the allocated attempt")
+        if self.execution_receipt.policy_sha256 != self.request.policy.content_sha256():
+            raise ValueError("execution receipt does not bind protected policy content")
+        if (
+            self.execution_receipt.execution_request_sha256
+            != self.request.execution_plan_sha256()
+        ):
+            raise ValueError("execution receipt does not bind the execution plan")
         if (
             self.execution_identity
             not in self.request.policy.allowed_execution_identities

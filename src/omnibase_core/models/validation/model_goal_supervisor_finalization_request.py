@@ -30,6 +30,7 @@ class ModelGoalSupervisorFinalizationRequest(BaseModel):
             receipt.result_sha256 != execution.result.content_sha256()
             or receipt.execution_request_sha256
             != execution.request.execution_plan_sha256()
+            or receipt.policy_sha256 != execution.request.policy.content_sha256()
             or receipt.execution_identity != execution.execution_identity
             or receipt.issuer_domain != execution.request.policy.issuer_domain
             or receipt.execution_record_id != execution.execution_record_id

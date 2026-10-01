@@ -63,6 +63,7 @@ class ModelGoalSupervisorAttestation(BaseModel):
     deadline_event_id: UUID
     verifier_artifact_sha256: str
     policy_revision: UUID
+    policy_sha256: str
     execution_identity: str = Field(..., min_length=1, max_length=256)
     issued_at: datetime
     expires_at: datetime
@@ -102,6 +103,7 @@ class ModelGoalSupervisorAttestation(BaseModel):
         "criterion_coverage_sha256",
         "revision_history_sha256",
         "verifier_artifact_sha256",
+        "policy_sha256",
     )
     @classmethod
     def _required_digests_are_canonical(cls, value: str) -> str:

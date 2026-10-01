@@ -104,6 +104,7 @@ class ModelGoalSupervisorFinalizationResult(BaseModel):
             or attestation.verifier_artifact_sha256
             != request.policy.verifier_artifact_sha256
             or attestation.policy_revision != request.policy.policy_revision
+            or attestation.policy_sha256 != request.policy.content_sha256()
             or attestation.issuer_domain != request.policy.issuer_domain
             or attestation.execution_identity
             not in request.policy.allowed_execution_identities

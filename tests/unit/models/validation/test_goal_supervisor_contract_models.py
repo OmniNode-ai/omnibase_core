@@ -344,6 +344,7 @@ def _execution_result(
         evaluation_observation_sha256=request.evaluation_observation.content_sha256(),
         verifier_artifact_sha256=request.policy.verifier_artifact_sha256,
         policy_revision=request.policy.policy_revision,
+        policy_sha256=request.policy.content_sha256(),
         execution_identity="infra-test-supervisor",
         started_at=started_at,
         completed_at=now,
@@ -453,6 +454,7 @@ def _request_fields(
     request: ModelGoalSupervisorExecutionRequest,
     *,
     attempt_snapshot: ModelGoalAttemptAllocationSnapshot | None = None,
+    policy: ModelGoalVerifierPolicy | None = None,
     evaluation_observation: ModelGoalEvaluationObservation | None = None,
     revision_history: ModelGoalRevisionHistorySnapshot | None = None,
     dispatch_idempotency_key: UUID | None = None,
@@ -460,7 +462,7 @@ def _request_fields(
     return {
         "contract": request.contract,
         "attempt_snapshot": attempt_snapshot or request.attempt_snapshot,
-        "policy": request.policy,
+        "policy": policy or request.policy,
         "evaluation_observation": evaluation_observation
         or request.evaluation_observation,
         "revision_history": revision_history or request.revision_history,
@@ -508,6 +510,42 @@ def test_execution_plan_hash_excludes_the_allocation_snapshot_digest() -> None:
     assert (
         restored.attempt_snapshot.attempts[-1].execution_request_sha256 == original_plan
     )
+
+
+def test_execution_plan_rejects_changed_policy_content_under_same_revision() -> None:
+    request = _running_request(datetime(2026, 10, 1, 12, 0, tzinfo=UTC))
+    changed_policy = request.policy.model_copy(
+        update={"max_attestation_age_seconds": 3600}
+    )
+
+    assert changed_policy.policy_revision == request.policy.policy_revision
+    assert changed_policy.content_sha256() != request.policy.content_sha256()
+    assert request.model_copy(
+        update={"policy": changed_policy}
+    ).execution_plan_sha256() != (request.execution_plan_sha256())
+    with pytest.raises(ValidationError, match="immutable execution plan"):
+        ModelGoalSupervisorExecutionRequest.model_validate(
+            _request_fields(request, policy=changed_policy)
+        )
+
+    execution = _execution_result(request)
+    changed_policy_receipt = execution.execution_receipt.model_copy(
+        update={"policy_sha256": changed_policy.content_sha256()}
+    )
+    with pytest.raises(ValidationError, match="protected policy content"):
+        ModelGoalSupervisorExecutionResult.model_validate(
+            {
+                "outcome": execution.outcome,
+                "request": execution.request,
+                "execution_receipt": changed_policy_receipt,
+                "execution_record_id": execution.execution_record_id,
+                "execution_identity": execution.execution_identity,
+                "started_at": execution.started_at,
+                "completed_at": execution.completed_at,
+                "result": execution.result,
+                "report_sha256": execution.report_sha256,
+            }
+        )
 
 
 def test_execution_request_rejects_wrong_dispatch_key_and_subject() -> None:
@@ -728,6 +766,7 @@ def test_finalization_request_and_readback_round_trip_json_wire_formats() -> Non
         deadline_event_id=request.evaluation_observation.deadline_event_id,
         verifier_artifact_sha256=request.policy.verifier_artifact_sha256,
         policy_revision=request.policy.policy_revision,
+        policy_sha256=request.policy.content_sha256(),
         execution_identity=execution.execution_identity,
         issued_at=execution.completed_at,
         expires_at=execution.completed_at
@@ -778,6 +817,23 @@ def test_finalization_request_and_readback_round_trip_json_wire_formats() -> Non
         assert (
             restored.attestation.attempt_result_sha256
             == execution.result.content_sha256()
+        )
+
+    changed_policy = request.policy.model_copy(
+        update={"max_attestation_age_seconds": 3600}
+    )
+    assert changed_policy.policy_revision == request.policy.policy_revision
+    changed_policy_attestation = attestation.model_copy(
+        update={"policy_sha256": changed_policy.content_sha256()}
+    )
+    with pytest.raises(ValidationError, match="final attestation does not bind"):
+        ModelGoalSupervisorFinalizationResult.model_validate(
+            {
+                "finalization": finalization_result.finalization,
+                "completed_attempt_snapshot": finalization_result.completed_attempt_snapshot,
+                "attestation": changed_policy_attestation,
+                "trusted_observation_id": finalization_result.trusted_observation_id,
+            }
         )
 
 

@@ -86,6 +86,7 @@ def _execution_receipt() -> ModelGoalSupervisorExecutionReceipt:
         evaluation_observation_sha256=_HASH_B,
         verifier_artifact_sha256=_HASH_A,
         policy_revision=UUID("00000000-0000-4000-8000-000000000106"),
+        policy_sha256=_HASH_B,
         execution_identity="github-actions/goal-verifier",
         started_at=started_at,
         completed_at=started_at + timedelta(seconds=90),

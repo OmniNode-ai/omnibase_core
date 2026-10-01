@@ -1413,6 +1413,7 @@ def _validate_goal_eligibility(
         contract_revision=snapshot.contract_revision,
         contract_sha256=contract_digest,
         policy_revision=policy.policy_revision,
+        policy_sha256=policy.content_sha256(),
         verifier_artifact_sha256=policy.verifier_artifact_sha256,
         criterion_baseline_sha256=baseline_digest,
         revision_history_sha256=revision_history_digest,
@@ -1461,6 +1462,7 @@ def _validate_goal_eligibility(
         != observation.content_sha256()
         or execution_receipt.verifier_artifact_sha256 != policy.verifier_artifact_sha256
         or execution_receipt.policy_revision != policy.policy_revision
+        or execution_receipt.policy_sha256 != policy.content_sha256()
         or execution_receipt.execution_identity
         not in policy.allowed_execution_identities
         or execution_receipt.completed_at > observation.deadline_at
@@ -1568,6 +1570,7 @@ def _validate_goal_eligibility(
         or attestation.attempt_snapshot_sha256 != allocation.snapshot_sha256
         or attestation.verifier_artifact_sha256 != policy.verifier_artifact_sha256
         or attestation.policy_revision != policy.policy_revision
+        or attestation.policy_sha256 != policy.content_sha256()
         or attestation.criterion_baseline_sha256 != baseline_digest
         or attestation.criterion_coverage_sha256 != coverage_digest
         or attestation.revision_history_sha256 != revision_history_digest
