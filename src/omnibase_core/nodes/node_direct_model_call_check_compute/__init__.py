@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Direct-model-call validator (OMN-20295).
 
-Task N4.1 of knowledge-base-internal ``beta/plans/2026-09-24-delegation-work-plan.md``
-section 3.9: a blocking, structural gate that refuses any model call (an HTTP
+A blocking, structural gate that refuses any model call (an HTTP
 request to a model endpoint, provider host or base_url; the exec of a model
 CLI such as crush, codex, ``claude -p`` or llama-cli; the import of a model SDK;
 or a caller of one of those in another file) outside the sanctioned delegation

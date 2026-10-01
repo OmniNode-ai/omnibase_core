@@ -2,13 +2,11 @@
 # SPDX-License-Identifier: MIT
 """HandlerDirectModelCallCompute: a structural gate on direct model calls.
 
-OMN-20295, task N4.1 of knowledge-base-internal
-``beta/plans/2026-09-24-delegation-work-plan.md`` section 3.9. A model call
+OMN-20295. A model call
 must sit inside the sanctioned delegation node packages named in
 ``policy.yaml``. Everywhere else it is refused, whatever words it uses.
 
-The audit of 2026-10-01 (knowledge-base-internal
-``reports/2026-10-01-gates-and-delegation-readiness-audit.md`` section 2) found
+The gates-and-delegation readiness audit of 2026-10-01 found
 that the earlier gates matched banned literals: a crush shell-out, or a direct
 call with no IP, model name or endpoint literal, passed all of them. This
 handler reads the AST and the repository's import and call graph instead:

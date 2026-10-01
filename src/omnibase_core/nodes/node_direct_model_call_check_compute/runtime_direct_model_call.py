@@ -75,8 +75,7 @@ _HOOK_CONFIGS: Final[tuple[str, ...]] = (
 )
 _BASELINE_HEADER: Final[str] = """\
 # Baseline for check-direct-model-call (OMN-20295).
-# Plan: knowledge-base-internal beta/plans/2026-09-24-delegation-work-plan.md,
-# section 3.9, task N4.1. A model call must sit inside a sanctioned delegation
+# A model call must sit inside a sanctioned delegation
 # node package (omnibase_core nodes/node_direct_model_call_check_compute/policy.yaml).
 #
 # RULE: entries only leave. A site not listed here fails. An entry that no

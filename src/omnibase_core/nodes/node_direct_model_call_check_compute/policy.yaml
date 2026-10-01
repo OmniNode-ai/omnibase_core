@@ -17,7 +17,7 @@ schema_version: 1
 
 sanctioned_packages:
   # The delegation call effect: the one node that sends a delegated request
-  # to a model (plan 2026-09-24 section 3.9, N4.1).
+  # to a model (OMN-20295).
   omnimarket:
     - src/omnimarket/nodes/node_llm_delegation_call_effect/**
   # The routing authority's LLM effect nodes.
