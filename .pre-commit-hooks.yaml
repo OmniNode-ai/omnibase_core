@@ -16,6 +16,7 @@
   entry: validate-string-versions
   types_or: [python, yaml]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-local-paths
@@ -28,6 +29,7 @@
   entry: python -m omnibase_core.validation.validator_local_paths
   types: [text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-duplicate-registry-ids
@@ -56,6 +58,7 @@
   entry: python -m omnibase_core.validation.local_paths.runtime_local_paths
   types: [text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-private-ip-compute
@@ -73,6 +76,7 @@
   entry: python -m omnibase_core.validation.private_ip.runtime_private_ip
   types: [text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-hardcoded-model-config-compute
@@ -92,6 +96,7 @@
   args: [--baseline, config/hardcoded_model_config_baseline.yaml]
   types: [text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-faked-boundary
@@ -116,6 +121,7 @@
   entry: python -m omnibase_core.validation.no_faked_boundary.runtime_no_faked_boundary --report-only
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-todo-fixme-marker-compute
@@ -135,6 +141,7 @@
   entry: python -m omnibase_core.validation.todo_marker.runtime_todo_marker
   types: [text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-localhost-url-compute
@@ -158,6 +165,7 @@
   entry: python -m omnibase_core.validation.localhost_url.runtime_localhost_url
   types: [text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-stub-implementations
@@ -168,6 +176,7 @@
   language: script
   entry: scripts/validation/check_stub_implementations.py
   pass_filenames: true
+  require_serial: true
   types: [python]
   exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
   stages: [pre-commit]
@@ -197,6 +206,7 @@
   types: [python]
   files: (handlers/handler_.*\.py|nodes/node\.py)$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: no-new-env-vars
@@ -210,6 +220,7 @@
   entry: python scripts/validation/validate_no_new_env_vars.py
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: no-new-os-environ
@@ -225,6 +236,7 @@
   entry: python -m omnibase_core.validators.no_new_os_environ
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-hardcoded-topics-v2
@@ -274,6 +286,7 @@
   types: [yaml]
   files: drift/dod_receipts/.*\.yaml$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-antipatterns
@@ -287,6 +300,7 @@
   entry: python -m omnibase_core.validation.antipattern_checker
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: transport-mock-lint
@@ -301,6 +315,7 @@
   types: [python]
   files: (^|/)test_.*\.py$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-github-token-env-reads
@@ -314,6 +329,7 @@
   entry: uv run python -m omnibase_core.validation.validator_github_token_env_reads
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-delegation-profile
@@ -329,6 +345,7 @@
   types: [yaml]
   files: (delegation.*runtime_profile|runtime_profile.*delegation)\.ya?ml$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-routing-authority
@@ -360,6 +377,7 @@
   args: [--repo, omnibase_core, --repo-root, .]
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: validate-validator-requirements
@@ -393,6 +411,7 @@
   entry: python -m omnibase_core.validation.doc_content_scan.runtime_doc_content_scan
   types_or: [markdown, rst, text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: backend-secret-discipline
@@ -410,6 +429,7 @@
   entry: python -m omnibase_core.validators.backend_secret_discipline
   files: \.(ya?ml|json)$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-backend-secret-discipline
@@ -424,6 +444,7 @@
   entry: python -m omnibase_core.validation.validator_backend_secret_discipline
   files: \.(ya?ml|json)$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-utcnow
@@ -442,6 +463,7 @@
   entry: python -m omnibase_core.nodes.node_no_utcnow_check_compute.runtime_no_utcnow_check
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-hardcoded-ip
@@ -459,6 +481,7 @@
   entry: python -m omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check
   types_or: [python, yaml]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-direct-kafka-producer
@@ -476,6 +499,7 @@
   entry: python -m omnibase_core.nodes.node_no_direct_kafka_producer_check_compute.runtime_no_direct_kafka_producer_check
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-env-fallbacks
@@ -494,6 +518,7 @@
   entry: python -m omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check
   types_or: [python, shell]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-raw-sqlite3
@@ -509,6 +534,7 @@
   entry: python -m omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-io-outside-effects
@@ -529,6 +555,7 @@
   entry: python -m omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check
   types_or: [python, yaml]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-enum-governance
@@ -576,6 +603,7 @@
   entry: python -m omnibase_core.validation.validator_no_lane_literal_branching
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-canonical-inference
@@ -593,6 +621,7 @@
   args: [--repo, omnibase_core, --repo-root, .]
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: no-plugin-daemon-classes
@@ -607,6 +636,7 @@
   entry: python -m omnibase_core.validators.no_plugin_daemon_classes
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: pydantic-extra-forbid
@@ -647,6 +677,7 @@
   entry: python -m omnibase_core.validators.no_noncanonical_lifecycle_classes
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: validate-no-transport-imports
@@ -660,6 +691,7 @@
   entry: python -m omnibase_core.validation.validator_transport_import
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: bypass-token-blocklist
@@ -676,6 +708,7 @@
   entry: python -m omnibase_core.validators.bypass_token_blocklist
   types_or: [markdown, yaml, text]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: node-purity
@@ -689,6 +722,7 @@
   entry: python -m omnibase_core.validation.validator_node_purity
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: operation-match-requires-operation
@@ -706,6 +740,7 @@
   entry: python -m omnibase_core.validators.operation_match_requires_operation
   files: (^|/)contract\.yaml$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: dispatched-contract-operation
@@ -723,6 +758,7 @@
   entry: python -m omnibase_core.validators.dispatched_contract_operation
   files: (^|/)contract\.yaml$
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-fsm-handler-drift
