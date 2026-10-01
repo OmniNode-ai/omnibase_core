@@ -525,6 +525,17 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-20298: a shape-gate detector job must run on every PR, whatever the
+      # change-control preflight says. Zero baseline, no allowlist.
+      - id: check-shape-gate-independence
+        name: Shape-gate detectors never depend on the OCC preflight (OMN-20298)
+        entry: uv run python -m omnibase_core.validators.shape_gate_independence
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # OMN-14891: no test may shell out to git while able to inherit GIT_DIR /
       # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_COMMON_DIR from a git hook. Those
       # variables OVERRIDE `cwd=` and `git -C`, so a tmp_path fixture running under

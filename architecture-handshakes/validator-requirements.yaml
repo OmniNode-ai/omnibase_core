@@ -741,6 +741,31 @@ required_validators:
     applies_to_repos:
       - omnibase_core
 
+  shape-gate-independence:
+    description: |
+      A shape-gate detector must run on every PR, whatever the change-control
+      preflight says. Every shape-gate failure in the 30 days before 2026-10-01
+      was the preflight failing first: the detector job was skipped behind
+      `needs: occ-preflight` or began with a step that exits 1 on the preflight
+      result, so no detector result existed on those PRs. This guard refuses
+      both shapes in .github/workflows. It has no baseline, no allowlist and
+      no suppression comment. OMN-20298.
+    central_source: "omnibase_core.validators.shape_gate_independence"
+    pre_commit: required
+    ci_workflow: required
+    required_check_on_main: "CI Summary"
+    silent_skip_allowed: false
+    pre_commit_hook_ids:
+      - "check-shape-gate-independence"
+    ci_workflow_keywords:
+      - "shape_gate_independence"
+      - "shape-gate-independence"
+    excludes:
+      allowed: []
+      forbidden: []
+    applies_to_repos:
+      - omnibase_core
+
 # ---------------------------------------------------------------------------
 # Model B — failing-rollup enforcement (OMN-13574, epic OMN-13573)
 # ---------------------------------------------------------------------------
@@ -832,6 +857,8 @@ model_b_rollup_enforcement:
         # the ci-summary poller only sees jobs from its own run_id (OMN-14430),
         # and the OMN-14907 PR-workflow ratchet is count-locked.
         runtime-identity: ["runtime-identity-validator"]
+        # OMN-20298: shape-gate-independence runs as a ci.yml job, unconditional.
+        shape-gate-independence: ["shape-gate-independence"]
       # Machine-checkable intentional omissions. These validators are
       # ci_workflow: required and apply to omnibase_core, but are currently
       # grandfathered in validator-requirements-baseline.yaml as

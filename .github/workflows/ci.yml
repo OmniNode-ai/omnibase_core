@@ -2117,6 +2117,49 @@ jobs:
           uv run python -m omnibase_core.validation.hardcoded_topic.runtime_hardcoded_topic \
             --report-only src/omnibase_core/
 
+  # Shape-gate independence guard (OMN-20298). Every shape-gate failure in the
+  # 30 days before 2026-10-01 was the change-control preflight failing first:
+  # the detector job was skipped behind `needs: occ-preflight` or began with a
+  # step that exits 1 on the preflight result, so the detector never ran. This
+  # job refuses both shapes in .github/workflows. It is unconditional (no `if:`,
+  # no `needs:`), has no baseline, no allowlist and no suppression, and is
+  # listed in SPEC_REQUIRED_VALIDATOR_JOBS.
+  shape-gate-independence:
+    name: Shape-Gate Independence (OMN-20298)
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run guard unit tests
+        run: uv run pytest tests/unit/validators/test_shape_gate_independence.py -v
+
+      - name: Refuse shape-gate detector jobs that depend on the preflight
+        run: uv run python -m omnibase_core.validators.shape_gate_independence
+
   # ===========================================================================
   # Phase 1 - Migrated decorative validators (OMN-14877, OMN-14430 fast-follow)
   # ---------------------------------------------------------------------------
