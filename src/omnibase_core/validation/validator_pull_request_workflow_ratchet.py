@@ -37,7 +37,10 @@ used by ``no_noncanonical_lifecycle_classes`` (OMN-14350) and
     delete a workflow without also removing its registry line and lowering the
     budget, which is how the count ratchets DOWN.
   * A waiver past its ``expires`` date fails (``WAIVER_EXPIRED``) so exceptions
-    cannot become permanent.
+    cannot become permanent. On a pull_request, merge_group or local run a
+    waiver already fails on its last valid day (OMN-20354, see
+    :func:`expiry_horizon_days`), so the expiry reaches a pull request before
+    the date rollover reaches ``dev``.
 
 Because a job that lives in a *separate* workflow file is structurally invisible
 to ``ci.yml``'s ``ci-summary`` poller (the OMN-14430 finding), this gate runs as a
@@ -49,15 +52,47 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+from omnibase_core.models.bootstrap.model_environment_bootstrap import (
+    ModelEnvironmentBootstrap,
+)
 from omnibase_core.models.validation.model_workflow_ratchet_gap import (
     ModelWorkflowRatchetGap,
 )
+
+# OMN-20354: the events whose run judges a tree already on its branch. Only
+# there does an expiring entry fail no earlier than its real expiry.
+_EVENT_NAME_KEY = "GITHUB_EVENT_NAME"
+POST_MERGE_EVENTS: frozenset[str] = frozenset({"push", "schedule", "workflow_dispatch"})
+EXPIRY_FAIL_HORIZON_DAYS = 1
+
+
+def expiry_horizon_days(event_name: str | None) -> int:
+    """Days before its expiry at which a waiver already fails (OMN-20354).
+
+    A pull_request or merge_group run, and a local run with no event, fail a
+    waiver on its last valid day. A PR whose checks ran green the day before
+    a waiver lapsed merged after midnight and turned ``dev`` red with no code
+    change: omnibase_core runs 36204419348 (pull-request workflow budget
+    waiver, 2026-09-26) and 36794165897 (extra="forbid" waiver, 2026-10-01).
+    A push, schedule or dispatch run judges only a real expiry, so ``dev``
+    stays green while the pull requests carry the warning.
+    """
+    return 0 if event_name in POST_MERGE_EVENTS else EXPIRY_FAIL_HORIZON_DAYS
+
+
+def current_event_name() -> str | None:
+    """The GitHub Actions event this process runs under, or ``None`` locally."""
+    bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
+        declared_keys=(_EVENT_NAME_KEY,)
+    )
+    return bootstrap.environment.optional(_EVENT_NAME_KEY)
+
 
 __all__ = [
     "verify_pull_request_workflow_ratchet",
@@ -133,7 +168,7 @@ def live_pull_request_workflows(workflows_dir: Path) -> list[str]:
 
 
 def _validate_waivers(
-    waivers: list[Any], today: date
+    waivers: list[Any], today: date, horizon_days: int = 0
 ) -> tuple[set[str], list[ModelWorkflowRatchetGap]]:
     """Return (waived_file_names, gaps). A malformed or expired waiver is a gap."""
     waived: set[str] = set()
@@ -186,11 +221,28 @@ def _validate_waivers(
                     ),
                 )
             )
+        elif expires < today + timedelta(days=horizon_days):
+            gaps.append(
+                ModelWorkflowRatchetGap(
+                    workflow_file=wf,
+                    code="WAIVER_EXPIRED",
+                    detail=(
+                        f"waiver expires {expires.isoformat()} (ticket "
+                        f"{entry['ticket']}), inside the {horizon_days}-day "
+                        "pull-request horizon (OMN-20354) — migrate, retire or "
+                        "renew it now, before the date passes and dev goes red"
+                    ),
+                )
+            )
     return waived, gaps
 
 
 def verify_pull_request_workflow_ratchet(
-    *, repo_root: Path, registry_path: Path, today: date | None = None
+    *,
+    repo_root: Path,
+    registry_path: Path,
+    today: date | None = None,
+    horizon_days: int = 0,
 ) -> list[ModelWorkflowRatchetGap]:
     """Return count-locked-ratchet gaps. Empty list means the ratchet holds.
 
@@ -227,7 +279,7 @@ def verify_pull_request_workflow_ratchet(
 
     gaps: list[ModelWorkflowRatchetGap] = []
 
-    waived, waiver_gaps = _validate_waivers(waivers_raw, today)
+    waived, waiver_gaps = _validate_waivers(waivers_raw, today, horizon_days)
     gaps.extend(waiver_gaps)
 
     # BUDGET_MISMATCH: the count lock. len(allowlist) must equal the declared
@@ -348,7 +400,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         gaps = verify_pull_request_workflow_ratchet(
-            repo_root=repo_root, registry_path=registry_path
+            repo_root=repo_root,
+            registry_path=registry_path,
+            horizon_days=expiry_horizon_days(current_event_name()),
         )
     except (ValueError, FileNotFoundError) as exc:
         sys.stderr.write(f"pull-request-workflow-ratchet: registry error: {exc}\n")

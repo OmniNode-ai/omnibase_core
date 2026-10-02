@@ -82,7 +82,7 @@ import json
 import subprocess
 import sys
 from collections.abc import Iterator, Sequence
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -110,6 +110,10 @@ from omnibase_core.validation.pydantic_module_index import (
 )
 from omnibase_core.validation.pydantic_runtime_resolver import _RuntimeResolver
 from omnibase_core.validation.pydantic_static_resolver import _StaticResolver
+from omnibase_core.validation.validator_pull_request_workflow_ratchet import (
+    current_event_name,
+    expiry_horizon_days,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -207,8 +211,14 @@ def load_baseline(path: Path) -> set[str]:
     return set(data.violations)
 
 
-def load_waivers(path: Path, today: date) -> tuple[set[str], list[str]]:
+def load_waivers(
+    path: Path, today: date, horizon_days: int = 0
+) -> tuple[set[str], list[str]]:
     """Return ``(active_waived_fqns, errors)``.
+
+    ``horizon_days`` (OMN-20354) fails a waiver that expires before
+    ``today + horizon_days`` as well; see
+    :func:`~omnibase_core.validation.validator_pull_request_workflow_ratchet.expiry_horizon_days`.
 
     A waiver MUST carry ``fqn``, ``ticket`` (OMN-NNNN), ``pr``, and an ``expires_at``
     date. Anything missing, malformed, or expired is an ERROR (hard failure) — never a
@@ -254,6 +264,14 @@ def load_waivers(path: Path, today: date) -> tuple[set[str], list[str]]:
                 f"waiver {fqn}: EXPIRED on {expires.isoformat()} (ticket {ticket}, {pr}) "
                 f'— fix the model (extra="forbid") or renew the waiver with a new '
                 f"expiry; an expired waiver is a hard failure by design"
+            )
+            continue
+        if expires < today + timedelta(days=horizon_days):
+            errors.append(
+                f"waiver {fqn}: EXPIRES on {expires.isoformat()} (ticket {ticket}, "
+                f"{pr}), inside the {horizon_days}-day pull-request horizon "
+                f'(OMN-20354) — fix the model (extra="forbid") or renew the '
+                f"waiver now, before the date passes and dev goes red"
             )
             continue
         active.add(fqn)
@@ -514,7 +532,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     baseline = load_baseline(args.baseline)
-    waived, waiver_errors = load_waivers(args.waivers, today_utc())
+    waived, waiver_errors = load_waivers(
+        args.waivers, today_utc(), expiry_horizon_days(current_event_name())
+    )
 
     present = {f.fqn for f in violations}
     new_violations = [
