@@ -62,6 +62,19 @@ differences, each because the in-job evaluation could not work or because
   superseded this way, a row with no run URL is judged as before, and an
   unreadable annotation leaves the row judged.
 
+* A check-run that started after the PR merged is not the PR's CI (OMN-20369).
+  On a push the recorded PR's head is judged, and workflows the PR's closing
+  triggers (the node redeploy trigger, the post-merge deploy verify
+  jobs, the release auto-tag) post rows on that same head after the merge. The
+  PR's own CI never had them and could never fail on them, yet each red one
+  turned the dev push's CI Summary red with no code defect (omnibase_infra runs
+  36778623912, 36893261474, 36911667005, 36974717257; omnibase_core run
+  36668301225). When the PR's head is resolved from the record, rows that
+  started after its ``merged_at`` are dropped BEFORE latest-wins and reported,
+  never judged; post-merge deploy verification has its own gate (the lab-pass
+  receipt). A row with no readable ``started_at`` is judged, and a pull_request
+  run (``--head-sha`` given, nothing merged) judges exactly what it did before.
+
 Exit codes: ``0`` success, ``1`` failure.
 """
 
@@ -92,6 +105,7 @@ __all__ = [
     "evaluate_checks",
     "load_record",
     "record_required",
+    "split_post_merge",
 ]
 
 CONTRACT_COMPLIANCE_JOB = "Contract Compliance Check"
@@ -312,6 +326,41 @@ def cancelled_run_ids(check_runs: list[dict[str, object]]) -> list[int]:
     return sorted(ids)
 
 
+def _parse_timestamp(value: object) -> datetime | None:
+    """An ISO-8601 timestamp as GitHub writes it, or ``None`` when unreadable."""
+
+    text = str(value or "")
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
+
+
+def split_post_merge(
+    rows: list[dict[str, object]], merged_at: datetime | None
+) -> tuple[list[dict[str, object]], list[str]]:
+    """Rows the PR merged on, and the names of rows that started after it merged.
+
+    ``merged_at=None`` (a pull_request run, or an unmerged PR) keeps every row.
+    A row whose ``started_at`` cannot be read is kept, so it is judged.
+    """
+
+    if merged_at is None:
+        return rows, []
+    kept: list[dict[str, object]] = []
+    post_merge: set[str] = set()
+    for row in rows:
+        started = _parse_timestamp(row.get("started_at"))
+        if started is not None and started > merged_at:
+            post_merge.add(str(row.get("name") or ""))
+            continue
+        kept.append(row)
+    return kept, sorted(post_merge - {"", SELF_JOB_NAME})
+
+
 def evaluate_checks(
     check_runs: list[dict[str, object]],
     *,
@@ -319,10 +368,18 @@ def evaluate_checks(
     workflow_runs: list[dict[str, object]] | None = None,
     concurrency_cancelled_runs: frozenset[int] = frozenset(),
     own_run_ids: frozenset[int] = frozenset(),
+    merged_at: datetime | None = None,
 ) -> tuple[int, str]:
-    """Judge one head's ``commits/{sha}/check-runs`` rows."""
+    """Judge one head's ``commits/{sha}/check-runs`` rows.
 
-    raw_latest = _latest_rows([row for row in check_runs if _is_actions_row(row)])
+    ``merged_at`` (push runs only) drops the rows that started after the PR
+    merged before anything else is read (OMN-20369).
+    """
+
+    actions_rows, post_merge = split_post_merge(
+        [row for row in check_runs if _is_actions_row(row)], merged_at
+    )
+    raw_latest = _latest_rows(actions_rows)
     latest = {name: _state(name, raw) for name, raw in raw_latest.items()}
     latest, superseded = _drop_superseded_placeholders(latest)
     others = {name: st for name, st in latest.items() if name != SELF_JOB_NAME}
@@ -358,6 +415,11 @@ def evaluate_checks(
         else:
             failures.append(f"{name} ({st.conclusion})")
     lines = [f"  checks observed: {len(others)} (latest per name, CI Summary excluded)"]
+    if post_merge:
+        lines.append(
+            "  started after the PR merged (post-merge, not the PR's CI; not judged): "
+            + ", ".join(post_merge)
+        )
     if superseded:
         lines.append(
             "  cancelled matrix placeholders superseded by their expanded copies: "
@@ -449,20 +511,30 @@ def _pr_target(deferred: list[dict[str, object]]) -> tuple[str, str]:
     return targets.pop()
 
 
-def _pr_head(pr_number: str, repo: str) -> str:
+def _pr_head_and_merged_at(pr_number: str, repo: str) -> tuple[str, datetime | None]:
+    """The recorded PR's head and, once it merged, its ``merged_at`` (OMN-20369)."""
+
     result = subprocess.run(
-        ["gh", "api", f"repos/{repo}/pulls/{pr_number}", "--jq", ".head.sha"],
+        [
+            "gh",
+            "api",
+            f"repos/{repo}/pulls/{pr_number}",
+            "--jq",
+            r'"\(.head.sha) \(.merged_at // "")"',
+        ],
         capture_output=True,
         text=True,
         check=False,
         timeout=120,
     )
-    head = result.stdout.strip()
+    fields = result.stdout.split()
+    head = fields[0] if fields else ""
     if result.returncode != 0 or not head:
         raise ValueError(
             f"could not resolve the head of {repo}#{pr_number}: {result.stderr.strip()}"
         )
-    return head
+    merged_at = _parse_timestamp(fields[1]) if len(fields) > 1 else None
+    return head, merged_at
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -501,7 +573,11 @@ def main(argv: list[str] | None = None) -> int:
             print("No test_passes items were deferred.")  # noqa: T201
             return EXIT_SUCCESS
         pr_number, repo = _pr_target(deferred)
-        head = args.head_sha or _pr_head(pr_number, repo)
+        merged_at: datetime | None = None
+        if args.head_sha:
+            head = args.head_sha
+        else:
+            head, merged_at = _pr_head_and_merged_at(pr_number, repo)
     except (OSError, ValueError) as exc:
         print(f"::error::deferred test_passes evaluation refused: {exc}")  # noqa: T201
         return EXIT_FAILURE
@@ -538,6 +614,7 @@ def main(argv: list[str] | None = None) -> int:
                     run_id for run_id, hit in concurrency_cancelled.items() if hit
                 ),
                 own_run_ids=own_run_ids,
+                merged_at=merged_at,
             )
             print(report, flush=True)  # noqa: T201
             if code == EXIT_SUCCESS:
