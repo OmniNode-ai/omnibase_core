@@ -804,3 +804,74 @@ def test_gate_cli_reads_the_concurrency_annotation(tmp_path: Path) -> None:
     result = _run_gate(tmp_path, record=record, gh_script=script)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "cancelled by its concurrency group" in result.stdout
+
+
+# --- OMN-20369: post-merge check-runs are not the PR's CI ---------------------
+
+MERGED_AT = datetime(2026, 9, 23, 20, 0, tzinfo=UTC)
+BEFORE_MERGE = "2026-09-23T19:00:00Z"
+AFTER_MERGE = "2026-09-23T21:00:00Z"
+
+
+def test_post_merge_check_run_not_judged() -> None:
+    """omnibase_infra run 36778623912: ``Trigger node_redeploy Start`` ran on the
+    merged PR's head after the merge and failed; the push run's CI Summary went
+    red although the PR's own CI never had that row. With the PR's merged_at the
+    row is reported and not judged; without it (positive control) it fails."""
+    checks = [
+        _row("Tests Gate", "success", started=BEFORE_MERGE),
+        _row("Trigger node_redeploy Start", "failure", started=AFTER_MERGE, row_id=2),
+        _row(
+            "Verify dev lane applied the redeploy", None, started=AFTER_MERGE, row_id=3
+        ),
+        SELF,
+    ]
+    code, report = evaluate_checks(checks, now=NOW, merged_at=MERGED_AT)
+    assert code == EXIT_SUCCESS, report
+    assert "started after the PR merged" in report
+    assert "Trigger node_redeploy Start" in report
+    assert "Verify dev lane applied the redeploy" in report
+    control, _ = evaluate_checks(checks, now=NOW)
+    assert control == EXIT_FAILURE
+
+
+def test_pre_merge_red_still_fails_when_a_post_merge_rerun_is_green() -> None:
+    """The cutoff applies before latest-wins: a check the PR merged red on stays
+    red even when a rerun after the merge went green."""
+    checks = [
+        _row("Tests Gate", "failure", started=BEFORE_MERGE, row_id=1),
+        _row("Tests Gate", "success", started=AFTER_MERGE, row_id=2),
+        SELF,
+    ]
+    code, report = evaluate_checks(checks, now=NOW, merged_at=MERGED_AT)
+    assert code == EXIT_FAILURE, report
+    assert evaluate_checks(checks, now=NOW)[0] == EXIT_SUCCESS
+
+
+def test_pre_merge_red_still_fails_and_unreadable_start_is_judged() -> None:
+    red = [_row("Tests Gate", "failure", started=BEFORE_MERGE), SELF]
+    assert evaluate_checks(red, now=NOW, merged_at=MERGED_AT)[0] == EXIT_FAILURE
+    no_start = _row("mystery", "failure", started="")
+    assert (
+        evaluate_checks(
+            [_row("Tests Gate", "success"), no_start], now=NOW, merged_at=MERGED_AT
+        )[0]
+        == EXIT_FAILURE
+    )
+
+
+def test_gate_cli_post_merge_check_run_not_judged_only_on_push(tmp_path: Path) -> None:
+    """push (no --head-sha): the recorded PR's merged_at is read and a post-merge
+    red is not judged. pull_request (--head-sha given): the same rows fail."""
+    record = _write_record(tmp_path, [_ITEM])
+    rows = [
+        _row("Tests Gate", "success", started=BEFORE_MERGE),
+        _row("auto-tag", "failure", started=AFTER_MERGE, row_id=2),
+    ]
+    script = _gh_api_script(rows, pr_head=f"{HEAD} 2026-09-23T20:00:00Z")
+    push = _run_gate(tmp_path, record=record, gh_script=script, head_sha="")
+    assert push.returncode == 0, push.stdout + push.stderr
+    assert "started after the PR merged" in push.stdout
+    pull_request = _run_gate(tmp_path, record=record, gh_script=script)
+    assert pull_request.returncode == 1, pull_request.stdout + pull_request.stderr
+    assert "auto-tag" in pull_request.stdout
