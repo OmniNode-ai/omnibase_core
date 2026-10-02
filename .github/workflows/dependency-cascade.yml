@@ -320,6 +320,67 @@ jobs:
           open("pyproject.toml", "w").write(updated)
           PYEOF
 
+      # OMN-18941: wait on the named condition "this exact version is listed
+      # on the index the lock resolves against", not a blind retry of uv lock.
+      # The waited_s token is telemetry: a cut logging waited_s>0 settles
+      # propagation lag; a cut still failing after the wait settles that the
+      # cause is not the index. Interval: 10 s; total: 600 s. The observed lag
+      # on the 0.47.29 cut was within ~1 minute of upload, so 600 s is about ten
+      # times that and far below the job's default 360-minute limit: a stuck
+      # index fails one leg fast.
+      - name: Wait for released version on the index (OMN-18941)
+        if: steps.token_check.outputs.has_token == 'true'
+        env:
+          PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
+          RESOLVED: ${{ steps.vars.outputs.version }}
+        run: |
+          CASCADE_INDEX_BASE="${CASCADE_INDEX_BASE:-https://pypi.org/simple}"
+          CASCADE_WAIT_INTERVAL_S="${CASCADE_WAIT_INTERVAL_S:-10}"
+          CASCADE_WAIT_TOTAL_S="${CASCADE_WAIT_TOTAL_S:-600}"
+
+          if ! command -v curl >/dev/null 2>&1; then
+            echo "::error::curl is required to wait for the released version on the index."
+            exit 1
+          fi
+
+          started_us="${EPOCHREALTIME/[.,]/}"
+          while true; do
+            listed=false
+            poll_us="${EPOCHREALTIME/[.,]/}"
+            if body=$(curl -fsS --max-time 20 \
+              -H 'Accept: application/vnd.pypi.simple.v1+json' \
+              -H 'Cache-Control: no-cache' \
+              -H 'Pragma: no-cache' \
+              "${CASCADE_INDEX_BASE}/${PKG_HYPHEN}/?cb=${poll_us}"); then
+              filenames=$(printf '%s' "$body" | grep -oE '"filename": *"[^"]+"' || true)
+              while IFS= read -r filename; do
+                filename="${filename#*:}"
+                filename="${filename#*\"}"
+                filename="${filename%\"}"
+                case "$filename" in
+                  *-"${RESOLVED}"-*.whl | *-"${RESOLVED}".tar.gz | *-"${RESOLVED}".zip)
+                    listed=true
+                    break
+                    ;;
+                esac
+              done <<< "$filenames"
+            fi
+
+            now_us="${EPOCHREALTIME/[.,]/}"
+            waited=$(( (now_us - started_us) / 1000000 ))
+            if [ "$listed" = true ]; then
+              echo "CASCADE-INDEX-WAIT-OK package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
+              exit 0
+            fi
+            if [ "$waited" -ge "$CASCADE_WAIT_TOTAL_S" ]; then
+              echo "CASCADE-INDEX-WAIT-TIMEOUT package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
+              echo "::error::Released version ${PKG_HYPHEN}==${RESOLVED} is not listed on ${CASCADE_INDEX_BASE} after ${waited} seconds."
+              exit 1
+            fi
+            echo "Not listed yet: ${PKG_HYPHEN}==${RESOLVED} (${waited} seconds elapsed)."
+            sleep "$CASCADE_WAIT_INTERVAL_S"
+          done
+
       # OMN-16517 (docs/plans/2026-08-23-cloud-ci-offload-plan.md Stage 1):
       # sanitized generator environment. This step previously ran `uv lock`
       # with NO UV_* env sanitization at all -- on 2026-08-23 a bot-generated
@@ -366,7 +427,12 @@ jobs:
           # uses, rather than relying on uv's built-in default (which
           # --no-config does not change, but which this makes explicit and
           # future-proof against a workflow-level default changing).
-          uv lock --no-config --default-index https://pypi.org/simple --upgrade-package "$BUMP_PACKAGE"
+          # --refresh-package: makes uv's own HTTP cache unable to serve a
+          # stale simple-index entry for the package after the wait step
+          # observed the version present. uv documents that --upgrade-package
+          # implies --refresh-package; the explicit flag keeps this guarantee
+          # from depending on that implication.
+          uv lock --no-config --default-index https://pypi.org/simple --upgrade-package "$BUMP_PACKAGE" --refresh-package "$BUMP_PACKAGE"
 
           # Check if anything changed in either file -- a pin-only bump with
           # no lockfile delta (or vice versa) is still a real change to land.
