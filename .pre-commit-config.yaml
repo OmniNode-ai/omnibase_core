@@ -535,6 +535,14 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      # OMN-20298: a shape-gate detector job must run on every PR, whatever the
+      # change-control preflight says. Zero baseline, no allowlist.
+      - id: check-shape-gate-independence
+        name: Shape-gate detectors never depend on the OCC preflight (OMN-20298)
+        entry: uv run python -m omnibase_core.handlers.handler_shape_gate_independence
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
+        pass_filenames: true
         require_serial: true
         stages: [pre-commit]
 

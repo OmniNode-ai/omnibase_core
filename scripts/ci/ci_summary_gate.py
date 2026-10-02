@@ -303,6 +303,7 @@ SPEC_REQUIRED_VALIDATOR_JOBS: tuple[str, ...] = (
     "Hardcoded Topic Validator",  # hardcoded-topic-validator (OMN-14430)
     "Runtime Identity Validator",  # runtime-identity-validator (OMN-17308)
     "Canonical File Shape (OMN-20304)",  # canonical-file-shape (OMN-20304)
+    "Shape-Gate Independence (OMN-20298)",  # shape-gate-independence (OMN-20298)
 )
 
 # Conclusions that count as "provably passed".
