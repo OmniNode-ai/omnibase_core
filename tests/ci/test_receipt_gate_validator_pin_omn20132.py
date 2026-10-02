@@ -30,7 +30,8 @@ MODEL_PATH = "src/omnibase_core/models/contracts/ticket/model_dod_receipt.py"
 CHECKOUT_PATH = ".receipt-gate-deps/omnibase_core"
 
 # Fields receipts already carry in the wild. tree_sha: omnibase_core#1748.
-REQUIRED_RECEIPT_FIELDS = frozenset({"tree_sha"})
+# artifact_sha256: omnibase_core#1829.
+REQUIRED_RECEIPT_FIELDS = frozenset({"tree_sha", "artifact_sha256"})
 
 
 def _pinned_validator_ref() -> str:
@@ -107,3 +108,10 @@ def test_floor_rejects_the_pre_tree_sha_pin() -> None:
     old = "a03b10720db364575b0477003da95b46de765950"  # pragma: allowlist secret
     fields = _model_fields(_model_source_at(old))
     assert "tree_sha" not in fields
+
+
+def test_floor_rejects_the_pre_artifact_sha256_pin() -> None:
+    """Positive control: the old pin, d35ae63d3687, is below the floor."""
+    old = "d35ae63d3687c13c006015f1d220749bd6fed87c"  # pragma: allowlist secret
+    fields = _model_fields(_model_source_at(old))
+    assert "artifact_sha256" not in fields

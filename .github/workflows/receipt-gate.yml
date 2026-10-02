@@ -635,6 +635,20 @@ jobs:
       # byte-identical. tests/ci/test_receipt_gate_validator_pin_omn20132.py
       # pins the floor.
       #
+      # OMN-17427: advanced from d35ae63d3687 to b3e73e253adf (omnibase_core#1831),
+      # because ModelDodReceipt at d35ae63d3687 has no artifact_sha256 and
+      # forbids extra fields. onex_change_control#12360 made non-auto/ receipts
+      # carry it, so verify / verify failed with extra_forbidden on
+      # omnimarket#3247, #3248 and #3250. b3e73e253adf is the first sha where
+      # validator_occ_merge_eligibility.py, validator_receipt_gate.py and
+      # model_dod_receipt.py are in the form dev carries today; the entry points
+      # validator_receipt_gate_cli.py and validator_evidence_commit_binding_cli.py
+      # are byte-identical to d35ae63d3687. d35ae63d3687 is an ancestor, so the
+      # OMN-20132 tree_sha floor is retained. The new ref was run against the
+      # OCC evidence of omnimarket#3247, #3248 and #3250 (eligible, previously
+      # nonpass_receipt) and #3251 (eligible both before and after).
+      # tests/ci/test_receipt_gate_validator_pin_omn20132.py pins the floor.
+      #
       # `ref: main` still cannot be used: main is release-synced and no
       # published release carries the fix. v0.47.20 is the latest, tagged
       # 3afa3528 on 2026-09-20; the fix merged 2026-09-21 and
@@ -653,7 +667,7 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_core
           path: .receipt-gate-deps/omnibase_core
-          ref: d35ae63d3687c13c006015f1d220749bd6fed87c
+          ref: b3e73e253adf171ac94fb83578349443b6e83aa9
           fetch-depth: 1
 
       - name: Install omnibase_core
