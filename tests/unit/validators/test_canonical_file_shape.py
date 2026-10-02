@@ -176,6 +176,95 @@ def test_baseline_shrink_accepted(repo: Path) -> None:
     assert _rules(repo) == []
 
 
+BODY = "".join(f"line_{i} = {i}\n" for i in range(20))
+
+
+def _baselined_tool(repo: Path) -> None:
+    """Commit a larger baselined file so a rename survives an edit."""
+    _write(repo, "plugins/p/_bin/tool.sh", "#!/bin/sh\n" + BODY)
+    _write(
+        repo,
+        DEFAULT_BASELINE,
+        render_baseline(["scripts/old_tool.py", "plugins/p/_bin/tool.sh"]),
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "tool")
+
+
+def _rename(repo: Path, new: str, extra: str = "") -> None:
+    (repo / new).parent.mkdir(parents=True, exist_ok=True)
+    _git(repo, "mv", "plugins/p/_bin/tool.sh", new)
+    if extra:
+        with (repo / new).open("a", encoding="utf-8") as fh:
+            fh.write(extra)
+
+
+NEW_TOOL = "plugins/p/_bin/renamed.sh"
+SWAPPED = ["scripts/old_tool.py", NEW_TOOL]
+
+
+def test_rename_swap_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_baseline_untouched_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_with_edit_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL, "added = 1\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_of_unbaselined_file_refused(repo: Path) -> None:
+    _write(repo, "plugins/p/_bin/free.sh", "#!/bin/sh\n" + BODY)
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "unbaselined")
+    _git(repo, "mv", "plugins/p/_bin/free.sh", NEW_TOOL)
+    _stage(repo)
+    assert "noncanonical-file" in _rules(repo)
+
+
+def test_rename_plus_extra_script_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(repo, "scripts/extra.py", "x = 1\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == ["noncanonical-file"]
+
+
+def test_swap_without_detected_rename_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    (repo / "plugins/p/_bin/tool.sh").unlink()
+    _write(repo, NEW_TOOL, "#!/bin/sh\necho unrelated\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == ["baseline-growth"]
+
+
+def test_rename_keeping_old_entry_and_adding_new_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(
+        repo,
+        DEFAULT_BASELINE,
+        render_baseline([*SWAPPED, "plugins/p/_bin/tool.sh"]),
+    )
+    _stage(repo)
+    assert "baseline-growth" in _rules(repo)
+
+
 def test_skill_imperative_growth_refused(repo: Path) -> None:
     _write(
         repo,
