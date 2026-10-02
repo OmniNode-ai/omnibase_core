@@ -53,6 +53,7 @@ import gc
 import logging
 import os
 from collections.abc import Generator
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -157,6 +158,36 @@ def session_cleanup() -> Generator[None, None, None]:
 
     # Session teardown
     gc.collect()  # Clean up after all tests complete
+
+
+_LEDGER_BUS_ENV_VARS = (
+    "ONEX_LEDGER_WRITE_VIA",
+    "ONEX_LEDGER_BUS_APPEND_COMMAND",
+    "ONEX_LEDGER_HOST_NAME",
+    "ONEX_WORK_LEDGER_PROJECTION_URL",
+    "KAFKA_BOOTSTRAP_SERVERS",
+    "KAFKA_BROKERS",
+    "REDPANDA_BROKERS",
+)
+
+
+@pytest.fixture(autouse=True)
+def ledger_test_write_isolation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """OMN-19513: no test inherits the lane's bus, broker or canonical ledger.
+
+    A lane's shell names the ledger of record and the bus write mode; a test that
+    inherited them would write real rows. Strip the bus/broker variables and point
+    the ledger at a scratch file. The write path also refuses on its own
+    (``handlers/handler_ledger_write_guard.py``); this only keeps a test from
+    reaching that refusal by accident.
+    """
+    for name in _LEDGER_BUS_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(
+        "ONEX_LEDGER_PATH", str(tmp_path / "scratch_ROLLING_WORK_LEDGER.md")
+    )
 
 
 @pytest.fixture(autouse=True)

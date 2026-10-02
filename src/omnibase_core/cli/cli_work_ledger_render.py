@@ -42,6 +42,7 @@ from typing import Final
 from omnibase_core.errors.error_work_ledger_parse import WorkLedgerParseError
 from omnibase_core.errors.error_work_ledger_render import WorkLedgerRenderError
 from omnibase_core.errors.error_work_ledger_undecided import WorkLedgerUndecidedError
+from omnibase_core.handlers import handler_ledger_write_guard as write_guard
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
@@ -64,6 +65,7 @@ from omnibase_core.models.events.work.model_work_ledger_render import (
 __all__ = [
     "EXIT_CLEAR",
     "EXIT_FOUND",
+    "EXIT_TEST_WRITE_REFUSED",
     "EXIT_UNDECIDED",
     "MD_LEDGER_PATH_ENV",
     "md_lock_path_for",
@@ -73,6 +75,7 @@ __all__ = [
 EXIT_CLEAR: Final = 0
 EXIT_FOUND: Final = 3
 EXIT_UNDECIDED: Final = 2
+EXIT_TEST_WRITE_REFUSED: Final = write_guard.EXIT_TEST_WRITE_REFUSED
 
 MD_LEDGER_PATH_ENV: Final = "ONEX_LEDGER_PATH"
 """The variable naming the md ledger, as ``ledger_lock.py`` and the skills use it."""
@@ -127,8 +130,15 @@ def run_render(mode: str, md_option: str | None) -> tuple[int, list[str]]:
         # An identical duplicate line counts once; index_events refused a conflicting one.
         events = tuple(index.values())
         if mode == "repair":
+            write_guard.check_file(md_path)
             return _repair(headers[0], events, md_path, index)
         return _compare([*headers], "check", events, md[4], repaired=None)
+    except write_guard.LedgerTestWriteRefusedError as exc:
+        return write_guard.EXIT_TEST_WRITE_REFUSED, [
+            *headers,
+            f"verdict=refused guard={write_guard.GUARD_NAME} mode={mode}",
+            f"reason={_one_line(str(exc))}",
+        ]
     except (WorkLedgerUndecidedError, WorkLedgerRenderError) as exc:
         reason = exc.reason
         if not headers:
