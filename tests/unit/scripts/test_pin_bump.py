@@ -267,7 +267,8 @@ def test_shipped_manifest_omninode_infra_pattern_matches_its_own_pin_shape(
     assert result.old_sha == OLD_SHA
 
 
-FOREIGN_SHA = "1b0d2f0374bca1f39d9bab22a02251208cdce196"  # pragma: allowlist secret
+# A low-entropy 40-hex ref: a pin of another repository, never an omnibase_core sha.
+FOREIGN_SHA = "0f" * 20
 
 
 def _make_ci_with_foreign_ref(root: Path, *, core_sha: str | None) -> Path:
@@ -284,7 +285,7 @@ def _make_ci_with_foreign_ref(root: Path, *, core_sha: str | None) -> Path:
         "        uses: actions/checkout@v7\n"
         "        with:\n"
         "          repository: OmniNode-ai/onex_change_control\n"
-        f"          ref: {FOREIGN_SHA}  # pragma: allowlist secret\n"
+        f"          ref: {FOREIGN_SHA}\n"
         "          path: onex_change_control\n"
         "      - name: Checkout omnibase_core\n"
         "        uses: actions/checkout@v7\n"
