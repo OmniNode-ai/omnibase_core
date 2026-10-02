@@ -21,8 +21,10 @@ This ratchet looks at every tracked file in the repository and refuses:
 ``baseline-stale``
     a baseline entry whose file was removed, moved or made canonical. The
     entry must be deleted in the same change, so the baseline only shrinks.
+    The old path of a detected rename (below) is not stale.
 ``baseline-growth``
-    a baseline entry that the base revision's baseline did not have.
+    a baseline entry that the base revision's baseline did not have, except
+    the new path of a detected rename (below).
 ``skill-imperative``
     a ``SKILL.md`` with more imperative-pattern lines than at the base
     revision. The patterns are the omniclaude thin-shim gate's
@@ -44,6 +46,23 @@ repository declares its path in its own ``.pre-commit-config.yaml`` as the
 omnibase_core. That file is read from the head revision, and the gate itself
 enforces that its list only shrinks. A baseline-named file nothing declares is
 still refused.
+
+Renames. A baselined file may be renamed (``git diff -M`` from base to head,
+default similarity, so a rename plus an edit counts). The renamed path inherits
+its old path's entry from the BASE baseline. Two forms are accepted:
+
+* swap (preferred): the same change removes the old entry and adds the new
+  path, so the baseline count does not grow and the baseline stays true;
+* untouched: the change leaves the baseline alone. The old entry reads as
+  satisfied by the rename and the new path is covered. The old entry is then
+  stale in the next change, which must delete it, so the swap is the cleaner
+  form.
+
+Nothing is inherited when no rename is detected (a delete plus an add), when
+the old path was not in the base baseline, when the new path is not itself a
+non-canonical code file, or when the swap keeps the old entry and adds the new
+one (growth). Another new script in the same change is still refused. Only
+renames count, never copies.
 
 There is no allowlist, no suppression comment and no option that widens the
 canonical locations. The only state is the shrink-only baseline file, default
@@ -389,8 +408,27 @@ def check(
     noncanonical = noncanonical_code_files(repo, head)
     noncanonical_set = set(noncanonical)
 
+    base_baseline_text = (
+        None
+        if base is None
+        else _decode(repo.read_blobs(base, [baseline_path])[baseline_path])
+    )
+    base_entries = set(parse_baseline(base_baseline_text))
+    all_changes = [] if base is None else repo.changed_paths(base, head)
+    # new path -> old path, for a detected rename of a baselined file to a path
+    # that is itself a non-canonical code file.
+    renames = {
+        path: old
+        for status, path, old in all_changes
+        if status == "R"
+        and old is not None
+        and old in base_entries
+        and path in noncanonical_set
+    }
+    renamed_from = set(renames.values())
+
     for path in noncanonical:
-        if path not in baselined:
+        if path not in baselined and path not in renames:
             findings.append(
                 ModelCanonicalFileShapeFinding(
                     path=path,
@@ -402,7 +440,7 @@ def check(
                     ),
                 )
             )
-    for path in sorted(baselined - noncanonical_set):
+    for path in sorted(baselined - noncanonical_set - renamed_from):
         findings.append(
             ModelCanonicalFileShapeFinding(
                 path=baseline_path,
@@ -414,9 +452,10 @@ def check(
     if base is None:
         return findings
 
-    base_baseline_text = _decode(repo.read_blobs(base, [baseline_path])[baseline_path])
     if base_baseline_text is not None:
-        for path in sorted(baselined - set(parse_baseline(base_baseline_text))):
+        for path in sorted(baselined - base_entries):
+            if path in renames and renames[path] not in baselined:
+                continue
             findings.append(
                 ModelCanonicalFileShapeFinding(
                     path=baseline_path,
@@ -425,7 +464,7 @@ def check(
                 )
             )
 
-    changes = [c for c in repo.changed_paths(base, head) if c[0] != "D"]
+    changes = [c for c in all_changes if c[0] != "D"]
     head_text = repo.read_blobs(head, [path for _, path, _ in changes])
     base_text = repo.read_blobs(base, [old or path for _, path, old in changes])
 
