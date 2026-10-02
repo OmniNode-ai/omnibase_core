@@ -37,6 +37,7 @@ CI and skips only on a local machine; a definitive 404 fails everywhere.
 from __future__ import annotations
 
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -244,7 +245,7 @@ def test_occ_born_path_pins_are_dev_not_main() -> None:
     """OMN-14941 F1 regression pin, carried into omnibase_core (OMN-14990 for
     the companion-effect caller, OMN-14160 for the autobind caller).
 
-    Both OCC born-path reusables are pinned `@dev`, which is the ref every
+    Both OCC born-path reusables are pinned to a sha on `dev` (OMN-20001; was `@dev`), which is the ref every
     sibling caller on the fleet pins. An `@main` pin was a parse-time 404 on
     every PR when the original omnibase_infra caller shipped -- the E1 failure
     class, in which the workflow never runs and the publisher never fires.
@@ -263,10 +264,14 @@ def test_occ_born_path_pins_are_dev_not_main() -> None:
     occ_pins = {
         r.path: r.ref for r in refs if r.repo == "omniclaude" and "call-occ-" in r.path
     }
-    assert occ_pins == {
-        ".github/workflows/call-occ-companion-effect-reusable.yml": "dev",
-        ".github/workflows/call-occ-autobind-reusable.yml": "dev",
+    # OMN-20001: each is pinned to an omniclaude sha (not a moving branch), so
+    # an omniclaude merge cannot turn this repo red; both use the same sha.
+    assert set(occ_pins) == {
+        ".github/workflows/call-occ-companion-effect-reusable.yml",
+        ".github/workflows/call-occ-autobind-reusable.yml",
     }
+    assert len(set(occ_pins.values())) == 1
+    assert re.fullmatch(r"[0-9a-f]{40}", next(iter(occ_pins.values())))
 
 
 # ---------------------------------------------------------------------------

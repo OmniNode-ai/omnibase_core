@@ -179,7 +179,7 @@ jobs:
     concurrency:
       group: OCC Companion Effect Publisher-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@dev
+    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
     # pragma: allowlist secret -- `secrets: inherit` is GHA syntax, not a secret.
     secrets: inherit
     with:
@@ -787,7 +787,10 @@ jobs:
         with:
           repository: OmniNode-ai/omniclaude
           path: _external/omniclaude
-          ref: main
+          # OMN-20001: read the omniclaude rev this repo already pins (the
+          # same sha as the reusable-workflow pins above), never its live
+          # main, so an omniclaude merge cannot turn this job red.
+          ref: 1618db6e272da6ca4288c784906ea62ed7491a55
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
@@ -1288,6 +1291,8 @@ jobs:
           repository: OmniNode-ai/onex_change_control
           token: ${{ steps.app-token.outputs.token }}
           path: onex_change_control
+          # OMN-20001: the OCC sha pinned for the compliance job below
+          ref: 91f5b69104366c2d86e4bb21de67c3c497702111
           sparse-checkout: |
             standards/
           sparse-checkout-cone-mode: false
@@ -2989,7 +2994,8 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_compat
           path: omnibase_compat
-          ref: dev
+          # OMN-20001: release tag v0.5.7, not live dev
+          ref: 65aed95fa710748654e37d5c15c5446e779fdf52
           fetch-depth: 0
 
       - name: Checkout omnibase_spi (sibling)
@@ -2997,7 +3003,8 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_spi
           path: omnibase_spi
-          ref: dev
+          # OMN-20001: release tag v0.23.5, not live dev
+          ref: b6117e4efb1b734e974a8695f175cdac1f964db9
           fetch-depth: 0
 
       - name: Set up Python

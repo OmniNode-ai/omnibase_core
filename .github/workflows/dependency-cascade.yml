@@ -250,6 +250,9 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_infra
+          # OMN-20001: release tag v0.38.61, not live default branch; the
+          # script is identical at v0.38.61 and infra main. Bump = consumer PR.
+          ref: e2aa4548874020a989c807b33bf55c032e897485
           path: _dep_provenance_gate
           sparse-checkout: |
             scripts/check_dep_provenance.py

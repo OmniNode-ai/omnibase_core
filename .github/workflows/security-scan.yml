@@ -49,7 +49,7 @@ jobs:
     needs: occ-preflight
     if: always()
     name: CodeQL
-    uses: OmniNode-ai/onex_change_control/.github/workflows/codeql-reusable.yml@main
+    uses: OmniNode-ai/onex_change_control/.github/workflows/codeql-reusable.yml@91f5b69104366c2d86e4bb21de67c3c497702111  # OCC sha already pinned at ci.yml (OMN-14887); OMN-20001
     with:
       language: python
       query_suite: security-and-quality
