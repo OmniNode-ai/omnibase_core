@@ -70,6 +70,7 @@ from omnibase_core.cli.cli_work_ledger_projection import (
     local_tail,
 )
 from omnibase_core.cli.cli_work_ledger_render import (
+    EXIT_TEST_WRITE_REFUSED,
     MD_LEDGER_PATH_ENV,
     run_render,
 )
@@ -551,7 +552,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.source is not None:
             parser.error("render: --source does not apply to render")
         code, out = run_render("repair" if args.repair else "check", args.md)
-        sys.stdout.write("\n".join(out) + "\n")
+        stream = sys.stderr if code == EXIT_TEST_WRITE_REFUSED else sys.stdout
+        stream.write("\n".join(out) + "\n")
         return code
     if args.command == "claims" and (args.repo is None) != (args.pr is None):
         parser.error("claims: --repo and --pr are given together")

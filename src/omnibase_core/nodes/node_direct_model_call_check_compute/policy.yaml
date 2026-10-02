@@ -1,0 +1,153 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Policy for check-direct-model-call (OMN-20295).
+#
+# A model call (an HTTP request to a model endpoint, a provider host or a
+# base_url; the exec of a model CLI; the import of a model SDK) must sit inside
+# a sanctioned delegation node package. This file is the ONLY place a package
+# is sanctioned. A consumer repository cannot widen it, and no inline
+# suppression marker is honoured anywhere. Pre-existing sites outside these
+# packages live in each repository's shrink-only
+# .onex_ratchets/direct_model_call_baseline.yaml, each naming its removal ticket.
+#
+# tests/unit/nodes/node_direct_model_call_check_compute pins sanctioned_packages exactly, so
+# widening it is a reviewed change to this file and to that test.
+schema_version: 1
+
+sanctioned_packages:
+  # The delegation call effect: the one node that sends a delegated request
+  # to a model (OMN-20295).
+  omnimarket:
+    - src/omnimarket/nodes/node_llm_delegation_call_effect/**
+  # The routing authority's LLM effect nodes.
+  omnibase_infra:
+    - src/omnibase_infra/nodes/node_llm_inference_effect/**
+    - src/omnibase_infra/nodes/node_llm_completion_effect/**
+  omniclaude: []
+  omniclaude-internal: []
+  omnibase_internal: []
+
+model_sdk_modules:
+  - openai
+  - anthropic
+  - litellm
+  - ollama
+  - google.genai
+  - google.generativeai
+  - vertexai
+  - mistralai
+  - cohere
+  - groq
+  - together
+  - llama_cpp
+  - vllm
+  - langchain_openai
+  - langchain_anthropic
+  - langchain_ollama
+  - langchain_google_genai
+  - claude_agent_sdk
+  - claude_code_sdk
+
+# Executing any of these runs a model, whatever the arguments.
+model_clis:
+  - crush
+  - codex
+  - llama-cli
+  - llama-run
+  - llama-simple
+  - ollama
+  - gemini
+  - opencode
+  - aider
+  - goose
+  - qwen
+  - cursor-agent
+
+# These run a model only in one-shot print mode (claude -p "...").
+print_mode_clis:
+  - claude
+print_flags:
+  - -p
+  - --print
+
+http_clis:
+  - curl
+  - wget
+  - http
+  - https
+  - xh
+
+command_wrappers:
+  - env
+  - timeout
+  - gtimeout
+  - nohup
+  - nice
+  - stdbuf
+  - sudo
+  - exec
+  - time
+  - uv
+  - uvx
+  - npx
+  - pnpm
+  - bunx
+  - poetry
+  - pipx
+  - caffeinate
+  - script
+
+shells:
+  - sh
+  - bash
+  - zsh
+  - dash
+
+python_programs:
+  - python
+  - python3
+  - pypy3
+
+http_client_modules:
+  - httpx
+  - requests
+  - aiohttp
+  - urllib.request
+  - urllib3
+  - http.client
+  - httpcore
+
+# Matched against a resolved URL text ({?} stands for an unknown piece).
+model_api_path_pattern: >-
+  (?i)(?:/(?:chat/)?completions\b|/v1(?:beta)?/(?:messages|embeddings|models|responses|complete)\b|/(?:de)?tokenize\b|:11434/api/(?:generate|chat|embed(?:dings)?|tags|pull)\b|:(?:stream)?generatecontent\b|/v1/rerank\b)
+
+provider_host_pattern: >-
+  (?i)\b(?:api\.openai\.com|api\.anthropic\.com|openrouter\.ai|generativelanguage\.googleapis\.com|aiplatform\.googleapis\.com|api\.z\.ai|open\.bigmodel\.cn|api\.together\.xyz|api\.groq\.com|api\.mistral\.ai|api\.deepseek\.com|api\.fireworks\.ai|api\.cohere\.(?:ai|com)|api\.x\.ai|api\.perplexity\.ai|dashscope\.aliyuncs\.com|api\.moonshot\.(?:ai|cn)|api-inference\.huggingface\.co)\b
+
+# An identifier, attribute or mapping key that names a model base URL.
+base_url_identifier_pattern: >-
+  (?i)(?:^|_)(?:openai_?(?:api_?)?base|(?:model|llm|inference|vllm|ollama|llama|crush|codex|lab_?model)_?(?:server_?)?(?:base_?)?(?:url|endpoint|base|host))(?:$|_)
+
+# A plain base URL. GitHub, gateway and ledger clients use the same name, so a
+# URL from one is a model call only in a file that already holds a model call.
+generic_base_url_identifier_pattern: >-
+  (?i)(?:^|_)(?:base_?url|api_?base|base_?uri)(?:$|_)
+
+# An environment-variable name that holds a model endpoint.
+model_env_key_pattern: >-
+  (?i)(?:MODEL|LLM|INFERENCE|OPENAI|ANTHROPIC|OLLAMA|VLLM|LLAMA|CRUSH|CODEX|OPENROUTER|GEMINI)[A-Z0-9_]*_(?:URL|BASE|BASE_URL|ENDPOINT|HOST|API_BASE)$
+
+payload_keys:
+  - messages
+payload_model_companions:
+  - prompt
+  - max_tokens
+  - max_completion_tokens
+  - temperature
+  - contents
+  - n_predict
+  - stop
+
+required_ticket_by_target:
+  crush: OMN-20290

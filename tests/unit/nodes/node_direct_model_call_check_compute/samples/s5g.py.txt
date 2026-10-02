@@ -1,0 +1,15 @@
+import os
+
+import httpx
+
+PARTS = ("v1", "chat", "completions")
+
+
+def settings() -> dict[str, str]:
+    return {"endpoint": os.environ[os.environ["WHICH"]]}
+
+
+def send(question: str) -> str:
+    target = "/".join((settings()["endpoint"], *PARTS))
+    payload = {"model": os.environ.get("WHAT", ""), "messages": [{"role": "user", "content": question}]}
+    return httpx.post(target, json=payload).text

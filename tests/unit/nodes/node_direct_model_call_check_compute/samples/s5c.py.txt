@@ -1,0 +1,5 @@
+import subprocess
+
+
+def run_agent(task: str) -> str:
+    return subprocess.run(["crush", "run", task], capture_output=True, text=True, check=False).stdout

@@ -27,6 +27,6 @@ jobs:
   pr-title:
     needs: occ-preflight
     if: always()
-    uses: OmniNode-ai/onex_change_control/.github/workflows/pr-title-check-reusable.yml@main
+    uses: OmniNode-ai/onex_change_control/.github/workflows/pr-title-check-reusable.yml@91f5b69104366c2d86e4bb21de67c3c497702111  # OCC sha already pinned at ci.yml (OMN-14887); OMN-20001
     permissions:
       pull-requests: read

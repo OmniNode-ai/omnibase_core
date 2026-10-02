@@ -19,6 +19,7 @@ from omnibase_core.validators.canonical_file_shape import (
     GitRepo,
     check,
     count_suppressions,
+    declared_gate_baselines,
     is_canonical_location,
     is_code_file,
     main,
@@ -175,6 +176,95 @@ def test_baseline_shrink_accepted(repo: Path) -> None:
     assert _rules(repo) == []
 
 
+BODY = "".join(f"line_{i} = {i}\n" for i in range(20))
+
+
+def _baselined_tool(repo: Path) -> None:
+    """Commit a larger baselined file so a rename survives an edit."""
+    _write(repo, "plugins/p/_bin/tool.sh", "#!/bin/sh\n" + BODY)
+    _write(
+        repo,
+        DEFAULT_BASELINE,
+        render_baseline(["scripts/old_tool.py", "plugins/p/_bin/tool.sh"]),
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "tool")
+
+
+def _rename(repo: Path, new: str, extra: str = "") -> None:
+    (repo / new).parent.mkdir(parents=True, exist_ok=True)
+    _git(repo, "mv", "plugins/p/_bin/tool.sh", new)
+    if extra:
+        with (repo / new).open("a", encoding="utf-8") as fh:
+            fh.write(extra)
+
+
+NEW_TOOL = "plugins/p/_bin/renamed.sh"
+SWAPPED = ["scripts/old_tool.py", NEW_TOOL]
+
+
+def test_rename_swap_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_baseline_untouched_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_with_edit_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL, "added = 1\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_of_unbaselined_file_refused(repo: Path) -> None:
+    _write(repo, "plugins/p/_bin/free.sh", "#!/bin/sh\n" + BODY)
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "unbaselined")
+    _git(repo, "mv", "plugins/p/_bin/free.sh", NEW_TOOL)
+    _stage(repo)
+    assert "noncanonical-file" in _rules(repo)
+
+
+def test_rename_plus_extra_script_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(repo, "scripts/extra.py", "x = 1\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == ["noncanonical-file"]
+
+
+def test_swap_without_detected_rename_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    (repo / "plugins/p/_bin/tool.sh").unlink()
+    _write(repo, NEW_TOOL, "#!/bin/sh\necho unrelated\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == ["baseline-growth"]
+
+
+def test_rename_keeping_old_entry_and_adding_new_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(
+        repo,
+        DEFAULT_BASELINE,
+        render_baseline([*SWAPPED, "plugins/p/_bin/tool.sh"]),
+    )
+    _stage(repo)
+    assert "baseline-growth" in _rules(repo)
+
+
 def test_skill_imperative_growth_refused(repo: Path) -> None:
     _write(
         repo,
@@ -195,6 +285,78 @@ def test_new_exception_file_refused(repo: Path) -> None:
     _write(repo, ".onex_ratchets/foo_waivers.yaml", "- x\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
+
+
+GATE_BASELINE = ".onex_ratchets/direct_model_call_baseline.yaml"
+
+
+def _gate_config(
+    baseline: str, url: str = "https://github.com/OmniNode-ai/omnibase_core"
+) -> str:
+    return (
+        "repos:\n"
+        f"  - repo: {url}\n"
+        "    rev: abc\n"
+        "    hooks:\n"
+        "      - id: check-direct-model-call\n"
+        f"        args: [--repo, r, --baseline, {baseline}, --base, HEAD]\n"
+    )
+
+
+def test_gate_declared_baseline_accepted(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_gate_declared_baseline_only_shrinks_by_gate(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gate")
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_undeclared_baseline_still_refused(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, ".onex_ratchets/other_baseline.yaml", "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_baseline_without_any_declaration_refused(repo: Path) -> None:
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_declaration_by_a_local_hook_does_not_count(repo: Path) -> None:
+    _write(
+        repo,
+        ".pre-commit-config.yaml",
+        _gate_config(GATE_BASELINE, url="local"),
+    )
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_declared_gate_baselines_forms() -> None:
+    assert declared_gate_baselines(None) == frozenset()
+    assert declared_gate_baselines("not: [valid") == frozenset()
+    text = (
+        "repos:\n"
+        "  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
+        "    hooks:\n"
+        "      - id: check-direct-model-call\n"
+        "        args: ['--baseline=x/y.yaml']\n"
+        "      - id: canonical-file-shape\n"
+        "        args: [--baseline, z.txt]\n"
+    )
+    assert declared_gate_baselines(text) == frozenset({"x/y.yaml"})
 
 
 def test_exception_entry_growth_refused(repo: Path) -> None:

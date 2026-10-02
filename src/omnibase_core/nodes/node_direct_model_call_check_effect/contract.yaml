@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the direct_model_call_check EFFECT node (OMN-20295).
+# The I/O half of the direct-model-call gate: it reads what the paired COMPUTE
+# node (node_direct_model_call_check_compute) judges. Invoked directly by the
+# check-direct-model-call pre-commit hook and CI command, not via the event bus.
+
+name: node_direct_model_call_check_effect
+node_id: node_direct_model_call_check_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Reads a repository for the direct-model-call gate: its tracked files (git ls-files) with their content
+  inline, the policy packaged with node_direct_model_call_check_compute, the committed shrink-only baseline,
+  that baseline and the hook configuration at a base ref (git show), and today's date. Returns them as
+  the COMPUTE node's input so the verdict stays pure.
+input_model: omnibase_core.models.nodes.direct_model_call_check.model_direct_model_call_check_request.ModelDirectModelCallCheckRequest
+output_model: omnibase_core.models.nodes.direct_model_call_check.model_direct_model_call_check_input.ModelDirectModelCallCheckInput
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:HandlerDirectModelCallCheckEffect
+
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 120000

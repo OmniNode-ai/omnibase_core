@@ -80,7 +80,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "a6fa1e4ffb7740fc365e526a88e488cccf2d1f08474c6e6b2f2cbe8bdb95f85d"  # pragma: allowlist secret
     ),
     "check-deterministic-skills": (
-        "e9092b6a2e64c9dcc5d1d89ac7171a0e84547dbd1dfc4c962660c522fba99e7a"  # pragma: allowlist secret
+        "2a5e1946265d5b3c049848df322df4e4892713c8f8e3ae7bbf2dcb719e27e1a5"  # pragma: allowlist secret
     ),
     "node-purity-check": (
         "11a091eb4a9382801797ca89fef8090e43385b5b1c991949d7b4ed13afef3b06"  # pragma: allowlist secret
