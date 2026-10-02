@@ -33,6 +33,10 @@ CHECKOUT_PATH = ".receipt-gate-deps/omnibase_core"
 # artifact_sha256: omnibase_core#1829.
 REQUIRED_RECEIPT_FIELDS = frozenset({"tree_sha", "artifact_sha256"})
 
+# Pins the floor was raised past: below tree_sha, then below artifact_sha256.
+_PRE_FLOOR_PINS = "a03b10720db364575b0477003da95b46de765950 d35ae63d3687c13c006015f1d220749bd6fed87c"  # pragma: allowlist secret
+PRE_TREE_SHA_PIN, PRE_ARTIFACT_SHA256_PIN = _PRE_FLOOR_PINS.split()
+
 
 def _pinned_validator_ref() -> str:
     data = yaml.safe_load(WORKFLOW_PATH.read_text())
@@ -105,13 +109,11 @@ def test_floor_holds_for_the_in_tree_model() -> None:
 
 def test_floor_rejects_the_pre_tree_sha_pin() -> None:
     """Positive control: the old pin, a03b10720db3, is below the floor."""
-    old = "a03b10720db364575b0477003da95b46de765950"  # pragma: allowlist secret
-    fields = _model_fields(_model_source_at(old))
+    fields = _model_fields(_model_source_at(PRE_TREE_SHA_PIN))
     assert "tree_sha" not in fields
 
 
 def test_floor_rejects_the_pre_artifact_sha256_pin() -> None:
     """Positive control: the old pin, d35ae63d3687, is below the floor."""
-    old = "d35ae63d3687c13c006015f1d220749bd6fed87c"  # pragma: allowlist secret
-    fields = _model_fields(_model_source_at(old))
+    fields = _model_fields(_model_source_at(PRE_ARTIFACT_SHA256_PIN))
     assert "artifact_sha256" not in fields
