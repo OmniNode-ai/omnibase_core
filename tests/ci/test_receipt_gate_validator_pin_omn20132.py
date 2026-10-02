@@ -64,8 +64,10 @@ def _git(*args: str) -> subprocess.CompletedProcess[str]:
 def _model_source_at(ref: str) -> str:
     shown = _git("show", f"{ref}:{MODEL_PATH}")
     if shown.returncode != 0:
-        _git("fetch", "--depth=1", "origin", ref)
-        shown = _git("show", f"{ref}:{MODEL_PATH}")
+        # A fetched tag is not stored as a local ref, so read FETCH_HEAD, and
+        # only when this fetch succeeded (a failed fetch leaves an older one).
+        if _git("fetch", "--depth=1", "origin", ref).returncode == 0:
+            shown = _git("show", f"FETCH_HEAD:{MODEL_PATH}")
     if shown.returncode != 0:
         pytest.skip(f"validator ref {ref} is not reachable from this checkout")
     return shown.stdout
@@ -112,8 +114,13 @@ def test_floor_rejects_the_pre_tree_sha_pin() -> None:
 
 
 def test_floor_rejects_the_pre_artifact_sha256_pin() -> None:
-    """Positive control: the old pin, d35ae63d3687, is below the floor."""
-    old = "d35ae63d3687"
+    """Positive control: v0.47.27 is below the floor.
+
+    It is the last release before omnibase_core#1829 added artifact_sha256 and
+    a descendant of the old pin d35ae63d3687. A tag, because GitHub fetches a
+    sha only in full and a full sha literal needs a secrets suppression.
+    """
+    old = "v0.47.27"
     fields = _model_fields(_model_source_at(old))
     assert "artifact_sha256" not in fields
     assert "tree_sha" in fields
