@@ -24,6 +24,8 @@ from omnibase_core.models.validation.model_workflow_ratchet_gap import (
 )
 from omnibase_core.validation.validator_pull_request_workflow_ratchet import (
     _validate_waivers,
+    current_event_name,
+    expiry_horizon_days,
     live_pull_request_workflows,
     triggers_on_pull_request,
     verify_pull_request_workflow_ratchet,
@@ -325,3 +327,86 @@ def test_live_pull_request_workflows_matches_registry() -> None:
     )
     active_waived = waived - {gap.workflow_file for gap in waiver_gaps}
     assert live == set(registry["allowlisted_workflows"]) | active_waived
+
+
+# ---------------------------------------------------------------------------
+# OMN-20354: an expiring waiver fails the pull request first
+# ---------------------------------------------------------------------------
+
+
+def _registry_with_waiver(tmp_path: Path, expires: str) -> Path:
+    wf_dir = tmp_path / ".github" / "workflows"
+    _write_pr_workflow(wf_dir, "waived.yml")
+    registry = tmp_path / "budget.yaml"
+    _write_registry(
+        registry,
+        budget=0,
+        allowlisted_workflows=[],
+        waivers=[
+            {
+                "workflow_file": "waived.yml",
+                "ticket": "OMN-0000",
+                "expires": expires,
+                "justification": "test",
+                "retires": "nothing",
+            }
+        ],
+    )
+    return registry
+
+
+def test_waiver_expiring_within_horizon_fails_the_pull_request(tmp_path: Path) -> None:
+    """omnibase_core run 36204419348: the kb-doc-gate.yml waiver expired
+    2026-09-25; the PR's checks passed on 09-25 and it merged at 00:19 on 09-26,
+    turning dev red. On its last valid day the waiver now fails a pull_request
+    run (horizon 1) and still passes a push run (horizon 0)."""
+    registry = _registry_with_waiver(tmp_path, "2026-09-25")
+    today = date(2026, 9, 25)
+    pr_gaps = verify_pull_request_workflow_ratchet(
+        repo_root=tmp_path,
+        registry_path=registry,
+        today=today,
+        horizon_days=expiry_horizon_days("pull_request"),
+    )
+    assert ("waived.yml", "WAIVER_EXPIRED") in {
+        (g.workflow_file, g.code) for g in pr_gaps
+    }
+    assert any("pull-request horizon" in g.format() for g in pr_gaps)
+    push_gaps = verify_pull_request_workflow_ratchet(
+        repo_root=tmp_path,
+        registry_path=registry,
+        today=today,
+        horizon_days=expiry_horizon_days("push"),
+    )
+    assert not push_gaps, "\n".join(g.format() for g in push_gaps)
+    later = verify_pull_request_workflow_ratchet(
+        repo_root=tmp_path,
+        registry_path=registry,
+        today=date(2026, 9, 24),
+        horizon_days=expiry_horizon_days("pull_request"),
+    )
+    assert not later, "\n".join(g.format() for g in later)
+
+
+@pytest.mark.parametrize(
+    ("event", "days"),
+    [
+        ("push", 0),
+        ("schedule", 0),
+        ("workflow_dispatch", 0),
+        ("pull_request", 1),
+        ("merge_group", 1),
+        (None, 1),
+    ],
+)
+def test_expiry_horizon_days_by_event(event: str | None, days: int) -> None:
+    assert expiry_horizon_days(event) == days
+
+
+def test_current_event_name_reads_the_actions_event(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
+    assert current_event_name() == "push"
+    monkeypatch.delenv("GITHUB_EVENT_NAME")
+    assert current_event_name() is None

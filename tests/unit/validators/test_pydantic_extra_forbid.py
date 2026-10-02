@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -722,3 +722,25 @@ def test_core_baseline_matches_the_tree() -> None:
         "STALE baseline entries (model fixed or gone) — remove them: "
         f"{sorted(baselined - live)[:10]}"
     )
+
+
+def test_waiver_expiring_within_horizon_fails_the_pull_request(tmp_path: Path) -> None:
+    """omnibase_core run 36794165897 (OMN-20354): the ModelHandlerRoutingEntry
+    waiver expired 2026-09-30; the PR's hook passed at 23:53 that day and the
+    push at 00:04 on 10-01 went red. On its last valid day the waiver now fails
+    with the pull-request horizon and stays active with none."""
+    waivers = tmp_path / "waivers.yaml"
+    waivers.write_text(
+        'waivers:\n  - fqn: "m:M"\n    ticket: OMN-1\n    pr: x\n'
+        "    expires_at: 2026-09-30\n",
+        encoding="utf-8",
+    )
+    today = date(2026, 9, 30)
+    active, errors = load_waivers(waivers, today, horizon_days=1)
+    assert active == set()
+    assert any("pull-request horizon" in error for error in errors)
+    assert load_waivers(waivers, today) == ({"m:M"}, [])
+    assert load_waivers(waivers, date(2026, 9, 29), horizon_days=1) == ({"m:M"}, [])
+    expired_active, expired = load_waivers(waivers, date(2026, 10, 1))
+    assert expired_active == set()
+    assert any("EXPIRED" in error for error in expired)
