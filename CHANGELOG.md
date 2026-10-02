@@ -1,3 +1,18 @@
+## v0.47.29 (2026-10-02)
+
+### Release
+- Cut omnibase-core from dev at 0.47.29 by the scheduled release train.
+- 6 release-relevant commit(s) merged since v0.47.28.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.28
+- feat: shape-gate detectors run on every PR, whatever the preflight says (#1833)
+- feat: canonical-file-shape ratchet carries a renamed file's baseline entry (#1843)
+- fix: onex-work-ledger render --repair refuses ledger writes under a test runner (#1842)
+- feat: canonical-file-shape accepts the baseline a declared gate names (#1839)
+- feat: structural direct-model-call gate node and check-direct-model-call hook (#1837)
+- feat: canonical-file-shape ratchet refuses new scripts, plugins and exceptions (#1836)
+
 ## v0.47.28 (2026-10-01)
 
 ### Release
