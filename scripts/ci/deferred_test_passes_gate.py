@@ -64,7 +64,7 @@ differences, each because the in-job evaluation could not work or because
 
 * A check-run that started after the PR merged is not the PR's CI (OMN-20369).
   On a push the recorded PR's head is judged, and workflows the PR's closing
-  triggers (the node redeploy trigger, the dev-lane and k3s onex-lab verify
+  triggers (the node redeploy trigger, the post-merge deploy verify
   jobs, the release auto-tag) post rows on that same head after the merge. The
   PR's own CI never had them and could never fail on them, yet each red one
   turned the dev push's CI Summary red with no code defect (omnibase_infra runs
