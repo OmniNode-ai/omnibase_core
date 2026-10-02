@@ -19,6 +19,18 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-untracked-todos
+  name: No untracked TODO/FIXME/HACK comments
+  description: >
+    Require all TODO/FIXME/HACK comments to reference a Linear ticket (OMN-XXXX). Ported from onex_change_control
+    (OMN-20068, S8).
+  language: python
+  entry: python -m omnibase_core.handlers.handler_todo_format
+  types: [python]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-local-paths
   name: Check for local path references
   description: >
