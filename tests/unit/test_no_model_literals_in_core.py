@@ -51,6 +51,23 @@ _DELETED_B1_FILES: tuple[str, ...] = (
     "src/omnibase_core/constants/constants_llm_refs.py",
     "src/omnibase_core/models/configuration/model_tier_config.py",
 )
+_REMOVED_B1_SYMBOLS: tuple[str, ...] = ("constants_llm_refs", "ModelTierConfig")
+
+
+def _files_naming(
+    symbols: tuple[str, ...], root: Path, base: Path | None = None
+) -> dict[str, list[str]]:
+    """Find removed symbol names in all regular files, excluding bytecode caches."""
+    base = _REPO_ROOT if base is None else base
+    by_file: dict[str, list[str]] = {}
+    for path in sorted(root.rglob("*")):
+        if "__pycache__" in path.parts or not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        found = [symbol for symbol in symbols if symbol in text]
+        if found:
+            by_file[path.relative_to(base).as_posix()] = found
+    return by_file
 
 
 def _model_and_endpoint_findings() -> dict[str, list[str]]:
@@ -83,6 +100,21 @@ def test_no_model_or_endpoint_literal_outside_the_residual_set() -> None:
 def test_the_b1_modules_are_gone() -> None:
     present = [p for p in _DELETED_B1_FILES if (_REPO_ROOT / p).exists()]
     assert present == []
+
+
+def test_no_source_file_names_a_removed_b1_symbol() -> None:
+    findings = _files_naming(_REMOVED_B1_SYMBOLS, _SRC)
+    assert findings == {}, (
+        f"core source files must not name removed B1 symbols: {findings}"
+    )
+
+
+def test_the_symbol_scan_positive_control(tmp_path: Path) -> None:
+    # A zero is only evidence when the same scan can return a row (rule 16).
+    (tmp_path / "planted.txt").write_text("ModelTierConfig\n", encoding="utf-8")
+    (tmp_path / "clean.txt").write_text("no removed symbols\n", encoding="utf-8")
+    findings = _files_naming(_REMOVED_B1_SYMBOLS, tmp_path, base=tmp_path)
+    assert findings == {"planted.txt": ["ModelTierConfig"]}
 
 
 def test_the_scan_sees_model_ids_positive_control() -> None:

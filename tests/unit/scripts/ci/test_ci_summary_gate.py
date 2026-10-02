@@ -101,6 +101,132 @@ def _all_good() -> list[dict]:
 _ALL_EXTERNAL_GREEN = [_check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS]
 
 
+class TestRunningRowsHoldTheVerdictOmn20066:
+    """In-run rows without a verdict must hold CI Summary at PENDING."""
+
+    @pytest.mark.parametrize("status", ["queued", "in_progress", "waiting", "pending"])
+    def test_running_unregistered_job_cannot_conclude_success(
+        self, status: str
+    ) -> None:
+        """Every running status holds an otherwise passing snapshot."""
+        jobs = _all_good() + [_job("Some New Job", None, status=status)]
+        code, report = evaluate(
+            jobs, run_attempt=1, external_check_runs=_ALL_EXTERNAL_GREEN
+        )
+        assert code == EXIT_PENDING, report
+        assert (
+            "  default-deny sweep rows still running (PENDING, re-polled): Some New Job"
+            in report
+        )
+
+    @pytest.mark.parametrize("status", ["queued", "in_progress", "waiting", "pending"])
+    def test_merge_group_running_unregistered_job_holds_pending(
+        self, status: str
+    ) -> None:
+        """Merge-group's external-context tier also waits for in-run rows."""
+        jobs = _all_good() + [_job("Some New Job", None, status=status)]
+        code, report = evaluate(
+            jobs,
+            run_attempt=1,
+            external_contexts=external_contexts_for_event("merge_group"),
+        )
+        assert code == EXIT_PENDING, report
+        assert "Some New Job" in report
+
+    def test_running_job_then_completed_success_concludes_success(self) -> None:
+        """A successful completion clears the running row's pending verdict."""
+        jobs = _all_good() + [_job("Some New Job", None, status="in_progress")]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_PENDING, report
+        jobs[-1] = _job("Some New Job", "success")
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_SUCCESS, report
+        assert "default-deny sweep rows still running" not in report
+
+    def test_running_job_then_completed_failure_fails(self) -> None:
+        """A failed completion remains a default-deny sweep failure."""
+        jobs = _all_good() + [_job("Some New Job", None, status="in_progress")]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_PENDING, report
+        jobs[-1] = _job("Some New Job", "failure")
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_FAILURE, report
+        assert "default-deny sweep failures: Some New Job" in report
+        assert "default-deny sweep rows still running" not in report
+
+    def test_failure_wins_over_a_running_row(self) -> None:
+        """A completed failure takes precedence over an undecided row."""
+        jobs = _all_good() + [
+            _job("Failed New Job", "failure"),
+            _job("Some New Job", None, status="in_progress"),
+        ]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_FAILURE, report
+        assert "default-deny sweep failures: Failed New Job" in report
+
+    @pytest.mark.parametrize("name", [*sorted(SOFT_ALLOWLIST), "CI Summary"])
+    def test_allowlisted_running_rows_do_not_hold(self, name: str) -> None:
+        """Advisory rows and the poller itself stay exempt."""
+        jobs = _all_good() + [_job(name, None, status="in_progress")]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_SUCCESS, report
+        assert "default-deny sweep rows still running" not in report
+
+    def test_every_job_needing_ci_summary_is_allowlisted(self) -> None:
+        """Jobs waiting directly on CI Summary must not deadlock its poller."""
+        workflow = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
+        for job_id, job in workflow["jobs"].items():
+            needs = job.get("needs", [])
+            if isinstance(needs, str):
+                needs = [needs]
+            if "ci-summary" in needs:
+                display_name = job.get("name") or job_id
+                assert display_name in SOFT_ALLOWLIST, display_name
+
+    def test_same_attempt_running_duplicate_is_not_hidden_by_success(self) -> None:
+        jobs = _all_good() + [
+            _job("Duplicate Job", None, status="in_progress"),
+            _job("Duplicate Job", "success"),
+        ]
+        code, report = evaluate(
+            jobs, run_attempt=1, external_check_runs=_ALL_EXTERNAL_GREEN
+        )
+        assert code == EXIT_PENDING, report
+        assert (
+            "default-deny sweep rows still running (PENDING, re-polled): Duplicate Job"
+            in report
+        )
+
+    @pytest.mark.parametrize("run_attempt", [None, 2])
+    def test_older_attempt_running_row_is_ignored(
+        self, run_attempt: int | None
+    ) -> None:
+        jobs = _all_good() + [
+            _job("Some New Job", None, status="in_progress", attempt=1),
+            _job("Some New Job", "success", attempt=2),
+        ]
+        if run_attempt is not None:
+            jobs = [dict(job, run_attempt=2) for job in _all_good()] + jobs[-2:]
+        code, report = evaluate(
+            jobs, run_attempt=run_attempt, external_check_runs=_ALL_EXTERNAL_GREEN
+        )
+        assert code == EXIT_SUCCESS, report
+        assert "default-deny sweep rows still running" not in report
+
+    def test_running_rows_are_reported_once_in_sorted_order(self) -> None:
+        jobs = _all_good() + [
+            _job("Z Job", None, status="queued"),
+            _job("A Job", None, status="in_progress"),
+            _job("A Job", None, status="waiting"),
+        ]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_PENDING, report
+        assert (
+            "  default-deny sweep rows still running (PENDING, re-polled): A Job, Z Job"
+            in report
+        )
+
+
 class TestCiSummaryGate:
     def test_all_good_is_success(self) -> None:
         code, _ = evaluate(_all_good(), external_check_runs=_ALL_EXTERNAL_GREEN)

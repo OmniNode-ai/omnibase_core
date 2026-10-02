@@ -1,15 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""OMN-20132 - the Receipt Gate's validator checkout must know today's receipt shape.
+"""OMN-20132 / OMN-20375 - the validator checkout must know today's receipt shape.
 
 ``receipt-gate.yml`` checks out omnibase_core at a pinned sha to supply the
-validator source. ModelDodReceipt forbids extra fields, so when the pin
-predated ``tree_sha`` (omnibase_core#1748) every receipt written by current
-tooling failed ``verify / verify`` with ``extra_forbidden``. This test reads
-the pin, reads ModelDodReceipt at that exact sha, and asserts the floor of
-fields the corpus already contains. Raise the floor when a new field starts
-appearing in written receipts; the failure then names the pin to advance.
+validator source. ModelDodReceipt forbids extra fields, so pins predating
+``tree_sha`` (omnibase_core#1748) or ``artifact_sha256`` (omnibase_core#1829)
+reject receipts carrying those fields in ``verify / verify`` with
+``extra_forbidden``. This test reads the pin, reads ModelDodReceipt at that
+exact sha, and asserts the floor of fields the corpus already contains.
+Raise the floor when a new field starts appearing in written receipts; the
+failure then names the pin to advance.
 """
 
 from __future__ import annotations
@@ -30,7 +31,8 @@ MODEL_PATH = "src/omnibase_core/models/contracts/ticket/model_dod_receipt.py"
 CHECKOUT_PATH = ".receipt-gate-deps/omnibase_core"
 
 # Fields receipts already carry in the wild. tree_sha: omnibase_core#1748.
-REQUIRED_RECEIPT_FIELDS = frozenset({"tree_sha"})
+# artifact_sha256: omnibase_core#1829 (OMN-20375)
+REQUIRED_RECEIPT_FIELDS = frozenset({"tree_sha", "artifact_sha256"})
 
 
 def _pinned_validator_ref() -> str:
@@ -62,8 +64,10 @@ def _git(*args: str) -> subprocess.CompletedProcess[str]:
 def _model_source_at(ref: str) -> str:
     shown = _git("show", f"{ref}:{MODEL_PATH}")
     if shown.returncode != 0:
-        _git("fetch", "--depth=1", "origin", ref)
-        shown = _git("show", f"{ref}:{MODEL_PATH}")
+        # A fetched tag is not stored as a local ref, so read FETCH_HEAD, and
+        # only when this fetch succeeded (a failed fetch leaves an older one).
+        if _git("fetch", "--depth=1", "origin", ref).returncode == 0:
+            shown = _git("show", f"FETCH_HEAD:{MODEL_PATH}")
     if shown.returncode != 0:
         pytest.skip(f"validator ref {ref} is not reachable from this checkout")
     return shown.stdout
@@ -107,3 +111,16 @@ def test_floor_rejects_the_pre_tree_sha_pin() -> None:
     old = "a03b10720db364575b0477003da95b46de765950"  # pragma: allowlist secret
     fields = _model_fields(_model_source_at(old))
     assert "tree_sha" not in fields
+
+
+def test_floor_rejects_the_pre_artifact_sha256_pin() -> None:
+    """Positive control: v0.47.27 is below the floor.
+
+    It is the last release before omnibase_core#1829 added artifact_sha256 and
+    a descendant of the old pin d35ae63d3687. A tag, because GitHub fetches a
+    sha only in full and a full sha literal needs a secrets suppression.
+    """
+    old = "v0.47.27"
+    fields = _model_fields(_model_source_at(old))
+    assert "artifact_sha256" not in fields
+    assert "tree_sha" in fields
