@@ -13,6 +13,9 @@
 #   3. Commit + push a bot/bump-omnibase-core-pin-<shortsha> branch.
 #   4. Open a PR titled "chore(ci): bump omnibase_core pin to <shortsha> [bot]".
 #   5. Enable auto-merge SQUASH via GraphQL so the PR merges on green CI.
+#      Arming is skipped where the repo disallows auto-merge (OMN-20361); the
+#      PR URL and a hand-landing line go to the step summary and the leg stays
+#      green. Any other arming failure still fails the leg.
 #
 # Failures on a single downstream repo must NOT cascade — each matrix leg is
 # `continue-on-error: true` so a bad pin surface on one repo doesn't block the
@@ -239,8 +242,39 @@ jobs:
           fi
 
           PR_NUMBER=$(echo "$PR_URL" | sed -E 's#.*/pull/([0-9]+).*#\1#')
+
+          # OMN-20361: a repo with allow_auto_merge=false refuses the arm call
+          # ("Auto merge is not allowed for this repository"), which turned the
+          # leg red after the PR already existed. Skip arming there and leave
+          # the PR for the landing controller. Only an explicit false skips up
+          # front: an App-token read of the setting can return null (OMN-19852),
+          # so null/empty still attempts the arm call and treats that exact
+          # refusal as the same skip. Any other failure still fails the leg.
+          skip_arming() {
+            echo "::notice::auto-merge is not allowed on OmniNode-ai/${REPO}; PR ${PR_URL} left unarmed for the landing controller"
+            {
+              echo "### ${REPO}: auto-merge not allowed, PR left unarmed"
+              echo "- PR: ${PR_URL}"
+              echo "- Land by hand: \`gh pr merge ${PR_NUMBER} --repo OmniNode-ai/${REPO} --squash\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          ALLOW=$(gh api "repos/OmniNode-ai/${REPO}" --jq '.allow_auto_merge')
+          if [[ "$ALLOW" == "false" ]]; then
+            skip_arming
+            exit 0
+          fi
+
           PR_ID=$(gh api "repos/OmniNode-ai/${REPO}/pulls/${PR_NUMBER}" --jq '.node_id')
-          gh api graphql -f query='mutation($id:ID!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:SQUASH}){pullRequest{number}}}' -f id="$PR_ID"
+          if ! ARM_OUT=$(gh api graphql -f query='mutation($id:ID!){enablePullRequestAutoMerge(input:{pullRequestId:$id,mergeMethod:SQUASH}){pullRequest{number}}}' -f id="$PR_ID" 2>&1); then
+            if [[ "$ARM_OUT" == *"Auto merge is not allowed for this repository"* ]]; then
+              skip_arming
+              exit 0
+            fi
+            echo "$ARM_OUT"
+            exit 1
+          fi
+          echo "$ARM_OUT"
 
       - name: Report no-op
         if: steps.diff.outputs.changed == 'false'
