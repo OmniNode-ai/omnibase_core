@@ -11,6 +11,11 @@
 # pattern for precedent). Required status-check name: `receipt-gate / verify`.
 #
 # Inputs:
+#   evidence-source: occ (default) or caller. `caller` reads
+#                   contracts/<OMN-N>.yaml from the caller's own checkout at
+#                   the PR head and runs no OCC checkout.
+#   verifier-version: pinned omnimarket PyPI release for caller mode
+#                   (default: 0.4.280; must be numeric MAJOR.MINOR.PATCH).
 #   contracts-dir:  path to ticket contract YAMLs, relative to the
 #                   onex_change_control checkout (default: contracts). The
 #                   Run Receipt-Gate step always prepends `.onex_change_control/`
@@ -42,6 +47,16 @@ name: receipt-gate
 on:
   workflow_call:
     inputs:
+      evidence-source:
+        description: "Evidence source: occ or caller (contracts at the caller's PR head)."
+        type: string
+        required: false
+        default: occ
+      verifier-version:
+        description: Pinned omnimarket PyPI release for caller evidence verification.
+        type: string
+        required: false
+        default: "0.4.280"
       contracts-dir:
         description: Path to the contracts directory on disk, relative to the onex_change_control checkout.
         type: string
@@ -70,6 +85,7 @@ permissions:
 jobs:
   verify:
     name: verify
+    if: inputs.evidence-source != 'caller'
     # OMN-18205: the untrusted test is the FORK test, and only the fork test.
     # This selector sent EVERY pull-request event to the public class,
     # same-repo ones included, so every repository consuming this reusable had
@@ -1019,3 +1035,251 @@ jobs:
             $PR_NUMBER_ARG \
             $PR_OPENED_AT_ARG \
             "${commit_args[@]}"
+
+  dod-verify:
+    name: dod-verify
+    if: inputs.evidence-source == 'caller'
+    # Same runner routing expression as verify (OMN-18205).
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
+    timeout-minutes: 40
+    env:
+      ACTIONS_CACHE_URL: ""
+      ACTIONS_RUNTIME_URL: ""
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Refuse anything but a same-repository pull request
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          CALLER_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request|pull_request_target) ;;
+            *)
+              echo "::error::caller evidence requires a pull_request or pull_request_target event"
+              exit 1
+              ;;
+          esac
+          if [ "$HEAD_REPOSITORY" != "$CALLER_REPOSITORY" ]; then
+            echo "::error::caller evidence requires a same-repository pull request; fork heads are refused"
+            exit 1
+          fi
+
+      - name: Resolve the cited tickets
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/dod"
+          printf '%s\n' "$PR_TITLE" | grep -oE 'OMN-[0-9]+' | sort -u > "$RUNNER_TEMP/dod/tickets.txt" || true
+          if [ ! -s "$RUNNER_TEMP/dod/tickets.txt" ]; then
+            echo "::error::pull request title must cite at least one OMN-[0-9]+ ticket"
+            exit 1
+          fi
+          while IFS= read -r ticket; do
+            if [[ ! "$ticket" =~ ^OMN-[0-9]+$ ]]; then
+              echo "::error::invalid cited ticket id"
+              exit 1
+            fi
+          done < "$RUNNER_TEMP/dod/tickets.txt"
+
+      - name: Check out the pull request head
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          path: .dod-verify/head_home/${{ github.event.repository.name }}
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install the pinned verifier
+        env:
+          VERIFIER_VERSION: ${{ inputs.verifier-version }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERIFIER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::verifier-version must match numeric MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          uv venv --clear --python 3.13 "$GITHUB_WORKSPACE/.dod-verify/venv"
+          uv pip install --python "$GITHUB_WORKSPACE/.dod-verify/venv/bin/python" --no-config "omnimarket==${VERIFIER_VERSION}"
+          DOD_VERIFY_PY="$GITHUB_WORKSPACE/.dod-verify/venv/bin/python"
+          echo "DOD_VERIFY_PY=$DOD_VERIFY_PY" >> "$GITHUB_ENV"
+          "$DOD_VERIFY_PY" -c "import omnimarket.nodes.node_dod_verify"
+
+      - name: Verify the contract at the PR head
+        env:
+          REPO_SHORT: ${{ github.event.repository.name }}
+          GH_TOKEN: ${{ github.token }}
+          # CI checks the exact subject commit, detached from a moving upstream.
+          DOD_VERIFY_ALLOW_STALE_PRODUCT_CLONE: "1"
+        run: |
+          set -euo pipefail
+          export OMNI_HOME="$GITHUB_WORKSPACE/.dod-verify/head_home"
+          head_tree="$OMNI_HOME/$REPO_SHORT"
+          cd "$head_tree"
+          while IFS= read -r ticket; do
+            contract="$head_tree/contracts/$ticket.yaml"
+            if [ ! -f "$contract" ]; then
+              echo "::error::pull request cites $ticket but carries no contracts/$ticket.yaml"
+              exit 1
+            fi
+            result="$RUNNER_TEMP/dod/head-$ticket.json"
+            rc=0
+            "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
+              --ticket-id "$ticket" --contract-path "$contract" --execution-audience hosted \
+              --output-path "$RUNNER_TEMP/dod/head-$ticket.receipt.json" > "$result" || rc=$?
+            # --output-path adds this non-JSON line after the pretty JSON document.
+            sed -i '/^Receipt written to: /d' "$result"
+            if [ "$rc" -ne 0 ]; then
+              diagnostic="$(jq -s -er 'if length == 1 and (.[0] | type == "object") then .[0] | "status=\(.status) error_message=\(.error_message // "")" else error("invalid verdict") end' "$result" 2>/dev/null || printf '%s' 'stdout is not JSON; status and error_message unavailable')"
+              echo "::error::$ticket head verification failed (exit $rc): $diagnostic"
+              exit 1
+            fi
+            if ! jq -s -e 'length == 1 and (.[0] | type == "object" and .status == "verified")' "$result" > /dev/null; then
+              echo "::error::$ticket head verification did not return one verified JSON verdict"
+              exit 1
+            fi
+            echo "$ticket head: verified"
+          done < "$RUNNER_TEMP/dod/tickets.txt"
+
+      - name: Prepare the merge base with the pull request's test side laid over it
+        env:
+          REPO_SHORT: ${{ github.event.repository.name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          head_tree="$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT"
+          base_tree="$GITHUB_WORKSPACE/.dod-verify/base_home/$REPO_SHORT"
+          if ! git -C "$head_tree" cat-file -e "$BASE_SHA^{commit}"; then
+            git -C "$head_tree" fetch --no-tags origin "$BASE_SHA"
+          fi
+          MB=$(git -C "$head_tree" merge-base "$BASE_SHA" "$HEAD_SHA")
+          printf '%s\n' "$MB" > "$RUNNER_TEMP/dod/merge-base.txt"
+          # A self-hosted workspace outlives the job: clear a previous run's base tree.
+          rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home"
+          git -C "$head_tree" worktree prune
+          mkdir -p "$GITHUB_WORKSPACE/.dod-verify/base_home"
+          git -C "$head_tree" worktree add --detach "$base_tree" "$MB"
+          git -C "$head_tree" diff --name-only --diff-filter=ACMR -z "$MB" "$HEAD_SHA" > "$RUNNER_TEMP/dod/overlay-paths"
+          test_paths=0
+          while IFS= read -r -d '' path; do
+            if [[ "$path" == *..* || "$path" == /* ]]; then
+              echo "::error::unsafe overlay path refused"
+              exit 1
+            fi
+            test_side=false
+            if [[ "$path" =~ ^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$ ]]; then
+              test_side=true
+            fi
+            cited_contract=false
+            while IFS= read -r ticket; do
+              if [ "$path" = "contracts/$ticket.yaml" ]; then
+                cited_contract=true
+              fi
+            done < "$RUNNER_TEMP/dod/tickets.txt"
+            if [ "$test_side" = true ] || [ "$cited_contract" = true ]; then
+              git -C "$base_tree" checkout "$HEAD_SHA" -- "$path"
+              printf 'Overlaid: %s\n' "$path"
+              if [ "$test_side" = true ]; then
+                test_paths=$((test_paths + 1))
+              fi
+            fi
+          done < "$RUNNER_TEMP/dod/overlay-paths"
+          if [ "$test_paths" -eq 0 ]; then
+            echo "::error::no test-side change: the bound tests cannot be shown to fail at the merge base"
+            exit 1
+          fi
+
+      - name: Must-fail control at the merge base
+        env:
+          REPO_SHORT: ${{ github.event.repository.name }}
+          GH_TOKEN: ${{ github.token }}
+          # CI checks the exact subject commit, detached from a moving upstream.
+          DOD_VERIFY_ALLOW_STALE_PRODUCT_CLONE: "1"
+        run: |
+          set -euo pipefail
+          export OMNI_HOME="$GITHUB_WORKSPACE/.dod-verify/base_home"
+          base_tree="$OMNI_HOME/$REPO_SHORT"
+          cd "$base_tree"
+          failed=0
+          while IFS= read -r ticket; do
+            result="$RUNNER_TEMP/dod/base-$ticket.json"
+            control="$RUNNER_TEMP/dod/base-$ticket.control.txt"
+            printf '%s\n' 'refused' > "$control"
+            "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
+              --ticket-id "$ticket" --contract-path "$base_tree/contracts/$ticket.yaml" --execution-audience hosted \
+              --output-path "$RUNNER_TEMP/dod/base-$ticket.receipt.json" > "$result" || true
+            sed -i '/^Receipt written to: /d' "$result"
+            if ! jq -s -e 'length == 1 and (.[0] | type == "object" and (.checks | type == "array"))' "$result" > /dev/null 2>&1; then
+              echo "::error::$ticket: control stdout is not parseable as one JSON verdict with checks; evidence ids unavailable"
+              failed=1
+              continue
+            fi
+            bound="$RUNNER_TEMP/dod/base-$ticket.bound.json"
+            if ! jq '[.checks[] | select((.binds_ac | length) > 0)]' "$result" > "$bound"; then
+              echo "::error::$ticket: cannot read bound checks; evidence ids unavailable"
+              failed=1
+              continue
+            fi
+            if [ "$(jq 'length' "$bound")" -eq 0 ]; then
+              echo "::error::$ticket: zero bound checks (evidence ids: none); nothing is bound, so nothing can fail"
+              failed=1
+              continue
+            fi
+            verified_ids="$(jq -r '[.[] | select(.status == "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
+            other_ids="$(jq -r '[.[] | select(.status != "failed" and .status != "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
+            if [ -n "$verified_ids" ]; then
+              echo "::error::$ticket [$verified_ids]: bound test also passes at the merge base: the control did not fail (always-pass)"
+              failed=1
+            fi
+            if [ -n "$other_ids" ]; then
+              echo "::error::$ticket [$other_ids]: the control could not run, a control that did not run is not a pass"
+              failed=1
+            fi
+            if [ -n "$verified_ids" ] || [ -n "$other_ids" ]; then
+              continue
+            fi
+            ids="$(jq -r '[.[].evidence_id // "<missing evidence_id>"] | join(", ")' "$bound")"
+            printf '%s\n' 'passed: every bound check failed' > "$control"
+            echo "$ticket base control: passed; every bound check failed [$ids]"
+          done < "$RUNNER_TEMP/dod/tickets.txt"
+          exit "$failed"
+
+      - name: Summarise
+        if: always()
+        env:
+          VERIFIER_VERSION: ${{ inputs.verifier-version }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Best-effort summary, including when an earlier step failed.
+          {
+            printf 'Verifier version: %s\n\nHead SHA: %s\n\n' "$VERIFIER_VERSION" "$HEAD_SHA"
+            printf 'Merge base SHA: %s\n\n' "$(cat "$RUNNER_TEMP/dod/merge-base.txt" 2>/dev/null || printf '%s' 'unavailable')"
+            if [ -f "$RUNNER_TEMP/dod/tickets.txt" ]; then
+              while IFS= read -r ticket; do
+                verdict="$(jq -r '"status=\(.status), acceptance_basis=\(.acceptance_basis)"' "$RUNNER_TEMP/dod/head-$ticket.json" 2>/dev/null || printf '%s' 'unavailable')"
+                control="$(cat "$RUNNER_TEMP/dod/base-$ticket.control.txt" 2>/dev/null || printf '%s' 'not run')"
+                printf '%s: head %s; base control %s\n\n' "$ticket" "$verdict" "$control"
+              done < "$RUNNER_TEMP/dod/tickets.txt"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY" || true
+          exit 0
