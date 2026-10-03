@@ -15,10 +15,10 @@ from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply
     write_payload,
 )
 
-__all__ = ["SprintRollJournal"]
+__all__ = ["NodeSprintRollJournal"]
 
 
-class SprintRollJournal:
+class NodeSprintRollJournal:
     """Appends each write to a manifest BEFORE the transport is asked to send it.
 
     The ordering is the guarantee. A crash between the journal line and the mutation

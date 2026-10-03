@@ -14,7 +14,7 @@ ordering, the undo and the query text, and a test passes a recorder and asserts 
 sent.
 
 `with_retries` is the retry POLICY, which is not a transport: it wraps an injected
-callable and re-calls it when the callable raises :class:`LinearTransportError` (``node_linear_transport_error``) carrying a
+callable and re-calls it when the callable raises :class:`NodeLinearTransportError` (``node_linear_transport_error``) carrying a
 retryable status. The adapter that knows what a 503 is lives with the client, outside this
 package, and raises that typed error.
 """
@@ -32,7 +32,7 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect.node_linear_transport_error import (
-    LinearTransportError,
+    NodeLinearTransportError,
 )
 
 __all__ = [
@@ -92,12 +92,12 @@ def with_retries(
         for attempt in range(attempts):
             try:
                 return transport(query, variables)
-            except LinearTransportError as exc:
+            except NodeLinearTransportError as exc:
                 retryable = exc.status in RETRYABLE_STATUS
                 if not retryable or attempt == attempts - 1:
                     raise
                 sleep(3 * (attempt + 1))
-        raise LinearTransportError("transport exhausted without a result")
+        raise NodeLinearTransportError("transport exhausted without a result")
 
     return call
 
@@ -112,10 +112,10 @@ def node_rows(data: GraphQLPayload, collection: str) -> list[GraphQLPayload]:
     """
     holder = data.get(collection)
     if not isinstance(holder, dict):
-        raise LinearTransportError(f"Linear returned no {collection} object")
+        raise NodeLinearTransportError(f"Linear returned no {collection} object")
     rows = holder.get("nodes")
     if not isinstance(rows, list):
-        raise LinearTransportError(f"Linear returned no {collection}.nodes list")
+        raise NodeLinearTransportError(f"Linear returned no {collection}.nodes list")
     return [row for row in rows if isinstance(row, dict)]
 
 
@@ -142,7 +142,7 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
         key=lambda p: _text(p, "startDate"),
     )
     if not dated:
-        raise LinearTransportError("no dated sprint project exists")
+        raise NodeLinearTransportError("no dated sprint project exists")
     iso = as_of.isoformat()
     containing = next(
         (p for p in dated if _text(p, "startDate") <= iso <= _text(p, "targetDate")),
@@ -152,7 +152,7 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
         return dt.date.fromisoformat(_text(containing, "startDate"))
     ended = [p for p in dated if _text(p, "targetDate") < iso]
     if not ended:
-        raise LinearTransportError(
+        raise NodeLinearTransportError(
             f"no sprint has ended before {iso} and {iso} is not the last day of any "
             "sprint window, so there is nothing to roll"
         )
@@ -167,7 +167,7 @@ def label_uuid(transport: GraphQLTransport, name: str) -> str:
     )
     rows = node_rows(data, "issueLabels")
     if not rows:
-        raise LinearTransportError(f"no label named {name!r}")
+        raise NodeLinearTransportError(f"no label named {name!r}")
     return _text(rows[0], "id")
 
 
@@ -180,7 +180,9 @@ def state_uuid(transport: GraphQLTransport, team_key: str, state_name: str) -> s
     )
     rows = node_rows(data, "workflowStates")
     if not rows:
-        raise LinearTransportError(f"team {team_key} has no state named {state_name!r}")
+        raise NodeLinearTransportError(
+            f"team {team_key} has no state named {state_name!r}"
+        )
     return _text(rows[0], "id")
 
 

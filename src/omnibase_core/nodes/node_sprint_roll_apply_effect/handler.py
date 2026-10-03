@@ -33,7 +33,7 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect.node_sprint_roll_journal import (
-    SprintRollJournal,
+    NodeSprintRollJournal,
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
     GraphQLPayload,
@@ -118,7 +118,7 @@ class NodeSprintRollApplyEffect:
                 write_calls=0,
             )
 
-        journal = SprintRollJournal(request.manifest_path)
+        journal = NodeSprintRollJournal(request.manifest_path)
         for write in planned:
             journal.send(self._transport, write)
             self._writes += 1

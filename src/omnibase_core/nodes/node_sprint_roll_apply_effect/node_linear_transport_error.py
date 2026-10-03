@@ -4,10 +4,10 @@
 
 from __future__ import annotations
 
-__all__ = ["LinearTransportError"]
+__all__ = ["NodeLinearTransportError"]
 
 
-class LinearTransportError(RuntimeError):
+class NodeLinearTransportError(RuntimeError):
     """A Linear call failed.
 
     `status` is the HTTP status when the caller's adapter knows one, and None otherwise.
