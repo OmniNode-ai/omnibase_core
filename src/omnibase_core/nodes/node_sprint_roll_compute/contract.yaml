@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the sprint_roll COMPUTE node.
+# Regenerates the omni plugin's `sprint-roll` placement arithmetic (OMN-20395) into a
+# canonical def-B NodeCompute, after the canonical-file-shape gate (OMN-20304) refused
+# the script form under the operator ruling of 2026-10-01. Same migration as
+# node_test_selector_compute did for scripts/ci/detect_test_paths.py.
+#
+# See: OMN-20396 (parent OMN-20395; the paired EFFECT half is OMN-20397)
+
+name: node_sprint_roll_compute
+node_id: node_sprint_roll_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Resolves a sprint roll: given a sprint window, the run date, and the release-criterion carrier lists
+  with their wording, it returns where every open ticket lands. The sprint drained is the one ending or
+  most recently ended, never one that has just begun. Every open ticket across the window is pooled and
+  ranked once (in flight, then carrier, then named by a criterion, then larger estimate) and placed forward
+  to a cap measured from the drained sprint's own throughput, so a pre-full later sprint yields its slots
+  rather than the roll queueing behind it. A ticket no carrier list names gets a criterion proposal taken
+  from its own Gate line, or none at all when the wording overlap is weak. Pure — no Linear call, no filesystem,
+  no clock, no global state; all I/O belongs to the paired EFFECT node. #magic___^_^___line
+input_model: omnibase_core.models.nodes.sprint_roll.model_sprint_roll_request.ModelSprintRollRequest
+output_model: omnibase_core.models.nodes.sprint_roll.model_sprint_roll_plan.ModelSprintRollPlan
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeSprintRollCompute
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
