@@ -9,6 +9,7 @@ comment of its own.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -418,3 +419,95 @@ def test_main_exit_codes_and_explicit_revisions(
 
 def test_write_baseline_refused_when_present(repo: Path) -> None:
     assert main(["--write-baseline"], repo_root=repo, env=_env()) == 1
+
+
+# The launching Mac's failure mode (OMN-17427): a pipe to the child's stdin is
+# writable once and never reports writable to poll() again, so a parent that
+# feeds ``git cat-file --batch`` over that pipe sleeps forever. This selector
+# drops every write-ready event; the child process installs it as the one
+# ``subprocess`` uses, then reads more than 1 KB of requests.
+_STALLED_PIPE_CHILD = """
+import selectors, subprocess, sys, time
+from pathlib import Path
+
+from omnibase_core.validators.canonical_file_shape import INDEX, GitRepo
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
+
+
+class StalledPipeSelector(selectors.PollSelector):
+    def select(self, timeout=None):
+        ready = [
+            (key, events & ~selectors.EVENT_WRITE)
+            for key, events in super().select(timeout)
+        ]
+        ready = [(key, events) for key, events in ready if events]
+        if not ready:
+            time.sleep(0.05)
+        return ready
+
+
+subprocess._PopenSelector = StalledPipeSelector
+paths = sys.argv[2:]
+blobs = GitRepo(root=Path(sys.argv[1]), env=scrub_git_location_env()).read_blobs(
+    INDEX, paths
+)
+print(sum(1 for path in paths if blobs[path] == f"{path}\\n".encode()))
+"""
+
+
+def test_read_blobs_does_not_wait_on_stdin_pipe(repo: Path) -> None:
+    paths = [f"docs/stall/file_{i:03d}.md" for i in range(60)]
+    for path in paths:
+        _write(repo, path, f"{path}\n")
+    _stage(repo)
+    assert sum(len(p) + 2 for p in paths) > 1100
+
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-c", _STALLED_PIPE_CHILD, str(repo), *paths],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=20,
+        )
+    except subprocess.TimeoutExpired:
+        pytest.fail("read_blobs stalled on the cat-file stdin pipe")
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.strip() == str(len(paths))
+
+
+def test_large_staged_delta_completes(repo: Path) -> None:
+    # A merge commit carrying a whole dev delta: the requests and the responses
+    # are each far larger than a pipe buffer.
+    body = "x" * 2048 + "\n"
+    paths = [f"docs/delta/part_{i // 100:02d}/file_{i:04d}.md" for i in range(3000)]
+    for path in paths:
+        _write(repo, path, body)
+    _stage(repo)
+
+    git = GitRepo(root=repo, env=_env())
+    assert check(git, INDEX, "HEAD") == []
+    blobs = git.read_blobs(INDEX, [*paths, "docs/delta/absent.md"])
+    assert all(blobs[path] == body.encode() for path in paths)
+    assert blobs["docs/delta/absent.md"] is None
+
+
+def test_read_blobs_fails_loud_when_cat_file_hangs(
+    repo: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import omnibase_core.validators.canonical_file_shape as module
+
+    bin_dir = tmp_path_factory.mktemp("bin")
+    fake_git = bin_dir / "git"
+    fake_git.write_text("#!/bin/sh\nexec sleep 30\n", encoding="utf-8")
+    fake_git.chmod(0o755)
+    env = _env()
+    env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+    monkeypatch.setattr(module, "CAT_FILE_TIMEOUT_S", 1)
+
+    with pytest.raises(subprocess.TimeoutExpired):
+        GitRepo(root=repo, env=env).read_blobs(INDEX, ["docs/any.md"])
