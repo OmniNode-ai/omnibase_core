@@ -24,14 +24,12 @@ TWO FACTS ABOUT THE BOARD shape this module and are easy to get wrong:
 
 from __future__ import annotations
 
-import json
-import ssl
 import time
-import urllib.error
-import urllib.request
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+import httpx
 
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
@@ -68,38 +66,44 @@ class LinearTransportError(RuntimeError):
 
 
 def http_transport(api_key: str, *, timeout: float = 120.0) -> GraphQLTransport:
-    """A real transport. The key is never logged, printed or put in a URL."""
-    context = ssl.create_default_context()
-    try:
-        import certifi
+    """A real transport over httpx, the client this package already depends on.
 
-        context = ssl.create_default_context(cafile=certifi.where())
-    except ImportError:  # pragma: no cover - certifi is a normal dependency
-        pass
+    httpx rather than `urllib.request.urlopen`: urlopen takes any scheme a caller can
+    smuggle into the URL, which is what ruff's S310 is about, and it needs the certifi
+    bundle wired in by hand. httpx verifies against certifi by default and only speaks
+    HTTP.
+
+    The key is passed as a header and never put in a URL, a log line or an exception
+    message -- a transport error names the status and the attempt count, nothing else.
+    """
 
     def call(query: str, variables: dict[str, Any]) -> dict[str, Any]:
-        body = json.dumps({"query": query, "variables": variables}).encode()
+        payload = {"query": query, "variables": variables}
+        headers = {"Authorization": api_key, "Content-Type": "application/json"}
         for attempt in range(MAX_ATTEMPTS):
-            request = urllib.request.Request(
-                LINEAR_API,
-                data=body,
-                headers={"Authorization": api_key, "Content-Type": "application/json"},
-            )
             try:
-                with urllib.request.urlopen(
-                    request, context=context, timeout=timeout
-                ) as response:
-                    payload = json.load(response)
-            except urllib.error.HTTPError as exc:
-                if exc.code in RETRYABLE_STATUS and attempt < MAX_ATTEMPTS - 1:
+                response = httpx.post(
+                    LINEAR_API, json=payload, headers=headers, timeout=timeout
+                )
+            except httpx.TransportError as exc:
+                if attempt < MAX_ATTEMPTS - 1:
                     time.sleep(3 * (attempt + 1))
                     continue
                 raise LinearTransportError(
-                    f"Linear returned HTTP {exc.code} after {attempt + 1} attempt(s)"
+                    f"Linear unreachable after {attempt + 1} attempt(s)"
                 ) from exc
-            if "errors" in payload:
-                raise LinearTransportError(f"Linear API error: {payload['errors']}")
-            data = payload.get("data")
+            if response.status_code in RETRYABLE_STATUS and attempt < MAX_ATTEMPTS - 1:
+                time.sleep(3 * (attempt + 1))
+                continue
+            if response.status_code >= 400:
+                raise LinearTransportError(
+                    f"Linear returned HTTP {response.status_code} after "
+                    f"{attempt + 1} attempt(s)"
+                )
+            body = response.json()
+            if "errors" in body:
+                raise LinearTransportError(f"Linear API error: {body['errors']}")
+            data = body.get("data")
             if not isinstance(data, dict):
                 raise LinearTransportError("Linear returned no data object")
             return data
