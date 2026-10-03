@@ -16,6 +16,12 @@
 #                   the PR head and runs no OCC checkout.
 #   verifier-version: pinned omnimarket PyPI release for caller mode
 #                   (default: 0.4.280; must be numeric MAJOR.MINOR.PATCH).
+#   compare-with-occ: "true" during the pilot, when dod-verify is required
+#                   beside OCC's contexts; "false" otherwise (default: "false").
+#   occ-context:    check run name carrying OCC's verdict
+#                   (default: "occ-preflight / eligibility").
+#   occ-wait-seconds: bounded wait for OCC's verdict on the same PR head
+#                   (default: "1500").
 #   contracts-dir:  path to ticket contract YAMLs, relative to the
 #                   onex_change_control checkout (default: contracts). The
 #                   Run Receipt-Gate step always prepends `.onex_change_control/`
@@ -57,6 +63,21 @@ on:
         type: string
         required: false
         default: "0.4.280"
+      compare-with-occ:
+        description: "Compare with OCC during the pilot, when dod-verify is required beside OCC's contexts: true or false."
+        type: string
+        required: false
+        default: "false"
+      occ-context:
+        description: Check run name carrying OCC's verdict on the same PR head.
+        type: string
+        required: false
+        default: "occ-preflight / eligibility"
+      occ-wait-seconds:
+        description: Bounded wait in seconds for OCC's verdict on the same PR head.
+        type: string
+        required: false
+        default: "1500"
       contracts-dir:
         description: Path to the contracts directory on disk, relative to the onex_change_control checkout.
         type: string
@@ -1073,8 +1094,16 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           CALLER_REPOSITORY: ${{ github.repository }}
+          COMPARE_WITH_OCC: ${{ inputs.compare-with-occ }}
         run: |
           set -euo pipefail
+          case "$COMPARE_WITH_OCC" in
+            true|false) ;;
+            *)
+              echo "::error::compare-with-occ must be exactly true or false"
+              exit 1
+              ;;
+          esac
           case "$EVENT_NAME" in
             pull_request|pull_request_target) ;;
             *)
@@ -1277,6 +1306,74 @@ jobs:
           done < "$RUNNER_TEMP/dod/tickets.txt"
           exit "$failed"
 
+      # OMN-20072: during the pilot, repo-evidence / dod-verify is required
+      # beside OCC's contexts on the same PR head. The expected-difference
+      # table and classification live in node_dod_verify. An expected difference
+      # passes this step; earlier steps still enforce the new path's own refusal,
+      # and OCC's context stays required: a merge needs both (the stricter verdict).
+      # Check runs of a public repository are read with the job's existing read
+      # token. A private caller would need checks: read; an unreadable verdict
+      # fails closed as not_compared.
+      - name: Difference against OCC's verdict for the same head
+        if: ${{ !cancelled() && inputs.compare-with-occ == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          OCC_CONTEXT: ${{ inputs.occ-context }}
+          WAIT_SECONDS: ${{ inputs.occ-wait-seconds }}
+          NEGATIVE_CONTROL: ${{ contains(github.event.pull_request.labels.*.name, 'dod-negative-control') }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DOD_VERIFY_PY:-}" ]; then
+            echo "::error::the pinned verifier was not installed; the difference was not computed"
+            exit 1
+          fi
+          if [ ! -f "$RUNNER_TEMP/dod/tickets.txt" ]; then
+            echo "::error::tickets.txt is missing; the difference was not computed"
+            exit 1
+          fi
+          if [[ ! "$WAIT_SECONDS" =~ ^[0-9]+$ ]]; then
+            echo "::error::occ-wait-seconds must be a nonnegative integer"
+            exit 1
+          fi
+          occ_file="$RUNNER_TEMP/dod/occ-check-run.json"
+          rm -f "$occ_file"
+          deadline=$((SECONDS + 10#$WAIT_SECONDS))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            check_run="$(gh api -X GET "repos/$REPO/commits/$HEAD_SHA/check-runs" \
+              -f check_name="$OCC_CONTEXT" -f filter=latest -f per_page=1 \
+              --jq '.check_runs[0] // empty' 2>/dev/null)" || check_run=""
+            # A cancelled run is not OCC's verdict; wait for a newer run.
+            if [ -n "$check_run" ] && jq -e '.status == "completed" and .conclusion != "cancelled"' <<< "$check_run" > /dev/null; then
+              check_id="$(jq -r '.id' <<< "$check_run")"
+              annotations="$(gh api "repos/$REPO/check-runs/$check_id/annotations?per_page=100" 2>/dev/null)" || annotations='[]'
+              jq -n --argjson check_run "$check_run" --argjson annotations "$annotations" \
+                '{conclusion: $check_run.conclusion, html_url: ($check_run.html_url // ""), annotations: [$annotations[] | {message: .message}]}' > "$occ_file"
+              break
+            fi
+            remaining=$((deadline - SECONDS))
+            if [ "$remaining" -le 0 ]; then
+              break
+            fi
+            # Keep the final sleep within the caller's bounded wait.
+            sleep_seconds=30
+            if [ "$remaining" -lt "$sleep_seconds" ]; then
+              sleep_seconds="$remaining"
+            fi
+            sleep "$sleep_seconds"
+          done
+          if [ ! -f "$occ_file" ]; then
+            echo "::notice::OCC's verdict was not available within $WAIT_SECONDS seconds; the node will report not_compared and fail"
+          fi
+          difference_args=(--dod-dir "$RUNNER_TEMP/dod" \
+            --tickets-file "$RUNNER_TEMP/dod/tickets.txt" --occ-check-run "$occ_file")
+          if [ "$NEGATIVE_CONTROL" = true ]; then
+            difference_args+=(--negative-control)
+          fi
+          "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify occ-difference \
+            "${difference_args[@]}" | tee "$RUNNER_TEMP/dod/occ-difference.json"
+
       - name: Summarise
         if: always()
         env:
@@ -1287,6 +1384,9 @@ jobs:
           {
             printf 'Verifier version: %s\n\nHead SHA: %s\n\n' "$VERIFIER_VERSION" "$HEAD_SHA"
             printf 'Merge base SHA: %s\n\n' "$(cat "$RUNNER_TEMP/dod/merge-base.txt" 2>/dev/null || printf '%s' 'unavailable')"
+            if [ -f "$RUNNER_TEMP/dod/occ-difference.json" ]; then
+              jq -r '"OCC difference: \(.outcome) \(.reason_code) — \(.message)"' "$RUNNER_TEMP/dod/occ-difference.json" || true
+            fi
             if [ -f "$RUNNER_TEMP/dod/tickets.txt" ]; then
               while IFS= read -r ticket; do
                 verdict="$(jq -r '"status=\(.status), acceptance_basis=\(.acceptance_basis)"' "$RUNNER_TEMP/dod/head-$ticket.json" 2>/dev/null || printf '%s' 'unavailable')"
