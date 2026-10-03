@@ -474,8 +474,9 @@ def test_read_blobs_does_not_wait_on_stdin_pipe(repo: Path) -> None:
         )
     except subprocess.TimeoutExpired:
         pytest.fail("read_blobs stalled on the cat-file stdin pipe")
-    assert proc.returncode == 0, proc.stderr
-    assert proc.stdout.strip() == str(len(paths))
+    else:
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == str(len(paths))
 
 
 def test_large_staged_delta_completes(repo: Path) -> None:
@@ -499,15 +500,15 @@ def test_read_blobs_fails_loud_when_cat_file_hangs(
     tmp_path_factory: pytest.TempPathFactory,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import omnibase_core.validators.canonical_file_shape as module
-
     bin_dir = tmp_path_factory.mktemp("bin")
     fake_git = bin_dir / "git"
     fake_git.write_text("#!/bin/sh\nexec sleep 30\n", encoding="utf-8")
     fake_git.chmod(0o755)
     env = _env()
     env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
-    monkeypatch.setattr(module, "CAT_FILE_TIMEOUT_S", 1)
+    monkeypatch.setattr(
+        "omnibase_core.validators.canonical_file_shape.CAT_FILE_TIMEOUT_S", 1
+    )
 
     with pytest.raises(subprocess.TimeoutExpired):
         GitRepo(root=repo, env=env).read_blobs(INDEX, ["docs/any.md"])
