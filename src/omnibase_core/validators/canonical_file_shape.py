@@ -87,6 +87,7 @@ import argparse
 import re
 import subprocess
 import sys
+import tempfile
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -103,6 +104,8 @@ PRE_COMMIT_CONFIG = ".pre-commit-config.yaml"
 GATE_HOOK_ID = "check-direct-model-call"
 GATE_REPO_URL = re.compile(r"omnibase_core(\.git)?/?$")
 INDEX = ":"
+# Wall-clock ceiling for one cat-file run so a stall fails loud instead of hanging the hook.
+CAT_FILE_TIMEOUT_S = 300
 
 CODE_EXTENSIONS: frozenset[str] = frozenset(
     (
@@ -215,21 +218,35 @@ class GitRepo:
         return [path for meta, path in entries if not meta.startswith("160000")]
 
     def read_blobs(self, rev: str, paths: Iterable[str]) -> dict[str, bytes | None]:
-        """Contents of ``paths`` at ``rev`` (``INDEX`` for the index); None if absent."""
+        """Contents of ``paths`` at ``rev`` (``INDEX`` for the index); None if absent.
+
+        Requests and responses go through temporary files, not pipes: on the
+        launching Mac, a request over about 1 KB on the child's stdin pipe never
+        became writable again, and the hook slept at 0% CPU forever (OMN-17427).
+        The run has a wall-clock ceiling so a stall fails loud.
+        """
         wanted = list(dict.fromkeys(paths))
         if not wanted:
             return {}
         prefix = ":" if rev == INDEX else f"{rev}:"
         spec = "".join(f"{prefix}{path}\n" for path in wanted).encode()
-        proc = subprocess.run(
-            ["git", "cat-file", "--batch"],
-            cwd=self.root,
-            env=None if self.env is None else dict(self.env),
-            input=spec,
-            capture_output=True,
-            check=True,
-        )
-        out = proc.stdout
+        with (
+            tempfile.TemporaryFile() as requests,
+            tempfile.TemporaryFile() as responses,
+        ):
+            requests.write(spec)
+            requests.seek(0)
+            subprocess.run(
+                ["git", "cat-file", "--batch"],
+                cwd=self.root,
+                env=None if self.env is None else dict(self.env),
+                stdin=requests,
+                stdout=responses,
+                check=True,
+                timeout=CAT_FILE_TIMEOUT_S,
+            )
+            responses.seek(0)
+            out = responses.read()
         result: dict[str, bytes | None] = {}
         pos = 0
         for path in wanted:
