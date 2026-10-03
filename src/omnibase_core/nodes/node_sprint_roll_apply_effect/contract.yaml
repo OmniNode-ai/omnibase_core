@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the sprint_roll apply EFFECT node.
+# The I/O half of the sprint roll; the placement arithmetic is node_sprint_roll_compute.
+# Split so the arithmetic can be proven with no Linear account and the I/O against a
+# recorded transport.
+#
+# See: OMN-20397 (parent OMN-20395; the COMPUTE half is OMN-20396)
+
+name: node_sprint_roll_apply_effect
+node_id: node_sprint_roll_apply_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Applies a sprint roll plan to Linear. Reads each named issue for its own uuid and the project and state
+  it holds now, then moves it to the sprint the plan placed it in. Dry run is the default and sends nothing,
+  which is provable from the transport rather than from the node's own report. Every mutation is journalled
+  to the manifest BEFORE it is sent, so a run interrupted halfway leaves a record that reverses what it
+  managed to do; the undo replays prior values newest-first rather than recomputing them, because recomputation
+  would re-derive from a board that has since moved. A transient Linear 429 or 503 is retried and a persistent
+  one surfaces. #magic___^_^___line
+input_model: omnibase_core.models.nodes.sprint_roll.model_sprint_roll_apply_request.ModelSprintRollApplyRequest
+output_model: omnibase_core.models.nodes.sprint_roll.model_sprint_roll_apply_result.ModelSprintRollApplyResult
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeSprintRollApplyEffect
+
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 120000
