@@ -12,6 +12,10 @@ on:
     branches: [main, dev, "hotfix/**"]
   pull_request:
     branches: [main, dev]
+  # OMN-20375: dev is queue-controlled. `CodeQL` (code scanning) and
+  # `CodeQL / CodeQL Analysis (python)` are required contexts, and code scanning
+  # can only report them on a queue commit when this workflow analyses it.
+  merge_group:
   schedule:
     # Run weekly on Monday at 06:00 UTC
     - cron: "0 6 * * 1"
