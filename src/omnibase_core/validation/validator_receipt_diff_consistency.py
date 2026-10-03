@@ -143,12 +143,18 @@ def _check_contract_unmodified(
     entries: list[tuple[str, str]],
     ticket_id: str,
 ) -> str | None:
-    """The ticket's own ``contracts/<ticket_id>.yaml`` must be absent or added."""
+    """The ticket's own contract files must be absent or added.
+
+    That is ``contracts/<ticket_id>.yaml`` and, since OMN-20068, every per-PR
+    file under ``contracts/<ticket_id>/``.
+    """
     target = f"{_CONTRACT_PREFIX}{ticket_id}.yaml"
+    per_pr_prefix = f"{_CONTRACT_PREFIX}{ticket_id}/"
     offenders = [
         f"{code} {path}"
         for code, path in entries
-        if path == target and code in _MUTATION_CODES
+        if (path == target or path.startswith(per_pr_prefix))
+        and code in _MUTATION_CODES
     ]
     if not offenders:
         return None

@@ -98,6 +98,11 @@ from pydantic import ValidationError
 
 from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.handlers.handler_occ_contract_view import (
+    load_occ_contract_view,
+    per_pr_contract_dir,
+)
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 from omnibase_core.models.contracts.ticket.model_receipt_check_result import (
     ModelReceiptCheckResult,
@@ -1471,7 +1476,14 @@ def _verify_ticket_identity(
                 "to this PR whose commit message references that ticket."
             )
 
-    # Axis 3: Contract ticket_id field.
+    # Axis 3: Contract ticket_id field. A per-PR file under
+    # contracts/<ticket>/ must declare the same ticket_id (OMN-20068); the
+    # loader refuses one that does not.
+    if per_pr_contract_dir(contracts_dir, evidence_ticket).is_dir():
+        try:
+            load_occ_contract_view(contracts_dir, evidence_ticket)
+        except ModelOnexError as e:
+            return f"IDENTITY BINDING FAILED: {e.message}"
     contract_path = contracts_dir / f"{evidence_ticket}.yaml"
     if contract_path.exists():
         try:
@@ -1613,19 +1625,23 @@ def _check_ticket(
             )
         ]
 
+    # OMN-20068: the contract is the union of contracts/<ticket>.yaml and the
+    # per-PR files under contracts/<ticket>/; each receipt binds to the file
+    # that holds its own entry.
     contract_path = contracts_dir / f"{ticket_id}.yaml"
-    if not contract_path.exists():
-        return _fail(f"no contract at {contract_path}")
-
     try:
-        with contract_path.open(encoding="utf-8") as fh:
-            contract_data = yaml.safe_load(fh)
-    except (yaml.YAMLError, OSError) as e:
-        return _fail(f"corrupt contract at {contract_path}: {e}")
+        contract_view = load_occ_contract_view(contracts_dir, ticket_id)
+    except ModelOnexError as e:
+        return _fail(f"corrupt contract for {ticket_id}: {e.message}")
+    if contract_view is None:
+        return _fail(
+            f"no contract at {contract_path} or under {contract_path.with_suffix('')}/"
+        )
+    contract_data = contract_view.data
 
     triples = _iter_dod_evidence(contract_data)
     if not triples:
-        return _fail(f"contract {contract_path} has no dod_evidence items")
+        return _fail(f"contract {contract_view.primary.path} has no dod_evidence items")
 
     dod_evidence_raw = (
         contract_data.get("dod_evidence", []) if isinstance(contract_data, dict) else []
@@ -1638,9 +1654,9 @@ def _check_ticket(
             item_id,
             check_type,
             receipts_dir,
-            contract_path=contract_path,
+            contract_path=contract_view.source_for(item_id).path,
             pr_opened_at=pr_opened_at,
-            contract_data=contract_data,
+            contract_data=contract_view.source_for(item_id).data,
             current_pr_number=current_pr_number,
         )
         for item_id, check_type, _check_value in triples
