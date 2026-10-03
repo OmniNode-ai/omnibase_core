@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import datetime as dt
 import statistics
+from uuid import UUID
 
 from omnibase_core.enums.enum_capacity_unit import EnumCapacityUnit
 from omnibase_core.models.nodes.sprint_roll.model_criterion_proposal import (
@@ -212,7 +213,7 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
             return ticket.estimate or median
         return 1
 
-    origin: dict[str, str] = {t.identifier: source.sprint_id for t in rolling}
+    origin: dict[str, UUID] = {t.identifier: source.sprint_id for t in rolling}
     pool: list[ModelSprintTicket] = list(rolling)
     for sprint in following:
         for ticket in _open_tickets(sprint, closed):
@@ -232,8 +233,10 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
         )
     )
 
-    load = {s.sprint_id: 0 for s in following}
-    placed: dict[str, list[ModelSprintTicket]] = {s.sprint_id: [] for s in following}
+    load: dict[UUID, int] = {s.sprint_id: 0 for s in following}
+    placed: dict[UUID, list[ModelSprintTicket]] = {
+        s.sprint_id: [] for s in following
+    }
     backlog: list[ModelSprintTicket] = []
     for ticket in pool:
         for sprint in following:
