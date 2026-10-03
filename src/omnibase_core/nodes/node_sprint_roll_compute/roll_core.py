@@ -234,9 +234,7 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
     )
 
     load: dict[UUID, int] = {s.sprint_id: 0 for s in following}
-    placed: dict[UUID, list[ModelSprintTicket]] = {
-        s.sprint_id: [] for s in following
-    }
+    placed: dict[UUID, list[ModelSprintTicket]] = {s.sprint_id: [] for s in following}
     backlog: list[ModelSprintTicket] = []
     for ticket in pool:
         for sprint in following:
