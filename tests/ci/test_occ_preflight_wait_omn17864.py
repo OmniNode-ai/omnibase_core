@@ -215,7 +215,9 @@ def test_ancestor_sha_proceeds() -> None:
     assert decision.reason == "evidence_durable"
 
 
-def test_unreadable_body_fails_now_without_waiting() -> None:
+def test_unreadable_body_waits_and_is_re_read() -> None:
+    """OMN-20427: a body that could not be read is a retryable transport
+    failure, like an unresolved companion state, not a FAIL_NOW."""
     decision = decide_preflight_wait(
         pr_body=None,
         companion_state=None,
@@ -224,8 +226,8 @@ def test_unreadable_body_fails_now_without_waiting() -> None:
         deadline_seconds=DEADLINE,
         event_name="pull_request",
     )
-    assert decision.outcome is EnumPreflightWaitOutcome.FAIL_NOW
-    assert decision.reason == "body_unreadable"
+    assert decision.outcome is EnumPreflightWaitOutcome.WAIT
+    assert decision.reason == "body_unresolved"
 
 
 def test_companion_state_unresolved_retries_rather_than_fails() -> None:
@@ -381,7 +383,11 @@ def test_pin_only_outcome_never_overrides_a_stamp_that_is_present() -> None:
     assert malformed.reason == "stamp_malformed"
 
 
-def test_unreadable_body_still_fails_now_even_with_a_pin_only_outcome() -> None:
+def test_unreadable_body_is_never_read_as_not_required_even_with_a_pin_only_outcome() -> (
+    None
+):
+    """The stamp cannot be judged without the body, so a pin-only outcome must
+    neither exempt the PR nor end the wait early (OMN-20427)."""
     decision = decide_preflight_wait(
         pr_body=None,
         companion_state=None,
@@ -391,8 +397,8 @@ def test_unreadable_body_still_fails_now_even_with_a_pin_only_outcome() -> None:
         event_name="pull_request",
         autobind_outcome=("DECLINED", PIN_ONLY_REASON),
     )
-    assert decision.outcome is EnumPreflightWaitOutcome.FAIL_NOW
-    assert decision.reason == "body_unreadable"
+    assert decision.outcome is EnumPreflightWaitOutcome.WAIT
+    assert decision.reason == "body_unresolved"
 
 
 @pytest.mark.parametrize(
