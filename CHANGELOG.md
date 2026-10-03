@@ -1,3 +1,14 @@
+## v0.47.32 (2026-10-03)
+
+### Release
+- Cut omnibase-core from dev at 0.47.32 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.31.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.31
+- feat: the sprint roll's Linear writes, journal and undo as an EFFECT node (#1862)
+- feat: the sprint roll's placement arithmetic as a canonical COMPUTE node (#1861)
+
 ## v0.47.31 (2026-10-03)
 
 ### Release
