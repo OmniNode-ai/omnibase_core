@@ -195,7 +195,11 @@ def test_base_overlay_requires_changed_tests_and_cited_contracts() -> None:
     )["run"]
     assert 'merge-base "$BASE_SHA" "$HEAD_SHA"' in script
     assert 'fetch --no-tags origin "$BASE_SHA"' in script
-    assert 'worktree add --detach "$base_tree" "$MB"' in script
+    assert 'worktree add --detach "$control_tree" "$MB"' in script
+    assert (
+        'prepare_control "$GITHUB_WORKSPACE/.dod-verify/base_home" "the merge base"'
+        in script
+    )
     assert "--diff-filter=ACMR" in script
     assert "while IFS= read -r" in script
     assert '"$path" == *..* || "$path" == /*' in script
@@ -209,9 +213,10 @@ def test_control_refuses_always_pass_non_failed_and_missing_bound_checks() -> No
     assert "select((.binds_ac | length) > 0)" in script
     assert 'select(.status == "verified")' in script
     assert 'select(.status != "failed" and .status != "verified")' in script
+    assert 'where="$(cat "$RUNNER_TEMP/dod/control-label-$ticket.txt")"' in script
     for message in (
         "zero bound checks",
-        "bound test also passes at the merge base: the control did not fail (always-pass)",
+        "bound test also passes at $where: the control did not fail (always-pass)",
         "the control could not run, a control that did not run is not a pass",
         "control stdout is not parseable",
     ):
@@ -408,6 +413,10 @@ def _run_base_control(
     dod_dir.mkdir(parents=True)
     (dod_dir / "tickets.txt").write_text("OMN-1\n")
     (dod_dir / "merge-base.txt").write_text(merge_base + "\n")
+    (dod_dir / "control-home-OMN-1.txt").write_text(
+        str(workspace / ".dod-verify" / "base_home") + "\n"
+    )
+    (dod_dir / "control-label-OMN-1.txt").write_text("the merge base\n")
     verdict = tmp_path / "verdict.json"
     verdict.write_text(json.dumps({"status": "verified", "checks": checks}))
     verifier = tmp_path / "verifier"
