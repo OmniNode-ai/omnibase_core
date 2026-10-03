@@ -24,6 +24,7 @@ TWO FACTS ABOUT THE BOARD shape this module and are easy to get wrong:
 
 from __future__ import annotations
 
+import datetime as dt
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -41,6 +42,7 @@ __all__ = [
     "SprintRollJournal",
     "http_transport",
     "label_uuid",
+    "resolve_source_start",
     "state_uuid",
     "undo_from_manifest",
 ]
@@ -110,6 +112,48 @@ def http_transport(api_key: str, *, timeout: float = 120.0) -> GraphQLTransport:
         raise LinearTransportError("Linear unreachable")
 
     return call
+
+
+SPRINT_PROJECTS_QUERY = (
+    'query{projects(first:100,filter:{name:{startsWith:"Sprint "}})'
+    "{nodes{id name startDate targetDate}}}"
+)
+
+
+def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date:
+    """The start date of the sprint to drain, read from the PROJECT list.
+
+    This exists because the board's sprint read returns only the current and future
+    sprints: a finished sprint is invisible to it. Asking the project list first -- which
+    has no window -- gives the drained sprint, and loading the window from ITS start date
+    puts both it and every later sprint in scope. Without this a Monday 07:00 run refuses
+    with "nothing to roll" on a sprint that plainly ended on Sunday.
+
+    The containing sprint is the source only on its last day; otherwise the source is the
+    one that ended most recently. Same rule as the COMPUTE node's, applied here to a
+    different shape of data, because the window has to be fetched before the node that
+    knows the rule can see it.
+    """
+    projects = transport(SPRINT_PROJECTS_QUERY, {})["projects"]["nodes"]
+    dated = sorted(
+        (p for p in projects if p.get("startDate") and p.get("targetDate")),
+        key=lambda p: str(p["startDate"]),
+    )
+    if not dated:
+        raise LinearTransportError("no dated sprint project exists")
+    iso = as_of.isoformat()
+    containing = next(
+        (p for p in dated if str(p["startDate"]) <= iso <= str(p["targetDate"])), None
+    )
+    if containing is not None and str(containing["targetDate"]) == iso:
+        return dt.date.fromisoformat(str(containing["startDate"]))
+    ended = [p for p in dated if str(p["targetDate"]) < iso]
+    if not ended:
+        raise LinearTransportError(
+            f"no sprint has ended before {iso} and {iso} is not the last day of any "
+            "sprint window, so there is nothing to roll"
+        )
+    return dt.date.fromisoformat(str(ended[-1]["startDate"]))
 
 
 def label_uuid(transport: GraphQLTransport, name: str) -> str:

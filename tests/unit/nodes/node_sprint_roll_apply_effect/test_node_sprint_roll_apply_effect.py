@@ -9,6 +9,7 @@ merely says it sent nothing is not evidence.
 
 from __future__ import annotations
 
+import datetime as dt
 import json
 from pathlib import Path
 from typing import Any
@@ -30,9 +31,13 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect import NodeSprintRollApplyEffect
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
+    MAX_ATTEMPTS,
+    RETRYABLE_STATUS,
     LinearTransportError,
     SprintRollJournal,
+    http_transport,
     label_uuid,
+    resolve_source_start,
     state_uuid,
     undo_from_manifest,
 )
@@ -322,3 +327,138 @@ def test_the_label_and_state_lookups_read_by_exact_name() -> None:
     assert state_uuid(recorder, "OMN", "Backlog") == "state-uuid"
     assert recorder.reads[0]["n"] == "beta-critical"
     assert recorder.reads[1] == {"t": "OMN", "s": "Backlog"}
+
+
+# -- AC2: the drained sprint is found from the project list -------------------
+
+SPRINTS = [
+    {"id": "p0", "name": "s0", "startDate": "2026-09-21", "targetDate": "2026-09-27"},
+    {"id": "p1", "name": "s1", "startDate": "2026-09-28", "targetDate": "2026-10-04"},
+    {"id": "p2", "name": "s2", "startDate": "2026-10-05", "targetDate": "2026-10-11"},
+]
+
+
+def _projects(rows: list[dict[str, Any]]):
+    def transport(query: str, variables: dict[str, Any]) -> dict[str, Any]:
+        return {"projects": {"nodes": rows}}
+
+    return transport
+
+
+def test_on_the_last_day_the_containing_sprint_is_the_one_drained() -> None:
+    start = resolve_source_start(_projects(SPRINTS), dt.date(2026, 10, 4))
+    assert start == dt.date(2026, 9, 28)
+
+
+@pytest.mark.parametrize("day", ["2026-10-05", "2026-10-06", "2026-10-08"])
+def test_after_the_boundary_the_sprint_that_ended_is_drained_not_the_new_one(
+    day: str,
+) -> None:
+    """The regression this function exists for: on Monday the containing sprint is the
+    one just beginning, and the board's own sprint read cannot even see the finished one.
+    """
+    start = resolve_source_start(_projects(SPRINTS), dt.date.fromisoformat(day))
+    assert start == dt.date(2026, 9, 28)
+
+
+def test_a_window_that_omits_the_finished_sprint_still_resolves_it() -> None:
+    """The project list has no window, which is the whole reason it is asked first."""
+    only_future = [SPRINTS[2]]
+    with pytest.raises(LinearTransportError, match="nothing to roll"):
+        resolve_source_start(_projects(only_future), dt.date(2026, 10, 6))
+    assert resolve_source_start(_projects(SPRINTS), dt.date(2026, 10, 6)) == dt.date(
+        2026, 9, 28
+    )
+
+
+def test_a_date_before_every_sprint_is_refused() -> None:
+    with pytest.raises(LinearTransportError, match="nothing to roll"):
+        resolve_source_start(_projects(SPRINTS), dt.date(2026, 9, 1))
+
+
+def test_an_undated_project_is_ignored_rather_than_crashed_on() -> None:
+    rows = [*SPRINTS, {"id": "px", "name": "no dates"}]
+    assert resolve_source_start(_projects(rows), dt.date(2026, 10, 4)) == dt.date(
+        2026, 9, 28
+    )
+
+
+def test_no_dated_sprint_project_at_all_is_refused() -> None:
+    with pytest.raises(LinearTransportError, match="no dated sprint project"):
+        resolve_source_start(_projects([]), dt.date(2026, 10, 4))
+
+
+# -- AC6: transient Linear failures retry, persistent ones surface ------------
+
+
+class FlakyHTTP:
+    """Stands in for httpx.post, counting attempts and answering by script."""
+
+    def __init__(self, statuses: list[int]) -> None:
+        self.statuses = statuses
+        self.attempts = 0
+
+    def __call__(self, url: str, **kwargs: Any) -> Any:
+        self.attempts += 1
+        code = self.statuses[min(self.attempts - 1, len(self.statuses) - 1)]
+
+        class Response:
+            status_code = code
+
+            @staticmethod
+            def json() -> dict[str, Any]:
+                return {"data": {"ok": True}}
+
+        return Response()
+
+
+@pytest.mark.parametrize("code", sorted(RETRYABLE_STATUS))
+def test_a_transient_status_is_retried_and_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch, code: int
+) -> None:
+    import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
+
+    flaky = FlakyHTTP([code, 200])
+    monkeypatch.setattr(rt.httpx, "post", flaky)
+    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
+    assert http_transport("key")("query{}", {}) == {"ok": True}
+    assert flaky.attempts == 2
+
+
+def test_a_persistent_transient_status_surfaces_rather_than_being_swallowed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failure swallowed mid-plan leaves the board half rolled."""
+    import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
+
+    flaky = FlakyHTTP([503])
+    monkeypatch.setattr(rt.httpx, "post", flaky)
+    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
+    with pytest.raises(LinearTransportError, match="HTTP 503"):
+        http_transport("key")("query{}", {})
+    assert flaky.attempts == MAX_ATTEMPTS
+
+
+def test_a_non_retryable_status_fails_on_the_first_attempt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
+
+    flaky = FlakyHTTP([401])
+    monkeypatch.setattr(rt.httpx, "post", flaky)
+    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
+    with pytest.raises(LinearTransportError, match="HTTP 401"):
+        http_transport("key")("query{}", {})
+    assert flaky.attempts == 1
+
+
+def test_a_transport_error_message_never_carries_the_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
+
+    monkeypatch.setattr(rt.httpx, "post", FlakyHTTP([401]))
+    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
+    with pytest.raises(LinearTransportError) as caught:
+        http_transport("lin_api_secret_value")("query{}", {})
+    assert "lin_api_secret_value" not in str(caught.value)
