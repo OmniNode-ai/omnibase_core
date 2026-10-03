@@ -81,7 +81,10 @@ class Recorder:
                         "state": {"id": "state-old"},
                         "labels": {"nodes": [{"id": "keep-me"}]},
                     }
-                    for ident in variables.get("ids", [])
+                    for ident in (
+                        [f"OMN-{int(n)}" for n in variables.get("nums", [])]
+                        or variables.get("ids", [])
+                    )
                 ]
             }
         }
@@ -480,3 +483,56 @@ def test_core_imports_no_http_client_and_names_no_url(tmp_path: Path) -> None:
         if "://" in line and not line.lstrip().startswith(("#", '"""', "*"))
     ]
     assert code == [], code
+
+
+# -- the invalid query the 2026-10-03 live dry run found ---------------------
+
+
+def test_the_issue_query_filters_by_number_not_identifier() -> None:
+    """`IssueFilter` has no `identifier` field. Linear answers HTTP 400 with
+    `Field "identifier" is not defined by type "IssueFilter"`, so the earlier query made
+    `handle` fail on every plan that moved anything -- and no test caught it, because a
+    recorded transport answers whatever query it is handed. This asserts the shape that
+    a fake cannot validate."""
+    from omnibase_core.nodes.node_sprint_roll_apply_effect.handler import ISSUE_QUERY
+
+    assert "number:{in:$nums}" in ISSUE_QUERY
+    assert "identifier:{in:" not in ISSUE_QUERY
+    assert "$nums:[Float!]!" in ISSUE_QUERY
+
+
+def test_identifiers_become_the_float_numbers_the_filter_accepts() -> None:
+    from omnibase_core.nodes.node_sprint_roll_apply_effect.handler import issue_numbers
+
+    assert issue_numbers(["OMN-20395", "OMN-7"]) == [7.0, 20395.0]
+
+
+def test_a_repeated_identifier_is_sent_once() -> None:
+    from omnibase_core.nodes.node_sprint_roll_apply_effect.handler import issue_numbers
+
+    assert issue_numbers(["OMN-1", "OMN-1", "OMN-2"]) == [1.0, 2.0]
+
+
+def test_an_identifier_with_no_number_is_dropped_rather_than_guessed() -> None:
+    """Sending it would widen the filter rather than narrow it."""
+    from omnibase_core.nodes.node_sprint_roll_apply_effect.handler import issue_numbers
+
+    assert issue_numbers(["OMN-20395", "not-a-ticket", "OMN-"]) == [20395.0]
+
+
+def test_the_read_sends_numbers_for_the_tickets_the_plan_moves() -> None:
+    recorder = Recorder()
+    NodeSprintRollApplyEffect(recorder).handle(
+        ModelSprintRollApplyRequest(plan=_plan(("OMN-1", "OMN-2")))
+    )
+    assert recorder.reads[0] == {"nums": [1.0, 2.0]}
+
+
+def test_a_plan_whose_tickets_carry_no_number_refuses_rather_than_reading_everything() -> (
+    None
+):
+    plan = _plan(("nope",))
+    with pytest.raises(LinearTransportError, match="no plan ticket carries"):
+        NodeSprintRollApplyEffect(Recorder()).handle(
+            ModelSprintRollApplyRequest(plan=plan)
+        )
