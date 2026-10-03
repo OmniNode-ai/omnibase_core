@@ -14,7 +14,7 @@ ordering, the undo and the query text, and a test passes a recorder and asserts 
 sent.
 
 `with_retries` is the retry POLICY, which is not a transport: it wraps an injected
-callable and re-calls it when the callable raises :class:`LinearTransportError` carrying a
+callable and re-calls it when the callable raises :class:`LinearTransportError` (``node_linear_transport_error``) carrying a
 retryable status. The adapter that knows what a 503 is lives with the client, outside this
 package, and raises that typed error.
 """
@@ -31,18 +31,21 @@ from pydantic import JsonValue
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_linear_transport_error import (
+    LinearTransportError,
+)
 
 __all__ = [
     "MAX_ATTEMPTS",
+    "MUTATION",
     "RETRYABLE_STATUS",
     "GraphQLTransport",
-    "LinearTransportError",
-    "SprintRollJournal",
     "label_uuid",
     "node_rows",
     "resolve_source_start",
     "state_uuid",
     "undo_from_manifest",
+    "write_payload",
     "with_retries",
 ]
 
@@ -70,19 +73,6 @@ SPRINT_PROJECTS_QUERY = (
     'query{projects(first:100,filter:{name:{startsWith:"Sprint "}})'
     "{nodes{id name startDate targetDate}}}"
 )
-
-
-class LinearTransportError(RuntimeError):
-    """A Linear call failed.
-
-    `status` is the HTTP status when the caller's adapter knows one, and None otherwise.
-    It is the only thing this package needs to know about HTTP, and it arrives as data
-    rather than as an imported client type.
-    """
-
-    def __init__(self, message: str, *, status: int | None = None) -> None:
-        super().__init__(message)
-        self.status = status
 
 
 def with_retries(
@@ -194,32 +184,6 @@ def state_uuid(transport: GraphQLTransport, team_key: str, state_name: str) -> s
     return _text(rows[0], "id")
 
 
-class SprintRollJournal:
-    """Appends each write to a manifest BEFORE the transport is asked to send it.
-
-    The ordering is the guarantee. A crash between the journal line and the mutation
-    leaves a manifest entry for a write that never happened, and undoing that is a no-op;
-    the reverse ordering would leave a write with no record, which nothing can undo.
-    """
-
-    def __init__(self, path: Path | None) -> None:
-        self.path = path
-        self.writes: list[ModelSprintRollWrite] = []
-
-    def record(self, write: ModelSprintRollWrite) -> None:
-        self.writes.append(write)
-        if self.path is None:
-            return
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(write.model_dump_json() + "\n")
-            handle.flush()
-
-    def send(self, transport: GraphQLTransport, write: ModelSprintRollWrite) -> None:
-        """Journal, then mutate. Never the other way round."""
-        self.record(write)
-        transport(MUTATION, {"id": write.issue_uuid, "in": _payload(write)})
-
-
 #: Fields Linear takes as a single id. Everything else is a set.
 SCALAR_FIELDS = frozenset({"projectId", "stateId"})
 
@@ -231,7 +195,7 @@ def _value(field: str, ids: tuple[str, ...] | None) -> JsonValue:
     return list(ids or ())
 
 
-def _payload(write: ModelSprintRollWrite) -> GraphQLPayload:
+def write_payload(write: ModelSprintRollWrite) -> GraphQLPayload:
     return {write.field: _value(write.field, write.after)}
 
 

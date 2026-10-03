@@ -32,10 +32,12 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_apply_result impor
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_sprint_roll_journal import (
+    SprintRollJournal,
+)
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
     GraphQLPayload,
     GraphQLTransport,
-    SprintRollJournal,
     node_rows,
 )
 
