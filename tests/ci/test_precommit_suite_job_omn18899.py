@@ -139,5 +139,9 @@ class TestSkipListIsHonest:
         Twenty-one entries. The list is expected to shrink; growing it means a
         hook stopped being enforced, which is a decision, not a cleanup.
         Lowering this number when entries are removed is the ratchet working.
+
+        Twenty since OMN-20068: `no-untracked-todos` became a local hook running
+        this repository's own handler, so it no longer needs a clone and left
+        the list.
         """
-        assert len(_skipped_ids()) <= 21
+        assert len(_skipped_ids()) <= 20
