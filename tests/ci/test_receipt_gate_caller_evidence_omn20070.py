@@ -4,11 +4,21 @@
 
 from __future__ import annotations
 
+import json
+import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
+from textwrap import dedent
 from typing import Any
 
 import pytest
 import yaml
+
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -37,7 +47,9 @@ def _step(name: str) -> dict[str, Any]:
 def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
     workflow = _workflow()
     # PyYAML interprets the YAML 1.1 `on` key as True.
-    inputs = workflow.get(True, workflow.get("on"))["workflow_call"]["inputs"]
+    trigger = workflow.get(True, workflow.get("on"))
+    assert isinstance(trigger, dict)
+    inputs = trigger["workflow_call"]["inputs"]
     expected = {
         "contracts-dir": "contracts",
         "receipts-dir": "drift/dod_receipts",
@@ -302,3 +314,267 @@ def test_summary_always_reports_head_and_base_without_failing() -> None:
     ) in script
     assert '"$GITHUB_STEP_SUMMARY" || true' in script
     assert script.rstrip().endswith("exit 0")
+
+
+def test_control_compares_merge_base_contract_and_exempts_carried_evidence() -> None:
+    script = _step(BASE_STEP)["run"]
+    assert 'show "$MB:contracts/$ticket.yaml"' in script
+    assert '"$RUNNER_TEMP/dod/base-$ticket.carried.json"' in script
+    assert (
+        "carried unchanged from the merge base's contract, not re-controlled" in script
+    )
+    assert "binds no evidence of its own" in script
+
+
+_CONTROL_TOOLS_MISSING = any(
+    shutil.which(tool) is None for tool in ("bash", "git", "jq")
+)
+_OLD_CONTRACT = "dod_evidence:\n  - id: old\n    binds_ac: [AC1]\n    check_value: X\n"
+_NEW_CONTRACT = "dod_evidence:\n  - id: new\n    binds_ac: [AC2]\n"
+_APPENDED_CONTRACT = _OLD_CONTRACT + "  - id: new\n    binds_ac: [AC2]\n"
+
+
+def _run_base_control(
+    tmp_path: Path,
+    base_contract: str | None,
+    head_contract: str,
+    checks: list[dict[str, object]],
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    workspace = tmp_path / "ws"
+    head_tree = workspace / ".dod-verify" / "head_home" / "omnimarket"
+    base_tree = workspace / ".dod-verify" / "base_home" / "omnimarket"
+    contract = head_tree / "contracts" / "OMN-1.yaml"
+    contract.parent.mkdir(parents=True)
+    base_tree.parent.mkdir(parents=True)
+
+    # A full replacement env: nothing inherited, so a hook's GIT_DIR cannot retarget git.
+    tool_dirs = {
+        str(Path(found).parent)
+        for found in (shutil.which(tool) for tool in ("bash", "git", "jq"))
+        if found
+    }
+    env = {
+        "PATH": os.pathsep.join([*sorted(tool_dirs), "/usr/bin", "/bin"]),
+        "HOME": str(tmp_path),
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_CONFIG_GLOBAL": os.devnull,
+    }
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", "-C", str(head_tree), *args],
+            env=scrub_git_location_env(env),
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    git("init")
+    if base_contract is not None:
+        contract.write_text(base_contract)
+        git("add", "contracts/OMN-1.yaml")
+    git(
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "--allow-empty",
+        "-m",
+        "merge base",
+    )
+    merge_base = git("rev-parse", "HEAD")
+    contract.write_text(head_contract)
+    git("add", "contracts/OMN-1.yaml")
+    git(
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.com",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "--allow-empty",
+        "-m",
+        "head",
+    )
+    git("worktree", "add", "--detach", str(base_tree), merge_base)
+    (base_tree / "contracts").mkdir(exist_ok=True)
+    shutil.copyfile(contract, base_tree / "contracts" / "OMN-1.yaml")
+
+    dod_dir = tmp_path / "rt" / "dod"
+    dod_dir.mkdir(parents=True)
+    (dod_dir / "tickets.txt").write_text("OMN-1\n")
+    (dod_dir / "merge-base.txt").write_text(merge_base + "\n")
+    verdict = tmp_path / "verdict.json"
+    verdict.write_text(json.dumps({"status": "verified", "checks": checks}))
+    verifier = tmp_path / "verifier"
+    verifier.write_text(
+        f"#!{sys.executable}\n"
+        f"VERDICT = {str(verdict)!r}\n"
+        + dedent("""\
+            import os
+            import sys
+            from pathlib import Path
+
+            if len(sys.argv) > 1 and sys.argv[1] == "-m":
+                print(Path(VERDICT).read_text())
+                sys.exit(0)
+            os.execv(sys.executable, [sys.executable, *sys.argv[1:]])
+            """)
+    )
+    verifier.chmod(0o755)
+    completed = subprocess.run(
+        ["bash", "-c", _step(BASE_STEP)["run"]],
+        env={
+            **env,
+            "GITHUB_WORKSPACE": str(workspace),
+            "RUNNER_TEMP": str(dod_dir.parent),
+            "REPO_SHORT": "omnimarket",
+            "DOD_VERIFY_PY": str(verifier),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return completed, dod_dir
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    ("base_contract", "head_contract", "statuses", "exit_code", "message", "carried"),
+    [
+        pytest.param(
+            _OLD_CONTRACT,
+            _APPENDED_CONTRACT,
+            {"old": "verified", "new": "failed"},
+            0,
+            "OMN-1 base control: passed; every bound check failed [new]",
+            ["old"],
+            id="inherited-pass-new-failure",
+        ),
+        pytest.param(
+            _OLD_CONTRACT,
+            _APPENDED_CONTRACT,
+            {"old": "verified", "new": "verified"},
+            1,
+            "::error::OMN-1 [new]: bound test also passes at the merge base",
+            ["old"],
+            id="new-evidence-always-passes",
+        ),
+        pytest.param(
+            _OLD_CONTRACT,
+            _OLD_CONTRACT,
+            {"old": "verified"},
+            1,
+            "this pull request binds no evidence of its own",
+            ["old"],
+            id="all-bound-evidence-carried",
+        ),
+        pytest.param(
+            _OLD_CONTRACT,
+            _OLD_CONTRACT.replace("X", "Y"),
+            {"old": "verified"},
+            1,
+            "::error::OMN-1 [old]: bound test also passes at the merge base",
+            [],
+            id="changed-evidence-not-carried",
+        ),
+        pytest.param(
+            _OLD_CONTRACT,
+            _OLD_CONTRACT + "  - id: old\n    binds_ac: [AC1]\n    check_value: Z\n",
+            {"old": "verified"},
+            1,
+            "::error::OMN-1 [old]: bound test also passes at the merge base",
+            [],
+            id="repeated-inherited-id-not-carried",
+        ),
+        pytest.param(
+            None,
+            _NEW_CONTRACT,
+            {"new": "failed"},
+            0,
+            "OMN-1 base control: passed; every bound check failed [new]",
+            [],
+            id="no-contract-at-merge-base",
+        ),
+    ],
+)
+def test_base_control_only_requires_own_evidence_to_fail(
+    tmp_path: Path,
+    base_contract: str | None,
+    head_contract: str,
+    statuses: dict[str, str],
+    exit_code: int,
+    message: str,
+    carried: list[str],
+) -> None:
+    checks: list[dict[str, object]] = [
+        {
+            "evidence_id": evidence_id,
+            "binds_ac": ["AC1" if evidence_id == "old" else "AC2"],
+            "status": status,
+        }
+        for evidence_id, status in statuses.items()
+    ]
+    completed, dod_dir = _run_base_control(
+        tmp_path, base_contract, head_contract, checks
+    )
+    assert completed.returncode == exit_code, completed.stdout + completed.stderr
+    assert message in completed.stdout
+    assert json.loads((dod_dir / "base-OMN-1.carried.json").read_text()) == carried
+    control = (dod_dir / "base-OMN-1.control.txt").read_text().splitlines()[0]
+    assert control == (
+        "passed: every bound check failed" if exit_code == 0 else "refused"
+    )
+    if carried:
+        assert (
+            "OMN-1: carried unchanged from the merge base's contract, not re-controlled [old]"
+            in completed.stdout
+        )
+    else:
+        assert "not re-controlled" not in completed.stdout
+    errors = "\n".join(
+        line for line in completed.stdout.splitlines() if line.startswith("::error::")
+    )
+    if "new" in statuses and statuses["new"] == "verified":
+        assert "always-pass" in errors
+        assert "old" not in errors
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    ("base_contract", "head_contract"),
+    [(_OLD_CONTRACT, "dod_evidence: ["), ("dod_evidence: [", _OLD_CONTRACT)],
+    ids=["invalid-head-yaml", "invalid-base-yaml"],
+)
+def test_base_control_fails_closed_when_contract_comparison_fails(
+    tmp_path: Path, base_contract: str, head_contract: str
+) -> None:
+    completed, dod_dir = _run_base_control(tmp_path, base_contract, head_contract, [])
+    assert completed.returncode == 1
+    assert (
+        "::error::OMN-1: cannot compare the contract with the merge base's; carried evidence unavailable"
+        in completed.stdout
+    )
+    assert (dod_dir / "base-OMN-1.control.txt").read_text() == "refused\n"
+    assert not (dod_dir / "base-OMN-1.json").exists()
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_base_control_preserves_zero_bound_checks_refusal(tmp_path: Path) -> None:
+    completed, dod_dir = _run_base_control(
+        tmp_path,
+        _OLD_CONTRACT,
+        _OLD_CONTRACT,
+        [{"evidence_id": "old", "binds_ac": [], "status": "verified"}],
+    )
+    assert completed.returncode == 1
+    assert (
+        "::error::OMN-1: zero bound checks (evidence ids: none); nothing is bound, so nothing can fail"
+        in completed.stdout
+    )
+    assert "binds no evidence of its own" not in completed.stdout
+    assert (dod_dir / "base-OMN-1.control.txt").read_text() == "refused\n"

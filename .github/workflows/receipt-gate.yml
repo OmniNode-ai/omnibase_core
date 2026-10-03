@@ -1251,6 +1251,7 @@ jobs:
             exit 1
           fi
 
+      # OMN-20070: unchanged carried evidence is exempt; each PR must bind its own evidence.
       - name: Must-fail control at the merge base
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
@@ -1262,11 +1263,50 @@ jobs:
           export OMNI_HOME="$GITHUB_WORKSPACE/.dod-verify/base_home"
           base_tree="$OMNI_HOME/$REPO_SHORT"
           cd "$base_tree"
+          MB="$(cat "$RUNNER_TEMP/dod/merge-base.txt")"
           failed=0
           while IFS= read -r ticket; do
             result="$RUNNER_TEMP/dod/base-$ticket.json"
             control="$RUNNER_TEMP/dod/base-$ticket.control.txt"
             printf '%s\n' 'refused' > "$control"
+            mb_contract="$RUNNER_TEMP/dod/base-$ticket.mb-contract.yaml"
+            carried="$RUNNER_TEMP/dod/base-$ticket.carried.json"
+            git -C "$base_tree" show "$MB:contracts/$ticket.yaml" > "$mb_contract" 2>/dev/null || : > "$mb_contract"
+            if ! "$DOD_VERIFY_PY" - "$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT/contracts/$ticket.yaml" "$mb_contract" > "$carried" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          def evidence(path):
+              contract = yaml.safe_load(Path(path).read_text())
+              items = contract.get("dod_evidence") if isinstance(contract, dict) else None
+              return items if isinstance(items, list) else []
+
+          head_items = evidence(sys.argv[1])
+          base_items = {
+              item["id"]: item for item in evidence(sys.argv[2])
+              if isinstance(item, dict) and isinstance(item.get("id"), str)
+          }
+          head_ids = [
+              item["id"] for item in head_items
+              if isinstance(item, dict) and isinstance(item.get("id"), str)
+          ]
+          # An id the head repeats is never carried: a second item cannot hide behind an inherited id.
+          carried = {
+              item["id"] for item in head_items
+              if isinstance(item, dict) and isinstance(item.get("id"), str)
+              and head_ids.count(item["id"]) == 1
+              and item == base_items.get(item["id"])
+          }
+          print(json.dumps(sorted(carried)))
+          PY
+            then
+              echo "::error::$ticket: cannot compare the contract with the merge base's; carried evidence unavailable"
+              failed=1
+              continue
+            fi
             "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
               --ticket-id "$ticket" --contract-path "$base_tree/contracts/$ticket.yaml" --execution-audience hosted \
               --output-path "$RUNNER_TEMP/dod/base-$ticket.receipt.json" > "$result" || true
@@ -1287,6 +1327,18 @@ jobs:
               failed=1
               continue
             fi
+            carried_ids="$(jq -r 'join(", ")' "$carried")"
+            if [ -n "$carried_ids" ]; then
+              echo "$ticket: carried unchanged from the merge base's contract, not re-controlled [$carried_ids]"
+            fi
+            remaining="$RUNNER_TEMP/dod/base-$ticket.remaining.json"
+            jq --slurpfile carried "$carried" '[.[] | select(.evidence_id as $id | $carried[0] | index($id) | not)]' "$bound" > "$remaining"
+            if [ "$(jq 'length' "$remaining")" -eq 0 ]; then
+              echo "::error::$ticket [$carried_ids]: every bound check is carried unchanged from the merge base's contract; this pull request binds no evidence of its own"
+              failed=1
+              continue
+            fi
+            bound="$remaining"
             verified_ids="$(jq -r '[.[] | select(.status == "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
             other_ids="$(jq -r '[.[] | select(.status != "failed" and .status != "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
             if [ -n "$verified_ids" ]; then
