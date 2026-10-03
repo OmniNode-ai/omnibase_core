@@ -25,7 +25,8 @@ import datetime as dt
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+
+from pydantic import JsonValue
 
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
@@ -38,6 +39,7 @@ __all__ = [
     "LinearTransportError",
     "SprintRollJournal",
     "label_uuid",
+    "node_rows",
     "resolve_source_start",
     "state_uuid",
     "undo_from_manifest",
@@ -50,8 +52,14 @@ __all__ = [
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 MAX_ATTEMPTS = 6
 
+#: A GraphQL variables map, and the `data` object a query answers with. Typed as
+#: pydantic's JsonValue rather than Any: the shape genuinely is arbitrary JSON -- that is
+#: what GraphQL returns -- but `GraphQLPayload` is an anti-pattern here and would also
+#: let a caller pass something unserialisable without a word.
+GraphQLPayload = dict[str, JsonValue]
+
 #: (query, variables) -> the `data` object.
-GraphQLTransport = Callable[[str, dict[str, Any]], dict[str, Any]]
+GraphQLTransport = Callable[[str, GraphQLPayload], GraphQLPayload]
 
 MUTATION = (
     "mutation($id:String!,$in:IssueUpdateInput!)"
@@ -90,7 +98,7 @@ def with_retries(
     the last error rather than returning anything.
     """
 
-    def call(query: str, variables: dict[str, Any]) -> dict[str, Any]:
+    def call(query: str, variables: GraphQLPayload) -> GraphQLPayload:
         for attempt in range(attempts):
             try:
                 return transport(query, variables)
@@ -102,6 +110,28 @@ def with_retries(
         raise LinearTransportError("transport exhausted without a result")
 
     return call
+
+
+def node_rows(data: GraphQLPayload, collection: str) -> list[GraphQLPayload]:
+    """The `nodes` list under one collection, narrowed from arbitrary JSON.
+
+    The payload is typed as JsonValue rather than Any, so every access has to be
+    narrowed. That is the point: a Linear response that does not have the shape the query
+    asked for raises here, naming the collection, instead of surfacing as an
+    AttributeError somewhere inside a loop over it.
+    """
+    holder = data.get(collection)
+    if not isinstance(holder, dict):
+        raise LinearTransportError(f"Linear returned no {collection} object")
+    rows = holder.get("nodes")
+    if not isinstance(rows, list):
+        raise LinearTransportError(f"Linear returned no {collection}.nodes list")
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def _text(row: GraphQLPayload, key: str) -> str:
+    value = row.get(key)
+    return value if isinstance(value, str) else ""
 
 
 def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date:
@@ -116,26 +146,27 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
     The containing sprint is the source only on its last day; otherwise the source is the
     one that ended most recently.
     """
-    projects = transport(SPRINT_PROJECTS_QUERY, {})["projects"]["nodes"]
+    projects = node_rows(transport(SPRINT_PROJECTS_QUERY, {}), "projects")
     dated = sorted(
-        (p for p in projects if p.get("startDate") and p.get("targetDate")),
-        key=lambda p: str(p["startDate"]),
+        (p for p in projects if _text(p, "startDate") and _text(p, "targetDate")),
+        key=lambda p: _text(p, "startDate"),
     )
     if not dated:
         raise LinearTransportError("no dated sprint project exists")
     iso = as_of.isoformat()
     containing = next(
-        (p for p in dated if str(p["startDate"]) <= iso <= str(p["targetDate"])), None
+        (p for p in dated if _text(p, "startDate") <= iso <= _text(p, "targetDate")),
+        None,
     )
-    if containing is not None and str(containing["targetDate"]) == iso:
-        return dt.date.fromisoformat(str(containing["startDate"]))
-    ended = [p for p in dated if str(p["targetDate"]) < iso]
+    if containing is not None and _text(containing, "targetDate") == iso:
+        return dt.date.fromisoformat(_text(containing, "startDate"))
+    ended = [p for p in dated if _text(p, "targetDate") < iso]
     if not ended:
         raise LinearTransportError(
             f"no sprint has ended before {iso} and {iso} is not the last day of any "
             "sprint window, so there is nothing to roll"
         )
-    return dt.date.fromisoformat(str(ended[-1]["startDate"]))
+    return dt.date.fromisoformat(_text(ended[-1], "startDate"))
 
 
 def label_uuid(transport: GraphQLTransport, name: str) -> str:
@@ -144,10 +175,10 @@ def label_uuid(transport: GraphQLTransport, name: str) -> str:
         "query($n:String!){issueLabels(filter:{name:{eq:$n}},first:1){nodes{id}}}",
         {"n": name},
     )
-    nodes = data["issueLabels"]["nodes"]
-    if not nodes:
+    rows = node_rows(data, "issueLabels")
+    if not rows:
         raise LinearTransportError(f"no label named {name!r}")
-    return str(nodes[0]["id"])
+    return _text(rows[0], "id")
 
 
 def state_uuid(transport: GraphQLTransport, team_key: str, state_name: str) -> str:
@@ -157,10 +188,10 @@ def state_uuid(transport: GraphQLTransport, team_key: str, state_name: str) -> s
         "name:{eq:$s}},first:1){nodes{id}}}",
         {"t": team_key, "s": state_name},
     )
-    nodes = data["workflowStates"]["nodes"]
-    if not nodes:
+    rows = node_rows(data, "workflowStates")
+    if not rows:
         raise LinearTransportError(f"team {team_key} has no state named {state_name!r}")
-    return str(nodes[0]["id"])
+    return _text(rows[0], "id")
 
 
 class SprintRollJournal:
@@ -193,14 +224,14 @@ class SprintRollJournal:
 SCALAR_FIELDS = frozenset({"projectId", "stateId"})
 
 
-def _value(field: str, ids: tuple[str, ...] | None) -> Any:
+def _value(field: str, ids: tuple[str, ...] | None) -> JsonValue:
     """Unwrap the stored tuple into the shape Linear's input expects."""
     if field in SCALAR_FIELDS:
         return ids[0] if ids else None
     return list(ids or ())
 
 
-def _payload(write: ModelSprintRollWrite) -> dict[str, Any]:
+def _payload(write: ModelSprintRollWrite) -> GraphQLPayload:
     return {write.field: _value(write.field, write.after)}
 
 
@@ -228,7 +259,7 @@ def undo_from_manifest(
             # guessing one would be worse than reporting it.
             skipped.append(record)
             continue
-        payload: dict[str, Any] = {record.field: _value(record.field, record.before)}
+        payload: GraphQLPayload = {record.field: _value(record.field, record.before)}
         transport(MUTATION, {"id": record.issue_uuid, "in": payload})
         reversed_writes.append(record)
     return reversed_writes, skipped

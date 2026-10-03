@@ -21,7 +21,7 @@ Ticket: OMN-20397 (parent OMN-20395).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_apply_request import (
     ModelSprintRollApplyRequest,
@@ -33,9 +33,14 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
+    GraphQLPayload,
     GraphQLTransport,
     SprintRollJournal,
+    node_rows,
 )
+
+if TYPE_CHECKING:
+    from pydantic import JsonValue
 
 __all__ = ["NodeSprintRollApplyEffect"]
 
@@ -57,7 +62,7 @@ class NodeSprintRollApplyEffect:
         self._reads = 0
         self._writes = 0
 
-    def _read(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
+    def _read(self, query: str, variables: GraphQLPayload) -> GraphQLPayload:
         self._reads += 1
         return self._transport(query, variables)
 
@@ -73,9 +78,11 @@ class NodeSprintRollApplyEffect:
                 dry_run=request.dry_run, read_calls=0, write_calls=0
             )
 
-        current = self._read(ISSUE_QUERY, {"ids": sorted(set(wanted))})
-        nodes: list[dict[str, Any]] = current["issues"]["nodes"]
-        by_identifier = {str(node["identifier"]): node for node in nodes}
+        ids: list[JsonValue] = [str(i) for i in sorted(set(wanted))]
+        current = self._read(ISSUE_QUERY, {"ids": ids})
+        by_identifier = {
+            str(node.get("identifier")): node for node in node_rows(current, "issues")
+        }
 
         planned: list[ModelSprintRollWrite] = []
         for placement in plan.placements:
@@ -83,16 +90,17 @@ class NodeSprintRollApplyEffect:
                 node = by_identifier.get(identifier)
                 if node is None:
                     continue
-                before = (node.get("project") or {}).get("id")
+                project = node.get("project")
+                before = project.get("id") if isinstance(project, dict) else None
                 after = str(placement.sprint_id)
                 if before == after:
                     continue
                 planned.append(
                     ModelSprintRollWrite(
-                        issue_uuid=str(node["id"]),
+                        issue_uuid=str(node.get("id")),
                         identifier=identifier,
                         field="projectId",
-                        before=(before,) if before else None,
+                        before=(str(before),) if before else None,
                         after=(after,),
                     )
                 )
