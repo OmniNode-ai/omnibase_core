@@ -1,25 +1,20 @@
-# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
-# SPDX-License-Identifier: MIT
-"""The sprint roll's I/O: Linear reads, the writes, the journal and the undo.
+"""The sprint roll's write journal, undo replay and Linear query shapes.
 
-Every network call in the roll lives here. The placement arithmetic is the COMPUTE
-node's (OMN-20396) and is reached with data this module gathered, so the two halves can
-be proven separately -- the arithmetic without an account, and the I/O against a recorded
-transport.
+The placement arithmetic is the COMPUTE node's (OMN-20396) and is reached with data
+gathered through the transport this module is handed.
 
-THE TRANSPORT IS INJECTED, as a plain callable taking a query and variables. A test
-passes a recorder and asserts what was sent; a dry run is then provable by what the
-transport saw rather than by what this module claims it would have done.
+THE TRANSPORT IS INJECTED AND NEVER CONSTRUCTED HERE. ADR-005 forbids a transport import
+anywhere in omnibase_core -- no httpx, aiohttp, requests or urllib3 -- and the
+url-authority gate forbids a URL literal, which must resolve from a contract rather than
+from a constant in a module. Both refused an earlier version of this file that built its
+own HTTP client. The caller owns the client and the endpoint; this module owns the write
+ordering, the undo and the query text, and a test passes a recorder and asserts what was
+sent.
 
-TWO FACTS ABOUT THE BOARD shape this module and are easy to get wrong:
-
-* The sprint window read returns only the current and future sprints, so a finished
-  sprint is invisible to it. `resolve_source_window` asks the PROJECT list first, which
-  has no window, and loads from the drained sprint's own start date. Without that a
-  Monday run refuses with "nothing to roll" on a sprint that plainly ended on Sunday.
-* The criterion carrier lists live in omninode_infra's `tools/beta_board`. They are read
-  by the caller and passed in. A second copy here would disagree with the board the week
-  one of them drifted.
+`with_retries` is the retry POLICY, which is not a transport: it wraps an injected
+callable and re-calls it when the callable raises :class:`LinearTransportError` carrying a
+retryable status. The adapter that knows what a 503 is lives with the client, outside this
+package, and raises that typed error.
 """
 
 from __future__ import annotations
@@ -30,24 +25,23 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import httpx
-
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
 
 __all__ = [
+    "MAX_ATTEMPTS",
+    "RETRYABLE_STATUS",
     "GraphQLTransport",
     "LinearTransportError",
     "SprintRollJournal",
-    "http_transport",
     "label_uuid",
     "resolve_source_start",
     "state_uuid",
     "undo_from_manifest",
+    "with_retries",
 ]
 
-LINEAR_API = "https://api.linear.app/graphql"
 #: Linear answers 503 routinely under load and 429 on burst. Both are transient and the
 #: roll is read-heavy enough to meet them; a persistent one must surface, not be
 #: swallowed into a half-applied plan.
@@ -62,62 +56,50 @@ MUTATION = (
     "{issueUpdate(id:$id,input:$in){success}}"
 )
 
-
-class LinearTransportError(RuntimeError):
-    """A Linear call failed in a way a retry will not fix."""
-
-
-def http_transport(api_key: str, *, timeout: float = 120.0) -> GraphQLTransport:
-    """A real transport over httpx, the client this package already depends on.
-
-    httpx rather than `urllib.request.urlopen`: urlopen takes any scheme a caller can
-    smuggle into the URL, which is what ruff's S310 is about, and it needs the certifi
-    bundle wired in by hand. httpx verifies against certifi by default and only speaks
-    HTTP.
-
-    The key is passed as a header and never put in a URL, a log line or an exception
-    message -- a transport error names the status and the attempt count, nothing else.
-    """
-
-    def call(query: str, variables: dict[str, Any]) -> dict[str, Any]:
-        payload = {"query": query, "variables": variables}
-        headers = {"Authorization": api_key, "Content-Type": "application/json"}
-        for attempt in range(MAX_ATTEMPTS):
-            try:
-                response = httpx.post(
-                    LINEAR_API, json=payload, headers=headers, timeout=timeout
-                )
-            except httpx.TransportError as exc:
-                if attempt < MAX_ATTEMPTS - 1:
-                    time.sleep(3 * (attempt + 1))
-                    continue
-                raise LinearTransportError(
-                    f"Linear unreachable after {attempt + 1} attempt(s)"
-                ) from exc
-            if response.status_code in RETRYABLE_STATUS and attempt < MAX_ATTEMPTS - 1:
-                time.sleep(3 * (attempt + 1))
-                continue
-            if response.status_code >= 400:
-                raise LinearTransportError(
-                    f"Linear returned HTTP {response.status_code} after "
-                    f"{attempt + 1} attempt(s)"
-                )
-            body = response.json()
-            if "errors" in body:
-                raise LinearTransportError(f"Linear API error: {body['errors']}")
-            data = body.get("data")
-            if not isinstance(data, dict):
-                raise LinearTransportError("Linear returned no data object")
-            return data
-        raise LinearTransportError("Linear unreachable")
-
-    return call
-
-
 SPRINT_PROJECTS_QUERY = (
     'query{projects(first:100,filter:{name:{startsWith:"Sprint "}})'
     "{nodes{id name startDate targetDate}}}"
 )
+
+
+class LinearTransportError(RuntimeError):
+    """A Linear call failed.
+
+    `status` is the HTTP status when the caller's adapter knows one, and None otherwise.
+    It is the only thing this package needs to know about HTTP, and it arrives as data
+    rather than as an imported client type.
+    """
+
+    def __init__(self, message: str, *, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+def with_retries(
+    transport: GraphQLTransport,
+    *,
+    attempts: int = MAX_ATTEMPTS,
+    sleep: Callable[[float], None] = time.sleep,
+) -> GraphQLTransport:
+    """Retry an injected transport on a retryable status; surface anything else.
+
+    A retry policy, not a transport: it knows nothing about sockets, TLS or URLs. A
+    failure swallowed mid-plan would leave the board half rolled, so exhaustion re-raises
+    the last error rather than returning anything.
+    """
+
+    def call(query: str, variables: dict[str, Any]) -> dict[str, Any]:
+        for attempt in range(attempts):
+            try:
+                return transport(query, variables)
+            except LinearTransportError as exc:
+                retryable = exc.status in RETRYABLE_STATUS
+                if not retryable or attempt == attempts - 1:
+                    raise
+                sleep(3 * (attempt + 1))
+        raise LinearTransportError("transport exhausted without a result")
+
+    return call
 
 
 def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date:
@@ -130,9 +112,7 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
     with "nothing to roll" on a sprint that plainly ended on Sunday.
 
     The containing sprint is the source only on its last day; otherwise the source is the
-    one that ended most recently. Same rule as the COMPUTE node's, applied here to a
-    different shape of data, because the window has to be fetched before the node that
-    knows the rule can see it.
+    one that ended most recently.
     """
     projects = transport(SPRINT_PROJECTS_QUERY, {})["projects"]["nodes"]
     dated = sorted(

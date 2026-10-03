@@ -35,11 +35,11 @@ from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply
     RETRYABLE_STATUS,
     LinearTransportError,
     SprintRollJournal,
-    http_transport,
     label_uuid,
     resolve_source_start,
     state_uuid,
     undo_from_manifest,
+    with_retries,
 )
 
 P_OLD = UUID(int=10)
@@ -388,77 +388,95 @@ def test_no_dated_sprint_project_at_all_is_refused() -> None:
         resolve_source_start(_projects([]), dt.date(2026, 10, 4))
 
 
-# -- AC6: transient Linear failures retry, persistent ones surface ------------
+# -- AC6: transient failures retry, persistent ones surface ------------------
+#
+# The retry POLICY is what core owns. ADR-005 forbids an HTTP client anywhere in
+# omnibase_core and the url-authority gate forbids a URL literal, so the client and the
+# endpoint belong to the caller; the adapter there raises LinearTransportError with the
+# status, and these cases prove what the policy does with it.
 
 
-class FlakyHTTP:
-    """Stands in for httpx.post, counting attempts and answering by script."""
+class Flaky:
+    """A transport that fails with a scripted status then succeeds."""
 
-    def __init__(self, statuses: list[int]) -> None:
+    def __init__(self, statuses: list[int | None]) -> None:
         self.statuses = statuses
         self.attempts = 0
 
-    def __call__(self, url: str, **kwargs: Any) -> Any:
+    def __call__(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         self.attempts += 1
         code = self.statuses[min(self.attempts - 1, len(self.statuses) - 1)]
-
-        class Response:
-            status_code = code
-
-            @staticmethod
-            def json() -> dict[str, Any]:
-                return {"data": {"ok": True}}
-
-        return Response()
+        if code is None:
+            return {"ok": True}
+        raise LinearTransportError(f"HTTP {code}", status=code)
 
 
 @pytest.mark.parametrize("code", sorted(RETRYABLE_STATUS))
-def test_a_transient_status_is_retried_and_then_succeeds(
-    monkeypatch: pytest.MonkeyPatch, code: int
-) -> None:
-    import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
-
-    flaky = FlakyHTTP([code, 200])
-    monkeypatch.setattr(rt.httpx, "post", flaky)
-    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
-    assert http_transport("key")("query{}", {}) == {"ok": True}
+def test_a_transient_status_is_retried_and_then_succeeds(code: int) -> None:
+    flaky = Flaky([code, None])
+    assert with_retries(flaky, sleep=lambda _s: None)("query{}", {}) == {"ok": True}
     assert flaky.attempts == 2
 
 
-def test_a_persistent_transient_status_surfaces_rather_than_being_swallowed(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A failure swallowed mid-plan leaves the board half rolled."""
-    import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
-
-    flaky = FlakyHTTP([503])
-    monkeypatch.setattr(rt.httpx, "post", flaky)
-    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
+def test_a_persistent_transient_status_surfaces_rather_than_being_swallowed() -> None:
+    """A failure swallowed mid-plan would leave the board half rolled."""
+    flaky = Flaky([503])
     with pytest.raises(LinearTransportError, match="HTTP 503"):
-        http_transport("key")("query{}", {})
+        with_retries(flaky, sleep=lambda _s: None)("query{}", {})
     assert flaky.attempts == MAX_ATTEMPTS
 
 
-def test_a_non_retryable_status_fails_on_the_first_attempt(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
-
-    flaky = FlakyHTTP([401])
-    monkeypatch.setattr(rt.httpx, "post", flaky)
-    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
+def test_a_non_retryable_status_fails_on_the_first_attempt() -> None:
+    flaky = Flaky([401])
     with pytest.raises(LinearTransportError, match="HTTP 401"):
-        http_transport("key")("query{}", {})
+        with_retries(flaky, sleep=lambda _s: None)("query{}", {})
     assert flaky.attempts == 1
 
 
-def test_a_transport_error_message_never_carries_the_key(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
+def test_an_error_with_no_status_is_not_retried() -> None:
+    """A transport failure the adapter could not classify is not assumed transient."""
+    calls = {"n": 0}
+
+    def unclassified(query: str, variables: dict[str, Any]) -> dict[str, Any]:
+        calls["n"] += 1
+        raise LinearTransportError("socket closed")
+
+    with pytest.raises(LinearTransportError, match="socket closed"):
+        with_retries(unclassified, sleep=lambda _s: None)("query{}", {})
+    assert calls["n"] == 1
+
+
+def test_the_backoff_grows_and_is_injected_so_the_test_does_not_sleep() -> None:
+    slept: list[float] = []
+    flaky = Flaky([503, 503, None])
+    with_retries(flaky, sleep=slept.append)("query{}", {})
+    assert slept == [3, 6]
+
+
+def test_a_transport_that_never_raises_is_called_once() -> None:
+    flaky = Flaky([None])
+    with_retries(flaky, sleep=lambda _s: None)("query{}", {})
+    assert flaky.attempts == 1
+
+
+def test_core_imports_no_http_client_and_names_no_url(tmp_path: Path) -> None:
+    """ADR-005 and the url-authority gate, asserted here so a reintroduction fails a
+    test rather than only a CI job somebody can rerun."""
     import omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply as rt
 
-    monkeypatch.setattr(rt.httpx, "post", FlakyHTTP([401]))
-    monkeypatch.setattr(rt.time, "sleep", lambda _s: None)
-    with pytest.raises(LinearTransportError) as caught:
-        http_transport("lin_api_secret_value")("query{}", {})
-    assert "lin_api_secret_value" not in str(caught.value)
+    lines = [
+        line.strip()
+        for line in Path(rt.__file__).read_text(encoding="utf-8").splitlines()
+        if line.strip().startswith(("import ", "from "))
+    ]
+    banned = ("httpx", "requests", "aiohttp", "urllib3", "urllib.request", "socket")
+    offending = [line for line in lines if any(name in line for name in banned)]
+    assert offending == [], offending
+    # A URL literal must come from a contract, not a module constant. Prose in a
+    # docstring is not a literal, so only code lines are read.
+    code = [
+        line
+        for line in Path(rt.__file__).read_text(encoding="utf-8").splitlines()
+        if "://" in line and not line.lstrip().startswith(("#", '"""', "*"))
+    ]
+    assert code == [], code
