@@ -1,3 +1,15 @@
+## v0.47.31 (2026-10-03)
+
+### Release
+- Cut omnibase-core from dev at 0.47.31 by the scheduled release train.
+- 3 release-relevant commit(s) merged since v0.47.29.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.29
+- feat: port the no-untracked-todos pre-commit hook from OCC (#1856)
+- feat: add done write receipt gate (#1852)
+- fix: an expiring waiver fails the pull request on its last valid day, not dev after midnight (#1849)
+
 ## v0.47.29 (2026-10-02)
 
 ### Release
