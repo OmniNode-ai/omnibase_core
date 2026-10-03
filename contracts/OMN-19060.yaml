@@ -1,0 +1,110 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19060
+title: A gate-decided exhaustion has a terminal failure cause it can land on
+summary: The terminal failure cause vocabulary gains quality_gate_refused, which is not a provider cause,
+  the provider arm of the routed-failure union refuses it at construction while still accepting all three
+  provider causes, and no library emitter assigns it.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19060
+    statement: The vocabulary must express a gate-decided exhaustion without borrowing a provider member,
+      consumer-first.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the vocabulary gains a member expressing a gate-decided exhaustion and it is
+          not a provider member -- falsifier: uv run pytest tests/unit/enums/test_enum_delegation_terminal_failure_cause.py
+          -q -k "gate_decided or vocabulary_is_exactly"'
+      - id: AC2
+        statement: 'AC2: the provider arm of the routed-failure union refuses the new member at construction
+          -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_model_delegation_terminal_v2.py
+          -q -k provider_branch_refuses_a_gate_decided_cause'
+      - id: AC3
+        statement: 'AC3: all three provider causes still construct on that arm, a positive control --
+          falsifier: uv run pytest tests/unit/models/delegation/wire/test_model_delegation_terminal_v2.py
+          -q -k provider_branch_still_accepts_every_provider_cause'
+      - id: AC4
+        statement: 'AC4: RED taken first and behaviourally rather than at import -- falsifier: a red run
+          that is an AttributeError or a collection error'
+      - id: AC5
+        statement: 'AC5: consumer-first by construction, no emitter in the library assigns the new member
+          -- falsifier: a library source file other than the enum definition and the provider-arm validator
+          that names the member'
+evidence_requirements:
+  - kind: tests
+    description: The enum tests pin the wire value and assert the member is not among the provider causes
+      and the vocabulary is exactly the pinned set.
+    command: uv run pytest tests/unit/enums/test_enum_delegation_terminal_failure_cause.py -q -k "a_gate_decided_exhaustion_has_a_member_to_land_on
+      or the_gate_decided_cause_is_not_a_provider_cause or vocabulary_is_exactly_the_pinned_set"
+  - kind: tests
+    description: The wire model test constructs a provider-kind failure with the gate-decided cause and
+      expects a validation error.
+    command: uv run pytest tests/unit/models/delegation/wire/test_model_delegation_terminal_v2.py -q -k
+      provider_branch_refuses_a_gate_decided_cause
+  - kind: tests
+    description: The wire model test constructs a provider-kind failure for each provider cause.
+    command: uv run pytest tests/unit/models/delegation/wire/test_model_delegation_terminal_v2.py -q -k
+      provider_branch_still_accepts_every_provider_cause
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-19060-ac1
+    description: The enum tests pin the wire value and assert the member is not among the provider causes
+      and the vocabulary is exactly the pinned set.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/enums/test_enum_delegation_terminal_failure_cause.py -q
+          -k "a_gate_decided_exhaustion_has_a_member_to_land_on or the_gate_decided_cause_is_not_a_provider_cause
+          or vocabulary_is_exactly_the_pinned_set"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-19060-ac2
+    description: The wire model test constructs a provider-kind failure with the gate-decided cause and
+      expects a validation error.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_model_delegation_terminal_v2.py
+          -q -k provider_branch_refuses_a_gate_decided_cause
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-19060-ac3
+    description: The wire model test constructs a provider-kind failure for each provider cause.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_model_delegation_terminal_v2.py
+          -q -k provider_branch_still_accepts_every_provider_cause
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn-19060-ac4
+    description: The merged pull request body records that the vocabulary test spells the wire value as
+      a literal and the provider-arm test failed with DID NOT RAISE before the validator existed.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: gh pr view 1735 --repo OmniNode-ai/omnibase_core --json body --jq .body | grep -Eq
+          'Red first, and behaviourally'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn-19060-ac5
+    description: The command lists every library source file naming the member and fails if any is neither
+      the enum definition nor the provider-arm validator.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: test "$(grep -rl --include='*.py' 'QUALITY_GATE_REFUSED' src | grep -v -e 'src/omnibase_core/enums/enum_delegation_terminal_failure_cause.py'
+          -e 'src/omnibase_core/models/delegation/wire/model_delegation_terminal_v2.py' | wc -l | tr -d
+          ' ')" = 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
