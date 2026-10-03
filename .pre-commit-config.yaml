@@ -2106,14 +2106,31 @@ repos:
         stages: [pre-commit]
 
       # OMN-5063: Block untyped metadata dict fields
-      # Centralized in onex_change_control (OMN-5135)
+      # Runs this repository's own scripts/check_no_untyped_metadata.py (OMN-20068,
+      # OCC retirement S8); it was the onex_change_control console script of the
+      # same name, which came from the onex-change-control dependency pin.
       - id: no-untyped-metadata
         name: No untyped metadata dict fields
         language: system
-        entry: uv run check-no-untyped-metadata
+        entry: uv run python scripts/check_no_untyped_metadata.py
         require_serial: true
         types: [python]
         exclude: ^tests/|^examples/|^scripts/
+        stages: [pre-commit]
+
+      # Require TODO/FIXME/HACK comments to carry a ticket reference (OMN-20068,
+      # OCC retirement S8). Runs this repository's own handler, ported from the
+      # onex_change_control hook of the same id, which used to be pulled from the
+      # onex_change_control repo block below. The exclude is the one that block
+      # carried: the todo-marker validator's own source names the markers as its
+      # SUBJECT (OMN-16606).
+      - id: no-untracked-todos
+        name: No untracked TODO/FIXME/HACK comments
+        language: system
+        entry: uv run python -m omnibase_core.handlers.handler_todo_format
+        require_serial: true
+        types: [python]
+        exclude: ^src/omnibase_core/validation/todo_marker/
         stages: [pre-commit]
 
   # Hardcoded topic string prevention (OMN-5259)
@@ -2126,16 +2143,6 @@ repos:
       - id: no-hardcoded-topics
         require_serial: true
         exclude: ^(src/omnibase_core/constants/constants_event_types\.py|src/omnibase_core/models/events/contract_registration/model_contract_deregistered_event\.py|src/omnibase_core/models/events/contract_registration/model_contract_registered_event\.py|src/omnibase_core/models/events/contract_registration/model_node_heartbeat_event\.py|src/omnibase_core/models/events/model_episode_event\.py|src/omnibase_core/models/events/model_git_hook_event\.py|src/omnibase_core/models/events/model_github_pr_status_event\.py|src/omnibase_core/models/events/model_linear_snapshot_event\.py|src/omnibase_core/models/events/validation/model_validation_run_completed_event\.py|src/omnibase_core/models/events/validation/model_validation_run_started_event\.py|src/omnibase_core/models/events/validation/model_validation_violations_batch_event\.py|src/omnibase_core/schemas/cli_contribution\.v1\.example\.yaml|src/omnibase_core/validation/validator_topic_suffix\.py)$
-        stages: [pre-commit]
-      - id: no-untracked-todos
-        require_serial: true
-        # The todo-marker validator's own source names TODO/FIXME/HACK as its SUBJECT.
-        # Both files already carry this repo's file-level escape hatch comment
-        # (onex-allow-file-todo-marker, OMN-13480), which the validator itself honors;
-        # this hook is owned by onex_change_control and does not read that marker, so the
-        # two files are excluded here rather than having their documentation mangled
-        # (OMN-16606 — first change to touch them since the hook was added).
-        exclude: ^src/omnibase_core/validation/todo_marker/
         stages: [pre-commit]
 
   # KB doc gate (OMN-16589) — keeps repo markdown inside the allowed set.

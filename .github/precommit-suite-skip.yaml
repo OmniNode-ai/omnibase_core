@@ -57,10 +57,10 @@
 # environments only for the hooks it will execute, so a skipped hook is never
 # cloned.
 #
-# Residual, stated: these three have no assertion from this job. Covering them
+# Residual, stated: these two have no assertion from this job. Covering them
 # means arranging a credential for pre-commit's own clone, which is a separate
-# decision with its own blast radius.
-- no-untracked-todos
+# decision with its own blast radius. (no-untracked-todos used to be a third; it
+# now runs this repository's own handler, so it left this list — OMN-20068.)
 - kb-doc-gate
 - secrets-baseline-wired
 
