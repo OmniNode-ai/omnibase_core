@@ -33,6 +33,7 @@ from scripts.ci.occ_preflight_wait import (
     AUTOBIND_NO_COMPANION_REQUIRED_REASONS,
     EXIT_ERROR,
     EXIT_OK,
+    EnumAncestryRead,
     EnumAutobindReadStatus,
     ModelAutobindOutcomeRead,
     main,
@@ -103,7 +104,7 @@ class _FakeGh:
 
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
-    ) -> bool:
+    ) -> EnumAncestryRead:
         raise AssertionError("the pin-only probe must not resolve ancestry")
 
     def read_autobind_outcome(
