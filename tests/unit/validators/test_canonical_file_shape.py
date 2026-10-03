@@ -425,12 +425,12 @@ def test_write_baseline_refused_when_present(repo: Path) -> None:
 # writable once and never reports writable to poll() again, so a parent that
 # feeds ``git cat-file --batch`` over that pipe sleeps forever. This selector
 # drops every write-ready event; the child process installs it as the one
-# ``subprocess`` uses, then reads more than 1 KB of requests.
+# ``subprocess`` uses, then reads more than 64 KB of requests.
 _STALLED_PIPE_CHILD = """
 import selectors, subprocess, sys, time
 from pathlib import Path
 
-from omnibase_core.validators.canonical_file_shape import INDEX, GitRepo
+from omnibase_core.validators.canonical_file_shape import GitRepo
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
 )
@@ -449,24 +449,30 @@ class StalledPipeSelector(selectors.PollSelector):
 
 
 subprocess._PopenSelector = StalledPipeSelector
-paths = sys.argv[2:]
+rev = sys.argv[2]
+paths = sys.argv[3:]
 blobs = GitRepo(root=Path(sys.argv[1]), env=scrub_git_location_env()).read_blobs(
-    INDEX, paths
+    rev, paths
 )
 print(sum(1 for path in paths if blobs[path] == f"{path}\\n".encode()))
 """
 
 
-def test_read_blobs_does_not_wait_on_stdin_pipe(repo: Path) -> None:
-    paths = [f"docs/stall/file_{i:03d}.md" for i in range(60)]
+@pytest.mark.parametrize("rev", [INDEX, "HEAD"])
+def test_read_blobs_does_not_wait_on_stdin_pipe(repo: Path, rev: str) -> None:
+    paths = [f"docs/stall/file_{i:04d}.md" for i in range(3000)]
     for path in paths:
         _write(repo, path, f"{path}\n")
     _stage(repo)
-    assert sum(len(p) + 2 for p in paths) > 1100
+    if rev == "HEAD":
+        _git(repo, "commit", "-q", "-m", "large batch")
+    prefix = ":" if rev == INDEX else f"{rev}:"
+    spec = "".join(f"{prefix}{path}\n" for path in paths).encode()
+    assert len(spec) > 64 * 1024
 
     try:
         proc = subprocess.run(
-            [sys.executable, "-c", _STALLED_PIPE_CHILD, str(repo), *paths],
+            [sys.executable, "-c", _STALLED_PIPE_CHILD, str(repo), rev, *paths],
             capture_output=True,
             text=True,
             check=False,
