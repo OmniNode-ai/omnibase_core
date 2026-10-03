@@ -180,8 +180,8 @@ def test_the_journal_records_the_prior_value_not_the_new_one(tmp_path: Path) -> 
         )
     )
     record = json.loads(manifest.read_text(encoding="utf-8").strip())
-    assert record["before"] == str(P_OLD)
-    assert record["after"] == str(P_NEW)
+    assert record["before"] == [str(P_OLD)]
+    assert record["after"] == [str(P_NEW)]
 
 
 def test_a_ticket_already_in_the_target_sprint_is_not_written(tmp_path: Path) -> None:
@@ -227,8 +227,8 @@ def test_undo_restores_prior_values_newest_write_first(tmp_path: Path) -> None:
                 issue_uuid=f"uuid-{n}",
                 identifier=f"OMN-{n}",
                 field="projectId",
-                before=str(P_OLD),
-                after=str(P_NEW),
+                before=(str(P_OLD),),
+                after=(str(P_NEW),),
             )
         )
     recorder = Recorder()
@@ -248,7 +248,7 @@ def test_undo_reports_a_state_with_no_prior_value_rather_than_guessing(
             identifier="OMN-1",
             field="stateId",
             before=None,
-            after="state-new",
+            after=("state-new",),
         )
     )
     recorder = Recorder()
@@ -268,7 +268,7 @@ def test_undo_restores_an_empty_project_because_no_sprint_is_a_real_prior_state(
             identifier="OMN-1",
             field="projectId",
             before=None,
-            after=str(P_NEW),
+            after=(str(P_NEW),),
         )
     )
     recorder = Recorder()

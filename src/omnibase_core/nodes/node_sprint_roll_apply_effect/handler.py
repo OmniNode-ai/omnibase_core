@@ -92,8 +92,8 @@ class NodeSprintRollApplyEffect:
                         issue_uuid=str(node["id"]),
                         identifier=identifier,
                         field="projectId",
-                        before=before,
-                        after=after,
+                        before=(before,) if before else None,
+                        after=(after,),
                     )
                 )
 

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 """The sprint roll's write journal, undo replay and Linear query shapes.
 
 The placement arithmetic is the COMPUTE node's (OMN-20396) and is reached with data
@@ -187,11 +189,19 @@ class SprintRollJournal:
         transport(MUTATION, {"id": write.issue_uuid, "in": _payload(write)})
 
 
+#: Fields Linear takes as a single id. Everything else is a set.
+SCALAR_FIELDS = frozenset({"projectId", "stateId"})
+
+
+def _value(field: str, ids: tuple[str, ...] | None) -> Any:
+    """Unwrap the stored tuple into the shape Linear's input expects."""
+    if field in SCALAR_FIELDS:
+        return ids[0] if ids else None
+    return list(ids or ())
+
+
 def _payload(write: ModelSprintRollWrite) -> dict[str, Any]:
-    if write.field == "labelIds":
-        after = write.after or ()
-        return {"labelIds": list(after)}
-    return {write.field: write.after}
+    return {write.field: _value(write.field, write.after)}
 
 
 def undo_from_manifest(
@@ -213,16 +223,12 @@ def undo_from_manifest(
     reversed_writes: list[ModelSprintRollWrite] = []
     skipped: list[ModelSprintRollWrite] = []
     for record in reversed(records):
-        if record.field == "labelIds":
-            payload: dict[str, Any] = {"labelIds": list(record.before or ())}
-        elif record.before is None:
-            if record.field == "projectId":
-                payload = {"projectId": None}
-            else:
-                skipped.append(record)
-                continue
-        else:
-            payload = {record.field: record.before}
+        if record.before is None and record.field == "stateId":
+            # A workflow state cannot be empty, so there is nothing to restore and
+            # guessing one would be worse than reporting it.
+            skipped.append(record)
+            continue
+        payload: dict[str, Any] = {record.field: _value(record.field, record.before)}
         transport(MUTATION, {"id": record.issue_uuid, "in": payload})
         reversed_writes.append(record)
     return reversed_writes, skipped

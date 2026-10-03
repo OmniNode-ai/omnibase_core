@@ -25,6 +25,11 @@ class ModelSprintRollWrite(BaseModel):
     issue_uuid: str
     identifier: str
     field: str
-    before: str | tuple[str, ...] | None
-    after: str | tuple[str, ...] | None
+    #: Always a tuple of ids, never a bare string. A scalar field such as `projectId`
+    #: carries a one-element tuple, and `labelIds` carries the whole set. One shape
+    #: rather than `str | tuple[str, ...]`: that union reads as primitive soup to the
+    #: union gate, and it made every reader branch on the field's arity as well as its
+    #: name. `None` means the field held nothing.
+    before: tuple[str, ...] | None
+    after: tuple[str, ...] | None
     at: dt.datetime = Field(default_factory=lambda: dt.datetime.now(dt.UTC))
