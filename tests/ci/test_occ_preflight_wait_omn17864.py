@@ -20,6 +20,7 @@ from scripts.ci.occ_preflight_wait import (
     AUTOBIND_NO_COMPANION_REQUIRED_REASONS,
     DEFAULT_DEADLINE_SECONDS,
     DEFAULT_POLL_INTERVAL_SECONDS,
+    EnumAncestryRead,
     EnumPreflightWaitOutcome,
     decide_preflight_wait,
     is_no_companion_required,
@@ -36,7 +37,7 @@ def test_stamp_absent_waits() -> None:
     decision = decide_preflight_wait(
         pr_body="Just a PR description, no stamp yet.",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -49,7 +50,7 @@ def test_companion_open_waits() -> None:
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="OPEN",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=INTERVAL,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -62,7 +63,7 @@ def test_companion_merged_inside_deadline_proceeds() -> None:
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="MERGED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=2 * INTERVAL,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -76,7 +77,7 @@ def test_full_fixture_sequence_stamp_then_open_then_merged() -> None:
     t0 = decide_preflight_wait(
         pr_body="no stamp here",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -86,7 +87,7 @@ def test_full_fixture_sequence_stamp_then_open_then_merged() -> None:
     t1 = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="OPEN",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=INTERVAL,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -96,7 +97,7 @@ def test_full_fixture_sequence_stamp_then_open_then_merged() -> None:
     t2 = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="MERGED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=16 * 60,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -108,7 +109,7 @@ def test_never_resolves_hits_deadline_exactly_and_not_one_poll_before() -> None:
     just_before = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="OPEN",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=DEADLINE - INTERVAL,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -118,7 +119,7 @@ def test_never_resolves_hits_deadline_exactly_and_not_one_poll_before() -> None:
     at_deadline = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="OPEN",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=DEADLINE,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -131,7 +132,7 @@ def test_never_resolves_stamp_absent_hits_deadline() -> None:
     at_deadline = decide_preflight_wait(
         pr_body="no stamp",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=DEADLINE,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -145,7 +146,7 @@ def test_positive_control_companion_closed_unmerged_fails_now_with_zero_wait() -
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="CLOSED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -158,7 +159,7 @@ def test_positive_control_malformed_stamp_fails_now() -> None:
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: not-a-valid-value",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -176,7 +177,7 @@ def test_non_pull_request_event_proceeds_immediately_regardless_of_state(
     decision = decide_preflight_wait(
         pr_body=None,
         companion_state="CLOSED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=99999,
         deadline_seconds=DEADLINE,
         event_name=event_name,
@@ -193,7 +194,7 @@ def test_genuine_ineligibility_still_fails_even_past_the_deadline() -> None:
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: deadbeefcafe1234567890abcdef1234567890",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=DEADLINE * 10,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -206,7 +207,7 @@ def test_ancestor_sha_proceeds() -> None:
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: deadbeefcafe1234567890abcdef1234567890",
         companion_state=None,
-        cited_sha_is_ancestor=True,
+        cited_sha_ancestry=EnumAncestryRead.ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -221,7 +222,7 @@ def test_unreadable_body_waits_and_is_re_read() -> None:
     decision = decide_preflight_wait(
         pr_body=None,
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -236,7 +237,7 @@ def test_companion_state_unresolved_retries_rather_than_fails() -> None:
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -270,7 +271,7 @@ def test_pin_only_declined_with_no_stamp_is_not_required() -> None:
     decision = decide_preflight_wait(
         pr_body="chore: release omnimarket 0.2.1 -- no stamp, none is coming",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -289,7 +290,7 @@ def test_no_red_derivable_declined_with_no_stamp_still_waits() -> None:
     decision = decide_preflight_wait(
         pr_body="no stamp yet",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -301,7 +302,7 @@ def test_no_red_derivable_declined_with_no_stamp_still_waits() -> None:
     at_deadline = decide_preflight_wait(
         pr_body="no stamp yet",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=DEADLINE,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -319,7 +320,7 @@ def test_absent_autobind_outcome_with_no_stamp_still_waits() -> None:
     decision = decide_preflight_wait(
         pr_body="no stamp yet",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -333,7 +334,7 @@ def test_error_outcome_with_no_stamp_behaves_exactly_as_today() -> None:
     decision = decide_preflight_wait(
         pr_body="no stamp yet",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -349,7 +350,7 @@ def test_pin_only_outcome_never_overrides_a_stamp_that_is_present() -> None:
     closed = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="CLOSED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -361,7 +362,7 @@ def test_pin_only_outcome_never_overrides_a_stamp_that_is_present() -> None:
     merged = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#5012",
         companion_state="MERGED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -373,7 +374,7 @@ def test_pin_only_outcome_never_overrides_a_stamp_that_is_present() -> None:
     malformed = decide_preflight_wait(
         pr_body="Evidence-Source: not-a-ref",
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -391,7 +392,7 @@ def test_unreadable_body_is_never_read_as_not_required_even_with_a_pin_only_outc
     decision = decide_preflight_wait(
         pr_body=None,
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -440,7 +441,7 @@ def test_only_declined_carries_the_exemption() -> None:
         decision = decide_preflight_wait(
             pr_body="no stamp yet",
             companion_state=None,
-            cited_sha_is_ancestor=False,
+            cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
             elapsed_seconds=0,
             deadline_seconds=DEADLINE,
             event_name="pull_request",

@@ -40,6 +40,7 @@ import yaml
 
 from scripts.ci.occ_preflight_wait import (
     AUTOBIND_TERMINAL_DECLINE_REASONS,
+    EnumAncestryRead,
     EnumAutobindReadStatus,
     EnumPreflightWaitOutcome,
     GhCli,
@@ -121,7 +122,7 @@ def _decide(
     return decide_preflight_wait(
         pr_body=pr_body,
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=elapsed_seconds,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -335,7 +336,7 @@ def test_a_present_stamp_is_evaluated_on_its_evidence_not_on_the_outcome() -> No
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#10524",
         companion_state="MERGED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -420,7 +421,7 @@ def test_flag_defaults_to_off() -> None:
     decision = decide_preflight_wait(
         pr_body=NO_STAMP_BODY,
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",

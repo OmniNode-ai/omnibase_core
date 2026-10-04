@@ -17,6 +17,7 @@ import pytest
 
 from scripts.ci.occ_preflight_wait import (
     OCC_DURABLE_BRANCHES,
+    EnumAncestryRead,
     EnumAutobindReadStatus,
     ModelAutobindOutcomeRead,
     main,
@@ -68,8 +69,12 @@ class _FakeGh:
 
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
-    ) -> bool:
-        return self.ancestor
+    ) -> EnumAncestryRead:
+        return (
+            EnumAncestryRead.ANCESTOR
+            if self.ancestor
+            else EnumAncestryRead.NOT_ANCESTOR
+        )
 
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str

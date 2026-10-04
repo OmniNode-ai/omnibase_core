@@ -24,6 +24,7 @@ from scripts.ci.occ_preflight_wait import (
     DEFAULT_POLL_INTERVAL_SECONDS,
     EXIT_ERROR,
     EXIT_OK,
+    EnumAncestryRead,
     EnumAutobindReadStatus,
     EnumPreflightWaitOutcome,
     ModelAutobindOutcomeRead,
@@ -44,7 +45,7 @@ def _decide(
     return decide_preflight_wait(
         pr_body=None,
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=elapsed,
         deadline_seconds=DEADLINE,
         event_name=event_name,
@@ -134,8 +135,8 @@ class _FakeGh:
 
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
-    ) -> bool:
-        return True
+    ) -> EnumAncestryRead:
+        return EnumAncestryRead.ANCESTOR
 
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str
