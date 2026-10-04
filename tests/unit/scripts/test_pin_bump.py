@@ -360,3 +360,92 @@ def test_shipped_manifest_omnidash_onex_schema_compat_is_not_a_pin_site() -> Non
     assert ".github/workflows/onex-schema-compat.yml" not in [
         s.path for s in entry.pin_sites
     ]
+
+
+# --- banner indent (OMN-20525) -------------------------------------------------
+
+INDENT_OLD_SHA = OLD_SHA
+INDENT_MID_SHA = "1" * 40
+INDENT_NEW_SHA = "2" * 40
+_SAME_INDENT = " " * 8
+_BANNER_TWO_LINE = (
+    "# Pinned to omnibase_core main as of 2026-03-22.\n"
+    f"{_SAME_INDENT}# Update by running: uv run scripts/pin_bump.py\n"
+)
+_BANNER_SINGLE_LINE = (
+    "# Auto-bumped by omnibase_core publish-downstream-pin-bump.yml "
+    f"to {INDENT_OLD_SHA[:12]}.\n"
+)
+_PIN_SITE = PinSite(
+    path=".github/workflows/check-handshake.yml", pattern=r"ref:\s*([0-9a-f]{40})"
+)
+
+
+def _make_same_indent_handshake(root: Path, banner: str) -> Path:
+    """Banner comment sits at the same indent as the ``ref:`` key, as on omninode_infra."""
+    p = root / _PIN_SITE.path
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        "jobs:\n"
+        "  check-handshake:\n"
+        "    steps:\n"
+        "      - uses: actions/checkout@v6\n"
+        "        with:\n"
+        "          repository: OmniNode-ai/omnibase_core\n"
+        f"{_SAME_INDENT}  {banner}"
+        f"{_SAME_INDENT}  ref: {INDENT_OLD_SHA}\n"
+        "          path: omnibase_core\n"
+    )
+    return p
+
+
+def _banner_lines(content: str) -> list[str]:
+    return [ln for ln in content.splitlines() if "#" in ln]
+
+
+@pytest.mark.parametrize(
+    "banner", [_BANNER_TWO_LINE, _BANNER_SINGLE_LINE], ids=["two_line", "single_line"]
+)
+def test_bump_banner_keeps_indent_and_changes_only_sha12(
+    tmp_repo: Path, banner: str
+) -> None:
+    f = _make_same_indent_handshake(tmp_repo, banner)
+    before = f.read_text()
+    bump_file(tmp_repo, _PIN_SITE, INDENT_NEW_SHA)
+    after = f.read_text()
+    (line,) = _banner_lines(after)
+    assert line.startswith(" " * 10 + "# Auto-bumped")
+    assert line == " " * 10 + (
+        "# Auto-bumped by omnibase_core publish-downstream-pin-bump.yml "
+        f"to {INDENT_NEW_SHA[:12]}."
+    )
+    # nothing but the pin and the banner changed
+    assert after.replace(INDENT_NEW_SHA, INDENT_OLD_SHA).count("\n") == (
+        before.count("\n") - (1 if banner is _BANNER_TWO_LINE else 0)
+    )
+
+
+@pytest.mark.parametrize(
+    "banner", [_BANNER_TWO_LINE, _BANNER_SINGLE_LINE], ids=["two_line", "single_line"]
+)
+def test_bump_idempotent_indent_banner_length_stable_across_bumps(
+    tmp_repo: Path, banner: str
+) -> None:
+    f = _make_same_indent_handshake(tmp_repo, banner)
+    bump_file(tmp_repo, _PIN_SITE, INDENT_MID_SHA)
+    (first,) = _banner_lines(f.read_text())
+    bump_file(tmp_repo, _PIN_SITE, INDENT_NEW_SHA)
+    (second,) = _banner_lines(f.read_text())
+    assert len(first) == len(second) == 10 + len(second.lstrip())
+    assert len(second) <= 150
+
+
+def test_bump_two_line_banner_indent_follows_first_line(tmp_repo: Path) -> None:
+    f = _make_same_indent_handshake(tmp_repo, _BANNER_TWO_LINE)
+    text = f.read_text().replace(
+        f"{_SAME_INDENT}  # Pinned", f"{_SAME_INDENT}      # Pinned"
+    )
+    f.write_text(text)
+    bump_file(tmp_repo, _PIN_SITE, INDENT_NEW_SHA)
+    (line,) = _banner_lines(f.read_text())
+    assert line.startswith(" " * 14 + "# Auto-bumped")
