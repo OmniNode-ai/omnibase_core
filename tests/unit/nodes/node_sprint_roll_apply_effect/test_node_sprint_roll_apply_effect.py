@@ -348,30 +348,16 @@ def _projects(rows: list[dict[str, Any]]):
     return transport
 
 
-def test_on_the_last_day_the_containing_sprint_is_the_one_drained() -> None:
-    start = resolve_source_start(_projects(SPRINTS), dt.date(2026, 10, 4))
-    assert start == dt.date(2026, 9, 28)
-
-
-@pytest.mark.parametrize("day", ["2026-10-05", "2026-10-06", "2026-10-08"])
-def test_after_the_boundary_the_sprint_that_ended_is_drained_not_the_new_one(
-    day: str,
-) -> None:
-    """The regression this function exists for: on Monday the containing sprint is the
-    one just beginning, and the board's own sprint read cannot even see the finished one.
-    """
-    start = resolve_source_start(_projects(SPRINTS), dt.date.fromisoformat(day))
-    assert start == dt.date(2026, 9, 28)
-
-
-def test_a_window_that_omits_the_finished_sprint_still_resolves_it() -> None:
-    """The project list has no window, which is the whole reason it is asked first."""
+def test_a_project_list_holding_only_a_future_window_still_resolves_inside_it() -> None:
+    """Under the aligned rule a window that CONTAINS the date is the source, so this no
+    longer raises -- it resolves to that window. The refusal is reserved for a date in no
+    window with nothing ended before it."""
     only_future = [SPRINTS[2]]
+    assert resolve_source_start(
+        _projects(only_future), dt.date(2026, 10, 6)
+    ) == dt.date(2026, 10, 5)
     with pytest.raises(LinearTransportError, match="nothing to roll"):
-        resolve_source_start(_projects(only_future), dt.date(2026, 10, 6))
-    assert resolve_source_start(_projects(SPRINTS), dt.date(2026, 10, 6)) == dt.date(
-        2026, 9, 28
-    )
+        resolve_source_start(_projects(only_future), dt.date(2026, 10, 1))
 
 
 def test_a_date_before_every_sprint_is_refused() -> None:
@@ -536,3 +522,45 @@ def test_a_plan_whose_tickets_carry_no_number_refuses_rather_than_reading_everyt
         NodeSprintRollApplyEffect(Recorder()).handle(
             ModelSprintRollApplyRequest(plan=plan)
         )
+
+
+# -- the source rule must MATCH the compute node's (OMN-20397) ----------------
+
+
+@pytest.mark.parametrize("day", ["2026-09-28", "2026-10-01", "2026-10-04"])
+def test_the_containing_sprint_is_the_source_on_any_day_inside_it(day: str) -> None:
+    """These two implementations drifted: this one kept "containing sprint only on its
+    last day" after the compute node moved to "any day inside it". A 2026-10-08 run then
+    loaded the window at 2026-10-04 while the compute node drained 10-05 -> 10-11, so
+    capacity came from the wrong sprint -- `0 closed in 7 of 7 days`, a cap of 1."""
+    assert resolve_source_start(
+        _projects(SPRINTS), dt.date.fromisoformat(day)
+    ) == dt.date(2026, 9, 28)
+
+
+def test_a_day_inside_the_following_sprint_drains_that_one() -> None:
+    assert resolve_source_start(_projects(SPRINTS), dt.date(2026, 10, 8)) == dt.date(
+        2026, 10, 5
+    )
+
+
+def test_only_a_date_in_no_window_falls_back_to_the_latest_ended() -> None:
+    gapped = [SPRINTS[0], SPRINTS[2]]
+    assert resolve_source_start(_projects(gapped), dt.date(2026, 10, 1)) == dt.date(
+        2026, 9, 21
+    )
+
+
+def test_overlapping_windows_resolve_to_the_latest_start() -> None:
+    rows = [
+        {
+            "id": "w",
+            "name": "wide",
+            "startDate": "2026-09-14",
+            "targetDate": "2026-10-10",
+        },
+        *SPRINTS,
+    ]
+    assert resolve_source_start(_projects(rows), dt.date(2026, 10, 1)) == dt.date(
+        2026, 9, 28
+    )

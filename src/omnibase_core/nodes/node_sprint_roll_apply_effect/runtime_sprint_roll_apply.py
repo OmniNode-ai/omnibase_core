@@ -31,6 +31,9 @@ from pydantic import JsonValue
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
+from omnibase_core.nodes.node_sprint_roll_apply_effect.linear_transport_failure import (
+    LinearTransportError,
+)
 
 __all__ = [
     "MAX_ATTEMPTS",
@@ -70,19 +73,6 @@ SPRINT_PROJECTS_QUERY = (
     'query{projects(first:100,filter:{name:{startsWith:"Sprint "}})'
     "{nodes{id name startDate targetDate}}}"
 )
-
-
-class LinearTransportError(RuntimeError):
-    """A Linear call failed.
-
-    `status` is the HTTP status when the caller's adapter knows one, and None otherwise.
-    It is the only thing this package needs to know about HTTP, and it arrives as data
-    rather than as an imported client type.
-    """
-
-    def __init__(self, message: str, *, status: int | None = None) -> None:
-        super().__init__(message)
-        self.status = status
 
 
 def with_retries(
@@ -139,12 +129,19 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
 
     This exists because the board's sprint read returns only the current and future
     sprints: a finished sprint is invisible to it. Asking the project list first -- which
-    has no window -- gives the drained sprint, and loading the window from ITS start date
-    puts both it and every later sprint in scope. Without this a Monday 07:00 run refuses
-    with "nothing to roll" on a sprint that plainly ended on Sunday.
+    has no window -- gives the drained sprint, and the caller loads the window from there.
 
-    The containing sprint is the source only on its last day; otherwise the source is the
-    one that ended most recently.
+    THE RULE HERE MUST MATCH `resolve_source` IN THE COMPUTE NODE, and for a while it did
+    not: this copy kept the superseded "containing sprint only on its last day" rule after
+    the compute half moved to "the containing sprint on any day inside it". The two then
+    disagreed, so a 2026-10-08 run loaded the window at 2026-10-04 while the compute node
+    drained 10-05 -> 10-11, and capacity was measured from the wrong sprint's window --
+    `0 tickets closed in 7 of 7 days`, a cap of 1.
+
+    So: the containing sprint is the source on any day inside it, overlapping windows
+    resolve to the latest start, and only when no window contains `as_of` does the most
+    recently ENDED sprint win. A caller that wants the sprint which just closed passes
+    that Sunday as `as_of`, exactly as the compute node documents.
     """
     projects = node_rows(transport(SPRINT_PROJECTS_QUERY, {}), "projects")
     dated = sorted(
@@ -154,19 +151,19 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
     if not dated:
         raise LinearTransportError("no dated sprint project exists")
     iso = as_of.isoformat()
-    containing = next(
-        (p for p in dated if _text(p, "startDate") <= iso <= _text(p, "targetDate")),
-        None,
-    )
-    if containing is not None and _text(containing, "targetDate") == iso:
-        return dt.date.fromisoformat(_text(containing, "startDate"))
+    containing = [
+        p for p in dated if _text(p, "startDate") <= iso <= _text(p, "targetDate")
+    ]
+    if containing:
+        return dt.date.fromisoformat(_text(containing[-1], "startDate"))
     ended = [p for p in dated if _text(p, "targetDate") < iso]
     if not ended:
         raise LinearTransportError(
-            f"no sprint has ended before {iso} and {iso} is not the last day of any "
-            "sprint window, so there is nothing to roll"
+            f"no sprint contains {iso} and none ended before it, so there is nothing "
+            "to roll"
         )
-    return dt.date.fromisoformat(_text(ended[-1], "startDate"))
+    latest = max(ended, key=lambda p: _text(p, "targetDate"))
+    return dt.date.fromisoformat(_text(latest, "startDate"))
 
 
 def label_uuid(transport: GraphQLTransport, name: str) -> str:
