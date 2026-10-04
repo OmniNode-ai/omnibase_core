@@ -37,17 +37,26 @@ function, a :class:`GhPort` protocol for the live reads it needs, a
 ``main()`` polling driver. The pure function is exhaustively unit-tested;
 the client is exercised only by the workflow itself.
 
-Every branch fails closed. An unreadable PR body is ``FAIL_NOW``, not
-``WAIT`` -- there is nothing to re-read that will fix itself. A companion
-CLOSED without merging is ``FAIL_NOW`` -- that is the exact OMN-15214
-incident state, and waiting cannot un-close it. A malformed evidence-source
-value is ``FAIL_NOW`` -- waiting cannot repair an authoring error. A
-evidence-source SHA that is not an ancestor of any onex_change_control
-durable branch is ``FAIL_NOW`` -- onex_change_control is squash-only, so a
-feature-branch head SHA can never become one (OMN-15216), and no amount of
-elapsed time changes that. Only ``stamp_absent`` and ``companion_unmerged``
-are genuinely retryable, and even those convert to ``DEADLINE`` (also a hard
+Every branch fails closed. A companion CLOSED without merging is
+``FAIL_NOW`` -- that is the exact OMN-15214 incident state, and waiting cannot
+un-close it. A malformed evidence-source value is ``FAIL_NOW`` -- waiting
+cannot repair an authoring error. A evidence-source SHA that is not an
+ancestor of any onex_change_control durable branch is ``FAIL_NOW`` --
+onex_change_control is squash-only, so a feature-branch head SHA can never
+become one (OMN-15216), and no amount of elapsed time changes that. The
+retryable set is ``stamp_absent``, ``companion_unmerged``,
+``companion_state_unresolved``, ``autobind_outcome_unreadable`` and
+``body_unresolved``, and every member converts to ``DEADLINE`` (also a hard
 failure) once ``elapsed_seconds >= deadline_seconds``.
+
+``body_unresolved`` (OMN-20427) is the PR body that could not be READ on this
+poll: ``gh`` timed out, exited non-zero or could not start. That is a
+transport failure, the same kind as ``companion_state_unresolved``, and it
+used to end the gate on the first occurrence (reason ``body_unreadable``,
+``FAIL_NOW``) while the companion read beside it waited. The body is re-read
+on every poll, so the retry costs nothing the budget did not already allow,
+and a body that never becomes readable still ends as ``DEADLINE`` at the
+unchanged budget.
 
 The one exemption (OMN-18848)
 -----------------------------
@@ -251,6 +260,20 @@ AUTOBIND_TERMINAL_DECLINE_REASONS: Final[tuple[str, ...]] = (
     "skip:NO_RED_DERIVABLE_CHECK",
     "skip:DEFER_HAND_AUTHORED",
 )
+
+
+class EnumAncestryRead(StrEnum):
+    """What :meth:`GhPort.sha_is_ancestor` could establish about a cited SHA.
+
+    OMN-20448. A read that FAILED is not a read that said no: ANCESTOR means a
+    durable branch proved ancestry, NOT_ANCESTOR means every branch compare was
+    a successful read and none proved it (terminal), and UNRESOLVED means no
+    branch proved it and at least one compare could not be read (retryable).
+    """
+
+    ANCESTOR = "ancestor"
+    NOT_ANCESTOR = "not_ancestor"
+    UNRESOLVED = "unresolved"
 
 
 class EnumAutobindReadStatus(StrEnum):
@@ -646,7 +669,7 @@ def decide_preflight_wait(
     *,
     pr_body: str | None,
     companion_state: str | None,
-    cited_sha_is_ancestor: bool,
+    cited_sha_ancestry: EnumAncestryRead,
     elapsed_seconds: int,
     deadline_seconds: int,
     event_name: str,
@@ -662,8 +685,9 @@ def decide_preflight_wait(
     companion was cited but its state could not be read (a retryable
     transport failure, distinct from an authoritative CLOSED).
 
-    ``cited_sha_is_ancestor`` is only consulted when the stamp is SHA-shaped;
-    it is ignored otherwise.
+    ``cited_sha_ancestry`` is only consulted when the stamp is SHA-shaped; it
+    is ignored otherwise. UNRESOLVED (an ancestry read that failed) retries
+    inside the deadline; only NOT_ANCESTOR is terminal (OMN-20448).
 
     ``autobind_outcome`` is the OCC autobind producer's ``(outcome, reason)``
     for the PR's CURRENT head SHA, or ``None`` when no outcome was recorded or
@@ -693,13 +717,18 @@ def decide_preflight_wait(
         )
 
     if pr_body is None:
-        return ModelPreflightWaitDecision(
-            outcome=EnumPreflightWaitOutcome.FAIL_NOW,
-            reason="body_unreadable",
+        # OMN-20427: a body that could not be READ is not a body that says
+        # nothing. The stamp (and so any producer outcome) cannot be judged
+        # without it, so no exemption or decline is read from this poll; the
+        # next poll re-reads the body, and the deadline stays the only exit.
+        return _wait_or_deadline(
+            reason="body_unresolved",
             detail=(
-                "the PR body could not be read; failing closed rather than waiting "
-                "on a surface that cannot be observed"
+                "the PR body could not be read on this poll (transport failure, "
+                "retryable); it will be re-read on the next poll"
             ),
+            elapsed_seconds=elapsed_seconds,
+            deadline_seconds=deadline_seconds,
         )
 
     stamp = parse_evidence_source(pr_body)
@@ -845,7 +874,17 @@ def decide_preflight_wait(
         )
 
     # SHA-shaped stamp.
-    if cited_sha_is_ancestor:
+    if cited_sha_ancestry is EnumAncestryRead.UNRESOLVED:
+        return _wait_or_deadline(
+            reason="sha_ancestry_unresolved",
+            detail=(
+                f"could not read whether evidence-source SHA {stamp} is an "
+                "ancestor of an OCC durable branch (retryable)"
+            ),
+            elapsed_seconds=elapsed_seconds,
+            deadline_seconds=deadline_seconds,
+        )
+    if cited_sha_ancestry is EnumAncestryRead.ANCESTOR:
         return ModelPreflightWaitDecision(
             outcome=EnumPreflightWaitOutcome.PROCEED,
             reason="evidence_durable",
@@ -892,7 +931,7 @@ class GhPort(Protocol):
 
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
-    ) -> bool: ...
+    ) -> EnumAncestryRead: ...
 
     def read_autobind_outcome(
         self, *, repo: str, pr_number: str
@@ -1077,7 +1116,8 @@ class GhCli:
 
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
-    ) -> bool:
+    ) -> EnumAncestryRead:
+        read_failed = False
         for branch in branches:
             raw = self._run(
                 [
@@ -1088,9 +1128,15 @@ class GhCli:
                     ".status",
                 ]
             )
-            if raw is not None and raw.strip() in ("identical", "behind"):
-                return True
-        return False
+            if raw is None:
+                read_failed = True
+            elif raw.strip() in ("identical", "behind"):
+                return EnumAncestryRead.ANCESTOR
+        return (
+            EnumAncestryRead.UNRESOLVED
+            if read_failed
+            else EnumAncestryRead.NOT_ANCESTOR
+        )
 
 
 _AUTOBIND_NOT_CONSULTED: Final[ModelAutobindOutcomeRead] = ModelAutobindOutcomeRead(
@@ -1100,12 +1146,12 @@ _AUTOBIND_NOT_CONSULTED: Final[ModelAutobindOutcomeRead] = ModelAutobindOutcomeR
 
 def _resolve_facts(
     client: GhPort, *, repo: str, pr_number: str, occ_repo: str
-) -> tuple[str | None, str | None, bool, str, ModelAutobindOutcomeRead]:
+) -> tuple[str | None, str | None, EnumAncestryRead, str, ModelAutobindOutcomeRead]:
     """One round of live reads. Returns (pr_body, companion_state,
-    cited_sha_is_ancestor, resolved_sha, autobind)."""
+    cited_sha_ancestry, resolved_sha, autobind)."""
     pr_body = client.read_pr_body(repo=repo, pr_number=pr_number)
     if pr_body is None:
-        return None, None, False, "", _AUTOBIND_NOT_CONSULTED
+        return None, None, EnumAncestryRead.NOT_ANCESTOR, "", _AUTOBIND_NOT_CONSULTED
 
     stamp = parse_evidence_source(pr_body)
     if stamp is None:
@@ -1115,7 +1161,7 @@ def _resolve_facts(
         return (
             pr_body,
             None,
-            False,
+            EnumAncestryRead.NOT_ANCESTOR,
             "",
             client.read_autobind_outcome(repo=repo, pr_number=pr_number),
         )
@@ -1125,18 +1171,24 @@ def _resolve_facts(
         state, sha = client.read_companion(
             occ_repo=occ_repo, pr_number=occ_ref.group(1)
         )
-        return pr_body, state, False, sha, _AUTOBIND_NOT_CONSULTED
+        return (
+            pr_body,
+            state,
+            EnumAncestryRead.NOT_ANCESTOR,
+            sha,
+            _AUTOBIND_NOT_CONSULTED,
+        )
 
     if HEX_SHA_RE.match(stamp.lower()) is not None:
         canonical = client.canonicalize_sha(occ_repo=occ_repo, sha=stamp)
         resolved_sha = canonical or stamp
-        is_ancestor = client.sha_is_ancestor(
+        ancestry = client.sha_is_ancestor(
             occ_repo=occ_repo, sha=resolved_sha, branches=OCC_DURABLE_BRANCHES
         )
-        return pr_body, None, is_ancestor, resolved_sha, _AUTOBIND_NOT_CONSULTED
+        return pr_body, None, ancestry, resolved_sha, _AUTOBIND_NOT_CONSULTED
 
     # Malformed; decide_preflight_wait reports this itself from pr_body.
-    return pr_body, None, False, "", _AUTOBIND_NOT_CONSULTED
+    return pr_body, None, EnumAncestryRead.NOT_ANCESTOR, "", _AUTOBIND_NOT_CONSULTED
 
 
 def advance_to_durable_tip(
@@ -1306,7 +1358,7 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
         (
             pr_body,
             companion_state,
-            cited_sha_is_ancestor,
+            cited_sha_ancestry,
             resolved_sha,
             autobind,
         ) = _resolve_facts(
@@ -1315,7 +1367,7 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
         decision = decide_preflight_wait(
             pr_body=pr_body,
             companion_state=companion_state,
-            cited_sha_is_ancestor=cited_sha_is_ancestor,
+            cited_sha_ancestry=cited_sha_ancestry,
             elapsed_seconds=elapsed,
             deadline_seconds=args.deadline_seconds,
             event_name=args.event_name,
