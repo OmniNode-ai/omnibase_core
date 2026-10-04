@@ -30,11 +30,11 @@ from pydantic import BaseModel, Field
 
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 BANNER_OLD_RE = re.compile(
-    r"#\s*Pinned to omnibase_core[^\n]*\n\s*#\s*Update by running:[^\n]*\n",
+    r"^([ \t]*)#\s*Pinned to omnibase_core[^\n]*\n\s*#\s*Update by running:[^\n]*\n",
     re.MULTILINE,
 )
 BANNER_ANY_OLD_RE = re.compile(
-    r"#\s*(?:Pinned to omnibase_core|Auto-bumped by omnibase_core)[^\n]*\n",
+    r"^([ \t]*)#\s*(?:Pinned to omnibase_core|Auto-bumped by omnibase_core)[^\n]*\n",
     re.MULTILINE,
 )
 
@@ -85,14 +85,18 @@ def _validate_sha(sha: str) -> None:
 
 def _rewrite_banner(content: str, new_sha: str) -> str:
     short = new_sha[:12]
-    banner = (
-        f"          # Auto-bumped by omnibase_core publish-downstream-pin-bump.yml "
-        f"to {short}.\n"
+    text = (
+        f"# Auto-bumped by omnibase_core publish-downstream-pin-bump.yml to {short}.\n"
     )
-    if BANNER_OLD_RE.search(content):
-        return BANNER_OLD_RE.sub(banner, content, count=1)
-    if BANNER_ANY_OLD_RE.search(content):
-        return BANNER_ANY_OLD_RE.sub(banner, content, count=1)
+
+    def _banner(m: re.Match[str]) -> str:
+        # Reuse the indent of the (first) line being replaced so repeated bumps
+        # never grow the line.
+        return m.group(1) + text
+
+    for pattern in (BANNER_OLD_RE, BANNER_ANY_OLD_RE):
+        if pattern.search(content):
+            return pattern.sub(_banner, content, count=1)
     return content
 
 
