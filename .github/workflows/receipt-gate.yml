@@ -1216,39 +1216,136 @@ jobs:
           fi
           MB=$(git -C "$head_tree" merge-base "$BASE_SHA" "$HEAD_SHA")
           printf '%s\n' "$MB" > "$RUNNER_TEMP/dod/merge-base.txt"
-          # A self-hosted workspace outlives the job: clear a previous run's base tree.
-          rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home"
+          # A self-hosted workspace outlives the job: clear a previous run's base trees.
+          rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home" "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home"
           git -C "$head_tree" worktree prune
-          mkdir -p "$GITHUB_WORKSPACE/.dod-verify/base_home"
-          git -C "$head_tree" worktree add --detach "$base_tree" "$MB"
-          git -C "$head_tree" diff --name-only --diff-filter=ACMR -z "$MB" "$HEAD_SHA" > "$RUNNER_TEMP/dod/overlay-paths"
-          test_paths=0
-          while IFS= read -r -d '' path; do
-            if [[ "$path" == *..* || "$path" == /* ]]; then
-              echo "::error::unsafe overlay path refused"
+          TEST_SIDE='^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$'
+          # prepare_control HOME LABEL [FIX]: check the merge base out at HOME/$REPO_SHORT,
+          # revert FIX's product (non-test) changes there when one is named, and lay
+          # over it every test-side path and cited contract this pull request changed.
+          prepare_control() {
+            local control_home="$1" label="$2" fix="${3:-}"
+            local control_tree="$control_home/$REPO_SHORT" overlay_paths
+            overlay_paths="$(mktemp "$RUNNER_TEMP/dod/overlay-paths.XXXXXX")"
+            mkdir -p "$control_home"
+            git -C "$head_tree" worktree add --detach "$control_tree" "$MB"
+            local path test_side cited_contract ticket
+            if [ -n "$fix" ]; then
+              local -a product=()
+              while IFS= read -r -d '' path; do
+                if [[ "$path" == *..* || "$path" == /* ]]; then
+                  echo "::error::unsafe revert path refused"
+                  exit 1
+                fi
+                if [[ ! "$path" =~ $TEST_SIDE ]]; then
+                  product+=("$path")
+                fi
+              done < <(git -C "$head_tree" diff --name-only --no-renames -z "$fix^1" "$fix")
+              if [ "${#product[@]}" -eq 0 ]; then
+                echo "::error::merged fix $fix changes no product path, so reverting it cannot make a bound test fail"
+                exit 1
+              fi
+              if ! git -C "$head_tree" diff --binary --no-renames "$fix^1" "$fix" -- "${product[@]}" | git -C "$control_tree" apply -R; then
+                echo "::error::the product changes of merged fix $fix do not revert cleanly at the merge base, so the control cannot run"
+                exit 1
+              fi
+              for path in "${product[@]}"; do
+                printf 'Reverted from %s: %s\n' "$fix" "$path"
+              done
+            fi
+            git -C "$head_tree" diff --name-only --diff-filter=ACMR -z "$MB" "$HEAD_SHA" > "$overlay_paths"
+            local test_paths=0
+            while IFS= read -r -d '' path; do
+              if [[ "$path" == *..* || "$path" == /* ]]; then
+                echo "::error::unsafe overlay path refused"
+                exit 1
+              fi
+              test_side=false
+              if [[ "$path" =~ $TEST_SIDE ]]; then
+                test_side=true
+              fi
+              cited_contract=false
+              while IFS= read -r ticket; do
+                if [ "$path" = "contracts/$ticket.yaml" ]; then
+                  cited_contract=true
+                fi
+              done < "$RUNNER_TEMP/dod/tickets.txt"
+              if [ "$test_side" = true ] || [ "$cited_contract" = true ]; then
+                git -C "$control_tree" checkout "$HEAD_SHA" -- "$path"
+                printf 'Overlaid: %s\n' "$path"
+                if [ "$test_side" = true ]; then
+                  test_paths=$((test_paths + 1))
+                fi
+              fi
+            done < "$overlay_paths"
+            # With a named fix, the reverted product change is what must make the bound tests fail.
+            if [ -z "$fix" ] && [ "$test_paths" -eq 0 ]; then
+              echo "::error::no test-side change: the bound tests cannot be shown to fail at $label"
               exit 1
             fi
-            test_side=false
-            if [[ "$path" =~ ^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$ ]]; then
-              test_side=true
+          }
+          # OMN-17427: a binding for a fix that already merged names that fix in a
+          # trailer on its own commits, "Binds-Merged-Fix: OMN-<n> <full sha>". Its
+          # tests pass at the merge base by construction, so its control runs at the
+          # merge base with that fix's product changes reverted: the head run and the
+          # control run then differ by the fix alone. What makes the commit the fix is
+          # read from git: it exists, is merged at the merge base, has one parent, and
+          # its subject cites the ticket. The trailer only picks which merged commit;
+          # the pull request body is never read.
+          fixes="$RUNNER_TEMP/dod/merged-fixes.txt"
+          git -C "$head_tree" log --format='%(trailers:key=Binds-Merged-Fix,valueonly)' "$MB..$HEAD_SHA" | sed '/^[[:space:]]*$/d' | sort -u > "$fixes"
+          while IFS= read -r value; do
+            if [[ ! "$value" =~ ^OMN-[0-9]+\ [0-9a-f]{40}$ ]]; then
+              echo "::error::Binds-Merged-Fix must read 'OMN-<n> <full 40-character sha>'; refused: $value"
+              exit 1
             fi
-            cited_contract=false
-            while IFS= read -r ticket; do
-              if [ "$path" = "contracts/$ticket.yaml" ]; then
-                cited_contract=true
-              fi
-            done < "$RUNNER_TEMP/dod/tickets.txt"
-            if [ "$test_side" = true ] || [ "$cited_contract" = true ]; then
-              git -C "$base_tree" checkout "$HEAD_SHA" -- "$path"
-              printf 'Overlaid: %s\n' "$path"
-              if [ "$test_side" = true ]; then
-                test_paths=$((test_paths + 1))
-              fi
+          done < "$fixes"
+          merge_base_needed=false
+          while IFS= read -r ticket; do
+            named="$(awk -v t="$ticket" '$1 == t {print $2}' "$fixes")"
+            if [ -z "$named" ]; then
+              printf '%s\n' "$GITHUB_WORKSPACE/.dod-verify/base_home" > "$RUNNER_TEMP/dod/control-home-$ticket.txt"
+              printf '%s\n' "the merge base" > "$RUNNER_TEMP/dod/control-label-$ticket.txt"
+              merge_base_needed=true
+              continue
             fi
-          done < "$RUNNER_TEMP/dod/overlay-paths"
-          if [ "$test_paths" -eq 0 ]; then
-            echo "::error::no test-side change: the bound tests cannot be shown to fail at the merge base"
-            exit 1
+            if [ "$(printf '%s\n' "$named" | wc -l)" -ne 1 ]; then
+              echo "::error::$ticket: Binds-Merged-Fix names more than one merged fix; name exactly one"
+              exit 1
+            fi
+            fix="$named"
+            if ! git -C "$head_tree" cat-file -e "$fix^{commit}" 2>/dev/null; then
+              echo "::error::$ticket: merged fix $fix is not a commit in this repository"
+              exit 1
+            fi
+            if ! git -C "$head_tree" merge-base --is-ancestor "$fix" "$MB"; then
+              echo "::error::$ticket: $fix is not merged at the merge base $MB; an unmerged fix proves red at the merge base"
+              exit 1
+            fi
+            if [ "$(git -C "$head_tree" rev-list --parents -n 1 "$fix" | wc -w)" -ne 2 ]; then
+              echo "::error::$ticket: merged fix $fix does not have exactly one parent"
+              exit 1
+            fi
+            subject="$(git -C "$head_tree" log -1 --format=%s "$fix")"
+            if ! grep -qwF -- "$ticket" <<< "$subject"; then
+              echo "::error::$ticket: the subject of merged fix $fix does not cite $ticket"
+              exit 1
+            fi
+            # A pull request that changes product code proves red at its own merge base.
+            while IFS= read -r -d '' path; do
+              if [[ ! "$path" =~ $TEST_SIDE|^contracts/OMN-[0-9]+\.yaml$ ]]; then
+                echo "::error::$ticket names merged fix $fix, but this pull request changes $path, which is neither test-side nor a contract; a product change proves red at the merge base"
+                exit 1
+              fi
+            done < <(git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA")
+            label="the merge base with merged fix $fix reverted"
+            echo "$ticket: control at $label"
+            prepare_control "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home/$ticket" "$label" "$fix"
+            printf '%s\n' "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home/$ticket" > "$RUNNER_TEMP/dod/control-home-$ticket.txt"
+            printf '%s\n' "$label" > "$RUNNER_TEMP/dod/control-label-$ticket.txt"
+          done < "$RUNNER_TEMP/dod/tickets.txt"
+          if [ "$merge_base_needed" = true ]; then
+            prepare_control "$GITHUB_WORKSPACE/.dod-verify/base_home" "the merge base"
           fi
 
       # OMN-20070: unchanged carried evidence is exempt; each PR must bind its own evidence.
@@ -1260,12 +1357,15 @@ jobs:
           DOD_VERIFY_ALLOW_STALE_PRODUCT_CLONE: "1"
         run: |
           set -euo pipefail
-          export OMNI_HOME="$GITHUB_WORKSPACE/.dod-verify/base_home"
-          base_tree="$OMNI_HOME/$REPO_SHORT"
-          cd "$base_tree"
           MB="$(cat "$RUNNER_TEMP/dod/merge-base.txt")"
           failed=0
           while IFS= read -r ticket; do
+            # The merge base, or the merge base with a named merged fix reverted (OMN-17427).
+            control_home="$(cat "$RUNNER_TEMP/dod/control-home-$ticket.txt")"
+            export OMNI_HOME="$control_home"
+            base_tree="$OMNI_HOME/$REPO_SHORT"
+            cd "$base_tree"
+            where="$(cat "$RUNNER_TEMP/dod/control-label-$ticket.txt")"
             result="$RUNNER_TEMP/dod/base-$ticket.json"
             control="$RUNNER_TEMP/dod/base-$ticket.control.txt"
             printf '%s\n' 'refused' > "$control"
@@ -1342,7 +1442,7 @@ jobs:
             verified_ids="$(jq -r '[.[] | select(.status == "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
             other_ids="$(jq -r '[.[] | select(.status != "failed" and .status != "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
             if [ -n "$verified_ids" ]; then
-              echo "::error::$ticket [$verified_ids]: bound test also passes at the merge base: the control did not fail (always-pass)"
+              echo "::error::$ticket [$verified_ids]: bound test also passes at $where: the control did not fail (always-pass)"
               failed=1
             fi
             if [ -n "$other_ids" ]; then
@@ -1443,7 +1543,8 @@ jobs:
               while IFS= read -r ticket; do
                 verdict="$(jq -r '"status=\(.status), acceptance_basis=\(.acceptance_basis)"' "$RUNNER_TEMP/dod/head-$ticket.json" 2>/dev/null || printf '%s' 'unavailable')"
                 control="$(cat "$RUNNER_TEMP/dod/base-$ticket.control.txt" 2>/dev/null || printf '%s' 'not run')"
-                printf '%s: head %s; base control %s\n\n' "$ticket" "$verdict" "$control"
+                where="$(cat "$RUNNER_TEMP/dod/control-label-$ticket.txt" 2>/dev/null || printf '%s' 'unavailable')"
+                printf '%s: head %s; base control %s at %s\n\n' "$ticket" "$verdict" "$control" "$where"
               done < "$RUNNER_TEMP/dod/tickets.txt"
             fi
           } >> "$GITHUB_STEP_SUMMARY" || true
