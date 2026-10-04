@@ -204,6 +204,29 @@ class TestContractUnmodified:
         diff = [("M", "drift/dod_receipts/OMN-13501/dod-a/command.yaml")]
         assert check_diff_consistency(receipt, diff) == []
 
+    def test_fails_on_modified_own_per_pr_contract(self) -> None:
+        # OMN-20068: a companion's per-PR file is part of the ticket's contract.
+        receipt = _make_receipt(
+            actual_output="x",
+            diff_attestations=[EnumDiffAttestation.CONTRACT_UNMODIFIED],
+        )
+        diff = [("M", "contracts/OMN-13501/omnibase_core-101.yaml")]
+        violations = check_diff_consistency(receipt, diff)
+        assert [v.attestation for v in violations] == [
+            EnumDiffAttestation.CONTRACT_UNMODIFIED
+        ]
+
+    def test_passes_when_per_pr_contract_added(self) -> None:
+        receipt = _make_receipt(
+            actual_output="x",
+            diff_attestations=[EnumDiffAttestation.CONTRACT_UNMODIFIED],
+        )
+        diff = [
+            ("A", "contracts/OMN-13501/omnibase_core-101.yaml"),
+            ("M", "contracts/OMN-135010/omnibase_core-101.yaml"),
+        ]
+        assert check_diff_consistency(receipt, diff) == []
+
     def test_explicit_ticket_id_override_targets_other_contract(self) -> None:
         receipt = _make_receipt(
             actual_output="x",

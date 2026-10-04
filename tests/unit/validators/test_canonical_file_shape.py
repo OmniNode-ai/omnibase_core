@@ -9,10 +9,12 @@ comment of its own.
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 
+from omnibase_core.validators import canonical_file_shape
 from omnibase_core.validators.canonical_file_shape import (
     DEFAULT_BASELINE,
     INDEX,
@@ -418,3 +420,246 @@ def test_main_exit_codes_and_explicit_revisions(
 
 def test_write_baseline_refused_when_present(repo: Path) -> None:
     assert main(["--write-baseline"], repo_root=repo, env=_env()) == 1
+
+
+# The launching Mac's failure mode (OMN-17427): a pipe to the child's stdin is
+# writable once and never reports writable to poll() again, so a parent that
+# feeds ``git cat-file --batch`` over that pipe sleeps forever. This selector
+# drops every write-ready event; the child process installs it as the one
+# ``subprocess`` uses, then reads more than 64 KB of requests.
+_STALLED_PIPE_CHILD = """
+import importlib.util, os, selectors, subprocess, sys, time
+from pathlib import Path
+
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
+
+module_file = os.environ.get("CFS_MODULE_UNDER_TEST")
+if module_file:
+    module_spec = importlib.util.spec_from_file_location(
+        "canonical_file_shape_under_test", module_file
+    )
+    module = importlib.util.module_from_spec(module_spec)
+    sys.modules[module_spec.name] = module
+    module_spec.loader.exec_module(module)
+    GitRepo = module.GitRepo
+else:
+    from omnibase_core.validators.canonical_file_shape import GitRepo
+
+
+class StalledPipeSelector(selectors.PollSelector):
+    def select(self, timeout=None):
+        ready = [
+            (key, events & ~selectors.EVENT_WRITE)
+            for key, events in super().select(timeout)
+        ]
+        ready = [(key, events) for key, events in ready if events]
+        if not ready:
+            time.sleep(0.05)
+        return ready
+
+
+subprocess._PopenSelector = StalledPipeSelector
+rev = sys.argv[2]
+paths = sys.argv[3:]
+blobs = GitRepo(root=Path(sys.argv[1]), env=scrub_git_location_env()).read_blobs(
+    rev, paths
+)
+print(sum(1 for path in paths if blobs[path] == f"{path}\\n".encode()))
+"""
+
+
+def _stage_batch(repo: Path, rev: str, count: int) -> tuple[list[str], int]:
+    """Stage (and for ``HEAD`` commit) ``count`` files; return paths and spec size."""
+    paths = [f"docs/stall/file_{i:04d}.md" for i in range(count)]
+    for path in paths:
+        _write(repo, path, f"{path}\n")
+    _stage(repo)
+    if rev == "HEAD":
+        _git(repo, "commit", "-q", "-m", "large batch")
+    prefix = ":" if rev == INDEX else f"{rev}:"
+    spec = "".join(f"{prefix}{path}\n" for path in paths).encode()
+    return paths, len(spec)
+
+
+def _assert_read_blobs_completes(
+    repo: Path,
+    rev: str,
+    paths: list[str],
+    *,
+    module: Path | None = None,
+    timeout: int = 20,
+) -> None:
+    """The regression's check: read ``paths`` under the stalled-pipe selector.
+
+    ``module`` names a copy of ``canonical_file_shape`` to read through instead
+    of the installed one; the mutation control below uses it.
+    """
+    env = _env()
+    if module is not None:
+        env["CFS_MODULE_UNDER_TEST"] = str(module)
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-c", _STALLED_PIPE_CHILD, str(repo), rev, *paths],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
+            env=env,
+        )
+    except subprocess.TimeoutExpired:
+        pytest.fail("read_blobs stalled on the cat-file stdin pipe")
+    else:
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == str(len(paths))
+
+
+@pytest.mark.parametrize("rev", [INDEX, "HEAD"])
+def test_read_blobs_does_not_wait_on_stdin_pipe(repo: Path, rev: str) -> None:
+    paths, spec_size = _stage_batch(repo, rev, 3000)
+    assert spec_size > 64 * 1024
+
+    _assert_read_blobs_completes(repo, rev, paths)
+
+
+# Mutation control (OMN-20467). The fix under test is a route: requests and
+# responses go through temporary files. The mutant keeps that route for a request
+# of up to 64 KiB and sends a larger one over the stdin pipe. The earlier form
+# of the regression read about 2.5 KB and could not tell the mutant from the
+# fix; the form above reads more than 64 KiB and can. The mutant is applied to a
+# copy of the module source, and the stalled-pipe check above runs against that
+# copy, so the evidence that the check catches the regression is a test that
+# runs in CI and not a one-off run.
+_REAL_CAT_FILE_RUN = """\
+            subprocess.run(
+                ["git", "cat-file", "--batch"],
+                cwd=self.root,
+                env=None if self.env is None else dict(self.env),
+                stdin=requests,
+                stdout=responses,
+                check=True,
+                timeout=CAT_FILE_TIMEOUT_S,
+            )
+            responses.seek(0)
+            out = responses.read()
+"""
+
+_MUTANT_CAT_FILE_RUN = """\
+            if len(spec) > 64 * 1024:
+                out = subprocess.run(
+                    ["git", "cat-file", "--batch"],
+                    cwd=self.root,
+                    env=None if self.env is None else dict(self.env),
+                    input=spec,
+                    capture_output=True,
+                    check=True,
+                    timeout=CAT_FILE_TIMEOUT_S,
+                ).stdout
+            else:
+                subprocess.run(
+                    ["git", "cat-file", "--batch"],
+                    cwd=self.root,
+                    env=None if self.env is None else dict(self.env),
+                    stdin=requests,
+                    stdout=responses,
+                    check=True,
+                    timeout=CAT_FILE_TIMEOUT_S,
+                )
+                responses.seek(0)
+                out = responses.read()
+"""
+
+# The control's ceiling is shorter than the check's 20 s: the fixed route reads
+# the 3000-path batch in well under a second, and a stall never recovers.
+_CONTROL_TIMEOUT_S = 8
+
+
+def _module_copy(tmp_path: Path, *, mutate: bool) -> Path:
+    source = Path(canonical_file_shape.__file__).read_text(encoding="utf-8")
+    assert source.count(_REAL_CAT_FILE_RUN) == 1, (
+        "read_blobs no longer has the call shape the mutation control rewrites; "
+        "update the control with the change"
+    )
+    if mutate:
+        source = source.replace(_REAL_CAT_FILE_RUN, _MUTANT_CAT_FILE_RUN)
+    target = tmp_path / ("cfs_mutant.py" if mutate else "cfs_copy.py")
+    target.write_text(source, encoding="utf-8")
+    return target
+
+
+@pytest.mark.parametrize("rev", [INDEX, "HEAD"])
+def test_stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant(
+    repo: Path, tmp_path: Path, rev: str
+) -> None:
+    paths, spec_size = _stage_batch(repo, rev, 3000)
+    assert spec_size > 64 * 1024
+    mutant = _module_copy(tmp_path, mutate=True)
+
+    with pytest.raises(pytest.fail.Exception, match="stalled on the cat-file stdin"):
+        _assert_read_blobs_completes(
+            repo, rev, paths, module=mutant, timeout=_CONTROL_TIMEOUT_S
+        )
+
+
+@pytest.mark.parametrize("rev", [INDEX, "HEAD"])
+def test_stalled_pipe_check_passes_on_an_unmutated_copy(
+    repo: Path, tmp_path: Path, rev: str
+) -> None:
+    # Positive control: the copy-and-load path adds no failure of its own, so the
+    # failure on the mutant is the mutation's.
+    paths, _ = _stage_batch(repo, rev, 3000)
+    copy = _module_copy(tmp_path, mutate=False)
+
+    _assert_read_blobs_completes(
+        repo, rev, paths, module=copy, timeout=_CONTROL_TIMEOUT_S
+    )
+
+
+def test_the_earlier_small_batch_check_cannot_see_the_mutant(
+    repo: Path, tmp_path: Path
+) -> None:
+    # The earlier regression read 60 paths. That is under 64 KiB, so the mutant
+    # takes the temporary-file route for it and passes.
+    paths, spec_size = _stage_batch(repo, INDEX, 60)
+    assert spec_size < 64 * 1024
+    mutant = _module_copy(tmp_path, mutate=True)
+
+    _assert_read_blobs_completes(
+        repo, INDEX, paths, module=mutant, timeout=_CONTROL_TIMEOUT_S
+    )
+
+
+def test_large_staged_delta_completes(repo: Path) -> None:
+    # A merge commit carrying a whole dev delta: the requests and the responses
+    # are each far larger than a pipe buffer.
+    body = "x" * 2048 + "\n"
+    paths = [f"docs/delta/part_{i // 100:02d}/file_{i:04d}.md" for i in range(3000)]
+    for path in paths:
+        _write(repo, path, body)
+    _stage(repo)
+
+    git = GitRepo(root=repo, env=_env())
+    assert check(git, INDEX, "HEAD") == []
+    blobs = git.read_blobs(INDEX, [*paths, "docs/delta/absent.md"])
+    assert all(blobs[path] == body.encode() for path in paths)
+    assert blobs["docs/delta/absent.md"] is None
+
+
+def test_read_blobs_fails_loud_when_cat_file_hangs(
+    repo: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bin_dir = tmp_path_factory.mktemp("bin")
+    fake_git = bin_dir / "git"
+    fake_git.write_text("#!/bin/sh\nexec sleep 30\n", encoding="utf-8")
+    fake_git.chmod(0o755)
+    env = _env()
+    env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+    monkeypatch.setattr(
+        "omnibase_core.validators.canonical_file_shape.CAT_FILE_TIMEOUT_S", 1
+    )
+
+    with pytest.raises(subprocess.TimeoutExpired):
+        GitRepo(root=repo, env=env).read_blobs(INDEX, ["docs/any.md"])

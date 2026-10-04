@@ -58,27 +58,34 @@ def resolve_source(
 ) -> tuple[ModelSprint, tuple[ModelSprint, ...]]:
     """The sprint to drain, and the sprints after it to rebalance.
 
-    A roll only makes sense for a sprint that has finished or is finishing, so the
-    containing sprint is the source ONLY on its last day; otherwise the source is the
-    sprint that ended most recently. Getting this wrong is silent and costly: by Monday
-    07:00 the containing sprint is the one just beginning, and draining it would move an
-    untouched plan forward while leaving the sprint that actually has unfinished tickets
-    exactly as it was.
+    THE SPRINT CONTAINING `as_of` IS THE ONE DRAINED. An earlier rule drained the
+    containing sprint only on its LAST day and otherwise took the most recently ended
+    one. That is right on a Sunday and right at 07:00 on a Monday, and wrong every other
+    day: a Wednesday run re-drained the previous sprint -- already drained -- and treated
+    the live sprint as a TARGET, which on the 2026-10-03 dry run moved 84 tickets INTO
+    the running sprint and emptied the three after it.
+
+    A caller that wants the sprint which just ended says so with `as_of`: the scheduled
+    Monday job passes the Sunday that closed it, which lands inside that window. One rule
+    covers both, and nothing is re-drained.
+
+    When windows overlap -- the board carries some -- the containing sprint with the
+    LATEST start wins, because that is the one in progress.
     """
     if not sprints:
         raise SprintRollError("no sprints were given, so there is nothing to roll")
     chron = sorted(sprints, key=lambda s: s.start)
-    containing = next((s for s in chron if s.start <= as_of <= s.end), None)
-    if containing is not None and containing.end == as_of:
-        source = containing
+    containing = [s for s in chron if s.start <= as_of <= s.end]
+    if containing:
+        source = containing[-1]
     else:
         ended = [s for s in chron if s.end < as_of]
         if not ended:
             raise SprintRollError(
-                f"no sprint has ended before {as_of} and {as_of} is not the last day "
-                "of any sprint window, so there is nothing to roll"
+                f"no sprint contains {as_of} and none ended before it, so there is "
+                "nothing to roll"
             )
-        source = ended[-1]
+        source = max(ended, key=lambda s: s.end)
     index = chron.index(source)
     following = tuple(chron[index + 1 :])
     if not following:
@@ -95,17 +102,30 @@ def median_estimate(tickets: list[ModelSprintTicket], fallback: int = 3) -> int:
 
 
 def measure_capacity(
-    sprint: ModelSprint, unit: EnumCapacityUnit, closed_states: frozenset[str]
+    sprint: ModelSprint,
+    unit: EnumCapacityUnit,
+    closed_states: frozenset[str],
+    as_of: dt.date | None = None,
 ) -> tuple[int, str]:
     """Throughput measured on the drained sprint, in the unit in use.
 
-    Extrapolated from the days actually elapsed to the span, so a sprint read mid-week
-    does not understate a week. This is a one-sprint sample and therefore the weakest
-    input to the plan; a caller with a better figure passes `cap_override`.
+    Extrapolated from the days elapsed to the span, so a sprint read mid-week does not
+    understate a week. TWO CLAMPS MAKE THAT SAFE, and the second was missing: a sprint
+    whose window has already closed -- its end on or before `as_of` -- counts its WHOLE
+    span as elapsed. Without it the
+    2026-10-03 dry run read a finished sprint as `142 tickets closed in 1 of 7 days` and
+    reported a cap of 994 -- seven times a real week -- because a stale `elapsed_days`
+    of 1 was multiplied by the span. `elapsed` is also never allowed to exceed the span.
+
+    This is still a one-sprint sample and so the weakest input to the plan; a caller with
+    a better figure passes `cap_override`.
     """
     done = [t for t in sprint.tickets if t.state in closed_states]
-    elapsed = max(1, sprint.elapsed_days)
     span = sprint.span_days if sprint.span_days > 0 else 7
+    if as_of is not None and sprint.end <= as_of:
+        elapsed = span
+    else:
+        elapsed = min(max(1, sprint.elapsed_days), span)
     if unit is EnumCapacityUnit.POINTS:
         amount = sum(t.estimate or 0 for t in done)
         label = "pts"
@@ -204,7 +224,9 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
     if request.cap_override is not None:
         cap, basis = request.cap_override, "caller override"
     else:
-        cap, basis = measure_capacity(source, request.capacity_unit, closed)
+        cap, basis = measure_capacity(
+            source, request.capacity_unit, closed, request.as_of
+        )
 
     def size(ticket: ModelSprintTicket) -> int:
         # In ticket mode every ticket costs one, so an unestimated ticket needs no

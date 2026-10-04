@@ -40,6 +40,7 @@ import yaml
 
 from scripts.ci.occ_preflight_wait import (
     AUTOBIND_TERMINAL_DECLINE_REASONS,
+    EnumAncestryRead,
     EnumAutobindReadStatus,
     EnumPreflightWaitOutcome,
     GhCli,
@@ -121,7 +122,7 @@ def _decide(
     return decide_preflight_wait(
         pr_body=pr_body,
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=elapsed_seconds,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -309,16 +310,18 @@ def test_unreadable_outcome_fails_closed_at_the_deadline() -> None:
     assert decision.reason == "autobind_outcome_unreadable"
 
 
-def test_unreadable_body_still_fails_now_whatever_the_outcome_says() -> None:
-    """An unreadable PR body is terminal ahead of any producer read, and a
-    terminal decline does not change that -- the body is the surface the
-    stamp lands on."""
+def test_unreadable_body_is_never_read_as_a_decline_whatever_the_outcome_says() -> None:
+    """An unreadable PR body is retried ahead of any producer read, and a
+    terminal decline does not change that -- the body is the surface the stamp
+    lands on, so without it the decline cannot be tied to a missing stamp
+    (OMN-20427)."""
     decision = _decide(
         autobind=_read("DECLINED", TERMINAL_NO_RED),
         pr_body=None,
     )
-    assert decision.outcome is EnumPreflightWaitOutcome.FAIL_NOW
-    assert decision.reason == "body_unreadable"
+    assert decision.outcome is EnumPreflightWaitOutcome.WAIT
+    assert decision.outcome is not EnumPreflightWaitOutcome.DECLINED_TERMINAL
+    assert decision.reason == "body_unresolved"
 
 
 # ---------------------------------------------------------------------------
@@ -333,7 +336,7 @@ def test_a_present_stamp_is_evaluated_on_its_evidence_not_on_the_outcome() -> No
     decision = decide_preflight_wait(
         pr_body="Evidence-Source: OCC#10524",
         companion_state="MERGED",
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",
@@ -418,7 +421,7 @@ def test_flag_defaults_to_off() -> None:
     decision = decide_preflight_wait(
         pr_body=NO_STAMP_BODY,
         companion_state=None,
-        cited_sha_is_ancestor=False,
+        cited_sha_ancestry=EnumAncestryRead.NOT_ANCESTOR,
         elapsed_seconds=0,
         deadline_seconds=DEADLINE,
         event_name="pull_request",

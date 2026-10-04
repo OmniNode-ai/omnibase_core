@@ -33,6 +33,9 @@ from omnibase_core.errors.error_goal_admission_provider import (
     GoalAdmissionProviderError,
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.handlers.handler_occ_contract_view import (
+    load_occ_contract_view,
+)
 from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
     ModelDodEvidenceCheck,
 )
@@ -79,6 +82,9 @@ from omnibase_core.models.validation.model_goal_verification_attempt import (
 )
 from omnibase_core.models.validation.model_goal_verifier_policy import (
     ModelGoalVerifierPolicy,
+)
+from omnibase_core.models.validation.model_occ_contract_view import (
+    ModelOccContractView,
 )
 from omnibase_core.models.validation.model_occ_eligibility_input import (
     ModelOccEligibilityInput,
@@ -2488,7 +2494,7 @@ def validate_occ_merge_eligibility(
             )
 
     contract_hashes: dict[str, str] = {}
-    contract_data_by_ticket: dict[str, object] = {}
+    contract_views_by_ticket: dict[str, ModelOccContractView] = {}
     receipt_ids: list[str] = []
     missing_contracts: list[str] = []
     missing_receipts: list[str] = []
@@ -2532,14 +2538,12 @@ def validate_occ_merge_eligibility(
         )
 
     for ticket_id in ticket_ids:
-        contract_path = snapshot.contracts_dir / f"{ticket_id}.yaml"
-        if not contract_path.is_file():
-            missing_contracts.append(ticket_id)
-            continue
+        # OMN-20068: the contract is the union of contracts/<ticket>.yaml and
+        # the per-PR files under contracts/<ticket>/; each receipt binds to the
+        # file that holds its own entry.
         try:
-            contract_data = _load_yaml(contract_path)
-            contract_hash = _sha256_file(contract_path)
-        except (OSError, yaml.YAMLError) as exc:
+            contract_view = load_occ_contract_view(snapshot.contracts_dir, ticket_id)
+        except ModelOnexError as exc:
             missing_contracts.append(ticket_id)
             # OMN-14404: a stale binding found in an earlier iteration still
             # dominates, exactly as it did when the binding check returned
@@ -2555,10 +2559,14 @@ def validate_occ_merge_eligibility(
                 occ_commit_sha=snapshot.occ_commit_sha,
                 contract_hashes=contract_hashes,
                 missing_contracts=tuple(sorted(missing_contracts)),
-                detail=f"contract {contract_path} is unreadable: {exc}",
+                detail=exc.message,
             )
-        contract_hashes[ticket_id] = contract_hash
-        contract_data_by_ticket[ticket_id] = contract_data
+        if contract_view is None:
+            missing_contracts.append(ticket_id)
+            continue
+        contract_data = contract_view.data
+        contract_hashes[ticket_id] = contract_view.primary.sha256
+        contract_views_by_ticket[ticket_id] = contract_view
         triples = _iter_dod_evidence(contract_data)
         if not triples:
             missing_receipts.append(f"{ticket_id}:*:*")
@@ -2706,11 +2714,12 @@ def validate_occ_merge_eligibility(
                         "contract. Rerun probes to produce a new receipt."
                     ),
                 )
+            entry_source = contract_view.source_for(evidence_item_id)
             binding_error = check_receipt_contract_binding(
                 receipt=receipt,
-                contract_data=contract_data,
+                contract_data=entry_source.data,
                 evidence_item_id=evidence_item_id,
-                whole_file_hash=contract_hash,
+                whole_file_hash=entry_source.sha256,
                 is_bound_to_this_pr=is_bound,
             )
             if binding_error is not None:
@@ -2883,11 +2892,21 @@ def validate_occ_merge_eligibility(
                         "both contract_sha256 and contract_entry_sha256"
                     ),
                 )
+            # The structural self-bind id is declared in no file. Its whole-file
+            # hash may name any one file of the ticket's contract as it stands
+            # (OMN-20068): a companion binds to the per-PR file it adds, and a
+            # legacy-only ticket has exactly one file, so nothing loosens there.
+            self_bind_view = contract_views_by_ticket[ticket_id]
+            self_bind_hash = (
+                receipt.contract_sha256
+                if receipt.contract_sha256 in self_bind_view.source_hashes
+                else self_bind_view.primary.sha256
+            )
             binding_error = check_receipt_contract_binding(
                 receipt=receipt,
-                contract_data=contract_data_by_ticket[ticket_id],
+                contract_data=self_bind_view.data,
                 evidence_item_id=evidence_item_id,
-                whole_file_hash=contract_hashes[ticket_id],
+                whole_file_hash=self_bind_hash,
                 is_bound_to_this_pr=is_bound,
             )
             if binding_error is not None:

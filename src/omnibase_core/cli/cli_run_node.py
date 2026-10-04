@@ -96,6 +96,57 @@ def _resolve_bootstrap_servers(node_id: str) -> str:
     return bootstrap
 
 
+#: The standard client-security environment every lane container already
+#: carries, mapped to the librdkafka keys it configures (OMN-17427).
+_SECURITY_ENV_TO_LIBRDKAFKA: tuple[tuple[str, str], ...] = (
+    ("KAFKA_SECURITY_PROTOCOL", "security.protocol"),
+    ("KAFKA_SASL_MECHANISM", "sasl.mechanism"),
+    ("KAFKA_SASL_USERNAME", "sasl.username"),
+    ("KAFKA_SASL_PASSWORD", "sasl.password"),
+)
+_SASL_CREDENTIAL_ENV = ("KAFKA_SASL_USERNAME", "KAFKA_SASL_PASSWORD")
+
+
+def _resolve_client_security_config(node_id: str) -> dict[str, str]:
+    """Return the librdkafka security settings for ``run-node``'s clients.
+
+    A lane broker that declares SASL (the .201 dev lane listens with
+    SASL_PLAINTEXT and SCRAM-SHA-256) closes an unauthenticated connection,
+    which librdkafka reports as a ``_TRANSPORT`` failure. Before OMN-17427 this
+    command built its clients from ``bootstrap.servers`` alone, so it could not
+    reach such a broker even inside a container holding the credential. The
+    settings come from the same ``KAFKA_SECURITY_PROTOCOL`` / ``KAFKA_SASL_*``
+    environment the lane's runtimes are configured with; an unset variable adds
+    nothing, so a plaintext lane behaves exactly as before.
+
+    A ``SASL_*`` protocol with no username or password fails fast, naming the
+    missing variable and never a value, instead of offering an anonymous
+    handshake the listener refuses.
+    """
+    config: dict[str, str] = {}
+    for env_name, librdkafka_key in _SECURITY_ENV_TO_LIBRDKAFKA:
+        value = os.environ.get(env_name, "").strip()
+        if value:
+            config[librdkafka_key] = value
+    protocol = config.get("security.protocol", "").upper()
+    mechanism = config.get("sasl.mechanism", "").upper()
+    if protocol.startswith("SASL_") and mechanism != "OAUTHBEARER":
+        missing = [
+            env_name
+            for env_name in _SASL_CREDENTIAL_ENV
+            if not os.environ.get(env_name, "").strip()
+        ]
+        if missing:
+            _emit_error(
+                node_id,
+                f"KAFKA_SECURITY_PROTOCOL is {protocol} but {', '.join(missing)} "
+                "is not set. `onex run-node` authenticates with the lane's "
+                "KAFKA_SASL_* environment; set it, or run the command inside a "
+                "lane container that carries it.",
+            )
+    return config
+
+
 def _coerce_contract_metadata(
     contract: ModelGenericYaml | dict[str, object],
 ) -> dict[str, object]:
@@ -191,11 +242,16 @@ def publish_and_poll(
     command_topic: str,
     response_topic: str,
     inject_payload_correlation_id: bool = False,
+    client_security: dict[str, str] | None = None,
 ) -> dict[str, object] | None:
     """Publish a contract-routed command envelope and poll for its terminal event.
 
+    ``client_security`` carries the librdkafka security settings from
+    :func:`_resolve_client_security_config`; both clients use them.
+
     Returns the response dict, or None on timeout.
     """
+    security = dict(client_security or {})
     try:
         _ck = importlib.import_module("confluent_kafka")
         # NOTE(OMN-9715): lazy importlib import preserves ADR-005 transport boundary
@@ -241,6 +297,7 @@ def publish_and_poll(
     consumer = Consumer(
         {
             "bootstrap.servers": bootstrap_servers,
+            **security,
             "group.id": derive_run_node_group_id(correlation_uuid),
             "auto.offset.reset": "latest",
             "enable.auto.commit": False,
@@ -256,13 +313,25 @@ def publish_and_poll(
             # confluent_kafka.KafkaException (_TRANSPORT) when the bootstrap
             # address is unreachable. Convert it into an actionable error
             # instead of surfacing an opaque traceback.
+            # OMN-17427: a SASL listener closes an unauthenticated connection
+            # with the same _TRANSPORT error, so name the security env when
+            # none is configured. Only the protocol is ever echoed.
+            protocol = security.get("security.protocol")
+            auth_hint = (
+                f" The client connected with security.protocol={protocol}."
+                if protocol
+                else " No KAFKA_SECURITY_PROTOCOL is set: a lane broker that "
+                "requires SASL closes an unauthenticated connection with this "
+                "same error, so set KAFKA_SECURITY_PROTOCOL and KAFKA_SASL_* "
+                "for that lane."
+            )
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.RUNTIME_ERROR,
                 message=(
                     f"Kafka broker unreachable at {bootstrap_servers!r}: {exc}. "
                     "Verify KAFKA_BOOTSTRAP_SERVERS points at a reachable lane "
                     f"broker, or run the node locally (bus-less) with `onex run "
-                    f"{node_id}`."
+                    f"{node_id}`.{auth_hint}"
                 ),
             ) from exc
         topic_metadata = metadata.topics.get(response_topic)
@@ -286,7 +355,7 @@ def publish_and_poll(
 
         consumer.assign(response_partitions)
 
-        producer = Producer({"bootstrap.servers": bootstrap_servers})
+        producer = Producer({"bootstrap.servers": bootstrap_servers, **security})
         producer.produce(
             topic=command_topic,
             value=envelope.model_dump_json().encode(),
@@ -360,6 +429,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
         _emit_error(node_id, f"Invalid JSON input: {exc}")
 
     bootstrap_servers = _resolve_bootstrap_servers(node_id)
+    client_security = _resolve_client_security_config(node_id)
 
     try:
         (
@@ -376,6 +446,7 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
             command_topic=command_topic,
             response_topic=response_topic,
             inject_payload_correlation_id=inject_payload_correlation_id,
+            client_security=client_security,
         )
     except (ConnectionError, OSError, ImportError, ModelOnexError) as exc:
         _emit_error(node_id, str(exc))

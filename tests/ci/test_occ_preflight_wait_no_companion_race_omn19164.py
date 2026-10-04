@@ -42,6 +42,7 @@ from scripts.ci.occ_preflight_wait import (
     DEFAULT_NO_COMPANION_POLL_INTERVAL_SECONDS,
     EXIT_ERROR,
     EXIT_OK,
+    EnumAncestryRead,
     EnumAutobindReadStatus,
     EnumNoCompanionProbeVerdict,
     ModelAutobindOutcomeRead,
@@ -116,7 +117,7 @@ class _ScriptedGh:
 
     def sha_is_ancestor(
         self, *, occ_repo: str, sha: str, branches: tuple[str, ...]
-    ) -> bool:
+    ) -> EnumAncestryRead:
         raise AssertionError("the pin-only probe must not resolve ancestry")
 
     def read_branch_tip(self, *, occ_repo: str, branch: str) -> str | None:
