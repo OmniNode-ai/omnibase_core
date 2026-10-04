@@ -35,6 +35,7 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
     GraphQLPayload,
     GraphQLTransport,
+    LinearTransportError,
     SprintRollJournal,
     node_rows,
 )
@@ -47,11 +48,33 @@ __all__ = ["NodeSprintRollApplyEffect"]
 #: Linear's issue read, for the facts a placement plan does not carry: the issue's own
 #: uuid (the plan speaks in identifiers), and what its project and state hold now, which
 #: is what an undo restores.
+#:
+#: FILTERED BY `number`, NOT `identifier`. `IssueFilter` has no `identifier` field --
+#: Linear answers `Field "identifier" is not defined by type "IssueFilter"` with HTTP
+#: 400 -- so an earlier version of this query made `handle` fail on every plan that
+#: moved anything. No test caught it: a recorded transport answers whatever query it is
+#: handed, so a unit suite can prove the ORDER of calls but never their validity against
+#: the live schema. `test_the_issue_query_filters_by_number_not_identifier` asserts the
+#: shape instead.
 ISSUE_QUERY = (
-    'query($ids:[String!]!){issues(filter:{team:{key:{eq:"OMN"}},'
-    "identifier:{in:$ids}},first:250){nodes{id identifier "
+    'query($nums:[Float!]!){issues(filter:{team:{key:{eq:"OMN"}},'
+    "number:{in:$nums}},first:250){nodes{id identifier "
     "project{id} state{id} labels{nodes{id}}}}}"
 )
+
+
+def issue_numbers(identifiers: list[str]) -> list[float]:
+    """`OMN-20395` -> `20395.0`, the only form `IssueFilter.number` accepts.
+
+    An identifier that does not carry a number is dropped rather than guessed: it cannot
+    name a Linear issue, so sending it would widen the filter rather than narrow it.
+    """
+    numbers: list[float] = []
+    for identifier in identifiers:
+        _, _, tail = identifier.rpartition("-")
+        if tail.isdigit():
+            numbers.append(float(tail))
+    return sorted(set(numbers))
 
 
 class NodeSprintRollApplyEffect:
@@ -78,8 +101,12 @@ class NodeSprintRollApplyEffect:
                 dry_run=request.dry_run, read_calls=0, write_calls=0
             )
 
-        ids: list[JsonValue] = [str(i) for i in sorted(set(wanted))]
-        current = self._read(ISSUE_QUERY, {"ids": ids})
+        nums: list[JsonValue] = list(issue_numbers(wanted))
+        if not nums:
+            raise LinearTransportError(
+                "no plan ticket carries a Linear issue number, so nothing can be read"
+            )
+        current = self._read(ISSUE_QUERY, {"nums": nums})
         by_identifier = {
             str(node.get("identifier")): node for node in node_rows(current, "issues")
         }

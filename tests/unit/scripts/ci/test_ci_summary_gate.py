@@ -16,6 +16,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -35,6 +36,7 @@ from scripts.ci.ci_summary_gate import (
     evaluate,
     evaluate_external,
     external_contexts_for_event,
+    provisional_external_verdicts,
 )
 
 pytestmark = pytest.mark.unit
@@ -1341,3 +1343,56 @@ class TestSupersededSkips:
         ]
         kept = drop_superseded_skips(rows)
         assert [r["conclusion"] for r in kept] == ["success"]
+
+
+class TestSuiteRerunInFlightOmn20427:
+    """A stale non-success L4 row whose own check suite is re-running is PENDING.
+
+    Replays omnibase_core#1873 (check suite 100653109843): attempt 1 of
+    check-db-ownership.yml left ``DB ownership CI twin (B1)`` skipped at
+    23:06:32Z; the whole-run rerun's ``occ-preflight / eligibility`` was in
+    progress from 23:46:47Z when ``CI Summary`` polled at 23:47:03Z.
+    """
+
+    NOW = datetime(2026, 10, 3, 23, 47, 3, tzinfo=UTC)
+    SUITE = {"id": 100653109843}
+
+    def _runs(self, sibling_status: str, sibling_started: str) -> list[dict]:
+        db = EXPECTED_EXTERNAL_CONTEXTS[0]
+        runs = [_check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS if n != db]
+        stale = _check_run(db, "skipped", started_at="2026-10-03T23:06:33Z")
+        stale["completed_at"] = "2026-10-03T23:06:32Z"
+        stale["check_suite"] = self.SUITE
+        sibling = _check_run(
+            "occ-preflight / eligibility",
+            None if sibling_status != "completed" else "success",
+            status=sibling_status,
+            started_at=sibling_started,
+        )
+        sibling["check_suite"] = self.SUITE
+        return [*runs, stale, sibling]
+
+    def test_stale_skip_is_pending_while_its_suite_reruns(self) -> None:
+        runs = self._runs("in_progress", "2026-10-03T23:46:47Z")
+        failures, missing = evaluate_external(runs, now=self.NOW)
+        assert failures == []
+        assert missing == [EXPECTED_EXTERNAL_CONTEXTS[0]]
+        assert provisional_external_verdicts(runs, now=self.NOW) == [
+            EXPECTED_EXTERNAL_CONTEXTS[0]
+        ]
+
+    def test_stale_skip_fails_once_the_suite_has_settled(self) -> None:
+        runs = self._runs("completed", "2026-10-03T23:46:47Z")
+        failures, _missing = evaluate_external(runs, now=self.NOW)
+        assert failures == [EXPECTED_EXTERNAL_CONTEXTS[0]]
+
+    def test_running_sibling_older_than_the_stale_row_does_not_hold(self) -> None:
+        runs = self._runs("in_progress", "2026-10-03T23:00:00Z")
+        failures, _missing = evaluate_external(runs, now=self.NOW)
+        assert failures == [EXPECTED_EXTERNAL_CONTEXTS[0]]
+
+    def test_running_row_in_another_suite_does_not_hold(self) -> None:
+        runs = self._runs("in_progress", "2026-10-03T23:46:47Z")
+        runs[-1]["check_suite"] = {"id": 1}
+        failures, _missing = evaluate_external(runs, now=self.NOW)
+        assert failures == [EXPECTED_EXTERNAL_CONTEXTS[0]]
