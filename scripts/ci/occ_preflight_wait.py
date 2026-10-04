@@ -37,17 +37,26 @@ function, a :class:`GhPort` protocol for the live reads it needs, a
 ``main()`` polling driver. The pure function is exhaustively unit-tested;
 the client is exercised only by the workflow itself.
 
-Every branch fails closed. An unreadable PR body is ``FAIL_NOW``, not
-``WAIT`` -- there is nothing to re-read that will fix itself. A companion
-CLOSED without merging is ``FAIL_NOW`` -- that is the exact OMN-15214
-incident state, and waiting cannot un-close it. A malformed evidence-source
-value is ``FAIL_NOW`` -- waiting cannot repair an authoring error. A
-evidence-source SHA that is not an ancestor of any onex_change_control
-durable branch is ``FAIL_NOW`` -- onex_change_control is squash-only, so a
-feature-branch head SHA can never become one (OMN-15216), and no amount of
-elapsed time changes that. Only ``stamp_absent`` and ``companion_unmerged``
-are genuinely retryable, and even those convert to ``DEADLINE`` (also a hard
+Every branch fails closed. A companion CLOSED without merging is
+``FAIL_NOW`` -- that is the exact OMN-15214 incident state, and waiting cannot
+un-close it. A malformed evidence-source value is ``FAIL_NOW`` -- waiting
+cannot repair an authoring error. A evidence-source SHA that is not an
+ancestor of any onex_change_control durable branch is ``FAIL_NOW`` --
+onex_change_control is squash-only, so a feature-branch head SHA can never
+become one (OMN-15216), and no amount of elapsed time changes that. The
+retryable set is ``stamp_absent``, ``companion_unmerged``,
+``companion_state_unresolved``, ``autobind_outcome_unreadable`` and
+``body_unresolved``, and every member converts to ``DEADLINE`` (also a hard
 failure) once ``elapsed_seconds >= deadline_seconds``.
+
+``body_unresolved`` (OMN-20427) is the PR body that could not be READ on this
+poll: ``gh`` timed out, exited non-zero or could not start. That is a
+transport failure, the same kind as ``companion_state_unresolved``, and it
+used to end the gate on the first occurrence (reason ``body_unreadable``,
+``FAIL_NOW``) while the companion read beside it waited. The body is re-read
+on every poll, so the retry costs nothing the budget did not already allow,
+and a body that never becomes readable still ends as ``DEADLINE`` at the
+unchanged budget.
 
 The one exemption (OMN-18848)
 -----------------------------
@@ -693,13 +702,18 @@ def decide_preflight_wait(
         )
 
     if pr_body is None:
-        return ModelPreflightWaitDecision(
-            outcome=EnumPreflightWaitOutcome.FAIL_NOW,
-            reason="body_unreadable",
+        # OMN-20427: a body that could not be READ is not a body that says
+        # nothing. The stamp (and so any producer outcome) cannot be judged
+        # without it, so no exemption or decline is read from this poll; the
+        # next poll re-reads the body, and the deadline stays the only exit.
+        return _wait_or_deadline(
+            reason="body_unresolved",
             detail=(
-                "the PR body could not be read; failing closed rather than waiting "
-                "on a surface that cannot be observed"
+                "the PR body could not be read on this poll (transport failure, "
+                "retryable); it will be re-read on the next poll"
             ),
+            elapsed_seconds=elapsed_seconds,
+            deadline_seconds=deadline_seconds,
         )
 
     stamp = parse_evidence_source(pr_body)

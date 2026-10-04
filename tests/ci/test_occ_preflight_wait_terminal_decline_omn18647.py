@@ -309,16 +309,18 @@ def test_unreadable_outcome_fails_closed_at_the_deadline() -> None:
     assert decision.reason == "autobind_outcome_unreadable"
 
 
-def test_unreadable_body_still_fails_now_whatever_the_outcome_says() -> None:
-    """An unreadable PR body is terminal ahead of any producer read, and a
-    terminal decline does not change that -- the body is the surface the
-    stamp lands on."""
+def test_unreadable_body_is_never_read_as_a_decline_whatever_the_outcome_says() -> None:
+    """An unreadable PR body is retried ahead of any producer read, and a
+    terminal decline does not change that -- the body is the surface the stamp
+    lands on, so without it the decline cannot be tied to a missing stamp
+    (OMN-20427)."""
     decision = _decide(
         autobind=_read("DECLINED", TERMINAL_NO_RED),
         pr_body=None,
     )
-    assert decision.outcome is EnumPreflightWaitOutcome.FAIL_NOW
-    assert decision.reason == "body_unreadable"
+    assert decision.outcome is EnumPreflightWaitOutcome.WAIT
+    assert decision.outcome is not EnumPreflightWaitOutcome.DECLINED_TERMINAL
+    assert decision.reason == "body_unresolved"
 
 
 # ---------------------------------------------------------------------------
