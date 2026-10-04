@@ -1088,6 +1088,28 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+    # OMN-20543: a bound test that needs a database gets one, at the head and
+    # in the must-fail control alike. Without it a real-Postgres test could not
+    # be bound as hosted evidence, its author scoped it local_done_gate, the
+    # hosted verifier reported it SKIPPED at both trees, and the control refused
+    # it as a control that could not run (omnimarket#3369, run 37211811803).
+    # The service, the PG16 server tools and the INTEGRATION_POSTGRES_* env are
+    # the ones the caller's own test job uses (omnimarket ci.yml, OMN-14167 and
+    # OMN-18693), so a test runs here the way it runs in the pull request's CI.
+    # The password is a throwaway for a container that lives as long as the job.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: omnibase_infra
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       # OMN-20073: the caller-evidence path honours the same dependency-bot
       # exemption as the OCC path above, byte for byte (OMN-13762, OMN-20161).
@@ -1291,6 +1313,90 @@ jobs:
           DOD_VERIFY_PY="$GITHUB_WORKSPACE/.dod-verify/venv/bin/python"
           echo "DOD_VERIFY_PY=$DOD_VERIFY_PY" >> "$GITHUB_ENV"
           "$DOD_VERIFY_PY" -c "import omnimarket.nodes.node_dod_verify"
+
+      # OMN-20543: a test that starts its own native cluster (initdb into a
+      # temporary directory) needs the PG16 server tools on PATH. Fail here,
+      # before any verdict, when they are missing: a database test that cannot
+      # start its database is a control that did not run, never a pass.
+      - name: Provide the PostgreSQL 16 server tools
+        if: steps.bot_exempt.outputs.exempt != 'true'
+        run: |
+          set -euo pipefail
+          pg16_bin=/usr/lib/postgresql/16/bin
+          if [ ! -x "${pg16_bin}/initdb" ]; then
+            # The GitHub-hosted image this job routes to today lets the runner
+            # install packages. The self-hosted omnibase-ci image does not grant
+            # apt-get, so a routing flip to it needs PG16 baked into that image;
+            # until then this step refuses by name rather than letting a native
+            # cluster test skip, which would read as a pass.
+            if ! { sudo -n apt-get update && sudo -n apt-get install --yes postgresql-16; }; then
+              echo "::error::the PostgreSQL 16 server tools are absent from this runner and cannot be installed (no sudo apt-get); bake PG16 into the runner image before routing dod-verify to it"
+              exit 1
+            fi
+          fi
+          for tool in initdb pg_ctl psql; do
+            test -x "${pg16_bin}/${tool}"
+          done
+          "${pg16_bin}/initdb" --version | grep -Eq 'PostgreSQL\) 16\.'
+          echo "${pg16_bin}" >> "$GITHUB_PATH"
+
+      # OMN-20543: export the connection env the integration fixtures read, so
+      # the head step and the must-fail control step see the same database. The
+      # host is resolved the way the caller's test job resolves it, so this
+      # holds on GitHub-hosted and self-hosted runners alike.
+      - name: Export the Postgres service to the bound tests
+        if: steps.bot_exempt.outputs.exempt != 'true'
+        env:
+          POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
+        run: |
+          set -euo pipefail
+          host="$(python3 - <<'PY'
+          import os
+          import socket
+
+          port = int(os.environ["POSTGRES_PORT"])
+
+          def can_connect(candidate: str) -> bool:
+              try:
+                  with socket.create_connection((candidate, port), timeout=1.0):
+                      return True
+              except OSError:
+                  return False
+
+          if can_connect("127.0.0.1"):
+              print("127.0.0.1")
+              raise SystemExit(0)
+
+          try:
+              with open("/proc/net/route", encoding="utf-8") as routes:
+                  route_lines = routes.readlines()[1:]
+          except OSError:
+              route_lines = []
+          for line in route_lines:
+              fields = line.split()
+              if len(fields) >= 3 and fields[1] == "00000000":
+                  gateway_hex = fields[2]
+                  gateway = ".".join(
+                      str(int(gateway_hex[i : i + 2], 16)) for i in (6, 4, 2, 0)
+                  )
+                  if can_connect(gateway):
+                      print(gateway)
+                      raise SystemExit(0)
+
+          raise SystemExit(
+              f"could not reach the Postgres service on localhost or the default gateway, port {port}"
+          )
+          PY
+          )"
+          {
+            echo "INTEGRATION_POSTGRES_HOST=${host}"
+            echo "INTEGRATION_POSTGRES_PORT=${POSTGRES_PORT}"
+            echo "INTEGRATION_POSTGRES_USER=postgres"
+            echo "INTEGRATION_POSTGRES_PASSWORD=test_password"
+            echo "INTEGRATION_POSTGRES_DB=omnibase_infra"
+            echo "POSTGRES_PASSWORD=test_password"
+          } >> "$GITHUB_ENV"
+          echo "Postgres service for the bound tests: host=${host} port=${POSTGRES_PORT}"
 
       - name: Verify the contract at the PR head
         if: steps.bot_exempt.outputs.exempt != 'true'
@@ -1628,6 +1734,14 @@ jobs:
             if [ -n "$other_ids" ]; then
               echo "::error::$ticket [$other_ids]: the control could not run, a control that did not run is not a pass"
               failed=1
+              # OMN-20543: name the commonest cause. This hosted job never runs a
+              # local_done_gate item, at the head or here, so such an item cannot
+              # be controlled. A database is provided to every bound test, so a
+              # test that needs one is bound with the default scope instead.
+              scoped_ids="$(jq -r '[.[] | select(.status != "failed" and .status != "verified") | select((.message // "") | startswith("NOT_EVALUATED [local_done_gate]")) | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
+              if [ -n "$scoped_ids" ]; then
+                echo "::error::$ticket [$scoped_ids]: scoped local_done_gate, which this hosted check runs neither at the head nor at $where; this job gives every bound test a Postgres (INTEGRATION_POSTGRES_*, PG16 initdb on PATH), so bind a database test with the default execution_scope"
+              fi
             fi
             if [ -n "$verified_ids" ] || [ -n "$other_ids" ]; then
               continue
