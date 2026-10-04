@@ -1352,12 +1352,42 @@ jobs:
       - name: Must-fail control at the merge base
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           GH_TOKEN: ${{ github.token }}
           # CI checks the exact subject commit, detached from a moving upstream.
           DOD_VERIFY_ALLOW_STALE_PRODUCT_CLONE: "1"
         run: |
           set -euo pipefail
           MB="$(cat "$RUNNER_TEMP/dod/merge-base.txt")"
+          head_tree="$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT"
+          # OMN-20070: coverage-only evidence has no earlier product behaviour
+          # to control (GC.9 IMPOSSIBLE / TEST_ONLY_DIFF). Derive this from the
+          # complete diff, including deletions and both sides of renames. Only
+          # test-side paths and the cited contracts qualify; config, workflows,
+          # uncited contracts and all other paths still require a failing control.
+          TEST_SIDE='^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$'
+          diff_paths="$RUNNER_TEMP/dod/control-diff-paths.txt"
+          git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA" > "$diff_paths"
+          test_only=true
+          has_tests=false
+          while IFS= read -r -d '' path; do
+            if [[ "$path" =~ $TEST_SIDE ]]; then
+              has_tests=true
+              continue
+            fi
+            cited_contract=false
+            while IFS= read -r ticket; do
+              if [ "$path" = "contracts/$ticket.yaml" ]; then
+                cited_contract=true
+              fi
+            done < "$RUNNER_TEMP/dod/tickets.txt"
+            if [ "$cited_contract" = false ]; then
+              test_only=false
+            fi
+          done < "$diff_paths"
+          if [ "$has_tests" = false ]; then
+            test_only=false
+          fi
           failed=0
           while IFS= read -r ticket; do
             # The merge base, or the merge base with a named merged fix reverted (OMN-17427).
@@ -1441,6 +1471,27 @@ jobs:
             bound="$remaining"
             verified_ids="$(jq -r '[.[] | select(.status == "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
             other_ids="$(jq -r '[.[] | select(.status != "failed" and .status != "verified") | (.evidence_id | if . == null or . == "" then "<missing evidence_id>" else tostring end)] | join(", ")' "$bound")"
+            # A named merged fix supplies earlier behaviour even on a test-only
+            # binding PR. Its reverted control must still fail. A coverage-only
+            # exception also cannot supply a missing or non-green head verdict.
+            if [ "$test_only" = true ] && [ "$where" = "the merge base" ] && [ -z "$other_ids" ]; then
+              head_result="$RUNNER_TEMP/dod/head-$ticket.json"
+              if ! jq -s -e --slurpfile bound "$bound" '
+                length == 1 and (.[0] as $head |
+                  $head.status == "verified" and ($head.checks | type == "array")
+                  and all($bound[0][]; .evidence_id as $id |
+                    ($id | type == "string" and length > 0) and
+                    any($head.checks[]; .evidence_id == $id and
+                      (.binds_ac | length) > 0 and .status == "verified")))
+              ' "$head_result" > /dev/null 2>&1; then
+                echo "::error::$ticket: TEST_ONLY_DIFF requires verified head evidence for every own bound check"
+                failed=1
+                continue
+              fi
+              printf '%s\n' 'passed: IMPOSSIBLE TEST_ONLY_DIFF (test_only_diff); coverage-only evidence, no earlier product behaviour to control' > "$control"
+              echo "$ticket base control: IMPOSSIBLE TEST_ONLY_DIFF (test_only_diff); coverage-only evidence, no earlier product behaviour to control"
+              continue
+            fi
             if [ -n "$verified_ids" ]; then
               echo "::error::$ticket [$verified_ids]: bound test also passes at $where: the control did not fail (always-pass)"
               failed=1

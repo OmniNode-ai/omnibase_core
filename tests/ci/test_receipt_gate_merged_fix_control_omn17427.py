@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -160,6 +161,10 @@ def _bind(
 
 def _run_steps(
     repo: _GitFixture,
+    *,
+    head_status: str | None = "verified",
+    head_evidence_id: str = "dod-omn-1-ac1",
+    head_binds_ac: bool = True,
 ) -> tuple[subprocess.CompletedProcess[str], subprocess.CompletedProcess[str] | None]:
     prepare = subprocess.run(
         ["bash", "-c", _script(PREPARE_STEP)],
@@ -170,6 +175,24 @@ def _run_steps(
     )
     if prepare.returncode != 0:
         return prepare, None
+
+    if head_status is not None:
+        (repo.dod_dir / "head-OMN-1.json").write_text(
+            "not JSON"
+            if head_status == "malformed"
+            else json.dumps(
+                {
+                    "status": head_status,
+                    "checks": [
+                        {
+                            "evidence_id": head_evidence_id,
+                            "binds_ac": ["AC1"] if head_binds_ac else [],
+                            "status": head_status,
+                        }
+                    ],
+                }
+            )
+        )
 
     verifier = repo.dod_dir.parent / "verifier"
     verifier.write_text(
@@ -276,6 +299,166 @@ def test_contract_only_binding_without_a_trailer_is_refused(tmp_path: Path) -> N
     )
     assert control is None
     assert not (repo.dod_dir / "base-OMN-1.control.txt").exists()
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    "test_path",
+    [
+        "tests/test_coverage.py",
+        "tests/fixture.json",
+        "test/test_more.py",
+        "conftest.py",
+    ],
+)
+def test_coverage_only_diff_names_impossible_control(
+    tmp_path: Path, test_path: str
+) -> None:
+    repo = _repository(tmp_path)
+    _bind(repo, [], extra_files={test_path: PRODUCT_TEST})
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert control is not None
+    _assert_success(control)
+    assert "IMPOSSIBLE TEST_ONLY_DIFF (test_only_diff)" in control.stdout
+    assert "every bound check failed" not in control.stdout
+    assert (repo.dod_dir / "base-OMN-1.control.txt").read_text() == (
+        "passed: IMPOSSIBLE TEST_ONLY_DIFF (test_only_diff); coverage-only evidence, "
+        "no earlier product behaviour to control\n"
+    )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    "product_path",
+    [
+        "src/other.py",
+        ".github/workflows/ci.yml",
+        "pyproject.toml",
+        "contracts/OMN-2.yaml",
+        "README.md",
+    ],
+)
+def test_coverage_with_other_paths_still_refuses_always_pass(
+    tmp_path: Path, product_path: str
+) -> None:
+    repo = _repository(tmp_path)
+    _bind(
+        repo,
+        [],
+        extra_files={"tests/test_coverage.py": PRODUCT_TEST, product_path: "changed\n"},
+    )
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert control is not None
+    assert control.returncode == 1, control.stdout + control.stderr
+    assert "the control did not fail (always-pass)" in control.stdout
+    assert "IMPOSSIBLE" not in control.stdout
+    assert (repo.dod_dir / "base-OMN-1.control.txt").read_text() == "refused\n"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    "rename", [False, True], ids=["delete-source", "rename-source-to-test"]
+)
+def test_product_removal_cannot_be_hidden_by_test_additions(
+    tmp_path: Path, rename: bool
+) -> None:
+    repo = _repository(tmp_path)
+    repo.write("src/other.py", "OTHER = True\n")
+    repo.commits["merge_base"] = repo.commit("chore: other source")
+    repo.env["BASE_SHA"] = repo.commits["merge_base"]
+    if rename:
+        repo.git("mv", "src/other.py", "tests/test_other.py")
+    else:
+        repo.git("rm", "src/other.py")
+    _bind(repo, [], extra_files={"tests/test_coverage.py": PRODUCT_TEST})
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert control is not None
+    assert control.returncode == 1, control.stdout + control.stderr
+    assert "the control did not fail (always-pass)" in control.stdout
+    assert "IMPOSSIBLE" not in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    ("head_status", "head_evidence_id", "head_binds_ac"),
+    [
+        (None, "dod-omn-1-ac1", True),
+        ("malformed", "dod-omn-1-ac1", True),
+        ("failed", "dod-omn-1-ac1", True),
+        ("verified", "wrong-id", True),
+        ("verified", "dod-omn-1-ac1", False),
+    ],
+    ids=["absent", "malformed", "failed", "wrong-evidence", "unbound"],
+)
+def test_coverage_only_diff_requires_own_verified_head_evidence(
+    tmp_path: Path, head_status: str | None, head_evidence_id: str, head_binds_ac: bool
+) -> None:
+    repo = _repository(tmp_path)
+    _bind(repo, [], extra_files={"tests/test_coverage.py": PRODUCT_TEST})
+    prepare, control = _run_steps(
+        repo,
+        head_status=head_status,
+        head_evidence_id=head_evidence_id,
+        head_binds_ac=head_binds_ac,
+    )
+
+    _assert_success(prepare)
+    assert control is not None
+    assert control.returncode == 1, control.stdout + control.stderr
+    assert (
+        "TEST_ONLY_DIFF requires verified head evidence for every own bound check"
+        in control.stdout
+    )
+    assert (repo.dod_dir / "base-OMN-1.control.txt").read_text() == "refused\n"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_coverage_binding_for_merged_fix_still_requires_reverted_failure(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path, note_after_fix=True)
+    _bind(
+        repo,
+        [f"OMN-1 {repo.commits['note']}"],
+        extra_files={"tests/test_coverage.py": PRODUCT_TEST},
+    )
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert control is not None
+    assert control.returncode == 1, control.stdout + control.stderr
+    assert "the control did not fail (always-pass)" in control.stdout
+    assert "IMPOSSIBLE" not in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_real_product_repair_still_requires_all_own_checks_to_fail_at_base(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path)
+    repo.git("checkout", "--detach", repo.commits["initial"])
+    repo.env["BASE_SHA"] = repo.commits["initial"]
+    _bind(
+        repo,
+        [],
+        extra_files={
+            "src/product.py": "BROKEN = False\n",
+            "tests/test_coverage.py": PRODUCT_TEST,
+        },
+    )
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+    assert "IMPOSSIBLE" not in control.stdout
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
