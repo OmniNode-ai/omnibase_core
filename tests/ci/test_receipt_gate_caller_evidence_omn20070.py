@@ -28,6 +28,8 @@ WORKFLOW_PATH = (
 HEAD_STEP = "Verify the contract at the PR head"
 BASE_STEP = "Must-fail control at the merge base"
 DIFFERENCE_STEP = "Difference against OCC's verdict for the same head"
+PG_TOOLS_STEP = "Provide the PostgreSQL 16 server tools"
+PG_ENV_STEP = "Export the Postgres service to the bound tests"
 
 
 def _workflow() -> dict[Any, Any]:
@@ -103,6 +105,8 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "Set up Python 3.13",
         "Install uv",
         "Install the pinned verifier",
+        PG_TOOLS_STEP,
+        PG_ENV_STEP,
         HEAD_STEP,
         "Prepare the merge base with the pull request's test side laid over it",
         BASE_STEP,
@@ -592,4 +596,161 @@ def test_base_control_preserves_zero_bound_checks_refusal(tmp_path: Path) -> Non
         in completed.stdout
     )
     assert "binds no evidence of its own" not in completed.stdout
+    assert (dod_dir / "base-OMN-1.control.txt").read_text() == "refused\n"
+
+
+# OMN-20543: a bound test that needs a database gets the same one at the head and
+# in the must-fail control, the way the caller's own test job provides it.
+def test_dod_verify_job_provides_the_callers_postgres_service() -> None:
+    service = _job()["services"]["postgres"]
+    assert service["image"] == "postgres:16-alpine"
+    assert set(service["env"]) == {"POSTGRES_PASSWORD", "POSTGRES_DB"}
+    assert service["env"]["POSTGRES_PASSWORD"]
+    assert service["env"]["POSTGRES_DB"] == "omnibase_infra"
+    assert service["ports"] == ["5432/tcp"]
+    assert "--health-cmd pg_isready" in service["options"]
+    # The verify (OCC) job is untouched.
+    assert "services" not in _workflow()["jobs"]["verify"]
+
+
+def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
+    names = [step.get("name") for step in _job()["steps"]]
+    assert names.index(PG_TOOLS_STEP) < names.index(PG_ENV_STEP)
+    assert names.index(PG_ENV_STEP) < names.index(HEAD_STEP)
+    for name in (PG_TOOLS_STEP, PG_ENV_STEP):
+        assert _step(name)["if"] == "steps.bot_exempt.outputs.exempt != 'true'"
+        assert "set -euo pipefail" in _step(name)["run"]
+    tools = _step(PG_TOOLS_STEP)["run"]
+    assert "pg16_bin=/usr/lib/postgresql/16/bin" in tools
+    assert 'test -x "${pg16_bin}/${tool}"' in tools
+    assert "for tool in initdb pg_ctl psql; do" in tools
+    assert "PostgreSQL\\) 16\\." in tools
+    assert 'echo "${pg16_bin}" >> "$GITHUB_PATH"' in tools
+    export = _step(PG_ENV_STEP)
+    assert export["env"] == {
+        "POSTGRES_PORT": "${{ job.services.postgres.ports['5432'] }}"
+    }
+    assert '>> "$GITHUB_ENV"' in export["run"]
+
+
+def _service_password() -> str:
+    password = _job()["services"]["postgres"]["env"]["POSTGRES_PASSWORD"]
+    assert isinstance(password, str)
+    return password
+
+
+def _export_path() -> str:
+    tool_dirs = {
+        str(Path(found).parent)
+        for found in (shutil.which(tool) for tool in ("bash", "python3"))
+        if found
+    }
+    return os.pathsep.join([*sorted(tool_dirs), "/usr/bin", "/bin"])
+
+
+def _listening_port() -> tuple[Any, int]:
+    import socket
+
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    return listener, listener.getsockname()[1]
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="bash is required")
+def test_postgres_export_writes_the_integration_env_for_a_reachable_service(
+    tmp_path: Path,
+) -> None:
+    listener, port = _listening_port()
+    github_env = tmp_path / "github_env"
+    try:
+        completed = subprocess.run(
+            ["bash", "-c", _step(PG_ENV_STEP)["run"]],
+            env={
+                "PATH": _export_path(),
+                "POSTGRES_PORT": str(port),
+                "GITHUB_ENV": str(github_env),
+            },
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    finally:
+        listener.close()
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    assert github_env.read_text().splitlines() == [
+        "INTEGRATION_POSTGRES_HOST=127.0.0.1",
+        f"INTEGRATION_POSTGRES_PORT={port}",
+        "INTEGRATION_POSTGRES_USER=postgres",
+        f"INTEGRATION_POSTGRES_PASSWORD={_service_password()}",
+        "INTEGRATION_POSTGRES_DB=omnibase_infra",
+        f"POSTGRES_PASSWORD={_service_password()}",
+    ]
+
+
+@pytest.mark.skipif(shutil.which("bash") is None, reason="bash is required")
+def test_postgres_export_fails_when_the_service_is_unreachable(
+    tmp_path: Path,
+) -> None:
+    listener, port = _listening_port()
+    listener.close()
+    github_env = tmp_path / "github_env"
+    completed = subprocess.run(
+        ["bash", "-c", _step(PG_ENV_STEP)["run"]],
+        env={
+            "PATH": _export_path(),
+            "POSTGRES_PORT": str(port),
+            "GITHUB_ENV": str(github_env),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode != 0
+    assert "could not reach the Postgres service" in completed.stderr
+    assert not github_env.exists()
+
+
+_SCOPED_MESSAGE = (
+    "NOT_EVALUATED [local_done_gate] -- hosted node_dod_verify is not an "
+    "authorized consumer; the local Done gate must execute this item and "
+    "persist its result."
+)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    ("message", "names_scope"),
+    [
+        pytest.param(_SCOPED_MESSAGE, True, id="local-done-gate-scope"),
+        pytest.param("SKIPPED: environment unavailable", False, id="other-skip"),
+    ],
+)
+def test_base_control_still_refuses_a_bound_check_that_did_not_run(
+    tmp_path: Path, message: str, names_scope: bool
+) -> None:
+    completed, dod_dir = _run_base_control(
+        tmp_path,
+        _OLD_CONTRACT,
+        _APPENDED_CONTRACT,
+        [
+            {"evidence_id": "old", "binds_ac": ["AC1"], "status": "verified"},
+            {
+                "evidence_id": "new",
+                "binds_ac": ["AC2"],
+                "status": "skipped",
+                "message": message,
+            },
+        ],
+    )
+    assert completed.returncode == 1, completed.stdout + completed.stderr
+    assert (
+        "::error::OMN-1 [new]: the control could not run, a control that did not run is not a pass"
+        in completed.stdout
+    )
+    scoped = (
+        "::error::OMN-1 [new]: scoped local_done_gate, which this hosted check "
+        "runs neither at the head nor at the merge base"
+    )
+    assert (scoped in completed.stdout) is names_scope
     assert (dod_dir / "base-OMN-1.control.txt").read_text() == "refused\n"
