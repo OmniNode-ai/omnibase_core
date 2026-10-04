@@ -5021,7 +5021,17 @@ jobs:
               sleep "${POLL_INTERVAL_SECONDS}"
               continue
             fi
-            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --event-name "${EVENT_NAME}"
+            # OMN-20522: the runs of this head let the gate hold a cancelled/failure/
+            # skipped L4 row pending while a newer run of its producer is unfinished.
+            # Optional by construction: a failed fetch leaves no file, which the gate
+            # reads as today's behaviour (the red fails on the poll that observes it).
+            rm -f workflow_runs.json
+            gh api --paginate \
+                "repos/${GH_REPO}/actions/runs?head_sha=${COMMIT_SHA}&per_page=100" \
+                --jq '.workflow_runs[] | {id, workflow_id, path, head_sha, status, created_at, run_started_at, run_attempt}' \
+              | jq -s '.' > workflow_runs.json.tmp \
+              && mv workflow_runs.json.tmp workflow_runs.json
+            python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --workflow-runs-file workflow_runs.json --event-name "${EVENT_NAME}"
             rc=$?
             case "${rc}" in
               0) echo "::notice::CI Summary = SUCCESS (all gating jobs provably passed)"; exit 0 ;;
@@ -5031,7 +5041,7 @@ jobs:
             esac
             if [ "$(date +%s)" -ge "${deadline}" ]; then
               echo "::error::CI Summary poll deadline (${DEADLINE_MINUTES}m) reached with gating jobs still pending — failing closed"
-              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --event-name "${EVENT_NAME}" --report-only || true
+              python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --workflow-runs-file workflow_runs.json --event-name "${EVENT_NAME}" --report-only || true
               exit 1
             fi
             sleep "${POLL_INTERVAL_SECONDS}"

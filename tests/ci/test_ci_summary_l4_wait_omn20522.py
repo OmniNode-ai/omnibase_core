@@ -300,13 +300,13 @@ class TestOnlyAnUnfinishedNewerProducerRunHolds:
     def test_omn_l4_wait_the_rows_own_attempt_in_progress_does_not_hold(self) -> None:
         # Same run id, but the row concluded AFTER this attempt started: it is
         # this attempt's own answer, not a previous attempt's.
-        rows = [_stale("cancelled", completed_at=datetime(2026, 1, 1, tzinfo=UTC))]
-        runs = [_run(100, run_started_at=datetime(2025, 12, 31, tzinfo=UTC))]
+        rows = [_stale("cancelled", completed_at=datetime(2025, 6, 2, tzinfo=UTC))]
+        runs = [_run(100, run_started_at=datetime(2025, 6, 1, tzinfo=UTC))]
         assert _external(rows, runs, SYNTH_NOW) == ([DB], [])
 
     def test_omn_l4_wait_a_later_attempt_of_the_same_run_holds(self) -> None:
-        rows = [_stale("cancelled", completed_at=datetime(2025, 12, 31, tzinfo=UTC))]
-        runs = [_run(100, run_started_at=datetime(2026, 1, 1, tzinfo=UTC))]
+        rows = [_stale("cancelled", completed_at=datetime(2025, 6, 1, tzinfo=UTC))]
+        runs = [_run(100, run_started_at=datetime(2025, 6, 2, tzinfo=UTC))]
         assert _external(rows, runs, SYNTH_NOW) == ([], [DB])
 
     @pytest.mark.parametrize("conclusion", ["timed_out", "action_required", "neutral"])
