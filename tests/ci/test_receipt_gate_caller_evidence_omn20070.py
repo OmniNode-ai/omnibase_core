@@ -442,6 +442,7 @@ def _run_base_control(
             "GITHUB_WORKSPACE": str(workspace),
             "RUNNER_TEMP": str(dod_dir.parent),
             "REPO_SHORT": "omnimarket",
+            "HEAD_SHA": git("rev-parse", "HEAD"),
             "DOD_VERIFY_PY": str(verifier),
         },
         capture_output=True,
