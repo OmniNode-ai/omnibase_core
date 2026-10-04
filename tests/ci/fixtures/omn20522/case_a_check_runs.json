@@ -1,0 +1,38 @@
+[
+  {
+    "id": 111405107275,
+    "name": "DB ownership CI twin (B1)",
+    "status": "completed",
+    "conclusion": "cancelled",
+    "started_at": "2026-10-04T09:18:11Z",
+    "completed_at": "2026-10-04T09:18:11Z",
+    "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/37191600018/job/111405107275",
+    "check_suite": {
+      "id": 100739308870
+    }
+  },
+  {
+    "id": 111405107756,
+    "name": "occ-preflight / eligibility",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-10-04T09:18:14Z",
+    "completed_at": "2026-10-04T09:28:55Z",
+    "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/37191705833/job/111405107756",
+    "check_suite": {
+      "id": 100739595790
+    }
+  },
+  {
+    "id": 111406835614,
+    "name": "DB ownership CI twin (B1)",
+    "status": "completed",
+    "conclusion": "success",
+    "started_at": "2026-10-04T09:28:58Z",
+    "completed_at": "2026-10-04T09:29:04Z",
+    "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/37191705833/job/111406835614",
+    "check_suite": {
+      "id": 100739595790
+    }
+  }
+]
