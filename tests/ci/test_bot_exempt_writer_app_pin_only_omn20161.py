@@ -45,7 +45,13 @@ WORKFLOWS = {
     ),
     "receipt-gate": (
         REPO_ROOT / ".github" / "workflows" / "receipt-gate.yml",
-        None,
+        "verify",
+        ".receipt-gate-deps/omnibase_core_wait",
+    ),
+    # OMN-20073: the caller-evidence job carries the same exemption.
+    "receipt-gate-dod-verify": (
+        REPO_ROOT / ".github" / "workflows" / "receipt-gate.yml",
+        "dod-verify",
         ".receipt-gate-deps/omnibase_core_wait",
     ),
 }
@@ -66,12 +72,6 @@ HUMANS = ("jonah", "jonahgabriel")
 def _steps(name: str) -> list[dict[str, Any]]:
     path, job, _ = WORKFLOWS[name]
     jobs = yaml.safe_load(path.read_text())["jobs"]
-    if job is None:
-        job = next(
-            k
-            for k, v in jobs.items()
-            if any(s.get("id") == "bot_exempt" for s in v["steps"])
-        )
     steps = jobs[job]["steps"]
     assert isinstance(steps, list)
     return steps
@@ -263,3 +263,28 @@ def test_the_probe_checkout_precedes_bot_exempt_and_is_not_gated_on_it(
     assert "github.repository != 'OmniNode-ai/onex_change_control'" in condition
     assert f"! hashFiles('{PROBE_REL}')" in condition
     assert steps[checkouts[0]]["with"]["path"] == WORKFLOWS[name][2]
+
+
+_GUARD = "steps.bot_exempt.outputs.exempt != 'true'"
+
+
+def test_every_dod_verify_step_after_bot_exempt_is_gated_on_it() -> None:
+    """OMN-20073: an exempt bot bump must skip the whole caller-evidence run.
+
+    Only the best-effort Summarise step may run regardless; every other step
+    after ``bot_exempt`` carries the guard, so a skipped job concludes success
+    and ``repo-evidence / dod-verify`` passes without a skip token.
+    """
+    steps = _steps("receipt-gate-dod-verify")
+    ids = [s.get("id") for s in steps]
+    after = steps[ids.index("bot_exempt") + 1 :]
+    assert after, "dod-verify has no step after bot_exempt"
+    ungated = [s["name"] for s in after if _GUARD not in str(s.get("if", ""))]
+    assert ungated == ["Summarise"]
+
+
+def test_dod_verify_runs_only_the_probe_checkout_before_bot_exempt() -> None:
+    steps = _steps("receipt-gate-dod-verify")
+    ids = [s.get("id") for s in steps]
+    before = [s["name"] for s in steps[: ids.index("bot_exempt")]]
+    assert before == ["Check out omnibase_core (for occ_preflight_wait.py)"]
