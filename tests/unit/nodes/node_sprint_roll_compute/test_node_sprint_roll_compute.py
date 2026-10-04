@@ -159,16 +159,6 @@ def test_a_sunday_run_drains_the_sprint_whose_last_day_it_is() -> None:
     assert [s.sprint_id for s in following] == [P1, P2, P3]
 
 
-@pytest.mark.parametrize("as_of", ["2026-10-05", "2026-10-06", "2026-10-08"])
-def test_a_run_after_the_boundary_still_drains_the_sprint_that_ended(
-    as_of: str,
-) -> None:
-    """By Monday the containing sprint is the one just beginning. Draining it would
-    move an untouched plan forward and leave the unfinished work alone."""
-    source, _ = resolve_source(_window(), dt.date.fromisoformat(as_of))
-    assert source.sprint_id == P0
-
-
 def test_a_window_with_nothing_after_the_source_is_refused() -> None:
     window = (_sprint(P0, "2026-09-28", "2026-10-04", ()),)
     with pytest.raises(SprintRollError, match="nowhere to roll"):
@@ -374,3 +364,78 @@ def test_handling_a_request_twice_does_not_mutate_it() -> None:
     NodeSprintRollCompute().handle(request)
     NodeSprintRollCompute().handle(request)
     assert request.model_dump_json() == before
+
+
+# -- defects the 2026-10-03 live dry run found -------------------------------
+
+
+def test_the_containing_sprint_is_the_one_drained_on_any_day_inside_it() -> None:
+    """The old rule drained the containing sprint only on its LAST day, so a midweek
+    run re-drained the previous sprint and treated the live one as a target: 84 tickets
+    moved INTO the running sprint and the three after it emptied to zero."""
+    for day in ("2026-10-05", "2026-10-08", "2026-10-11"):
+        source, _ = resolve_source(_window(), dt.date.fromisoformat(day))
+        assert source.sprint_id == P1, day
+
+
+def test_a_caller_wanting_the_closed_sprint_says_so_with_as_of() -> None:
+    """How the Monday job targets the sprint that just ended: pass the Sunday that
+    closed it. One rule, no special case, and nothing is re-drained."""
+    source, _ = resolve_source(_window(), dt.date(2026, 10, 4))
+    assert source.sprint_id == P0
+
+
+def test_a_gap_between_windows_falls_back_to_the_latest_ended_sprint() -> None:
+    window = (
+        _sprint(P0, "2026-09-28", "2026-10-04", ()),
+        _sprint(P1, "2026-10-12", "2026-10-18", ()),
+    )
+    source, _ = resolve_source(window, dt.date(2026, 10, 7))
+    assert source.sprint_id == P0
+
+
+def test_overlapping_windows_pick_the_one_that_started_most_recently() -> None:
+    """The board carries overlapping windows; the in-progress one is the later start."""
+    window = (
+        _sprint(P0, "2026-09-14", "2026-10-10", ()),
+        _sprint(P1, "2026-09-28", "2026-10-04", ()),
+        _sprint(P2, "2026-10-05", "2026-10-11", ()),
+    )
+    source, _ = resolve_source(window, dt.date(2026, 10, 1))
+    assert source.sprint_id == P1
+
+
+def test_a_finished_sprint_counts_its_whole_span_however_stale_elapsed_is() -> None:
+    """The 994-ticket cap: a closed sprint reported `142 closed in 1 of 7 days`, so a
+    stale elapsed of 1 was multiplied by the span."""
+    done = tuple(_ticket(f"D{n}", "Done", 1) for n in range(142))
+    sprint = _sprint(P0, "2026-09-21", "2026-09-27", done, elapsed=1)
+    cap, basis = measure_capacity(
+        sprint, EnumCapacityUnit.TICKETS, frozenset({"Done"}), dt.date(2026, 10, 3)
+    )
+    assert cap == 142
+    assert basis == "142 tickets closed in 7 of 7 days"
+
+
+def test_elapsed_can_never_exceed_the_span() -> None:
+    sprint = _sprint(
+        P0, "2026-09-28", "2026-10-04", (_ticket("X", "Done", 1),), elapsed=99
+    )
+    cap, basis = measure_capacity(sprint, EnumCapacityUnit.TICKETS, frozenset({"Done"}))
+    # 99 clamps DOWN to the span, so the rate is 1/7 of a week and the cap is 1 -- not
+    # 1/99, which would understate, and not 7x, which was the 994 defect.
+    assert cap == 1
+    assert basis == "1 tickets closed in 7 of 7 days"
+
+
+def test_a_sprint_ending_exactly_on_as_of_is_finished() -> None:
+    """The Monday job passes the Sunday that CLOSED the sprint, so `end == as_of` is
+    the normal case and must count as a full span -- with `<` it read `18 closed in 1
+    of 7 days` and gave a cap of 126."""
+    done = tuple(_ticket(f"D{n}", "Done", 1) for n in range(18))
+    sprint = _sprint(P0, "2026-09-28", "2026-10-04", done, elapsed=1)
+    cap, basis = measure_capacity(
+        sprint, EnumCapacityUnit.TICKETS, frozenset({"Done"}), dt.date(2026, 10, 4)
+    )
+    assert cap == 18
+    assert basis == "18 tickets closed in 7 of 7 days"

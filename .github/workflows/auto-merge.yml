@@ -147,10 +147,14 @@ permissions:
   pull-requests: write
 
 concurrency:
-  # One active run per PR (or per dispatch invocation). Cancels the queued
-  # run when a newer check_suite completion arrives for the same PR, keeping
-  # only the latest attempt in flight.
-  group: auto-merge-${{ github.event.pull_request.number || github.event.inputs.pr_number || github.event.check_suite.pull_requests[0].number || github.event.check_suite.id }}
+  # One active run per PR and event class (or per dispatch invocation). A newer
+  # check_suite completion for a PR cancels that PR's older check_suite run, and
+  # a newer push cancels the older pull_request run, but no class cancels
+  # another (OMN-20482): a check_suite run executes at the default branch's sha,
+  # so when it cancelled the PR's pull_request run the head was left with only
+  # the cancelled copy ("Canceling since a higher priority waiting request for
+  # auto-merge-<pr> exists").
+  group: auto-merge-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.inputs.pr_number || github.event.check_suite.pull_requests[0].number || github.event.check_suite.id }}
   cancel-in-progress: true
 
 jobs:

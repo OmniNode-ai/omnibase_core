@@ -685,6 +685,70 @@ def verdict_is_provisional(state: JobState, now: datetime | None) -> bool:
     )
 
 
+def _suite_rerun_in_flight(
+    check_runs: list[dict[str, object]],
+    name: str,
+    state: JobState,
+) -> bool:
+    """True when ``state``'s own check suite has a newer row still running.
+
+    OMN-20427, measured on omnibase_core#1873. A whole-run rerun of the
+    producer workflow and of ``CI Summary`` started in the same second
+    (23:46:43Z). The producer's first new row (``occ-preflight / eligibility``)
+    was ``in_progress`` from 23:46:47Z, but the re-run of ``DB ownership CI
+    twin (B1)`` waits on it via ``needs:``, so for those seconds the latest
+    ``DB ownership`` row on the head was still the attempt-1 ``skipped`` row
+    from 23:06:32Z -- 40 minutes old, outside every window above. ``CI
+    Summary`` recorded FAILURE at 23:47:03Z; the replacement row concluded
+    ``success`` at 23:47:53Z.
+
+    A row whose check suite has a sibling that STARTED AFTER this row completed
+    and has NOT completed is a statement about the previous attempt of a run
+    that is executing again right now. It is held pending, never passed: only
+    a real ``success`` row resolves the context, and the poller's deadline
+    still converts a sustained PENDING into FAILURE.
+
+    FAIL-CLOSED: a row with no ``check_suite.id``, or an unparseable
+    ``completed_at``, is never held.
+    """
+
+    target = next(
+        (
+            raw
+            for raw in check_runs
+            if str(raw.get("name") or "") == name
+            and str(raw.get("completed_at") or "") == (state.completed_at or "")
+            and str(raw.get("status") or "") == state.status
+        ),
+        None,
+    )
+    suite_id = _check_suite_id(target) if target is not None else None
+    completed = _parse_timestamp(state.completed_at)
+    if suite_id is None or completed is None:
+        return False
+    for raw in check_runs:
+        if str(raw.get("status") or "") == "completed":
+            continue
+        if _check_suite_id(raw) != suite_id:
+            continue
+        started = _parse_timestamp(str(raw.get("started_at") or "") or None)
+        if started is not None and started >= completed:
+            return True
+    return False
+
+
+def _check_suite_id(raw: dict[str, object]) -> int | None:
+    """The ``check_suite.id`` of a check-run row, or ``None`` if absent."""
+
+    suite = raw.get("check_suite")
+    if not isinstance(suite, dict):
+        return None
+    try:
+        return int(str(suite.get("id")))
+    except (TypeError, ValueError):
+        return None
+
+
 def provisional_external_verdicts(
     check_runs: list[dict[str, object]],
     *,
@@ -705,7 +769,10 @@ def provisional_external_verdicts(
         if (st := latest.get(name)) is not None
         and st.status == "completed"
         and st.conclusion != "success"
-        and verdict_is_provisional(st, now)
+        and (
+            verdict_is_provisional(st, now)
+            or _suite_rerun_in_flight(check_runs, name, st)
+        )
     )
 
 
@@ -742,7 +809,9 @@ def evaluate_external(
             missing_or_pending.append(name)
         elif st.conclusion == "success":
             continue
-        elif verdict_is_provisional(st, now):
+        elif verdict_is_provisional(st, now) or _suite_rerun_in_flight(
+            check_runs, name, st
+        ):
             missing_or_pending.append(name)
         else:
             failures.append(name)
