@@ -232,12 +232,14 @@ def _run(
     *,
     status: str | None = "in_progress",
     workflow_id: int = WORKFLOW,
+    event: str = "pull_request",
     run_started_at: datetime | None = None,
     head_sha: str = "c" * 40,
 ) -> dict[str, object]:
     run: dict[str, object] = {
         "id": run_id,
         "workflow_id": workflow_id,
+        "event": event,
         "head_sha": head_sha,
         "created_at": _z(run_started_at or LONG_AGO),
         "run_started_at": _z(run_started_at or LONG_AGO),
@@ -279,6 +281,10 @@ class TestOnlyAnUnfinishedNewerProducerRunHolds:
             _run(100, status="completed"),
             _run(101, workflow_id=OTHER_WORKFLOW),
         ]
+        assert _external([_stale("cancelled")], runs, SYNTH_NOW) == ([DB], [])
+
+    def test_omn_l4_wait_a_newer_run_of_another_event_does_not_hold(self) -> None:
+        runs = [_run(100, status="completed"), _run(101, event="push")]
         assert _external([_stale("cancelled")], runs, SYNTH_NOW) == ([DB], [])
 
     def test_omn_l4_wait_a_newer_completed_run_does_not_hold(self) -> None:

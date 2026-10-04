@@ -765,7 +765,7 @@ def _producer_rerun_in_flight(
     (``.../actions/runs/<run_id>/job/<job_id>``). ``workflow_runs`` is the
     ``actions/runs?head_sha=`` list, which maps a run id to its ``workflow_id``.
     The row is held when a run of that workflow on that head is not
-    ``completed`` and is either a higher run id, or the row's own run id
+    ``completed``, was triggered by the same event, and is either a higher run id, or the row's own run id
     re-started (``run_started_at``) after the row concluded.
 
     Held pending, never passed: only a real ``success`` row resolves the
@@ -799,10 +799,13 @@ def _producer_rerun_in_flight(
         None,
     )
     workflow_id = None if own is None else _workflow_id(own)
-    if workflow_id is None:
+    if own is None or workflow_id is None:
         return False
+    event = str(own.get("event") or "")
     for run in workflow_runs:
         if _workflow_id(run) != workflow_id:
+            continue
+        if str(run.get("event") or "") != event:
             continue
         run_head = str(run.get("head_sha") or "")
         if head_sha and run_head and run_head != head_sha:
