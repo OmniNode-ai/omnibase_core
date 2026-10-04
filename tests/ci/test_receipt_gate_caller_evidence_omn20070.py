@@ -626,6 +626,9 @@ def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
     assert "for tool in initdb pg_ctl psql; do" in tools
     assert "PostgreSQL\\) 16\\." in tools
     assert 'echo "${pg16_bin}" >> "$GITHUB_PATH"' in tools
+    # A runner that cannot install the tools refuses by name, never continues.
+    assert "cannot be installed (no sudo apt-get)" in tools
+    assert "sudo -n apt-get install --yes postgresql-16" in tools
     export = _step(PG_ENV_STEP)
     assert export["env"] == {
         "POSTGRES_PORT": "${{ job.services.postgres.ports['5432'] }}"

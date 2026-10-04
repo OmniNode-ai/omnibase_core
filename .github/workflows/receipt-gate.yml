@@ -1324,8 +1324,15 @@ jobs:
           set -euo pipefail
           pg16_bin=/usr/lib/postgresql/16/bin
           if [ ! -x "${pg16_bin}/initdb" ]; then
-            sudo apt-get update
-            sudo apt-get install --yes postgresql-16
+            # The GitHub-hosted image this job routes to today lets the runner
+            # install packages. The self-hosted omnibase-ci image does not grant
+            # apt-get, so a routing flip to it needs PG16 baked into that image;
+            # until then this step refuses by name rather than letting a native
+            # cluster test skip, which would read as a pass.
+            if ! { sudo -n apt-get update && sudo -n apt-get install --yes postgresql-16; }; then
+              echo "::error::the PostgreSQL 16 server tools are absent from this runner and cannot be installed (no sudo apt-get); bake PG16 into the runner image before routing dod-verify to it"
+              exit 1
+            fi
           fi
           for tool in initdb pg_ctl psql; do
             test -x "${pg16_bin}/${tool}"
