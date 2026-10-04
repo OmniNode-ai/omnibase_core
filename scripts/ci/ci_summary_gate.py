@@ -53,6 +53,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -374,6 +375,20 @@ EXTERNAL_FAILURE_SUPERSESSION_GRACE_S: int = 1200
 #: are absent because neither is produced by a producer that an automatic re-run
 #: replaces.
 SUPERSEDABLE_CONCLUSIONS: frozenset[str] = frozenset({"failure", "skipped"})
+
+#: OMN-20522 -- non-success terminal conclusions held pending while a NEWER run
+#: of the same producer workflow on the same head is unfinished (see
+#: :func:`_producer_rerun_in_flight`). `timed_out` and `action_required` stay
+#: strict exactly as in :data:`SUPERSEDABLE_CONCLUSIONS`: neither is produced by
+#: a producer an automatic re-run replaces.
+PRODUCER_HELD_CONCLUSIONS: frozenset[str] = frozenset(
+    {"cancelled", "failure", "skipped"}
+)
+
+#: The Actions run id inside a check-run ``details_url``
+#: (``.../actions/runs/<run_id>/job/<job_id>``). The check-runs payload carries
+#: no workflow identity, only this.
+_DETAILS_URL_RUN_ID = re.compile(r"/actions/runs/(\d+)(?:/|$)")
 
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
@@ -712,16 +727,7 @@ def _suite_rerun_in_flight(
     ``completed_at``, is never held.
     """
 
-    target = next(
-        (
-            raw
-            for raw in check_runs
-            if str(raw.get("name") or "") == name
-            and str(raw.get("completed_at") or "") == (state.completed_at or "")
-            and str(raw.get("status") or "") == state.status
-        ),
-        None,
-    )
+    target = _find_check_run(check_runs, name, state)
     suite_id = _check_suite_id(target) if target is not None else None
     completed = _parse_timestamp(state.completed_at)
     if suite_id is None or completed is None:
@@ -735,6 +741,106 @@ def _suite_rerun_in_flight(
         if started is not None and started >= completed:
             return True
     return False
+
+
+def _producer_rerun_in_flight(
+    check_runs: list[dict[str, object]],
+    name: str,
+    state: JobState,
+    workflow_runs: list[dict[str, object]] | None,
+) -> bool:
+    """True when ``state``'s producer workflow has a newer run not yet completed.
+
+    OMN-20522, measured twice on omnibase_core: #1881 (head ``4ba4fdba``) and
+    #1869 (head ``f7402aa6``). A ``cancelled`` row is the previous run's answer;
+    its replacement is already executing but its own row for this context does
+    not exist yet, because the producer's job ``needs:`` an upstream job. On
+    #1881 the replacement lived in a DIFFERENT check suite from the stale row
+    (so :func:`_suite_rerun_in_flight` cannot see it) and the stale row was 604 s
+    old against a 600 s window; ``CI Summary`` recorded FAILURE 43 s before the
+    replacement's row concluded ``success``. On #1869 the replacement was a
+    later ATTEMPT of the same run.
+
+    The check-runs payload carries no workflow identity, only ``details_url``
+    (``.../actions/runs/<run_id>/job/<job_id>``). ``workflow_runs`` is the
+    ``actions/runs?head_sha=`` list, which maps a run id to its ``workflow_id``.
+    The row is held when a run of that workflow on that head is not
+    ``completed``, was triggered by the same event, and is either a higher run id, or the row's own run id
+    re-started (``run_started_at``) after the row concluded.
+
+    Held pending, never passed: only a real ``success`` row resolves the
+    context, and the poller's deadline still converts a sustained PENDING into
+    FAILURE.
+
+    FAIL-CLOSED: no runs list, a conclusion outside
+    :data:`PRODUCER_HELD_CONCLUSIONS`, a row whose run id cannot be parsed or
+    whose run is not in the list, a run with no ``workflow_id``, a run on
+    another head, or a run whose status is absent, is never held.
+    """
+
+    if not workflow_runs or state.conclusion not in PRODUCER_HELD_CONCLUSIONS:
+        return False
+    target = _find_check_run(check_runs, name, state)
+    completed = _parse_timestamp(state.completed_at)
+    if target is None or completed is None:
+        return False
+    match = _DETAILS_URL_RUN_ID.search(str(target.get("details_url") or ""))
+    if match is None:
+        return False
+    stale_run_id = int(match.group(1))
+    head_sha = str(target.get("head_sha") or "")
+
+    def _workflow_id(run: dict[str, object]) -> str | None:
+        raw = run.get("workflow_id")
+        return None if raw is None else str(raw)
+
+    own = next(
+        (run for run in workflow_runs if str(run.get("id")) == str(stale_run_id)),
+        None,
+    )
+    workflow_id = None if own is None else _workflow_id(own)
+    if own is None or workflow_id is None:
+        return False
+    event = str(own.get("event") or "")
+    for run in workflow_runs:
+        if _workflow_id(run) != workflow_id:
+            continue
+        if str(run.get("event") or "") != event:
+            continue
+        run_head = str(run.get("head_sha") or "")
+        if head_sha and run_head and run_head != head_sha:
+            continue
+        status = str(run.get("status") or "")
+        if not status or status == "completed":
+            continue
+        try:
+            run_id = int(str(run.get("id")))
+        except ValueError:
+            continue
+        if run_id > stale_run_id:
+            return True
+        if run_id == stale_run_id:
+            started = _parse_timestamp(str(run.get("run_started_at") or "") or None)
+            if started is not None and started > completed:
+                return True
+    return False
+
+
+def _find_check_run(
+    check_runs: list[dict[str, object]], name: str, state: JobState
+) -> dict[str, object] | None:
+    """The raw row ``state`` was collapsed from (same name, status, completion)."""
+
+    return next(
+        (
+            raw
+            for raw in check_runs
+            if str(raw.get("name") or "") == name
+            and str(raw.get("completed_at") or "") == (state.completed_at or "")
+            and str(raw.get("status") or "") == state.status
+        ),
+        None,
+    )
 
 
 def _check_suite_id(raw: dict[str, object]) -> int | None:
@@ -754,6 +860,7 @@ def provisional_external_verdicts(
     *,
     expected: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
     now: datetime | None = None,
+    workflow_runs: list[dict[str, object]] | None = None,
 ) -> list[str]:
     """The subset of ``expected`` held pending by a due automatic replacement.
 
@@ -772,6 +879,7 @@ def provisional_external_verdicts(
         and (
             verdict_is_provisional(st, now)
             or _suite_rerun_in_flight(check_runs, name, st)
+            or _producer_rerun_in_flight(check_runs, name, st, workflow_runs)
         )
     )
 
@@ -781,6 +889,7 @@ def evaluate_external(
     *,
     expected: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
     now: datetime | None = None,
+    workflow_runs: list[dict[str, object]] | None = None,
 ) -> tuple[list[str], list[str]]:
     """Return ``(failures, missing_or_pending)`` for L4 EXPECTED_EXTERNAL_CONTEXTS.
 
@@ -798,6 +907,12 @@ def evaluate_external(
     success path, it is re-read on the next poll, and it fails as soon as its
     window closes. ``now`` is the observation time those windows are measured
     against; omitting it is the strict, pre-OMN-17864 reading.
+
+    OMN-20522: a ``cancelled``/``failure``/``skipped`` row is also
+    missing-or-pending while a NEWER run of the same producer workflow on the
+    same head is not completed (:func:`_producer_rerun_in_flight`), whatever its
+    age. ``workflow_runs`` is the ``actions/runs?head_sha=`` list; omitting it
+    is today's reading.
     """
 
     latest = _external_check_states(check_runs)
@@ -809,8 +924,10 @@ def evaluate_external(
             missing_or_pending.append(name)
         elif st.conclusion == "success":
             continue
-        elif verdict_is_provisional(st, now) or _suite_rerun_in_flight(
-            check_runs, name, st
+        elif (
+            verdict_is_provisional(st, now)
+            or _suite_rerun_in_flight(check_runs, name, st)
+            or _producer_rerun_in_flight(check_runs, name, st, workflow_runs)
         ):
             missing_or_pending.append(name)
         else:
@@ -829,6 +946,7 @@ def evaluate(
     external_check_runs: list[dict[str, object]] | None = None,
     external_contexts: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS,
     now: datetime | None = None,
+    workflow_runs: list[dict[str, object]] | None = None,
 ) -> tuple[int, str]:
     """Return ``(exit_code, human_report)`` for the current job snapshot.
 
@@ -908,10 +1026,16 @@ def evaluate(
     #     workflow file, resolved against commits/{sha}/check-runs rather than
     #     this run's job list. See EXPECTED_EXTERNAL_CONTEXTS docstring above.
     external_failures, external_missing_or_pending = evaluate_external(
-        external_check_runs or [], expected=external_contexts, now=now
+        external_check_runs or [],
+        expected=external_contexts,
+        now=now,
+        workflow_runs=workflow_runs,
     )
     external_provisional = provisional_external_verdicts(
-        external_check_runs or [], expected=external_contexts, now=now
+        external_check_runs or [],
+        expected=external_contexts,
+        now=now,
+        workflow_runs=workflow_runs,
     )
 
     args = (
@@ -1067,6 +1191,34 @@ def _load_check_runs(path: str | None) -> list[dict[str, object]]:
     return check_runs
 
 
+def _load_workflow_runs(path: str | None) -> list[dict[str, object]] | None:
+    """Load the ``actions/runs?head_sha=`` list, or ``None`` when unusable.
+
+    OMN-20522. The list only ever HOLDS a red pending, so every way it can be
+    missing or unreadable returns ``None``, which is today's reading: the red
+    fails on the poll that observes it. Accepts the raw endpoint object
+    (``{"workflow_runs": [...]}``) or a bare array.
+    """
+    if path is None:
+        return None
+    try:
+        with open(path, encoding="utf-8") as handle:
+            data = json.loads(handle.read())
+    except (OSError, ValueError) as error:
+        sys.stderr.write(
+            f"workflow-runs file unusable ({error}); L4 producer hold disabled\n"
+        )
+        return None
+    if isinstance(data, dict):
+        data = data.get("workflow_runs")
+    if not isinstance(data, list):
+        sys.stderr.write(
+            "workflow-runs file is not a run list; L4 producer hold disabled\n"
+        )
+        return None
+    return [run for run in data if isinstance(run, dict)]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -1094,6 +1246,14 @@ def main(argv: list[str] | None = None) -> int:
         "all-missing, i.e. PENDING until supplied).",
     )
     parser.add_argument(
+        "--workflow-runs-file",
+        default=None,
+        help="Path to the actions/runs?head_sha=<sha> JSON (OMN-20522). Optional: "
+        "when absent or unreadable a cancelled/failure/skipped L4 row is read "
+        "exactly as before; when present it holds such a row pending while a "
+        "newer run of the same producer workflow is not completed.",
+    )
+    parser.add_argument(
         "--event-name",
         required=True,
         help="GitHub event name selecting the L4 external-context contract.",
@@ -1102,6 +1262,7 @@ def main(argv: list[str] | None = None) -> int:
 
     jobs = _load_jobs(args.jobs_file)
     external_check_runs = _load_check_runs(args.external_check_runs_file)
+    workflow_runs = _load_workflow_runs(args.workflow_runs_file)
     try:
         external_contexts = external_contexts_for_event(args.event_name)
     except ValueError as error:
@@ -1112,6 +1273,7 @@ def main(argv: list[str] | None = None) -> int:
         run_attempt=args.run_attempt,
         external_check_runs=external_check_runs,
         external_contexts=external_contexts,
+        workflow_runs=workflow_runs,
         # The observation time the OMN-17864 / OMN-18355 windows are measured
         # against. It is the process's own wall clock and has NO CLI surface --
         # deliberately, because a caller-assertable time would let a long-dead
