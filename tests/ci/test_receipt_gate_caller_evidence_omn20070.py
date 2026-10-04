@@ -95,6 +95,8 @@ def test_jobs_select_evidence_source_and_preserve_occ_steps() -> None:
 def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
     steps = _job()["steps"]
     assert [step.get("name") for step in steps] == [
+        "Check out omnibase_core (for occ_preflight_wait.py)",
+        "Detect dependency-bot author (receipt-gate exemption)",
         "Refuse anything but a same-repository pull request",
         "Resolve the cited tickets",
         "Check out the pull request head",
@@ -227,7 +229,10 @@ def test_control_refuses_always_pass_non_failed_and_missing_bound_checks() -> No
 
 def test_occ_difference_runs_after_refusal_with_only_the_existing_read_token() -> None:
     step = _step(DIFFERENCE_STEP)
-    assert step["if"] == "${{ !cancelled() && inputs.compare-with-occ == 'true' }}"
+    assert step["if"] == (
+        "${{ !cancelled() && steps.bot_exempt.outputs.exempt != 'true' "
+        "&& inputs.compare-with-occ == 'true' }}"
+    )
     assert step["env"] == {
         "GH_TOKEN": "${{ github.token }}",
         "REPO": "${{ github.repository }}",
