@@ -32,11 +32,15 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_apply_result impor
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_linear_transport_error import (
+    NodeLinearTransportError,
+)
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_sprint_roll_journal import (
+    NodeSprintRollJournal,
+)
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
     GraphQLPayload,
     GraphQLTransport,
-    LinearTransportError,
-    SprintRollJournal,
     node_rows,
 )
 
@@ -103,7 +107,7 @@ class NodeSprintRollApplyEffect:
 
         nums: list[JsonValue] = list(issue_numbers(wanted))
         if not nums:
-            raise LinearTransportError(
+            raise NodeLinearTransportError(
                 "no plan ticket carries a Linear issue number, so nothing can be read"
             )
         current = self._read(ISSUE_QUERY, {"nums": nums})
@@ -143,7 +147,7 @@ class NodeSprintRollApplyEffect:
                 write_calls=0,
             )
 
-        journal = SprintRollJournal(request.manifest_path)
+        journal = NodeSprintRollJournal(request.manifest_path)
         for write in planned:
             journal.send(self._transport, write)
             self._writes += 1

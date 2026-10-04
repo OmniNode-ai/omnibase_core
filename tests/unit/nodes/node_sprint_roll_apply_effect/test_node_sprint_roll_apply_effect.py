@@ -30,11 +30,15 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect import NodeSprintRollApplyEffect
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_linear_transport_error import (
+    NodeLinearTransportError,
+)
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_sprint_roll_journal import (
+    NodeSprintRollJournal,
+)
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
     MAX_ATTEMPTS,
     RETRYABLE_STATUS,
-    LinearTransportError,
-    SprintRollJournal,
     label_uuid,
     resolve_source_start,
     state_uuid,
@@ -64,7 +68,7 @@ class Recorder:
     def __call__(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         self.calls.append((query, variables))
         if self.fail_after is not None and len(self.mutations) > self.fail_after:
-            raise LinearTransportError("transport refused")
+            raise NodeLinearTransportError("transport refused")
         if query.lstrip().startswith("mutation"):
             return {"issueUpdate": {"success": True}}
         if "issueLabels" in query:
@@ -164,7 +168,7 @@ def test_a_run_interrupted_after_the_first_write_still_leaves_its_undo(
     ordering leaves a write nothing can undo."""
     manifest = tmp_path / "m.jsonl"
     recorder = Recorder(fail_after=1)
-    with pytest.raises(LinearTransportError):
+    with pytest.raises(NodeLinearTransportError):
         NodeSprintRollApplyEffect(recorder).handle(
             ModelSprintRollApplyRequest(
                 plan=_plan(), dry_run=False, manifest_path=manifest
@@ -223,7 +227,7 @@ def test_a_plan_that_moves_nothing_reads_nothing() -> None:
 
 def test_undo_restores_prior_values_newest_write_first(tmp_path: Path) -> None:
     manifest = tmp_path / "m.jsonl"
-    journal = SprintRollJournal(manifest)
+    journal = NodeSprintRollJournal(manifest)
     for n in (1, 2, 3):
         journal.record(
             ModelSprintRollWrite(
@@ -245,7 +249,7 @@ def test_undo_reports_a_state_with_no_prior_value_rather_than_guessing(
     tmp_path: Path,
 ) -> None:
     manifest = tmp_path / "m.jsonl"
-    SprintRollJournal(manifest).record(
+    NodeSprintRollJournal(manifest).record(
         ModelSprintRollWrite(
             issue_uuid="uuid-1",
             identifier="OMN-1",
@@ -265,7 +269,7 @@ def test_undo_restores_an_empty_project_because_no_sprint_is_a_real_prior_state(
     tmp_path: Path,
 ) -> None:
     manifest = tmp_path / "m.jsonl"
-    SprintRollJournal(manifest).record(
+    NodeSprintRollJournal(manifest).record(
         ModelSprintRollWrite(
             issue_uuid="uuid-1",
             identifier="OMN-1",
@@ -283,7 +287,7 @@ def test_undo_restores_an_empty_project_because_no_sprint_is_a_real_prior_state(
 
 def test_undo_restores_the_whole_prior_label_set(tmp_path: Path) -> None:
     manifest = tmp_path / "m.jsonl"
-    SprintRollJournal(manifest).record(
+    NodeSprintRollJournal(manifest).record(
         ModelSprintRollWrite(
             issue_uuid="uuid-1",
             identifier="OMN-1",
@@ -312,7 +316,7 @@ def test_a_missing_label_is_a_refusal_not_a_silent_skip() -> None:
     def no_label(query: str, variables: dict[str, Any]) -> dict[str, Any]:
         return {"issueLabels": {"nodes": []}}
 
-    with pytest.raises(LinearTransportError, match="no label named"):
+    with pytest.raises(NodeLinearTransportError, match="no label named"):
         label_uuid(no_label, "beta-critical")
 
 
@@ -320,7 +324,7 @@ def test_a_missing_state_is_a_refusal() -> None:
     def no_state(query: str, variables: dict[str, Any]) -> dict[str, Any]:
         return {"workflowStates": {"nodes": []}}
 
-    with pytest.raises(LinearTransportError, match="no state named"):
+    with pytest.raises(NodeLinearTransportError, match="no state named"):
         state_uuid(no_state, "OMN", "Backlog")
 
 
@@ -367,7 +371,7 @@ def test_after_the_boundary_the_sprint_that_ended_is_drained_not_the_new_one(
 def test_a_window_that_omits_the_finished_sprint_still_resolves_it() -> None:
     """The project list has no window, which is the whole reason it is asked first."""
     only_future = [SPRINTS[2]]
-    with pytest.raises(LinearTransportError, match="nothing to roll"):
+    with pytest.raises(NodeLinearTransportError, match="nothing to roll"):
         resolve_source_start(_projects(only_future), dt.date(2026, 10, 6))
     assert resolve_source_start(_projects(SPRINTS), dt.date(2026, 10, 6)) == dt.date(
         2026, 9, 28
@@ -375,7 +379,7 @@ def test_a_window_that_omits_the_finished_sprint_still_resolves_it() -> None:
 
 
 def test_a_date_before_every_sprint_is_refused() -> None:
-    with pytest.raises(LinearTransportError, match="nothing to roll"):
+    with pytest.raises(NodeLinearTransportError, match="nothing to roll"):
         resolve_source_start(_projects(SPRINTS), dt.date(2026, 9, 1))
 
 
@@ -387,7 +391,7 @@ def test_an_undated_project_is_ignored_rather_than_crashed_on() -> None:
 
 
 def test_no_dated_sprint_project_at_all_is_refused() -> None:
-    with pytest.raises(LinearTransportError, match="no dated sprint project"):
+    with pytest.raises(NodeLinearTransportError, match="no dated sprint project"):
         resolve_source_start(_projects([]), dt.date(2026, 10, 4))
 
 
@@ -395,7 +399,7 @@ def test_no_dated_sprint_project_at_all_is_refused() -> None:
 #
 # The retry POLICY is what core owns. ADR-005 forbids an HTTP client anywhere in
 # omnibase_core and the url-authority gate forbids a URL literal, so the client and the
-# endpoint belong to the caller; the adapter there raises LinearTransportError with the
+# endpoint belong to the caller; the adapter there raises NodeLinearTransportError with the
 # status, and these cases prove what the policy does with it.
 
 
@@ -411,7 +415,7 @@ class Flaky:
         code = self.statuses[min(self.attempts - 1, len(self.statuses) - 1)]
         if code is None:
             return {"ok": True}
-        raise LinearTransportError(f"HTTP {code}", status=code)
+        raise NodeLinearTransportError(f"HTTP {code}", status=code)
 
 
 @pytest.mark.parametrize("code", sorted(RETRYABLE_STATUS))
@@ -424,14 +428,14 @@ def test_a_transient_status_is_retried_and_then_succeeds(code: int) -> None:
 def test_a_persistent_transient_status_surfaces_rather_than_being_swallowed() -> None:
     """A failure swallowed mid-plan would leave the board half rolled."""
     flaky = Flaky([503])
-    with pytest.raises(LinearTransportError, match="HTTP 503"):
+    with pytest.raises(NodeLinearTransportError, match="HTTP 503"):
         with_retries(flaky, sleep=lambda _s: None)("query{}", {})
     assert flaky.attempts == MAX_ATTEMPTS
 
 
 def test_a_non_retryable_status_fails_on_the_first_attempt() -> None:
     flaky = Flaky([401])
-    with pytest.raises(LinearTransportError, match="HTTP 401"):
+    with pytest.raises(NodeLinearTransportError, match="HTTP 401"):
         with_retries(flaky, sleep=lambda _s: None)("query{}", {})
     assert flaky.attempts == 1
 
@@ -442,9 +446,9 @@ def test_an_error_with_no_status_is_not_retried() -> None:
 
     def unclassified(query: str, variables: dict[str, Any]) -> dict[str, Any]:
         calls["n"] += 1
-        raise LinearTransportError("socket closed")
+        raise NodeLinearTransportError("socket closed")
 
-    with pytest.raises(LinearTransportError, match="socket closed"):
+    with pytest.raises(NodeLinearTransportError, match="socket closed"):
         with_retries(unclassified, sleep=lambda _s: None)("query{}", {})
     assert calls["n"] == 1
 
@@ -532,7 +536,7 @@ def test_a_plan_whose_tickets_carry_no_number_refuses_rather_than_reading_everyt
     None
 ):
     plan = _plan(("nope",))
-    with pytest.raises(LinearTransportError, match="no plan ticket carries"):
+    with pytest.raises(NodeLinearTransportError, match="no plan ticket carries"):
         NodeSprintRollApplyEffect(Recorder()).handle(
             ModelSprintRollApplyRequest(plan=plan)
         )

@@ -14,7 +14,7 @@ ordering, the undo and the query text, and a test passes a recorder and asserts 
 sent.
 
 `with_retries` is the retry POLICY, which is not a transport: it wraps an injected
-callable and re-calls it when the callable raises :class:`LinearTransportError` carrying a
+callable and re-calls it when the callable raises :class:`NodeLinearTransportError` (``node_linear_transport_error``) carrying a
 retryable status. The adapter that knows what a 503 is lives with the client, outside this
 package, and raises that typed error.
 """
@@ -31,18 +31,21 @@ from pydantic import JsonValue
 from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_linear_transport_error import (
+    NodeLinearTransportError,
+)
 
 __all__ = [
     "MAX_ATTEMPTS",
+    "MUTATION",
     "RETRYABLE_STATUS",
     "GraphQLTransport",
-    "LinearTransportError",
-    "SprintRollJournal",
     "label_uuid",
     "node_rows",
     "resolve_source_start",
     "state_uuid",
     "undo_from_manifest",
+    "write_payload",
     "with_retries",
 ]
 
@@ -72,19 +75,6 @@ SPRINT_PROJECTS_QUERY = (
 )
 
 
-class LinearTransportError(RuntimeError):
-    """A Linear call failed.
-
-    `status` is the HTTP status when the caller's adapter knows one, and None otherwise.
-    It is the only thing this package needs to know about HTTP, and it arrives as data
-    rather than as an imported client type.
-    """
-
-    def __init__(self, message: str, *, status: int | None = None) -> None:
-        super().__init__(message)
-        self.status = status
-
-
 def with_retries(
     transport: GraphQLTransport,
     *,
@@ -102,12 +92,12 @@ def with_retries(
         for attempt in range(attempts):
             try:
                 return transport(query, variables)
-            except LinearTransportError as exc:
+            except NodeLinearTransportError as exc:
                 retryable = exc.status in RETRYABLE_STATUS
                 if not retryable or attempt == attempts - 1:
                     raise
                 sleep(3 * (attempt + 1))
-        raise LinearTransportError("transport exhausted without a result")
+        raise NodeLinearTransportError("transport exhausted without a result")
 
     return call
 
@@ -122,10 +112,10 @@ def node_rows(data: GraphQLPayload, collection: str) -> list[GraphQLPayload]:
     """
     holder = data.get(collection)
     if not isinstance(holder, dict):
-        raise LinearTransportError(f"Linear returned no {collection} object")
+        raise NodeLinearTransportError(f"Linear returned no {collection} object")
     rows = holder.get("nodes")
     if not isinstance(rows, list):
-        raise LinearTransportError(f"Linear returned no {collection}.nodes list")
+        raise NodeLinearTransportError(f"Linear returned no {collection}.nodes list")
     return [row for row in rows if isinstance(row, dict)]
 
 
@@ -152,7 +142,7 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
         key=lambda p: _text(p, "startDate"),
     )
     if not dated:
-        raise LinearTransportError("no dated sprint project exists")
+        raise NodeLinearTransportError("no dated sprint project exists")
     iso = as_of.isoformat()
     containing = next(
         (p for p in dated if _text(p, "startDate") <= iso <= _text(p, "targetDate")),
@@ -162,7 +152,7 @@ def resolve_source_start(transport: GraphQLTransport, as_of: dt.date) -> dt.date
         return dt.date.fromisoformat(_text(containing, "startDate"))
     ended = [p for p in dated if _text(p, "targetDate") < iso]
     if not ended:
-        raise LinearTransportError(
+        raise NodeLinearTransportError(
             f"no sprint has ended before {iso} and {iso} is not the last day of any "
             "sprint window, so there is nothing to roll"
         )
@@ -177,7 +167,7 @@ def label_uuid(transport: GraphQLTransport, name: str) -> str:
     )
     rows = node_rows(data, "issueLabels")
     if not rows:
-        raise LinearTransportError(f"no label named {name!r}")
+        raise NodeLinearTransportError(f"no label named {name!r}")
     return _text(rows[0], "id")
 
 
@@ -190,34 +180,10 @@ def state_uuid(transport: GraphQLTransport, team_key: str, state_name: str) -> s
     )
     rows = node_rows(data, "workflowStates")
     if not rows:
-        raise LinearTransportError(f"team {team_key} has no state named {state_name!r}")
+        raise NodeLinearTransportError(
+            f"team {team_key} has no state named {state_name!r}"
+        )
     return _text(rows[0], "id")
-
-
-class SprintRollJournal:
-    """Appends each write to a manifest BEFORE the transport is asked to send it.
-
-    The ordering is the guarantee. A crash between the journal line and the mutation
-    leaves a manifest entry for a write that never happened, and undoing that is a no-op;
-    the reverse ordering would leave a write with no record, which nothing can undo.
-    """
-
-    def __init__(self, path: Path | None) -> None:
-        self.path = path
-        self.writes: list[ModelSprintRollWrite] = []
-
-    def record(self, write: ModelSprintRollWrite) -> None:
-        self.writes.append(write)
-        if self.path is None:
-            return
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(write.model_dump_json() + "\n")
-            handle.flush()
-
-    def send(self, transport: GraphQLTransport, write: ModelSprintRollWrite) -> None:
-        """Journal, then mutate. Never the other way round."""
-        self.record(write)
-        transport(MUTATION, {"id": write.issue_uuid, "in": _payload(write)})
 
 
 #: Fields Linear takes as a single id. Everything else is a set.
@@ -231,7 +197,7 @@ def _value(field: str, ids: tuple[str, ...] | None) -> JsonValue:
     return list(ids or ())
 
 
-def _payload(write: ModelSprintRollWrite) -> GraphQLPayload:
+def write_payload(write: ModelSprintRollWrite) -> GraphQLPayload:
     return {write.field: _value(write.field, write.after)}
 
 
