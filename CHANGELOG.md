@@ -1,3 +1,17 @@
+## v0.47.34 (2026-10-04)
+
+### Release
+- Cut omnibase-core from dev at 0.47.34 by the scheduled release train.
+- 5 release-relevant commit(s) merged since v0.47.32.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.32
+- fix: split runtime_sprint_roll_apply.py into single-class modules (#1874)
+- fix: three defects a live dry run found, and the test that each needed (#1872)
+- fix: canonical-file-shape reads blobs through temporary files, not a stdin pipe (#1868)
+- feat: read OCC contracts from legacy and per-PR files (#1870)
+- fix: onex run-node authenticates to a SASL lane broker (#1865)
+
 ## v0.47.32 (2026-10-03)
 
 ### Release
