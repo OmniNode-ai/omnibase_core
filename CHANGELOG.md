@@ -1,3 +1,13 @@
+## v0.47.35 (2026-10-05)
+
+### Release
+- Cut omnibase-core from dev at 0.47.35 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.34.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.34
+- refactor: omnibase_core ratchet burn-down, first pass: five empty exemption surfaces retired, stale entries removed (#1888)
+
 ## v0.47.34 (2026-10-04)
 
 ### Release
