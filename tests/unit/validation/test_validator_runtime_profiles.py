@@ -263,10 +263,27 @@ class TestValidatorRuntimeProfilesPasses:
 
 @pytest.mark.unit
 class TestValidatorRuntimeProfilesAllowlistFile:
-    """The default allowlist YAML must require an explicit reason per entry."""
+    """Core ships no allowlist; a repo baseline requires a reason per entry."""
 
-    def test_default_allowlist_loads_with_reason_per_entry(self) -> None:
-        entries = load_default_allowlist()
+    def test_core_ships_no_default_allowlist(self) -> None:
+        """OMN-20559: core's own allowlist emptied and was deleted."""
+        import omnibase_core.validation.validator_runtime_profiles as mod
+
+        assert load_default_allowlist() == {}
+        assert not (
+            Path(mod.__file__).parent / "runtime_profiles_allowlist.yaml"
+        ).exists()
+
+    def test_repo_baseline_loads_with_reason_per_entry(self, tmp_path: Path) -> None:
+        baseline = tmp_path / "runtime_profiles_allowlist.yaml"
+        baseline.write_text(
+            yaml.safe_dump(
+                {"allowlist": [{"node_id": "node_frozen", "reason": "pre-existing"}]}
+            ),
+            encoding="utf-8",
+        )
+        entries = load_default_allowlist(baseline)
+        assert entries == {"node_frozen": "pre-existing"}
         for node_id, reason in entries.items():
             assert isinstance(node_id, str) and node_id, (
                 "node_id must be non-empty string"
