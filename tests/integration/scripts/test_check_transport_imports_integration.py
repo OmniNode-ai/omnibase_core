@@ -38,7 +38,7 @@ class TestTransportImportCheckerIntegration:
             text=True,
             cwd=project_root,
         )
-        # Should pass (exit 0) since allowlisted violations are suppressed
+        # Should pass (exit 0) since the codebase has no transport violations
         assert result.returncode == 0, f"Script failed with stderr: {result.stderr}"
 
     def test_json_output_is_valid(self, project_root: Path) -> None:
@@ -75,7 +75,7 @@ class TestTransportImportCheckerIntegration:
         assert "clean_files" in summary
         assert "files_with_violations" in summary
         assert "total_violations" in summary
-        assert "allowlisted_files" in summary
+        assert "allowlisted_files" not in summary
 
         # Verify results is a list
         assert isinstance(data["results"], list)
@@ -129,8 +129,8 @@ class TestTransportImportCheckerIntegration:
         assert result.returncode == 0
         assert "usage:" in result.stdout.lower() or "transport" in result.stdout.lower()
 
-    def test_script_reports_allowlisted_files_count(self, project_root: Path) -> None:
-        """Test that the script correctly reports allowlisted file count in summary."""
+    def test_json_summary_has_no_allowlist_fields(self, project_root: Path) -> None:
+        """Test that the JSON summary contains no exemption metadata."""
         result = subprocess.run(
             ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
@@ -141,31 +141,46 @@ class TestTransportImportCheckerIntegration:
         assert result.returncode == 0
         data = json.loads(result.stdout)
 
-        # The allowlisted_files field should be present and non-negative
         summary = data["summary"]
-        assert "allowlisted_files" in summary
-        assert summary["allowlisted_files"] >= 0
+        assert "allowlisted_files" not in summary
+        assert "allowlist_expiration_warning" not in summary
 
-        # When allowlist is empty, count should be 0 (all violations fixed!)
-        # When allowlist has items, count should match the number of files with violations
-        assert isinstance(summary["allowlisted_files"], int)
-
-    def test_exit_code_zero_with_only_allowlisted_violations(
-        self, project_root: Path
+    def test_src_dir_violation_fails_with_json_result(
+        self, project_root: Path, tmp_path: Path
     ) -> None:
-        """Test that exit code is 0 when only allowlisted violations exist."""
+        """Test that a planted transport import fails and appears in JSON results."""
+        planted_file = tmp_path / "planted_transport.py"
+        planted_file.write_text("import httpx\n", encoding="utf-8")
         result = subprocess.run(
-            ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/check_transport_imports.py",
+                "--src-dir",
+                str(tmp_path),
+                "--json",
+            ],
             check=False,
             capture_output=True,
             text=True,
             cwd=project_root,
         )
+        assert result.returncode == 1, result.stdout + result.stderr
         data = json.loads(result.stdout)
-
-        # If there are no new violations (files_with_violations == 0), exit code should be 0
-        if data["summary"]["files_with_violations"] == 0:
-            assert result.returncode == 0
+        assert data["summary"]["files_with_violations"] == 1
+        assert data["summary"]["total_violations"] == 1
+        assert len(data["results"]) == 1
+        file_result = data["results"][0]
+        assert file_result["file"] == str(planted_file.resolve())
+        assert file_result["is_clean"] is False
+        assert file_result["skip_reason"] is None
+        assert len(file_result["violations"]) == 1
+        violation = file_result["violations"][0]
+        assert violation["type"] == "banned_transport_import"
+        assert violation["severity"] == "error"
+        assert violation["line"] == 1
+        assert "httpx" in violation["message"]
 
     def test_combined_json_and_verbose_flags(self, project_root: Path) -> None:
         """Test that --json and --verbose can be used together."""
@@ -187,33 +202,3 @@ class TestTransportImportCheckerIntegration:
         # JSON output should still be valid even with verbose flag
         data = json.loads(result.stdout)
         assert "summary" in data
-
-    def test_results_contain_allowlisted_file_info_when_present(
-        self, project_root: Path
-    ) -> None:
-        """Test that results include information about allowlisted files when present."""
-        result = subprocess.run(
-            ["uv", "run", "python", "scripts/check_transport_imports.py", "--json"],
-            check=False,
-            capture_output=True,
-            text=True,
-            cwd=project_root,
-        )
-        assert result.returncode == 0
-        data = json.loads(result.stdout)
-
-        # Find allowlisted files in results
-        results = data["results"]
-        allowlisted_results = [
-            r for r in results if "Allowlisted" in r.get("skip_reason", "")
-        ]
-
-        # Allowlisted count in summary should match results with "Allowlisted" skip_reason
-        summary = data["summary"]
-        assert len(allowlisted_results) == summary["allowlisted_files"]
-
-        # If there are allowlisted files, they should have proper skip_reason
-        for allowlisted in allowlisted_results:
-            assert "Allowlisted" in allowlisted["skip_reason"]
-            assert allowlisted["is_clean"] is True  # Allowlisted files are marked clean
-            assert allowlisted["violations"] == []  # Violations are suppressed

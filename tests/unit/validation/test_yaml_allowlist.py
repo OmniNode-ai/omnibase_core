@@ -13,6 +13,7 @@ This prevents the allowlist from becoming stale as the codebase evolves.
 """
 
 import ast
+import re
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +70,19 @@ class TestAllowlistFileExistence:
             f"{chr(10).join(f'  - {f}' for f in missing_files)}\n\n"
             f"Update .yaml-validation-allowlist.yaml to remove non-existent files."
         )
+
+    def test_allowed_files_still_load_yaml(self, allowed_files: list[str]) -> None:
+        """OMN-20559: an entry whose file no longer loads YAML is stale and must
+        be deleted, so the list only shrinks as call sites go away."""
+        loads_yaml = re.compile(r"yaml\.(?:safe_)?load|\bsafe_load(?:_all)?\(")
+        stale = [
+            file_path
+            for file_path in allowed_files
+            if not loads_yaml.search(
+                (PROJECT_ROOT / file_path).read_text(encoding="utf-8")
+            )
+        ]
+        assert not stale, f"Stale allowlist entries (no YAML load): {stale}"
 
     def test_allowed_files_are_python_files(self, allowed_files: list[str]) -> None:
         """Verify all allowed files are Python files (.py extension)."""

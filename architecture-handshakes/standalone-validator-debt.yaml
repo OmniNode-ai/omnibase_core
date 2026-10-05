@@ -24,7 +24,7 @@
 #
 # `tests/validation/test_standalone_validator_workflow_registry.py` fails
 # CLOSED if any `validator-*.yml` file that triggers on `pull_request` is not
-# classified in exactly one of the three buckets below, or if a classified
+# classified in exactly one of the two buckets below, or if a classified
 # entry no longer matches the live file (stale-entry hygiene — you cannot
 # silently un-track a gap without also fixing it).
 #
@@ -37,10 +37,9 @@
 #      branch-protection required_status_checks context on `dev` (verified via
 #      `gh api repos/OmniNode-ai/omnibase_core/branches/dev/protection/required_status_checks
 #      --jq '.contexts'`, dated below). Gated independently of ci-summary.
-#   3. decorative_debt — CONFIRMED decorative: gates nothing today. Tracked,
-#      counted, ticketed. Retire an entry by migrating it into ci.yml (bucket 1)
-#      or adding its context to required_status_checks (bucket 2, disfavored —
-#      wedges in-flight PRs per OMN-14430).
+#   A third bucket, decorative_debt (confirmed gate-nothing debt), emptied on
+#   2026-08-20 (OMN-16281) and was retired on 2026-10-05 (OMN-20559). The
+#   validator now refuses a manifest that declares it.
 
 schema_version: 1
 
@@ -114,21 +113,6 @@ migrated_into_ci_yml:
   # .github/required-checks.yaml's row for this context, `workflow: ci.yml`).
   - workflow_file: validator-no-unguarded-git-subprocess.yml
     ci_job_key: no-unguarded-git-subprocess
-
-# TRACKED DEBT (OMN-14430 fast-follow, ticket OMN-14430): confirmed decorative
-# — no merge gate blocks on any of these today; pre-commit (if installed, if not
-# bypassed) is the only enforcement. Migrate one-by-one into `migrated_into_ci_yml`
-# (preferred) to retire from this list; the count below is the live decorative
-# gate count this ticket asked to be reported.
-#
-# EMPTIED 2026-07-21 (OMN-14877): all 18 remaining decorative validators were
-# batch-migrated into ci.yml (see migrated_into_ci_yml above).
-#
-# EMPTIED AGAIN 2026-08-20 (OMN-16281): the one remaining entry (OMN-14891
-# git-env-isolation gate) was migrated into ci.yml too — see migrated_into_ci_yml
-# above. This bucket is intentionally empty; it is not dead code, the next
-# decorative standalone validator discovered lands here.
-decorative_debt: []
 
 metadata:
   generated_by: "OMN-14430 audit, 2026-07-20"
