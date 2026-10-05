@@ -25,6 +25,11 @@
 #   - GitHub CLI (gh) authenticated with access to OmniNode-ai org repos
 #   - jq (for URL-encoding branch names; falls back to raw name if absent)
 #
+# Transient API reads are retried with exponential backoff. Tunables:
+#   POLICY_GATE_RETRY_ATTEMPTS     total attempts per repo (default 4)
+#   POLICY_GATE_RETRY_BASE_DELAY   first backoff, whole seconds, doubling (default 2);
+#                                  non-integer values fall back to the default
+#
 # Non-success conclusions (cancelled, skipped, timed_out, etc.) are treated
 # as failures. Manually cancelled runs will show as FAIL.
 
@@ -124,32 +129,60 @@ check_repo() {
     local encoded_branch
     encoded_branch=$(printf '%s' "${branch}" | jq -sRr @uri 2>/dev/null || printf '%s' "${branch}")
 
-    # Query the latest *completed* workflow run conclusion for check-handshake.yml.
+    # Query the latest *completed* workflow run for check-handshake.yml.
     # The status=completed filter excludes in-progress runs whose conclusion is null.
-    api_output=$(gh api \
-        "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${encoded_branch}&status=completed&per_page=1" \
-        --jq '.workflow_runs[0].conclusion // empty' \
-        2>"${api_stderr}") && api_exit=0 || api_exit=$?
+    # The page is per_page=1, so total_count is read alongside the conclusion:
+    # an empty page while total_count > 0 is a transient API read, not "no runs".
+    # Transient reads (API error, or an empty page with runs) are retried with
+    # exponential backoff; a 404 or a genuine zero-run repo is not transient.
+    local attempts="${POLICY_GATE_RETRY_ATTEMPTS:-4}"
+    local delay="${POLICY_GATE_RETRY_BASE_DELAY:-2}"
+    # Backoff doubles with integer arithmetic: reject anything else up front.
+    [[ "${attempts}" =~ ^[1-9][0-9]*$ ]] || attempts=4
+    [[ "${delay}" =~ ^[0-9]+$ ]] || delay=2
+    local attempt=1
+    local last_result="error"
+    while :; do
+        local total_count="" conclusion="" api_exit=0
+        api_output=$(gh api \
+            "repos/${full_repo}/actions/workflows/${WORKFLOW_FILENAME}/runs?branch=${encoded_branch}&status=completed&per_page=1" \
+            --jq '[(.total_count // 0), (.workflow_runs[0].conclusion // "")] | @tsv' \
+            2>"${api_stderr}") && api_exit=0 || api_exit=$?
 
-    if [[ ${api_exit} -ne 0 ]]; then
-        local err_content
-        err_content=$(<"${api_stderr}")
+        if [[ ${api_exit} -ne 0 ]]; then
+            local err_content
+            err_content=$(<"${api_stderr}")
 
-        # gh api returns exit code 1 for HTTP 4xx/5xx errors.
-        # A 404 means the workflow file does not exist in the repo.
-        if [[ "${err_content}" == *"404"* ]] || [[ "${err_content}" == *"Not Found"* ]]; then
-            echo "no_workflow"
+            # gh api returns exit code 1 for HTTP 4xx/5xx errors.
+            # A 404 means the workflow file does not exist in the repo.
+            if [[ "${err_content}" == *"404"* ]] || [[ "${err_content}" == *"Not Found"* ]]; then
+                echo "no_workflow"
+                return 0
+            fi
+            last_result="error"
         else
-            echo "error"
+            IFS=$'\t' read -r total_count conclusion <<<"${api_output}"
+            if [[ -n "${conclusion}" ]]; then
+                break
+            elif [[ "${total_count:-0}" == "0" ]]; then
+                # Genuinely zero runs: fail clearly, nothing to retry.
+                echo "no_runs"
+                return 0
+            fi
+            # Runs exist but the page came back empty: retry.
+            last_result="error"
         fi
-        return 0
-    fi
 
-    # No runs on default branch
-    if [[ -z "${api_output}" ]]; then
-        echo "no_runs"
-        return 0
-    fi
+        if [[ ${attempt} -ge ${attempts} ]]; then
+            echo "${last_result}"
+            return 0
+        fi
+        log_info "Transient read for ${repo} (attempt ${attempt}/${attempts}), retrying in ${delay}s"
+        sleep "${delay}"
+        delay=$((delay * 2))
+        attempt=$((attempt + 1))
+    done
+    api_output="${conclusion}"
 
     case "${api_output}" in
         success)  echo "pass" ;;
