@@ -1035,3 +1035,18 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: spdx-headers-check
+  name: ONEX SPDX header requirement
+  description: >
+    Require the canonical SPDX MIT header (two exact lines after an optional shebang and encoding cookie,
+    no stale license lines). Runs as a canonical COMPUTE node (node_spdx_headers_check_compute, OMN-20565)
+    over explicit (path, source) pairs, replacing scripts/validation/validate_spdx_headers.py; the header
+    logic is shared with `onex spdx validate`, and --report-json writes the canonical OMN-2362 validation
+    report. The existing `# spdx-skip:` bypass is honoured exactly as before.
+  language: python
+  entry: python -m omnibase_core.nodes.node_spdx_headers_check_compute.runtime_spdx_headers_check
+  types_or: [python, shell, bash, yaml, toml]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_spdx_headers_check_compute
+node_id: node_spdx_headers_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Pure SPDX header check over explicit (path, source) pairs, reproducing the deleted scripts/validation/validate_spdx_headers.py
+  and `onex spdx validate` per-file messages byte for byte (OMN-20565).
+input_model: omnibase_core.models.nodes.spdx_headers_check.model_spdx_headers_check_input.ModelSpdxHeadersCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeSpdxHeadersCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

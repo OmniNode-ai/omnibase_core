@@ -174,7 +174,6 @@ scripts/validation/validate_pr_receipts.py
 scripts/validation/validate_precommit_fail_loud.py
 scripts/validation/validate_precommit_pin_parity.py
 scripts/validation/validate_protocol_syntax.py
-scripts/validation/validate_spdx_headers.py
 scripts/validation/validate_structure.py
 scripts/validation/yaml_contract_validator.py
 scripts/zone_diff_filter.py

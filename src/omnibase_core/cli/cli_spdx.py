@@ -91,10 +91,11 @@ def _is_excluded_dir(path: Path) -> bool:
     return False
 
 
-def _is_eligible_file(path: Path) -> bool:
-    """Return True if *path* should carry an SPDX header."""
-    if not path.is_file():
-        return False
+def is_spdx_eligible_path(path: Path) -> bool:
+    """Return True if the name of *path* says it should carry an SPDX header.
+
+    Pure: inspects only the path components, never the filesystem.
+    """
     if path.name in EXCLUDED_FILES:
         return False
     if _is_excluded_dir(path):
@@ -104,6 +105,11 @@ def _is_eligible_file(path: Path) -> bool:
     if path.name in INCLUDED_FILENAMES:
         return True
     return False
+
+
+def _is_eligible_file(path: Path) -> bool:
+    """Return True if *path* is an existing file that should carry an SPDX header."""
+    return path.is_file() and is_spdx_eligible_path(path)
 
 
 def _discover_files(root: Path) -> list[Path]:
@@ -430,7 +436,14 @@ def _validate_file(path: Path) -> str | None:
         content = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as e:
         return f"Cannot read file: {e}"
+    return validate_spdx_source(content)
 
+
+def validate_spdx_source(content: str) -> str | None:
+    """Validate SPDX header text; pure, shared by the CLI and the check node.
+
+    Returns None if valid, or an error message string if invalid.
+    """
     # Intentional: no keepends=True here.  _validate_file only inspects tokens
     # (shebang, encoding cookie, SPDX text) and never reconstructs file content,
     # so stripped line endings are fine.  _fix_file_content uses

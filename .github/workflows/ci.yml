@@ -1820,7 +1820,7 @@ jobs:
             exit 0
           fi
           # shellcheck disable=SC2086
-          .venv/bin/python scripts/validation/validate_spdx_headers.py $files
+          .venv/bin/python -m omnibase_core.nodes.node_spdx_headers_check_compute.runtime_spdx_headers_check --report-json spdx-headers-report.json $files
 
   # Typed-bootstrap env gate (OMN-17744) — canonical AST-based inventory audit.
   # The four-root adversarial corpus remains in scope. Existing readers are
