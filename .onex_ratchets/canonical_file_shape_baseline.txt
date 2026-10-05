@@ -47,7 +47,6 @@ scripts/check_transport_imports.py
 scripts/ci/__init__.py
 scripts/ci/adequacy_receipt.py
 scripts/ci/canonical_handler_shape.py
-scripts/ci/canonical_handler_shape_baseline.py
 scripts/ci/check_async_fixture_decorators.py
 scripts/ci/check_auto_merge_hold.py
 scripts/ci/check_import_ratchet.py
@@ -71,7 +70,6 @@ scripts/ci/product_readiness.py
 scripts/ci/product_reason_graph.py
 scripts/ci/resolve_contract_compliance_evidence.py
 scripts/ci/rsd_provenance_stamp.py
-scripts/ci/rsd_provenance_stamp_baseline.py
 scripts/ci/run_contract_compliance_with_evidence.py
 scripts/ci/shadow_metrics_append.py
 scripts/ci/shadow_premise_replay.py

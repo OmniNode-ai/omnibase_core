@@ -54,34 +54,6 @@ allowed_files:
     added: "2026-06-18"
     review: "2026-12-13"
 
-  - file: "src/omnibase_core/validation/validator_architecture.py"
-    reason: >-
-      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
-      ModelValidatorSubcontract for Pydantic validation
-    added: "2026-01-10"
-    review: "2026-06-13"
-
-  - file: "src/omnibase_core/validation/validator_types.py"
-    reason: >-
-      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
-      ModelValidatorSubcontract for Pydantic validation
-    added: "2026-01-10"
-    review: "2026-06-13"
-
-  - file: "src/omnibase_core/validation/validator_patterns.py"
-    reason: >-
-      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
-      ModelValidatorSubcontract for Pydantic validation
-    added: "2026-01-10"
-    review: "2026-06-13"
-
-  - file: "src/omnibase_core/validation/validator_naming_convention.py"
-    reason: >-
-      Validator contract loading - must parse nested 'validation:' YAML structure before extracting the
-      ModelValidatorSubcontract for Pydantic validation
-    added: "2026-01-10"
-    review: "2026-06-13"
-
   - file: "src/omnibase_core/validation/validator_banned_compose_vars.py"
     reason: >-
       Cross-schema drift validator - must parse heterogeneous YAML (docker-compose services, k8s Deployment/Pod
@@ -334,14 +306,6 @@ allowed_files:
     added: "2026-04-26"
     review: "2026-06-13"
 
-  - file: "src/omnibase_core/cli/cli_refresh_credentials.py"
-    reason: >-
-      Loads ~/.onex/config.yaml as free-form user configuration. No fixed Pydantic schema exists for this
-      file — the config contains arbitrary AWS section fields (secret_name, region) and is read to extract
-      raw key-value pairs for Secrets Manager lookup. (OMN-9011)
-    added: "2026-04-17"
-    review: "2026-06-13"
-
   - file: "src/omnibase_core/cli/cli_pack.py"
     reason: >-
       onex pack CLI must parse heterogeneous third-party metadata.yaml + contract.yaml files from arbitrary
@@ -350,15 +314,6 @@ allowed_files:
       to route to the correct model. metadata.yaml is a thin descriptor consumed before any registry lookup.
       Both sites validate required keys explicitly (mapping check, name/version presence) before use.
       Parallels cli_install.py pattern (OMN-7537).
-    added: "2026-04-24"
-    review: "2026-06-13"
-
-  - file: "src/omnibase_core/cli/cli_config.py"
-    reason: >-
-      onex config get reads ~/.onex/config.yaml as free-form user configuration. No fixed Pydantic schema
-      exists for this file — the config is a thin key-value YAML with optional sections (kafka, logging,
-      aws). Raw yaml.safe_load() is required to support dotted-key access (e.g. kafka.bootstrap_servers)
-      before any Pydantic model applies. Parallels cli_refresh_credentials.py pattern (OMN-9011).
     added: "2026-04-24"
     review: "2026-06-13"
 

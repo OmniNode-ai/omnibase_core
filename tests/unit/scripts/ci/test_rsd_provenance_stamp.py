@@ -24,20 +24,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 
 import pytest
 
 import scripts.ci.rsd_provenance_stamp as mod
 from scripts.ci.rsd_provenance_stamp import (
     STAMP_FILENAME,
-    ModelProvenanceFinding,
     classify_all,
     classify_node,
     current_unstamped,
     evaluate,
-    load_base_baseline,
-    load_baseline,
-    write_baseline,
 )
 
 
@@ -100,7 +97,7 @@ def test_new_node_without_stamp_hard_fails(tmp_path) -> None:
     assert finding.is_stamped is False
     assert finding.category == "missing"
 
-    result = evaluate([finding], baseline=[], base_baseline=[])
+    result = evaluate([finding])
     assert result.failed is True
     assert node_id in result.new_unstamped
 
@@ -117,7 +114,7 @@ def test_new_node_with_valid_machine_stamp_passes(tmp_path) -> None:
     assert finding.is_stamped is True
     assert finding.category == "rsd_delegation"
 
-    result = evaluate([finding], baseline=[], base_baseline=[])
+    result = evaluate([finding])
     assert result.failed is False
     assert node_id not in result.new_unstamped
 
@@ -266,82 +263,30 @@ def test_unknown_generated_by_fails_closed(tmp_path) -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Ratchet -- baseline exemption, WARN vs HARD-FAIL, growth
+# Blocking check -- every unstamped node fails
 # --------------------------------------------------------------------------- #
 
 
-def test_baselined_unstamped_node_warns_not_fails(tmp_path) -> None:
-    _, node_id = _make_node(tmp_path, stamp=None)
-    finding = ModelProvenanceFinding(
-        node_id=node_id, is_stamped=False, category="missing", detail=None
-    )
-    result = evaluate([finding], baseline=[node_id], base_baseline=[node_id])
-    assert result.failed is False
-    assert node_id in result.warn_baselined
-
-
-def test_baseline_growth_hard_fails(tmp_path) -> None:
-    # Working baseline hand-adds an entry absent from git-BASE -> illegal growth,
-    # unconditionally (no proof can rescue growth -- it is a bounded allowlist).
-    result = evaluate(
-        [], baseline=["omnibase_core.nodes.node_sneaky"], base_baseline=[]
-    )
+def test_unstamped_node_fails_evaluate_and_main(tmp_path, monkeypatch) -> None:
+    contract_path, node_id = _make_node(tmp_path, stamp=None)
+    finding = classify_node(contract_path)
+    result = evaluate([finding])
     assert result.failed is True
-    assert "omnibase_core.nodes.node_sneaky" in result.baseline_growth
+    assert result.new_unstamped == (node_id,)
+
+    monkeypatch.setattr(mod, "PACKAGE", mod.PACKAGE)
+    monkeypatch.setattr(mod, "NODES_GLOB", mod.NODES_GLOB)
+    assert mod.main(["--package", "omnibase_core", "--src-root", str(tmp_path)]) == 1
 
 
-def test_baseline_shrink_needs_no_extra_proof(tmp_path) -> None:
-    # A node leaves the baseline by acquiring a real stamp -- classify_node's own
-    # recompute IS the proof; evaluate() requires nothing further.
-    content = "name: node_demo\n"
-    _, node_id = _make_node(
-        tmp_path, contract_content=content, stamp=_valid_machine_stamp(content)
+def test_provenance_stamp_baseline_file_does_not_exist() -> None:
+    baseline_path = (
+        Path(__file__).resolve().parents[4]
+        / "scripts"
+        / "ci"
+        / "rsd_provenance_stamp_baseline.py"
     )
-    finding = ModelProvenanceFinding(
-        node_id=node_id, is_stamped=True, category="rsd_delegation", detail="ok"
-    )
-    result = evaluate([finding], baseline=[], base_baseline=[node_id])
-    assert result.failed is False
-    assert result.baseline_growth == ()
-
-
-def test_base_baseline_none_skips_growth_check() -> None:
-    # First-ever landing of the gate: baseline absent at git-BASE -> None, not
-    # [], so this PR's own freshly-generated baseline is never treated as growth.
-    result = evaluate(
-        [], baseline=["omnibase_core.nodes.node_legacy"], base_baseline=None
-    )
-    assert result.failed is False
-    assert result.baseline_growth == ()
-
-
-# --------------------------------------------------------------------------- #
-# Baseline round-trip (write_baseline / load_baseline / load_base_baseline)
-# --------------------------------------------------------------------------- #
-
-
-def test_write_and_load_baseline_roundtrip(tmp_path) -> None:
-    baseline_path = tmp_path / "rsd_provenance_stamp_baseline.py"
-    write_baseline(
-        ["omnibase_core.nodes.node_a", "omnibase_core.nodes.node_b"], baseline_path
-    )
-    assert load_baseline(baseline_path) == [
-        "omnibase_core.nodes.node_a",
-        "omnibase_core.nodes.node_b",
-    ]
-
-
-def test_load_baseline_missing_file_raises(tmp_path) -> None:
-    with pytest.raises(FileNotFoundError):
-        load_baseline(tmp_path / "does_not_exist.py")
-
-
-def test_load_base_baseline_absent_at_ref_returns_none(tmp_path, monkeypatch) -> None:
-    # A path outside any git repo -> _git_repo_root returns None -> None.
-    result = load_base_baseline(
-        tmp_path / "rsd_provenance_stamp_baseline.py", "origin/dev"
-    )
-    assert result is None
+    assert not baseline_path.exists()
 
 
 # --------------------------------------------------------------------------- #

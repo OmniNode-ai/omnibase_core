@@ -33,8 +33,12 @@ or a core that reaches into the envelope directly (``envelope_in_core``).
 
 Enforcement (mirrors the import-layering ratchet, OMN-14340):
 
-* A committed baseline (``scripts/ci/canonical_handler_shape_baseline.py``,
-  generated) freezes the current non-canonical node set as a plain tuple.
+* A package that still carries non-canonical debt has a committed baseline
+  (``canonical_handler_shape_baseline.py`` in that repo, generated) that freezes
+  its non-canonical node set as a plain tuple. A package with no baseline file
+  has no grandfathered node, so the gate is a plain check there: every
+  non-canonical node hard-fails. omnibase_core's own baseline emptied and was
+  deleted (OMN-20559), and ``--update`` deletes a baseline that empties.
 * WARN (non-blocking) on every baselined non-canonical node — known debt.
 * HARD-FAIL on a NEW non-canonical node (not in the baseline) or baseline-count
   growth. New nodes must be born canonical.
@@ -579,11 +583,14 @@ def current_non_canonical(findings: list[ModelHandlerShapeFinding]) -> list[str]
 
 
 def load_baseline(path: Path = BASELINE_PATH) -> list[str]:
+    """Return the grandfathered non-canonical node ids.
+
+    No baseline file means no grandfathered node: the gate is a plain check and
+    every non-canonical node fails (OMN-20559). That is the fail-closed reading,
+    since an absent file can only make the gate stricter.
+    """
     if not path.exists():
-        raise FileNotFoundError(
-            f"Baseline missing at {path}. Generate it with "
-            f"`uv run python scripts/ci/canonical_handler_shape.py --update`."
-        )
+        return []
     spec = importlib.util.spec_from_file_location(
         "canonical_handler_shape_baseline", path
     )
@@ -601,6 +608,15 @@ def _render_tuple(items: list[str]) -> str:
 
 
 def write_baseline(non_canonical: list[str], path: Path = BASELINE_PATH) -> None:
+    """Write the frozen baseline, or delete it once it is empty (OMN-20559).
+
+    An empty baseline is dead weight: ``load_baseline`` already reads an absent
+    file as "nothing grandfathered", so the file goes and the gate stays a plain
+    check rather than carrying an empty exception list.
+    """
+    if not non_canonical:
+        path.unlink(missing_ok=True)
+        return
     body = (
         _BASELINE_HEADER
         + "\nNON_CANONICAL: tuple[str, ...] = "

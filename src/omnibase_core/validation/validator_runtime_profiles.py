@@ -40,14 +40,14 @@ validator must not under-detect command consumers in the meantime):
 - classic: ``event_bus.subscribe_topics: [str, ...]``
 - nested: ``event_bus.subscribe: [{topic: str, ...}, ...]``
 
-The base allowlist is loaded from
-``src/omnibase_core/validation/runtime_profiles_allowlist.yaml``. When the
-validator scans a consumer repo, it additionally discovers that repo's frozen
+omnibase_core ships no allowlist of its own: its core default emptied and was
+deleted (OMN-20559), so on core's own tree the validator is a plain check. When
+the validator scans a consumer repo, it discovers that repo's frozen, shrink-only
 baseline allowlist at ``<repo>/validation/runtime_profiles_allowlist.yaml`` by
 walking up from each scanned contract to the repo root (the directory holding
 ``pyproject.toml``). No environment variable is consulted — discovery is
 deterministic from the contract path. The effective allowlist for a contract is
-``the union of core_default and repo_baseline``. Every entry MUST carry a non-empty ``reason``
+that repo baseline alone. Every entry MUST carry a non-empty ``reason``
 string; the loader raises on a blank reason so a "drop in to silence the gate"
 PR cannot land. Per-call overrides via the ``allowlist`` constructor argument
 are intended for tests (and disable repo discovery for isolation).
@@ -82,8 +82,6 @@ ALLOWLIST_REASON_REQUIRED = (
     "the node is exempt from runtime_profiles enforcement"
 )
 
-_DEFAULT_ALLOWLIST_PATH = Path(__file__).parent / "runtime_profiles_allowlist.yaml"
-
 # Consumer repos vendor a frozen baseline allowlist at this repo-relative path.
 # The validator discovers it deterministically by walking up from each scanned
 # contract to the repo root (no env var, no config-via-env). Pre-existing
@@ -95,13 +93,15 @@ _REPO_ALLOWLIST_RELPATH = Path("validation") / "runtime_profiles_allowlist.yaml"
 def load_default_allowlist(
     path: Path | None = None,
 ) -> dict[str, str]:
-    """Return mapping of allowlisted node id -> reason.
+    """Return mapping of allowlisted node id -> reason from a repo baseline.
 
     Raises ``ValueError`` if any entry is missing a non-empty ``reason``.
-    Returns an empty dict if the file does not exist (bootstrap-friendly so
-    new repos can adopt the validator before adding exemptions).
+    Returns an empty dict when ``path`` is ``None`` (omnibase_core carries no
+    allowlist of its own since OMN-20559) or the file does not exist.
     """
-    target = path or _DEFAULT_ALLOWLIST_PATH
+    if path is None:
+        return {}
+    target = path
     if not target.is_file():
         return {}
     raw = yaml.safe_load(target.read_text(encoding="utf-8")) or {}
@@ -251,7 +251,8 @@ class ValidatorRuntimeProfiles(ValidatorBase):
         discover_repo_allowlist: bool = True,
     ) -> None:
         super().__init__(contract=contract)
-        # Base allowlist: explicit set (tests) > explicit path > core default.
+        # Base allowlist: explicit set (tests) > explicit path > none. Core
+        # ships no default allowlist (OMN-20559).
         if allowlist is not None:
             self._base_allowlist: frozenset[str] = frozenset(allowlist)
         else:
@@ -345,8 +346,7 @@ class ValidatorRuntimeProfiles(ValidatorBase):
         message = (
             "runtime_profiles missing on command-consuming contract "
             f"{node_id!r}: declare 'runtime_profiles: [<profile>]' at the top "
-            "level or under 'descriptor', or add the node id to "
-            "validation/runtime_profiles_allowlist.yaml with a reason."
+            "level or under 'descriptor'."
         )
         return (
             ModelValidationIssue(

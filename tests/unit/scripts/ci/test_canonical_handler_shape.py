@@ -372,6 +372,27 @@ def test_baseline_roundtrip(tmp_path) -> None:
     assert load_baseline(path) == ["a.node", "z.node"]  # sorted, deterministic
 
 
+def test_absent_baseline_grandfathers_nothing(tmp_path) -> None:
+    """OMN-20559: no baseline file is a plain check, never a crash or a pass."""
+    assert load_baseline(tmp_path / "absent_baseline.py") == []
+    result = evaluate([_nc("pkg.nodes.node_new")], load_baseline(tmp_path / "x.py"))
+    assert result.failed
+    assert result.new_non_canonical == ("pkg.nodes.node_new",)
+
+
+def test_emptied_baseline_is_deleted_not_written(tmp_path) -> None:
+    path = tmp_path / "baseline.py"
+    write_baseline(["a.node"], path)
+    assert path.exists()
+    write_baseline([], path)
+    assert not path.exists()
+
+
+def test_core_carries_no_handler_shape_baseline() -> None:
+    """omnibase_core's baseline emptied; the gate is a plain check here."""
+    assert not mod.BASELINE_PATH.exists()
+
+
 # --------------------------------------------------------------------------- #
 # Live regression guard (like the import-ratchet live test)
 # --------------------------------------------------------------------------- #

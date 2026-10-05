@@ -15,8 +15,8 @@ validation:
     or under descriptor), that declared profiles are members of the
     canonical REGISTERED_RUNTIME_PROFILES registry, and that subscribing
     REDUCER/EFFECT contracts name at least one consumer-attached profile.
-    Allowlist:
-      src/omnibase_core/validation/runtime_profiles_allowlist.yaml
+    omnibase_core carries no allowlist (OMN-20559); a consumer repo's
+    shrink-only baseline lives at <repo>/validation/runtime_profiles_allowlist.yaml.
     Plans: docs/plans/2026-04-26-runtime-lifecycle-hardening-plan.md (Task 4);
     docs/plans/2026-06-11-open-issues-remediation-plan.md (P1.1).
     Linear: OMN-9886, OMN-12957.
