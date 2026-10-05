@@ -422,7 +422,10 @@ def test_selftest_mode_passes_and_is_what_the_pre_commit_hook_runs() -> None:
     result = _run("--selftest")
     assert result.returncode == 0, result.stdout + result.stderr
     hook_config = (REPO_ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8")
-    assert "runtime_skip_count_ratchet_check --selftest" in hook_config
+    # The YAML formatter folds the long entry line, so compare on collapsed whitespace.
+    assert "runtime_skip_count_ratchet_check --selftest" in " ".join(
+        hook_config.split()
+    )
 
 
 def _toggle_prefix(node_id: str) -> str:
