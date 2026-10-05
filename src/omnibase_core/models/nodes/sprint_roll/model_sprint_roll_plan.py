@@ -37,3 +37,12 @@ class ModelSprintRollPlan(BaseModel):
     placements: tuple[ModelSprintPlacement, ...] = Field(default_factory=tuple)
     backlog_ticket_ids: tuple[str, ...] = Field(default_factory=tuple)
     proposals: tuple[ModelCriterionProposal, ...] = Field(default_factory=tuple)
+
+    #: Ticket identifier -> the base estimate to write, for tickets that carry none.
+    #: Proposals only: the EFFECT node journals each write, and an estimate that already
+    #: exists is never overwritten.
+    proposed_estimates: dict[str, int] = Field(default_factory=dict)
+
+    #: Unestimated tickets deliberately left alone because their children hold the
+    #: points. Reported so a blank parent reads as a decision, not an omission.
+    unestimated_parents: tuple[str, ...] = Field(default_factory=tuple)

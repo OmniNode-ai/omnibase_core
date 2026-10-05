@@ -439,3 +439,191 @@ def test_a_sprint_ending_exactly_on_as_of_is_finished() -> None:
     )
     assert cap == 18
     assert basis == "18 tickets closed in 7 of 7 days"
+
+
+# --------------------------------------------------------------------------------------
+# Placement policy (OMN-20395 follow-up): mandatory walks, per-owner caps, pillar floors,
+# excluded targets, and proposed base estimates. Every case here was a defect in the
+# 2026-10-04 live dry run, not a hypothetical.
+# --------------------------------------------------------------------------------------
+
+
+def _owned(identifier: str, owner: str, estimate: int, state: str = "Backlog"):
+    return ModelSprintTicket(
+        identifier=identifier,
+        state=state,
+        estimate=estimate,
+        is_carrier=False,
+        owner=owner,
+        title=identifier,
+        description="",
+    )
+
+
+def _owned_window(source_tickets, p1_tickets=()):
+    return (
+        _sprint(P0, "2026-09-28", "2026-10-04", source_tickets),
+        _sprint(P1, "2026-10-05", "2026-10-11", tuple(p1_tickets)),
+        _sprint(P2, "2026-10-12", "2026-10-18", ()),
+    )
+
+
+def _policy_plan(window, **kw) -> ModelSprintRollPlan:
+    return NodeSprintRollCompute().handle(
+        ModelSprintRollRequest(
+            sprints=window,
+            as_of=dt.date(2026, 10, 4),
+            capacity_unit=EnumCapacityUnit.POINTS,
+            criteria_text=CRITERIA_TEXT,
+            **kw,
+        )
+    )
+
+
+def _ids_in(plan: ModelSprintRollPlan, sprint_id: UUID) -> tuple[str, ...]:
+    return next(p.ticket_ids for p in plan.placements if p.sprint_id == sprint_id)
+
+
+def test_points_is_the_default_capacity_unit() -> None:
+    """Carriers are fully estimated now, so a flat ticket count hides a 7-vs-1 gap."""
+    assert (
+        ModelSprintRollRequest(
+            sprints=_window(), as_of=dt.date(2026, 10, 4)
+        ).capacity_unit
+        is EnumCapacityUnit.POINTS
+    )
+
+
+def test_a_mandatory_ticket_is_seated_in_the_first_target_past_a_full_cap() -> None:
+    """The three delegation walks went to Backlog on the 2026-10-04 run. A walk is the
+    only evidence someone who did not build a thing exercised it, so a cap may not
+    defer one."""
+    window = _owned_window(
+        (
+            _owned("WALK", "mike", 5),
+            _owned("BUILD1", "jonah", 5, "In Review"),
+            _owned("BUILD2", "jonah", 5, "In Review"),
+        )
+    )
+    plan = _policy_plan(window, cap_override=5, mandatory=frozenset({"WALK"}))
+    assert "WALK" in _ids_in(plan, P1)
+    assert "WALK" not in plan.backlog_ticket_ids
+
+
+def test_a_mandatory_ticket_still_spends_the_load_it_costs() -> None:
+    """Exempting it from the cap would silently inflate the sprint instead; the
+    overflow has to land on ordinary work."""
+    window = _owned_window(
+        (_owned("WALK", "mike", 5), _owned("BUILD", "jonah", 5, "In Review"))
+    )
+    plan = _policy_plan(window, cap_override=5, mandatory=frozenset({"WALK"}))
+    first = next(p for p in plan.placements if p.sprint_id == P1)
+    assert first.load_after == 5
+    assert "BUILD" not in first.ticket_ids
+
+
+def test_an_owner_cap_stops_one_person_carrying_a_whole_sprint() -> None:
+    """The team cap alone was satisfied while 42 of 46 points sat on one owner."""
+    window = _owned_window(
+        (
+            _owned("L1", "lakshman", 6),
+            _owned("L2", "lakshman", 6),
+            _owned("L3", "lakshman", 6),
+            _owned("J1", "jonah", 6),
+        )
+    )
+    plan = _policy_plan(window, cap_override=24, owner_cap=12)
+    seated = _ids_in(plan, P1)
+    assert sum(1 for i in seated if i.startswith("L")) == 2
+    assert "J1" in seated
+    assert "L3" in _ids_in(plan, P2)
+
+
+def test_an_owner_with_no_owner_recorded_is_not_capped() -> None:
+    """A null owner is unknown, not a person; capping it would wedge the fill."""
+    unowned = ModelSprintTicket(
+        identifier="U1", state="Backlog", estimate=9, owner=None, title="U1"
+    )
+    plan = _policy_plan(_owned_window((unowned,)), cap_override=20, owner_cap=2)
+    assert "U1" in _ids_in(plan, P1)
+
+
+def test_a_pillar_floor_puts_every_pillar_in_every_sprint() -> None:
+    """The first cascade produced a 36-of-46-point Dashboard sprint with zero
+    Delegation, and nothing refused it."""
+    window = _owned_window(
+        (
+            _owned("D1", "lakshman", 2),
+            _owned("D2", "lakshman", 2),
+            _owned("D3", "lakshman", 2),
+            _owned("D4", "lakshman", 2),
+            _owned("G1", "jonah", 2),
+            _owned("O1", "jake", 2),
+        )
+    )
+    pillars = {
+        "D1": "Dashboard",
+        "D2": "Dashboard",
+        "D3": "Dashboard",
+        "D4": "Dashboard",
+        "G1": "Delegation",
+        "O1": "Onboarding",
+    }
+    plan = _policy_plan(window, cap_override=6, pillar_of=pillars, pillar_floor=1)
+    seated = _ids_in(plan, P1)
+    assert {pillars[i] for i in seated} == {"Dashboard", "Delegation", "Onboarding"}
+
+
+def test_a_floor_of_zero_leaves_the_ranking_alone() -> None:
+    window = _owned_window((_owned("D1", "lakshman", 2), _owned("G1", "jonah", 2)))
+    plan = _policy_plan(
+        window,
+        cap_override=2,
+        pillar_of={"D1": "Dashboard", "G1": "Delegation"},
+        pillar_floor=0,
+    )
+    assert len(_ids_in(plan, P1)) == 1
+
+
+def test_an_excluded_target_receives_nothing_but_still_yields_its_tickets() -> None:
+    """M4.5 is a parked fast-follow list. Left in, the run rebalanced it to the cap,
+    moving 20 tickets into a sprint nobody was planning and pushing 26 out."""
+    window = _owned_window(
+        (_owned("A1", "jake", 2),), p1_tickets=(_owned("M45", "jonah", 2),)
+    )
+    plan = _policy_plan(window, cap_override=10, target_sprint_ids=frozenset({P2}))
+    assert [p.sprint_id for p in plan.placements] == [P2]
+    # Its own open ticket is not stranded: it competes for a real sprint.
+    assert "M45" in _ids_in(plan, P2)
+
+
+def test_excluding_every_target_is_refused_rather_than_silently_empty() -> None:
+    window = _owned_window((_owned("A1", "jake", 2),))
+    with pytest.raises(SprintRollError, match="nowhere to roll"):
+        _policy_plan(window, cap_override=10, target_sprint_ids=frozenset({P0}))
+
+
+def test_an_unestimated_ticket_gets_a_base_estimate() -> None:
+    """Anyone may change an estimate, so a proposal that is roughly right beats a blank
+    that silently costs nothing in points mode."""
+    window = _owned_window(
+        (
+            _owned("E4", "jake", 4),
+            _owned("E6", "jake", 6),
+            _ticket("BLANK"),
+            _ticket("BLANK_CARRIER", carrier=True),
+        )
+    )
+    plan = _policy_plan(window, cap_override=40)
+    assert plan.proposed_estimates["BLANK"] == plan.median_estimate
+    assert plan.proposed_estimates["BLANK_CARRIER"] == plan.median_estimate + 1
+    assert "E4" not in plan.proposed_estimates
+
+
+def test_a_parent_is_reported_rather_than_estimated() -> None:
+    """Estimating a parent AND its children double-counts the work."""
+    window = _owned_window((_ticket("PARENT"), _ticket("LEAF")))
+    plan = _policy_plan(window, cap_override=40, parents=frozenset({"PARENT"}))
+    assert "PARENT" not in plan.proposed_estimates
+    assert plan.unestimated_parents == ("PARENT",)
+    assert "LEAF" in plan.proposed_estimates

@@ -255,14 +255,89 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
         )
     )
 
-    load: dict[UUID, int] = {s.sprint_id: 0 for s in following}
-    placed: dict[UUID, list[ModelSprintTicket]] = {s.sprint_id: [] for s in following}
+    # Only some of the following sprints may be targets. The M4.5 bucket is a parked
+    # fast-follow list, not next week's plan: left in, the 2026-10-04 run rebalanced it
+    # to the cap, moving 20 tickets in and pushing 26 out of a sprint nobody was
+    # planning. Its own open tickets still enter the pool, so excluding it does not
+    # strand them -- they compete for a real sprint like everything else.
+    targets = [
+        s
+        for s in following
+        if not request.target_sprint_ids or s.sprint_id in request.target_sprint_ids
+    ]
+    if not targets:
+        raise SprintRollError(
+            "every sprint after the source was excluded as a target, so there is "
+            "nowhere to roll it into"
+        )
+
+    load: dict[UUID, int] = {s.sprint_id: 0 for s in targets}
+    by_owner: dict[UUID, dict[str, int]] = {s.sprint_id: {} for s in targets}
+    placed: dict[UUID, list[ModelSprintTicket]] = {s.sprint_id: [] for s in targets}
     backlog: list[ModelSprintTicket] = []
+    seated: set[str] = set()
+
+    def owner_room(sprint_id: UUID, ticket: ModelSprintTicket) -> bool:
+        """Whether this owner has room left in this sprint."""
+        if request.owner_cap is None or ticket.owner is None:
+            return True
+        spent = by_owner[sprint_id].get(ticket.owner, 0)
+        return spent + size(ticket) <= request.owner_cap
+
+    def seat(sprint_id: UUID, ticket: ModelSprintTicket) -> None:
+        placed[sprint_id].append(ticket)
+        load[sprint_id] += size(ticket)
+        if ticket.owner is not None:
+            by_owner[sprint_id][ticket.owner] = by_owner[sprint_id].get(
+                ticket.owner, 0
+            ) + size(ticket)
+        seated.add(ticket.identifier)
+
+    # PASS 1 -- MANDATORY, INTO THE FIRST TARGET, CAP OR NO CAP. A walk is the only
+    # evidence that someone who did not build a thing exercised it, so a cap may not
+    # defer one: the 2026-10-04 run put all three delegation walks in Backlog. Their
+    # size still counts, so the overflow they cause lands on ordinary work below.
+    first = targets[0]
     for ticket in pool:
-        for sprint in following:
-            if load[sprint.sprint_id] + size(ticket) <= cap:
-                placed[sprint.sprint_id].append(ticket)
-                load[sprint.sprint_id] += size(ticket)
+        if ticket.identifier in request.mandatory:
+            seat(first.sprint_id, ticket)
+
+    # PASS 2 -- PILLAR FLOOR. A sprint that ships one pillar and starves another reads
+    # as progress and is not; the first cascade gave a 36-of-46-point Dashboard sprint
+    # with zero Delegation. Each pillar takes its highest-ranked tickets first, within
+    # the team cap and the owner cap, before the general pass claims the room.
+    if request.pillar_floor > 0 and request.pillar_of:
+        pillars = sorted(set(request.pillar_of.values()))
+        for sprint in targets:
+            for pillar in pillars:
+                have = sum(
+                    1
+                    for t in placed[sprint.sprint_id]
+                    if request.pillar_of.get(t.identifier) == pillar
+                )
+                for ticket in pool:
+                    if have >= request.pillar_floor:
+                        break
+                    if ticket.identifier in seated:
+                        continue
+                    if request.pillar_of.get(ticket.identifier) != pillar:
+                        continue
+                    if load[sprint.sprint_id] + size(ticket) > cap:
+                        continue
+                    if not owner_room(sprint.sprint_id, ticket):
+                        continue
+                    seat(sprint.sprint_id, ticket)
+                    have += 1
+
+    # PASS 3 -- THE GENERAL FILL, forward through the targets.
+    for ticket in pool:
+        if ticket.identifier in seated:
+            continue
+        for sprint in targets:
+            if load[sprint.sprint_id] + size(ticket) <= cap and owner_room(
+                sprint.sprint_id, ticket
+            ):
+                seat(sprint.sprint_id, ticket)
                 break
         else:
             backlog.append(ticket)
@@ -280,7 +355,7 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
                 if origin.get(t.identifier) != s.sprint_id
             ),
         )
-        for s in following
+        for s in targets
     )
 
     proposals = tuple(
@@ -294,7 +369,31 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
         if t.identifier not in request.criteria
     )
 
+    # A BASE ESTIMATE FOR EVERY UNESTIMATED TICKET, so a sprint total is a number
+    # rather than a shrug. The operator's rule for this is explicit: anyone may change
+    # an estimate, so a proposed one that is roughly right beats a blank that silently
+    # costs nothing. Three sizes, from the one signal available without reading the work
+    # -- the median of what IS estimated, nudged by whether the ticket is a carrier
+    # (criterion-bearing work runs larger) and whether it is a parent (its children hold
+    # the points, so a parent proposes nothing and is reported instead). The caller
+    # writes these; this node only proposes, and never overwrites an estimate that
+    # exists.
+    proposed = {
+        t.identifier: max(1, median + 1 if t.is_carrier else median)
+        for t in pool
+        if not t.estimate and t.identifier not in request.parents
+    }
+    parents_skipped = tuple(
+        sorted(
+            t.identifier
+            for t in pool
+            if not t.estimate and t.identifier in request.parents
+        )
+    )
+
     return ModelSprintRollPlan(
+        proposed_estimates=proposed,
+        unestimated_parents=parents_skipped,
         source_sprint_id=source.sprint_id,
         source_sprint_name=source.name,
         cap=cap,
