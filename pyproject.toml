@@ -255,6 +255,7 @@ exclude = [
     "**/__pycache__/**",
     "**/site-packages/**",
     "tests/fixtures/validation/exports/syntax_error.py",  # Intentionally invalid for testing
+    "tests/fixtures/validator_parity/release_identity",  # Data corpus of deliberately invalid pyproject.toml files: ruff parses every nested pyproject.toml it walks past
 ]
 
 [tool.ruff.format]
