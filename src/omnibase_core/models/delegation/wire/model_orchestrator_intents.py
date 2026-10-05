@@ -12,6 +12,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from omnibase_core.enums.enum_budget_action import EnumBudgetAction
 from omnibase_core.enums.enum_credential_source import EnumCredentialSource
+from omnibase_core.enums.enum_delegation_failure_class import (
+    EnumDelegationFailureClass,
+)
 from omnibase_core.enums.enum_delegation_output_shape import EnumDelegationOutputShape
 from omnibase_core.models.delegation.wire.model_delegation_contract_evidence import (
     ModelDelegationContractEvidence,
@@ -326,6 +329,14 @@ class ModelInferenceResponseData(BaseModel):
     error_message: str = Field(
         default="",
         description="Failure reason when inference could not produce content.",
+    )
+    failure_class: EnumDelegationFailureClass | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Typed failure class the inference effect assigned. Consumers read "
+            "this field and never re-derive the class from error_message text."
+        ),
     )
     route: str | None = Field(
         default=None,
