@@ -161,6 +161,13 @@ class TestTransportViolation:
 class TestBannedModulesConfiguration:
     """Tests that banned modules configuration is complete."""
 
+    def test_module_has_no_temporary_allowlist(self) -> None:
+        """Test that the transport checker exposes no temporary allowlist."""
+        assert _load_module()
+        assert not hasattr(
+            sys.modules["check_transport_imports"], "TEMPORARY_ALLOWLIST"
+        )
+
     def test_banned_modules_contains_kafka(self) -> None:
         """Test that kafka is in the banned modules list."""
         skip_if_module_not_loaded()

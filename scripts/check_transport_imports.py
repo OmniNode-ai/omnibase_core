@@ -13,6 +13,8 @@ This enforces the ONEX architecture principle of dependency inversion:
 omnibase_core provides abstractions (protocols), while omnibase_spi
 provides concrete implementations using transport libraries.
 
+Every detected transport import violation fails the check.
+
 FORBIDDEN IMPORTS:
 - kafka, aiokafka: Message queue clients (use ProtocolEventBus)
 - httpx, aiohttp, requests: HTTP clients (use ProtocolHttpClient)
@@ -50,7 +52,6 @@ import ast
 import json
 import sys
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
 from enum import Enum
 from pathlib import Path
 from typing import NamedTuple
@@ -158,27 +159,6 @@ TRANSPORT_ALTERNATIVES: dict[str, str] = {
     "redis": "ProtocolCache",
     "valkey": "ProtocolCache",
 }
-
-# Temporary allowlist for pre-existing violations
-# These should be fixed and removed from this list
-# Each entry is a relative path from src/omnibase_core/
-#
-# OMN-566 (2025-12-11): Removed mixin_health_check.py - refactored to use ProtocolHttpClient
-TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
-    {
-        # No pre-existing violations - all items have been fixed!
-    }
-)
-
-# Allowlist expiration tracking - only relevant when TEMPORARY_ALLOWLIST has items
-# When adding items to the allowlist:
-#   1. Set ALLOWLIST_EXPIRATION_DATE to 6 months from addition date
-#   2. Add comment noting items need tickets for removal  # TODO_FORMAT_EXEMPT: describes allowlist maintenance process
-ALLOWLIST_EXPIRATION_DATE: date | None = (
-    None if not TEMPORARY_ALLOWLIST else date(2026, 6, 10)
-)
-ALLOWLIST_WARNING_DAYS: int = 30  # Warn this many days before expiration
-
 
 # ==============================================================================
 # AST VISITOR
@@ -555,53 +535,6 @@ def _safe_relative_path(file_path: Path, base_dir: Path) -> str:
         return str(file_path)
 
 
-def _is_allowlisted(file_path: Path, src_dir: Path) -> bool:
-    """Check if a file is in the temporary allowlist.
-
-    Args:
-        file_path: Absolute path to the file.
-        src_dir: The src/omnibase_core directory.
-
-    Returns:
-        True if file is allowlisted and violations should be suppressed.
-    """
-    try:
-        relative_path = str(file_path.relative_to(src_dir))
-        return relative_path in TEMPORARY_ALLOWLIST
-    except ValueError:
-        return False
-
-
-def check_allowlist_expiration() -> tuple[bool, str]:
-    """Check if allowlist expiration date is approaching or passed.
-
-    Returns:
-        Tuple of (is_warning, message). is_warning is True if expiration
-        is approaching or passed. Returns (False, "") if allowlist is empty
-        or no expiration date is set.
-    """
-    # No expiration tracking needed when allowlist is empty
-    if ALLOWLIST_EXPIRATION_DATE is None:
-        return False, ""
-
-    today = datetime.now(tz=UTC).date()
-    days_until_expiration = (ALLOWLIST_EXPIRATION_DATE - today).days
-
-    if days_until_expiration < 0:
-        return True, (
-            f"ALLOWLIST EXPIRED: The temporary allowlist expired on "
-            f"{ALLOWLIST_EXPIRATION_DATE}. Please review and remove allowlisted "
-            f"items or update the expiration date."
-        )
-    elif days_until_expiration <= ALLOWLIST_WARNING_DAYS:
-        return True, (
-            f"ALLOWLIST EXPIRING SOON: The temporary allowlist expires in "
-            f"{days_until_expiration} days ({ALLOWLIST_EXPIRATION_DATE}). "
-            f"Please review allowlisted items."
-        )
-    return False, ""
-
-
 def get_changed_files(src_dir: Path) -> list[Path]:
     """Get Python files changed in current git branch compared to main.
 
@@ -820,27 +753,10 @@ def main() -> int:
         print(f"Analyzing {len(python_files)} Python files in {src_dir}")
         print()
 
-    # Check allowlist expiration
-    is_expiring, expiration_msg = check_allowlist_expiration()
-    if is_expiring and not args.json:
-        print(f"WARNING: {expiration_msg}", file=sys.stderr)
-        print()
-
     # Analyze each file
     results: list[TransportCheckResult] = []
-    allowlisted_violations: list[TransportCheckResult] = []
     for file_path in python_files:
         result = analyze_file(file_path)
-        # Check if file is allowlisted (suppress violations for pre-existing issues)
-        if result.violations and _is_allowlisted(file_path, src_dir):
-            allowlisted_violations.append(result)
-            # Mark as clean since it's allowlisted
-            result = TransportCheckResult(
-                file_path=result.file_path,
-                violations=[],
-                is_clean=True,
-                skip_reason="Allowlisted (pre-existing violation, see TEMPORARY_ALLOWLIST)",
-            )
         results.append(result)
 
     # Calculate summary statistics
@@ -848,7 +764,6 @@ def main() -> int:
     clean_files = sum(1 for r in results if r.is_clean)
     files_with_violations = sum(1 for r in results if not r.is_clean)
     total_violations = sum(len(r.violations) for r in results)
-    allowlisted_count = len(allowlisted_violations)
 
     # Output results
     if args.json:
@@ -860,8 +775,6 @@ def main() -> int:
                 "clean_files": clean_files,
                 "files_with_violations": files_with_violations,
                 "total_violations": total_violations,
-                "allowlisted_files": allowlisted_count,
-                "allowlist_expiration_warning": expiration_msg if is_expiring else None,
             },
             "results": [
                 {
@@ -912,10 +825,6 @@ def main() -> int:
     print(f"  Clean files: {clean_files}")
     print(f"  Files with violations: {files_with_violations}")
     print(f"  Total violations: {total_violations}")
-    if allowlisted_count > 0:
-        print(
-            f"  Allowlisted files: {allowlisted_count} (pre-existing, tracked for fix)"
-        )
 
     if files_with_violations > 0:
         print()
