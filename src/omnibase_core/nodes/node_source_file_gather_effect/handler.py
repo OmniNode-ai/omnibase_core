@@ -23,6 +23,7 @@ Ticket: OMN-14656 (RSD canary — Characterize -> Generate two-node split).
 
 from __future__ import annotations
 
+import fnmatch
 from pathlib import Path
 
 import pathspec
@@ -91,6 +92,9 @@ class NodeSourceFileGatherEffect:
 
         Typed request in, typed response out — synchronous, no event bus.
         """
+        if request.explicit_paths:
+            return self._gather_explicit(request)
+
         root = Path(request.root)
         if not root.exists() or not root.is_dir():
             # Oracle: non-existent/not-a-dir root returns an empty result
@@ -132,6 +136,51 @@ class NodeSourceFileGatherEffect:
                 )
             )
 
+        return ModelSourceFileGatherOutput(
+            root=request.root, files=files, skipped=skipped
+        )
+
+    # =========================================================================
+    # Explicit-paths mode (OMN-20565)
+    # =========================================================================
+
+    def _gather_explicit(
+        self, request: ModelSourceFileGatherInput
+    ) -> ModelSourceFileGatherOutput:
+        """Gather exactly the named files (pre-commit staged-filename mode).
+
+        The caller named each file, so ignore patterns, schema exclusion and the
+        size cap do not apply. A path is skipped, with a reason, when it is not
+        an existing file or its name matches no include pattern (the final
+        component of each include pattern is matched against the file name, so
+        ``**/*.py`` selects ``*.py``).
+        """
+        suffix_patterns = [p.rsplit("/", 1)[-1] for p in request.include_patterns]
+        files: list[ModelGatheredSourceFile] = []
+        skipped: list[ModelSkippedSourceFile] = []
+        for raw in request.explicit_paths:
+            file_path = Path(raw)
+            if not file_path.is_file():
+                skipped.append(ModelSkippedSourceFile(path=raw, reason="not a file"))
+                continue
+            if not any(fnmatch.fnmatch(file_path.name, pat) for pat in suffix_patterns):
+                skipped.append(
+                    ModelSkippedSourceFile(
+                        path=raw, reason="not matched by include patterns"
+                    )
+                )
+                continue
+            try:
+                source = file_path.read_text(encoding="utf-8")
+                size_bytes = file_path.stat().st_size
+            except OSError as exc:
+                skipped.append(
+                    ModelSkippedSourceFile(path=raw, reason=f"read error: {exc}")
+                )
+                continue
+            files.append(
+                ModelGatheredSourceFile(path=raw, size_bytes=size_bytes, source=source)
+            )
         return ModelSourceFileGatherOutput(
             root=request.root, files=files, skipped=skipped
         )

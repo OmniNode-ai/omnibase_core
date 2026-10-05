@@ -440,3 +440,81 @@ def test_root_that_is_a_file_returns_empty_result(tmp_path: Path) -> None:
 # test_exclude_patterns_are_applied, and
 # test_default_ignore_dirs_pruned_unconditionally above.
 # =============================================================================
+
+
+# =============================================================================
+# explicit_paths mode (OMN-20565): pre-commit hands a runtime the exact files
+# to check, and the runtime reads them through this EFFECT node instead of a
+# per-runtime copy of the read loop.
+# =============================================================================
+
+
+def test_explicit_paths_gathers_exactly_the_named_files(tmp_path: Path) -> None:
+    named = tmp_path / "named.py"
+    named.write_text("x = 1\n")
+    other = tmp_path / "other.py"
+    other.write_text("y = 2\n")
+
+    output = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=str(tmp_path),
+            explicit_paths=[str(named)],
+            include_patterns=["**/*.py"],
+        )
+    )
+
+    assert [f.path for f in output.files] == [str(named)]
+    assert output.files[0].source == "x = 1\n"
+    assert output.skipped == []
+
+
+def test_explicit_paths_skips_missing_and_non_matching_with_reasons(
+    tmp_path: Path,
+) -> None:
+    prose = tmp_path / "notes.md"
+    prose.write_text("datetime.utcnow()\n")
+    missing = tmp_path / "missing.py"
+
+    output = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=str(tmp_path),
+            explicit_paths=[str(prose), str(missing)],
+            include_patterns=["**/*.py"],
+        )
+    )
+
+    assert output.files == []
+    assert {(s.path, s.reason) for s in output.skipped} == {
+        (str(prose), "not matched by include patterns"),
+        (str(missing), "not a file"),
+    }
+
+
+def test_explicit_paths_reports_unreadable_file_as_read_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    unreadable = tmp_path / "unreadable.py"
+    unreadable.write_text("x = 1\n")
+    original_read_text = Path.read_text
+
+    def fake_read_text(
+        self: Path, encoding: str | None = None, errors: str | None = None
+    ) -> str:
+        if self == unreadable:
+            raise OSError("permission denied")
+        return original_read_text(self, encoding=encoding, errors=errors)
+
+    monkeypatch.setattr(Path, "read_text", fake_read_text)
+
+    output = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=str(tmp_path),
+            explicit_paths=[str(unreadable)],
+            include_patterns=["**/*.py"],
+        )
+    )
+
+    assert output.files == []
+    assert [(s.path, s.reason) for s in output.skipped] == [
+        (str(unreadable), "read error: permission denied")
+    ]

@@ -39,6 +39,12 @@ class ModelSourceFileGatherInput(BaseModel):
         source_only: When True, additionally prune ``env``/``.env``
             directories (``.venv``/``venv`` are already pruned
             unconditionally via the default ignore directories).
+        explicit_paths: When non-empty, gather exactly these files (pre-commit's
+            staged-filename mode) instead of walking ``root``. Each path must be
+            an existing file whose name matches an include pattern; the ignore
+            patterns, schema exclusion and size cap are not applied, because the
+            caller named the file. Missing or non-matching paths come back in
+            ``skipped`` with a reason (OMN-20565).
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -52,3 +58,4 @@ class ModelSourceFileGatherInput(BaseModel):
     ignore_file: str | None = Field(default=None)
     max_file_size: int = Field(default=5 * 1024 * 1024, ge=0)
     source_only: bool = Field(default=False)
+    explicit_paths: list[str] = Field(default_factory=list)
