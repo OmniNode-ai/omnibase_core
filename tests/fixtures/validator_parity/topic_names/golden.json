@@ -1,0 +1,533 @@
+{
+  "valid_evt": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "valid_cmd": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "valid_dlq": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "valid_intent": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "valid_snapshot": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "env_template": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "topic uses {env}. prefix (legacy pattern): {env}.onex.evt.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: topic uses {env}. prefix (legacy pattern): {env}.onex.evt.platform.event.v1\n"
+  },
+  "flat": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n"
+  },
+  "flat_digits": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-123"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-123\n"
+  },
+  "flat_upper": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must be lowercase. Use lowercase topic suffixes.: Agent"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must be lowercase. Use lowercase topic suffixes.: Agent\n"
+  },
+  "empty": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 0 topic(s) validated across 1 file(s)\n"
+  },
+  "space_empty": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix cannot be empty:    "
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix cannot be empty:    \n"
+  },
+  "upper": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must be lowercase. Use lowercase topic suffixes.: onex.EVT.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must be lowercase. Use lowercase topic suffixes.: onex.EVT.platform.event.v1\n"
+  },
+  "short": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must have exactly 5 segments (onex.kind.producer.event-name.version). Got 3 segments.: onex.evt.platform"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must have exactly 5 segments (onex.kind.producer.event-name.version). Got 3 segments.: onex.evt.platform\n"
+  },
+  "long": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must have exactly 5 segments (onex.kind.producer.event-name.version). Got 6 segments.: onex.evt.platform.event.extra.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must have exactly 5 segments (onex.kind.producer.event-name.version). Got 6 segments.: onex.evt.platform.event.extra.v1\n"
+  },
+  "wrong_prefix": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must start with 'onex.' prefix. Got: 'other.': other.evt.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must start with 'onex.' prefix. Got: 'other.': other.evt.platform.event.v1\n"
+  },
+  "kind": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Kind must be one of: cmd, dlq, evt, intent, snapshot. Got: 'events': onex.events.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Kind must be one of: cmd, dlq, evt, intent, snapshot. Got: 'events': onex.events.platform.event.v1\n"
+  },
+  "producer_underscore": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad_producer': onex.evt.bad_producer.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad_producer': onex.evt.bad_producer.event.v1\n"
+  },
+  "producer_digit": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: '1bad': onex.evt.1bad.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: '1bad': onex.evt.1bad.event.v1\n"
+  },
+  "producer_trailing": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad-': onex.evt.bad-.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad-': onex.evt.bad-.event.v1\n"
+  },
+  "producer_double": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad--name': onex.evt.bad--name.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Producer must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad--name': onex.evt.bad--name.event.v1\n"
+  },
+  "event_underscore": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad_event': onex.evt.platform.bad_event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad_event': onex.evt.platform.bad_event.v1\n"
+  },
+  "event_digit": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: '1bad': onex.evt.platform.1bad.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: '1bad': onex.evt.platform.1bad.v1\n"
+  },
+  "event_double": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad--event': onex.evt.platform.bad--event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad--event': onex.evt.platform.bad--event.v1\n"
+  },
+  "event_trailing": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad-': onex.evt.platform.bad-.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Event name must be kebab-case (lowercase letters, digits, hyphens, starting with letter). Got: 'bad-': onex.evt.platform.bad-.v1\n"
+  },
+  "version_zero": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Version number must be >= 1. Got: v0: onex.evt.platform.event.v0"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Version number must be >= 1. Got: v0: onex.evt.platform.event.v0\n"
+  },
+  "version_missing_v": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Version must match 'v{int}' pattern (e.g., v1, v2). Got: '1': onex.evt.platform.event.1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Version must match 'v{int}' pattern (e.g., v1, v2). Got: '1': onex.evt.platform.event.1\n"
+  },
+  "version_negative": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Version must match 'v{int}' pattern (e.g., v1, v2). Got: 'v-1': onex.evt.platform.event.v-1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Version must match 'v{int}' pattern (e.g., v1, v2). Got: 'v-1': onex.evt.platform.event.v-1\n"
+  },
+  "version_leading_zero": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "edge_spaces": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "unknown_producer": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "snapshot_unknown": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 1 topic(s) validated across 1 file(s)\n"
+  },
+  "env_dev": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must not start with environment prefix 'dev.'. Environment prefix should be added separately when composing full topic.: dev.onex.evt.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must not start with environment prefix 'dev.'. Environment prefix should be added separately when composing full topic.: dev.onex.evt.platform.event.v1\n"
+  },
+  "env_staging": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must not start with environment prefix 'staging.'. Environment prefix should be added separately when composing full topic.: staging.onex.evt.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must not start with environment prefix 'staging.'. Environment prefix should be added separately when composing full topic.: staging.onex.evt.platform.event.v1\n"
+  },
+  "env_prod": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must not start with environment prefix 'prod.'. Environment prefix should be added separately when composing full topic.: prod.onex.evt.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must not start with environment prefix 'prod.'. Environment prefix should be added separately when composing full topic.: prod.onex.evt.platform.event.v1\n"
+  },
+  "env_test": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must not start with environment prefix 'test.'. Environment prefix should be added separately when composing full topic.: test.onex.evt.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must not start with environment prefix 'test.'. Environment prefix should be added separately when composing full topic.: test.onex.evt.platform.event.v1\n"
+  },
+  "env_local": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix must not start with environment prefix 'local.'. Environment prefix should be added separately when composing full topic.: local.onex.evt.platform.event.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix must not start with environment prefix 'local.'. Environment prefix should be added separately when composing full topic.: local.onex.evt.platform.event.v1\n"
+  },
+  "control_0": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\nent.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\nent.v1\n"
+  },
+  "control_1": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\nent.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\nent.v1\n"
+  },
+  "control_2": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\tent.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\tent.v1\n"
+  },
+  "control_3": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\u0000ent.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\u0000ent.v1\n"
+  },
+  "control_4": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\u000bent.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\u000bent.v1\n"
+  },
+  "control_5": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\fent.v1"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.py:3: Suffix contains invalid control characters (newline, tab, etc.): onex.evt.platform.ev\fent.v1\n"
+  },
+  "extraction": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.py",
+        "line": 3,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      },
+      {
+        "path": "topics.py",
+        "line": 4,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      },
+      {
+        "path": "topics.py",
+        "line": 10,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      },
+      {
+        "path": "topics.py",
+        "line": 12,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      }
+    ],
+    "stdout": "FAIL: 4 violation(s) found:\n\n  topics.py:3: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n  topics.py:4: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n  topics.py:10: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n  topics.py:12: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n"
+  },
+  "typescript": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "topics.ts",
+        "line": 3,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      }
+    ],
+    "stdout": "FAIL: 1 violation(s) found:\n\n  topics.ts:3: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n"
+  },
+  "ignored": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 0 topic(s) validated across 0 file(s)\n"
+  },
+  "ast_copy_only": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 0 topic(s) validated across 1 file(s)\n"
+  },
+  "discovery": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": ".github/topics.ts",
+        "line": 3,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      },
+      {
+        "path": ".venv/topics.py",
+        "line": 3,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      },
+      {
+        "path": "schemas/topics.py",
+        "line": 3,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions"
+      }
+    ],
+    "stdout": "FAIL: 3 violation(s) found:\n\n  .github/topics.ts:3: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n  .venv/topics.py:3: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n  schemas/topics.py:3: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): agent-actions\n"
+  },
+  "empty_tree": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "OK: 0 topic(s) validated across 0 file(s)\n"
+  },
+  "repo_src": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
+        "line": 42,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): commands"
+      },
+      {
+        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
+        "line": 43,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq"
+      },
+      {
+        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
+        "line": 44,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): events"
+      },
+      {
+        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
+        "line": 45,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intents"
+      },
+      {
+        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
+        "line": 46,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshots"
+      },
+      {
+        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
+        "line": 51,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): cmd"
+      },
+      {
+        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
+        "line": 52,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): evt"
+      },
+      {
+        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
+        "line": 53,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq"
+      },
+      {
+        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
+        "line": 54,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intent"
+      },
+      {
+        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
+        "line": 55,
+        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshot"
+      }
+    ],
+    "stdout": "FAIL: 10 violation(s) found:\n\n  omnibase_core/constants/constants_topic_taxonomy.py:42: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): commands\n  omnibase_core/constants/constants_topic_taxonomy.py:43: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq\n  omnibase_core/constants/constants_topic_taxonomy.py:44: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): events\n  omnibase_core/constants/constants_topic_taxonomy.py:45: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intents\n  omnibase_core/constants/constants_topic_taxonomy.py:46: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshots\n  omnibase_core/models/validation/model_topic_suffix_parts.py:51: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): cmd\n  omnibase_core/models/validation/model_topic_suffix_parts.py:52: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): evt\n  omnibase_core/models/validation/model_topic_suffix_parts.py:53: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq\n  omnibase_core/models/validation/model_topic_suffix_parts.py:54: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intent\n  omnibase_core/models/validation/model_topic_suffix_parts.py:55: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshot\n"
+  }
+}

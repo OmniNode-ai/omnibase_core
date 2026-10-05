@@ -13,6 +13,8 @@ Ticket: OMN-14656 (RSD canary).
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_ignore_pattern_source import EnumTraversalMode
@@ -39,6 +41,15 @@ class ModelSourceFileGatherInput(BaseModel):
         source_only: When True, additionally prune ``env``/``.env``
             directories (``.venv``/``venv`` are already pruned
             unconditionally via the default ignore directories).
+        explicit_paths: When non-empty, gather exactly these files (pre-commit's
+            staged-filename mode) instead of walking ``root``. Each path must be
+            an existing file whose name matches an include pattern; the ignore
+            patterns, schema exclusion and size cap are not applied, because the
+            caller named the file. Missing or non-matching paths come back in
+            ``skipped`` with a reason (OMN-20565).
+        decode_errors: ``strict`` (default) reports a file with an undecodable
+            byte as a ``read error`` skip; ``replace`` reads it with U+FFFD for
+            each bad byte, the way a line scanner that must see every file does.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -52,3 +63,5 @@ class ModelSourceFileGatherInput(BaseModel):
     ignore_file: str | None = Field(default=None)
     max_file_size: int = Field(default=5 * 1024 * 1024, ge=0)
     source_only: bool = Field(default=False)
+    explicit_paths: list[str] = Field(default_factory=list)
+    decode_errors: Literal["strict", "replace"] = Field(default="strict")

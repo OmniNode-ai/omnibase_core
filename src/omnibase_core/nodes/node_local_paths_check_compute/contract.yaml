@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_local_paths_check_compute
+node_id: node_local_paths_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Scan explicit source text for machine-specific absolute paths, preserving the pre-node local-paths validator's
+  patterns, comment suppression and messages.
+input_model: omnibase_core.models.nodes.local_paths_check.model_local_paths_check_input.ModelLocalPathsCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeLocalPathsCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

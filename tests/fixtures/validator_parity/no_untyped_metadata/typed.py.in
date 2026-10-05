@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+metadata: OutputMetadataDict = Field(default_factory=lambda: OutputMetadataDict())
+metadata: dict[str, str]
+metadata: dict[str, int]
+metadata: dict [str, Any]
+metadata: dict[str , Any]
+metadata: Dict[str, Any]
+metadata: Mapping[str, Any]
+metadata: Any
+metadata:
+    dict[str, Any]
+metadata: dict[str,
+    Any]
+Metadata: dict[str, Any]

@@ -1,0 +1,139 @@
+{
+  "pass": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "Markdown Links: PASS (2 files, 20 links checked, 9 skipped)\n"
+  },
+  "fail": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "README.md",
+        "line": 2,
+        "target": "absent.md",
+        "message": "Target file not found: absent.md"
+      },
+      {
+        "path": "README.md",
+        "line": 3,
+        "target": "missing.png",
+        "message": "Target file not found: missing.png"
+      },
+      {
+        "path": "README.md",
+        "line": 4,
+        "target": "#absent",
+        "message": "Anchor 'absent' not found in file"
+      },
+      {
+        "path": "README.md",
+        "line": 5,
+        "target": "target.md#absent",
+        "message": "Anchor 'absent' not found in target.md"
+      },
+      {
+        "path": "README.md",
+        "line": 6,
+        "target": "__ONEX_MISSING_REF__:ref",
+        "message": "Reference-style link [ref] has no definition"
+      },
+      {
+        "path": "README.md",
+        "line": 7,
+        "target": "__ONEX_MISSING_REF__:collapsed",
+        "message": "Reference-style link [collapsed] has no definition"
+      },
+      {
+        "path": "README.md",
+        "line": 8,
+        "target": "../outside.md",
+        "message": "Link points outside repository: <ROOT_PARENT>/outside.md"
+      },
+      {
+        "path": "README.md",
+        "line": 9,
+        "target": "target.md?query",
+        "message": "Target file not found: target.md?query"
+      },
+      {
+        "path": "README.md",
+        "line": 10,
+        "target": "space%20name.md",
+        "message": "Target file not found: space%20name.md"
+      },
+      {
+        "path": "README.md",
+        "line": 11,
+        "target": "#foo%2520bar",
+        "message": "Anchor 'foo%20bar' not found in file"
+      },
+      {
+        "path": "README.md",
+        "line": 12,
+        "target": "empty.md#missing",
+        "message": "Anchor 'missing' not found in empty.md"
+      },
+      {
+        "path": "README.md",
+        "line": 13,
+        "target": "target#absent",
+        "message": "Anchor 'absent' not found in target"
+      },
+      {
+        "path": "README.md",
+        "line": 15,
+        "target": "absent.md",
+        "message": "Target file not found: absent.md"
+      }
+    ],
+    "stdout": "MARKDOWN LINK VALIDATION FAILED\n============================================================\n\nFound 13 broken link(s):\n\n  README.md:2\n    Link: [broken](absent.md)\n    Reason: Target file not found: absent.md\n\n  README.md:3\n    Link: [image](missing.png)\n    Reason: Target file not found: missing.png\n\n  README.md:4\n    Link: [same](#absent)\n    Reason: Anchor 'absent' not found in file\n\n  README.md:5\n    Link: [cross](target.md#absent)\n    Reason: Anchor 'absent' not found in target.md\n\n  README.md:6\n    Link: [missing][ref]\n    Reason: Reference-style link [ref] has no definition\n\n  README.md:7\n    Link: [collapsed][collapsed]\n    Reason: Reference-style link [collapsed] has no definition\n\n  README.md:8\n    Link: [outside](../outside.md)\n    Reason: Link points outside repository: <ROOT_PARENT>/outside.md\n\n  README.md:9\n    Link: [query](target.md?query)\n    Reason: Target file not found: target.md?query\n\n  README.md:10\n    Link: [encoded path](space%20name.md)\n    Reason: Target file not found: space%20name.md\n\n  README.md:11\n    Link: [double](#foo%2520bar)\n    Reason: Anchor 'foo%20bar' not found in file\n\n  README.md:12\n    Link: [empty](empty.md#missing)\n    Reason: Anchor 'missing' not found in empty.md\n\n  README.md:13\n    Link: [implicit](target#absent)\n    Reason: Anchor 'absent' not found in target\n\n  README.md:15\n    Link: [fenced](absent.md)\n    Reason: Target file not found: absent.md\n\n============================================================\nSummary: 4 files, 13 links checked, 13 broken, 0 skipped\n\n"
+  },
+  "edge": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "README.md",
+        "line": 10,
+        "target": "#case",
+        "message": "Anchor 'case' not found in file"
+      }
+    ],
+    "stdout": "MARKDOWN LINK VALIDATION FAILED\n============================================================\n\nFound 1 broken link(s):\n\n  README.md:10\n    Link: [case](#case)\n    Reason: Anchor 'case' not found in file\n\n============================================================\nSummary: 2 files, 11 links checked, 1 broken, 1 skipped\n\n"
+  },
+  "repository": {
+    "exit_code": 0,
+    "findings": [],
+    "stdout": "Markdown Links: PASS (17 files, 54 links checked, 44 skipped)\n",
+    "files_checked": 18
+  },
+  "decoded": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "README.md",
+        "line": 2,
+        "target": "absent.md",
+        "message": "Target file not found: absent.md"
+      },
+      {
+        "path": "docs/target.md",
+        "line": 3,
+        "target": "#missing",
+        "message": "Anchor 'missing' not found in file"
+      }
+    ],
+    "stdout": "MARKDOWN LINK VALIDATION FAILED\n============================================================\n\nFound 2 broken link(s):\n\n  README.md:2\n    Link: [bad](absent.md)\n    Reason: Target file not found: absent.md\n\n  docs/target.md:3\n    Link: [bad](#missing)\n    Reason: Anchor 'missing' not found in file\n\n============================================================\nSummary: 2 files, 4 links checked, 2 broken, 0 skipped\n\n"
+  },
+  "headings": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "README.md",
+        "line": 15,
+        "target": "#special%2526chars",
+        "message": "Anchor 'special%26chars' not found in file"
+      }
+    ],
+    "stdout": "MARKDOWN LINK VALIDATION FAILED\n============================================================\n\nFound 1 broken link(s):\n\n  README.md:15\n    Link: [percent](#special%2526chars)\n    Reason: Anchor 'special%26chars' not found in file\n\n============================================================\nSummary: 4 files, 15 links checked, 1 broken, 0 skipped\n\n"
+  }
+}

@@ -15,7 +15,7 @@
 # missing import because the version string could not disambiguate the two states.
 #
 # This is the omnibase_core port of the omnibase_infra release-identity gate
-# (OMN-13412, scripts/check_release_identity.py). Same blocking direction, same
+# (OMN-13412, now node_release_identity_check_compute, OMN-20565). Same blocking direction, same
 # src/**-only enforcement, same docs/tests/CI exemption.
 
 # MIGRATED INTO ci.yml (OMN-14877, OMN-14430 fast-follow): this workflow used to
@@ -87,11 +87,11 @@ jobs:
 
       - name: Run release-identity unit tests
         run: |
-          uv run pytest tests/scripts/test_check_release_identity.py -v
+          uv run pytest tests/unit/nodes/node_release_identity_check_compute -v
 
       - name: No code merged onto a published version without a bump
         run: |
           set -euo pipefail
           BASE="${{ github.event.pull_request.base.ref || 'dev' }}"
           git fetch --quiet origin "${BASE}" || true
-          uv run python scripts/check_release_identity.py --base "origin/${BASE}"
+          uv run python -m omnibase_core.nodes.node_release_identity_check_compute.runtime_release_identity_check --base "origin/${BASE}"

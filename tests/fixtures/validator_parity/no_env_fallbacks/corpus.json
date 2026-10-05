@@ -1,0 +1,122 @@
+{
+  "environ_get_localhost": {
+    "suffix": ".py",
+    "source": "import os\nx = os.environ.get(\"H\", \"localhost\")\n"
+  },
+  "getenv_http_localhost": {
+    "suffix": ".py",
+    "source": "x = os.getenv(\"U\", \"http://localhost:8080\")\n"
+  },
+  "getenv_redis_localhost": {
+    "suffix": ".py",
+    "source": "x = os.getenv(\"U\", \"redis://localhost:6379\")\n"
+  },
+  "getenv_priv_ip": {
+    "suffix": ".py",
+    "source": "x = os.getenv(\"U\", \"{LAN_HOST}\")\n"
+  },
+  "field_default_localhost": {
+    "suffix": ".py",
+    "source": "class A:\n    h: str = Field(default=\"localhost:9092\")\n"
+  },
+  "param_default_localhost": {
+    "suffix": ".py",
+    "source": "def f(h: str = \"http://localhost:8080\"):\n    return h\n"
+  },
+  "param_default_priv_ip": {
+    "suffix": ".py",
+    "source": "def f(h: str = \"192.168.1.5\"):\n    return h\n"
+  },
+  "bootstrap_localhost": {
+    "suffix": ".py",
+    "source": "p = Producer(bootstrap_servers=\"localhost:9092\")\n"
+  },
+  "bootstrap_priv_ip": {
+    "suffix": ".py",
+    "source": "p = Producer(bootstrap_servers=\"192.168.1.5:9092\")\n"
+  },
+  "bind_loopback_default": {
+    "suffix": ".py",
+    "source": "def f(host: str = \"127.0.0.1\"):\n    return host\n"
+  },
+  "marker_fallback_ok": {
+    "suffix": ".py",
+    "source": "x = os.environ.get(\"H\", \"localhost\")  # fallback-ok: test\n"
+  },
+  "marker_cloud_bus_ok": {
+    "suffix": ".py",
+    "source": "x = os.getenv(\"H\", \"192.168.1.5\")  # cloud-bus-ok\n"
+  },
+  "marker_omn_7227": {
+    "suffix": ".py",
+    "source": "x = os.getenv(\"H\", \"localhost\")  # OMN-7227-exempt\n"
+  },
+  "pure_comment": {
+    "suffix": ".py",
+    "source": "# os.getenv(\"H\", \"localhost\")\n"
+  },
+  "docstring_block": {
+    "suffix": ".py",
+    "source": "\"\"\"\nos.environ.get(\"H\", \"localhost\")\n\"\"\"\n"
+  },
+  "docstring_block_single_quotes": {
+    "suffix": ".py",
+    "source": "'''\nos.getenv(\"H\", \"localhost\")\n'''\n"
+  },
+  "clean_fail_fast": {
+    "suffix": ".py",
+    "source": "import os\nx = os.environ[\"H\"]\n"
+  },
+  "clean_non_local_default": {
+    "suffix": ".py",
+    "source": "x = os.getenv(\"H\", \"example.org\")\n"
+  },
+  "closing_line_with_code": {
+    "suffix": ".py",
+    "source": "\"\"\"\ndoc\n\"\"\" ; x = os.getenv(\"H\", \"localhost\")\n"
+  },
+  "closing_line_after_docstring": {
+    "suffix": ".py",
+    "source": "\"\"\"\ndoc\n\"\"\"\nx = os.getenv(\"H\", \"localhost\")\n"
+  },
+  "two_delims_with_code": {
+    "suffix": ".py",
+    "source": "y = \"\"\"a\"\"\" + os.getenv(\"H\", \"localhost\")\n"
+  },
+  "oneline_docstring_mentions_pattern": {
+    "suffix": ".py",
+    "source": "\"\"\"os.environ.get(\"H\", \"localhost\")\"\"\"\n"
+  },
+  "docstring_last_line_mentions_pattern": {
+    "suffix": ".py",
+    "source": "\"\"\"\nx\nos.getenv(\"H\", \"localhost\")\"\"\"\n"
+  },
+  "assign_open_multiline_string": {
+    "suffix": ".py",
+    "source": "x = \"\"\"\nos.environ.get(\"H\", \"localhost\")\n\"\"\"\n"
+  },
+  "midline_open_string": {
+    "suffix": ".py",
+    "source": "x = 1  \"\"\"\nos.environ.get(\"H\", \"localhost\")\n\"\"\"\n"
+  },
+  "shell_default_localhost": {
+    "suffix": ".sh",
+    "source": "URL=${URL:-http://localhost:8080}\n"
+  },
+  "shell_default_priv_ip": {
+    "suffix": ".sh",
+    "source": "URL=${URL:-192.168.1.5}\n"
+  },
+  "shell_marker": {
+    "suffix": ".sh",
+    "source": "URL=${URL:-localhost} # fallback-ok\n"
+  },
+  "shell_comment": {
+    "suffix": ".sh",
+    "source": "# URL=${URL:-localhost}\n"
+  },
+  "shell_clean": {
+    "suffix": ".sh",
+    "source": "URL=${URL:?must be set}\n"
+  }
+}

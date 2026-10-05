@@ -1,0 +1,544 @@
+[
+  {
+    "path": "generation.py",
+    "source_parts": [
+      "T = \"",
+      ".generation.benchmark.completed\""
+    ]
+  },
+  {
+    "path": "publish.py",
+    "source_parts": [
+      "await bus.publish(\"",
+      ".delegation.attempt.started\", env)"
+    ]
+  },
+  {
+    "path": "single.py",
+    "source_parts": [
+      "T = '",
+      ".aislop.sweep.completed'"
+    ]
+  },
+  {
+    "path": "domain.py",
+    "source_parts": [
+      "T = \"",
+      ".review.verdict.posted\""
+    ]
+  },
+  {
+    "path": "deep.py",
+    "source_parts": [
+      "T = \"",
+      ".runtime.node.deploy.requested\""
+    ]
+  },
+  {
+    "path": "contract.py",
+    "source_parts": [
+      "topic = self._contract.topics[\"benchmark_completed\"]"
+    ]
+  },
+  {
+    "path": "import.py",
+    "source_parts": [
+      "from omnimarket.nodes.node_generation_consumer.models import x"
+    ]
+  },
+  {
+    "path": "short.py",
+    "source_parts": [
+      "T = \"",
+      ".core\""
+    ]
+  },
+  {
+    "path": "other.py",
+    "source_parts": [
+      "T = \"kafka.cluster.broker.id\""
+    ]
+  },
+  {
+    "path": "mismatch.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c'"
+    ]
+  },
+  {
+    "path": "missing_quote.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c"
+    ]
+  },
+  {
+    "path": "uppercase_prefix.py",
+    "source_parts": [
+      "T = \"ONEX.A.B.C\""
+    ]
+  },
+  {
+    "path": "uppercase_segment.py",
+    "source_parts": [
+      "T = \"",
+      ".a.B.c\""
+    ]
+  },
+  {
+    "path": "underscore.py",
+    "source_parts": [
+      "T = \"",
+      ".evt.my_event.v1\""
+    ]
+  },
+  {
+    "path": "hyphen.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.my-event.v1\""
+    ]
+  },
+  {
+    "path": "digits.py",
+    "source_parts": [
+      "T = \"",
+      ".1.b2.3\""
+    ]
+  },
+  {
+    "path": "empty_segment.py",
+    "source_parts": [
+      "T = \"",
+      ".a..c\""
+    ]
+  },
+  {
+    "path": "short_cmd.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x\""
+    ]
+  },
+  {
+    "path": "short_evt.py",
+    "source_parts": [
+      "T = \"",
+      ".evt.x\""
+    ]
+  },
+  {
+    "path": "dlq_underscore.py",
+    "source_parts": [
+      "T = \"",
+      ".dlq.my_event.v1\""
+    ]
+  },
+  {
+    "path": "prefix_probe.py",
+    "source_parts": [
+      "T.startswith(\"",
+      ".evt.x.v1\")"
+    ]
+  },
+  {
+    "path": "dynamic.py",
+    "source_parts": [
+      "T = f\"",
+      ".evt.x.{name}.v1\""
+    ]
+  },
+  {
+    "path": "static_fstring.py",
+    "source_parts": [
+      "T = f\"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "raw_string.py",
+    "source_parts": [
+      "T = r\"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "comment.py",
+    "source_parts": [
+      "# T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "docstring.py",
+    "source_parts": [
+      "\"\"\"\nT = \"",
+      ".a.b.c\"\n\"\"\""
+    ]
+  },
+  {
+    "path": "triple_quote.py",
+    "source_parts": [
+      "T = \"\"\"",
+      ".a.b.c\"\"\""
+    ]
+  },
+  {
+    "path": "duplicate_order.py",
+    "source_parts": [
+      "\n  A = \"",
+      ".a.b.c\"; B = '",
+      ".a.b.c'\r\nC = \"",
+      ".d.e.f\"\r\n"
+    ]
+  },
+  {
+    "path": "line_marker.py",
+    "source_parts": [
+      "A = \"",
+      ".a.b.c\" # ",
+      "-allow-topic-literal approved\nB = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "marker_string.py",
+    "source_parts": [
+      "A = \"",
+      ".a.b.c\"; marker = \"",
+      "-allow-topic-literal\"\nB = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "file_marker.py",
+    "source_parts": [
+      "A = \"",
+      ".a.b.c\"\n# ",
+      "-allow-file-topic-literal registry"
+    ]
+  },
+  {
+    "path": "file_marker_string.py",
+    "source_parts": [
+      "A = \"",
+      ".a.b.c\"\nmarker = \"",
+      "-allow-file-topic-literal\""
+    ]
+  },
+  {
+    "path": "market_annotation.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\" # ",
+      "-topic-allow: example"
+    ]
+  },
+  {
+    "path": "empty.py",
+    "source_parts": [
+      ""
+    ]
+  },
+  {
+    "path": "extension.md",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.yaml",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.yml",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.json",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.sh",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.toml",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.txt",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.rst",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.cfg",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "extension.ini",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".github/included.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "schemas/included.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".ruff_cache/included.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".pytest_cache/included.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "env/included.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".git/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "__pycache__/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "node_modules/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".tox/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".venv/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "venv/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".next/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "dist/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "build/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "graphify-out/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "dod_receipts/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "evidence/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".evidence/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": ".onex_state/skipped.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "unsupported.js",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ]
+  },
+  {
+    "path": "Dockerfile",
+    "source_parts": [
+      "ENV INPUT_TOPIC=",
+      ".evt.my_event.v1"
+    ]
+  },
+  {
+    "path": "line_marker_cmd.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1\" # ",
+      "-allow-topic-literal approved"
+    ]
+  },
+  {
+    "path": "file_marker_cmd.py",
+    "source_parts": [
+      "# ",
+      "-allow-file-topic-literal registry\nT = \"",
+      ".cmd.x.v1\""
+    ]
+  },
+  {
+    "path": "mismatch_cmd.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1'"
+    ]
+  },
+  {
+    "path": "missing_quote_cmd.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1"
+    ]
+  },
+  {
+    "path": "uppercase_cmd.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.X.v1\""
+    ]
+  },
+  {
+    "path": "market_annotation_cmd.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1\" # ",
+      "-topic-allow: reason"
+    ]
+  },
+  {
+    "path": "handler_inline.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1\""
+    ]
+  },
+  {
+    "path": "model_inline.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1\""
+    ]
+  },
+  {
+    "path": "topics.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1\""
+    ]
+  },
+  {
+    "path": "test_inline.py",
+    "source_parts": [
+      "T = \"",
+      ".cmd.x.v1\""
+    ]
+  },
+  {
+    "path": "invalid_utf8.py",
+    "source_parts": [
+      "T = \"",
+      ".a.b.c\""
+    ],
+    "trailing_bytes": [
+      255
+    ]
+  }
+]

@@ -1,0 +1,406 @@
+{
+  "_spdx": [
+    "SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.",
+    "SPDX-License-Identifier: MIT"
+  ],
+  "ahead": {
+    "exit_code": 0,
+    "stdout": "OK: version 0.46.0 is ahead of latest published 0.45.0.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "equal": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "behind": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.44.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.44.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "docs_only": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "src_changed": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "prefix_edge": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "no_tags": {
+    "exit_code": 0,
+    "stdout": "OK: no published tag yet — release-identity bump not required.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "invalid_tags": {
+    "exit_code": 0,
+    "stdout": "OK: no published tag yet — release-identity bump not required.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "highest_tag": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 1.2.9 is NOT ahead of the latest published version 1.2.10 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 1.2.10 (e.g. 1.2.11).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 1.2.9 is NOT ahead of the latest published version 1.2.10 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "prerelease": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 1.2.0rc1 is NOT ahead of the latest published version 1.2.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 1.2.0 (e.g. 1.2.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 1.2.0rc1 is NOT ahead of the latest published version 1.2.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "normalization": {
+    "exit_code": 0,
+    "stdout": "OK: version 1.2 is ahead of latest published 1.1.9.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "malformed": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: malformed project.version 'banana': Invalid version: 'banana'\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: malformed project.version 'banana': Invalid version: 'banana'"
+      }
+    ]
+  },
+  "empty_version": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: no project.version in <root>/pyproject.toml\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: no project.version in <root>/pyproject.toml"
+      }
+    ]
+  },
+  "missing_version": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: no project.version in <root>/pyproject.toml\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: no project.version in <root>/pyproject.toml"
+      }
+    ]
+  },
+  "explicit_override": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "stdin_src": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "stdin_docs": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "stdin_empty": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "docs_commit": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "pending_staged": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "pending_unstaged": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "stale_base": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "unreachable_peer": {
+    "exit_code": 0,
+    "stdout": "OK: version 2.0.0 is ahead of latest published 1.0.0.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "reachable_equal": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 1.0.0 is NOT ahead of the latest published version 1.0.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 1.0.0 (e.g. 1.0.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 1.0.0 is NOT ahead of the latest published version 1.0.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "reachable_behind": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.9.0 is NOT ahead of the latest published version 1.0.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 1.0.0 (e.g. 1.0.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.9.0 is NOT ahead of the latest published version 1.0.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "empty_merged_fallback": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 1.0.0 is NOT ahead of the latest published version 9.0.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 9.0.0 (e.g. 9.0.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 1.0.0 is NOT ahead of the latest published version 9.0.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "shallow_fallback": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 1.0.0 is NOT ahead of the latest published version 9.0.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 9.0.0 (e.g. 9.0.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 1.0.0 is NOT ahead of the latest published version 9.0.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "tagless_patch": {
+    "exit_code": 0,
+    "stdout": "OK: no published tag yet — release-identity bump not required.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "tagless_bundle": {
+    "exit_code": 0,
+    "stdout": "OK: no published tag yet — release-identity bump not required.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "tagless_shallow": {
+    "exit_code": 0,
+    "stdout": "OK: no published tag yet — release-identity bump not required.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "missing_base_ahead": {
+    "exit_code": 0,
+    "stdout": "OK: version 0.46.0 is ahead of latest published 0.45.0.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "missing_base_equal": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "disconnected_base": {
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate).\nMerging code consumers import onto an already-published version aliases two code states under one wheel version. Bump project.version in pyproject.toml past 0.45.0 (e.g. 0.45.1).\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "FAIL: packaged source changed but pyproject version 0.45.0 is NOT ahead of the latest published version 0.45.0 (OMN-13411 release-identity gate)."
+      }
+    ]
+  },
+  "quoted_path": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "empty_diff": {
+    "exit_code": 0,
+    "stdout": "OK: no packaged src/** change in this diff — version bump not required (pyproject 0.45.0, latest published 0.45.0).\n",
+    "stderr": "",
+    "findings": []
+  },
+  "zero_version": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: no project.version in <root>/pyproject.toml\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: no project.version in <root>/pyproject.toml"
+      }
+    ]
+  },
+  "numeric_version": {
+    "exit_code": 0,
+    "stdout": "OK: version 1.2 is ahead of latest published 1.1.\n",
+    "stderr": "",
+    "findings": []
+  },
+  "boolean_version": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: malformed project.version True: Invalid version: 'True'\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: malformed project.version True: Invalid version: 'True'"
+      }
+    ]
+  },
+  "list_version": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: malformed project.version ['banana']: Invalid version: \"['banana']\"\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: malformed project.version ['banana']: Invalid version: \"['banana']\""
+      }
+    ]
+  },
+  "empty_list_version": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: no project.version in <root>/pyproject.toml\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: no project.version in <root>/pyproject.toml"
+      }
+    ]
+  },
+  "invalid_toml": {
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "ERROR: Expected ']' at the end of a table declaration (at line 3, column 8)\n",
+    "findings": [
+      {
+        "path": "pyproject.toml",
+        "line": 1,
+        "message": "ERROR: Expected ']' at the end of a table declaration (at line 3, column 8)"
+      }
+    ]
+  },
+  "repository": {
+    "default": {
+      "exit_code": 0,
+      "stdout": "OK: version 0.47.35 is ahead of latest published 0.47.34.\n",
+      "stderr": "",
+      "findings": [],
+      "status": "PASS"
+    },
+    "origin/dev": {
+      "exit_code": 0,
+      "stdout": "OK: version 0.47.35 is ahead of latest published 0.47.34.\n",
+      "stderr": "",
+      "findings": [],
+      "status": "PASS"
+    }
+  }
+}

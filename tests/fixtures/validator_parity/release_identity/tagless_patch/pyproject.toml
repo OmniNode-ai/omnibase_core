@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+[project]
+name = "parity-fixture"
+version = "0.1.1"

@@ -2,7 +2,7 @@
 # OMN-18790 — per-suite skip-count baseline for omnibase_core (epic OMN-18775).
 #
 # Ported from omnibase_infra's OMN-18776 landing (squash 77ea8d01). The gate
-# that reads this file is scripts/ci/skip_count_ratchet.py, a hand-vendored
+# that reads this file is the node_skip_count_ratchet_check_compute runtime (OMN-20565 replaced scripts/ci/skip_count_ratchet.py, a hand-vendored
 # copy of that repo's script; there is no automated vendoring path in this
 # estate, so the SYNC header on that file is the convention.
 #
@@ -11,7 +11,7 @@
 # baseline with no recorded measurement is a claim, not a measurement.
 #
 # Lowering a number here is the ONLY way to lower the bar. There is no flag and
-# no environment variable on scripts/ci/skip_count_ratchet.py that does it, and
+# no environment variable on the ratchet runtime that does it, and
 # tests/ci/test_skip_count_ratchet_omn18790.py reads the parser's own option
 # strings to keep it that way.
 #
@@ -35,8 +35,8 @@ suites:
       measured_at: '2026-09-18'
       measured_by: OMN-18790
       measurement_command: gh run download 35351419513 --repo OmniNode-ai/omnibase_core --pattern 'junit-int-*'
-        --dir <dir> && uv run python scripts/ci/skip_count_ratchet.py --print-observed --suite omnibase_core/tests-integration
-        --junit <dir>/*/junit-int-*.xml
+        --dir <dir> && uv run python -m omnibase_core.nodes.node_skip_count_ratchet_check_compute.runtime_skip_count_ratchet_check
+        --print-observed --suite omnibase_core/tests-integration --junit <dir>/*/junit-int-*.xml
       source_runs:
         - '35351419513'
       corroborating_runs:
@@ -84,8 +84,8 @@ suites:
       measured_at: '2026-09-19'
       measured_by: OMN-16851
       measurement_command: gh run download 35445052084 --repo OmniNode-ai/omnibase_core --pattern 'test-results-*'
-        --dir <dir> && uv run python scripts/ci/skip_count_ratchet.py --print-observed --suite omnibase_core/test-parallel
-        --junit <dir>/*/junit-*.xml
+        --dir <dir> && uv run python -m omnibase_core.nodes.node_skip_count_ratchet_check_compute.runtime_skip_count_ratchet_check
+        --print-observed --suite omnibase_core/test-parallel --junit <dir>/*/junit-*.xml
       source_runs:
         - '35445052084'
       corroborating_runs:

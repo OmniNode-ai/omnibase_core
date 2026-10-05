@@ -18,6 +18,9 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.models.validation.model_validation_report import (
+    ModelValidationReport,
+)
 from omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check import (
     main,
 )
@@ -159,7 +162,7 @@ def test_full_tree_mode_clean_tree_passes(
     assert "OK: No forbidden I/O found in non-EFFECT node packages" in out
 
 
-def test_full_tree_mode_empty_root_passes(
+def test_full_tree_mode_empty_root_parity_is_error(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     empty = tmp_path / "empty"
@@ -167,4 +170,88 @@ def test_full_tree_mode_empty_root_passes(
 
     exit_code = main(["--root", str(empty)])
 
+    assert exit_code == 1
+    assert "zero files scanned" in capsys.readouterr().out
+
+
+def test_main_report_json_parity_on_fail(tmp_path: Path) -> None:
+    node_dir = _make_node(tmp_path, "node_bad_compute", _COMPUTE_CONTRACT, _GIT_HANDLER)
+    bad = node_dir / "handler.py"
+    report_path = tmp_path / "reports" / "report.json"
+
+    exit_code = main([str(bad), "--report-json", str(report_path)])
+
+    assert exit_code == 1
+    report = ModelValidationReport.model_validate_json(report_path.read_text())
+    assert report.overall_status == "FAIL"
+    assert report.metrics.fail_count == 1
+    assert report.provenance.validators_run == ("arch-no-io-outside-effects",)
+
+
+def test_main_report_json_parity_on_pass(tmp_path: Path) -> None:
+    node_dir = _make_node(
+        tmp_path, "node_clean_compute", _COMPUTE_CONTRACT, _CLEAN_HANDLER
+    )
+    clean = node_dir / "handler.py"
+    report_path = tmp_path / "report.json"
+
+    exit_code = main([str(clean), "--report-json", str(report_path)])
+
     assert exit_code == 0
+    report = ModelValidationReport.model_validate_json(report_path.read_text())
+    assert report.overall_status == "PASS"
+    assert report.provenance.validators_run == ("arch-no-io-outside-effects",)
+
+
+def test_main_report_json_parity_on_zero_scan(tmp_path: Path) -> None:
+    empty_root = tmp_path / "empty"
+    empty_root.mkdir()
+    report_path = tmp_path / "report.json"
+
+    exit_code = main(["--root", str(empty_root), "--report-json", str(report_path)])
+
+    assert exit_code == 1
+    report = ModelValidationReport.model_validate_json(report_path.read_text())
+    assert report.overall_status == "ERROR"
+    assert report.metrics.error_count == 1
+    assert "zero files scanned" in report.findings[0].message
+    assert report.findings[0].validator_id == "arch-no-io-outside-effects"
+    assert report.provenance.validators_run == ("arch-no-io-outside-effects",)
+
+
+@pytest.mark.parametrize("full_tree", [False, True])
+def test_main_report_json_parity_on_read_error(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    full_tree: bool,
+) -> None:
+    node_dir = _make_node(
+        tmp_path, "node_clean_compute", _COMPUTE_CONTRACT, _CLEAN_HANDLER
+    )
+    unreadable = node_dir / "handler.py"
+    report_path = tmp_path / "report.json"
+    original_read_text = Path.read_text
+
+    def fake_read_text(
+        self: Path, encoding: str | None = None, errors: str | None = None
+    ) -> str:
+        if self == unreadable:
+            raise OSError("permission denied")
+        return original_read_text(self, encoding=encoding, errors=errors)
+
+    monkeypatch.setattr(Path, "read_text", fake_read_text)
+    args = ["--root", str(tmp_path)] if full_tree else [str(unreadable)]
+
+    exit_code = main([*args, "--report-json", str(report_path)])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "ERROR: Failed to read 1 " in out
+    assert "read error: permission denied" in out
+    report = ModelValidationReport.model_validate_json(report_path.read_text())
+    assert report.overall_status == "ERROR"
+    assert report.metrics.error_count == 1
+    assert "read error: permission denied" in report.findings[0].message
+    assert report.findings[0].validator_id == "arch-no-io-outside-effects"
+    assert report.provenance.validators_run == ("arch-no-io-outside-effects",)

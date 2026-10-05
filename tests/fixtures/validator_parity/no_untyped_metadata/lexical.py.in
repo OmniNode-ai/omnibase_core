@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# metadata: dict[str, Any]
+x = "metadata: dict[str, Any]"
+extra_metadata: dict[str, Any]
+metadata: Optional[dict[str, Any]
+metadata: dict[str, Any]; metadata: dict[str, object]
+def f(:

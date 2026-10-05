@@ -1,0 +1,13 @@
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+<testsuites><testsuite>
+<testcase name="ran"/>
+<testcase classname="t" name="c0"><skipped message="PostgreSQL integration tests skipped: PostgreSQL configured but not reachable"/></testcase>
+<testcase classname="t" name="c1"><skipped message="PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)"/></testcase>
+<testcase classname="t" name="c2"><skipped message="PostgreSQL not configured or not reachable"/></testcase>
+<testcase classname="t" name="c3"><skipped message="PostgreSQL not reachable"/></testcase>
+<testcase classname="t" name="c4"><skipped message="PostgreSQL DSN not available"/></testcase>
+<testcase classname="t" name="c5"><skipped message="Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)"/></testcase>
+<testcase classname="t" name="c6"><skipped message="Database not reachable: Connection refused"/></testcase>
+<testcase classname="t" name="c7"><skipped message="No database URL configured (set OMNIBASE_INFRA_DB_URL)"/></testcase>
+</testsuite></testsuites>

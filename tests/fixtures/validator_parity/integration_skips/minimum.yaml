@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+silent_skip_allowed: false
+require_executed_min: 2
+required_services:
+  postgres:
+    missing_skip_patterns:
+      - 'postgres(?:ql)?.*(?:not |missing|configured but not)'
+      - 'database.*(?:not configured|not reachable)'
+      - 'no database URL configured'
+      - 'no reachable Postgres'
+allowed_optional_skip_patterns:
+  - 'kafka|redpanda'
+  - 'live cloud delegation'
+  - 'catalog'
+  - 'optional token'

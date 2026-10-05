@@ -1,0 +1,10 @@
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+<testsuite>
+<testcase name="ran"/>
+<testcase classname="t" name="text"><skipped message="">  PostgreSQL not reachable  </skipped></testcase>
+<testcase name="message"><skipped message=" optional token ">Postgres not available</skipped></testcase>
+<testcase><skipped/></testcase>
+<testcase name="nested"><wrapper><skipped message="Postgres not available"/></wrapper></testcase>
+<testcase name="double"><skipped message="optional token"/><skipped message="Postgres not available"/></testcase>
+</testsuite>

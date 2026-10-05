@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+
+<testsuites><testsuite name="pytest" tests="2" skipped="1">
+ <testcase classname="t" name="ran" time="0.1"/>
+ <testcase classname="t" name="kafka"><skipped type="pytest.skip"
+   message="Redpanda broker not reachable at localhost:9092: connection refused"/></testcase>
+</testsuite></testsuites>

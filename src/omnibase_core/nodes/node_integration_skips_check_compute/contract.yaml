@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_integration_skips_check_compute
+node_id: node_integration_skips_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Detect missing-service silent skips, strict unclassified skips, and insufficient executed integration
+  tests from typed JUnit observations and caller configuration.
+input_model: omnibase_core.models.nodes.integration_skips_check.model_integration_skips_check_input.ModelIntegrationSkipsCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeIntegrationSkipsCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

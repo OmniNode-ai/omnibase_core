@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+---
+name: node_skip_count_ratchet_check_compute
+node_id: node_skip_count_ratchet_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Compare typed observed test records with a frozen skip-count baseline. Refuse skip growth and empty
+  inventories with the canonical validation report.
+input_model: omnibase_core.models.nodes.skip_count_ratchet_check.model_skip_count_ratchet_check_input.ModelSkipCountRatchetCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeSkipCountRatchetCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

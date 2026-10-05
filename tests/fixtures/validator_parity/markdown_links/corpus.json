@@ -1,0 +1,70 @@
+{
+  "pass": {
+    "files": {
+      "README.md": "# Foo\n## Foo-1\n## Foo\n## Using `code`\n## 日本語\n<a id=\"with space\">\n[one](#foo) [two](#foo-2) [code](#using-code) [unicode](#日本語) [encoded](#with%20space)\n[target](docs/target#target) [root](/docs/target.md#target)\n![image](image.png) [directory](docs/) [nonmd](image.png#anything)\n[Ref][OK] [OK][]\n[ok]: docs/target.md\n```md\n[skip](missing.md)\n```\n  ```\n[skip](missing.md)\n  ```\n`[skip](missing.md)` `[dict][key]`\n[web](https://example.com) [protocol](//example.com) [mail](mailto:a@b) [tel](tel:123) [ftp](ftp://example.com) [js](javascript:alert) [data](data:text/plain) [file](file:///tmp/example)\n[ignore](ignored.md)\n",
+      "docs/target.md": "# Target\n",
+      "image.png": "image",
+      "excluded.md": "[broken](absent.md)\n",
+      "archived/old.md": "[broken](absent.md)\n"
+    },
+    "config": {
+      "ignorePatterns": [
+        {
+          "pattern": "^ignored\\.md$"
+        }
+      ],
+      "excludeFiles": [
+        "excluded.md",
+        "archived/**"
+      ]
+    }
+  },
+  "fail": {
+    "files": {
+      "README.md": "# Foo\n[broken](absent.md)\n![image](missing.png)\n[same](#absent)\n[cross](target.md#absent)\n[missing][ref]\n[collapsed][]\n[outside](../outside.md)\n[query](target.md?query)\n[encoded path](space%20name.md)\n[double](#foo%2520bar)\n[empty](empty.md#missing)\n[implicit](target#absent)\n~~~\n[fenced](absent.md)\n~~~\n",
+      "target.md": "# Target\n",
+      "empty.md": "",
+      "space name.md": "# Space\n"
+    },
+    "config": {
+      "excludeFiles": []
+    }
+  },
+  "edge": {
+    "files": {
+      "README.md": "# A  B\n# A - B\n# my_heading\n# Что нового\n# Foo\n# Foo\n# Foo-1\n<a NAME=\"Case\">\n[a](#a--b) [b](#a---b) [under](#my_heading) [cyrillic](#что-нового) [reverse](#foo-1-1) [html](#Case)\n[case](#case)\n[title](target.md \"title\") [empty anchor](target.md#)\n[CodeRef][ref]\n```\n[ref]: target.md\n# Code Heading\n```\n[code heading](#code-heading)\n[ignored][missing]\n",
+      "target.md": "# Target\n"
+    },
+    "config": {
+      "ignorePatterns": [
+        {
+          "pattern": "^__ONEX_MISSING_REF__:missing$"
+        }
+      ],
+      "excludeFiles": []
+    }
+  },
+  "decoded": {
+    "files": {
+      "README.md": "[yes](docs/target.md#target)\n[bad](absent.md)\n"
+    },
+    "binary_sources": {
+      "docs/target.md": "2320546172676574ff0a5b7965735d2823746172676574290a5b6261645d28236d697373696e67290a"
+    },
+    "config": {
+      "excludeFiles": []
+    }
+  },
+  "headings": {
+    "files": {
+      "README.md": "# ![alt](image.png) Title\n## [Link Text](target.md)\n### -Leading\n#### Trailing-\n##### Hello World\n###### Hello, World!\n## Hello-World\n## 😀 Emoji Test 🚀\n## مرحبا بالعالم\n<a id=\"special&chars\">\n[image](#title) [link](#link-text) [leading](#leading) [trailing](#trailing)\n[one](#hello-world) [two](#hello-world-1) [three](#hello-world-2)\n[emoji](#emoji-test) [arabic](#مرحبا-بالعالم) [encoded](#special%26chars)\n[unicode path](日本語.md#日本語) [special path](file+name.md#target)\n[percent](#special%2526chars)\n",
+      "image.png": "image",
+      "target.md": "# Target\n",
+      "日本語.md": "# 日本語\n",
+      "file+name.md": "# Target\n"
+    },
+    "config": {
+      "excludeFiles": []
+    }
+  }
+}

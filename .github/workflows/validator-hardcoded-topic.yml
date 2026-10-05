@@ -70,7 +70,7 @@ jobs:
 
       - name: Run validator unit tests
         run: |
-          uv run pytest tests/unit/validation/hardcoded_topic/ -v
+          uv run pytest tests/unit/nodes/node_hardcoded_topic_check_compute/ -v
 
       # Self-scan omnibase_core src/ for hardcoded onex.* topic literals. Lands
       # REPORT-ONLY (--report-only) for the OMN-13294 burn-down: the real shadow
@@ -85,5 +85,5 @@ jobs:
       # --report-only to flip the full-src scan to blocking once findings reach zero.
       - name: Self-scan omnibase_core src/ (report mode — baseline burn-down pending)
         run: |
-          uv run python -m omnibase_core.validation.hardcoded_topic.runtime_hardcoded_topic \
+          uv run python -m omnibase_core.nodes.node_hardcoded_topic_check_compute.runtime_hardcoded_topic_check \
             --report-only src/omnibase_core/

@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# {exemption}
+metadata: dict[str, Any] = Field(
+    default_factory=dict, # {exemption} reason
+)
+metadata: dict[str, Any]
+# {exemption}

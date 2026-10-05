@@ -18,6 +18,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+
 # ---------------------------------------------------------------------------
 # Status precedence matrix (OMN-2543 requirement)
 # "Status precedence must be explicitly encoded as a lookup (not implicit)"
@@ -410,6 +413,38 @@ class ModelValidationReport(BaseModel):
             findings=findings,
             metrics=metrics,
             provenance=provenance,
+        )
+
+    @classmethod
+    def from_runtime_errors(
+        cls,
+        validator_id: str,
+        messages: tuple[str, ...],
+    ) -> ModelValidationReport:
+        """Build the ERROR report for a check that could not scan its input.
+
+        A check runtime that gathered zero files on a full-tree run, or could
+        not read a file it was asked to check, must not report PASS (OMN-20565,
+        plan derivation (n)). One ERROR finding per message, ``default`` profile.
+
+        Raises:
+            ModelOnexError: ``messages`` is empty (an ERROR report needs a cause).
+        """
+        if not messages:
+            raise ModelOnexError(
+                message="from_runtime_errors requires at least one message",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        findings = tuple(
+            ModelValidationFindingEmbed(
+                validator_id=validator_id, severity="ERROR", message=message
+            )
+            for message in messages
+        )
+        return cls.from_findings(
+            findings=findings,
+            request=ModelValidationRequestRef(profile="default"),
+            validators_run=(validator_id,),
         )
 
 

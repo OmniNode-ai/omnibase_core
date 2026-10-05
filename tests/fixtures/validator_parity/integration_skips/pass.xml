@@ -1,0 +1,7 @@
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+<testsuite>
+<testcase name="passed"/>
+<testcase name="failed"><failure/></testcase>
+<testcase name="errored"><error/></testcase>
+</testsuite>

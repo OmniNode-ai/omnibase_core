@@ -1,0 +1,20 @@
+{
+  "config_00": "overrides: [{name: sycophancy, enabled: false}]",
+  "config_01": "overrides: [{name: rest_docstring, severity: WARNING}]",
+  "config_02": "overrides: [{name: unknown}]",
+  "config_03": "invalid: true",
+  "config_04": "overrides: [",
+  "config_05": "overrides: [{name: sycophancy, enabled: false}, {name: rest_docstring, enabled: false}, {name: boilerplate_docstring, enabled: false}, {name: md_separator, enabled: false}]",
+  "config_06": "custom_rules: [{name: custom, pattern_type: regex_line, pattern: flagme, file_globs: ['*.py', '*.md'], severity: INFO, description: custom}]",
+  "config_07": "custom_rules: [{name: custom_doc, pattern_type: regex_ast_docstring, pattern: flagme, severity: ERROR, description: custom}]",
+  "config_08": "custom_rules: [{name: invalid_regex, pattern_type: regex_line, pattern: '[', severity: ERROR, description: custom}]",
+  "config_09": "custom_rules: [{name: invalid_doc_regex, pattern_type: regex_ast_docstring, pattern: '[', severity: ERROR, description: custom}]",
+  "config_10": "custom_rules: [{name: custom_doc, pattern_type: regex_ast_docstring, pattern: flagme, severity: INFO, description: custom}]",
+  "config_11": "custom_rules: [{name: custom, pattern_type: regex_line, pattern: flagme, file_globs: [], severity: WARNING, description: custom}]",
+  "config_12": "custom_rules: [{name: custom, pattern_type: regex_line, pattern: flagme, file_globs: ['*.md'], severity: WARNING, description: custom}]",
+  "config_13": "custom_rules: [{name: custom, pattern_type: regex_line, pattern: flagme, file_globs: ['*.py'], severity: WARNING, description: custom}]",
+  "config_14": "custom_rules: [{name: custom, pattern_type: regex_line, pattern: flagme, file_globs: ['*.txt'], severity: WARNING, description: custom}]",
+  "config_15": "custom_rules: [{name: custom, pattern_type: regex_line, pattern: flagme, enabled: false, severity: ERROR, description: custom}]",
+  "config_16": "custom_rules: [{name: custom, pattern_type: grep_code, pattern: flagme, severity: ERROR, description: custom}]",
+  "config_17": "custom_rules: [{name: custom, pattern_type: ast_check, pattern: flagme, severity: ERROR, description: custom}]"
+}

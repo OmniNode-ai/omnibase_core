@@ -1,0 +1,688 @@
+{
+  "cases": [
+    {
+      "name": "clean",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "stray",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/widget/tests/test_widget.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "missing_declared_root",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\", \"scripts/gone/tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "collocated_mapped",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\", \"scripts/widget/tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {'scripts/widget/': 'scripts/widget/tests/'}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/', 'scripts/widget/tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/widget/tests/test_widget.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "collocated_unmapped",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\", \"scripts/widget/tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/widget/tests/test_widget.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "mapped_undeclared",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {'scripts/widget/': 'scripts/widget/tests/'}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/', 'scripts/widget/tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "product_and_empty_tests",
+      "directories": [
+        "docs/tests"
+      ],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/ci/test_selection_loader.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "nested_stray",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/widget/tests/unit/test_widget.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "prefix_boundary",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "tests_extra/tests/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "trailing_slash",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests///\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "all_options",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest -c c -k k -m \"not slow\" -n 2 -o x -p y --deselect d --dist loadgroup --group 1 --ignore tests/ignored --junitxml=j.xml --maxfail 1 --rootdir . --splits ${{ needs.detect.outputs.n }} --timeout 60 --timeout-method signal --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "expressions_and_continuations",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest \\\n            -m \"not slow and not chaos\" \\\n            --splits ${{ needs.detect.outputs.n }} \\\n            --junitxml=junit-${{ matrix.split }}.xml\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "positional_tests",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest tests/ --ignore=tests/integration/docker -n 2\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "positional_compat",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest src/omnibase_compat/tests/ --splits 4\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "no_pytest_token",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          echo collecting\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "shell_suffix",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short && echo done\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "multiple_pytest_commands",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest\n          uv run pytest tests/\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "empty_testpaths",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = []\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "missing_testpaths",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "malformed_toml",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "missing_workflow",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "missing_pyproject",
+      "directories": [],
+      "files": {
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "renamed_step",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (everything)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "malformed_ci",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\njobs: [\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "nonmapping_ci",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[]\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "unclosed_shell_quote",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest \"tests/\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "missing_selector",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "missing_selector_constant",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = \"tests/\"\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "selector_syntax_error",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef broken(:\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "ignored_git",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        ".git/vendor/tests/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "ignored___pycache__",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "__pycache__/vendor/tests/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "ignored_venv",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        ".venv/vendor/tests/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "ignored_node_modules",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "node_modules/vendor/tests/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "ignored_proof-dependencies",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        ".proof-dependencies/vendor/tests/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "ignored_mypy_cache",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        ".mypy_cache/vendor/tests/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "standalone_missing_project",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n"
+      }
+    },
+    {
+      "name": "standalone_missing_workflow",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n"
+      }
+    },
+    {
+      "name": "standalone_unrelated",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: pull_request\njobs: {}\n"
+      }
+    },
+    {
+      "name": "standalone_push_only",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: push\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      }
+    },
+    {
+      "name": "standalone_no_trigger",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      }
+    },
+    {
+      "name": "standalone_scalar_pr",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: pull_request\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      }
+    },
+    {
+      "name": "standalone_target_pr",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: pull_request_target\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      }
+    },
+    {
+      "name": "standalone_list_pr",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      }
+    },
+    {
+      "name": "standalone_mapping_pr",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n\"on\":\n  pull_request:\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      }
+    },
+    {
+      "name": "standalone_unreachable_call",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: workflow_call\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      }
+    },
+    {
+      "name": "standalone_yaml_caller",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: workflow_call\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n",
+        ".github/workflows/caller.yaml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: pull_request\njobs:\n  call:\n    uses: ./.github/workflows/deploy-agent-tests.yml\n"
+      }
+    },
+    {
+      "name": "standalone_cycle",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: workflow_call\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n  call:\n    uses: ./.github/workflows/caller.yaml\n",
+        ".github/workflows/caller.yaml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: workflow_call\njobs:\n  call:\n    uses: ./.github/workflows/deploy-agent-tests.yml\n"
+      }
+    },
+    {
+      "name": "standalone_malformed",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\njobs: [ # scripts/deploy-agent\n"
+      }
+    },
+    {
+      "name": "standalone_nonmapping",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[scripts/deploy-agent]\n"
+      }
+    },
+    {
+      "name": "standalone_call_chain",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: workflow_call\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n",
+        ".github/workflows/caller.yaml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: workflow_call\njobs:\n  call:\n    uses: ./.github/workflows/deploy-agent-tests.yml\n",
+        ".github/workflows/entry.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: pull_request\njobs:\n  call:\n    uses: ./.github/workflows/caller.yaml\n"
+      }
+    },
+    {
+      "name": "selector_full_suite_drift",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/unit/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "selector_tests_prefix_missing",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "nested_tests_roots",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/widget/tests/unit/nested/tests/test_nested.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "collected_parent_without_tests_name",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\", \"scripts/widget\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {'scripts/widget/': 'scripts/widget/'}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/', 'scripts/widget/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/widget/tests/test_widget.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      }
+    },
+    {
+      "name": "unrelated_project_config_encoding",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n"
+      },
+      "binary_files": {
+        "scripts/deploy-agent/pyproject.toml": "ff"
+      }
+    },
+    {
+      "name": "standalone_project_config_encoding",
+      "directories": [],
+      "files": {
+        "pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\n",
+        ".github/workflows/ci.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: [push, pull_request]\njobs:\n  test:\n    steps:\n      - name: Run pytest (full suite)\n        run: |\n          uv run pytest --tb=short\n",
+        "scripts/ci/detect_test_paths.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTESTS_PREFIX = 'tests/'\nCOLLOCATED_TEST_ROOTS = {}\nfrom types import SimpleNamespace\ndef _full_suite(reason):\n    return SimpleNamespace(selected_paths=['tests/'])\n",
+        "scripts/ci/test_selection_models.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nfrom enum import Enum\nclass EnumFullSuiteReason(Enum):\n    MAIN_BRANCH = \"main_branch\"\n",
+        "tests/unit/test_sample.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\ndef test_sample():\n    pass\n",
+        "scripts/deploy-agent/tests/unit/test_agent.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\npass\n",
+        "scripts/deploy-agent/pyproject.toml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n[project]\nname = \"agent\"\n",
+        ".github/workflows/deploy-agent-tests.yml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\non: pull_request\njobs:\n  agent:\n    steps:\n      - run: pytest scripts/deploy-agent/tests\n"
+      },
+      "binary_files": {
+        "scripts/deploy-agent/pyproject.toml": "ff"
+      }
+    }
+  ]
+}

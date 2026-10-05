@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+suites:
+  fixture/count:
+    baseline_collected: 100
+    job: j
+    max_skips: 2
+    mode: count
+    node_ids: &id001
+      - pkg.a::test_one
+      - pkg.b::test_two
+    provenance: &id002
+      measured_at: '2026-09-18'
+      measurement_command: selftest
+      source_runs:
+        - selftest
+    repo: r
+  fixture/nodeids:
+    baseline_collected: 100
+    job: j
+    max_skips: 2
+    mode: 'read error:'
+    node_ids: *id001
+    provenance: *id002
+    repo: r
+version: 1

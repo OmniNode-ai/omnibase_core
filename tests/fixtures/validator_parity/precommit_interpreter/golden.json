@@ -1,0 +1,1881 @@
+{
+  "provenance": [
+    {
+      "repo": "omnibase_infra",
+      "file": "scripts/validation/validate_precommit_interpreter.py",
+      "git_sha": "ea5585e99f0b871fb2d3684a42c0bafb6436ce78",
+      "command": "UV_CACHE_DIR=/tmp/omn20565-precommit_interpreter/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-precommit_interpreter/generate.py",
+      "invocation": "importlib loads $OMNI_HOME/omnibase_infra/scripts/validation/validate_precommit_interpreter.py; REPO_ROOT and CONFIG_PATH are rebound to each scratch fixture or core tree before calling the unchanged main()"
+    },
+    {
+      "repo": "omnimarket",
+      "file": "scripts/validation/validate_precommit_interpreter.py",
+      "git_sha": "43700e20870637a2b618fba3d9f5e55e9bfc6497",
+      "command": "UV_CACHE_DIR=/tmp/omn20565-precommit_interpreter/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-precommit_interpreter/generate.py",
+      "invocation": "importlib loads $OMNI_HOME/omnimarket/scripts/validation/validate_precommit_interpreter.py; REPO_ROOT and CONFIG_PATH are rebound to each scratch fixture or core tree before calling the unchanged main()"
+    }
+  ],
+  "cases": [
+    {
+      "name": "test_bare_interpreter_entry_is_rejected-0",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/check_one_occ_producer.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/check_one_occ_producer.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/check_one_occ_producer.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/check_one_occ_producer.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bare_interpreter_entry_is_rejected-1",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 scripts/ci/check_one_occ_producer.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 scripts/ci/check_one_occ_producer.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 scripts/ci/check_one_occ_producer.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 scripts/ci/check_one_occ_producer.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bare_interpreter_entry_is_rejected-2",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env PYTHONPATH=src python -m omnimarket.validators.x')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env PYTHONPATH=src python -m omnimarket.validators.x')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env PYTHONPATH=src python -m omnimarket.validators.x')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env PYTHONPATH=src python -m omnimarket.validators.x')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bare_interpreter_entry_is_rejected-3",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='exec python scripts/ci/x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='exec python scripts/ci/x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='exec python scripts/ci/x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='exec python scripts/ci/x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bare_interpreter_entry_is_rejected-4",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-0",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-1",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-2",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-3",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-4",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-5",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-6",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-7",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_interpreter_entry_is_accepted-8",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_suppression_marker_requires_a_reason-0",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/x.py  \u0023 precommit-interp-ok')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/x.py  \u0023 precommit-interp-ok')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_suppression_marker_requires_a_reason-1",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/x.py  \u0023 precommit-interp-ok:')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python scripts/ci/x.py  \u0023 precommit-interp-ok:')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_bypass_shapes_are_rejected-0",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"uv run --with pyyaml bash -c 'python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"uv run --with pyyaml bash -c 'python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"uv run --with pyyaml bash -c 'python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"uv run --with pyyaml bash -c 'python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bypass_shapes_are_rejected-1",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'true && python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'true && python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'true && python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'true && python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bypass_shapes_are_rejected-2",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'echo hi; python3 scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'echo hi; python3 scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'echo hi; python3 scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'echo hi; python3 scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bypass_shapes_are_rejected-3",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'uv run mypy src || python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'uv run mypy src || python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'uv run mypy src || python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'uv run mypy src || python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_bypass_shapes_are_rejected-4",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'FOO=1 python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'FOO=1 python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'FOO=1 python scripts/ci/x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"bash -c 'FOO=1 python scripts/ci/x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_uv_run_variants_stay_accepted-0",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_uv_run_variants_stay_accepted-1",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_uv_run_variants_stay_accepted-2",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_uv_run_variants_stay_accepted-3",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_shell_command_positions_are_scanned-0",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=1 python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=1 python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=1 python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=1 python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_shell_command_positions_are_scanned-1",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('env FOO=1 python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('env FOO=1 python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('env FOO=1 python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('env FOO=1 python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_shell_command_positions_are_scanned-2",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"if python -c 'import yaml'; then :; fi\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"if python -c 'import yaml'; then :; fi\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"if python -c 'import yaml'; then :; fi\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"if python -c 'import yaml'; then :; fi\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_shell_command_positions_are_scanned-3",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('while python check.py; do :; done')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('while python check.py; do :; done')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('while python check.py; do :; done')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('while python check.py; do :; done')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_shell_command_positions_are_scanned-4",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('uv run true && python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('uv run true && python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('uv run true && python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('uv run true && python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_shell_command_positions_are_scanned-5",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"out=$(python -c 'print(1)')\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"out=$(python -c 'print(1)')\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"out=$(python -c 'print(1)')\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` (\"out=$(python -c 'print(1)')\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_shell_command_positions_are_scanned-6",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('exec python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('exec python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('exec python script.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('exec python script.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "test_resolvable_shell_lines_stay_accepted-0",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_shell_lines_stay_accepted-1",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_shell_lines_stay_accepted-2",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_shell_lines_stay_accepted-3",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "test_resolvable_shell_lines_stay_accepted-4",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "entry-reason-suppressed",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "entry-marker-in-argument",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py precommit-interp-ok')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py precommit-interp-ok')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "entry-marker-empty-reason",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py \u0023 precommit-interp-ok:   ')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py \u0023 precommit-interp-ok:   ')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "script-reason-suppressed",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "script-marker-in-argument",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py precommit-interp-ok')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py precommit-interp-ok')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "script-marker-empty-reason",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 precommit-interp-ok:')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 precommit-interp-ok:')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "script-bare-marker",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 precommit-interp-ok')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 precommit-interp-ok')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 1 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "shell-script-mixed",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 6,
+            "message": "hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python scripts/ci/x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python scripts/ci/x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 6,
+            "message": "hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python scripts/ci/x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python scripts/ci/x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "unbalanced-entry",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry is not shell-parsable: \"python 'x.py\""
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry is not shell-parsable: \"python 'x.py\"\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry is not shell-parsable: \"python 'x.py\""
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry is not shell-parsable: \"python 'x.py\"\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "unbalanced-inner-body",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "sh-body",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"sh -c 'python x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"sh -c 'python x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"sh -c 'python x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry=\"sh -c 'python x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "zsh-body",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"zsh -c 'python3 x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"zsh -c 'python3 x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"zsh -c 'python3 x.py'\")"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry=\"zsh -c 'python3 x.py'\")\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "all-separators",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python a.py; python b.py && python c.py || python d.py | python e.py & ( python f.py ) ;; python g.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "all-wrappers",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env exec command nice time builtin FOO=1 python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env exec command nice time builtin FOO=1 python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 7,
+            "message": "some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env exec command nice time builtin FOO=1 python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - some-hook: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='env exec command nice time builtin FOO=1 python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "wrapper-only",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "empty-segments",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "quoted-argument",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "uv-options",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "uv-only",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "missing-script",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 11 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "languages-and-unnamed",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 6,
+            "message": "<unnamed>: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 8,
+            "message": "script: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - <unnamed>: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n  - script: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 6,
+            "message": "<unnamed>: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          },
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 8,
+            "message": "script: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - <unnamed>: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n  - script: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "deduplicated-scripts",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          },
+          {
+            "path": "hook.bash",
+            "line": 3,
+            "message": "hook.bash:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python y.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n  - hook.bash:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python y.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          },
+          {
+            "path": "hook.bash",
+            "line": 3,
+            "message": "hook.bash:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python y.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n  - hook.bash:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python y.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "entry-suppression-still-scans-script",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "floor-nine",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 9 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 9 local hooks -- refusing to report a vacuous pass\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 9 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 9 local hooks -- refusing to report a vacuous pass\n"
+      }
+    },
+    {
+      "name": "floor-hides-violations",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 1 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 1 local hooks -- refusing to report a vacuous pass\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 1 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 1 local hooks -- refusing to report a vacuous pass\n"
+      }
+    },
+    {
+      "name": "floor-empty",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      }
+    },
+    {
+      "name": "null-repos",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      }
+    },
+    {
+      "name": "null-hooks",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      }
+    },
+    {
+      "name": "script-regex-edges",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('then python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('else python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 5,
+            "message": "hook.sh:5: invokes bare `python` -- use `uv run python` or a guarded `python3` ('elif python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 6,
+            "message": "hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('do python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 7,
+            "message": "hook.sh:7: invokes bare `python` -- use `uv run python` or a guarded `python3` ('until python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 8,
+            "message": "hook.sh:8: invokes bare `python` -- use `uv run python` or a guarded `python3` ('nice python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 9,
+            "message": "hook.sh:9: invokes bare `python` -- use `uv run python` or a guarded `python3` ('time python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 10,
+            "message": "hook.sh:10: invokes bare `python` -- use `uv run python` or a guarded `python3` ('xargs python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 11,
+            "message": "hook.sh:11: invokes bare `python` -- use `uv run python` or a guarded `python3` ('echo `python x.py`')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 12,
+            "message": "hook.sh:12: invokes bare `python` -- use `uv run python` or a guarded `python3` ('! python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 16,
+            "message": "hook.sh:16: invokes bare `python` -- use `uv run python` or a guarded `python3` ('PY=1 python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 17,
+            "message": "hook.sh:17: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=\"a b\" python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 18,
+            "message": "hook.sh:18: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 comment')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('then python x.py')\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('else python x.py')\n  - hook.sh:5: invokes bare `python` -- use `uv run python` or a guarded `python3` ('elif python x.py')\n  - hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('do python x.py')\n  - hook.sh:7: invokes bare `python` -- use `uv run python` or a guarded `python3` ('until python x.py')\n  - hook.sh:8: invokes bare `python` -- use `uv run python` or a guarded `python3` ('nice python x.py')\n  - hook.sh:9: invokes bare `python` -- use `uv run python` or a guarded `python3` ('time python x.py')\n  - hook.sh:10: invokes bare `python` -- use `uv run python` or a guarded `python3` ('xargs python x.py')\n  - hook.sh:11: invokes bare `python` -- use `uv run python` or a guarded `python3` ('echo `python x.py`')\n  - hook.sh:12: invokes bare `python` -- use `uv run python` or a guarded `python3` ('! python x.py')\n  - hook.sh:16: invokes bare `python` -- use `uv run python` or a guarded `python3` ('PY=1 python x.py')\n  - hook.sh:17: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=\"a b\" python x.py')\n  - hook.sh:18: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 comment')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('then python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 4,
+            "message": "hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('else python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 5,
+            "message": "hook.sh:5: invokes bare `python` -- use `uv run python` or a guarded `python3` ('elif python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 6,
+            "message": "hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('do python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 7,
+            "message": "hook.sh:7: invokes bare `python` -- use `uv run python` or a guarded `python3` ('until python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 8,
+            "message": "hook.sh:8: invokes bare `python` -- use `uv run python` or a guarded `python3` ('nice python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 9,
+            "message": "hook.sh:9: invokes bare `python` -- use `uv run python` or a guarded `python3` ('time python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 10,
+            "message": "hook.sh:10: invokes bare `python` -- use `uv run python` or a guarded `python3` ('xargs python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 11,
+            "message": "hook.sh:11: invokes bare `python` -- use `uv run python` or a guarded `python3` ('echo `python x.py`')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 12,
+            "message": "hook.sh:12: invokes bare `python` -- use `uv run python` or a guarded `python3` ('! python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 16,
+            "message": "hook.sh:16: invokes bare `python` -- use `uv run python` or a guarded `python3` ('PY=1 python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 17,
+            "message": "hook.sh:17: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=\"a b\" python x.py')"
+          },
+          {
+            "path": "hook.sh",
+            "line": 18,
+            "message": "hook.sh:18: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 comment')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('then python x.py')\n  - hook.sh:4: invokes bare `python` -- use `uv run python` or a guarded `python3` ('else python x.py')\n  - hook.sh:5: invokes bare `python` -- use `uv run python` or a guarded `python3` ('elif python x.py')\n  - hook.sh:6: invokes bare `python` -- use `uv run python` or a guarded `python3` ('do python x.py')\n  - hook.sh:7: invokes bare `python` -- use `uv run python` or a guarded `python3` ('until python x.py')\n  - hook.sh:8: invokes bare `python` -- use `uv run python` or a guarded `python3` ('nice python x.py')\n  - hook.sh:9: invokes bare `python` -- use `uv run python` or a guarded `python3` ('time python x.py')\n  - hook.sh:10: invokes bare `python` -- use `uv run python` or a guarded `python3` ('xargs python x.py')\n  - hook.sh:11: invokes bare `python` -- use `uv run python` or a guarded `python3` ('echo `python x.py`')\n  - hook.sh:12: invokes bare `python` -- use `uv run python` or a guarded `python3` ('! python x.py')\n  - hook.sh:16: invokes bare `python` -- use `uv run python` or a guarded `python3` ('PY=1 python x.py')\n  - hook.sh:17: invokes bare `python` -- use `uv run python` or a guarded `python3` ('FOO=\"a b\" python x.py')\n  - hook.sh:18: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py \u0023 comment')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "floor-ten",
+      "omnibase_infra": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 10 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      },
+      "omnimarket": {
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: 10 local pre-commit hooks and 0 referenced shell scripts use a resolvable interpreter\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "false-repos",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      }
+    },
+    {
+      "name": "false-hooks",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 1,
+            "message": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass"
+          }
+        ],
+        "stdout": "",
+        "stderr": "ERROR: interpreter gate scanned only 0 local hooks -- refusing to report a vacuous pass\n"
+      }
+    },
+    {
+      "name": "absolute-shell-reference",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "hook.sh",
+            "line": 3,
+            "message": "hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "parent-shell-reference",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/../hook.sh",
+            "line": 3,
+            "message": "scripts/../hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - scripts/../hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/../hook.sh",
+            "line": 3,
+            "message": "scripts/../hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - scripts/../hook.sh:3: invokes bare `python` -- use `uv run python` or a guarded `python3` ('python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "yaml-hook-merge",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 5,
+            "message": "merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 5,
+            "message": "merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "yaml-hook-alias",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 5,
+            "message": "aliased: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - aliased: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 5,
+            "message": "aliased: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - aliased: entry invokes bare `python3` -- use `uv run python` (macOS has no bare `python`; entry='python3 x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "yaml-hook-merge-sequence",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 5,
+            "message": "merged-first: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - merged-first: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 5,
+            "message": "merged-first: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - merged-first: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    },
+    {
+      "name": "yaml-repo-merge",
+      "omnibase_infra": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 6,
+            "message": "repo-merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - repo-merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      },
+      "omnimarket": {
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".pre-commit-config.yaml",
+            "line": 6,
+            "message": "repo-merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')"
+          }
+        ],
+        "stdout": "",
+        "stderr": "Bare-interpreter pre-commit hooks found:\n  - repo-merged: entry invokes bare `python` -- use `uv run python` (macOS has no bare `python`; entry='python x.py')\n\nFix: replace the bare interpreter with the repo's sanctioned form, `uv run python <script>`.\nSuppress a reviewed false positive with `\u0023 precommit-interp-ok: <reason>`.\n"
+      }
+    }
+  ],
+  "core_tree": {
+    "omnibase_infra": {
+      "exit_code": 0,
+      "findings": [],
+      "stdout": "OK: 125 local pre-commit hooks and 7 referenced shell scripts use a resolvable interpreter\n",
+      "stderr": ""
+    },
+    "omnimarket": {
+      "exit_code": 0,
+      "findings": [],
+      "stdout": "OK: 125 local pre-commit hooks and 7 referenced shell scripts use a resolvable interpreter\n",
+      "stderr": ""
+    }
+  }
+}

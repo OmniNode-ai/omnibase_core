@@ -1,0 +1,117 @@
+{
+  "environ_get_localhost": [
+    {
+      "line": 2,
+      "text": "x = os.environ.get(\"H\", \"localhost\")"
+    }
+  ],
+  "getenv_http_localhost": [
+    {
+      "line": 1,
+      "text": "x = os.getenv(\"U\", \"http://localhost:8080\")"
+    }
+  ],
+  "getenv_redis_localhost": [
+    {
+      "line": 1,
+      "text": "x = os.getenv(\"U\", \"redis://localhost:6379\")"
+    }
+  ],
+  "getenv_priv_ip": [
+    {
+      "line": 1,
+      "text": "x = os.getenv(\"U\", \"{LAN_HOST}\")"
+    }
+  ],
+  "field_default_localhost": [
+    {
+      "line": 2,
+      "text": "h: str = Field(default=\"localhost:9092\")"
+    }
+  ],
+  "param_default_localhost": [
+    {
+      "line": 1,
+      "text": "def f(h: str = \"http://localhost:8080\"):"
+    }
+  ],
+  "param_default_priv_ip": [
+    {
+      "line": 1,
+      "text": "def f(h: str = \"192.168.1.5\"):"
+    }
+  ],
+  "bootstrap_localhost": [
+    {
+      "line": 1,
+      "text": "p = Producer(bootstrap_servers=\"localhost:9092\")"
+    }
+  ],
+  "bootstrap_priv_ip": [
+    {
+      "line": 1,
+      "text": "p = Producer(bootstrap_servers=\"192.168.1.5:9092\")"
+    }
+  ],
+  "bind_loopback_default": [
+    {
+      "line": 1,
+      "text": "def f(host: str = \"127.0.0.1\"):"
+    }
+  ],
+  "marker_fallback_ok": [],
+  "marker_cloud_bus_ok": [],
+  "marker_omn_7227": [],
+  "pure_comment": [],
+  "docstring_block": [],
+  "docstring_block_single_quotes": [],
+  "clean_fail_fast": [],
+  "clean_non_local_default": [],
+  "closing_line_with_code": [
+    {
+      "line": 3,
+      "text": "\"\"\" ; x = os.getenv(\"H\", \"localhost\")"
+    }
+  ],
+  "closing_line_after_docstring": [
+    {
+      "line": 4,
+      "text": "x = os.getenv(\"H\", \"localhost\")"
+    }
+  ],
+  "two_delims_with_code": [
+    {
+      "line": 1,
+      "text": "y = \"\"\"a\"\"\" + os.getenv(\"H\", \"localhost\")"
+    }
+  ],
+  "oneline_docstring_mentions_pattern": [
+    {
+      "line": 1,
+      "text": "\"\"\"os.environ.get(\"H\", \"localhost\")\"\"\""
+    }
+  ],
+  "docstring_last_line_mentions_pattern": [
+    {
+      "line": 3,
+      "text": "os.getenv(\"H\", \"localhost\")\"\"\""
+    }
+  ],
+  "assign_open_multiline_string": [],
+  "midline_open_string": [],
+  "shell_default_localhost": [
+    {
+      "line": 1,
+      "text": "URL=${URL:-http://localhost:8080}"
+    }
+  ],
+  "shell_default_priv_ip": [
+    {
+      "line": 1,
+      "text": "URL=${URL:-192.168.1.5}"
+    }
+  ],
+  "shell_marker": [],
+  "shell_comment": [],
+  "shell_clean": []
+}

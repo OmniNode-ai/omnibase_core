@@ -1,0 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+<!DOCTYPE testsuite [<!ENTITY missing "Postgres not reachable">]><testsuite>
+<testcase name="ran"/>
+<testcase name="entity"><skipped>&missing;</skipped></testcase>
+</testsuite>

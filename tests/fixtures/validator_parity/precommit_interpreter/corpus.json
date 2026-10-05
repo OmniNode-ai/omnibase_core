@@ -1,0 +1,424 @@
+[
+  {
+    "name": "test_bare_interpreter_entry_is_rejected-0",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: python scripts/ci/check_one_occ_producer.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bare_interpreter_entry_is_rejected-1",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: python3 scripts/ci/check_one_occ_producer.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bare_interpreter_entry_is_rejected-2",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: env PYTHONPATH=src python -m omnimarket.validators.x\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bare_interpreter_entry_is_rejected-3",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: exec python scripts/ci/x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bare_interpreter_entry_is_rejected-4",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c 'python scripts/ci/x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-0",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run python scripts/ci/x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-1",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run --frozen python scripts/check_dep_provenance.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-2",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run --no-project --with pyyaml python scripts/ci/x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-3",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: env PYTHONPATH=src uv run python -m omnimarket.validators.x\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-4",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c 'uv run mypy src/omnimarket'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-5",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: /opt/homebrew/bin/python3 scripts/ci/x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-6",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: '\"$PYTHON\" scripts/ci/x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-7",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run pytest tests/ci/test_x.py -q\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_resolvable_interpreter_entry_is_accepted-8",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: .pre-commit-hooks/reject-deploy-gate-skip-token.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_suppression_marker_requires_a_reason-0",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: 'python scripts/ci/x.py  \u0023 precommit-interp-ok'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_suppression_marker_requires_a_reason-1",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: 'python scripts/ci/x.py  \u0023 precommit-interp-ok:'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bypass_shapes_are_rejected-0",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run --with pyyaml bash -c 'python scripts/ci/x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bypass_shapes_are_rejected-1",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c 'true && python scripts/ci/x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bypass_shapes_are_rejected-2",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c 'echo hi; python3 scripts/ci/x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bypass_shapes_are_rejected-3",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c 'uv run mypy src || python scripts/ci/x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_bypass_shapes_are_rejected-4",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c 'FOO=1 python scripts/ci/x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_uv_run_variants_stay_accepted-0",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run --with=pyyaml python scripts/ci/x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_uv_run_variants_stay_accepted-1",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run --with pyyaml python3 scripts/ci/x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_uv_run_variants_stay_accepted-2",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run --python 3.12 python scripts/ci/x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_uv_run_variants_stay_accepted-3",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c 'uv run python a.py && uv run python b.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "test_shell_command_positions_are_scanned-0",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nFOO=1 python script.py\n"
+    }
+  },
+  {
+    "name": "test_shell_command_positions_are_scanned-1",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nenv FOO=1 python script.py\n"
+    }
+  },
+  {
+    "name": "test_shell_command_positions_are_scanned-2",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nif python -c 'import yaml'; then :; fi\n"
+    }
+  },
+  {
+    "name": "test_shell_command_positions_are_scanned-3",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nwhile python check.py; do :; done\n"
+    }
+  },
+  {
+    "name": "test_shell_command_positions_are_scanned-4",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nuv run true && python script.py\n"
+    }
+  },
+  {
+    "name": "test_shell_command_positions_are_scanned-5",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nout=$(python -c 'print(1)')\n"
+    }
+  },
+  {
+    "name": "test_shell_command_positions_are_scanned-6",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nexec python script.py\n"
+    }
+  },
+  {
+    "name": "test_resolvable_shell_lines_stay_accepted-0",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nuv run python script.py\n"
+    }
+  },
+  {
+    "name": "test_resolvable_shell_lines_stay_accepted-1",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\ncommand -v python3 >/dev/null && python3 -c 'import yaml'\n"
+    }
+  },
+  {
+    "name": "test_resolvable_shell_lines_stay_accepted-2",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\nexec python3 \"$GATE_WRAPPER\" --repo-root \"$REPO_ROOT\"\n"
+    }
+  },
+  {
+    "name": "test_resolvable_shell_lines_stay_accepted-3",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\n/opt/homebrew/bin/python3 script.py\n"
+    }
+  },
+  {
+    "name": "test_resolvable_shell_lines_stay_accepted-4",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\n\"$PYTHON\" script.py\n"
+    }
+  },
+  {
+    "name": "entry-reason-suppressed",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: 'python x.py  \u0023 precommit-interp-ok: illustrative'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "entry-marker-in-argument",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: python x.py precommit-interp-ok\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "entry-marker-empty-reason",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: 'python x.py \u0023 precommit-interp-ok:   '\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "script-reason-suppressed",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py \u0023 precommit-interp-ok: illustrative\n"
+    }
+  },
+  {
+    "name": "script-marker-in-argument",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py precommit-interp-ok\n"
+    }
+  },
+  {
+    "name": "script-marker-empty-reason",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py \u0023 precommit-interp-ok:   \n"
+    }
+  },
+  {
+    "name": "script-bare-marker",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py \u0023 precommit-interp-ok\n"
+    }
+  },
+  {
+    "name": "shell-script-mixed",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n\u0023!/usr/bin/env bash\n\u0023 python foo.py\ncommand -v python3 >/dev/null && python3 -c 'import yaml'\npython scripts/ci/x.py\n"
+    }
+  },
+  {
+    "name": "unbalanced-entry",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: python 'x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "unbalanced-inner-body",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash -c \"python 'x.py\"\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "sh-body",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: sh -c 'python x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "zsh-body",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: zsh -c 'python3 x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "all-separators",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: python a.py; python b.py && python c.py || python d.py | python e.py &\n      ( python f.py ) ;; python g.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "all-wrappers",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: env exec command nice time builtin FOO=1 python x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "wrapper-only",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: exec FOO=1\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "empty-segments",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: ; && ||\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "quoted-argument",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: echo 'python x.py'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "uv-options",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run --frozen --with pyyaml --python=3.13 python x.py\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "uv-only",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: uv run\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "missing-script",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash nonexistent.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "languages-and-unnamed",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - entry: python x.py\n  - id: script\n    entry: python3 x.py\n    language: script\n  - id: ignored\n    entry: python x.py\n    language: python\n  - id: blank\n    entry: ''\n  - id: absent\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {}
+  },
+  {
+    "name": "deduplicated-scripts",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: a\n    entry: bash hook.sh\n  - id: b\n    entry: bash ./hook.sh\n  - id: c\n    entry: bash hook.bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py\n",
+      "hook.bash": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython y.py\n",
+      "unreferenced.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython z.py\n"
+    }
+  },
+  {
+    "name": "entry-suppression-still-scans-script",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: 'bash hook.sh \u0023 precommit-interp-ok: illustrative'\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py\n"
+    }
+  },
+  {
+    "name": "floor-nine",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: '0'\n    entry: uv run python x.py\n  - id: '1'\n    entry: uv run python x.py\n  - id: '2'\n    entry: uv run python x.py\n  - id: '3'\n    entry: uv run python x.py\n  - id: '4'\n    entry: uv run python x.py\n  - id: '5'\n    entry: uv run python x.py\n  - id: '6'\n    entry: uv run python x.py\n  - id: '7'\n    entry: uv run python x.py\n  - id: '8'\n    entry: uv run python x.py\n",
+    "scripts": {}
+  },
+  {
+    "name": "floor-hides-violations",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: python x.py\n",
+    "scripts": {}
+  },
+  {
+    "name": "floor-empty",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks: []\n",
+    "scripts": {}
+  },
+  {
+    "name": "null-repos",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos: null\n",
+    "scripts": {}
+  },
+  {
+    "name": "null-hooks",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n  - repo: local\n    hooks: null\n",
+    "scripts": {}
+  },
+  {
+    "name": "script-regex-edges",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nthen python x.py\nelse python x.py\nelif python x.py\ndo python x.py\nuntil python x.py\nnice python x.py\ntime python x.py\nxargs python x.py\necho `python x.py`\n! python x.py\npython-extra x.py\npython/foo x.py\npython.py x.py\nPY=1 python x.py\nFOO=\"a b\" python x.py\npython x.py \u0023 comment\n"
+    }
+  },
+  {
+    "name": "floor-ten",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: '0'\n    entry: uv run python x.py\n  - id: '1'\n    entry: uv run python x.py\n  - id: '2'\n    entry: uv run python x.py\n  - id: '3'\n    entry: uv run python x.py\n  - id: '4'\n    entry: uv run python x.py\n  - id: '5'\n    entry: uv run python x.py\n  - id: '6'\n    entry: uv run python x.py\n  - id: '7'\n    entry: uv run python x.py\n  - id: '8'\n    entry: uv run python x.py\n  - id: '9'\n    entry: uv run python x.py\n",
+    "scripts": {}
+  },
+  {
+    "name": "false-repos",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos: false\n",
+    "scripts": {}
+  },
+  {
+    "name": "false-hooks",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n  - repo: local\n    hooks: false\n",
+    "scripts": {}
+  },
+  {
+    "name": "absolute-shell-reference",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash ${FIXTURE_ROOT}/hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py\n"
+    }
+  },
+  {
+    "name": "parent-shell-reference",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nrepos:\n- repo: local\n  hooks:\n  - id: some-hook\n    entry: bash scripts/../hook.sh\n  - id: padding-0\n    entry: uv run python x.py\n    language: system\n  - id: padding-1\n    entry: uv run python x.py\n    language: system\n  - id: padding-2\n    entry: uv run python x.py\n    language: system\n  - id: padding-3\n    entry: uv run python x.py\n    language: system\n  - id: padding-4\n    entry: uv run python x.py\n    language: system\n  - id: padding-5\n    entry: uv run python x.py\n    language: system\n  - id: padding-6\n    entry: uv run python x.py\n    language: system\n  - id: padding-7\n    entry: uv run python x.py\n    language: system\n  - id: padding-8\n    entry: uv run python x.py\n    language: system\n  - id: padding-9\n    entry: uv run python x.py\n    language: system\n",
+    "scripts": {
+      "scripts/keep.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\n",
+      "scripts/../hook.sh": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\npython x.py\n"
+    }
+  },
+  {
+    "name": "yaml-hook-merge",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\ndefaults: &defaults\n  id: merged\n  entry: python x.py\nrepos:\n  - hooks:\n      - <<: *defaults\n      - id: pad-0\n        entry: uv run python x.py\n      - id: pad-1\n        entry: uv run python x.py\n      - id: pad-2\n        entry: uv run python x.py\n      - id: pad-3\n        entry: uv run python x.py\n      - id: pad-4\n        entry: uv run python x.py\n      - id: pad-5\n        entry: uv run python x.py\n      - id: pad-6\n        entry: uv run python x.py\n      - id: pad-7\n        entry: uv run python x.py\n      - id: pad-8\n        entry: uv run python x.py\n      - id: pad-9\n        entry: uv run python x.py\n",
+    "scripts": {}
+  },
+  {
+    "name": "yaml-hook-alias",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\ndefaults: &defaults\n  id: aliased\n  entry: python3 x.py\nrepos:\n  - hooks:\n      - *defaults\n      - id: pad-0\n        entry: uv run python x.py\n      - id: pad-1\n        entry: uv run python x.py\n      - id: pad-2\n        entry: uv run python x.py\n      - id: pad-3\n        entry: uv run python x.py\n      - id: pad-4\n        entry: uv run python x.py\n      - id: pad-5\n        entry: uv run python x.py\n      - id: pad-6\n        entry: uv run python x.py\n      - id: pad-7\n        entry: uv run python x.py\n      - id: pad-8\n        entry: uv run python x.py\n      - id: pad-9\n        entry: uv run python x.py\n",
+    "scripts": {}
+  },
+  {
+    "name": "yaml-hook-merge-sequence",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\nfirst: &first\n  id: merged-first\n  entry: python x.py\nsecond: &second\n  entry: uv run python x.py\nrepos:\n  - hooks:\n      - <<: [*first, *second]\n      - id: pad-0\n        entry: uv run python x.py\n      - id: pad-1\n        entry: uv run python x.py\n      - id: pad-2\n        entry: uv run python x.py\n      - id: pad-3\n        entry: uv run python x.py\n      - id: pad-4\n        entry: uv run python x.py\n      - id: pad-5\n        entry: uv run python x.py\n      - id: pad-6\n        entry: uv run python x.py\n      - id: pad-7\n        entry: uv run python x.py\n      - id: pad-8\n        entry: uv run python x.py\n      - id: pad-9\n        entry: uv run python x.py\n",
+    "scripts": {}
+  },
+  {
+    "name": "yaml-repo-merge",
+    "config": "\u0023 SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n\u0023 SPDX-License-Identifier: MIT\ndefaults: &defaults\n  hooks:\n    - id: repo-merged\n      entry: python x.py\n    - id: pad-0\n      entry: uv run python x.py\n    - id: pad-1\n      entry: uv run python x.py\n    - id: pad-2\n      entry: uv run python x.py\n    - id: pad-3\n      entry: uv run python x.py\n    - id: pad-4\n      entry: uv run python x.py\n    - id: pad-5\n      entry: uv run python x.py\n    - id: pad-6\n      entry: uv run python x.py\n    - id: pad-7\n      entry: uv run python x.py\n    - id: pad-8\n      entry: uv run python x.py\n    - id: pad-9\n      entry: uv run python x.py\nrepos:\n  - <<: *defaults\n",
+    "scripts": {}
+  }
+]

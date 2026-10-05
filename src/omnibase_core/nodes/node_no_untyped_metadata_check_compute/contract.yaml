@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_no_untyped_metadata_check_compute
+node_id: node_no_untyped_metadata_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Pure line scanner reproducing scripts/check_no_untyped_metadata.py over explicit source pairs, including
+  same-line exemptions and byte-exact finding messages (OMN-20565).
+input_model: omnibase_core.models.nodes.no_untyped_metadata_check.model_no_untyped_metadata_check_input.ModelNoUntypedMetadataCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNoUntypedMetadataCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

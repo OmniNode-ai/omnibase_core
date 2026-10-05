@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# ONEX contract for the validation_report_write EFFECT node.
+# Persists the canonical OMN-2362 ValidationReport as JSON for a check runtime's
+# --report-json flag, so the check runtime packages stay free of filesystem writes.
+#
+# See: OMN-20565 — validator conversion, omnibase_core first batch
+
+name: node_validation_report_write_effect
+node_id: node_validation_report_write_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Writes a canonical OMN-2362 validation report to a caller-named JSON file, creating missing parent directories,
+  and returns the path and byte count. Invoked directly (CLI/direct call) by the converted check runtimes,
+  not via an event-bus subscription.
+input_model: omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input.ModelValidationReportWriteInput
+output_model: omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output.ModelValidationReportWriteOutput
+
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeValidationReportWriteEffect
+
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
