@@ -1087,7 +1087,7 @@ repos:
       # See: https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/onex-file-headers.md for canonical header format
       - id: validate-spdx-headers
         name: ONEX SPDX Header Requirement
-        entry: uv run python scripts/validation/validate_spdx_headers.py
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_spdx_headers_check_compute.runtime_spdx_headers_check
         language: system
         pass_filenames: true
         require_serial: true

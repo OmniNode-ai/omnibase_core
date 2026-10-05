@@ -1,0 +1,203 @@
+{
+  "Dockerfile": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "Makefile": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  Makefile: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got 'all:'\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "Makefile",
+        "rule": "spdx-header",
+        "line": 1,
+        "message": "Makefile: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got 'all:'"
+      }
+    ]
+  },
+  "bypass.py": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "bypass_beyond_scan.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  bypass_beyond_scan.py: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got ''\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "bypass_beyond_scan.py",
+        "rule": "spdx-header",
+        "line": 1,
+        "message": "bypass_beyond_scan.py: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got ''"
+      }
+    ]
+  },
+  "bypass_case.py": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "empty.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  empty.py: File is empty (expected SPDX header)\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "empty.py",
+        "rule": "spdx-header",
+        "line": 1,
+        "message": "empty.py: File is empty (expected SPDX header)"
+      }
+    ]
+  },
+  "good.bash": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "good.py": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "good.sh": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "good.toml": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "good.yaml": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "good.yml": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "header_only.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  header_only.py: Line 2: Missing '# SPDX-License-Identifier: MIT'\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "header_only.py",
+        "rule": "spdx-header",
+        "line": 2,
+        "message": "header_only.py: Line 2: Missing '# SPDX-License-Identifier: MIT'"
+      }
+    ]
+  },
+  "header_pair.py": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "ignored.PY": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "Warning: skipping ineligible file: ignored.PY\n",
+    "findings": []
+  },
+  "ignored.txt": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "Warning: skipping ineligible file: ignored.txt\n",
+    "findings": []
+  },
+  "missing.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  missing.py: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got 'pass'\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "missing.py",
+        "rule": "spdx-header",
+        "line": 1,
+        "message": "missing.py: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got 'pass'"
+      }
+    ]
+  },
+  "shebang_encoding_bad.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  shebang_encoding_bad.py: Line 3: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got 'pass'\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "shebang_encoding_bad.py",
+        "rule": "spdx-header",
+        "line": 3,
+        "message": "shebang_encoding_bad.py: Line 3: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got 'pass'"
+      }
+    ]
+  },
+  "shebang_encoding_good.py": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "stale_license.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  stale_license.py: Line 5: Stale SPDX-License-Identifier found after canonical header: '# SPDX-License-Identifier: Apache-2.0'\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "stale_license.py",
+        "rule": "spdx-header",
+        "line": 5,
+        "message": "stale_license.py: Line 5: Stale SPDX-License-Identifier found after canonical header: '# SPDX-License-Identifier: Apache-2.0'"
+      }
+    ]
+  },
+  "trailing_whitespace.py": {
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "",
+    "findings": []
+  },
+  "wrong_license.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  wrong_license.py: Line 2: Expected '# SPDX-License-Identifier: MIT', got '# SPDX-License-Identifier: Apache-2.0'\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "wrong_license.py",
+        "rule": "spdx-header",
+        "line": 2,
+        "message": "wrong_license.py: Line 2: Expected '# SPDX-License-Identifier: MIT', got '# SPDX-License-Identifier: Apache-2.0'"
+      }
+    ]
+  },
+  "wrong_year.py": {
+    "exit_code": 1,
+    "stdout": "\nSPDX Header Validation Failed \u2014 1 file(s):\n\n  wrong_year.py: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got '# SPDX-FileCopyrightText: 2024 OmniNode.ai Inc.'\n\nRun `onex spdx fix <path>` to fix.\n",
+    "stderr": "",
+    "findings": [
+      {
+        "path": "wrong_year.py",
+        "rule": "spdx-header",
+        "line": 1,
+        "message": "wrong_year.py: Line 1: Expected '# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.', got '# SPDX-FileCopyrightText: 2024 OmniNode.ai Inc.'"
+      }
+    ]
+  }
+}
