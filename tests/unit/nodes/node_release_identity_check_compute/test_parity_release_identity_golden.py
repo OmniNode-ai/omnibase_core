@@ -5,6 +5,7 @@
 
 import io
 import json
+import re
 
 import pytest
 
@@ -68,6 +69,16 @@ def test_parity_golden(case, tmp_path, monkeypatch, capsys):
     assert report_rows(report.model_dump_json(), root) == expected["findings"]
 
 
+def _mask_tag_state(stdout: str) -> str:
+    """Mask the one line that reads live tag state and the live pyproject version.
+
+    The repository golden is recorded against a checkout carrying tags; a CI
+    checkout without them reports "no published tag yet", and every dev bump
+    moves the version. The findings, status and exit code stay exact.
+    """
+    return re.sub(r"^OK: .*published.*$", "OK: <tag-state>", stdout, flags=re.M)
+
+
 @pytest.mark.parametrize("base", [None, "origin/dev"])
 def test_parity_repository_full_tree(base, tmp_path, capsys):
     destination = tmp_path / "report.json"
@@ -86,6 +97,8 @@ def test_parity_repository_full_tree(base, tmp_path, capsys):
         args.extend(["--base", base])
     assert main(args) == expected["exit_code"]
     output = capsys.readouterr()
-    assert output.out.replace(str(REPO), "<root>") == expected["stdout"]
+    assert _mask_tag_state(output.out.replace(str(REPO), "<root>")) == _mask_tag_state(
+        expected["stdout"]
+    )
     assert output.err.replace(str(REPO), "<root>") == expected["stderr"]
     assert report_rows(destination.read_text(), REPO) == expected["findings"]
