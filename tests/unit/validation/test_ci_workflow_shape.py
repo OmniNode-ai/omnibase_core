@@ -128,7 +128,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "1e8c24ae8e37648af73bfabb75575112632b8cd4ac169045d4ac8b5b9664e7cc"  # pragma: allowlist secret
     ),
     "spdx-headers": (
-        "a0d28fb716ae9560bc17be1d8f3631474ba82e00db2ad2b4490820fedcad8d8a"  # pragma: allowlist secret
+        "edf4e953ec7d15aa9a54551ff7b6f160b91d8d3e79d8b029f66657b81b0a6b91"  # pragma: allowlist secret
     ),
     "typed-bootstrap-environment-boundary": (
         "4e5f299d132f8ff7cff549f17626e3876a7525c5d28aec150b0b5a86d480aad5"  # pragma: allowlist secret
