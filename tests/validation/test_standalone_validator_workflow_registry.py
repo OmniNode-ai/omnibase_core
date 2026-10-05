@@ -45,20 +45,33 @@ def test_live_registry_is_airtight() -> None:
     )
 
 
-def test_decorative_debt_is_the_reported_count(tmp_path: Path) -> None:
-    """Locks the OMN-14430 audit count so a silent increase (a NEW decorative
-    validator shipped without classification) or an unnoticed decrease (an
-    entry quietly dropped without migrating/fixing the underlying file) both
-    fail loud. Migrating an entry to `migrated_into_ci_yml` legitimately lowers
-    this number — update the constant in the same PR as the migration."""
+def test_decorative_debt_bucket_is_retired() -> None:
+    """OMN-20559: the decorative_debt bucket emptied (OMN-14877, OMN-16281) and
+    was retired. The committed manifest must not declare it."""
     manifest = yaml.safe_load(DEBT_MANIFEST_PATH.read_text(encoding="utf-8"))
-    # OMN-14877 (2026-07-21): the 18 remaining decorative validators were
-    # batch-migrated into ci.yml and reclassified to migrated_into_ci_yml.
-    # OMN-16281 (2026-08-20): the last remaining entry, OMN-14891's
-    # git-env-isolation validator, was migrated into ci.yml too. This bucket
-    # is now empty; a future decorative standalone validator raises this back
-    # above zero and is expected to update this constant in the same PR.
-    assert len(manifest["decorative_debt"]) == 0
+    assert "decorative_debt" not in manifest
+
+
+def test_manifest_declaring_decorative_debt_is_refused(tmp_path: Path) -> None:
+    """PLANTED FAILURE: even an empty decorative_debt bucket is refused, so no
+    validator can be parked as gate-nothing debt again."""
+    wf_dir = tmp_path / ".github" / "workflows"
+    wf_dir.mkdir(parents=True)
+    manifest_path = tmp_path / "standalone-validator-debt.yaml"
+    manifest_path.write_text(
+        yaml.safe_dump(
+            {
+                "migrated_into_ci_yml": [],
+                "natively_required_contexts": [],
+                "decorative_debt": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="decorative_debt is retired"):
+        verify_standalone_validator_registry(
+            repo_root=tmp_path, debt_manifest_path=manifest_path
+        )
 
 
 def test_planted_undeclared_standalone_validator_is_detected(tmp_path: Path) -> None:
@@ -82,7 +95,6 @@ def test_planted_undeclared_standalone_validator_is_detected(tmp_path: Path) -> 
             {
                 "migrated_into_ci_yml": [],
                 "natively_required_contexts": [],
-                "decorative_debt": [],
             }
         ),
         encoding="utf-8",
@@ -95,8 +107,9 @@ def test_planted_undeclared_standalone_validator_is_detected(tmp_path: Path) -> 
 
 
 def test_planted_stale_entry_is_detected(tmp_path: Path) -> None:
-    """PLANTED FAILURE: a decorative_debt entry that no longer matches a live
-    file (retired without updating the registry) must be flagged."""
+    """PLANTED FAILURE: a natively_required_contexts entry that no longer
+    matches a live file (retired without updating the registry) must be
+    flagged."""
     wf_dir = tmp_path / ".github" / "workflows"
     wf_dir.mkdir(parents=True)
     manifest_path = tmp_path / "standalone-validator-debt.yaml"
@@ -104,8 +117,7 @@ def test_planted_stale_entry_is_detected(tmp_path: Path) -> None:
         yaml.safe_dump(
             {
                 "migrated_into_ci_yml": [],
-                "natively_required_contexts": [],
-                "decorative_debt": [
+                "natively_required_contexts": [
                     {"workflow_file": "validator-long-gone.yml", "context": "validate"}
                 ],
             }
@@ -147,7 +159,6 @@ def test_planted_regressed_migration_is_detected(tmp_path: Path) -> None:
                     }
                 ],
                 "natively_required_contexts": [],
-                "decorative_debt": [],
             }
         ),
         encoding="utf-8",

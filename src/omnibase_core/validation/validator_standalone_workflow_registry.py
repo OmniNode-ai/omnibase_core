@@ -17,9 +17,11 @@ regardless of anything in the governed spec.
 This module closes that residual: EVERY ``validator-*.yml`` workflow file is
 classified into exactly one bucket in
 ``architecture-handshakes/standalone-validator-debt.yaml`` —
-``migrated_into_ci_yml`` (preferred fix), ``natively_required_contexts`` (gated by
-branch protection independent of ci-summary), or ``decorative_debt`` (confirmed
-gate-nothing, tracked). A NEW standalone validator workflow that triggers on
+``migrated_into_ci_yml`` (preferred fix) or ``natively_required_contexts`` (gated
+by branch protection independent of ci-summary). The former ``decorative_debt``
+bucket emptied and was retired (OMN-20559): a manifest that still declares it is
+malformed, so no validator can be parked as gate-nothing debt again. A NEW
+standalone validator workflow that triggers on
 ``pull_request`` without being classified fails this gate CLOSED. A classified
 entry that no longer matches the live file (renamed, retired, re-triggered) is
 flagged as stale rather than silently ignored.
@@ -93,26 +95,29 @@ def verify_standalone_validator_registry(
 
     migrated = manifest.get("migrated_into_ci_yml", [])
     natively_required = manifest.get("natively_required_contexts", [])
-    decorative = manifest.get("decorative_debt", [])
-    for label, bucket in (
-        ("migrated_into_ci_yml", migrated),
-        ("natively_required_contexts", natively_required),
-        ("decorative_debt", decorative),
-    ):
-        if not isinstance(bucket, list):
-            raise ValueError(  # error-ok: manifest shape validation
-                f"{label} must be a list, got {type(bucket).__name__}"
-            )
+    problems = [
+        f"{label} must be a list, got {type(bucket).__name__}"
+        for label, bucket in (
+            ("migrated_into_ci_yml", migrated),
+            ("natively_required_contexts", natively_required),
+        )
+        if not isinstance(bucket, list)
+    ]
+    if "decorative_debt" in manifest:
+        problems.append(
+            "decorative_debt is retired (OMN-20559): a validator workflow must be "
+            "migrated_into_ci_yml or natively_required_contexts, never parked as "
+            "gate-nothing debt"
+        )
+    if problems:
+        raise ValueError(  # error-ok: manifest shape validation
+            "; ".join(problems)
+        )
 
     # workflow_file -> declared context(s)/status, built from every bucket.
     declared_by_file: dict[str, dict[str, Any]] = {}  # ONEX_EXCLUDE: dict_str_any
     for entry in natively_required:
         declared_by_file.setdefault(entry["workflow_file"], {"bucket": "native"})
-        declared_by_file[entry["workflow_file"]].setdefault("contexts", set()).add(
-            entry["context"]
-        )
-    for entry in decorative:
-        declared_by_file.setdefault(entry["workflow_file"], {"bucket": "decorative"})
         declared_by_file[entry["workflow_file"]].setdefault("contexts", set()).add(
             entry["context"]
         )
@@ -145,7 +150,7 @@ def verify_standalone_validator_registry(
         if not gates_on_pr:
             # Not an independent-run_id producer (workflow_dispatch-only, or
             # push-only) — nothing to classify. If it is stale-declared as
-            # decorative/native below, flag that instead.
+            # native below, flag that instead.
             declared = declared_by_file.get(filename)
             if declared is not None:
                 gaps.append(
@@ -169,8 +174,7 @@ def verify_standalone_validator_registry(
                         f"triggers on pull_request with context(s) {sorted(contexts)} "
                         "but is not classified in "
                         "architecture-handshakes/standalone-validator-debt.yaml — "
-                        "add it to migrated_into_ci_yml, natively_required_contexts, "
-                        "or decorative_debt"
+                        "add it to migrated_into_ci_yml or natively_required_contexts"
                     ),
                 )
             )
@@ -192,7 +196,6 @@ def verify_standalone_validator_registry(
     for label, entries in (
         ("migrated_into_ci_yml", migrated),
         ("natively_required_contexts", natively_required),
-        ("decorative_debt", decorative),
     ):
         for entry in entries:
             wf = entry["workflow_file"]
